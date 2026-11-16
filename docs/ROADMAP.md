@@ -12,11 +12,18 @@ These aren't features. They're the aims we use to choose which features to build
 
 ## Now
 
-- **Physical encounters.** Signals, scenes, the trader skiff, the derelict, the pirate ambush and the comms window shipped ([#309](https://github.com/BigBadLoser/cc-ftl/pull/309), [#314](https://github.com/BigBadLoser/cc-ftl/pull/314), [#327](https://github.com/BigBadLoser/cc-ftl/pull/327), [#329](https://github.com/BigBadLoser/cc-ftl/pull/329)). The distress freighter ([#343](https://github.com/BigBadLoser/cc-ftl/pull/343)) and the medical pod with passengers ([#345](https://github.com/BigBadLoser/cc-ftl/pull/345)) followed. Events outside transit are in too (#173, #60).
-- **UI consistency pass.** Shared colour, size and shadow tokens, then shared chips, meters, tooltips, headers and tabs, then one window frame. Art for overhead crew icons is with art sessions.
+Shipped and no longer listed: physical encounters, the UI consistency pass and prisoners ([#116](https://github.com/BigBadLoser/cc-ftl/issues/116)); see the [changelog](../CHANGELOG.md).
+
+- **Core loop: more to find per node.** One node-content table weighted by distance tier (no visible bands), with physical finds (small wrecks, probes, cargo pods, beacons, anomalies) that crew reach by shuttle or EVA, and some nodes left quiet on purpose. Loot and ore quality then scale with tier, and deep-only content follows later. Danger bands (#382) are folded in. ([#171](https://github.com/BigBadLoser/cc-ftl/issues/171))
+- **Station assembly.** One modular assembly system for station generation; the PR is open. ([#460](https://github.com/BigBadLoser/cc-ftl/issues/460))
 
 ## Next
 
+- **Research pass.** ([#380](https://github.com/BigBadLoser/cc-ftl/issues/380))
+- **Story arcs.** ([#383](https://github.com/BigBadLoser/cc-ftl/issues/383))
+- **Goals after the tutorial.** A rolling captain's log of goals past act 3, with a pull toward deeper space. ([#172](https://github.com/BigBadLoser/cc-ftl/issues/172), [#52](https://github.com/BigBadLoser/cc-ftl/issues/52))
+- **A second income and things to spend on.** Another way to earn besides deliveries, and real costs for credits. Needs your design call. ([#174](https://github.com/BigBadLoser/cc-ftl/issues/174))
+- **Recruiting prisoners.** Offer captives a place in the crew. ([#492](https://github.com/BigBadLoser/cc-ftl/issues/492))
 
 ## Later: major features
 
@@ -31,15 +38,11 @@ Not in order. Ship weapon upgrades and the flak cannon shipped ([#344](https://g
 
 Not in order.
 
-- **Prisoners and prizes.** At the end of a fight, take prisoners or let them go. Hold them in a brig, ransom or recruit them, and sell or keep captured hulls. ([#116](https://github.com/BigBadLoser/cc-ftl/issues/116))
-- **A second income and things to spend on.** Another way to earn besides deliveries, and real costs to spend credits on. Needs your design call. ([#174](https://github.com/BigBadLoser/cc-ftl/issues/174))
 - **Weapons and gear to chase.** Ten crew weapons with art become items you can find, buy and equip. ([#49](https://github.com/BigBadLoser/cc-ftl/issues/49))
-- **Goals after the tutorial.** A rolling captain's log of goals so there is something to work toward past act 3, with a pull toward deeper space. ([#172](https://github.com/BigBadLoser/cc-ftl/issues/172), [#52](https://github.com/BigBadLoser/cc-ftl/issues/52))
-- **Less dead waiting.** Start sectors with more to find, and fewer idle hops. ([#171](https://github.com/BigBadLoser/cc-ftl/issues/171))
 - **Vehicles built at their bays.** Pods and shuttles are built at their own bay, not at the fabricator. ([#48](https://github.com/BigBadLoser/cc-ftl/issues/48))
 - **More job types.** Escort runs, high-risk prisoners and classified cargo. ([#179](https://github.com/BigBadLoser/cc-ftl/issues/179))
-- **Clearer ship overview and alerts.** A labelled by-the-numbers overview, and clickable alerts for low fuel, food and money. ([#164](https://github.com/BigBadLoser/cc-ftl/issues/164))
 - **Small quality-of-life fixes.** Research hints on locked items, clearer trade wording, fuel on job cards, a skills row in the crew inspector. ([#176](https://github.com/BigBadLoser/cc-ftl/issues/176))
+- **Clearer ship overview.** A labelled by-the-numbers overview; the clickable alerts shipped. ([#164](https://github.com/BigBadLoser/cc-ftl/issues/164))
 - **UI scale setting.** Scale the whole interface from the display settings. ([#215](https://github.com/BigBadLoser/cc-ftl/issues/215))
 
 ## Parked

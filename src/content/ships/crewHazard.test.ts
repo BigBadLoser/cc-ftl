@@ -65,7 +65,8 @@ describe('hazard interrupt', () => {
     burn(sim, t);
     expect(hazardHolds(sim, c)).toBe(true);
     let held = 0;
-    for (let i = 0; i < 80; i++) {
+    // Until the interrupt has held and lapsed: after that the fire may spread to the safe tile and send them off again (or to put it out).
+    for (let i = 0; i < 80 && !(held > 0 && sim.world.get(c, InterruptC)?.reason !== 'hazard' && isSettled(sim.world.get(c, PositionC)!)); i++) {
       burn(sim, t);
       sim.step();
       if (sim.world.get(c, InterruptC)?.reason === 'hazard') held++;

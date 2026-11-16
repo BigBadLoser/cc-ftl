@@ -161,7 +161,9 @@ describe('a break in play', () => {
     const { sim, c } = quiet();
     startBreak(sim, c, { ...pick('despair'), ticks: 60 * TICK_HZ });
     run(sim, 5);
-    const p = sim.world.get(c, PositionC)!;
+    // Wait until they have stopped where the break takes them: a walk through fire is obeyed (the route was chosen), so the fire must catch them standing.
+    for (let i = 0; i < 400 && ((sim.world.get(c, PathC)?.steps.length ?? 0) > 0 || !isSettled(sim.world.get(c, PositionC)!)); i++) sim.step();
+    const p = { ...sim.world.get(c, PositionC)! }; // the tile they stood on (a copy: the live position would move the fire after them as they escape)
     shipGrid(sim, homeShip(sim))!.set('fire', Math.round(p.x), Math.round(p.y), 200);
     const seen = new Set<string>();
     for (let i = 0; i < 60; i++) {
@@ -171,7 +173,9 @@ describe('a break in play', () => {
       expect(sim.world.has(c, BreakdownC)).toBe(true);
     }
     expect(seen.has('hazard')).toBe(true);
-    shipGrid(sim, homeShip(sim))!.set('fire', Math.round(p.x), Math.round(p.y), 0);
+    // Put the fire out, the tiles it spread to as well (left burning, they light the first tile again).
+    const g = shipGrid(sim, homeShip(sim))!;
+    for (let y = g.y0; y < g.y0 + g.height; y++) for (let x = g.x0; x < g.x0 + g.width; x++) if (g.get('fire', x, y) > 0) g.set('fire', x, y, 0);
     run(sim, 40);
     expect(sim.world.get(c, InterruptC)?.reason).toBe('breakdown');
     expect(sim.world.get(c, TaskC)?.machine).toBe('break');

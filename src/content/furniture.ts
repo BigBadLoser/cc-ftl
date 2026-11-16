@@ -228,7 +228,7 @@ export const furniture = {
     name: 'Battery bank',
     category: 'power',
     description: "A bank of power cells. Charges from spare power and covers a shortfall (an empty reactor, a spike in draw) before any module is cut off.",
-    asset: 'module.battery', footprint: [1, 1], solid: true, power: 0, flammability: 0.2, battery: { capacity: 4000 },
+    asset: 'module.battery', footprint: [1, 2], solid: true, power: 0, flammability: 0.2, battery: { capacity: 4000 },
     maxHp: 80, buildWork: 80, cost: [{ item: 'item.metal', count: 6 }, { item: 'item.electronics', count: 6 }],
   },
   // A grow bed: pick a crop, a crew member sows it (the water comes from stock), it grows while powered and is harvested as an item.
@@ -262,5 +262,15 @@ export const furniture = {
     asset: 'module.refinery', footprint: [3, 4], solid: true, access: [3, 3], power: -8, powerPriority: 3,
     flammability: 0.1, maxHp: 220, buildWork: 300, workstation: true, crafting: true,
     cost: [{ item: 'item.metal', count: 30 }, { item: 'item.electronics', count: 8 }, { item: 'item.parts', count: 4 }],
+  },
+  // Water purifier 2x1: crew melt and filter ice into water at the access tile in front. A small alternative to the refinery's split-ice recipe.
+  'module.waterPurifier': {
+    scrap: 'tech',
+    name: 'Water purifier',
+    category: 'production',
+    description: 'Melts and filters ice into clean water. Crew work it from the access tile.',
+    asset: 'module.water_purifier', footprint: [2, 1], solid: true, access: [0, 1], power: -3, powerPriority: 3,
+    flammability: 0.1, maxHp: 80, buildWork: 120, workstation: true, crafting: true,
+    cost: [{ item: 'item.metal', count: 10 }, { item: 'item.electronics', count: 3 }, { item: 'item.parts', count: 1 }],
   },
 } satisfies Record<string, ModuleDef>;

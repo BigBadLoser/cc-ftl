@@ -109,7 +109,7 @@ describe('mining pods', () => {
   it('two pods share an order: with its only tile taken by another pod, a pod mines that tile too', () => {
     const { sim, pod, asteroid } = setup();
     const t = oreTiles(sim, asteroid).find((o) => o.amt > HOLD)!;
-    // Another pod with that tile as its target (it sits in a second bay with no pilot, so it never leaves).
+    // Another pod with that tile as its target, in a second bay (whether a pilot boards it and it flies out depends on where the bay lands).
     const ship = homeShip(sim);
     const g = shipGrid(sim, ship)!;
     let bay2 = 0;
@@ -123,11 +123,12 @@ describe('mining pods', () => {
     expect(log).not.toContain('mining.done');
     expect(sim.world.get(pod, MiningPodC)?.target).toEqual({ x: t.x, y: t.y });
     expect(hold(sim, pod)).toBeGreaterThan(0);
-    // It hovers clear of the other pod (on another heading ray), STANDOFF from the tile.
+    // It hovers clear of the other pod's spot (on another heading ray), STANDOFF from the tile.
     const size = content.vehicles['vehicle.mining_pod'].size ?? 1;
     const b = sim.world.get(pod, BodyC)!;
+    const spot = sim.world.get(other, MiningPodC)!.spot!;
     expect(Math.hypot(b.x - (t.x + 0.5), b.y - (t.y + 0.5))).toBeCloseTo(STANDOFF, 6);
-    expect(Math.hypot(b.x - (t.x + 0.5), b.y - (t.y + 0.5 - STANDOFF))).toBeGreaterThanOrEqual(size - 1e-6);
+    expect(Math.hypot(b.x - spot.x, b.y - spot.y)).toBeGreaterThanOrEqual(size - 1e-6);
   });
 
   it('a save mid-trip loads and plays on identically; two runs of a seed match', () => {

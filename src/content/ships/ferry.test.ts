@@ -5,6 +5,7 @@ import {
 import { ItemStackC } from '../../sim';
 import { done, outpostRegion, run, shuttleOf, stockOn, storages } from './ferryFixture';
 import { shipIdOf } from '../../sim/regions';
+import { ferryFree } from '../../sim/ferry/pick';
 import { content } from '../index';
 
 describe('base logistics: shuttle cargo runs', () => {
@@ -81,6 +82,30 @@ describe('base logistics: shuttle cargo runs', () => {
 });
 
 describe('base logistics: crew go to the base and back', () => {
+  it('a manual flight or a shuttle with crew riding is not free for a run (#488): a run would carry them off', () => {
+    const sim = newGame(3, content);
+    const base = outpostRegion(sim, 70, 30, false);
+    run(sim, 5);
+    const v = shuttleOf(sim);
+    const shuttle = () => sim.world.get(v, VehicleC)!;
+    expect(ferryFree(sim, v)).toBe(true);
+    const [pilot, rider] = [...sim.world.query(CrewC)].sort((a, b) => a - b);
+    for (const c of [pilot!, rider!]) sim.enqueue({ type: 'vehicle.embark', crew: c, vehicle: v });
+    run(sim, 2000, () => shuttle().pilot !== 0 && shuttle().passengers.length === 1);
+    expect(ferryFree(sim, v)).toBe(false); // crew riding
+    sim.enqueue({ type: 'vehicle.disembark', vehicle: v, crew: shuttle().passengers[0]! });
+    run(sim, 1);
+    expect(shuttle().passengers).toEqual([]);
+    expect(ferryFree(sim, v)).toBe(true); // a pilot alone in the bay: a run may take the shuttle (and them)
+    sim.enqueue({ type: 'vehicle.hover', vehicle: v, ship: base });
+    run(sim, 3000, () => shuttle().state === 'flying');
+    expect(shuttle().dest).not.toBeNull();
+    expect(ferryFree(sim, v)).toBe(false); // on its way where the player sent it
+    run(sim, 6000, () => shuttle().state === 'flying' && !shuttle().dest);
+    expect(shuttle().hover).toBe(base);
+    expect(ferryFree(sim, v)).toBe(true); // parked beside the base: free again
+  });
+
   it('ferries crew by shuttle and EVA to a base with no airlock; they work there; then come home', () => {
     const sim = newGame(3, content);
     const home = homeShip(sim);

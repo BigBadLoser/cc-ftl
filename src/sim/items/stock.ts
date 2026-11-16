@@ -1,10 +1,11 @@
-import { reaches, startLabels, viewOf } from '../ai/navView';
+import { goalTiles, reaches, startLabels, viewOf } from '../ai/navView';
 import { ShipC } from '../combat/components';
 import { ContainerC } from '../containers/components';
 import { shipIdAt , shipIdOf } from '../regions';
 import { JobC } from '../crew/components';
 import { jobGoal } from '../crew/helpers';
-import { ModuleC } from '../modules/components';
+import { ModuleC, type Module } from '../modules/components';
+import { moduleSite } from '../modules/footprint';
 import type { Sim } from '../sim';
 import { ItemStackC, StorageC, type HaulRef } from './components';
 import { storageCount, storageSpace, storageTake } from './storage';
@@ -27,6 +28,17 @@ export interface Located {
   y: number;
   /** Units free to claim (stock minus reservations). */
   avail: number;
+  /** A storage module's rotated footprint, worked from beside any side (`storageStop`). */
+  size?: [number, number];
+}
+
+/**
+ * Where a haul stops at a storage module: the module's site (`moduleSite`: its anchor and rotated footprint), so crew put in and take out from
+ * beside any side of it, as every job aimed at a module is worked. The anchor alone would need that one corner reachable: a pallet whose
+ * anchor corner is walled in could never be emptied (#488).
+ */
+export function storageStop(sim: Sim, m: Module): { x: number; y: number; size?: [number, number] } {
+  return moduleSite(sim.content.modules[m.def], m);
 }
 
 export const refKey = (kind: string, id: number, item: string): string => `${kind}:${id}:${item}`;
@@ -68,7 +80,7 @@ export function sourcesOf(sim: Sim, shipId: number, item: string, res: Reservati
     // Sealed containers are never reached by crew (their stock moves by unloader or shuttle, later).
     if (!m || shipIdOf(sim, m) !== shipId || sim.world.has(id, ContainerC)) continue;
     const avail = storageCount(sim, id, item) - (res.out.get(refKey('storage', id, item)) ?? 0);
-    if (avail > 0) out.push({ ref: { kind: 'storage', id }, x: m.x, y: m.y, avail });
+    if (avail > 0) out.push({ ref: { kind: 'storage', id }, ...storageStop(sim, m), avail });
   }
   return out;
 }
@@ -78,44 +90,47 @@ export function claimableCount(sim: Sim, shipId: number, item: string, res: Rese
   return sourcesOf(sim, shipId, item, res).reduce((n, s) => n + s.avail, 0);
 }
 
-/** The unreserved source of `item` nearest to a point (ties: lower id). */
-export function nearestSource(sim: Sim, shipId: number, item: string, at: { x: number; y: number }, res: Reservations): Located | null {
-  let best: Located | null = null;
-  let bestD = Infinity;
-  for (const s of sourcesOf(sim, shipId, item, res)) {
-    const d = dist2(s.x, s.y, at.x, at.y);
-    if (d < bestD) {
-      best = s;
-      bestD = d;
-    }
-  }
-  return best;
+/**
+ * The unreserved source of `item` nearest to a point (ties: lower id). With `carry`, the point is also the haul stop the load goes to (a docked
+ * hold's cargo tile, a job with its `size`), and only a source whose load can be carried there counts (`canCarry`): a planner must not post a
+ * haul nobody can ever claim, as `nearestStorageFor` will not send one to storage nobody can get to (#488).
+ */
+export function nearestSource(
+  sim: Sim, shipId: number, item: string, at: { x: number; y: number; size?: [number, number] }, res: Reservations, carry = false,
+): Located | null {
+  const found = sourcesOf(sim, shipId, item, res).map((s) => ({ s, d: dist2(s.x, s.y, at.x, at.y) }));
+  found.sort((a, b) => a.d - b.d); // stable: ties keep the order sourcesOf found them in, as before
+  return found.find((f) => !carry || canCarry(sim, shipId, f.s, at))?.s ?? null; // nearest first: the labelling is checked only until one reaches
 }
 
 /**
- * True when a load lying at `from` can be carried on foot to a haul stop at `to` (the tile a haul job is aimed at: a module's anchor, a job's
- * tile, with its `size`): the walker stands on or beside `from` and ends beside `to`, the widest way crew walk (suited: the deck and the hull,
- * as `zoneTilesNear` asks), so a load out on the hull still has somewhere to go. Components labelling, no search (#476: a planner must not
+ * True when a load lying at `from` can be carried on foot to a haul stop at `to` (where a haul job is aimed: a storage module's site, `storageStop`,
+ * a job's tile, each with its `size`): the walker stands on or beside `from` (beside any side of it, with a `size`) and ends beside `to`, the
+ * widest way crew walk (suited: the deck and the hull, as `zoneTilesNear` asks), so a load out on the hull still has somewhere to go. Components labelling, no search (#476: a planner must not
  * send a load to storage nobody can get to; the carrier's own way is checked again at pickup, `performHaul`).
  */
-export function canCarry(sim: Sim, shipId: number, from: { x: number; y: number }, to: { x: number; y: number; size?: [number, number] }): boolean {
+export function canCarry(
+  sim: Sim, shipId: number, from: { x: number; y: number; size?: [number, number] }, to: { x: number; y: number; size?: [number, number] },
+): boolean {
   const v = viewOf(sim, shipId, { suited: true });
   if (!v) return false;
-  return reaches(v, from, startLabels(v, from), jobGoal({ kind: 'haul', ...to }));
+  // A load in a storage module (`from` with its footprint) is taken out from beside any side of it, as `storageStop` puts the haul.
+  const starts = from.size ? [...new Set(goalTiles(v, jobGoal({ kind: 'haul', ...from })).map((i) => v.label[i] as number))] : startLabels(v, from);
+  return reaches(v, from, starts, jobGoal({ kind: 'haul', ...to }));
 }
 
 /** The storage module nearest to a point that can still take at least one unit of `item` and that a load at that point can be carried to (`canCarry`). */
 export function nearestStorageFor(sim: Sim, shipId: number, item: string, at: { x: number; y: number }, res: Reservations): (Located & { room: number }) | null {
-  const found: { id: number; m: { x: number; y: number }; room: number; d: number }[] = [];
+  const found: { id: number; m: { x: number; y: number; size?: [number, number] }; room: number; d: number }[] = [];
   for (const id of sim.world.query(StorageC, ModuleC)) {
     const m = sim.world.get(id, ModuleC);
     if (!m || shipIdOf(sim, m) !== shipId || sim.world.has(id, ContainerC)) continue;
     const room = storageSpace(sim, id, item) - (res.incoming.get(refKey('storage', id, item)) ?? 0);
-    if (room > 0) found.push({ id, m, room, d: dist2(m.x, m.y, at.x, at.y) });
+    if (room > 0) found.push({ id, m: storageStop(sim, m), room, d: dist2(m.x, m.y, at.x, at.y) });
   }
   found.sort((a, b) => a.d - b.d); // stable: ties keep query order, as before
   const best = found.find((f) => canCarry(sim, shipId, at, f.m)); // nearest first: the labelling is checked only until one reaches
-  return best ? { ref: { kind: 'storage', id: best.id }, x: best.m.x, y: best.m.y, avail: 0, room: best.room } : null;
+  return best ? { ref: { kind: 'storage', id: best.id }, ...best.m, avail: 0, room: best.room } : null;
 }
 
 /**

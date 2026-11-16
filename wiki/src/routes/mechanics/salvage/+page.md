@@ -148,7 +148,7 @@ A pod holds <Stat kind="vehicles" id="vehicle.mining_pod" field="cargo" /> units
 | Ore | Gives | What to do with it |
 |---|---|---|
 | Iron | Iron ore | Refine to metal. |
-| Ice | Ice | Use as it is; a refinery splits it. |
+| Ice | Ice | Use as it is; a refinery splits it into water and oxygen, and a water purifier turns it into water alone. |
 | Rare metals | Rare ore | Refine to electronics. |
 | Energy crystal | Energy crystals | Reactor fuel. See [Power](../power/). |
 

@@ -91,6 +91,15 @@ export const recipes = {
     outputs: [{ item: 'item.water', count: 8 }, { item: 'item.oxygen', count: 8 }],
     work: 240,
   },
+  // The water purifier's recipe: a small, dedicated ice-to-water step (issue #321); no oxygen, unlike the refinery's split.
+  'recipe.purify_ice': {
+    category: 'refining',
+    name: 'Purify ice',
+    station: 'module.waterPurifier',
+    inputs: [{ item: 'item.ice', count: 4 }],
+    outputs: [{ item: 'item.water', count: 4 }],
+    work: 80,
+  },
   // The galley's recipe: water becomes nutrient paste bars (water: issue #222; the starter ship carries 30, for 90 rations).
   // Interim input: rations will use hydroponics output once hydroponics exists (DESIGN.md "Salvaging derelicts").
   // The emergency fallback: cooked meals (below) feed more and lift mood; rations only need water.

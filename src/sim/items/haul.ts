@@ -11,6 +11,7 @@ import { CarryingC, ItemStackC, type HaulData, type HaulRef } from './components
 import { deliverToJob } from './materials';
 import { destroyJob, dropCarried, spillItems, takeFromStack } from './stacks';
 import { storageAdd, storageTake } from './storage';
+import { storageStop } from './stock';
 import { cargoAdd, cargoTake } from '../vehicles/cargo';
 import { cargoTile } from '../vehicles/geometry';
 import { shipIdOf } from '../regions';
@@ -27,10 +28,13 @@ export function destinationTile(sim: Sim, job: Job): { x: number; y: number; siz
     return t && t.shipId === shipIdOf(sim, job) ? { x: t.x, y: t.y } : null;
   }
   if (dst.kind === 'zone') return dst.id === shipIdOf(sim, job) ? stageTile(sim, dst.id, job.haul!.item) : null;
-  const at = dst.kind === 'job' ? sim.world.get(dst.id, JobC) : sim.world.get(dst.id, ModuleC);
+  if (dst.kind === 'storage') {
+    const m = sim.world.get(dst.id, ModuleC);
+    return m ? storageStop(sim, m) : null;
+  }
+  const at = sim.world.get(dst.id, JobC);
   if (!at) return null;
-  const size = dst.kind === 'job' ? (at as Job).size : undefined; // a job on a module site: crew deliver from any reachable side of it, not onto it
-  return size ? { x: at.x, y: at.y, size } : { x: at.x, y: at.y };
+  return at.size ? { x: at.x, y: at.y, size: at.size } : { x: at.x, y: at.y }; // a job on a module site: crew deliver from any reachable side of it, not onto it
 }
 
 /** Put units down at a haul's destination; returns how many went in (the rest stays in hand). */
@@ -169,6 +173,7 @@ export function performHaul(sim: Sim, crew: number, job: Job): WorkResult {
     job.x = to.x;
     job.y = to.y;
     if (to.size) job.size = to.size;
+    else delete job.size; // the pickup stop's size (a storage footprint) is not the destination's
     return 'working';
   }
 

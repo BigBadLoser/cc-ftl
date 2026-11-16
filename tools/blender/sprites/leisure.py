@@ -13,6 +13,7 @@ them yet, except module.bed).
   module.planter       planter_r2 pl1a: the deep-blue glazed pot with a broad-leaf bush, 1x1 (approved 2026-11-13)
   module.vending       vending_r23 vm1c23a: the paper-cup machine, 1x1 (approved 2026-11-14)
   module.vending_red   vending_r24 vm1c24e: the red machine with the side can, 1x1 (approved 2026-11-14)
+  module.water_purifier  purifier_g1 g1: body, porthole and tank, 2x1 (approved 2026-11-16; family purifier_module)
 
 Ids are what moduleArt.ts looks up: `module.<x>.r<r>`, and `module.<x>` (r0) for anything without rotations. The studies build at r0
 (K's default rotation); `turned` builds one at rotation r by giving every K made meanwhile that rotation, so each
@@ -22,7 +23,7 @@ pipeline's 4), set on the scene for their jobs only, as recovery.py does. Each j
 itself (r0 also gives the plain id), so a job is keyed by this module's source and what it imports."""
 import numpy as np
 
-from . import bunk_study, core, env_build as E, barcounter_r26, barcounter_r32, barstool_r27, exercise_r12, modkit, planter_r2, post, vending_r23, vending_r24
+from . import bunk_study, core, env_build as E, barcounter_r26, barcounter_r32, barstool_r27, exercise_r12, modkit, planter_r2, post, purifier_g1, vending_r23, vending_r24
 
 FAMILIES = {  # family: [(module id, footprint at r0, (study module, design)), ...], palette selection
     "bunk_module": ([("module.bunk", (1, 2), ("bunk_study", "b1h")),
@@ -35,8 +36,9 @@ FAMILIES = {  # family: [(module id, footprint at r0, (study module, design)), .
     "planter_module": ([("module.planter", (1, 1), ("planter_r2", "pl1a"))], "only:planter"),
     "vending_module": ([("module.vending", (1, 1), ("vending_r23", "vm1c23a")),
                         ("module.vending_red", (1, 1), ("vending_r24", "vm1c24e"))], "only:vending"),
+    "purifier_module": ([("module.water_purifier", (2, 1), ("purifier_g1", "g1"))], purifier_g1.PAL),
 }
-SAMPLES = {"vending_module": 64}
+SAMPLES = {"vending_module": 64, "purifier_module": 64}
 BERTHS = {"module.bunk": 2, "module.bed": 1}   # beds: front overlays per berth over their sleepers (bed_front.py)
 
 
@@ -53,7 +55,7 @@ def turned(build, rot):
         modkit.K.__init__ = init
 
 
-STUDIES = {m.__name__.rsplit(".", 1)[1]: m for m in (bunk_study, exercise_r12, planter_r2, vending_r23,
+STUDIES = {m.__name__.rsplit(".", 1)[1]: m for m in (bunk_study, exercise_r12, planter_r2, purifier_g1, vending_r23,
                                                      vending_r24)}
 for _m, _d in ((barcounter_r26, {k: f for k, (_, f) in barcounter_r26.PIECES.items()}),
                (barcounter_r32, {"o1s": barcounter_r32.o1s, "o1t": barcounter_r32.o1t}),

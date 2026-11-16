@@ -8,9 +8,9 @@ describe('work categories', () => {
     expect(WORK_CATEGORIES).toContain('crafting');
   });
 
-  it('refinery recipes are refining, galley recipes are cooking; fab and workbench recipes are crafting', () => {
+  it('refinery and purifier recipes are refining, galley recipes are cooking; fab and workbench recipes are crafting', () => {
     for (const [id, r] of Object.entries(content.recipes as Record<string, RecipeDef>)) {
-      const want = r.station === 'module.refinery' ? 'refining' : r.station === 'module.galley' ? 'cooking' : 'crafting';
+      const want = r.station === 'module.refinery' || r.station === 'module.waterPurifier' ? 'refining' : r.station === 'module.galley' ? 'cooking' : 'crafting';
       expect(r.category ?? 'crafting', id).toBe(want);
     }
     expect(Object.values(content.recipes as Record<string, RecipeDef>).some((r) => r.station === 'module.refinery')).toBe(true);

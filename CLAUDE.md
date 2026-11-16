@@ -73,6 +73,8 @@ or removes content. Before non-trivial work, read the index at the top of `docs/
 
 ## Workflow
 
+- Branch names describe the work: `feat/…`, `fix/…`, `art/…`, `tools/…`, `docs/…`, with the issue number where there is one
+  (`feat/asteroid-variety-505`). Avoid generated names such as `claude/<random-words>`.
 - Flow for every piece of work:
   1. Iterate on a work branch until the user is happy. Commit often with `check:fast` and push the branch freely (a push to
      a branch is a backup, not a release).
@@ -128,6 +130,9 @@ or removes content. Before non-trivial work, read the index at the top of `docs/
     - Briefs name the doc sections and files to read, and ask for a short report: changed, verified, open.
     - Keep command output small: pipe test, lint and build runs through `2>&1 | tail -n 40` (widen only to chase a
       failure), and fetch CI logs for the failing job only, tailed.
+    - Agents run `check:fast` and leave the slow tier to CI. When a slow or statistical test (`*.slow.test.ts`, seed sweeps,
+      design-number runs) fails, the agent stops and reports the failure with the numbers it has, and investigates further only
+      when the orchestrator asks.
     - Review fixes (Codex, CI) go back by message to the agent that wrote the PR, not to a fresh agent.
     - Mechanical work (scanning logs, sorting review comments, renames, doc moves) goes to Haiku.
     - The orchestrator reads an agent's final report, not its output file.

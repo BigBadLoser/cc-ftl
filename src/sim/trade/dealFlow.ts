@@ -161,6 +161,7 @@ function work(sim: Sim, d: Deal, v: Vehicle): void {
     unwindStation(sim, d);
     d.via = 'hover';
     delete d.dock;
+    sim.events.emit({ type: 'trade.rerouted', deal: d.id, ship: d.ship }); // told, not silent: a dock nobody works is worth knowing about
     return setPhase(sim, d, 'out');
   }
   if (!stationWork(sim, d, v)) return;

@@ -1,3 +1,5 @@
+> Historical snapshot (2026-10-19): the branch table and open-work notes are stale. Current state lives in [STATUS.md](STATUS.md).
+
 # Handoff (2026-10-19)
 
 This is where things stood when work moved from one long cloud session into a Claude Code Project. Read it after `CLAUDE.md`,

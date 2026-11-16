@@ -141,7 +141,7 @@ function planLoad(sim: Sim, id: number, region: number, f: Ferry): void {
   for (const l of f.items) {
     let need = l.count - cargoOf(sim, id, l.item) - (res.incoming.get(refKey('vehicle', id, l.item)) ?? 0);
     for (let guard = 0; need > 0 && guard < 20; guard++) {
-      const s = nearestSource(sim, region, l.item, stand, res);
+      const s = nearestSource(sim, region, l.item, stand, res, true);
       if (!s) break;
       const n = Math.min(need, s.avail, DEFAULT_CARRY_CAPACITY);
       makeHaul(sim, res, 'hauling', region, s, { kind: 'vehicle', id }, l.item, n);

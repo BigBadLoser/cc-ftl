@@ -1286,6 +1286,8 @@ common there, and the starmap hints at notable stock.
   (translucent, gear floating inside).
 - **Lighting is a sim field.** Lights need power, and darkness has gameplay effects.
 - **Art never blocks gameplay.** Placeholders are fine, and art gets timeboxed sessions.
+- **No module floor slabs** (user, 2026-10-17; restated 2026-11-15). A module stands straight on the ship floor: no plinth,
+  skid, deck plate or base slab under it.
 - **One body per module** (user, 2026-11-10). A module is one machine with one core body that fills its footprint. The body
   can be cut, notched, stepped or curved, but the footprint is never filled by separate, loosely related objects side by
   side (a desk across the back row with props in the remaining tiles reads as filler added afterwards).
