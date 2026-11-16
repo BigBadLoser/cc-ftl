@@ -12,8 +12,8 @@ would paint over the duct in front of it.
     .off    unpowered: lamps dark
 Anchored at the tile centre, footprint [1, 1].
 
-The duct: a body from each connected edge in to the middle; a joint frame straddling each duct-to-duct edge (each tile
-draws its half); a junction box where more than two sides meet, at a corner (a mitred elbow) and at a dead end (a blind
+The duct: a body from each connected edge in to the middle; a joint frame straddling each duct-to-duct edge (drawn
+whole by the tile on its south or east side, which the game draws later); a junction box where more than two sides meet, at a corner (a mitred elbow) and at a dead end (a blind
 end plate)."""
 from . import core
 from .cable_study import DIRS, PAL, _arms, _frame
@@ -68,9 +68,11 @@ def _arm(f, d, wall, inner=0.0):
             pu, pv = (-d[1] * s, d[0] * s)
             f.box(d[0] * 0.435 + pu * (DW + 0.04), d[1] * 0.435 + pv * (DW + 0.04), DH + 0.04, 0.04, 0.04, 0.04,
                   FRAME, top="cbBoxL")
-    else:                                                                       # this tile's half of the joint frame
-        e = 0.5 - JL / 2
-        _box(f, d[0] * e, d[1] * e, ax, JL, 2 * DW + 2 * JW, 0.0, DH + JW, FRAME, FRAME_TOP)
+    elif d[0] < 0 or d[1] < 0:
+        # The joint frame, whole, straddling the edge: drawn by the tile on its south or east side only (the one drawn
+        # later). Split between two sprites, each half took its own outline and shading and the halves never met cleanly;
+        # whole, it also covers the seam where the two tiles' bodies meet.
+        _box(f, d[0] * 0.5, d[1] * 0.5, ax, 2 * JL, 2 * DW + 2 * JW, 0.0, DH + JW, FRAME, FRAME_TOP)
 
 
 def _socket_lamp(f, d, lit):
