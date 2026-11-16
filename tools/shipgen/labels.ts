@@ -159,6 +159,8 @@ export function labelOf(g: GenResult, title: string, t = 16, captions: readonly 
     const cx = (sx / n) * t + (t >> 1), cy = TOP + (sy / n) * t + (t >> 1);
     outlined(r, name, Math.round(cx - name.length * 4), Math.round(cy - 5), [255, 255, 255], 2);
   }
+  // Lamps again over the names, so a lamp in the middle of a room shows through its label.
+  for (const m of g.template.modules ?? []) if (isLamp(defs[m.def])) r.rect(m.x * t + (t >> 1) - 2, TOP + m.y * t + (t >> 1) - 2, 4, 4, LAMP);
   for (const c of captions) outlined(r, c.text, c.x * t, TOP + c.y * t + 2, [255, 230, 120], 2);
   // The key: room colours, then the furniture codes in use.
   const kx = W * t + 16;

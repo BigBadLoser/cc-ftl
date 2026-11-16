@@ -97,7 +97,8 @@ const NEARLY = 0.75;
 
 /**
  * How central each tile of a room is: the shortest straight run from it to the room's edge, along a row or a column
- * (1 on a tile against the wall; a corridor's centre line, or a room's middle, the most). Furniture does not count as an
+ * (1 on a tile against the wall; a corridor's centre line, or a room's middle, the most), with ties broken by the run the
+ * other way, a hundredth a tile (so along a corridor, its middle). Furniture does not count as an
  * edge: a lamp is a grate in the deck, the plan of the room is what it is centred in.
  */
 function depthOf(lay: Layout, room: number, tiles: readonly number[]): Map<number, number> {
@@ -105,13 +106,9 @@ function depthOf(lay: Layout, room: number, tiles: readonly number[]): Map<numbe
   const out = new Map<number, number>();
   for (const t of tiles) {
     const x = t % W, y = (t - x) / W;
-    let d = Infinity;
-    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
-      let k = 1;
-      while (k < d && inRoom(x + k * dx, y + k * dy)) k++;
-      d = Math.min(d, k);
-    }
-    out.set(t, d);
+    const run = (dx: number, dy: number): number => { let k = 1; while (k < 64 && inRoom(x + k * dx, y + k * dy)) k++; return k; };
+    const across = Math.min(run(1, 0), run(-1, 0)), down = Math.min(run(0, 1), run(0, -1));
+    out.set(t, Math.min(across, down) + Math.max(across, down) / 100);
   }
   return out;
 }
