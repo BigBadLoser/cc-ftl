@@ -1,0 +1,159 @@
+"""The station hull's straight-run designs (#524; station_hull.DESIGN), after the ref's straight variants (design
+reference only): each its detail over the base, set in the base's slots (its panel lines: the seams a quarter in from
+each end, the line under the bullnose, the groove, the step).
+
+Positions are in art px across the tile from its far end (P): the screen-left end of the face rising to the right, as
+the ref's; the other face is its mirror, as hull 46's art is.
+
+  1  dents and a long gouge (ref T3-7)
+  2  the dents alone (ref T3-6)
+  3  a module in the middle slot (ref T3-3): the slot squared off up to the top (a vent in its front, a hatch on its
+     top), a framed plate, a dark recess down to the step; a rail on the seam at the near end, a box and two short
+     rails in the slot past it"""
+import math
+
+from . import core
+from . import wall3d as T
+from . import station_hull as SH
+from .wall3d_ext_geom import D, F, LINE
+
+# A dent: (px across, px under the bullnose's foot, half its width and its height in px, its outline: radius scales round
+# it from +u, eased between, its tilt in degrees on the face), painted as a shallow pit: its lit lower lip, a darker
+# ring, its shaded upper inside
+DENTS = ((7, 0, 3, 1.7, (1.0, 1.25, 0.8, 0.9, 1.15, 0.7, 0.95, 1.05), 15),
+         (13, 29.5, 2.6, 1.5, (1.0, 0.7, 1.05, 1.3, 0.9, 1.0, 0.75, 1.15), -12),
+         (25, 52, 2.4, 1.9, (0.8, 1.15, 1.2, 0.85, 0.7, 1.05, 1.3, 0.9), 35))
+GOUGE = (28, 25, 5, 1.0, (1.0, 0.75, 1.1, 1.0, 0.85, 1.25, 0.8, 1.0), 6)   # a long shallow dent out to the tile's edge
+DENT_LIP, DENT_RING, DENT_PIT = "stL", "stM", "stD"
+
+MODULE = 3
+DESIGNS = {1: DENTS + (GOUGE,), 2: DENTS, MODULE: ()}
+NO_TABS = {MODULE}                  # designs without the groove's tabs (the recess takes the middle slot's foot)
+
+BOX_SIDE, BOX_LIT = "stL", "stW"    # the squared slot's ends; its top's front edge
+VENTS = (5, 7, 9)                   # its vent's slots, px under the top
+VENT_W = 5
+PLATE = (11, 21, 18, 30)            # the framed plate: px across, px under the bullnose's foot
+PLATE_IN = 2                        # its inner frame line, px in
+HANDLE = (14, 2, 7)                 # a slot in it: px across, px from its top and foot
+RECESS = (11, 21, 2)                # the recess: px across, its top px over the groove (down to the step)
+RECESS_BACK, RECESS_RIM, RECESS_SIDE, RECESS_SILL = "stD", "stK", "stE", "stB"   # its back wall; the shadow under its
+                                    # lip and down its far side; its near side; the sill in its foot
+RAIL = (7, 9, 2, 0)                 # the rail on the near seam: px across, px under the bullnose's foot to the step
+CLAMP = (6, 10, 23, 26)             # a clamp on it
+GREEBLE = (25, 29, 24, 29)          # a box in the far slot
+STUBS = ((25, 26), (27, 28))        # two short rails over it
+STUB_Z = (3, 12)
+
+
+def dress(f, s0, design, zk):
+    """A whole straight span's detail in its design."""
+    if design in (1, 2):
+        for dent in DESIGNS[design]:
+            _dent(f, s0, *dent)
+    elif design == MODULE:
+        _module(f, s0, zk)
+
+
+def _u(s0, p):
+    """The u p px across the tile from its far end."""
+    return s0 + 1 - p * LINE
+
+
+def _span(s0, p0, p1):
+    return _u(s0, p1), _u(s0, p0)
+
+
+def _rect(f, u0, u1, z0, z1, d, col):
+    """A painted rectangle on a plumb front d out."""
+    pts = [T.P(f.ax, f.plane, u, z, d) for u, z in ((u0, z0), (u1, z0), (u1, z1), (u0, z1))]
+    f.k.poly(pts, F, 3, T.OUT(f.ax), fixed=T.SEAM_PASS or col)
+
+
+def _frame(f, u0, u1, z0, z1, d, col, px):
+    """A painted 1 px outline."""
+    zx = px / core.ZPX
+    for a in ((u0, u1, z0, z0 + zx), (u0, u1, z1 - zx, z1), (u0, u0 + LINE, z0, z1), (u1 - LINE, u1, z0, z1)):
+        _rect(f, *a, d, col)
+
+
+def _module(f, s0, zk):
+    s, H, px = f.sec, f.sec.H, 1 / core.ZPX
+    under = lambda n: s.z_at(s.zb, n)                       # noqa: E731  n px under the bullnose's foot
+    v0, v1 = (f.at_face(s0 + fr, zk) for fr in SH.SEAMS)
+    a, b = min(v0, v1) + LINE / 2, max(v0, v1) - LINE / 2  # the middle slot, between its seams
+    # the slot squared off: a box from the bullnose's back out to the face, up to the top
+    prof = [(D - SH.R_D - 0.02, s.zb), (D - SH.R_D - 0.02, H), (D, H), (D, s.zb)]
+    f.part(a, b, prof, [None, SH.TOP, SH.FACE, None], BOX_SIDE, end=False)
+    f.top_line(a, b, D - LINE, D, BOX_LIT)
+    for u in (a - LINE, b):                                 # the seams carried up its edges
+        _rect(f, u, u + LINE, s.zb - px, H, D + 0.001, SH.SEAM)
+    hd = D - SH.R_D + 2 * LINE                              # a hatch on its top
+    f.top_line(a + 2 * LINE, b - 2 * LINE, hd, hd + LINE, SH.SEAM)
+    for n in VENTS:                                         # its vent
+        m = (a + b) / 2
+        _rect(f, m - VENT_W / 2 * LINE, m + VENT_W / 2 * LINE, H - (n + 1) * px, H - n * px, D + 0.001,
+              SH.GROOVE_D)
+    # the framed plate
+    p0, p1, n0, n1 = PLATE
+    u0, u1 = _span(s0, p0, p1)
+    SH._part(f, u0, u1, under(n1), under(n0), LINE, SH.FACE, "stH", SH.SEAM)
+    fd = D + LINE + 0.001
+    i = PLATE_IN * LINE
+    _frame(f, u0 + i, u1 - i, under(n1 - PLATE_IN), under(n0 + PLATE_IN), fd, SH.SEAM, 1)
+    hp, ht, hf = HANDLE
+    hu = _u(s0, hp)
+    _rect(f, hu - LINE, hu, under(n1 - hf), under(n0 + ht), fd, SH.GROOVE_D)
+    # the recess, from over the groove down to the step
+    p0, p1, up = RECESS
+    u0, u1 = _span(s0, p0, p1)
+    zt, zf = s.z_at(SH.GROOVE, -up), s.z_at(SH.FOOT_H, -1)
+    _rect(f, u0, u1, zf, zt, D + 0.003, RECESS_BACK)
+    _rect(f, u1 - LINE, u1, zf, zt, D + 0.004, RECESS_SIDE)             # (u1: the near side, p0)
+    _rect(f, u0, u0 + LINE, zf, zt, D + 0.004, RECESS_RIM)
+    _rect(f, u0, u1, s.z_at(zt, 2), zt, D + 0.005, RECESS_RIM)
+    _rect(f, u0, u1, zf, s.z_at(zf, -2), D + 0.005, RECESS_SILL)
+    # the rail on the near seam, a clamp on it
+    p0, p1, n0, _ = RAIL
+    u0, u1 = _span(s0, p0, p1)
+    SH._part(f, u0, u1, s.z_at(SH.FOOT_H, -1), under(n0), LINE, SH.FACE, "stH", SH.SEAM)
+    p0, p1, n0, n1 = CLAMP
+    u0, u1 = _span(s0, p0, p1)
+    SH._part(f, u0, u1, under(n1), under(n0), 2 * LINE, SH.FACE, "stH", SH.SEAM)
+    # the far slot: a box, two short rails over it
+    p0, p1, n0, n1 = GREEBLE
+    u0, u1 = _span(s0, p0, p1)
+    SH._part(f, u0, u1, under(n1), under(n0), LINE, SH.FACE, "stH", SH.SEAM)
+    for p0, p1 in STUBS:
+        u0, u1 = _span(s0, p0, p1)
+        SH._part(f, u0, u1, under(STUB_Z[1]), under(STUB_Z[0]), LINE, SH.FACE, "stH", SH.SEAM)
+
+
+def _blob(f, s0, uc, zc, ru, rz, shape, tilt, d, col, n=32):
+    """A painted blob on the upright front: an ellipse (radii ru along, rz up, art px) its radius scaled round it by
+    shape (eased between), tilted `tilt` degrees, centred (uc, zc), d out; cut at the tile's edges (s0, s0 + 1)."""
+    px = 1 / core.ZPX
+    k, ca, sa = len(shape), math.cos(math.radians(tilt)), math.sin(math.radians(tilt))
+    pts = []
+    for i in range(n):
+        a = 2 * math.pi * i / n
+        t = a / (2 * math.pi) * k
+        j, w = int(t) % k, t - int(t)
+        w = (1 - math.cos(math.pi * w)) / 2
+        r = shape[j] * (1 - w) + shape[(j + 1) % k] * w
+        x, y = ru * r * math.cos(a), rz * r * math.sin(a)
+        x, y = x * ca - y * sa, x * sa + y * ca
+        u = min(max(uc - x * LINE, s0), s0 + 1)
+        pts.append(T.P(f.ax, f.plane, u, zc + y * px, d))   # (-x: the art's +x runs to -u)
+    f.k.poly(pts, F, 3, T.OUT(f.ax), fixed=T.SEAM_PASS or col)
+
+
+def _dent(f, s0, u, n, ru, rz, shape, tilt):
+    """A dent on the upright face: its lit lower lip (its outline a px down), the darker ring over it, the shaded
+    inside (the outline turned a few steps round, smaller) up and back a half px."""
+    s, px = f.sec, 1 / core.ZPX
+    uc, zc = _u(s0, u), s.z_at(s.zb, n)
+    pit = shape[3:] + shape[:3]
+    _blob(f, s0, uc - 0.5 * LINE, zc - px, ru, rz, shape, tilt, D + 0.001, DENT_LIP)
+    _blob(f, s0, uc, zc, ru, rz, shape, tilt, D + 0.0015, DENT_RING)
+    _blob(f, s0, uc + 0.5 * LINE, zc + 0.5 * px, ru - 1.2, rz - 0.6, pit, tilt, D + 0.002, DENT_PIT)

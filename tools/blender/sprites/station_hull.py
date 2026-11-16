@@ -48,17 +48,7 @@ FOOT, FOOT_TOP = FACE_LO, "stW"     # the step: its front the face's lower band'
 STEP_FRONT = 4                      # its front px tall, flat under (its blocks' a px more)
 BLOCK, BLOCK_LIT = FACE, "stH"      # its blocks: the face's tone, lit along their front's top edge
 
-# straight runs' designs (after the ref's straight variants): 0 the base; each its extra detail over it. A dent: (px along
-# the tile from its far end (see _dent), px under the bullnose's foot, half its width and its height in px), painted
-# as a shallow pit: its lit lower lip, a darker ring, its shaded upper inside
-DENTS = ((7, 0, 3, 1.7, (1.0, 1.25, 0.8, 0.9, 1.15, 0.7, 0.95, 1.05), 15),
-         (13, 29.5, 2.6, 1.5, (1.0, 0.7, 1.05, 1.3, 0.9, 1.0, 0.75, 1.15), -12),
-         (25, 52, 2.4, 1.9, (0.8, 1.15, 1.2, 0.85, 0.7, 1.05, 1.3, 0.9), 35))
-GOUGE = (28, 25, 5, 1.0, (1.0, 0.75, 1.1, 1.0, 0.85, 1.25, 0.8, 1.0), 6)   # (run out to the tile's edge)                                  # a long shallow dent near the tile's end
-DESIGNS = {1: DENTS + (GOUGE,), 2: DENTS}   # (its outline: radius scales round it from +u, eased between; its tilt,
-                                            # degrees on the face)
-DENT_LIP, DENT_RING, DENT_PIT = "stL", "stM", "stD"
-DESIGN = [0]                        # the design a straight piece is built in (0 the base)
+DESIGN = [0]                        # the design a straight piece is built in (0 the base; station_hull_designs)
 
 
 def _band(t):
@@ -213,7 +203,8 @@ def build(k, ax, plane, a, b, ends, H):
                 f.plumb(u, u + LINE, s.z_at(GROOVE, -1), H, zk, SEAM)     # (from the groove up)
                 f.top_line(u, u + LINE, ts, D - R_D, SEAM)
                 g = f.at_face(u + LINE / 2, zk) + sg * TAB_IN * LINE     # (a tab on the groove, in from the seam)
-                _part(f, g - TAB_W / 2 * LINE, g + TAB_W / 2 * LINE, g0, g1, LINE, TAB, TAB_TOP, TAB_SIDE)
+                if DESIGN[0] not in SD.NO_TABS:
+                    _part(f, g - TAB_W / 2 * LINE, g + TAB_W / 2 * LINE, g0, g1, LINE, TAB, TAB_TOP, TAB_SIDE)
             v0, v1 = (f.at_face(s0 + fr, zk) for fr in SEAMS)
             f.line(v0 + LINE / 2, v1 - LINE / 2, zt, s.z_at(zt, -1), GROOVE_D, bevel=False)
             f.line(v0 + LINE / 2, v1 - LINE / 2, s.z_at(zt, 1), zt, UNDER_L, bevel=False)
@@ -222,8 +213,7 @@ def build(k, ax, plane, a, b, ends, H):
         f.part(s0, s1, _step_prof(s), STEP_COLS, False)          # the step along the foot, one piece (open
                                                                 # ends: it runs on; round an outer corner)
         if whole and DESIGN[0]:
-            for dent in DESIGNS[DESIGN[0]]:
-                _dent(f, s0, *dent)
+            SD.dress(f, s0, DESIGN[0], zk)
         if whole:
             u = s0
             for i, w in enumerate(FOOT_BLOCKS):
@@ -232,37 +222,6 @@ def build(k, ax, plane, a, b, ends, H):
                 u += w * LINE
     if f.ch:
         _corner(f, zt, g0, g1)
-
-
-def _blob(f, s0, uc, zc, ru, rz, shape, tilt, d, col, n=32):
-    """A painted blob on the upright front: an ellipse (radii ru along, rz up, art px) its radius scaled round it by
-    shape (eased between), tilted `tilt` degrees, centred (uc, zc), d out; cut at the tile's edges (s0, s0 + 1)."""
-    px = 1 / core.ZPX
-    k, ca, sa = len(shape), math.cos(math.radians(tilt)), math.sin(math.radians(tilt))
-    pts = []
-    for i in range(n):
-        a = 2 * math.pi * i / n
-        t = a / (2 * math.pi) * k
-        j, w = int(t) % k, t - int(t)
-        w = (1 - math.cos(math.pi * w)) / 2
-        r = shape[j] * (1 - w) + shape[(j + 1) % k] * w
-        x, y = ru * r * math.cos(a), rz * r * math.sin(a)
-        x, y = x * ca - y * sa, x * sa + y * ca
-        u = min(max(uc - x * LINE, s0), s0 + 1)
-        pts.append(T.P(f.ax, f.plane, u, zc + y * px, d))   # (-x: the art's +x runs to -u, see _dent)
-    f.k.poly(pts, F, 3, T.OUT(f.ax), fixed=T.SEAM_PASS or col)
-
-
-def _dent(f, s0, u, n, ru, rz, shape, tilt):
-    """A dent on the upright face: its lit lower lip (its outline a px down), the darker ring over it, the shaded
-    inside (the outline turned a few steps round, smaller) up and back a half px."""
-    s, px = f.sec, 1 / core.ZPX
-    uc, zc = s0 + 1 - u * LINE, s.z_at(s.zb, n)     # (u px from the end at the screen-left of the face rising to the
-                                                    # right, as the ref's; the other face its mirror, as hull 46's art)
-    pit = shape[3:] + shape[:3]
-    _blob(f, s0, uc - 0.5 * LINE, zc - px, ru, rz, shape, tilt, D + 0.001, DENT_LIP)
-    _blob(f, s0, uc, zc, ru, rz, shape, tilt, D + 0.0015, DENT_RING)
-    _blob(f, s0, uc + 0.5 * LINE, zc + 0.5 * px, ru - 1.2, rz - 0.6, pit, tilt, D + 0.002, DENT_PIT)
 
 
 def _corner(f, zt, g0, g1):
@@ -357,4 +316,7 @@ def jobs():
     """The run set, and each straight run in each design (tile.hull.station.ext.o<o>.m<mask>.a<design>)."""
     out = [lambda m=m, o=o: _item(f"tile.hull.station.ext.o{o}.m{m}", lambda: _wide(m, o)) for m, o in PIECES]
     return out + [lambda m=m, o=o, v=v: _item(f"tile.hull.station.ext.o{o}.m{m}.a{v}", lambda: _wide(m, o, v))
-                  for (m, o) in STRAIGHT for v in DESIGNS]
+                  for (m, o) in STRAIGHT for v in SD.DESIGNS]
+
+
+from . import station_hull_designs as SD  # noqa: E402  (its designs build on this module)
