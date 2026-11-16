@@ -68,12 +68,12 @@ export function detachContainer(sim: Sim, id: number): boolean {
  * drift and stock. Returns its entity id.
  */
 export function spawnDriftingContainer(
-  sim: Sim, o: { def: string; rot: number; clamp?: ClampSide; x: number; y: number; vx: number; vy: number; spin: number; hp: number; ship: number; stock: { item: string; count: number }[] },
+  sim: Sim, o: { def: string; rot: number; clamp?: ClampSide; x: number; y: number; vx: number; vy: number; spin: number; hp: number; ship: number; faction?: string; stock: { item: string; count: number }[] },
 ): number {
   const def = sim.content.modules[o.def];
   if (!def?.container) throw new Error(`spawnDriftingContainer: "${o.def}" is not a container`);
   const id = sim.world.createEntity();
-  sim.world.add(id, ContainerC, { def: o.def, rot: o.rot, clamp: o.clamp ?? 'n', state: 'drifting', hp: Math.round(def.maxHp * o.hp), ship: o.ship, vx: o.vx, vy: o.vy, spin: o.spin });
+  sim.world.add(id, ContainerC, { def: o.def, rot: o.rot, clamp: o.clamp ?? 'n', state: 'drifting', hp: Math.round(def.maxHp * o.hp), ship: o.ship, vx: o.vx, vy: o.vy, spin: o.spin, ...(o.faction ? { faction: o.faction } : {}) });
   sim.world.add(id, BodyC, { x: o.x, y: o.y, heading: 0, alt: ALT.docked });
   sim.world.add(id, StorageC, { capacity: def.storage?.capacity ?? 0, filter: null, stacks: o.stock.map((q) => ({ ...q })) });
   return id;

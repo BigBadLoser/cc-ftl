@@ -120,6 +120,8 @@ export type SimEvent =
   | { type: 'module.upgradeFitted'; moduleId: number; item: string | null; ship: number }
   /** A container left its ship as a free body (same entity id); x, y are its body position in sector tiles. */
   | { type: 'container.detached'; container: number; ship: number; x: number; y: number }
+  /** A drifting container was cut open: its goods lie on the small derelict deck `ship` (the container entity is gone). */
+  | { type: 'container.opened'; container: number; ship: number }
   /** Ship state changes. 'destroyed' = became a wreck. */
   | { type: 'ship.disabled'; ship: number }
   /** A hostile ship's crew gave up: hull failing, weapons dead, cut off or outnumbered (combat/hopeless.ts). */

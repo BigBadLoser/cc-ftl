@@ -5,6 +5,7 @@ import type { Sim } from '../sim';
 import { rollCargo } from './cargoLoot';
 import { hash32, unit } from './hash';
 import { growSector } from './populateSpawn';
+import { pickWeighted, trafficPool } from './sector';
 import type { NodeData } from './types';
 
 /**
@@ -21,10 +22,23 @@ const SPEED = [0.05, 0.2] as const;
 const SPIN = 0.12;
 const HP = [0.55, 1] as const;
 
+/**
+ * Whose cargo it was, as a generator faction (`content.factions` id, the livery its containers wear): the node's own faction, else one picked by weight
+ * from those with traffic in the area (`trafficPool`, as a ship contact's owner is). Pirates and the rogue AI never lose cargo this way. The one owner
+ * of this question: a node's boxes all belong to one faction. Null when no faction fits or the faction fields no ships.
+ */
+export function lostCargoFaction(sim: Sim, node: NodeData, seed: number): string | null {
+  const content = sim.content.galaxy;
+  const ok = (id: string | null): id is string => !!id && !['pirates', 'rogue'].includes(content?.factions[id]?.kind ?? 'pirates');
+  const owner = ok(node.faction) ? node.faction : pickWeighted(trafficPool(content, null, node.danger).filter((w) => ok(w.value)), unit(seed, 221));
+  return ok(owner) ? pickWeighted(content?.factions[owner]?.ships ?? [], unit(seed, 222)) : null;
+}
+
 /** Make the node's lost cargo at the place the layout gives. Returns whether anything was made. */
 export function populateCargo(sim: Sim, node: NodeData, seed: number, at: Place): boolean {
   const n = unit(seed, 211) < PAIR_CHANCE ? 2 : 1;
   const first = typeof at === 'function' ? at(8, 8) : at;
+  const faction = lostCargoFaction(sim, node, seed);
   let made = 0;
   for (let k = 0; k < n; k++) {
     const s = hash32(seed, k, 212);
@@ -44,7 +58,7 @@ export function populateCargo(sim: Sim, node: NodeData, seed: number, at: Place)
     growSector(sim, Math.floor(x), Math.floor(y), w + 6, h + 6);
     spawnDriftingContainer(sim, {
       def: box.def, rot, x, y, vx: Math.cos(a) * speed, vy: Math.sin(a) * speed, spin: (unit(s, 7) - 0.5) * 2 * SPIN,
-      hp: HP[0] + unit(s, 8) * (HP[1] - HP[0]), ship: 0, stock: rollCargo(sim, s, node.danger, def.storage?.capacity ?? 0),
+      hp: HP[0] + unit(s, 8) * (HP[1] - HP[0]), ship: 0, ...(faction ? { faction } : {}), stock: rollCargo(sim, s, node.danger, def.storage?.capacity ?? 0),
     });
     made++;
   }

@@ -23,5 +23,7 @@ export interface Container {
   vx: number;
   vy: number;
   spin: number;
+  /** The generator faction (`content.factions` id) whose livery it wears; set on cargo lost by a faction. Looks only. */
+  faction?: string;
 }
 export const ContainerC = defineComponent<Container>('container');
