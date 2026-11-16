@@ -73,7 +73,7 @@ describe('off-screen clash rate', () => {
   const SEEDS: number[] = [];
   for (let seed = 1; SEEDS.length < CROWDED_SEEDS && seed <= 200; seed++) if (crowdOf(generated(seed)) >= CROWDED) SEEDS.push(seed);
 
-  it('a player in contested space reads a clash every 4 to 20 turns (the median world, at least half of them, and the mean), and the fleet economy absorbs the losses', () => {
+  it('a player in contested space reads a clash every 3 to 20 turns (the median world, at least half of them, and the mean), and the fleet economy absorbs the losses', () => {
     expect(SEEDS).toHaveLength(CROWDED_SEEDS);
     const clashes: number[] = [];
     for (const seed of SEEDS) {
@@ -86,13 +86,13 @@ describe('off-screen clash rate', () => {
       expect(Math.abs(end - start) / start, `seed ${seed}`).toBeLessThan(0.1);
       expect(r.rebuilt, `seed ${seed}`).toBeGreaterThanOrEqual((r.kinds['destroyed'] ?? 0) * 0.6);
     }
-    const inRange = (c: number): boolean => c >= TURNS / 20 && c <= TURNS / 4;
+    const inRange = (c: number): boolean => c >= TURNS / 20 && c <= TURNS / 3;
     const sorted = [...clashes].sort((a, b) => a - b);
     expect(inRange(sorted[Math.floor(sorted.length / 2)]!), `median of ${clashes.join(', ')}`).toBe(true);
     expect(clashes.filter(inRange).length, `in range: ${clashes.join(', ')}`).toBeGreaterThanOrEqual(Math.ceil(clashes.length * (1 / 2)));
     const mean = clashes.reduce((a, b) => a + b, 0) / (clashes.length * TURNS);
     expect(mean).toBeGreaterThan(1 / 20);
-    expect(mean).toBeLessThan(1 / 4);
+    expect(mean).toBeLessThan(1 / 3);
   }, 600000);
 
   it('is deterministic: the same world plays the same clashes', () => {

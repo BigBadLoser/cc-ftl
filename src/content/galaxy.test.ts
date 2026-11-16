@@ -10,6 +10,7 @@ import { nextArrival, rollArrival } from '../sim/galaxy/arrivals';
 import { ensureAround, nodeState } from '../sim/galaxy/state';
 import { playerStock } from '../sim/story/world';
 import { takeItems } from '../sim/story/effects';
+import { ores } from './ores';
 import { content } from '.';
 
 const ftl = (sim: Sim) => sim.world.get(playerShip(sim), CombatC);
@@ -58,7 +59,9 @@ describe('galaxy content', () => {
       for (const s of f.ships) expect(content.factions[s.value as keyof typeof content.factions], `${id} ${s.value}`).toBeDefined();
       for (const s of 'stations' in f ? f.stations : []) expect(g.structures[s.value as keyof typeof g.structures], s.value).toBeDefined();
     }
-    for (const s of Object.values(g.structures)) for (const item of s.resources) expect(content.items[item as keyof typeof content.items], item).toBeDefined();
+    for (const s of Object.values(g.structures)) for (const item of 'resources' in s ? s.resources : []) expect(content.items[item as keyof typeof content.items], item).toBeDefined();
+    // A field's items come from its yield mix: every ore of every mix is a real ore of a real item.
+    for (const e of Object.values(g.nodeContents.entries)) for (const ore of Object.keys('ores' in e ? e.ores : {})) expect(content.items[ores[ore as keyof typeof ores].item as keyof typeof content.items], ore).toBeDefined();
     // One faction table: every faction has a reputation key of its own, so each standing moves independently.
     const keys = Object.values(g.factions).map((f) => f.reputation);
     expect(new Set(keys).size).toBe(keys.length);

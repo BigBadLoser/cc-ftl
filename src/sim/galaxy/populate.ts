@@ -65,7 +65,7 @@ export function populateNode(sim: Sim, id: string): number {
         ok = populateStation(sim, port, kind, sizeOf(port), structureSeed(sim, id, i, SALT.station), at) !== null;
       }
     } else if (def.kind === 'asteroids') {
-      ok = populateField(sim, structureSeed(sim, id, i, SALT.field), at);
+      ok = populateField(sim, structureSeed(sim, id, i, SALT.field), at, s.def);
       if (port?.kind === 'outpost') ok = populateOutpost(sim, port, 'surface', 'mining', structureSeed(sim, id, i, SALT.outpost), slot(sim, id, i)) || ok;
     } else if (def.kind === 'cargo') {
       ok = populateCargo(sim, node, structureSeed(sim, id, i, SALT.cargo), at);
