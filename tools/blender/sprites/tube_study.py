@@ -326,7 +326,29 @@ def _junction_job(o, t):
     return run
 
 
+def _hull_job(rot):
+    """tube.hull.r<1|2>.<level>[.tint] (rotation 1: a hull row facing +x, 2: +y): the far port's hull row, as the
+    airlock's camera-facing one (airlock.hull: the base exterior hull full height in every view, closed by end cuts) but
+    three tiles long, the port block's width (tube_port.W): no neighbour's cut hull past its ends, those tiles' own."""
+    def run(rot=rot):
+        from . import airlock as AL, post, tube_port, walls as W
+        post.select(AL.HULL_PAL)
+        row = (-2, -1, 0, 1, 2)
+        keep = AL.HALF, AL.ROW, AL._stub_ends, AL._trim.__defaults__, AL._stub.__defaults__
+        AL.HALF, AL.ROW, AL._stub_ends = tube_port.W, row, (lambda r: [])
+        AL._trim.__defaults__, AL._stub.__defaults__ = (-tube_port.W, tube_port.W), (row,)
+        try:
+            out = []
+            for lv in W.LEVELS:
+                core.clear_scene_meshes()
+                out.extend(AL._hull_items(f"tube.hull.r{rot}.{lv}", rot, lv))
+        finally:
+            AL.HALF, AL.ROW, AL._stub_ends, AL._trim.__defaults__, AL._stub.__defaults__ = keep
+        return out
+    return run
+
+
 def jobs():
     return ([_seg_job(p, a) for a in ("x", "y") for p in PARTS] +
             [_port_job(o, d) for o in (2, 1) for d in (False, True)] + [_port_job(8), _port_job(4)] +
-            [_junction_job(o, t) for o in (2, 8, 1, 4) for t in (0.0, 1.0)])
+            [_junction_job(o, t) for o in (2, 8, 1, 4) for t in (0.0, 1.0)] + [_hull_job(1), _hull_job(2)])
