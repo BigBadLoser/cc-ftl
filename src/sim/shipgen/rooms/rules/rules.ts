@@ -9,7 +9,7 @@ import type { RoomRole } from '../../types';
 import type { Piece } from './check';
 import { db, tr, traumaFits } from './bays';
 import { f1 } from './farm';
-import { AC, B, seats, BT, OB, CD, DR, EX, FB, RF, G, GT, L, LS, MB, P, RK, RP, RS, SB, SP, SW, T, bunks, messSize, count, leftover, middle, range, rowsOf, sidePairs, tables, type Beds, type Run } from './parts';
+import { AC, B, seats, BT, OB, OBL, CD, DR, EX, FB, RF, G, GT, L, LS, MB, P, RK, RP, RS, SB, SP, SW, T, bunks, messSize, count, leftover, middle, range, rowsOf, sidePairs, tables, type Beds, type Run } from './parts';
 import { PB, VB, AI, CR, bank, core, crates, podsFit, pods, shuttle } from './plant';
 import { laid, messTables, tablesClear } from './mess';
 import { co, cu, gy, hl, mk, pz } from './social';
@@ -286,7 +286,7 @@ export const RULES: Partial<Record<RoomRole, readonly RuleArrangement[]>> = {
     rule: pa,
   }, { name: 'CG warehouse, crates in aisles', weight: 1, when: (n, r) => n.length > 0 && n.every((m) => m === CR) && r.h >= 3, rule: crates }, {
     name: 'OS ore store, bins down both long walls round an aisle', weight: 1,
-    when: (n, r) => n.length > 0 && n.every((m) => m === OB) && Math.min(r.w, r.h) >= 5 && Math.max(r.w, r.h) >= n.length + 1,
+    when: (n, r) => n.length > 0 && n.every((m) => m === OB || m === OBL) && Math.min(r.w, r.h) >= 5 && Math.max(r.w, r.h) >= n.length + 1,
     rule: ore,
   }],
   core: [{ name: 'CR core vault, the AI core between its point defence', weight: 1, when: (n, r) => count(n, AI) === 1 && r.w >= 3 * n.length - 1, rule: core }],

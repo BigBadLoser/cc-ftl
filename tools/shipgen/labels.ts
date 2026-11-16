@@ -51,7 +51,8 @@ export function roomKind(role: string, mods: readonly string[]): string {
   if (has('droneBay')) return 'drones';
   if (has('vehicle_bay')) return 'shuttle';
   if (has('pod_bay')) return 'pods';
-  if (has('storage_ore')) return 'ore';
+  if (has('refinery')) return 'refinery';
+  if (has('storage_ore') || has('storage_ore_large')) return 'ore';
   if (has('exercise')) return 'gym';
   if (has('arcade')) return 'rec';
   if (role === 'support' && has('storage_locker')) return 'suits';
@@ -64,7 +65,7 @@ export const CODES: Record<string, string> = {
   'Storage crate': 'CR', 'Storage rack': 'RK', 'Cargo pallet': 'PA', 'Freight container': 'FC', 'Holo column': 'HO', Planter: 'PL',
   'Tree planter': 'TR', Bench: 'BE', Console: 'CO', Helm: 'HE', 'Weapons console': 'WC', 'Shield console': 'SC',
   'Shield generator': 'SG', 'AI core': 'AI', 'Point defence': 'PD', 'Burst laser': 'BL', 'Mass driver': 'MD', 'Ion cannon': 'IC',
-  'Missile launcher': 'ML', 'Game table': 'GT', 'Cold store': 'CS', 'Storage tank': 'TK', 'Stasis wheel': 'SW', 'Vending machine': 'VM', 'Vending machine (red)': 'VR', 'Recovery pod': 'RP', 'Battery bank': 'BT', 'Medical bed': 'MB', Airlock: 'AK', Refinery: 'RF', Hydroponics: 'HY',
+  'Missile launcher': 'ML', 'Game table': 'GT', 'Cold store': 'CS', 'Storage tank': 'TK', 'Stasis wheel': 'SW', 'Vending machine': 'VM', 'Vending machine (red)': 'VR', 'Recovery pod': 'RP', 'Battery bank': 'BT', 'Medical bed': 'MB', Airlock: 'AK', Refinery: 'RF', Hydroponics: 'HY', 'Large ore bin': 'OL',
 };
 /** Lamps (floor lights, cage lamps, light masts) are dots, not coded pieces. */
 export const isLamp = (d: ModuleDef | undefined): boolean => !!d && !!d.light && /lamp|light/i.test(d.name);

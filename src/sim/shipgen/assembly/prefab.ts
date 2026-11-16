@@ -40,7 +40,9 @@ const ARRIVALS = 9, MESS_WIDE = 11;
 /** The market hall (wide, long): the trading post's court; the small trade hall of a farm or a mine. */
 const MARKET: [number, number] = [9, 11], TRADE_HALL: [number, number] = [7, 9];
 /** The long tube out to a compound on the ground, and the pitch of ribs hung side by side (a module and two tiles of ground). */
-const LONG = 12, RIB = OUT + 2;
+const LONG = 5, RIB = OUT + 2;
+/** A greenhouse's length (long and narrow), and an ore store's side; the lobby before an outside airlock. */
+const HOUSE = 15, ORES = 7, LOBBY = 4, CLUSTER = 5;
 /** The command room's length (its programme floor, nine by seven). */
 const CMD = 9;
 /** Between two branches off one side of the mess. */
@@ -68,7 +70,7 @@ const ordered = (rooms: readonly RoomSpec[]): RoomSpec[] => {
   const rank = (r: RoomSpec): number => { const i = ROOM_ORDER.indexOf(r.role); return i < 0 ? ROOM_ORDER.length : i; };
   return [...rooms].sort((a, b) => rank(a) - rank(b));
 };
-const CONSOLES: readonly string[] = ['module.weaponsConsole', 'module.shieldConsole'], ORE = 'module.storage_ore', CRATE = 'module.storage';
+const CONSOLES: readonly string[] = ['module.weaponsConsole', 'module.shieldConsole'], ORE = 'module.storage_ore_large', CRATE = 'module.storage', COLD = 'module.storage_cold';
 /** The market hall: trade counters and benches. */
 const TRADE: string[] = ['module.console', 'module.console', 'module.bench', 'module.bench'];
 
@@ -97,22 +99,27 @@ export function prefab(c: Ctx, rooms: readonly RoomSpec[], docks: readonly RoomS
   const commandRoom: RoomSpec = { role: 'bridge', dept: 'secure', mods: desk.flatMap((r) => r.mods.filter((m) => CONSOLES.includes(m))), w: CMD, h: PREFAB_WIDE };
   const beds = [...pick((r) => r.role === 'quarters' && r.dept !== 'harbour'), ...pick((r) => r.role === 'quarters'), ...cabins];
   const [mess, ...commons] = pick((r) => r.dept === 'commons');
-  const medical = pick((r) => r.dept === 'habitation');
+  // The ward with its trauma room (a farm or a mine has too few crew for the programme's).
+  const ward = pick((r) => r.dept === 'habitation');
+  const trauma: RoomSpec = { ...(ward[0] as RoomSpec), mods: ['module.recovery', 'module.med_bed'], w: 5, h: 4 };
+  delete trauma.annex;
+  const medical = ward.length > 0 && !trade && !ward.some((r) => r.annex) ? [{ ...(ward[0] as RoomSpec), annex: trauma }, ...ward.slice(1)] : ward;
   const secure = ordered(pick((r) => r.dept === 'secure' || r.role === 'bridge')), wings = secure.filter((r) => r.role !== 'reactor');
   // The reactors in one room, as long as they need (down both long walls, batteries in the gaps), not the programme's floor.
   const reactors = secure.filter((r) => r.role === 'reactor');
   const plant: RoomSpec[] = reactors.length > 0 ? [reactorRoom(reactors)] : [];
   // The warehouse as deep as its crates need (the programme's floor for it is the old crate rooms', roomy for a module).
-  const warehouse: Seg[] = pick((r) => r.dept === 'freight').map((r) => ({ spec: r, len: r.mods.includes(CRATE) ? holdDepth(r.mods.filter((m) => m === CRATE).length, PREFAB_WIDE) : lengthOf(r) }));
+  const warehouse: Seg[] = pick((r) => r.dept === 'freight').map((r) => !trade ? { ...r, mods: r.mods.map((m) => (m === COLD ? CRATE : m)) } : r).map((r) => ({ spec: r, len: r.mods.includes(CRATE) ? holdDepth(r.mods.filter((m) => m === CRATE).length, PREFAB_WIDE) : lengthOf(r) }));
   // The ore store: not in the programme (the workshop's raw stock, in ore bins). A farm has none.
-  const oreStore: RoomSpec = { role: 'cargo', dept: 'works', mods: Array<string>(4).fill(ORE), w: 6, h: PREFAB_WIDE };
+  const oreStore: RoomSpec = { role: 'cargo', dept: 'works', mods: Array<string>(4).fill(ORE), w: ORES, h: ORES };
   const rest = ordered(pick(() => true));
   const refinery = (r: RoomSpec): boolean => r.mods.includes('module.refinery');
   // The works, by kind: greenhouses, the refinery, the pod bay with its suit room, the ore stores, the workshop; the rest joins the medbay's branch.
   const farms = trade ? [] : rest.filter((r) => r.role === 'farm'), refineries = trade ? [] : rest.filter(refinery);
   const pods = trade ? [] : rest.filter((r) => r.role === 'hangar'), shop = trade ? [] : rest.filter((r) => r.role === 'industry' && !refinery(r));
-  const oreRooms = trade || farming ? [] : [...rest.filter((r) => r.role === 'cargo'), oreStore];
-  const used = new Set<RoomSpec>([...farms, ...refineries, ...pods, ...shop, ...oreRooms]);
+  // The ore stores all alike: four large bins in a square room.
+  const oreRooms = trade || farming ? [] : [...rest.filter((r) => r.role === 'cargo'), oreStore].map((r) => ({ ...r, mods: oreStore.mods, w: ORES, h: ORES }));
+  const used = new Set<RoomSpec>([...farms, ...refineries, ...pods, ...shop, ...rest.filter((r) => r.role === 'cargo' && !trade && !farming)]);
   const works = trade ? [...ordered(rest), oreStore, ...commons] : [];
   const extra = trade ? [] : [...rest.filter((r) => !used.has(r)), ...commons];
 
@@ -181,22 +188,16 @@ export function prefab(c: Ctx, rooms: readonly RoomSpec[], docks: readonly RoomS
     return r;
   };
   /**
-   * An airlock for a base's crew (no pad): a 3x3 unit carved in room `i` of module `m` at a wall, its hatch in that wall.
-   * `end`: the end wall of a horizontal module (facing along it); else the east or west wall at the room's far end (its wall ring
-   * must leave the door in from the module's centre line free).
+   * An airlock for a base's crew (no pad) out of the end of a horizontal module: its last room is a lobby, a hall
+   * `LOBBY` long, and the 3x3 unit stands in it against the end wall, its hatch in that wall onto the open ground.
    */
-  const lock = (m: Module, i: number, east: boolean, end: boolean): void => {
+  const lobby = (): Seg => ({ hall: g.hall('hall', 'commons'), len: LOBBY });
+  const lock = (m: Module, east: boolean): void => {
     const d = docks[0];
     if (!d) return;
-    const b = (m.spans[i] as [number, number])[1], h = m.dir === 'h';
-    if (end !== h) return;
-    const cy = h ? m.box[1] + 1 + (PREFAB_WIDE >> 1) : b - 3, wx = east ? m.box[2] - 1 : m.box[0], ax = east ? wx - 3 : wx + 1;
-    const id = g.hall('dock', 'airlock', { ...d, w: 3, h: 3 }), room = g.regions[m.ids[i] as number];
-    g.rect(id, ax, cy - 1, ax + 3, cy + 2);
+    const cy = m.box[1] + 1 + (PREFAB_WIDE >> 1), wx = east ? m.box[2] - 1 : m.box[0], ax = east ? wx - 3 : wx + 1;
+    g.rect(g.hall('dock', 'airlock', { ...d, w: 3, h: 3 }), ax, cy - 1, ax + 3, cy + 2);
     g.gate(wx, cy);
-    // A door from the room into it, on the centre line (the room's own doors are by its gates only).
-    g.gate(east ? ax - 1 : ax + 3, cy);
-    if (room?.access) room.access = [...room.access, id];
   };
   /** The last room of a run at least `n` long (a unit carved in it leaves room), and the run at least `need` altogether. */
   const padded = (segs: Seg[], n: number, need = 0): Seg[] => segs.map((s, i) => (i === segs.length - 1 ? { ...s, len: Math.max(s.len, n, need - run(segs) + s.len) } : s));
@@ -226,8 +227,10 @@ export function prefab(c: Ctx, rooms: readonly RoomSpec[], docks: readonly RoomS
   const legs: Leg[] = [];
   const row = (segs: Seg[]): void => { if (segs.length > 0) legs.push({ segs, len: run(segs) }); };
   const wing = (b: (y: number, west: boolean) => boolean): void => { legs.push({ len: 99, build: b, low: true }); };
-  row(segsOf(trade ? medical : [...medical, ...extra]));
+  row(segsOf(medical));
   row(segsOf(beds));
+  // What no branch takes (life support, a rec room): a small branch of its own, never in place of the trauma room.
+  row(segsOf(extra));
   // Greenhouses (or ore stores) hung side by side as ribs below room `i` of a module, a rib's pitch apart from `at` along it.
   const ribs = (m: Module, west: boolean, groups: RoomSpec[][], at = 4): boolean => {
     const first = m.spans[0] as [number, number], last = m.spans[m.spans.length - 1] as [number, number];
@@ -241,6 +244,8 @@ export function prefab(c: Ctx, rooms: readonly RoomSpec[], docks: readonly RoomS
     }
     return true;
   };
+  // A greenhouse: long and narrow, whatever the programme's floor says.
+  const house = (f: RoomSpec[]): Seg[] => f.map((r) => ({ spec: r, len: HOUSE }));
   if (plan === 'farmRows') {
     wing((y, west) => {
       // The workshop, then a hall as long as its ribs need; the greenhouses hang off it.
@@ -248,47 +253,46 @@ export function prefab(c: Ctx, rooms: readonly RoomSpec[], docks: readonly RoomS
       const m = side(hubOf(), y, west, segs);
       if (!m) return false;
       const hall = m.spans[segs.length - 1] as [number, number];
-      for (const [j, f] of farms.entries()) if (!below(m, (west ? hall[1] - 1 - 4 : hall[0] + 4) + (west ? -1 : 1) * RIB * j, segsOf([f]))) return false;
+      for (const [j, f] of farms.entries()) if (!below(m, (west ? hall[1] - 1 - 4 : hall[0] + 4) + (west ? -1 : 1) * RIB * j, house([f]))) return false;
       return true;
     });
   } else if (plan === 'farmCluster') row(segsOf(shop));
   else if (plan === 'mineWing') {
     wing((y, west) => {
-      // Workshop, refinery, the pod bay and its suit room, an airlock out of its end; the ore stores hang below.
-      const need = 4 + RIB * (oreRooms.length - 1) + 7, segs = padded([...segsOf(shop), ...segsOf(refineries), ...segsOf(pods)], 6, need);
+      // Workshop, refinery, the pod bay and its suit room, a lobby and an airlock out of its end; the ore stores hang below.
+      const need = 4 + RIB * (oreRooms.length - 1) + 7, segs = [...padded([...segsOf(shop), ...segsOf(refineries), ...segsOf(pods)], 6, need), lobby()];
       const m = side(hubOf(), y, west, segs);
       if (!m) return false;
-      lock(m, segs.length - 1, !west, true);
+      lock(m, !west);
       return ribs(m, west, oreRooms.map((r) => [r]));
     });
   } else if (plan === 'minePit') {
     wing((y, west) => {
-      // A long tube to the refinery hub (nine tiles inside, so it clears the command line above it); the ore stores and the
-      // workshop in a row off its far side, the pod bay and its suit room below with an airlock out of its side.
-      const hubRooms = segsOf(refineries).slice(0, 1).map((s) => ({ ...s, len: 9 })), hm = side(hubOf(), y, west, hubRooms, LONG, 9);
+      // A short tube to the refinery hub (nine tiles inside, so it clears the command line above it). Off it, dead ends: an ore
+      // store below, and a row off its far side (the workshop, the pod bay, the suit room, a lobby and an airlock out of its end)
+      // with the other ore store hung below it. No ore store is a way through.
+      const [first, ...more] = segsOf(refineries), hm = side(hubOf(), y, west, first ? [{ ...first, len: 9 }] : [], LONG, 9);
       if (!hm) return false;
-      const rowSegs = [...segsOf(oreRooms), ...segsOf(shop)];
-      if (rowSegs.length > 0 && !side(hm, y, west, rowSegs)) return false;
-      const sp = padded(segsOf(pods), 7), sm = below(hm, hm.box[0] + 1 + 4, sp, PREFAB_WIDE);
-      if (!sm) return false;
-      lock(sm, sp.length - 1, !west, false);
-      return true;
+      const rowSegs = [...padded([...segsOf(shop), ...more, ...segsOf(pods)], 6), lobby()], rm = side(hm, y, west, rowSegs);
+      if (!rm) return false;
+      lock(rm, !west);
+      return !!oreRooms[0] && !!below(hm, hm.box[0] + 1 + 4, segsOf([oreRooms[0]]), 9) && ribs(rm, west, oreRooms.slice(1).map((r) => [r]));
     });
   }
   if (trade) row(segsOf(works));
   if (secure.length > 0 || commandRoom.mods.length > 0) legs.push({ len: 0, command: true });
 
-  const n = legs.length, k = n > 2 ? 2 : 1, sizes = n >= 4 ? [2, 2] : n === 3 ? [2, 1] : n === 2 ? [1, 1] : [1, 0];
+  const n = legs.length, sizes = [Math.ceil(n / 2), Math.floor(n / 2)], k = Math.max(1, sizes[0] as number);
   const shuffle = <T,>(a: readonly T[]): T[] => { const b = [...a]; for (let i = b.length - 1; i > 0; i--) { const j = c.rng.int(0, i); [b[i], b[j]] = [b[j] as T, b[i] as T]; } return b; };
   const firstWest = c.rng.int(0, 1) === 0;
   const slots = shuffle([true, false].flatMap((west) => {
     const size = sizes[west === firstWest ? 0 : 1] as number;
-    return Array.from({ length: size }, (_, r): Slot => ({ west, row: r, size, up: size === 2 && r === 0, low: r === size - 1 }));
+    return Array.from({ length: size }, (_, r): Slot => ({ west, row: r, size, up: size >= 2 && r === 0, low: r === size - 1 }));
   }));
   const slotOf = new Map<Leg, Slot>();
   const take = (leg: Leg, ok: (s: Slot) => boolean): void => { const i = Math.max(0, slots.findIndex(ok)); slotOf.set(leg, slots.splice(i, 1)[0] as Slot); };
   for (const leg of legs.filter((l) => l.low)) take(leg, (s) => s.low);
-  for (const leg of legs.filter((l) => l.command)) take(leg, () => true);
+  for (const leg of legs.filter((l) => l.command)) take(leg, (s) => s.up || s.low);
   // The rest: the longer in the lower slots, the shorter above.
   slots.sort((a, b) => Number(a.low) - Number(b.low));
   for (const leg of legs.filter((l) => !slotOf.has(l)).sort((a, b) => a.len - b.len)) slotOf.set(leg, slots.shift() as Slot);
@@ -365,14 +369,14 @@ export function prefab(c: Ctx, rooms: readonly RoomSpec[], docks: readonly RoomS
     const from = pantry ?? hub, groups: RoomSpec[][] = [], sides = Math.min(3, Math.max(1, farms.length));
     for (let i = 0; i < sides; i++) groups.push([]);
     for (const [i, f] of farms.entries()) (groups[i % sides] as RoomSpec[]).push(f);
-    const fh = module(mc - 5, from.box[3] + 8, 'v', [{ hall: g.hall('hall', 'commons'), len: 9 }], { wide: 9 });
+    const fh = module(mc - 5, from.box[3] + CLUSTER, 'v', [{ hall: g.hall('hall', 'commons'), len: 9 }], { wide: 9 });
     if (!fh) return { why: 'no ground for the farm hub' };
-    tube(mc, from.box[3] - 1, 0, 1, 8);
+    tube(mc, from.box[3] - 1, 0, 1, CLUSTER);
     const yc = fh.box[1] + 1 + 4;
     // One greenhouse below; two, west and east; three, west, east and below (the two sides swapped by the seed).
     const order: Array<'s' | 'w' | 'e'> = sides === 1 ? ['s'] : sides === 2 ? ['w', 'e'] : ['w', 'e', 's'];
     for (const [i, o] of (c.rng.int(0, 1) === 0 ? order : [...order].reverse()).entries()) {
-      const segs = segsOf(groups[i] as RoomSpec[]);
+      const segs = house(groups[i] as RoomSpec[]);
       if (o === 's' ? !below(fh, mc, segs) : !side(fh, yc, o === 'w', segs)) return { why: 'no ground for a greenhouse' };
     }
   }
