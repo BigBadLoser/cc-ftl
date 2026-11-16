@@ -1,6 +1,7 @@
 import { JobC, PathC, type Crew, type Job, type Path, type Position } from '../../crew/components';
 import { clearPath, isSettled, origin } from '../../crew/helpers';
 import { findPath, type Tile } from '../../crew/pathfind';
+import { walkOpts } from '../../eva/route';
 import { walksOutside } from '../../eva/suit';
 import { isTileWalkable } from '../../modules/walk';
 import { shipGrid, shipIdOf } from '../../regions';
@@ -78,7 +79,7 @@ function strollTurn(sim: Sim, id: number, pos: Position): boolean {
   const courts = sim.world.get(sc.station, StationC)?.courts ?? [];
   if (courts.length === 0) return false;
   const goal = courts[sim.rng.int(0, courts.length - 1)] as { x: number; y: number };
-  const steps = findPath(sim, sc.station, origin(pos), goal);
+  const steps = findPath(sim, sc.station, origin(pos), goal, walkOpts(sim, id));
   const path = sim.world.get(id, PathC);
   if (!steps || steps.length === 0 || !path) return false;
   path.steps = steps;
@@ -138,7 +139,7 @@ function vacateSite(sim: Sim, id: number, pos: Position): boolean {
   }
   let best: Tile[] | null = null;
   for (const t of ring) {
-    const steps = findPath(sim, ship, here, t);
+    const steps = findPath(sim, ship, here, t, walkOpts(sim, id));
     if (steps && steps.length > 0 && (!best || steps.length < best.length)) best = steps;
   }
   if (!best) return false;

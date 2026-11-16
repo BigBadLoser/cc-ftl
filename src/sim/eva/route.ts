@@ -43,11 +43,12 @@ function gridHasThinAir(sim: Sim, grid: ShipGrid): boolean {
 }
 
 /**
- * The walk mode for a crew member's own errands (a bed, a meal, a break, a robot bay): the exterior counts for those who walk outside
- * (suited, or needing no air), as in `planWalk`. One helper, so the need machines cannot drift from it (Codex 4449530807).
+ * The walk mode for a crew member's own errands (a bed, a meal, a break, a robot bay, a stroll): the exterior counts for those who walk outside
+ * (suited, or needing no air), as in `planWalk`; the rest keep out of thin air. One helper, so the need machines cannot drift from it (Codex 4449530807).
  */
 export function walkOpts(sim: Sim, crew: number): PathOpts {
-  return { suited: walksOutside(sim, crew) };
+  // Someone who breathes and wears no suit keeps out of thin air: on a base of separate modules the open ground between them is vacuum.
+  return walksOutside(sim, crew) ? { suited: true } : { avoidThin: true };
 }
 
 /**
