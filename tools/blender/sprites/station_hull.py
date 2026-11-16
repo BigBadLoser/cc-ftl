@@ -213,8 +213,8 @@ def build(k, ax, plane, a, b, ends, H):
                     z0, z1 = SD.gap(s)
                     f.plumb(u, u + LINE, s.z_at(GROOVE, -1), z0, zk, SEAM)
                     f.plumb(u, u + LINE, z1, H, zk, SEAM)
-                else:
-                    f.plumb(u, u + LINE, s.z_at(GROOVE, -1), H, zk, SEAM)
+                else:                                                   # (a bay's cut is its own rim on the
+                    f.plumb(u, u + LINE, s.z_at(GROOVE, -1), s.zb if bay else H, zk, SEAM)   # bullnose)
                 f.top_line(u, u + LINE, ts, D - R_D, SEAM)
                 g = f.at_face(u + LINE / 2, zk) + sg * TAB_IN * LINE     # (a tab on the groove, in from the seam)
                 if DESIGN[0] not in SD.NO_TABS:
