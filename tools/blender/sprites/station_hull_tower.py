@@ -25,9 +25,9 @@ BLOCK_SLOPE = "stE"                 # its foot, sloped back down to the box's fr
 BLOCK_EDGE = SH.GROOVE_D            # a dark line down its front's edge at its end turned from view
 PLATE_UP, PLATE_CLEAR, PLATE_DEEP = 1, 2, 4   # a plate on the box's top: px proud; px clear of its chamfer and its
                                     # edge lines; px deep
-SIDE_PLATE, SIDE_DOWN = (5, 3), 5   # on the face beside the box: a plate (px wide, tall) this many px under the bullnose
+SIDE_PLATE, SIDE_DOWN = (4, 3), 5   # on the face beside the box: a plate (px wide, tall) this many px under the bullnose
 SIDE_SEAMS, SIDE_SEAM = 7, SH.GROOVE_D   # two seams down from under it, either side of its middle px: px long
-SIDE_FOOT, SIDE_CLEAR = 4, 2        # a plate where they end: px tall; px short of the box (across from the tile's end)
+SIDE_FOOT, SIDE_CLEAR = 4, 0        # a plate where they end: px tall; px short of the box (across from the tile's end)
 PLATE_SIDE, PLATE_LINE = SH.GROOVE_D, SH.SEAM   # its sides; the lines round its top's edges
 BLOCK_LIT, BLOCK_JOIN = "stL", SH.GROOVE_D   # a lit px along its front's top edge; a dark one on the box's front over
                                     # its top
