@@ -62,7 +62,7 @@ interface Fitted {
   /** Drone defs docked in the bay at this module index. */
   drones: Map<number, string[]>;
   /** Modules standing on open ground outside the hull (module indices), and the cable that wires them to it (`FinishOpts.ground`). */
-  ground?: { placed: Set<number>; cable: Set<number> };
+  ground?: { placed: Set<number>; cable: Set<number>; unwired: number };
 }
 
 /** Place every room's planned modules in that room; a reason string when something essential does not fit. */
@@ -176,8 +176,9 @@ function fitOut(
     const g = placeGroundTurrets(lay, o.ground);
     for (const id of o.ground.mods) wanted[id] = (wanted[id] ?? 0) + 1;
     for (const k of g.placed) { const id = lay.modules[k]?.def as string; placed[id] = (placed[id] ?? 0) + 1; }
-    out.ground = { placed: new Set(g.placed), cable: g.cable };
+    out.ground = { placed: new Set(g.placed), cable: g.cable, unwired: g.unwired };
   }
+  if (out.ground && out.ground.unwired > 0) return { ...out, error: 'a module standing apart has no cable' };
   const missing = (id: string): boolean => (wanted[id] ?? 0) > 0 && (placed[id] ?? 0) === 0;
   for (const id of ['module.engine', 'module.helm', 'module.airlock', 'module.reactor', 'module.weaponsConsole', 'module.aiCore', 'module.vehicle_bay']) {
     if (missing(id)) return { ...out, error: `no ${id.replace('module.', '')} fits` };

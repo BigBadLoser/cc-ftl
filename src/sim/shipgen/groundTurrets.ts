@@ -16,8 +16,8 @@ import type { Layout } from './layout';
  *   - no cable runs to the arrivals hall (a room holding an airlock): visitors walk in there;
  *   - a turret keeps a ring of open ground round it (crew walk round it to repair it); it and its cable stand clear of
  *     the landing pads (and a tile round them) and of the ground before each airlock;
- *   - a module standing apart is cabled to the nearest base wall the same way (one turn at most, square on, never to or from a
- *     wall beside an airlock room), before the turrets, and not along the walk between its airlock and the base's (crew cross it);
+ *   - a module standing apart is cabled to the base as a staple (out of a base wall for two tiles, across, into the pod's wall for
+ *     two tiles; never to or from a wall beside an airlock room), before the turrets (`wireApart`);
  *   - the ground stays one open walk: every pad, every airlock's outside and every turret's ring stays reachable.
  */
 
@@ -37,6 +37,8 @@ export interface GroundFit {
   placed: number[];
   /** Cabled tiles (row-major over the layout). */
   cable: Set<number>;
+  /** Modules standing apart that no cable reached (the fit-out then fails and the assembly tries again). */
+  unwired: number;
 }
 
 /** Ground kept clear before an airlock's outer door, in tiles (its collar and the walk out from it). */
@@ -51,7 +53,7 @@ export const OUTSIDE = 6;
 /** Place the plan's turrets on the layout's open ground and lay their cables. Turrets that find no spot are left out. */
 export function placeGroundTurrets(lay: Layout, plan: GroundPlan): GroundFit {
   const { w, h } = lay;
-  const out: GroundFit = { placed: [], cable: new Set() };
+  const out: GroundFit = { placed: [], cable: new Set(), unwired: 0 };
   const ground = (x: number, y: number): boolean => lay.at(x, y) === '.' && lay.inBounds(x, y);
   const free = (x: number, y: number): boolean => ground(x, y) && lay.occ[y * w + x] === -1 && !out.cable.has(y * w + x);
   // Kept clear: the pads and a tile round them, and the ground before each airlock.
@@ -142,81 +144,78 @@ export function placeGroundTurrets(lay: Layout, plan: GroundPlan): GroundFit {
   return out;
 
   /**
-   * The cable of each module standing apart: the cheapest run from a wall of its own (not beside an airlock room) to a wall of the
-   * base or to a cable already laid, with at most one turn where one reaches, else any. Tiles along the walk from its airlock
-   * to the nearest other airlock cost more, so the run crosses that walk rather than follows it.
+   * The cable of each module standing apart, a staple: out of a wall of the base square on for two tiles, across the open ground,
+   * and into the pod's wall facing the same way for two tiles (the longer leg takes up any difference in height), out of a top
+   * wall and into a top wall, or out of a bottom wall and into a bottom wall. The shortest staple of the two sides wins. Never
+   * from or into a wall beside an airlock room. Where no staple fits, a short straight cable across the gap into a module already
+   * wired. A module neither reaches is counted in `unwired`.
    */
   function wireApart(): void {
     const mods = (plan.apart ?? []).map((ids) => new Set(ids));
     if (mods.length === 0) return;
-    const D4 = [[1, 0], [-1, 0], [0, 1], [0, -1]] as const;
-    const wallsOf = (rooms: Set<number>): Set<number> => {
-      const out = new Set<number>();
+    const wallsOf = (rooms: Set<number>): number[] => {
+      const walls = new Set<number>();
       for (let i = 0; i < w * h; i++) {
         if (lay.cells[i] !== '_' || !rooms.has(lay.roomOf[i] as number)) continue;
-        for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const x = (i % w) + dx, y = Math.floor(i / w) + dy; if (lay.at(x, y) === '#') out.add(y * w + x); }
+        for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const x = (i % w) + dx, y = Math.floor(i / w) + dy; if (lay.at(x, y) === '#') walls.add(y * w + x); }
       }
-      return out;
+      return [...walls].sort((p, q) => p - q);
     };
-    const own = mods.map(wallsOf), theirs = new Set(own.flatMap((o) => [...o]));
-    const outsideOf = (m: (typeof lay.modules)[number]): { x: number; y: number } | null => {
-      const a = airlockTiles(lay.defs[m.def] as ModuleDef, m);
-      return outside.find((o) => Math.abs(o.x - a.outer.x) + Math.abs(o.y - a.outer.y) === 1) ?? null;
+    const own = mods.map(wallsOf), theirs = new Set(own.flat());
+    const baseWalls: number[] = [];
+    for (let i = 0; i < w * h; i++) if (wallAt(i % w, Math.floor(i / w)) && !theirs.has(i)) baseWalls.push(i);
+    const wired: number[] = [];
+    const ok = (x: number, y: number): boolean => lay.inBounds(x, y) && runs(y * w + x) && !clear[y * w + x];
+    /** The hull tiles four ways round a tile, as bits (east, west, south, north). */
+    const hullAt = (x: number, y: number): number => {
+      let m = 0;
+      [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(([dx, dy], k) => { if (lay.inBounds(x + dx!, y + dy!) && lay.cells[(y + dy!) * w + x + dx!] !== '.') m |= 1 << k; });
+      return m;
     };
-    for (const [k, rooms] of mods.entries()) {
-      // The walk between this module's airlock and the nearest other one: a band along its two legs.
-      const band = new Uint8Array(w * h);
-      const locks = lay.modules.filter((m) => lay.defs[m.def]?.airlock).map((m) => ({ m, o: outsideOf(m), in: footprintTiles(lay.defs[m.def] as ModuleDef, m.x, m.y, m.rot).some((t) => rooms.has(lay.roomOf[t.y * w + t.x] as number)) }));
-      const mine = locks.find((l) => l.in && l.o)?.o, others = locks.filter((l) => !l.in && l.o);
-      const near = mine ? others.map((l) => l.o as { x: number; y: number }).sort((a, b) => Math.abs(a.x - mine.x) + Math.abs(a.y - mine.y) - Math.abs(b.x - mine.x) - Math.abs(b.y - mine.y))[0] : undefined;
-      if (mine && near) {
-        for (let x = Math.min(mine.x, near.x); x <= Math.max(mine.x, near.x); x++) for (let d = -1; d <= 1; d++) if (lay.inBounds(x, mine.y + d)) band[(mine.y + d) * w + x] = 1;
-        for (let y = Math.min(mine.y, near.y); y <= Math.max(mine.y, near.y); y++) for (let d = -1; d <= 1; d++) if (lay.inBounds(near.x + d, y)) band[y * w + near.x + d] = 1;
-      }
-      const ok = (i: number): boolean => i >= 0 && i < w * h && runs(i) && !clear[i];
-      const wall = (i: number): boolean => wallAt(i % w, Math.floor(i / w));
-      // Done: heading square into a wall of the base, or onto a cable already laid.
-      const done = (i: number, d: number): boolean => { const [dx, dy] = D4[d] as readonly [number, number], x = (i % w) + dx, y = Math.floor(i / w) + dy; return lay.inBounds(x, y) && ((wall(y * w + x) && !theirs.has(y * w + x)) || out.cable.has(y * w + x)); };
-      const run = (limit: number): number[] | null => {
-        // Dijkstra over (tile, heading, turns used); the heap's ties break on the state, so it is deterministic.
-        const T = limit + 1, size = w * h * 4 * T, cost = new Int32Array(size).fill(1e9), from = new Int32Array(size).fill(-1), heap: [number, number][] = [];
-        const push = (c: number, st: number, prev: number): void => {
-          if (c >= (cost[st] as number)) return;
-          cost[st] = c; from[st] = prev; heap.push([c, st]);
-          for (let i = heap.length - 1; i > 0;) { const p = (i - 1) >> 1; if ((heap[p] as [number, number])[0] < (heap[i] as [number, number])[0] || ((heap[p] as [number, number])[0] === (heap[i] as [number, number])[0] && (heap[p] as [number, number])[1] <= (heap[i] as [number, number])[1])) break; [heap[p], heap[i]] = [heap[i] as [number, number], heap[p] as [number, number]]; i = p; }
-        };
-        const pop = (): [number, number] => {
-          const top = heap[0] as [number, number], last = heap.pop() as [number, number];
-          if (heap.length > 0) {
-            heap[0] = last;
-            for (let i = 0; ;) {
-              let m = i;
-              for (const c of [2 * i + 1, 2 * i + 2]) if (c < heap.length && ((heap[c] as [number, number])[0] < (heap[m] as [number, number])[0] || ((heap[c] as [number, number])[0] === (heap[m] as [number, number])[0] && (heap[c] as [number, number])[1] < (heap[m] as [number, number])[1]))) m = c;
-              if (m === i) break;
-              [heap[m], heap[i]] = [heap[i] as [number, number], heap[m] as [number, number]]; i = m;
-            }
-          }
-          return top;
-        };
-        for (const wi of [...(own[k] as Set<number>)].sort((a, b) => a - b)) {
-          if (!wall(wi)) continue;
-          D4.forEach(([dx, dy], d) => { const x = (wi % w) + dx, i = (Math.floor(wi / w) + dy) * w + x; if (x >= 0 && x < w && ok(i)) push(1 + (band[i] ? 5 : 0), (i * 4 + d) * T, -1); });
-        }
-        while (heap.length > 0) {
-          const [c, st] = pop();
-          if (c > (cost[st] as number)) continue;
-          const t = st % T, d = Math.floor(st / T) % 4, i = Math.floor(st / T / 4);
-          if (done(i, d)) { const path: number[] = []; for (let q = st; q >= 0; q = from[q] as number) path.push(Math.floor(q / T / 4)); return path.reverse(); }
-          D4.forEach(([dx, dy], nd) => {
-            const x = (i % w) + dx, y = Math.floor(i / w) + dy, j = y * w + x, turn = nd !== d;
-            if (x < 0 || x >= w || !ok(j) || (turn && t >= limit && limit > 0) ) return;
-            push(c + 1 + (band[j] ? 5 : 0) + (turn && limit === 0 ? 1 : 0), (j * 4 + nd) * T + (turn && limit > 0 ? t + 1 : t), st);
-          });
-        }
-        return null;
+    /** A leg tile on side `s` (-1 above, 1 below) of the wall at (x, y): ground, with that one wall alone touching it. */
+    const leg = (x: number, y: number, s: number): boolean => ok(x, y + s) && hullAt(x, y + s) === (s < 0 ? 4 : 8);
+    /** The staple from wall `bi` to wall `pi` on side `s`, or null: tiles in order, every one clear of any hull but each leg's first. */
+    const staple = (bi: number, pi: number, s: number): number[] | null => {
+      const xb = bi % w, yb = Math.floor(bi / w), xp = pi % w, yp = Math.floor(pi / w);
+      if (xb === xp) return null;
+      const yh = s < 0 ? Math.min(yb, yp) - 2 : Math.max(yb, yp) + 2;
+      const tiles: number[] = [];
+      const add = (x: number, y: number, first: boolean): boolean => {
+        if (!ok(x, y) || hullAt(x, y) !== (first ? (s < 0 ? 4 : 8) : 0)) return false;
+        tiles.push(y * w + x);
+        return true;
       };
-      const path = run(1) ?? run(0);
-      if (path) for (const i of path) out.cable.add(i);
+      for (let y = yb + s; s < 0 ? y >= yh : y <= yh; y += s) if (!add(xb, y, y === yb + s)) return null;
+      for (let x = xb + Math.sign(xp - xb); xb !== xp && (xp > xb ? x <= xp : x >= xp); x += Math.sign(xp - xb)) if (!add(x, yh, false)) return null;
+      for (let y = yh - s; s < 0 ? y < yp : y > yp; y -= s) if (!add(xp, y, y === yp + s)) return null;
+      return tiles;
+    };
+    for (const [k] of mods.entries()) {
+      let best: number[] | null = null;
+      for (const s of [-1, 1]) {
+        const pods = (own[k] as number[]).filter((i) => wallAt(i % w, Math.floor(i / w)) && leg(i % w, Math.floor(i / w), s));
+        const bases = baseWalls.filter((i) => leg(i % w, Math.floor(i / w), s));
+        for (const pi of pods) for (const bi of bases) {
+          // A cheap bound first: the staple is at least this long.
+          const lower = Math.abs((pi % w) - (bi % w)) + Math.abs(Math.floor(pi / w) - Math.floor(bi / w));
+          if (best && lower >= best.length) continue;
+          const t = staple(bi, pi, s);
+          if (t && (!best || t.length < best.length)) best = t;
+        }
+      }
+      // Else straight across the gap into a module already wired.
+      for (const s of best ? [] : [-1, 1]) {
+        for (const pi of own[k] as number[]) {
+          const x = pi % w, y0 = Math.floor(pi / w);
+          if (!wallAt(x, y0) || !leg(x, y0, s)) continue;
+          const tiles: number[] = [];
+          let y = y0 + s;
+          while (ok(x, y) && hullAt(x, y) === (tiles.length === 0 ? (s < 0 ? 4 : 8) : 0)) { tiles.push(y * w + x); y += s; }
+          const end = y * w + x;
+          if (tiles.length > 0 && wired.some((m) => (own[m] as number[]).includes(end)) && wallAt(x, y) && (hullAt(x, y - s) === (s < 0 ? 8 : 4) || hullAt(x, y - s) === 12) && (!best || tiles.length < best.length)) best = tiles;
+        }
+      }
+      if (best) { for (const i of best) out.cable.add(i); wired.push(k); } else out.unwired++;
     }
   }
 
