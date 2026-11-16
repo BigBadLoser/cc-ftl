@@ -68,6 +68,8 @@ C_SIDE = 22                         # the header's foot; C, a strip on from B's 
                                     # on B's left, the user), from the base's upper
                                     # lean line down (measured off the reference; the base's two lines across its
                                     # lean run on up to B and on from C)
+W2_PLATE_SHIFT = -2                 # px it moves along the face (the user: 2 px left, off centre under the group)
+W2_PLATE_TRIM = 2                   # px then taken off its left edge (the user)
 W2_PLATE = (3, 5)                   # W2's header: a plate over B and both Cs, on screen from the Cs' outer seams
                                     # (REC proud, it draws a px left of where it stands: set a px right), on the
                                     # header's upright face, from this many px under its top (the user's option 2),
@@ -270,7 +272,9 @@ def _w1_header(f, s, s0, s1, dv, zc, zh):
     for u in (c0, c1):
         band(u, u + ln, zh, L.px(zt, -1), YS[3])                        # C: its side, to the header's foot
     if PART == "w2":
-        _w2_head_plate(f, s, c0 + T3.px(1), c1 + ln + T3.px(1), d_of=lambda z: T3.BACK + (H - z) * dk if z > zc else dv, zc=zc, zh=zh)
+        sh = 1 + W2_PLATE_SHIFT                         # (REC proud, it draws a px left: set a px right)
+        _w2_head_plate(f, s, c0 + T3.px(sh + W2_PLATE_TRIM), c1 + ln + T3.px(sh),
+                       d_of=lambda z: T3.BACK + (H - z) * dk if z > zc else dv, zc=zc, zh=zh)
 
 
 def _w2_head_plate(f, s, u0, u1, d_of, zc, zh):
