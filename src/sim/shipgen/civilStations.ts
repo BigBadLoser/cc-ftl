@@ -5,7 +5,7 @@ import { dockSpec, engineSpec, reactorSpec, type RoomSpec } from './plan';
 import type { Rng } from '../rng';
 
 /**
- * Station builders with no bow or stern. Engines (none for immobile stations, `stationGen.ts`) are small thruster rooms on east faces inside the structure (the
+ * Station builders with no bow or stern. Engines (none on an immobile station) are small thruster rooms on east faces inside the structure (the
  * engine art faces +x only), never a drive section.
  *   ring     rooms round a corridor ring with an empty centre, a small hub joined by two to four spokes
  *   lattice  modules on a 2D grid with gaps, linked by short tubes (walkable) and beams (structure)

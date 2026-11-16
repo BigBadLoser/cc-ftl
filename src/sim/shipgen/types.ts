@@ -1,6 +1,5 @@
 import type { Faction } from '../combat/components';
 import type { ItemQty, ShipTemplate } from '../registry';
-import type { StationGrammar } from './stationTypes';
 
 /**
  * Procedural ship layouts, in stages: pick a ship role and a hull archetype (weighted by the faction's architectural
@@ -143,17 +142,13 @@ export interface HullFamilyDef {
   /** The core is a citadel: an enclosed compartment on the axis, passages around it, crew quarters outboard. */
   citadel?: boolean;
   /** Structural grammars the family uses (how its sections are arranged in 2D), weighted. */
-  grammars: readonly Weighted<NavyGrammar | DroneGrammar | ScrapGrammar | CivilGrammar | StationGrammar>[];
+  grammars: readonly Weighted<NavyGrammar | DroneGrammar | ScrapGrammar | CivilGrammar>[];
   /** Soft proportion target (length / beam): arrangements nearer it score better; never a hard reject. */
   aspect: readonly [number, number];
   /** Propulsion configurations the family uses (engines always face +x). */
   /** Salvage families: how much this role wants each donor aboard (by function), and which donors can anchor. */
   donors?: Partial<Record<DonorKind, number>>;
   anchors?: readonly Weighted<DonorKind>[];
-  /** Stations: ore cages hung off the structure (mining stations). */
-  cages?: number;
-  /** Stations: enclosed centres become open rooms of this role, with this chance per station. */
-  atrium?: { role: RoomRole; chance: number };
   propulsion: readonly ('bank' | 'cluster' | 'nacelles' | 'wingPods' | 'sideDrives')[];
 }
 

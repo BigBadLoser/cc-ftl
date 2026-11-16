@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  STATION_SIZES, airlockTiles, footprintTiles, generateShip, generateStation, type FactionDef, type GenResult, type ModuleDef, type StationDef,
+  STATION_SIZES, airlockTiles, buildStation, footprintTiles, generateShip, type FactionDef, type GenResult, type ModuleDef, type StationDef,
 } from '../sim';
 import { content } from './index';
 import { stations } from './stations';
@@ -16,7 +16,7 @@ function sweep(): { name: string; g: GenResult }[] {
   }
   for (const [id, def] of Object.entries(stations)) {
     for (const size of STATION_SIZES) {
-      for (let seed = 1; seed <= (size === 'hub' ? 1 : 4); seed++) out.push({ name: `${id} ${size} ${seed}`, g: generateStation(def as StationDef, id, size, seed, defs) });
+      for (let seed = 1; seed <= (size === 'hub' ? 1 : 4); seed++) out.push({ name: `${id} ${size} ${seed}`, g: buildStation(def as StationDef, id, size, seed, defs) });
     }
   }
   return out;

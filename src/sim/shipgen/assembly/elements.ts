@@ -181,8 +181,10 @@ export function block(c: Ctx, port: Port, rooms: readonly RoomSpec[], o: BlockOp
   const headOf = (cap: RoomSpec, width: number): number => Math.max(3, Math.ceil((cap.w * cap.h + (cap.annex ? cap.annex.w * cap.annex.h : 0)) / (width - (cap.annex ? 1 : 0)))) + 2;
   // A cap only where its head is not drawn out past what the room may take (`stretchOf`): a small core across a wide
   // block is a strip. With none that fits, the street runs through to a port.
+  // A room built round its machines is never pressed shallower than its planned short side (a Mk III reactor is four deep).
   const fits = (cap: RoomSpec): boolean => {
     const back = backOf(arrange(cap, () => 0)), width = back[0] + back[1] - 1;
+    if (fixed.includes(cap.role) && headOf(cap, width) - 2 < Math.min(cap.w, cap.h)) return false;
     return (headOf(cap, width) - 2) * width <= stretchOf(cap) * (cap.w * cap.h + (cap.annex ? cap.annex.w * cap.annex.h : 0));
   };
   const named = typeof o.cap === 'string' ? bySize.filter((r) => r.role === o.cap) : [];

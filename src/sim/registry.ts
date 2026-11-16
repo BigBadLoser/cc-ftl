@@ -100,7 +100,7 @@ export interface ContentRegistry {
   galaxy?: GalaxyContent;
   /** Faction content id (e.g. 'faction.scrapper') to definition, for generated ships. Absent = none. */
   factions?: Record<string, FactionDef>;
-  /** Station kinds the station generator builds (src/sim/shipgen/stationGen.ts). */
+  /** Station kinds the station assembly builds (src/sim/shipgen/stationBuild.ts). */
   stations?: Record<string, StationDef>;
   /** Trade: prices' spread, faction stances and trader profiles. Absent = nobody trades. */
   trade?: TradeDef;

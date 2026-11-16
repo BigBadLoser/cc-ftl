@@ -1,6 +1,6 @@
 /**
  * Asteroid outpost generator (pure, seeded): a big asteroid plus a small station on it. An outpost is a real `station.<kind>` of the
- * 'outpost' size tier (shipgen/stationGen.ts: room recipes, crew and security, docks), run by the station director like any station;
+ * 'outpost' size tier (shipgen/stationBuild.ts: room recipes, crew and security, docks), run by the station director like any station;
  * this file only fits it onto rock. Enemies and NPC factions use the same generator and pick by `kind`.
  * - 'surface' (trading, farming, mining): an open asteroid; the station stands on levelled rock ground (a pad one tile wider than
  *   the station) with its dock airlock at the asteroid's edge, facing open space. A prefab base (`StationResult.site`, the
@@ -15,7 +15,7 @@ import type { ModuleDef, ShipTemplate } from '../registry';
 import { Rng } from '../rng';
 import { rotateLayout } from '../shipgen/rotate';
 import { buildStation } from '../shipgen/stationBuild';
-import type { StationResult } from '../shipgen/stationGen';
+import type { StationResult } from '../shipgen/assembly/station';
 import type { StationDef } from '../shipgen/stationTypes';
 import { isAsteroidRock, Struct } from '../structure';
 import { builtOf, carveInRock, dropBuriedAirlocks, pickDock, placeAt, type Dock } from './site';

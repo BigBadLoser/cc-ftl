@@ -1,21 +1,16 @@
 import type { Faction } from '../combat/components';
 import type { Recipe } from './assembly/recipe';
 import type { StationDept } from './plan';
-import type { TransitionStyle, Weighted } from './types';
+import type { Weighted } from './types';
 
 /**
- * Station templates (`stationGen.ts`): immobile structures built by the shipgen arranger from the civil station
- * builders, sized by tier and fitted out by kind. They carry no FTL drive and no main engines.
+ * Station kinds: immobile structures built by the station assembly (`stationBuild.ts`, `assembly/`) from the kind's
+ * recipes, sized by tier and fitted out by kind. They carry no FTL drive and no main engines.
  */
 
 export type StationKind = 'trading' | 'mining' | 'farming' | 'military' | 'pirate' | 'research';
 export type StationSize = 'outpost' | 'station' | 'hub';
 export const STATION_SIZES: readonly StationSize[] = ['outpost', 'station', 'hub'];
-
-/** Station topologies (see stationGrammars.ts). */
-export type StationGrammar =
-  | 'stationRing' | 'stationLattice' | 'stationHub' | 'stationWelded' | 'stationWheel' | 'stationConcentric' | 'stationArc'
-  | 'stationSpine' | 'stationCross' | 'stationTree';
 
 /** A kind-specific room: its role, the modules it holds, its interior size, and how many per size tier. */
 export interface StationRoomDef {
@@ -38,14 +33,11 @@ export interface StationTier {
   shields: number;
   pointDefense: number;
   crates: number;
-  /** Airlock docks (at least). */
+  /** Airlock docks (two at least). */
   docks: number;
-  grammars: readonly Weighted<StationGrammar>[];
-  /** Ore cages (rows of ore holds on a rail) hung off the structure: mining stations. */
-  cages?: number;
-  /** Shuttle bays (hangars), for boarding parties and patrols. Read by the station assembly (`assembly/program.ts`). */
+  /** Shuttle bays (hangars), for boarding parties and patrols (one at least). */
   bays?: number;
-  /** Mining pod bays, together on one pod deck (a hangar). Read by the station assembly. */
+  /** Mining pod bays, together on one pod deck (a hangar). */
   pods?: number;
 }
 
@@ -57,12 +49,12 @@ export interface StationDef {
   motif: string;
   /**
    * The crew sleeps in barracks: rooms of this many beds each (double bunks, so half as many bunks), with this many
-   * one-bed cabins beside them. Without it, blocks of one-bed cabins. Read by the station assembly (`assembly/program.ts`).
+   * one-bed cabins beside them. Without it, blocks of one-bed cabins (`assembly/program.ts`).
    */
   barracks?: { beds: readonly [number, number]; cabins?: number };
   /**
    * Spaciousness, rolled per station between these (default [1, 1]): how far rooms grow past what their contents need.
-   * Under 1 tight (a navy depot, a pirate den), over 1 roomy (a trade station's halls). Read by the station assembly.
+   * Under 1 tight (a navy depot, a pirate den), over 1 roomy (a trade station's halls).
    */
   space?: readonly [number, number];
   /** Share (0..1) of the crew who are security (armed fighters, `role.security`). */
@@ -72,31 +64,22 @@ export interface StationDef {
   weapons: { light: readonly Weighted<string>[]; heavy: readonly Weighted<string>[] };
   shields: readonly Weighted<string>[];
   stock: readonly { item: string; min: number; max: number }[];
-  transition: TransitionStyle;
   tiers: Readonly<Record<StationSize, StationTier>>;
+  /** The kind's own rooms (labs, refineries, greenhouses, armouries, stalls), beside the ones every station has. */
   rooms: readonly StationRoomDef[];
-  /** The kind's rooms for the station assembly, where they differ from `rooms`. */
-  assemblyRooms?: readonly StationRoomDef[];
-  /** Rooms the station assembly adds to those (a breaker shop, a drone bay). */
-  assemblyAlso?: readonly StationRoomDef[];
-  /** Airlocks at each size for the station assembly, where not the tier's `docks`. */
-  assemblyDocks?: Readonly<Record<StationSize, number>>;
-  /** Enclosed centres (ring courtyards, sectors between spokes) become open rooms of this role, with this chance. */
-  atrium?: { role: 'plaza' | 'garden' | 'drill'; chance: number };
+  /** The kind's open rooms (a concourse, a garden deck, a drill hall): its power budget allows for their lamps, a garden's beds. */
+  atrium?: { role: 'plaza' | 'garden' | 'drill' };
   /**
    * The station assembly's recipes for this kind: its families (its look), each a list of recipes that are the seed's
-   * variations. A station of the kind is built from these (`buildStation`); without them, by the station grammars.
+   * variations. Every station of the kind is built from these (`buildStation`).
    */
-  assembly?: readonly (readonly Recipe[])[];
+  assembly: readonly (readonly Recipe[])[];
   /**
    * The families an asteroid outpost of this kind is built from, when they differ from the station's (`assembly`): a
-   * station in space may take shapes that don't sit on a rock. Empty: outposts are built by the station grammars.
+   * station in space may take shapes that don't sit on a rock.
    */
   outpostAssembly?: readonly (readonly Recipe[])[];
 }
-
-/** Largest template a station may have (tiles per side): a hub is much bigger than any ship but stays one region. */
-export const STATION_MAX = 160;
 
 /** Station summary attached to a generated station. */
 export interface StationInfo {

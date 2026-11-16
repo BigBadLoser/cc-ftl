@@ -349,7 +349,7 @@ export type Command =
   | { type: 'trade.cancel'; id: number }
   /** Spawn a trading station (an entity with a wallet and stock but no grid; deliveries use the instant fallback). */
   /**
-   * Generate and stamp a station (shipgen/stationGen.ts) of `kind` ('station.trading'...) and `size` at (x, y), or east of
+   * Build and stamp a station (shipgen/stationBuild.ts) of `kind` ('station.trading'...) and `size` at (x, y), or east of
    * everything in the node, with a trader aboard. The old grid-less form `{profile: 'trader.station'}` still works: it
    * spawns a trading outpost.
    */

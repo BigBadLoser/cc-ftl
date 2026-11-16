@@ -18,7 +18,7 @@
 		{ value: 'starter', label: 'Starter ship template' },
 	];
 	const families = $derived(opt(familiesOf(s.id)));
-	const layouts = $derived(opt(layoutsOf(s.id, s.size), 'station'));
+	const layouts = $derived(opt(layoutsOf(s.id, s.size), 'assembly.'));
 
 	// a kind change picks that kind's first id; an id or size change drops a family or layout that no longer exists
 	function setKind(k: string) {
