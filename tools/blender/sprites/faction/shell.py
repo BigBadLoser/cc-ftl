@@ -283,12 +283,17 @@ class LookShell(T.Shell):
             r = self._rect_at(*(((a + b) / 2, plane + 1e-3) if ax == "y" else (plane + 1e-3, (a + b) / 2)), 0.0)
             fam = "blue" if r and r[1] == "hull" else "wall"
             R = T.RAMPS[fam][1 if ax == "x" else 0]
-            pts, parts = self._prof(0.0, self.run, None, shelf=False)
             mt = {"cont": 0.0, "end": 0.0, "out": -1.0, "in": 1.0}
             lo, hi = self._back_end(ax, plane, a, -1), self._back_end(ax, plane, b, 1)
+            front = hi == "out"                         # (its high end round an outer corner onto a face the camera
+            pts, parts = self._prof(0.0, self.run, None, shelf=front)  # sees: that face's shelf carried round to
+                                                                        # it, in its tones, not the bare slope's top)
             pts = [(-d, z) for d, z in pts]             # (out from the face is -d here)
             endc = self._end_tone(fam, "x" if ax == "y" else "y")
-            cols = [False if q in ("bottom", "back") else R[0] for q in parts]
+            shelf = {"shelf": R[T.style().shelf_lvl], "shelf_edge": R[4],      # (its back px the shelf's tone:
+                     **{f"shelf_back{n}": R[T.style().shelf_lvl] for n in range(len(T.style().shelf_back))}}
+            #   no face's lip over them round the corner, so the front's dark back px would show as a pit there)
+            cols = [False if q in ("bottom", "back") else shelf.get(q, R[0]) for q in parts]
             prism(k, ax, T.snap(plane), a, b, pts, fam, 2, cols=cols,
                   cap=tuple(endc if t == "end" else False if t == "cont" else R[0] for t in (lo, hi)),
                   mitre=(mt[lo], mt[hi]))
