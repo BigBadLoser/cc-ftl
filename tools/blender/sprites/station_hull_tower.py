@@ -15,7 +15,7 @@ VENT_CLEAR = 2                      # the vent's frame: px of the box's front cl
                                     # the block's top line)
 SLATS, SLAT_IN = 4, 1               # slats in it, spaced evenly down it; px clear of its frame at either end
 SLAT_LIT = "stL"
-WIDE = 11                           # the block: px across, centred on the box's front
+WIDE = 13                           # the block: px across, centred on the box's front
 BLOCK = (54, 2)                     # the block: its bottom row, px proud of the box's front; a seam across its middle.
                                     # Its top's dark line on the box's front, across it, stands where the base's line
                                     # under the bullnose (the one with the plate) would show
