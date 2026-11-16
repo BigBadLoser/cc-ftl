@@ -29,7 +29,7 @@ UNDER = 5                           # the line under the bullnose: this many px 
 RAIL = 4 / 32                       # the line along the top's back: this far in from the back
 TOP_SEAM = 5 / 32                   # the seam across the top this far in past the bullnose's top edge (the seams end on it)
 FOOT_OUT = 3 / 32                   # the step along the foot: how far proud
-FOOT_H = 3 / core.ZPX + 4 / 32      # its top over the deck (about 8 px)
+FOOT_H = 4 / core.ZPX               # its top over the deck: its front (STEP_FRONT px) stands on the deck
 FOOT_BLOCKS = (7, 5, 8, 5, 7)       # the step's two blocks across a tile: gap, block, gap, block, gap (px; 32 px a tile
                                     # cannot split in three equal whole gaps); a px proud of its top and front
 CHAMFER_SEAM = 1                    # the corner's seams down its chamfer, this many px in from its edges
