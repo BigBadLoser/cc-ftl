@@ -100,8 +100,18 @@ export function outward(kindAt: KindAt, x: number, y: number): number {
   return o || (kindAt(x + 1, y + 1) === Struct.Space ? 4 : 0);
 }
 
-/** How far `clearTo` looks (tiles). gridView keys its chunks on the struct this far round them. */
+/** The fewest connected tiles of the back edge that stand full height in cutaway (`backEdge`). */
+const BACK_MIN = 3;
+
+/** How far `clearTo` and `hidesShip` look (tiles). */
 export const HULL_RAY = 16;
+
+/**
+ * How far a tile's `hullSide` can depend on the struct (tiles): the rays (HULL_RAY) of tiles up to BACK_MIN away (the
+ * back edge's connected bits, `backEdge`; a notch corner's neighbours). gridView keys its chunks on the struct this far
+ * round them.
+ */
+export const HULL_REACH = HULL_RAY + BACK_MIN + 1;
 
 /**
  * True if the ray from (x, y) toward (dx, dy) leaves the ship crossing only solid tiles: no floor of this ship lies that
@@ -161,8 +171,6 @@ function farOutline(kindAt: KindAt, x: number, y: number): boolean {
   return (sp(0, -1) && alongX) || (sp(-1, 0) && alongY) || (sp(-1, -1) && (backY || backX)) || (sp(1, -1) && backY) || (sp(-1, 1) && backX);
 }
 
-/** The fewest connected tiles of the back edge that stand full height in cutaway. */
-const BACK_MIN = 3;
 
 /**
  * Whether the far hull wall at (x, y) stands full height: nothing of the ship lies behind it on screen, and it joins at
