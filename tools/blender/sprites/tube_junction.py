@@ -1,7 +1,9 @@
 """The prefab base tube's junction, inboard (issue #508, study): where the tube (tube_study) comes through a module's wall,
 the three wall tiles round its door (the door tile and one either side) are one piece in place of the room's walls: a
-block a tile deep (no skirt ramp: the room's floor runs up to its face), the tube's own section through it (round,
-flat at the floor), a raised frame round that opening on the room face, and the hatch: one leaf the opening's shape
+block a tile deep: two ribs at its ends where it meets the room's walls (their section the walls' own: the skirt's
+ramp, then upright at the walls' face), the middle between them sunk to half a tile with a flat face and the floor
+run in to it; the tube's own section through it (round, flat at the floor), a raised frame round that opening on the
+sunk face, and the hatch: one leaf the opening's shape
 that slides straight down into the floor (tube_hatch's look is retired; an iris needs a round opening).
 
 Frame as tube_port's _builder (d out from the wall tiles' middle line toward the tube, r along the wall, z up); its
@@ -16,7 +18,11 @@ W = 1.5                                  # half width along the wall: three tile
 H = P.ZT                                 # its top: the outboard block's (so the two meet flush)
 ZC, R = P.AXIS, P.RS                     # the opening: the tube's section (round, cut flat at the floor)
 FRAME = (0.12, 0.04)                     # the room face's frame round the opening: width, stand off
-LEAF_T = 0.06                            # the hatch leaf's half thickness (in a slot mid-block)
+RIB = 0.25                               # the end ribs' width along the wall
+WM = W - RIB                             # the sunk middle's half width
+DM = 0.0                                 # the sunk middle's face (d; the room is at -d): half a tile deep
+LEAF_T = 0.06                            # the hatch leaf's half thickness (in a slot behind the sunk face)
+LEAF_D = (DM + 0.5) / 2                  # the slot's middle
 LEAF_R = R + 0.05                        # its radius (its edge in the slot, past the opening)
 N = 40
 
@@ -27,18 +33,18 @@ def _ends(r):
     return t, math.pi - t
 
 
-def _rect(c, s):
-    """Where a ray from the axis at (c, s) leaves the room face's rectangle, as (r, z)."""
-    t = min(W / abs(c) if abs(c) > 1e-9 else math.inf,
+def _rect(c, s, w=W):
+    """Where a ray from the axis at (c, s) leaves a face's rectangle (half width w), as (r, z)."""
+    t = min(w / abs(c) if abs(c) > 1e-9 else math.inf,
             (H - ZC) / s if s > 1e-9 else ZC / -s if s < -1e-9 else math.inf)
     return c * t, ZC + s * t
 
 
-def _angles(r):
+def _angles(r, w=W):
     t0, t1 = _ends(r)
     ts = {t0 + (t1 - t0) * i / N for i in range(N + 1)}
     for zc in (0.0, H):                                  # (the rectangle's corners, so its edges stay straight)
-        for rc in (-W, W):
+        for rc in (-w, w):
             a = math.atan2(zc - ZC, rc)
             while a < t0:
                 a += math.tau
@@ -51,29 +57,41 @@ def _arc(r, t):
     return r * math.cos(t), ZC + r * math.sin(t)
 
 
+def _rib_profile():
+    """The ribs' section (d, z): the outer face, then the room walls' own profile (walls: the skirt's foot and ramp from
+    the tile's edge up to the walls' face, upright from there to the top)."""
+    from . import doors as D, walls as WL
+    vw = D.planes()[1]                                   # (the walls' face, from the tile's middle line)
+    foot = WL.FOOT_PX / WL.ZART
+    return [(0.5, 0.0), (-0.5, 0.0), (-0.5, foot), (-vw, WL.skirt_top()), (-vw, H), (0.5, H)]
+
+
 def block(b):
-    """The block: both faces round the opening, the opening's walls and floor, the top and the two ends."""
-    ts = _angles(R)
-    for d, n in ((-0.5, (-1, 0, 0)), (0.5, (1, 0, 0))):
+    """The block: the two ribs, the sunk middle's face and the outer face round the opening, the opening's walls and
+    floor, the middle's top, the floor run in to the sunk face."""
+    for r0, r1 in ((-W, -WM), (WM, W)):
+        b.prism(_rib_profile(), r0, r1)
+    for d, n, w in ((DM, (-1, 0, 0), WM), (0.5, (1, 0, 0), W)):
+        ts = _angles(R, w)
         for t0, t1 in zip(ts, ts[1:]):
-            (r0, z0), (r1, z1) = _rect(math.cos(t0), math.sin(t0)), _rect(math.cos(t1), math.sin(t1))
+            (r0, z0), (r1, z1) = _rect(math.cos(t0), math.sin(t0), w), _rect(math.cos(t1), math.sin(t1), w)
             b.face([(d, *_arc(R, t0)), (d, r0, z0), (d, r1, z1), (d, *_arc(R, t1))], n)
+    ts = _angles(R, WM)
     for t0, t1 in zip(ts, ts[1:]):
         c, s = math.cos((t0 + t1) / 2), math.sin((t0 + t1) / 2)
-        b.face([(-0.5, *_arc(R, t0)), (0.5, *_arc(R, t0)), (0.5, *_arc(R, t1)), (-0.5, *_arc(R, t1))], (0, -c, -s),
+        b.face([(DM, *_arc(R, t0)), (0.5, *_arc(R, t0)), (0.5, *_arc(R, t1)), (DM, *_arc(R, t1))], (0, -c, -s),
                P.RAMP[0])
     c = math.sqrt(R * R - ZC * ZC)
-    b.face([(-0.5, -c, 0.002), (0.5, -c, 0.002), (0.5, c, 0.002), (-0.5, c, 0.002)], (0, 0, 1), "tbDeck")
-    b.face([(-0.5, -W, H), (0.5, -W, H), (0.5, W, H), (-0.5, W, H)], (0, 0, 1))
-    for r in (-W, W):
-        b.face([(-0.5, r, 0.0), (0.5, r, 0.0), (0.5, r, H), (-0.5, r, H)], (0, r, 0))
+    b.face([(DM, -c, 0.002), (0.5, -c, 0.002), (0.5, c, 0.002), (DM, c, 0.002)], (0, 0, 1), "tbDeck")
+    b.face([(-0.5, -WM, 0.002), (DM, -WM, 0.002), (DM, WM, 0.002), (-0.5, WM, 0.002)], (0, 0, 1), "tbDeckD")
+    b.face([(DM, -WM, H), (0.5, -WM, H), (0.5, WM, H), (DM, WM, H)], (0, 0, 1))
 
 
 def frame(b):
     """The raised frame round the opening on the room face (light face, dark outer lip), an amber band inside it, two
     lamps over it, bolts along it."""
     w, h = FRAME
-    d = -0.5 - h
+    d = DM - h
     t0, t1 = _ends(R)
     arc = [t0 + (t1 - t0) * i / N for i in range(N + 1)]
     for a0, a1 in zip(arc, arc[1:]):
@@ -86,14 +104,14 @@ def frame(b):
         c, s = math.cos((a0 + a1) / 2), math.sin((a0 + a1) / 2)
         p0, p1 = _arc(R + w, a0), _arc(R + w, a1)
         if min(p0[1], p1[1]) >= 0:
-            b.face([(-0.5, *p0), (d, *p0), (d, *p1), (-0.5, *p1)], (0, c, s), "steelD")
+            b.face([(DM, *p0), (d, *p0), (d, *p1), (DM, *p1)], (0, c, s), "steelD")
         p0, p1 = _arc(R, a0), _arc(R, a1)
-        b.face([(-0.5, *p0), (d, *p0), (d, *p1), (-0.5, *p1)], (0, -c, -s), "tbAmb")
+        b.face([(DM, *p0), (d, *p0), (d, *p1), (DM, *p1)], (0, -c, -s), "tbAmb")
     for s in (-1, 1):                                    # lamps either side over the frame
         t = math.pi / 2 - s * 0.55
         r, z = _arc(R + w + 0.12, t)
-        b.face([(d - 0.005, r - 0.07, z - 0.03), (d - 0.005, r + 0.07, z - 0.03), (d - 0.005, r + 0.07, z + 0.03),
-                (d - 0.005, r - 0.07, z + 0.03)], (-1, 0, 0), "tbLamp")
+        b.face([(DM - 0.005, r - 0.07, z - 0.03), (DM - 0.005, r + 0.07, z - 0.03), (DM - 0.005, r + 0.07, z + 0.03),
+                (DM - 0.005, r - 0.07, z + 0.03)], (-1, 0, 0), "tbLamp")
     for i in range(9):                                   # bolts along the frame
         t = t0 + (t1 - t0) * (i + 0.5) / 9
         r, z = _arc(R + w / 2 - 0.015, t)
@@ -109,12 +127,12 @@ def leaf(b, t):
     arc = [t0 + (t1 - t0) * i / N for i in range(N + 1)]
     pts = [_arc(LEAF_R, a) for a in arc]
     pts = [(r, z + dz) for r, z in pts]
-    for d, n in ((-LEAF_T, (-1, 0, 0)), (LEAF_T, (1, 0, 0))):
+    for d, n in ((LEAF_D - LEAF_T, (-1, 0, 0)), (LEAF_D + LEAF_T, (1, 0, 0))):
         b.face([(d, r, z) for r, z in pts], n, "tbHull")
     for (ra, za), (rb, zb) in zip(pts, pts[1:] + pts[:1]):
-        b.face([(-LEAF_T, ra, za), (LEAF_T, ra, za), (LEAF_T, rb, zb), (-LEAF_T, rb, zb)], (0, ra + rb, za + zb - 2 * (ZC + dz)),
+        b.face([(LEAF_D - LEAF_T, ra, za), (LEAF_D + LEAF_T, ra, za), (LEAF_D + LEAF_T, rb, zb), (LEAF_D - LEAF_T, rb, zb)], (0, ra + rb, za + zb - 2 * (ZC + dz)),
                "tbHullD")
-    f = -LEAF_T - 0.004
+    f = LEAF_D - LEAF_T - 0.004
     for ra, rb, col in ((0.55, 0.62, "tbHullD"), (0.62, 0.66, "tbRibL")):     # the ring
         for a0, a1 in zip([math.tau * i / N for i in range(N)], [math.tau * (i + 1) / N for i in range(N)]):
             q = [_arc(ra, a0), _arc(rb, a0), _arc(rb, a1), _arc(ra, a1)]
