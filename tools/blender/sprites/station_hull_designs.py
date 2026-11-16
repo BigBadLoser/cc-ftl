@@ -53,8 +53,9 @@ LOW_LIT = "stL"                     # a faint lit px under the box's top edge an
 TOP_LIT = "stB"                     # (the near edge of the top box's top: two steps over its tone)
 MID_LINE = SH.GROOVE_D              # the seam across each box (the darker seam tone)
 RECESS_LIT = "stL"                  # the recess: a lit px where its upright inside meets its lean
+RECESS_SHADE = (SH.GROOVE_D, 6)     # its lip's shadow on its lean: tone, px down from its top
 GAP_SHADE = SH.SEAM                    # the top box's shadow in the gap under it
-RECESS = (11, 21, 1)                # a recess in the face: px across, its top px under the groove (down to the seam where
+RECESS = (11, 21, 0)                # a recess in the face: px across, its top px under the groove (down to the seam where
                                     # the step meets the face)
 RECESS_IN, RECESS_FOOT, RECESS_BACK = 1, 5, 4   # its inside: upright RECESS_IN px in for RECESS_FOOT px, then leaning
                                     # back to RECESS_BACK px in at its top
@@ -136,7 +137,8 @@ def blocks(f, s0, s1):
     f.block(s0, u0, 0.0, SH.GROOVE)
     f.block(u1, s1, 0.0, SH.GROOVE)
     f.block(u0, u1, 0.0, zf)
-    f.block(u0, u1, zt, SH.GROOVE)
+    if zt < SH.GROOVE - 1e-6:
+        f.block(u0, u1, zt, SH.GROOVE)
     zk = s.z_at(zf, -RECESS_FOOT)
     di, db = D - RECESS_IN * LINE, D - RECESS_BACK * LINE
     f.part(u0, u1, [(db - 0.01, zf), (db - 0.01, zk), (di, zk), (di, zf)], [None, None, RECESS_FACE, None], None,
@@ -149,6 +151,11 @@ def blocks(f, s0, s1):
         f.k.poly(q, F, 3, (T.P(f.ax, 0, sg, 0, 0) - o).normalized(), fixed=T.SEAM_PASS or RECESS_WALL)
     px = 1 / core.ZPX
     _rect(f, u0, u1, s.z_at(zk, 1), zk, di + 0.001, RECESS_LIT)        # (its upright inside's top edge, lit)
+    col, n = RECESS_SHADE                                   # (its lip's shadow on its lean)
+    lean = lambda z: di + (db - di) * (z - zk) / (zt - zk) + 0.001     # noqa: E731
+    zs = zt - n * px
+    q = [T.P(f.ax, f.plane, u, z, lean(z)) for u, z in ((u0, zs), (u1, zs), (u1, zt), (u0, zt))]
+    f.k.poly(q, F, 3, (T.P(f.ax, 0, 0, di - db, zt - zk) - o).normalized(), fixed=T.SEAM_PASS or col)
     _rect(f, u0, u1, zf, zf + px, di + 0.001, RECESS_WALL)              # (the step's seam carried along its foot, a
                                                                         # step darker: its inside is the seam's tone)
     _rect(f, u1, u1 + LINE, zf, zt, D + 0.001, SH.GROOVE_D)             # (a dark seam down its near edge)

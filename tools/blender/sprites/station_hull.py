@@ -196,10 +196,11 @@ def build(k, ax, plane, a, b, ends, H):
             for z0, z1 in ((0.0, GROOVE), (GROOVE, H)):
                 f.block(s0, s1, z0, z1)
         f.line(s0, s1, GROOVE, s.z_at(GROOVE, -1), GROOVE_D, bevel=False)
-        f.line(s0, s1, s.z_at(GROOVE, 1), GROOVE, GROOVE_L, bevel=False)
-        cut = SD.recess(s0) if whole and DESIGN[0] == SD.MODULE else None    # a seam where the step meets the face
+        cut = SD.recess(s0) if whole and DESIGN[0] == SD.MODULE else None    # (the recess breaks its lit px and the
+        for u0, u1 in (((s0, cut[0]), (cut[1], s1)) if cut else ((s0, s1),)):   # step's seam)
+            f.line(u0, u1, s.z_at(GROOVE, 1), GROOVE, GROOVE_L, bevel=False)
         for u0, u1 in (((s0, cut[0]), (cut[1], s1)) if cut else ((s0, s1),)):
-            f.line(u0, u1, FOOT_H, s.z_at(FOOT_H, -1), GROOVE_D, bevel=False)
+            f.line(u0, u1, FOOT_H, s.z_at(FOOT_H, -1), GROOVE_D, bevel=False)   # a seam where the step meets the face
         f.top_line(s0, s1, ts - LINE, ts, SEAM)
         f.top_line(s0, s1, rail - LINE, rail, SEAM)
         if whole:
