@@ -24,7 +24,7 @@ from . import wall3d as T
 E = 0.5 - 1 / 32                    # the outline (the ship hull's: wall3d_ext_geom.E)
 DEPTH = E + 0.5                     # the block from its outer face back to the tile's back edge
 H = None                            # the top: the roof's height (walls.hull_top(), set on first use)
-R_D, R_Z = 0.38, 0.54               # the bullnose: this far in along the top, this far down the face (tiles)
+R_D, R_Z = 0.32, 0.46               # the bullnose: this far in along the top, this far down the face (tiles)
 ROUND = 8                           # its facets
 LINE = 1 / 32                       # one art px along the run
 SEAMS = (0.25, 0.75)                # seams along a straight run, as fractions of the tile
@@ -194,8 +194,7 @@ def _details(k, key):
         _paint(k, key, i, 0.0, 1.0, [(0.0, GROOVE - pz), (0.0, GROOVE)], GROOVE_L)
         _paint(k, key, i, 0.0, 1.0, [(rail - LINE, h), (rail, h)], RAIL_L)      # the line along the top's inner edge
         _paint(k, key, i, 0.0, 1.0, [(rail, h), (rail + LINE, h)], RAIL_D)
-    zt = h - R_Z - 3 * pz                                       # the hatch's top, under the bullnose
-    zh = GROOVE + 7 * pz                                        # its foot, over the groove
+    zt = h - R_Z - 3 * pz                                       # the line under the bullnose
     up = [(0.0, GROOVE + 3 * pz), (0.0, h - R_Z)] + bn + [(rail - LINE, h)]
     for i, seams, hatch in PANELS[key]:
         p = _chain(key, 0.0)[i:i + 2]
@@ -206,19 +205,10 @@ def _details(k, key):
             _paint(k, key, i, f + L / 2, f + 1.5 * L, up, SEAM_L)
             _box(k, key, i, f - 1.5 * L, f + 1.5 * L, GROOVE - 2 * pz, GROOVE + 3 * pz, LINE, TAB, TAB_TOP,
                  TAB_SIDE)                                      # a tab where the seam crosses the groove
-        if hatch:                                               # the hatch: an outlined panel, lit inside and under
-            a0, a1 = hatch
-            for z in (zh, zt):                                  # its top and bottom edges
-                _paint(k, key, i, a0, a1, [(0.0, z), (0.0, z + pz)], HATCH_D)
-                _paint(k, key, i, a0 + L, a1 - L, [(0.0, z - pz), (0.0, z)] if z == zt else [(0.0, z + pz),
-                       (0.0, z + 2 * pz)], HATCH_L)
-            for f in (a0, a1 - L):                              # its sides
-                _paint(k, key, i, f, f + L, [(0.0, zh), (0.0, zt + pz)], HATCH_D)
-            _paint(k, key, i, a0 + L, a0 + 2 * L, [(0.0, zh + 2 * pz), (0.0, zt - pz)], HATCH_L)
-            m = (a0 + a1) / 2                                   # a handle tab on its top edge, two on its foot
-            _box(k, key, i, m - 2 * L, m + 2 * L, zt - 2 * pz, zt + 3 * pz, LINE, TAB, TAB_TOP, TAB_SIDE)
-            for c in (a0 + (a1 - a0) * 0.3, a0 + (a1 - a0) * 0.7):
-                _box(k, key, i, c - 1.5 * L, c + 1.5 * L, zh - 2 * pz, zh + 3 * pz, LINE, TAB, TAB_TOP, TAB_SIDE)
+        if hatch:                                               # a line under the bullnose from seam to seam, lit under
+            a0, a1 = seams[0] + L / 2, seams[-1] - L / 2
+            _paint(k, key, i, a0, a1, [(0.0, zt), (0.0, zt + pz)], HATCH_D)
+            _paint(k, key, i, a0, a1, [(0.0, zt - pz), (0.0, zt)], HATCH_L)
     for i in range(segs):                                       # the bright ledge along the foot
         _paint(k, key, i, 0.0, 1.0, [(0.0, FOOT_H), (0.0, FOOT_H + LEDGE_H * pz)], LEDGE)
     for i in range(segs):                                       # the foot blocks
