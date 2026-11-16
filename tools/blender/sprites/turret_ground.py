@@ -81,45 +81,82 @@ def bunker(f):
     port(f, 0.36)
 
 
-# Trestle round 3: (deck top, foot radius, deck apothem, turret scale, keep the turret's own race ring)
-TRESTLE = {"T1": (0.95, 0.86, 0.7, 1.0, False), "T2": (0.95, 0.86, 0.62, 0.8, False), "T3": (0.7, 0.9, 0.76, 0.85, True)}
+# Round 4: supports that grow into the head. The head (TC turntable, R * rig scale = about 0.9) sits on a collar of its own
+# width, no roof ring. (deck top, builder)
+COLLAR = 0.92
 
 
-def trestle(f, top=0.95, feet=0.72, deck=0.66, skirt=False):
-    from . import detail as D
-    dia = [(math.cos(math.pi / 4 + k * math.pi / 2), math.sin(math.pi / 4 + k * math.pi / 2)) for k in range(4)]
-    legs = [(c * feet * math.sqrt(2), s_ * feet * math.sqrt(2)) for c, s_ in dia]   # feet: how far out toward the footprint corner (1 = the corner)
-    heads = [(c * deck * 0.8, s_ * deck * 0.8) for c, s_ in dia]
-    _g("pads")
-    for u, v in legs:
-        f.box(u, v, 0, 0.16, 0.16, 0.08, "gm", top="steelD")
-    _g("legs")
-    for (u, v), (hu, hv) in zip(legs, heads):
-        D.seg(f, (u, v, 0.08), (hu, hv, top - 0.14), 0.065, "steelD", 8)
-    for k in range(4):                                                          # cross bracing between legs
-        (u0, v0), (u1, v1) = legs[k], legs[(k + 1) % 4]
-        (h0, g0), (h1, g1) = heads[k], heads[(k + 1) % 4]
-        lo = 0.2
-        a0 = (u0 + (h0 - u0) * lo, v0 + (g0 - v0) * lo)
-        a1 = (u1 + (h1 - u1) * lo, v1 + (g1 - v1) * lo)
-        D.seg(f, (a0[0], a0[1], 0.08 + (top - 0.22) * lo), (h1, g1, top - 0.2), 0.03, "steel", 6)
-        D.seg(f, (a1[0], a1[1], 0.08 + (top - 0.22) * lo), (h0, g0, top - 0.2), 0.03, "steel", 6)
-    _g("deck")
-    TB.prism(f, octagon(deck - 0.04), top - 0.16, top - 0.05, "steelD", top="steel")
-    TB.prism(f, octagon(deck), top - 0.05, top, "steel", top="steelL")
-    if skirt:
-        TC.vannulus(f, deck + 0.02, deck - 0.08, top - 0.3, top - 0.16, "steelD", "steel", sides=8)
-    _g("riser")
-    D.seg(f, (0.72, PORT_V, 0.4), (deck * 0.7, PORT_V * 0.6, top - 0.16), 0.045, "dark", 8)
+def collar(f, top, ribs=12):
+    """The ring the head's turntable sits on: as wide as its skirt, dark, ribbed like it, a lit rim."""
+    _g("collar")
+    f.vcyl(0, 0, top - 0.14, COLLAR, 0.1, "dark", top="steel", sides=28)
+    for k in range(ribs):
+        a = (k + 0.5) * math.tau / ribs
+        obox(f, a, COLLAR - 0.02, COLLAR + 0.03, 0.035, top - 0.14, top - 0.04, "steelD")
+    TC.vannulus(f, COLLAR + 0.01, COLLAR - 0.1, top - 0.04, top, "steelL", "steel")
+
+
+def pintle(f, top=0.9):
+    """G1: the ship bay's mount column cut short, on a gusseted baseplate, flaring into the collar."""
+    _g("base")
+    TB.prism(f, square(0.96, 0.28), 0, 0.08, "gm", top="steelD")
+    f.vcyl(0, 0, 0.08, 0.5, 0.08, "steelD", top="steel", sides=28)
+    _g("column")
+    f.vcyl(0, 0, 0.16, 0.3, top - 0.5, "steelD", sides=28)
+    for z in (0.26, 0.4):
+        f.vcyl(0, 0, z, 0.33, 0.05, "steel", top="steelL", sides=28)
+    for k in range(4):                                                          # gussets
+        a = math.pi / 4 + k * math.pi / 2
+        obox(f, a, 0.3, 0.72, 0.03, 0.08, 0.2, "steel", top="steelL")
+        obox(f, a, 0.3, 0.5, 0.03, 0.2, 0.36, "steel", top="steelL")
+    _g("flare")
+    for k, (r, z) in enumerate(((0.38, top - 0.34), (0.55, top - 0.27), (0.72, top - 0.2))):
+        f.vcyl(0, 0, z, r, 0.07, "steelD", top="steel", sides=28)
+    collar(f, top)
+    port(f, 0.36)
+
+
+def casemate(f, top=0.62):
+    """G2: the head's ribbed skirt carried down to the rock as a squat armoured drum on a wider footing."""
+    _g("footing")
+    TB.prism(f, octagon(0.98), 0, 0.06, "gm", top="steelD")
+    f.vcyl(0, 0, 0.06, 0.97, 0.08, "steelD", top="steel", sides=28)
+    _g("drum")
+    f.vcyl(0, 0, 0.14, COLLAR - 0.02, top - 0.28, "dark", top="steelD", sides=28)
+    for k in range(12):                                                         # the skirt's ribs, full height
+        a = (k + 0.5) * math.tau / 12
+        obox(f, a, COLLAR - 0.04, COLLAR + 0.02, 0.04, 0.14, top - 0.14, "steelD", top="steel")
+    f.vcyl(0, 0, 0.3, COLLAR + 0.005, 0.04, "steel", sides=28)                  # a band round it
+    collar(f, top)
     port(f, 0.4)
 
 
+def tripod(f, top=0.95):
+    """G3: three heavy legs, knees out, meeting the collar under its rim."""
+    from . import detail as D
+    _g("legs")
+    for k in range(3):
+        a = math.pi / 2 + k * math.tau / 3 + math.pi
+        c, s_ = math.cos(a), math.sin(a)
+        foot, knee, hip = (0.96 * c, 0.96 * s_, 0.06), (0.9 * c, 0.9 * s_, 0.42), (0.62 * c, 0.62 * s_, top - 0.16)
+        f.box(foot[0], foot[1], 0, 0.2, 0.2, 0.07, "gm", top="steelD")
+        D.seg(f, foot, knee, 0.09, "steelD", 10)
+        f.vcyl(knee[0], knee[1], knee[2] - 0.08, 0.12, 0.16, "steel", top="steelL", sides=14)   # knee joint
+        D.seg(f, knee, hip, 0.085, "steelD", 10)
+        D.seg(f, (0.95 * c, 0.95 * s_, 0.2), (0.25 * c, 0.25 * s_, top - 0.3), 0.04, "steel", 8)   # hydraulic strut
+    _g("hub")
+    f.vcyl(0, 0, top - 0.42, 0.26, 0.28, "steelD", top="steel", sides=20)
+    collar(f, top)
+    port(f, 0.36)
+
+
+GV = {"G1": (0.9, pintle), "G2": (0.62, casemate), "G3": (0.95, tripod)}
+
+
 def ground_turret(key, d, variant):
-    """The turret head for a trestle variant: built on the deck's top, scaled, with or without its own race ring."""
-    top, _, _, scale, ring = TRESTLE[variant]
-    rig = TC.PICKS[key](False)
-    rig.scale *= scale
-    return TC.place(rig, d, z0=top, parts=("fixed", "head", "gun") if ring else ("head", "gun"))
+    """The turret head for a ground variant: built on the support's top, without its roof race ring."""
+    top = GV[variant][0]
+    return TC.place(TC.PICKS[key](False), d, z0=top, parts=("head", "gun"))
 
 
 def plinth(f):
@@ -146,7 +183,7 @@ def plinth(f):
     port(f, 0.4)
 
 
-VARIANTS = {v: (lambda f, a=a: trestle(f, a[0], a[1], a[2], a[4])) for v, a in TRESTLE.items()}
+VARIANTS = {v: (lambda f, a=a: a[1](f, a[0])) for v, a in GV.items()}
 
 
 def mount(rot=0, variant="A"):
