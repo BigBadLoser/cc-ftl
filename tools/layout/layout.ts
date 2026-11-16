@@ -6,6 +6,7 @@
 import { content } from '../../src/content';
 import { Sim, footprintTiles, type GenResult, type ModuleDef, type ShipTemplate } from '../../src/sim';
 import { outlineOf } from '../../src/sim/yard/width';
+import { keepWindows, type LayoutWindow } from './windows';
 import { accessTiles, hullOutward, hullRow, hullSide } from '../../src/sim/modules/footprint';
 
 export type TemplateModule = NonNullable<ShipTemplate['modules']>[number];
@@ -20,6 +21,8 @@ export interface Layout {
   /** Rooms by id; the role is a RoomRole id ('cargo', 'hall' for a corridor...). */
   rooms: { role: string }[];
   modules: TemplateModule[];
+  /** Player-built windows (#516), absent for none: runs of wall tiles by lower-coordinate end. */
+  windows?: LayoutWindow[];
   /** A stable id per module (parallel to `modules`): a pin follows a module by it through moves, turns and the removal of others. */
   moduleIds: number[];
   /** The next module id to hand out (ids are never reused, so a pin on a removed module stays orphaned). */
@@ -100,7 +103,7 @@ export function toTemplate(l: Layout): ShipTemplate {
 
 interface Work { l: Layout; cells: string[][]; roomOf: number[]; modules: TemplateModule[]; ids: number[]; rooms: { role: string }[] }
 const work = (l: Layout): Work => ({ l, cells: l.cells.map((r) => [...r]), roomOf: [...l.roomOf], modules: l.modules.map((m) => ({ ...m })), ids: [...l.moduleIds], rooms: l.rooms.map((r) => ({ ...r })) });
-const done = (w: Work): Layout => ({ ...w.l, cells: w.cells.map((r) => r.join('')), roomOf: w.roomOf, modules: w.modules, moduleIds: w.ids, rooms: w.rooms });
+const done = (w: Work): Layout => keepWindows({ ...w.l, cells: w.cells.map((r) => r.join('')), roomOf: w.roomOf, modules: w.modules, moduleIds: w.ids, rooms: w.rooms }, w.l.cells);
 const idx = (l: Layout, x: number, y: number): number => y * l.width + x;
 
 /**
