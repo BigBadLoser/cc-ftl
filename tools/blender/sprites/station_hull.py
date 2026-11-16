@@ -25,7 +25,7 @@ E = 0.5 - 1 / 32                    # the outline (the ship hull's: wall3d_ext_g
 DEPTH = E + 0.5                     # the block from its outer face back to the tile's back edge
 H = None                            # the top: the roof's height (walls.hull_top(), set on first use)
 R_D, R_Z = 0.32, 0.46               # the bullnose: this far in along the top, this far down the face (tiles)
-ROUND = 8                           # its facets
+ROUND = 16                          # its facets
 LINE = 1 / 32                       # one art px along the run
 SEAMS = (0.25, 0.75)                # seams along a straight run, as fractions of the tile
 GROOVE = 0.40                       # the groove's height over the deck
@@ -35,7 +35,8 @@ FOOT_N, FOOT_W, FOOT_OUT, FOOT_H = 3, 0.26, 3 / 32, 0.15   # the foot blocks: a 
 FACE, FACE_LO, END = "stS", "stL", "stE"   # the face, its band under the groove, the ends
 LEDGE, LEDGE_H = "stW", 2                   # the bright ledge along the foot: colour, px tall
 HATCH_D, HATCH_L = "stM", "stH"             # the hatch's outline: dark line, lit line inside/under it
-ROUND_COLS = ("stS", "stS", "stL", "stL", "stH", "stB", "stW", "stW")   # the bullnose from the face up to the top
+# the bullnose's bands from its top edge down to the face: colour, share of the arc (the lightest the widest)
+ROUND_BANDS = (("stW", 0.36), ("stB", 0.26), ("stH", 0.18), ("stL", 0.12), ("stS", 0.08))
 TOP = "stL"
 SEAM_D, SEAM_L = "stM", "stH"
 GROOVE_D, GROOVE_L = "stD", "stH"
@@ -105,12 +106,21 @@ def _bullnose():
             for i in range(ROUND + 1)]
 
 
+def _band(t):
+    """The bullnose's colour at t along its arc from the top edge (0) to the face (1)."""
+    for col, w in ROUND_BANDS:
+        if t < w:
+            return col
+        t -= w
+    return ROUND_BANDS[-1][0]
+
+
 def _section():
     """The outer section as (inset, z, colour of the strip up to the next): the face, its bullnose (the top after)."""
     out = [(0.0, 0.0, FACE_LO), (0.0, GROOVE, FACE)]
     bn = _bullnose()
     for i, (d, z) in enumerate(bn):
-        out.append((d, z, ROUND_COLS[i] if i < ROUND else None))
+        out.append((d, z, _band(1 - (i + 0.5) / ROUND) if i < ROUND else None))
     return out
 
 
