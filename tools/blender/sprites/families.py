@@ -137,6 +137,9 @@ def jobs(name):
                                             sel("CONT_STATES", ("intact", "damaged", "destroyed", "patched"))),
                                variants=tuple(int(v) for v in sel("CONT_VARIANTS", ("0", "1", "2"))))
         return jobs, True
+    if name == "station_hull":      # the station hull look (#524; prototype: straight runs, the outer corner, belly)
+        from . import station_hull
+        return station_hull.jobs(), "hull"              # (callables: each selects "hull" itself)
     if name == "structure":
         from . import structure
         return structure.jobs(), "walls+hull"
@@ -623,7 +626,7 @@ RENDERED = ("env", "walls", "consoles", "weapons", "roof", "robot_bay", "drones"
             "fx", "galley", "derelict", "eggsac", "storage_set", "medbay", "battery", "hydroponics", "workbench",
             "ops_consoles", "cryo", "wallprops", "hazards", "clutter", "decay", "corpse", "damage", "rock", "rockwall",
             "pod_bay", "mining_pod", "escape_pod", "fx_mining", "fx_shield", "starmap", "backdrop", "cargo", "items", "salvage", "storage_ore",
-            "hull", "scrapper", "upgrades", "research_bench", "arcade_cabinet", "gametable_module",
+            "hull", "station_hull", "scrapper", "upgrades", "research_bench", "arcade_cabinet", "gametable_module",
             "recovery_pod", "bunk_module", "exercise_module", "bench_module", "planter_module", "vending_module", "bar_module",
             "stasis", "stasisload", "decor", "lights", "deck_finishes", "deck_marks", "landmarks", "purifier_module")
 ALL = RENDERED + ("sol", "damage_sol", "marks")
