@@ -1,6 +1,6 @@
 import {
   DANGER_STEP, FTL_CHARGE_SEC, edgeBetween, ftlCharge, fuelStock, jumpFuel, galaxyIndex, isHostileFaction, planStarRoute, playerShipId, playerShipPackedOk,
-  fleetName, hullLoad, isAdrift, nodeOf, portNode, riskOf, routeBlocker, routeCharge, sensorNodes, standings, visibleFleets, type Fleet, type Sim,
+  fieldItems, fleetName, hullLoad, isAdrift, nodeOf, portNode, riskOf, routeBlocker, routeCharge, sensorNodes, standings, visibleFleets, type Fleet, type NodeData, type Sim,
 } from '../sim';
 import { featureName, passengerName } from './jobsSnapshot';
 import type { UiNodeJob, UiStarExit, UiStarIcon, UiStarFleet, UiTravel, UiStarmap, UiStarNode, UiStarRoute } from '../ui/starmapApi';
@@ -45,6 +45,14 @@ function fleetsOf(sim: Sim, nodeName: (id: string) => string): UiStarFleet[] {
 }
 
 /** A structure's starmap icon: its sprite (a station held by pirates is their den) and the owner's tone for stations. */
+/** Item names a node supplies: its stations' and wrecks' own lists plus what its asteroid fields' yield mixes mine (`fieldItems`). */
+function resourcesOf(sim: Sim, n: NodeData): string[] {
+  const g = sim.content.galaxy;
+  const items = new Set(n.resources);
+  for (const s of n.structures) for (const it of fieldItems(g?.nodeContents, sim.content.ores ?? {}, s.def)) items.add(it);
+  return [...items].sort().map((r) => sim.content.items[r]?.name ?? r);
+}
+
 export function iconOf(sim: Sim, def: string, faction: string | null): UiStarIcon {
   const content = sim.content.galaxy;
   const d = content?.structures[def];
@@ -107,7 +115,7 @@ export function buildStarmap(sim: Sim): UiStarmap {
       badges: k ? n.structures.map((s) => content?.structures[s.def]?.badge ?? '?') : [],
       structures: k ? n.structures.map((s) => content?.structures[s.def]?.name ?? s.def) : [],
       icons: k ? n.structures.map((s) => iconOf(sim, s.def, n.faction)) : [],
-      resources: k ? n.resources.map((r) => sim.content.items[r]?.name ?? r) : [],
+      resources: k ? resourcesOf(sim, n) : [],
       hostiles, others: contacts.length - hostiles, reachable: reachable.has(n.id), market: k && sensors.has(n.id) ? marketOf(sim, n.id) : null,
       jobs: k ? jobsAt.get(n.id) ?? [] : [],
       hints: k ? nodeHints(sim, n.id) : [],

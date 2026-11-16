@@ -22,6 +22,7 @@ describe('mining snapshot', () => {
     let m = buildMining(sim);
     const a = m.asteroids.find((x) => x.id === asteroid)!;
     expect(a.kind).toBe('field');
+    expect(a.name).toBe('Asteroid field'); // a debug-spawned field in a node with no field structure
     expect(a.ore.length).toBeGreaterThan(0);
     expect(a.ore.every((o) => o.units > 0 && /^#[0-9a-f]{6}$/.test(o.color))).toBe(true);
     expect(m.pods).toEqual([expect.objectContaining({ id: pod, state: 'stowed', phase: null, hold: 0, cap: content.vehicles['vehicle.mining_pod'].cargo, trips: 0 })]);
