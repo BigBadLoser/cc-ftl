@@ -10,8 +10,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from robots_preview import ROOT, Assets, Canvas, iso  # noqa: E402
 
-N = 6                                               # rock patch, tiles 0..N-1; the mount on (2..3, 2..3), cable east
-VARIANTS = {"R1": "on the rock", "R2": "steel baseplate", "R3": "apron, hazard band"}
+N = 7                                               # rock patch, tiles 0..N-1; the mount on (2..3, 2..3), cable east
+VARIANTS = {"W1": "platform", "W2": "revetment", "W3": "outriggers"}
 ZR = 2.05
 
 
@@ -19,10 +19,10 @@ def scene(cv, G, pub, cab, ox, oy, stem, v, aim, zpx):
     for gx in range(N):
         for gy in range(N):
             cv.static(pub, "rock.ground.m15.v0", *iso(ox, oy, gx, gy))
-    for i, gx in enumerate(range(4, N)):
-        cv.static(cab, f"cable.duct.{'m10.w8' if i == 0 else 'm10'}", *iso(ox, oy, gx, 2))
-    cv.static(G, f"module.{stem}.ground.{v}.r0", *iso(ox, oy, 3, 3))
-    sx, sy = iso(ox, oy, 2.5, 2.5)
+    for i, gx in enumerate(range(5, N)):
+        cv.static(cab, f"cable.duct.{'m10.w8' if i == 0 else 'm10'}", *iso(ox, oy, gx, 3))
+    cv.static(G, f"module.{stem}.ground.{v}.r0", *iso(ox, oy, 4, 4))
+    sx, sy = iso(ox, oy, 3, 3)
     cv.static(G, f"turret.{stem}.ground.{v}.d{aim}", round(sx), round(sy))
 
 
@@ -33,7 +33,7 @@ def main():
     pub = Assets(ROOT / "public/assets/1x")
     zpx = pub.m["heights"]["zPx"]
     out.mkdir(parents=True, exist_ok=True)
-    W, H = 330, 250
+    W, H = 400, 290
     cv = Canvas(W * len(VARIANTS), H)
     for i, (v, name) in enumerate(VARIANTS.items()):
         ox, oy = W // 2 + i * W, 70
