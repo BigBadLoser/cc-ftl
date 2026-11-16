@@ -287,7 +287,8 @@ def _wide(mask, o):
     return own, own + more
 
 
-PIECES = ((10, 1), (5, 2), (9, 3))
+OUT_MASK = {1: 4, 2: 2, 3: 6}       # the ship hull's run set (hulltiles.OUT_MASK): mask bits clear for each side out
+PIECES = tuple((m, o) for o, clear in OUT_MASK.items() for m in range(16) if not m & clear)
 PALETTE = "only:station"
 
 
