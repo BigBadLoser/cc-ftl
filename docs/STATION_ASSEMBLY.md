@@ -292,9 +292,14 @@ walked through within the department) down a tube off its outer side, the reacto
 floor together; furnished down both long walls, rule R2) off its far end. Per seed (tidy patterns only): no turns, or
 the other lower branch turned down off its tube (an L, its front room square on the tube) where it fits.
 
-No hangar, no stalls, no gun rooms (`recipeRooms`; the fit-out's `unarmed`): the guns are meant as turrets out on the
-ground worked from fire control, but a module on ground outside the hull belongs to no ship in the sim (the stamp
-owns only template tiles), so they wait. Nothing in the sim needs a stall: the trader's stock is rolled, station life
+No hangar, no stalls, no gun rooms (`recipeRooms`): the guns and the point defence are turrets out on the ground
+(#514, `groundTurrets` in `assemble.ts`, placed by `shipgen/groundTurrets.ts` through the fit-out's `ground` option).
+The site reaches four tiles past the modules and pads for them. The first turret stands nearest the command room, each
+next one beside those already out (a row), each with a ring of open ground round it, clear of the pads and of the
+ground before each airlock, and one tile off a hull wall: a single tile of cable (the template's `cable` rows, the
+sim's `cable` grid layer, `sim/cable.ts`) joins it to that wall. On the asteroid the stamp lays the cable over the
+ground and makes the cabled tiles and the turrets' tiles the base's, so the turrets draw its power, are fired from the
+command room's weapons console, are targeted as its modules and are repaired by suited crew walking out. Nothing in the sim needs a stall: the trader's stock is rolled, station life
 needs only room roles (courts, posts).
 
 On the asteroid (`outposts/`): a prefab base's dock is a pad's airlock (`pickDock` finds it once the layout is turned

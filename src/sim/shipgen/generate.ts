@@ -10,6 +10,8 @@ import { RECIPES, drawRoom, hostCompanions, pruneDoors, reserveWalkway, furnish,
 import { furnishByRule, placeFeed } from './rooms/rules/place';
 import { RULES } from './rooms/rules/rules';
 import { Layout } from './layout';
+import { placeGroundTurrets, type GroundPlan } from './groundTurrets';
+import { cableRows } from '../cable';
 import { hullChoices, pickWeighted, planShip, type RoomSpec, type ShipPlan } from './plan';
 import { clusters, hub, rails } from './topoDrone';
 import { ring, spine } from './topoNavy';
@@ -59,12 +61,14 @@ interface Fitted {
   vehicles: Map<number, string>;
   /** Drone defs docked in the bay at this module index. */
   drones: Map<number, string[]>;
+  /** Modules standing on open ground outside the hull (module indices), and the cable that wires them to it (`FinishOpts.ground`). */
+  ground?: { placed: Set<number>; cable: Set<number> };
 }
 
 /** Place every room's planned modules in that room; a reason string when something essential does not fit. */
 function fitOut(
   rng: Rng, f: FactionDef, rows: string[], roomOf: Int16Array, roles: RoomRole[], specs: (RoomSpec | undefined)[], defs: Record<string, ModuleDef>,
-  recipes = RECIPES, o: Pick<FinishOpts, 'airlocksAnyWay' | 'gunsAnywhere' | 'immobile' | 'unarmed'> = {},
+  recipes = RECIPES, o: Pick<FinishOpts, 'airlocksAnyWay' | 'gunsAnywhere' | 'immobile' | 'ground'> = {},
 ): Fitted {
   const lay = new Layout(rows, roomOf, roles, defs);
   lay.gunsOnHull = !o.gunsAnywhere;
@@ -167,12 +171,20 @@ function fitOut(
     if (j.spec.vehicle && defs[j.def]?.vehicleBay) out.vehicles.set(idx, defs[j.def]?.vehicleBay?.builtWith ?? 'vehicle.shuttle');
     if (j.spec.drones && defs[j.def]?.droneBay) out.drones.set(idx, Array<string>(Math.min(j.spec.drones.count, defs[j.def]?.droneBay?.slots ?? 0)).fill(j.spec.drones.def));
   }
+  if (o.ground) {
+    const g = placeGroundTurrets(lay, o.ground);
+    for (const id of o.ground.mods) wanted[id] = (wanted[id] ?? 0) + 1;
+    for (const k of g.placed) { const id = lay.modules[k]?.def as string; placed[id] = (placed[id] ?? 0) + 1; }
+    out.ground = { placed: new Set(g.placed), cable: g.cable };
+  }
   const missing = (id: string): boolean => (wanted[id] ?? 0) > 0 && (placed[id] ?? 0) === 0;
   for (const id of ['module.engine', 'module.helm', 'module.airlock', 'module.reactor', 'module.weaponsConsole', 'module.aiCore', 'module.vehicle_bay']) {
     if (missing(id)) return { ...out, error: `no ${id.replace('module.', '')} fits` };
   }
   const guns = (m: Record<string, number>): number => Object.entries(m).filter(([id]) => defs[id]?.weapon).reduce((t, [, n]) => t + n, 0);
-  if (!o.unarmed && (guns(placed) === 0 || guns(placed) * 4 < guns(wanted) * 3)) return { ...out, error: 'weapons do not fit' };
+  if (guns(placed) === 0 || guns(placed) * 4 < guns(wanted) * 3) return { ...out, error: 'weapons do not fit' };
+  const pd = (m: Record<string, number>): number => Object.entries(m).filter(([id]) => defs[id]?.pointDefense).reduce((t, [, n]) => t + n, 0);
+  if (o.ground && pd(placed) < pd(wanted)) return { ...out, error: 'point defence does not fit' };
   if ((placed['module.reactor'] ?? 0) < (wanted['module.reactor'] ?? 0)) return { ...out, error: 'reactors do not fit' };
   // Rooms with a recipe are lit after they are furnished, so lamps take the walkways the furniture leaves.
   for (let room = 0; room < roles.length; room++) if (!drawOf(room)) lightRoom(lay, rng, room);
@@ -228,6 +240,7 @@ function toTemplate(f: FactionDef, role: ShipRoleDef, factionId: string, seed: n
       ...(stock && stock.length > 0 ? { stock } : {}),
       ...(d.vehicles.has(i) ? { vehicle: d.vehicles.get(i) } : {}),
       ...(d.drones.has(i) ? { drones: d.drones.get(i) } : {}),
+      ...(d.ground?.placed.has(i) ? { ground: true as const } : {}),
     };
   });
   return {
@@ -237,6 +250,7 @@ function toTemplate(f: FactionDef, role: ShipRoleDef, factionId: string, seed: n
     crew: plan.crew,
     rows,
     modules,
+    ...(d.ground && d.ground.cable.size > 0 ? { cable: cableRows(d.lay.w, d.lay.h, d.ground.cable) } : {}),
     ...(f.doctrine.boarding ? { boarding: { ...f.doctrine.boarding } } : {}),
   };
 }
@@ -305,8 +319,8 @@ export interface FinishOpts {
   airlocksAnyWay?: boolean;
   /** Guns may stand anywhere in their bay, as the game allows (the arranger's hulls keep theirs beside the hull). */
   gunsAnywhere?: boolean;
-  /** No gun rooms planned, none wanted (a prefab base: its guns would be turrets on the ground, not built yet). */
-  unarmed?: boolean;
+  /** Turrets to stand on open ground outside the hull, cabled to it (a prefab asteroid base's guns and point defence: groundTurrets.ts). */
+  ground?: GroundPlan;
 }
 
 /**

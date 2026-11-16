@@ -7,7 +7,8 @@
  */
 import type { GenResult, ModuleDef, RoomRole } from '../../src/sim';
 import { content } from '../../src/content';
-import { rotatedSize } from '../../src/sim/modules/footprint';
+import { footprintTiles, rotatedSize } from '../../src/sim/modules/footprint';
+import { templateCable } from '../../src/sim/cable';
 import { E, edgeMarkings, MARK_INSET, N, S, W, type EdgeMarkings } from '../../src/sim/shipgen/markings';
 import { gen, Raster, ROLE_TINT, type RGB } from './draw';
 
@@ -113,6 +114,35 @@ function drawMarks(r: Raster, marks: EdgeMarkings, W0: number, t: number, top: n
   }
 }
 
+const GROUND: RGB = [46, 42, 40], PAD: RGB = [255, 210, 0], CABLE: RGB = [90, 200, 255];
+
+/**
+ * A template's ground cable (cable.ts): a duct down the middle of each cabled tile, out to every side it joins (four ways): another
+ * cabled tile, a wall it plugs into, or the ground module it feeds. False when it has none.
+ */
+function drawCable(r: Raster, g: GenResult, t: number, top: number): boolean {
+  const tiles = templateCable(g.template);
+  if (tiles.length === 0) return false;
+  const on = new Set(tiles.map((c) => `${c.x},${c.y}`));
+  const ground = new Set<string>();
+  for (const m of g.template.modules ?? []) {
+    const def = defs[m.def];
+    if (m.ground && def) for (const f of footprintTiles(def, m.x, m.y, m.rot)) ground.add(`${f.x},${f.y}`);
+  }
+  const k = Math.max(2, t >> 2), mid = (t - k) >> 1;
+  for (const { x, y } of tiles) {
+    const px = x * t, py = top + y * t;
+    r.rect(px + mid, py + mid, k, k, CABLE);
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+      const n = `${x + dx},${y + dy}`;
+      if (!on.has(n) && !ground.has(n) && g.template.rows[y + dy]?.[x + dx] !== '#') continue;
+      if (dx !== 0) r.rect(dx > 0 ? px + mid : px, py + mid, mid + k, k, CABLE);
+      else r.rect(px + mid, dy > 0 ? py + mid : py, k, mid + k, CABLE);
+    }
+  }
+  return true;
+}
+
 /** Any layout as a labelled image (a generated one, or a hand-made mock), with captions at tiles when given. */
 export function labelOf(g: GenResult, title: string, t = 16, captions: readonly { x: number; y: number; text: string }[] = [], names = true, marks?: EdgeMarkings): Raster {
   const rows = g.template.rows;
@@ -126,6 +156,12 @@ export function labelOf(g: GenResult, title: string, t = 16, captions: readonly 
   const mods: string[][] = roles.map(() => []);
   for (const m of g.template.modules ?? []) mods[g.roomOf[m.y * g.width + m.x] ?? -1]?.push(m.def);
   const kinds = new Map<string, RoomRole>(roles.map((role, i) => [roomKind(role, mods[i] ?? []), role]));
+  // A base on open ground (a prefab asteroid base): its levelled site as rock ground, its landing pads framed.
+  const site = (g as { site?: { pads: { x: number; y: number; w: number; h: number }[] } }).site;
+  if (site) {
+    r.rect(0, TOP, W * t, H * t, GROUND);
+    for (const p of site.pads) r.frame(p.x * t + 2, TOP + p.y * t + 2, p.w * t - 4, p.h * t - 4, PAD);
+  }
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     const c = rows[y]?.[x] ?? '.';
     if (c === '.') continue;
@@ -138,6 +174,7 @@ export function labelOf(g: GenResult, title: string, t = 16, captions: readonly 
     if (room >= 0) { const m = mid.get(room) ?? [0, 0, 0]; m[0] += x; m[1] += y; m[2]++; mid.set(room, m); }
   }
   if (marks) drawMarks(r, marks, g.width, t, TOP);
+  const cable = drawCable(r, g, t, TOP);
   const used = new Map<string, string>();
   let lamps = false;
   for (const m of g.template.modules ?? []) {
@@ -149,7 +186,7 @@ export function labelOf(g: GenResult, title: string, t = 16, captions: readonly 
     const [w, h] = def ? rotatedSize(def, m.rot ?? 0) : [1, 1];
     const x0 = m.x * t + 1, y0 = TOP + m.y * t + 1;
     r.rect(x0, y0, w * t - 2, h * t - 2, DARK);
-    r.frame(x0, y0, w * t - 2, h * t - 2, INK);
+    r.frame(x0, y0, w * t - 2, h * t - 2, m.ground ? CABLE : INK);
     r.text(code, x0 + ((w * t - 2) >> 1) - 7, y0 + ((h * t - 2) >> 1) - 5, INK, 2);
   }
   // Room names at the middle of every room big enough to carry one.
@@ -173,7 +210,13 @@ export function labelOf(g: GenResult, title: string, t = 16, captions: readonly 
   ky += 10;
   r.text('furniture', kx, ky, INK, 3); ky += 26;
   for (const [code, name] of [...used].sort((a, b) => a[1].localeCompare(b[1]))) { r.text(`${code} ${name}`, kx, ky, INK, 2); ky += 16; }
-  if (lamps) { r.rect(kx + 4, ky + 3, 5, 5, LAMP); r.text('lamp', kx + 26, ky, INK, 2); }
+  if (lamps) { r.rect(kx + 4, ky + 3, 5, 5, LAMP); r.text('lamp', kx + 26, ky, INK, 2); ky += 16; }
+  if (site || cable) {
+    ky += 10;
+    r.text('ground', kx, ky, INK, 3); ky += 26;
+    if (site) { swatch(GROUND, 'rock ground'); r.frame(kx, ky, 18, 14, PAD); r.text('landing pad', kx + 26, ky + 2, INK, 2); ky += 20; }
+    if (cable) { r.rect(kx, ky + 5, 18, 4, CABLE); r.text('cable', kx + 26, ky + 2, INK, 2); ky += 20; r.frame(kx, ky, 18, 14, CABLE); r.text('ground turret', kx + 26, ky + 2, INK, 2); ky += 20; }
+  }
   if (marks) { ky += 26; r.text('markings', kx, ky, INK, 3); ky += 26; for (const [k, c] of Object.entries(MARK_INK)) swatch(c, k); }
   return r;
 }

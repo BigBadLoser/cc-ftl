@@ -21,9 +21,8 @@ import { holdDepth } from '../rooms/rules/plant';
  * barracks, barracks, the chief's cabin; workshop, ore store). Command is a hub of its own in a lower slot: the command
  * room (the consoles; no helm), the core and the shields in one split pod down a tube off its outer side, the reactors
  * (one room) off its far end. Some branches turn down off their tube (an L), per seed, where they fit. The warehouse
- * is as long as its crates need. No gun rooms: the guns would be turrets out on
- * the ground worked from the command room, which the sim cannot stand yet (a module on ground outside the hull belongs to
- * no ship). Painted solid first, floor cut out, so every wall is one tile; a cut corner is a stair of wall (the seal
+ * is as long as its crates need. No gun rooms: the guns and the point defence are turrets out on the ground, worked
+ * from the command room and cabled to the hull (`groundTurrets`, shipgen/groundTurrets.ts). Painted solid first, floor cut out, so every wall is one tile; a cut corner is a stair of wall (the seal
  * rule allows no floor diagonal to space, so the floor's corner tile is wall too).
  */
 
