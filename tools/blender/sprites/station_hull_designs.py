@@ -8,6 +8,7 @@ the ref's; the other face is its mirror, as hull 46's art is.
   1  dents and a long gouge (ref T3-7)
   2  the dents alone (ref T3-6)
   4  a tower in the middle slot (ref T3-5; station_hull_tower)
+  5  a bay let into the middle slot (ref T3-2; station_hull_bay)
   3  a module in the middle slot (ref T3-3): two boxes a px off the face, the top one from a px over the top down to the
      line under the bullnose (a vent in its front), the lower one from under that line down to the groove (a seam
      across it, a rounded seam outline under that); a dark recess from the groove down to the step; a box and two short rails in the far slot"""
@@ -27,9 +28,9 @@ DENTS = ((7, 0, 3, 1.7, (1.0, 1.25, 0.8, 0.9, 1.15, 0.7, 0.95, 1.05), 15),
 GOUGE = (28, 25, 5, 1.0, (1.0, 0.75, 1.1, 1.0, 0.85, 1.25, 0.8, 1.0), 6)   # a long shallow dent out to the tile's edge
 DENT_LIP, DENT_RING, DENT_PIT = "stL", "stM", "stD"
 
-MODULE, TOWER = 3, 4
-DESIGNS = {1: DENTS + (GOUGE,), 2: DENTS, MODULE: (), TOWER: ()}
-NO_TABS = {MODULE, TOWER}           # designs without the groove's tabs (the recess takes the middle slot's foot), the
+MODULE, TOWER, BAY = 3, 4, 5
+DESIGNS = {1: DENTS + (GOUGE,), 2: DENTS, MODULE: (), TOWER: (), BAY: ()}
+NO_TABS = {MODULE, TOWER, BAY}      # designs without the groove's tabs (the recess takes the middle slot's foot), the
                                     # plate on the line under the bullnose and that line's lit px (the boxes take the
                                     # middle slot)
 ONE_BLOCK = {TOWER}                 # designs whose step carries one block over both, its middle a px higher

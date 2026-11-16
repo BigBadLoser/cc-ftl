@@ -190,12 +190,16 @@ def build(k, ax, plane, a, b, ends, H):
     rail = back + RAIL
     for s0, s1 in T.spans(a, b):
         whole = s1 - s0 > 1 - 1e-6
+        bay = whole and DESIGN[0] == SD.BAY
         if whole and DESIGN[0] == SD.MODULE:
             SD.blocks(f, s0, s1)
+        elif bay:
+            SB.blocks(f, s0, s1)
         else:
             for z0, z1 in ((0.0, GROOVE), (GROOVE, H)):
                 f.block(s0, s1, z0, z1)
-        f.line(s0, s1, GROOVE, s.z_at(GROOVE, -1), GROOVE_D, bevel=False)
+        for u0, u1 in (((s0, SB.span(s0)[0]), (SB.span(s0)[1], s1)) if bay else ((s0, s1),)):   # (broken by a bay)
+            f.line(u0, u1, GROOVE, s.z_at(GROOVE, -1), GROOVE_D, bevel=False)
         cut = SD.recess(s0) if whole and DESIGN[0] == SD.MODULE else None    # (the recess breaks its lit px and the
         for u0, u1 in (((s0, cut[0]), (cut[1], s1)) if cut else ((s0, s1),)):   # step's seam)
             f.line(u0, u1, s.z_at(GROOVE, 1), GROOVE, GROOVE_L, bevel=False)
@@ -217,7 +221,8 @@ def build(k, ax, plane, a, b, ends, H):
                 if DESIGN[0] not in SD.NO_TABS:
                     _part(f, g - TAB_W / 2 * LINE, g + TAB_W / 2 * LINE, g0, g1, LINE, TAB, TAB_TOP, TAB_SIDE)
             v0, v1 = (f.at_face(s0 + fr, zk) for fr in SEAMS)
-            f.line(v0 + LINE / 2, v1 - LINE / 2, zt, s.z_at(zt, -1), GROOVE_D, bevel=False)
+            if not bay:
+                f.line(v0 + LINE / 2, v1 - LINE / 2, zt, s.z_at(zt, -1), GROOVE_D, bevel=False)
             if DESIGN[0] not in SD.NO_TABS:
                 f.line(v0 + LINE / 2, v1 - LINE / 2, s.z_at(zt, 1), zt, UNDER_L, bevel=False)
             m, hw = (v0 + v1) / 2, (TAB_W / 2 + 1) * LINE           # a plate on it, in the middle, a px wider
@@ -338,3 +343,4 @@ def jobs():
 
 
 from . import station_hull_designs as SD  # noqa: E402  (its designs build on this module)
+from . import station_hull_bay as SB  # noqa: E402
