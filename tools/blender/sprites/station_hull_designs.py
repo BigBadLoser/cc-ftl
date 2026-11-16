@@ -45,10 +45,10 @@ VENT_W = 5
 LOW_DROP = 2                        # the lower box's top this many px under the line under the bullnose's foot
 LOW_LINE = 5                        # a seam across it this many px under its top
 LOW_FRAME = 2                       # under that, a seam outline (its corners rounded off) this many px in from each edge
-LOW_LIT = "stL"                     # a faint lit px under the seam across and the outline's top, beside the outline's
-                                    # near side (the ref's left on the face rising to the right)
-GAP_SHADE = SH.SEAM                 # the top box's shadow in the gap under it
-RECESS = (11, 21, 0)                # the recess: px across, its top px over the groove (down to the step)
+LOW_LIT = "stL"                     # a faint lit px under the box's top edge and the seam across, and down inside its near
+                                    # side (the ref's left on the face rising to the right)
+GAP_SHADE = SH.GROOVE_D                # the top box's shadow in the gap under it
+RECESS = (11, 21, -1)               # the recess: px across, its top px over the groove (down to the step)
 RECESS_BACK, RECESS_RIM, RECESS_SIDE, RECESS_SILL = "stD", "stK", "stE", "stB"   # its back wall; the shadow under its
                                     # lip and down its far side; its near side; the sill in its foot
 
@@ -162,9 +162,9 @@ def _module(f, s0, zk):
     _rect(f, u0 + LINE, u1 - LINE, za, za + px, fd, BOX_LINE)
     _rect(f, u0, u0 + LINE, za + px, zb - px, fd, BOX_LINE)
     _rect(f, u1 - LINE, u1, za + px, zb - px, fd, BOX_LINE)
-    _rect(f, a + LINE, b, zs - 2 * px, zs - px, fd, LOW_LIT)                 # (faint lit px)
-    _rect(f, u0 + LINE, u1 - LINE, zb - 2 * px, zb - px, fd, LOW_LIT)
-    _rect(f, u1 - 2 * LINE, u1 - LINE, za + px, zb - 2 * px, fd, LOW_LIT)    # the recess, from the groove down to the step
+    _rect(f, a + LINE, b, z1 - px, z1, fd, LOW_LIT)                          # (faint lit px)
+    _rect(f, a + LINE, b, zs - 2 * px, zs - px, fd, LOW_LIT)
+    _rect(f, b - LINE, b, z0, z1 - px, fd, LOW_LIT)    # the recess, from the groove down to the step
     p0, p1, up = RECESS
     u0, u1 = _span(s0, p0, p1)
     zt, zf = s.z_at(SH.GROOVE, -up), s.z_at(SH.FOOT_H, -1)
