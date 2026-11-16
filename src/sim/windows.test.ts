@@ -80,6 +80,14 @@ describe('window placement rules', () => {
     expect(windowRunError(g2, 4, 0, 'x', 2)).toBe('hasWindow');
     expect(windowRunError(g2, 8, 1, 'y', 2, (x, y) => x === 8 && y === 2)).toBe('jobExists');
   });
+  it('rejects a wall tile a module stands on (an engine hull row)', () => {
+    const { sim: s3, ship: sh3 } = make();
+    const g3 = grid(s3, sh3);
+    expect(g3.has('module')).toBe(true);
+    g3.set('module', 6, 0, 1);
+    expect(windowRunError(g3, 5, 0, 'x', 3)).toBe('moduleHere');
+    expect(windowRunError(g3, 4, 0, 'x', 2)).toBeNull();
+  });
 });
 
 describe('window encoding', () => {

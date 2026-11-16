@@ -39,7 +39,7 @@ const solid = (k: number) => k === Struct.Wall || k === Struct.Door || k === Str
 
 /**
  * Why a window cannot go on the run, or null when it can. Every tile must be a plain Wall (hull or partition) with no
- * window yet, and a straight piece: connected to the wall along the axis on both sides, and to nothing across it (no
+ * window yet and no module standing on it, and a straight piece: connected to the wall along the axis on both sides, and to nothing across it (no
  * corner, T-junction or thick block). `busy(x, y)` says whether a job already stands on a tile (the command passes it).
  */
 export function windowRunError(grid: GridLike, x: number, y: number, axis: WindowAxis, size: number, busy: (x: number, y: number) => boolean = () => false): string | null {
@@ -51,6 +51,7 @@ export function windowRunError(grid: GridLike, x: number, y: number, axis: Windo
     if (!grid.inBounds(t.x, t.y)) return 'outOfBounds';
     if (kindAt(t.x, t.y) !== Struct.Wall) return 'notWall';
     if (grid.get('window', t.x, t.y)) return 'hasWindow';
+    if (grid.has('module') && grid.get('module', t.x, t.y)) return 'moduleHere'; // a module's own art stands there (an engine's hull row)
     if (busy(t.x, t.y)) return 'jobExists';
     if (!solid(kindAt(t.x - ax, t.y - ay)) || !solid(kindAt(t.x + ax, t.y + ay))) return 'notStraight';
     if (solid(kindAt(t.x - ay, t.y - ax)) || solid(kindAt(t.x + ay, t.y + ax))) return 'notStraight';
