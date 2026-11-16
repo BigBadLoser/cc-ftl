@@ -147,13 +147,15 @@ def _part(f, u0, u1, z0, z1, out, face, top, side, end=False):
 
 
 def _block_prof(s):
-    """A foot block's section: a px proud of the step's top and front; its front's top px a lit edge."""
+    """A foot block's section: a px proud of the step's top and front; its front's top px a lit edge; the back of its
+    top (2 px out from the face: half a px a px on screen, under the face's seam a px over the step) carries on the
+    seam where the step meets the face, through the block on screen."""
     zt, out = s.z_at(FOOT_H, -1), FOOT_OUT + LINE
-    return [(D - 0.01, 0.0), (D - 0.01, zt), (D + out, zt), (D + out, s.z_at(zt, 1)),
+    return [(D - 0.01, 0.0), (D - 0.01, zt), (D + 2 * LINE, zt), (D + out, zt), (D + out, s.z_at(zt, 1)),
             (D + out, 0.0)]
 
 
-BLOCK_COLS = [None, BLOCK, BLOCK_LIT, BLOCK, None]
+BLOCK_COLS = [None, GROOVE_D, BLOCK, BLOCK_LIT, BLOCK, None]
 
 
 def _chamfer_part(f, t0, t1, z0, z1, out, face, top, side):
@@ -198,7 +200,7 @@ def build(k, ax, plane, a, b, ends, H):
             u = s0
             for i, w in enumerate(FOOT_BLOCKS):
                 if i % 2:
-                    f.part(u, u + w * LINE, _block_prof(s), BLOCK_COLS, BLOCK)
+                    f.part(u, u + w * LINE, _block_prof(s), BLOCK_COLS, GROOVE_D)    # (its sides the seam's)
                 u += w * LINE
     if f.ch:
         _corner(f, zt, g0, g1)
@@ -220,7 +222,7 @@ def _corner(f, zt, g0, g1):
     u = (W - sum(FOOT_BLOCKS)) / 2                           # the step's blocks across it, as a tile's
     for i, w in enumerate(FOOT_BLOCKS):
         if i % 2:
-            f.on_chamfer(t(u), t(u + w), _block_prof(s), BLOCK_COLS, BLOCK)
+            f.on_chamfer(t(u), t(u + w), _block_prof(s), BLOCK_COLS, GROOVE_D)
         u += w
     hw = TAB_W / 2 + 1
     _chamfer_part(f, t(W / 2 - hw), t(W / 2 + hw), *PLATE_Z(s, zt), LINE, TAB, TAB_TOP, TAB_SIDE)
