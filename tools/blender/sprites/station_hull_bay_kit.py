@@ -16,14 +16,26 @@ def machinery(f, u0, u1, zf, zl, back):
     _coolant(f, u0, u1, zf, zl, back, 1 / core.ZPX)
 
 
+RAMP = ("stK", "stE", "stDE", "stD", "stM", "stS", "stL", "stH", "stB", "stW")   # the station's tones, dark to light
+SHADE = 1                           # every tone in the machinery this many steps down the ramp (it stands in the bay)
+
+
+def _dk(col):
+    return RAMP[max(0, RAMP.index(col) - SHADE)]
+
+
+def _rect(f, u0, u1, z0, z1, d, col):
+    SD._rect(f, u0, u1, z0, z1, d, _dk(col))
+
+
 def _box(f, u0, u1, z0, z1, d0, d1, front, top, side):
-    f.part(u0, u1, [(d0, z0), (d0, z1), (d1, z1), (d1, z0)], [None, top, front, None], side, end=False)
+    f.part(u0, u1, [(d0, z0), (d0, z1), (d1, z1), (d1, z0)], [None, _dk(top), _dk(front), None], _dk(side), end=False)
 
 
 def _disc(f, uc, zc, r, d, col, n=24):
     px = 1 / core.ZPX
     f.k.poly([T.P(f.ax, f.plane, uc + r * LINE * math.cos(2 * math.pi * i / n), zc + r * px * math.sin(2 * math.pi * i / n),
-                  d) for i in range(n)], F, 3, T.OUT(f.ax), fixed=T.SEAM_PASS or col)
+                  d) for i in range(n)], F, 3, T.OUT(f.ax), fixed=T.SEAM_PASS or _dk(col))
 
 
 def _fillet(pts, R, k=4):
@@ -72,7 +84,7 @@ def _run(f, u0, zf, dc, pts, r=1.5, R=3, n=10):
                 continue
             col = "stH" if gz > 0.6 else "stD" if gz < -0.6 else "stL" if gu > 0.5 else "stM" if gu < -0.5 else "stS"
             f.k.poly([w(ra[j]), w(ra[(j + 1) % n]), w(rb[(j + 1) % n]), w(rb[j])], F, 3,
-                     (T.P(f.ax, 0, gu, gz, gd) - o).normalized(), fixed=T.SEAM_PASS or col)
+                     (T.P(f.ax, 0, gu, gz, gd) - o).normalized(), fixed=T.SEAM_PASS or _dk(col))
 
 
 MACHINE = ("stS", "stM", "stDE", "stD", "stE")   # a machine's tones by facing: up, lit (+u), front, dark (-u), down
@@ -95,7 +107,7 @@ def _lathe(f, uc, dc, prof, n=14, tones=MACHINE):
             col = up if sz > 0.6 else dn if sz < -0.6 else lit if gu > 0.4 else dk if gu < -0.4 else fr
             q = [T.P(f.ax, f.plane, uc + r * LINE * math.cos(a), z, dc + r * LINE * math.sin(a))
                  for a, z, r in ((a0, za, ra), (a1, za, ra), (a1, zb, rb), (a0, zb, rb))]
-            f.k.poly(q, F, 3, (T.P(f.ax, 0, gu, sz, gd) - o).normalized(), fixed=T.SEAM_PASS or col)
+            f.k.poly(q, F, 3, (T.P(f.ax, 0, gu, sz, gd) - o).normalized(), fixed=T.SEAM_PASS or _dk(col))
 
 
 def _wheel(f, uc, zc, d, r=3):
@@ -103,14 +115,14 @@ def _wheel(f, uc, zc, d, r=3):
     px = 1 / core.ZPX
     _disc(f, uc, zc, r, d, "stL")
     _disc(f, uc, zc, r - 1, d + 0.001, "stE")
-    SD._rect(f, uc - (r - 1) * LINE, uc + (r - 1) * LINE, zc - px / 2, zc + px / 2, d + 0.002, "stS")
+    _rect(f, uc - (r - 1) * LINE, uc + (r - 1) * LINE, zc - px / 2, zc + px / 2, d + 0.002, "stS")
     _disc(f, uc, zc, 0.8, d + 0.003, "stH")
 
 
 def _gauge(f, uc, zc, d):
     px = 1 / core.ZPX
     _disc(f, uc, zc, 1.5, d, "stB")
-    SD._rect(f, uc, uc + 0.7 * LINE, zc, zc + px, d + 0.001, "stE")
+    _rect(f, uc, uc + 0.7 * LINE, zc, zc + px, d + 0.001, "stE")
 
 
 def _coolant(f, u0, u1, zf, zl, back, px):
