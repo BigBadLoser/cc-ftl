@@ -20,6 +20,10 @@ from .wall3d_ext_diag import UP, WIDE, _cells, _corners, _front, _lift, _solid, 
 from .wall3d_ext_geom import D, LINE, PAINT
 
 EDGE = 1e-6
+# A level line (along a near diagonal: level on screen, where coverage anti-aliasing has nothing to soften) is painted
+# on whole px rows as the run set's slant ones come out: px rows from the one over its line down, by line.
+LEVEL_LINE = ("stM", "stLnCore", "stLnLit")         # the groove, the line under the bullnose (a dark line, lit under)
+LEVEL_FOOT = ("stLnSoft", "stLnMid")                # the seam where the step meets the face (over the step's lit top)
 
 
 def _sec(H):
@@ -118,6 +122,16 @@ def _along(s):
     return t, s.length, 1 / max(abs(t.x - t.y) * core.TILE_W / 2, abs(t.x + t.y) * core.TILE_H / 2)
 
 
+def _level(s):
+    """Whether a front lies level on screen (a near diagonal: seen face on)."""
+    return abs(s.x - s.y) < 1e-6 and s.x > 0
+
+
+def _snap(sec, z):
+    """The height nearest z on the groove's px rows (the groove's line lies on whole rows)."""
+    return sec.z_at(SH.GROOVE, round(sec.sy(z) - sec.sy(SH.GROOVE)))
+
+
 def _phase(f, L):
     """Where the front's tiles' centre panels sit along it (tile-local): a diagonal's tiles step half its span along
     it a tile out (its key's c says how many tiles out the front runs)."""
@@ -144,24 +158,34 @@ def _dress(rel, g, fronts, cut, top, ups, sec):
     nf = len(sec.levels) - 1
     for f, (s, c, w), up in zip(g, fronts, ups):
         t, L, px = _along(s)
-        for z0, z1, col in ((SH.GROOVE, sec.z_at(SH.GROOVE, -1), SH.GROOVE_D),
-                            (sec.z_at(SH.GROOVE, 1), SH.GROOVE, SH.GROOVE_L),
-                            (SH.FOOT_H, sec.z_at(SH.FOOT_H, -1), SH.GROOVE_D)):
-            _paint(rel, cut, up, col, [(UP, z1), (-UP, -z0)])
+        level = _level(s)
+        sh = px / 2 if level else 0.0                       # (level: its marks on whole px columns)
         ph = _phase(f, L)
+        lines = []                                          # (the level lines: z, rows, from row, t range)
+        for z, rows, n0, cols in ((SH.GROOVE, LEVEL_LINE, -2, (SH.GROOVE_D, SH.GROOVE_L)),
+                                  (SH.FOOT_H, LEVEL_FOOT, -3, (SH.GROOVE_D,))):  # (over the step's top's
+            lines.append((z, rows, n0, cols, ()))                                   # lit front px)
+        for k in range(-2, 3):                              # (the line under the bullnose, on the centre panels)
+            m = ph + k * L + sh
+            lines.append((zt, LEVEL_LINE, -2, (SH.GROOVE_D, SH.UNDER_L),
+                          _range(t, m - L / 4 + px / 2, m + L / 4 - px / 2)))
+        for z, rows, n0, cols, band in lines:
+            if level:
+                z = _snap(sec, z)
+                for i, col in enumerate(rows):
+                    n = n0 + i
+                    _paint(rel, cut, up, col, list(band) + [(UP, sec.z_at(z, n)), (-UP, -sec.z_at(z, n + 1))])
+            else:
+                for n, col in zip((-1, 0), cols):
+                    _paint(rel, cut, up, col, list(band) + [(UP, sec.z_at(z, n)), (-UP, -sec.z_at(z, n + 1))])
         for k in range(-3, 3):                              # (the seams: from the groove up, over the bullnose)
-            a = ph + k * L / 2 + L / 4
+            a = ph + k * L / 2 + L / 4 + sh
             band = _range(t, a - px / 2, a + px / 2)
             _paint(rel, cut, up, SH.SEAM, band + [(-UP, -sec.z_at(SH.GROOVE, -1))])
             for j in range(1, nf + 1):
                 _paint(rel, cut, up + j, SH.SEAM, band)
             _paint(rel, cut, top, SH.SEAM, band + [_lift(HO.at_least(f, SH.R_D - 0.01)),
                                                     _lift(tuple(-v for v in HO.at_least(f, ts)))])
-        for k in range(-2, 3):                              # (the line under the bullnose, on the centre panels)
-            m = ph + k * L
-            band = _range(t, m - L / 4 + px / 2, m + L / 4 - px / 2)
-            for z0, z1, col in ((zt, sec.z_at(zt, -1), SH.GROOVE_D), (sec.z_at(zt, 1), zt, SH.UNDER_L)):
-                _paint(rel, cut, up, col, band + [(UP, z1), (-UP, -z0)])
         for d0 in (ts, rail):                               # (the top's seam and its line along the back)
             band = [_lift(HO.at_least(f, d0)), _lift(tuple(-v for v in HO.at_least(f, d0 + LINE)))]
             band += [_lift(HO.at_least(h, d0)) for h in g if h is not f]
@@ -196,7 +220,7 @@ def _bits(rel, f, fr, cut, sec):
     line under the bullnose in the middle of the centre panel, the step's two blocks."""
     s, c, w = fr
     t, L, px = _along(s)
-    ph = _phase(f, L)
+    ph = _phase(f, L) + (px / 2 if _level(s) else 0.0)     # (level: on whole px columns, as _dress's marks)
     zt = sec.z_at(sec.zb, SH.UNDER)
     g0, g1 = sec.z_at(SH.GROOVE, 3), sec.z_at(SH.GROOVE, -2)
     pz = SH.PLATE_Z(sec, zt)
