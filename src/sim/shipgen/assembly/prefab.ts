@@ -43,6 +43,8 @@ const MARKET: [number, number] = [9, 11], TRADE_HALL: [number, number] = [7, 9];
 const RIB = OUT + 2;
 /** A greenhouse's length (long and narrow), and an ore store's side; the lobby before an outside airlock. */
 const HUB = 13, HOUSE = 15, ORES: [number, number] = [11, 7], LOBBY = 4, CLUSTER = 5;
+/** Open ground between the wing's airlock and a greenhouse's, and the suit room a farm base adds (lockers and a bench; a mine's is the pod bay's annex). */
+const AWAY = 6, SUIT_ROOM: RoomSpec = { role: 'support', dept: 'works', mods: [...Array<string>(4).fill('module.storage_locker'), 'module.chair', 'module.chair'], w: 6, h: 3 };
 /** The command room's length (its programme floor, nine by seven). */
 const CMD = 9;
 /** Between two branches off one side of the mess. */
@@ -117,7 +119,7 @@ export function prefab(c: Ctx, rooms: readonly RoomSpec[], docks: readonly RoomS
   // The works, by kind: greenhouses, the refinery, the pod bay with its suit room, the ore stores, the workshop; the rest joins the medbay's branch.
   const farms = trade ? [] : rest.filter((r) => r.role === 'farm'), refineries = trade ? [] : rest.filter(refinery);
   // The suit room (the pod bay's annex in the programme; the pods park outside, not planned here).
-  const suits = plan === 'mineWing' ? rest.filter((r) => r.role === 'support' && r.mods.includes('module.storage_locker')) : [], shop = trade ? [] : rest.filter((r) => r.role === 'industry' && !refinery(r));
+  const suits = plan === 'mineWing' ? rest.filter((r) => r.role === 'support' && r.mods.includes('module.storage_locker')) : plan === 'farmRows' ? [SUIT_ROOM] : [], shop = trade ? [] : rest.filter((r) => r.role === 'industry' && !refinery(r));
   // The ore stores all alike: four large bins in a square room.
   const oreRooms = trade || farming ? [] : [...rest.filter((r) => r.role === 'cargo'), oreStore].map((r) => ({ ...r, mods: oreStore.mods, w: ORES[0], h: ORES[1] }));
   const used = new Set<RoomSpec>([...farms, ...refineries, ...suits, ...shop, ...rest.filter((r) => r.role === 'cargo' && !trade && !farming)]);
@@ -193,12 +195,14 @@ export function prefab(c: Ctx, rooms: readonly RoomSpec[], docks: readonly RoomS
    * `LOBBY` long, and the 3x3 unit stands in it against the end wall, its hatch in that wall onto the open ground.
    */
   const lobby = (): Seg => ({ hall: g.hall('hall', 'commons'), len: LOBBY });
-  const lock = (m: Module, east: boolean): void => {
+  const lock = (m: Module, east: boolean): number | null => {
     const d = docks[0];
-    if (!d) return;
+    if (!d) return null;
     const cy = m.box[1] + 1 + (PREFAB_WIDE >> 1), wx = east ? m.box[2] - 1 : m.box[0], ax = east ? wx - 3 : wx + 1;
-    g.rect(g.hall('dock', 'airlock', { ...d, w: 3, h: 3 }), ax, cy - 1, ax + 3, cy + 2);
+    const id = g.hall('dock', 'airlock', { ...d, w: 3, h: 3 });
+    g.rect(id, ax, cy - 1, ax + 3, cy + 2);
     g.gate(wx, cy);
+    return id;
   };
   /** The last room of a run at least `n` long (a unit carved in it leaves room), and the run at least `need` altogether. */
   const padded = (segs: Seg[], n: number, need = 0): Seg[] => segs.map((s, i) => (i === segs.length - 1 ? { ...s, len: Math.max(s.len, n, need - run(segs) + s.len) } : s));
@@ -249,12 +253,20 @@ export function prefab(c: Ctx, rooms: readonly RoomSpec[], docks: readonly RoomS
   const house = (f: RoomSpec[]): Seg[] => f.map((r) => ({ spec: r, len: HOUSE }));
   if (plan === 'farmRows') {
     wing((y, west) => {
-      // The workshop, then a hall as long as its ribs need; the greenhouses hang off it.
-      const n = Math.max(1, farms.length), segs: Seg[] = [...segsOf(shop), { hall: g.hall('hall', 'commons'), len: n * RIB - 3 }];
-      const m = side(hubOf(), y, west, segs);
+      // The workshop, the suit room, a lobby and an airlock out of the wing's end; the greenhouses stand apart across the ground,
+      // each its own module with an airlock facing the wing's (crew walk out suited).
+      const segs: Seg[] = padded([...segsOf(shop), ...segsOf(suits)], 6), all = [...segs, lobby()];
+      const m = side(hubOf(), y, west, all);
       if (!m) return false;
-      const hall = m.spans[segs.length - 1] as [number, number];
-      for (const [j, f] of farms.entries()) if (!below(m, (west ? hall[1] - 1 - 4 : hall[0] + 4) + (west ? -1 : 1) * RIB * j, house([f]))) return false;
+      lock(m, !west);
+      const cy = m.box[1] + 1 + (PREFAB_WIDE >> 1), ends = west ? m.box[0] - AWAY : m.box[2] + AWAY;
+      for (const [j, f] of farms.entries()) {
+        // Row 0 faces the wing's airlock, the rest alternate below and above it.
+        const off = (j % 2 === 1 ? (j + 1) >> 1 : -(j >> 1)) * RIB, gs = [...house([f]), lobby()], len = run(gs) + 2;
+        const gh = module(west ? ends - len : ends, cy - (OUT >> 1) + off, 'h', west ? gs : [...gs].reverse());
+        if (!gh) return false;
+        for (const id of [...gh.ids, lock(gh, west)]) if (id !== null) g.apart.add(id);
+      }
       return true;
     });
   } else if (plan === 'farmCluster') row(segsOf(shop));
