@@ -25,7 +25,7 @@ ROUND = 16                          # its facets
 CORNER_C = 16 / 32                  # the outer corner's chamfer along each axis (the ship hull's)
 SEAMS = (0.25, 0.75)                # seams across a tile, as fractions of it
 GROOVE = 0.40 + 3 / core.ZPX        # the groove's height over the deck
-UNDER = 5                           # the line under the bullnose: this many px under its foot
+UNDER = 7                           # the line under the bullnose: this many px under its foot
 RAIL = 4 / 32                       # the line along the top's back: this far in from the back
 TOP_SEAM = 5 / 32                   # the seam across the top this far in past the bullnose's top edge (the seams end on it)
 FOOT_OUT = 3 / 32                   # the step along the foot: how far proud
@@ -209,7 +209,8 @@ def build(k, ax, plane, a, b, ends, H):
             f.line(v0 + LINE / 2, v1 - LINE / 2, zt, s.z_at(zt, -1), GROOVE_D, bevel=False)
             f.line(v0 + LINE / 2, v1 - LINE / 2, s.z_at(zt, 1), zt, UNDER_L, bevel=False)
             m, hw = (v0 + v1) / 2, (TAB_W / 2 + 1) * LINE           # a plate on it, in the middle, a px wider
-            _part(f, m - hw, m + hw, *PLATE_Z(s, zt), LINE, TAB, TAB_TOP, TAB_SIDE)
+            if DESIGN[0] not in SD.NO_TABS:
+                _part(f, m - hw, m + hw, *PLATE_Z(s, zt), LINE, TAB, TAB_TOP, TAB_SIDE)
         f.part(s0, s1, _step_prof(s), STEP_COLS, False)          # the step along the foot, one piece (open
                                                                 # ends: it runs on; round an outer corner)
         if whole and DESIGN[0]:

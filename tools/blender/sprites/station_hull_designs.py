@@ -7,9 +7,9 @@ the ref's; the other face is its mirror, as hull 46's art is.
 
   1  dents and a long gouge (ref T3-7)
   2  the dents alone (ref T3-6)
-  3  a module in the middle slot (ref T3-3): the slot squared off up to the top (a vent in its front, a hatch on its
-     top), a framed plate, a dark recess down to the step; a rail on the seam at the near end, a box and two short
-     rails in the slot past it"""
+  3  a module in the middle slot (ref T3-3): two boxes a px off the face, the top one from a px over the top down to the
+     line under the bullnose (a vent in its front), the lower one from under that line down to the groove (a framed
+     plate on it); a dark recess from the groove down to the step; a box and two short rails in the far slot"""
 import math
 
 from . import core
@@ -28,19 +28,20 @@ DENT_LIP, DENT_RING, DENT_PIT = "stL", "stM", "stD"
 
 MODULE = 3
 DESIGNS = {1: DENTS + (GOUGE,), 2: DENTS, MODULE: ()}
-NO_TABS = {MODULE}                  # designs without the groove's tabs (the recess takes the middle slot's foot)
+NO_TABS = {MODULE}                  # designs without the groove's tabs (the recess takes the middle slot's foot) and the
+                                    # plate on the line under the bullnose (the boxes take the middle slot)
 
-BOX_SIDE, BOX_LIT = "stL", "stW"    # the squared slot's ends; its top's front edge
-VENTS = (5, 7, 9)                   # its vent's slots, px under the top
+BOX_OUT, BOX_UP, BOX_GAP = 1, 1, 2   # the middle slot's boxes: px off the face, the top one's top px over the top's, the
+                                    # gap between them (the line under the bullnose)
+BOX_SIDE, BOX_LIT = "stL", "stH"    # their ends; the lower one's top
+VENTS = (4, 7, 10)                  # its vent's slots, px under the top
 VENT_W = 5
 PLATE = (11, 21, 18, 30)            # the framed plate: px across, px under the bullnose's foot
 PLATE_IN = 2                        # its inner frame line, px in
 HANDLE = (14, 2, 7)                 # a slot in it: px across, px from its top and foot
-RECESS = (11, 21, 2)                # the recess: px across, its top px over the groove (down to the step)
+RECESS = (11, 21, 0)                # the recess: px across, its top px over the groove (down to the step)
 RECESS_BACK, RECESS_RIM, RECESS_SIDE, RECESS_SILL = "stD", "stK", "stE", "stB"   # its back wall; the shadow under its
                                     # lip and down its far side; its near side; the sill in its foot
-RAIL = (7, 9, 2, 0)                 # the rail on the near seam: px across, px under the bullnose's foot to the step
-CLAMP = (6, 10, 23, 26)             # a clamp on it
 GREEBLE = (25, 29, 24, 29)          # a box in the far slot
 STUBS = ((25, 26), (27, 28))        # two short rails over it
 STUB_Z = (3, 12)
@@ -82,29 +83,36 @@ def _module(f, s0, zk):
     under = lambda n: s.z_at(s.zb, n)                       # noqa: E731  n px under the bullnose's foot
     v0, v1 = (f.at_face(s0 + fr, zk) for fr in SH.SEAMS)
     a, b = min(v0, v1) + LINE / 2, max(v0, v1) - LINE / 2  # the middle slot, between its seams
-    # the slot squared off: a box from the bullnose's back out to the face, up to the top
-    prof = [(D - SH.R_D - 0.02, s.zb), (D - SH.R_D - 0.02, H), (D, H), (D, s.zb)]
-    f.part(a, b, prof, [None, SH.TOP, SH.FACE, None], BOX_SIDE, end=False)
-    f.top_line(a, b, D - LINE, D, BOX_LIT)
-    for u in (a - LINE, b):                                 # the seams carried up its edges
-        _rect(f, u, u + LINE, s.zb - px, H, D + 0.001, SH.SEAM)
-    hd = D - SH.R_D + 2 * LINE                              # a hatch on its top
-    f.top_line(a + 2 * LINE, b - 2 * LINE, hd, hd + LINE, SH.SEAM)
-    for n in VENTS:                                         # its vent
-        m = (a + b) / 2
-        _rect(f, m - VENT_W / 2 * LINE, m + VENT_W / 2 * LINE, H - (n + 1) * px, H - n * px, D + 0.001,
-              SH.GROOVE_D)
-    # the framed plate
+    zt = s.z_at(s.zb, SH.UNDER)                             # the line under the bullnose (its dark px over zt)
+    out = D + BOX_OUT * LINE
+    lift = 0.5 * BOX_OUT * px                               # (a front LINE out stands a half px lower on screen: lifted
+                                                            # back so its edges and paint keep to the face's px rows)
+    # the top box: back from the top's seam, its top a px over the top's, its front a px off the face, down to the line
+    back = SH.E - round((SH.R_D + SH.TOP_SEAM) * 32) / 32
+    zl = s.z_at(zt, -1)                                     # (the line's top)
+    top, z0 = H + BOX_UP * px, zl + lift
+    f.part(a, b, [(back, z0), (back, top), (out, top), (out, z0)], [None, SH.TOP, SH.FACE, None], BOX_SIDE,
+           end=False)
+    m = (a + b) / 2
+    for n in VENTS:                                         # its vent (px rows under its top on screen)
+        zv = zl + lift + round((top - zl) / px) * px - n * px
+        _rect(f, m - VENT_W / 2 * LINE, m + VENT_W / 2 * LINE, zv - px, zv, out + 0.001, SH.GROOVE_D)
+    # the lower box: from BOX_GAP px under the line's top (the line its gap) down to the groove's line, its top px lit
+    z1, z0 = s.z_at(zl, BOX_GAP) + lift, s.z_at(SH.GROOVE, -1) + lift
+    f.part(a, b, [(D - 0.01, z0), (D - 0.01, z1), (out, z1), (out, z0)], [None, BOX_LIT, SH.FACE, None], BOX_SIDE,
+           end=False)
+    _rect(f, a, b, z1 - px, z1, out + 0.001, BOX_LIT)
+    # the framed plate on it
     p0, p1, n0, n1 = PLATE
     u0, u1 = _span(s0, p0, p1)
-    SH._part(f, u0, u1, under(n1), under(n0), LINE, SH.FACE, "stH", SH.SEAM)
-    fd = D + LINE + 0.001
+    SH._part(f, u0, u1, under(n1), under(n0), (BOX_OUT + 1) * LINE, SH.FACE, "stH", SH.SEAM)
+    fd = out + LINE + 0.001
     i = PLATE_IN * LINE
     _frame(f, u0 + i, u1 - i, under(n1 - PLATE_IN), under(n0 + PLATE_IN), fd, SH.SEAM, 1)
     hp, ht, hf = HANDLE
     hu = _u(s0, hp)
     _rect(f, hu - LINE, hu, under(n1 - hf), under(n0 + ht), fd, SH.GROOVE_D)
-    # the recess, from over the groove down to the step
+    # the recess, from the groove down to the step
     p0, p1, up = RECESS
     u0, u1 = _span(s0, p0, p1)
     zt, zf = s.z_at(SH.GROOVE, -up), s.z_at(SH.FOOT_H, -1)
@@ -113,13 +121,6 @@ def _module(f, s0, zk):
     _rect(f, u0, u0 + LINE, zf, zt, D + 0.004, RECESS_RIM)
     _rect(f, u0, u1, s.z_at(zt, 2), zt, D + 0.005, RECESS_RIM)
     _rect(f, u0, u1, zf, s.z_at(zf, -2), D + 0.005, RECESS_SILL)
-    # the rail on the near seam, a clamp on it
-    p0, p1, n0, _ = RAIL
-    u0, u1 = _span(s0, p0, p1)
-    SH._part(f, u0, u1, s.z_at(SH.FOOT_H, -1), under(n0), LINE, SH.FACE, "stH", SH.SEAM)
-    p0, p1, n0, n1 = CLAMP
-    u0, u1 = _span(s0, p0, p1)
-    SH._part(f, u0, u1, under(n1), under(n0), 2 * LINE, SH.FACE, "stH", SH.SEAM)
     # the far slot: a box, two short rails over it
     p0, p1, n0, n1 = GREEBLE
     u0, u1 = _span(s0, p0, p1)
