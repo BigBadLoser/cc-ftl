@@ -213,22 +213,18 @@ def outrigger(f, a, top, heavy=False, strut=0, tone=1, az=0.46):
         f.vcyl(jack[0], jack[1], 0, 0.16, 0.05, "gm", top="steelD", sides=12)
 
 
-def out_corners(f, arms):
+def out_corners(f, arms, tone=1):
     """arms: (angle, where the arm meets the jack) pairs."""
-    top = GV["V1"][0]
+    top = GV["K1"][0]
     riser(f, top)
     for a, az in arms:
-        outrigger(f, a, top, heavy=True, tone=2, az=az)
+        outrigger(f, a, top, heavy=True, tone=tone, az=az)
     port3(f, 0.0, 1.06)
 
 
-# Round 16: the corners are the only place with reach; the front corner (+u +v, toward the camera) is the problem in
-# every rotation. Three arms with the front corner open (V1); four, the front arm meeting its jack low (V2); four, the
-# front arm swung 20 degrees off the camera line, away from the cable (V3).
+# Picked (round 14, K1): four outriggers on the corners, light steel arms and struts, a collar and domed cap on each jack.
 _Q = math.pi / 4
-GV = {"V1": (0.78, lambda f: out_corners(f, [(_Q + k * math.pi / 2, 0.46) for k in (1, 2, 3)])),
-      "V2": (0.78, lambda f: out_corners(f, [(_Q, 0.24)] + [(_Q + k * math.pi / 2, 0.46) for k in (1, 2, 3)])),
-      "V3": (0.78, lambda f: out_corners(f, [(_Q + math.radians(20), 0.46)] + [(_Q + k * math.pi / 2, 0.46) for k in (1, 2, 3)]))}
+GV = {"K1": (0.78, lambda f: out_corners(f, [(_Q + k * math.pi / 2, 0.46) for k in range(4)], tone=1))}
 
 def ground_turret(key, d, variant):
     """The head with its turntable ring (no roof coaming), standing on the variant's base."""
