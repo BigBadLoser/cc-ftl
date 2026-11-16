@@ -33,7 +33,7 @@ NO_TABS = {MODULE}                  # designs without the groove's tabs (the rec
 
 BOX_OUT, BOX_UP, BOX_GAP = 1, 1, 2   # the middle slot's boxes: px off the face, the top one's top px over the top's, the
                                     # gap between them (the line under the bullnose)
-BOX_SIDE, BOX_LIT = "stL", "stH"    # their ends; the lower one's top
+BOX_SIDE, BOX_LIT = SH.SEAM, "stH"  # their ends (the seams'); the lower one's top
 VENTS = (4, 7, 10)                  # its vent's slots, px under the top
 VENT_W = 5
 PLATE = (11, 21, 18, 30)            # the framed plate: px across, px under the bullnose's foot
@@ -82,7 +82,7 @@ def _module(f, s0, zk):
     s, H, px = f.sec, f.sec.H, 1 / core.ZPX
     under = lambda n: s.z_at(s.zb, n)                       # noqa: E731  n px under the bullnose's foot
     v0, v1 = (f.at_face(s0 + fr, zk) for fr in SH.SEAMS)
-    a, b = min(v0, v1) + LINE / 2, max(v0, v1) - LINE / 2  # the middle slot, between its seams
+    a, b = min(v0, v1) - LINE / 2, max(v0, v1) + LINE / 2  # the middle slot out over its seams
     zt = s.z_at(s.zb, SH.UNDER)                             # the line under the bullnose (its dark px over zt)
     out = D + BOX_OUT * LINE
     lift = 0.5 * BOX_OUT * px                               # (a front LINE out stands a half px lower on screen: lifted
@@ -97,8 +97,9 @@ def _module(f, s0, zk):
     for n in VENTS:                                         # its vent (px rows under its top on screen)
         zv = zl + lift + round((top - zl) / px) * px - n * px
         _rect(f, m - VENT_W / 2 * LINE, m + VENT_W / 2 * LINE, zv - px, zv, out + 0.001, SH.GROOVE_D)
-    # the lower box: from BOX_GAP px under the line's top (the line its gap) down to the groove's line, its top px lit
-    z1, z0 = s.z_at(zl, BOX_GAP) + lift, s.z_at(SH.GROOVE, -1) + lift
+    # the lower box: from BOX_GAP px under the line's top (the line its gap) and a px more, down to a px over the
+    # groove's line, its top px lit
+    z1, z0 = s.z_at(zl, BOX_GAP + 1) + lift, s.z_at(SH.GROOVE, -2) + lift
     f.part(a, b, [(D - 0.01, z0), (D - 0.01, z1), (out, z1), (out, z0)], [None, BOX_LIT, SH.FACE, None], BOX_SIDE,
            end=False)
     _rect(f, a, b, z1 - px, z1, out + 0.001, BOX_LIT)
