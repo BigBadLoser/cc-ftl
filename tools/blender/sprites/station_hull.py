@@ -190,8 +190,11 @@ def build(k, ax, plane, a, b, ends, H):
     rail = back + RAIL
     for s0, s1 in T.spans(a, b):
         whole = s1 - s0 > 1 - 1e-6
-        for z0, z1 in ((0.0, GROOVE), (GROOVE, H)):
-            f.block(s0, s1, z0, z1)
+        if whole and DESIGN[0] == SD.MODULE:
+            SD.blocks(f, s0, s1)
+        else:
+            for z0, z1 in ((0.0, GROOVE), (GROOVE, H)):
+                f.block(s0, s1, z0, z1)
         f.line(s0, s1, GROOVE, s.z_at(GROOVE, -1), GROOVE_D, bevel=False)
         f.line(s0, s1, s.z_at(GROOVE, 1), GROOVE, GROOVE_L, bevel=False)
         f.line(s0, s1, FOOT_H, s.z_at(FOOT_H, -1), GROOVE_D, bevel=False)    # a seam where the step meets the face

@@ -50,10 +50,12 @@ HANDLE = (1, 2)                     # a handle in it, a line in the darker seam 
                                     # top and foot
 LOW_LIT = "stL"                     # a faint lit px under the box's top edge and the seam across, and down inside its near
                                     # side (the ref's left on the face rising to the right)
-GAP_SHADE = SH.GROOVE_D                # the top box's shadow in the gap under it
-RECESS = (11, 21, -1)               # the recess: px across, its top px over the groove (down to the step)
-RECESS_BACK, RECESS_RIM, RECESS_SIDE, RECESS_SILL = "stD", "stK", "stE", "stB"   # its back wall; the shadow under its
-                                    # lip and down its far side; its near side; the sill in its foot
+GAP_SHADE = SH.SEAM                    # the top box's shadow in the gap under it
+RECESS = (11, 21, 1)                # a recess in the face: px across, its top px under the groove (down to the seam where
+                                    # the step meets the face)
+RECESS_IN, RECESS_FOOT, RECESS_BACK = 1, 5, 4   # its inside: upright RECESS_IN px in for RECESS_FOOT px, then leaning
+                                    # back to RECESS_BACK px in at its top
+RECESS_FACE, RECESS_SLOPE, RECESS_WALL = SH.GROOVE_D, SH.SEAM, "stE"   # its inside's upright face, its lean, its ends
 
 
 def dress(f, s0, design, zk):
@@ -114,6 +116,30 @@ def _plate(f, a, b, back, top, n=4):
         f.k.poly(q, F, 3, core.Vector((0, 0, 1)), fixed=T.SEAM_PASS or BOX_LINE)
 
 
+def blocks(f, s0, s1):
+    """The face's armour on a whole span in the module design: the base's two blocks, the lower one round the recess,
+    and the recess's inside."""
+    s = f.sec
+    f.block(s0, s1, SH.GROOVE, s.H)
+    p0, p1, n = RECESS
+    u0, u1 = _span(s0, p0, p1)
+    zt, zf = s.z_at(SH.GROOVE, n), s.z_at(SH.FOOT_H, -1)
+    f.block(s0, u0, 0.0, SH.GROOVE)
+    f.block(u1, s1, 0.0, SH.GROOVE)
+    f.block(u0, u1, 0.0, zf)
+    f.block(u0, u1, zt, SH.GROOVE)
+    zk = s.z_at(zf, -RECESS_FOOT)
+    di, db = D - RECESS_IN * LINE, D - RECESS_BACK * LINE
+    f.part(u0, u1, [(db - 0.01, zf), (db - 0.01, zk), (di, zk), (di, zf)], [None, None, RECESS_FACE, None], None,
+           end=False)
+    f.part(u0, u1, [(db - 0.01, zk), (db - 0.01, zt), (db, zt), (di, zk)], [None, None, RECESS_SLOPE, None], None,
+           end=False)
+    o = T.P(f.ax, 0, 0, 0, 0)
+    for u, sg in ((u0, 1), (u1, -1)):                       # its ends (the armour's either side), in shadow
+        q = [T.P(f.ax, f.plane, u + sg * 0.001, z, d) for z, d in ((zf, db), (zf, D), (zt, D), (zt, db))]
+        f.k.poly(q, F, 3, (T.P(f.ax, 0, sg, 0, 0) - o).normalized(), fixed=T.SEAM_PASS or RECESS_WALL)
+
+
 def gap(s):
     """The gap between the module's boxes (z0, z1): the seams up the face break across it."""
     zl = s.z_at(s.z_at(s.zb, SH.UNDER), -1)
@@ -143,9 +169,12 @@ def _module(f, s0, zk):
               out - c * LINE + e), (a + LINE, top - c * px + e, out + e), (a, top - c * px + e, out + e))],
              F, 3, T.OUT(f.ax), fixed=T.SEAM_PASS or BOX_LINE)
     d0 = back - PLATE_BACK * LINE + PLATE_R * LINE
-    f.k.poly([T.P(f.ax, f.plane, u, top + T.PAINT, d) for u, d in ((a, d0), (a + LINE, d0),
-              (a + LINE, out - c * LINE), (a, out - c * LINE))], F, 3, core.Vector((0, 0, 1)),
-             fixed=T.SEAM_PASS or BOX_LINE)
+    for u, col in ((a, BOX_LINE), (b - LINE, LOW_LIT)):     # (its two edges along its top)
+        f.k.poly([T.P(f.ax, f.plane, v, top + T.PAINT, d) for v, d in ((u, d0), (u + LINE, d0),
+                  (u + LINE, out - c * LINE), (u, out - c * LINE))], F, 3, core.Vector((0, 0, 1)),
+                 fixed=T.SEAM_PASS or col)
+    _rect(f, a, b, z0 + c * px, z0 + (c + 1) * px, out + 0.001, BOX_LINE)  # a seam across, as far over its foot as
+                                                                            # the chamfer is under its top
     m = (a + b) / 2
     for n in VENTS:                                         # its vent (px rows under its top on screen)
         zv = zl + lift + round((top - zl) / px) * px - n * px
@@ -171,15 +200,7 @@ def _module(f, s0, zk):
     _rect(f, b - LINE, b, z0, z1 - px, fd, LOW_LIT)
     hs, he = HANDLE                                         # the handle (u1: the near side)
     hu = u1 - (2 + hs) * LINE
-    _rect(f, hu, hu + LINE, za + (1 + he) * px, zb - (1 + he) * px, fd, SH.GROOVE_D)    # the recess, from the groove down to the step
-    p0, p1, up = RECESS
-    u0, u1 = _span(s0, p0, p1)
-    zt, zf = s.z_at(SH.GROOVE, -up), s.z_at(SH.FOOT_H, -1)
-    _rect(f, u0, u1, zf, zt, D + 0.003, RECESS_BACK)
-    _rect(f, u1 - LINE, u1, zf, zt, D + 0.004, RECESS_SIDE)             # (u1: the near side, p0)
-    _rect(f, u0, u0 + LINE, zf, zt, D + 0.004, RECESS_RIM)
-    _rect(f, u0, u1, s.z_at(zt, 2), zt, D + 0.005, RECESS_RIM)
-    _rect(f, u0, u1, zf, s.z_at(zf, -2), D + 0.005, RECESS_SILL)
+    _rect(f, hu, hu + LINE, za + (1 + he) * px, zb - (1 + he) * px, fd, SH.GROOVE_D)
 
 
 def _blob(f, s0, uc, zc, ru, rz, shape, tilt, d, col, n=32):
