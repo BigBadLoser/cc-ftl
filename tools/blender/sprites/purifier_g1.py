@@ -1,7 +1,7 @@
 """Water purifier, the picked design (family `purifier_g1`, palette set purifier; issue #321): round 10's g1, polished
 (user: jagged pixels on the band edges, the fill window and the tray edges). Built on the pixel grid: every plan edge on
 a whole px (PX = 1/32 tile) and every height a whole px, the colour bands flush in the surface (a change of colour, no
-half-px lip), the tray's insets and chamfers whole px, the fill window a frame standing a clear 2 px proud.
+half-px lip), the tray's insets and chamfers whole px, the fill window a frame standing a clear 2 px proud, on the tank's side facing the camera.
 
 One long chamfered body (dark band at its foot) runs into a round tank as deep as the body, their sides tangent; the
 body's trim band runs straight into the tank's lower band; a big porthole on the body's front under the ice tray shows
@@ -9,6 +9,8 @@ the ice and the heater ring; a melt line runs from beside the porthole along the
 into the tank's front on its axis; the tap stands out of the tank's far end.
 
 Local frame modkit.K, footprint (2, 1): u -1..1 across, v -0.5..0.5 deep, front +v, z up; all sizes in tiles."""
+
+import math
 
 from .desk2_r2 import prism
 from .purifier_r10 import porthole, rod
@@ -58,15 +60,22 @@ def tank(k):
 
 
 def fill_window(k):
-    """The fill level window on the tank's front, on its axis: a frame 2 px proud, the window sunk 1 px in it."""
-    u0, u1, z0, z1 = CU - 3 * PX, CU + 3 * PX, TZ + zpx(3), B2 - zpx(1)
+    """The fill level window on the tank, on the side facing the camera (45 deg between front and far end): a frame
+    2 px proud, the window sunk 1 px in it."""
+    n, t = (math.sqrt(0.5), math.sqrt(0.5)), (math.sqrt(0.5), -math.sqrt(0.5))                         # normal, tangent
+
+    def wbox(t0, t1, r0, r1, z0, z1, col, top=None, kk=k):
+        tc, rc = (t0 + t1) / 2, (r0 + r1) / 2
+        kk.box(CU + t[0] * tc + n[0] * rc, CV + t[1] * tc + n[1] * rc, z0, t1 - t0, r1 - r0, z1 - z0, col, top=top,
+               rz=-math.pi / 4)
+    w, z0, z1 = 3 * PX, TZ + zpx(3), B2 - zpx(1)
     back, face, rim = CR - 2 * PX, CR + 1 * PX, CR + 2 * PX
-    box(k, u0, u1, back, face, z0, z1, "pfFrame")
-    for a, b, c, d in ((u0, u0 + PX, z0, z1), (u1 - PX, u1, z0, z1), (u0, u1, z0, z0 + zpx(1)), (u0, u1, z1 - zpx(1), z1)):
-        box(k, a, b, face, rim, c, d, "pfFrame", top="pfFrame")
-    box(k, u0 + PX, u1 - PX, face, face + 0.3 * PX, z0 + zpx(1), z0 + zpx(6), "pfWater", top="pfWaterL")
-    box(k, u0 + PX, u1 - PX, face, face + 0.3 * PX, z0 + zpx(6), z1 - zpx(1), "pfRecess")
-    k.part("glass").box(CU, face + 0.6 * PX, z0 + zpx(1), u1 - u0 - 2 * PX, 0.2 * PX, z1 - z0 - zpx(2), "pfIce")
+    wbox(-w, w, back, face, z0, z1, "pfFrame")
+    for a, b, c, d in ((-w, -w + PX, z0, z1), (w - PX, w, z0, z1), (-w, w, z0, z0 + zpx(1)), (-w, w, z1 - zpx(1), z1)):
+        wbox(a, b, face, rim, c, d, "pfFrame", "pfFrame")
+    wbox(-w + PX, w - PX, face, face + 0.3 * PX, z0 + zpx(1), z0 + zpx(6), "pfWater", "pfWaterL")
+    wbox(-w + PX, w - PX, face, face + 0.3 * PX, z0 + zpx(6), z1 - zpx(1), "pfRecess")
+    wbox(-w + PX, w - PX, face + 0.5 * PX, face + 0.7 * PX, z0 + zpx(1), z1 - zpx(1), "pfIce", kk=k.part("glass"))
 
 
 def tray(k):
