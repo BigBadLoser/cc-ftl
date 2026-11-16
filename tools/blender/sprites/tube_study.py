@@ -170,27 +170,26 @@ def _job(look):
     return run
 
 
-def _port_job(o, door=None):
-    """tube.port.<e|s>: the bore open (the cut view: the game's door tile shows through it); .roof[.open]: roofed, the
-    hull's door tile cut through behind it, the corridor door (closed / open) and the room's dark in the bore."""
+def _port_job(o, door=False):
+    """tube.port.<e|s>[.open], drawn in every view over the hull row (which stands full height there in every view, as
+    the airlock's: its hull sprite module.airlock.hull.r<n>): the bore through the door tile's hull with the corridor
+    door (closed / open) in it and the room's dark behind."""
     def run(o=o, door=door):
         import bpy
         from . import env_build as E, post, tube_port
-        aid = f"tube.port.{'e' if o == 2 else 's'}" + ("" if door is None else ".roof.open" if door else ".roof")
+        aid = f"tube.port.{'e' if o == 2 else 's'}" + (".open" if door else "")
         core.clear_scene_meshes()
         post.select("tube+hull+walls")
         at = (-1.0, 0.0) if o == 2 else (0.0, -1.0)     # (the door tile behind the tube's first tile, the origin)
         own, wide = tube_port.piece(o, at=at)
-        inside, mouth = tube_port.through(o, at, door) if door is not None else ([], None)
-        extra = inside + ([mouth] if mouth else [])
-        for ob in extra:
+        inside, mouth = tube_port.through(o, at, door)
+        for ob in inside + [mouth]:
             ob.hide_render = True
         sc = bpy.context.scene
         sc.cycles.samples = SAMPLES
         try:
             c, op, g, ox, oy = E.render_sprite(aid, "over", (own, wide))[:5]
-            if mouth:
-                c, op = _mouth(own, wide, inside, mouth, c, op)
+            c, op = _mouth(own, wide, inside, mouth, c, op)
             it = E.crop_item(aid, (1, 1), c, op, g, ox, oy)
         finally:
             sc.cycles.samples = core.SAMPLES
@@ -222,4 +221,4 @@ def _mouth(own, wide, inside, mouth, c, op):
 
 
 def jobs():
-    return [_job(look) for look in STUDY] + [_port_job(2, d) for d in (None, False, True)]
+    return [_job(look) for look in STUDY] + [_port_job(2, d) for d in (False, True)]
