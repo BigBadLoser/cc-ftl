@@ -22,9 +22,9 @@ FP = (2, 1)
 PX = 1 / 32
 U0, V0, V1 = -30 * PX, -13 * PX, 13 * PX        # the body: its left end, back and front
 CU, CV, CR = 16 * PX, 0.0, 13 * PX              # the tank: as deep as the body, its sides tangent to the body's
-BAND, TZ, H = zpx(7), zpx(23), zpx(27)          # dark band, trim band (2 px), body top
-B2, CH = zpx(37), zpx(45)                       # the tank's upper band (2 px), its shoulder
-SIDES = 64
+BAND, TZ, H = zpx(7), zpx(23), zpx(27)         # dark band, trim band (2 px), body top
+B2, CH = zpx(40), zpx(47)                      # the tank's upper band (2 px), its shoulder
+SIDES = 128
 TRAY = (-28 * PX, -4 * PX, -11 * PX, 9 * PX)    # the ice tray (u0, u1, v0, v1); the porthole sits under its middle
 PU, PZ, PR = (TRAY[0] + TRAY[1]) / 2, zpx(17), 0.2
 
@@ -39,8 +39,8 @@ def cham(u0, u1, v0, v1, c):
 
 def layers(z0, z1):
     """The body's and tank's colour layers between z0 and z1, bottom up: (z0, z1, colour), flush, no overlaps."""
-    cuts = [(zpx(1), BAND, "pfFrame"), (BAND, TZ, "pfHull"), (TZ, TZ + zpx(2), "pfTrayL"), (TZ + zpx(2), B2, "pfHull"),
-            (B2, B2 + zpx(2), "pfTrayL"), (B2 + zpx(2), CH, "pfHull")]
+    cuts = [(zpx(1), BAND, "pfFrame"), (BAND, TZ, "pfHull"), (TZ, TZ + zpx(2), "pfTrim"), (TZ + zpx(2), B2, "pfHull"),
+            (B2, B2 + zpx(2), "pfTrim"), (B2 + zpx(2), CH, "pfHull")]
     return [(max(a, z0), min(b, z1), c) for a, b, c in cuts if min(b, z1) > max(a, z0)]
 
 
@@ -71,13 +71,13 @@ def fill_window(k):
     # On the diagonal, t moves the screen x by t * sqrt(2) px per PX and r moves the screen y by r / sqrt(2): sizes
     # in units of sqrt(2) PX (or PX / sqrt(2)) keep every edge on a whole screen pixel.
     q = math.sqrt(2) * PX
-    w, bar, z0, z1 = 4 * PX / math.sqrt(2), PX / math.sqrt(2), TZ + zpx(3), B2 - zpx(1)
+    w, bar, z0, z1 = 4 * PX / math.sqrt(2), PX / math.sqrt(2), TZ + zpx(3), B2 - zpx(2)
     face, rim = 10 * q, 11 * q                                                                          # 1.1, 2.6 px proud
     wbox(-w, w, CR - 2 * PX, face - 0.5 * PX, z0, z1, "pfFrame")
     for a, b, c, d in ((-w, -w + bar, z0, z1), (w - bar, w, z0, z1), (-w, w, z0, z0 + zpx(1)), (-w, w, z1 - zpx(1), z1)):
         wbox(a, b, face - 0.5 * PX, rim, c, d, "pfFrame", "pfFrame")
-    wbox(-w + bar, w - bar, face - 0.5 * PX, face, z0 + zpx(1), z0 + zpx(6), "pfWater", "pfWaterL")
-    wbox(-w + bar, w - bar, face - 0.5 * PX, face, z0 + zpx(6), z1 - zpx(1), "pfRecess")
+    wbox(-w + bar, w - bar, face - 0.5 * PX, face, z0 + zpx(1), z0 + zpx(7), "pfWater", "pfWaterL")
+    wbox(-w + bar, w - bar, face - 0.5 * PX, face, z0 + zpx(7), z1 - zpx(1), "pfRecess")
     wbox(-w + bar, w - bar, face + 0.2 * PX, face + 0.4 * PX, z0 + zpx(1), z1 - zpx(1), "pfIce", kk=k.part("glass"))
 
 

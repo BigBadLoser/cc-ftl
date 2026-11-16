@@ -4005,5 +4005,6 @@
   "pfFrame": {"hex": "#303e49", "set": "purifier"},
   "pfRecess": {"hex": "#222e36", "set": "purifier"},
   "pfAmber": {"hex": "#cdb86c", "emissive": 0.9, "set": "purifier"},
-  "pfCyan": {"hex": "#76c5dc", "emissive": 1.0, "set": "purifier"}
+  "pfCyan": {"hex": "#76c5dc", "emissive": 1.0, "set": "purifier"},
+  "pfTrim": {"hex": "#66798a", "flat": true, "set": "purifier"}
 }
