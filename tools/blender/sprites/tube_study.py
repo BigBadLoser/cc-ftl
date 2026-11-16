@@ -193,9 +193,27 @@ def _hatch_job(axis, is_open):
         aid = f"tube.hatch.{axis}{'.open' if is_open else ''}"
         core.clear_scene_meshes()
         post.select("walls+hull+tube")
-        it = E.crop_item(aid, (1, 1), *E.render_sprite(aid, "block", tube_hatch.hatch(axis, is_open))[:5])
+        c, *rest = E.render_sprite(aid, "block", tube_hatch.hatch(axis, is_open))[:5]
+        it = E.crop_item(aid, (1, 1), _tint(c), *rest)
         return [it] if it else []
     return run
+
+
+VIS = {"df": (232, 132, 40), "dl": (40, 190, 210)}   # study only: the hatch's frame orange, its leaf cyan (to see it)
+
+
+def _tint(c):
+    """The hatch's frame and leaf tones recoloured (VIS), each keeping its brightness relative to its ramp's face."""
+    from . import post
+    out = c.copy()
+    for pre, rgb in VIS.items():
+        base = post._name_rgb(f"{pre}Y").astype(float).mean()
+        for sfx in ("T", "Y", "X", "Td", "Yd", "Xd", "Tdd", "Ydd", "Xdd", "Yl", "Xl"):
+            tone = post._name_rgb(pre + sfx)
+            at = (c == tone).all(-1)
+            k = tone.astype(float).mean() / base
+            out[at] = np.clip(np.array(rgb, float) * k, 0, 255).astype(np.uint8)
+    return out
 
 
 def jobs():
