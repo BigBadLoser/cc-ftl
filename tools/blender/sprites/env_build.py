@@ -12,7 +12,7 @@ from . import geom_digest as gd
 SS = core.SS
 SHADOW = (0.5, 0.75)                    # a builder's shadows (core.SHADOWS): a px shaded with this much of it in
                                         # shadow, darkened by this (to the nearest palette tone)
-# sprites coverage anti-aliased (post.downsample aa): the hull, and the walls in every look
+# sprites coverage anti-aliased (post.downsample aa): the hull (the station look too), and the walls in every look
 AA = ("tile.hull.ext.", "tile.hull.belly.", "tile.wall.")
 
 

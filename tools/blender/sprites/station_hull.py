@@ -1,269 +1,248 @@
 """Station hull look (#524; family `station_hull`): a station's hull from outside (roofed), on the ship hull's own belly.
-After the user's station hull reference (design reference only: our own geometry here): a block at the ship hull's
-height and footprint (tile.hull.ext: out to the outline E, the roof's height), its outer edge rounded over into the
-top in a big bullnose, two seams a tile running up the face and over the bullnose onto the top, a groove near the
-foot with tabs where the seams cross it, a row of chunky light blocks along the foot, and a line along the top's inner
-edge. Its own palette set (`station`, a darker blue-grey than the ship hull's).
+After the user's station hull reference (design reference only: our own geometry here). Built as the ship hull is
+(wall3d_ext: the shell block, its outer faces dressed through wall3d_ext_geom's Face), on a section of its own
+(RoundSection): upright from the floor, then rounded over into the top in a big bullnose, lit in bands from its top
+edge down. Two seams a tile run up the face, plumb on screen up to the bullnose's lower bands and following it over
+into the top, to a seam across the top; a groove near the foot with tabs where the seams cross it, a line under the
+bullnose from seam to seam, a bright ledge with a row of chunky light blocks along the foot, a line along the top's
+back. Its own palette set (`station`).
 
 Ids follow the faction looks' scheme (structure.py: tile.<fam>.<look>.<rest of the default id>), look `station`:
 
   tile.hull.station.ext.o<o>.m<mask>   the upper hull (as tile.hull.ext.o<o>.m<mask>: o 1 space at +y, 2 at +x, 3 both,
-                                       the outer corner; mask the hull ring's neighbours); the belly is the ship's.
-
-Geometry: a piece's outer face is a chain of plan lines (CHAINS) clipped at the tile's edges; the section (the face
-upright, then ROUND facets over into the top) is laid along it, each level's line moved in and mitred. Detail is
-painted on that section (a flat inlay a hair out along each strip's normal) or stands proud of it."""
+                                       the outer corner; mask the hull ring's neighbours); the belly is the ship's."""
 import math
 
 from mathutils import Vector
 
 from . import core
-from . import walls as W
 from . import wall3d as T
+from .wall3d_ext import STRAIGHT, ext_shell
+from .wall3d_ext_geom import D, E, F, LINE, Face, Section
 
-E = 0.5 - 1 / 32                    # the outline (the ship hull's: wall3d_ext_geom.E)
-DEPTH = E + 0.5                     # the block from its outer face back to the tile's back edge
-H = None                            # the top: the roof's height (walls.hull_top(), set on first use)
 R_D, R_Z = 0.32, 0.46               # the bullnose: this far in along the top, this far down the face (tiles)
 ROUND = 16                          # its facets
-LINE = 1 / 32                       # one art px along the run
-SEAMS = (0.25, 0.75)                # seams along a straight run, as fractions of the tile
+CORNER_C = 16 / 32                  # the outer corner's chamfer along each axis (the ship hull's)
+SEAMS = (0.25, 0.75)                # seams across a tile, as fractions of it
 GROOVE = 0.40                       # the groove's height over the deck
-RAIL = 3 / 32                       # the line along the top's inner edge: this far in from the back
-TOP_SEAM = 7 / 32                   # a seam across the top this far in past the bullnose's top edge (the seams end on it)
+UNDER = 3                           # the line under the bullnose: this many px under its foot
+RAIL = 3 / 32                       # the line along the top's back: this far in from the back
+TOP_SEAM = 7 / 32                   # the seam across the top this far in past the bullnose's top edge (the seams end on it)
 FOOT_N, FOOT_W, FOOT_OUT, FOOT_H = 3, 0.26, 3 / 32, 0.15   # the foot blocks: a tile, wide, proud, tall
+LEDGE_H = 2                         # the bright ledge along the foot, px tall
+SEAM_W = 1.0                        # the seams' core, px (the hull's long lines: LINE_W, with coverage AA)
+CHAMFER_SEAM = 1                    # the corner's seams down its chamfer, this many px in from its edges
 
-FACE, FACE_LO, END = "stS", "stL", "stE"   # the face, its band under the groove, the ends
-LEDGE, LEDGE_H = "stW", 2                   # the bright ledge along the foot: colour, px tall
-HATCH_D, HATCH_L = "stM", "stH"             # the hatch's outline: dark line, lit line inside/under it
+FACE, FACE_LO, END, TOP = "stS", "stL", "stE", "stL"      # the face, its band under the groove, the shell, the top
 # the bullnose's bands from its top edge down to the face: colour, share of the arc (the lightest the widest)
-ROUND_BANDS = (("stW", 0.36), ("stB", 0.26), ("stH", 0.18), ("stL", 0.12), ("stS", 0.08))
-PLUMB_LEVEL = 3                     # the bullnose level at the stL band's top: seams stand plumb on screen below it
-TOP = "stL"
-SEAM_D = "stM"
-GROOVE_D, GROOVE_L = "stD", "stH"
+BANDS = (("stW", 0.36), ("stB", 0.26), ("stH", 0.18), ("stL", 0.12), ("stS", 0.08))
+PLUMB_BAND = 3                      # the seams stand plumb on screen from this band's top down (stL)
+SEAM, GROOVE_D, GROOVE_L, UNDER_L = "stM", "stD", "stH", "stH"
 TAB, TAB_TOP, TAB_SIDE = "stB", "stW", "stH"
-FOOT, FOOT_TOP, FOOT_SIDE = "stB", "stW", "stH"
-RAIL_D = "stM"
-
-# (lines as (point, direction) in plan; the chain runs with the outside on its right; clips: the tile's edges at its
-# ends; back: the footprint's points behind the chain, closing the top)
-CHAINS = {
-    (10, 1): {"lines": [((0.0, E), (-1.0, 0.0))], "clips": [((0.5, 0.0), (0.0, 1.0)), ((-0.5, 0.0), (0.0, 1.0))],
-              "back": [(-0.5, -0.5), (0.5, -0.5)]},
-    (5, 2): {"lines": [((E, 0.0), (0.0, 1.0))], "clips": [((0.0, -0.5), (1.0, 0.0)), ((0.0, 0.5), (1.0, 0.0))],
-             "back": [(-0.5, 0.5), (-0.5, -0.5)]},
-    (9, 3): {"lines": [((E, 0.0), (0.0, 1.0)), ((E, 0.0), (-1.0, 1.0)), ((0.0, E), (-1.0, 0.0))],
-             "clips": [((0.0, -0.5), (1.0, 0.0)), ((-0.5, 0.0), (0.0, 1.0))],
-             "back": [(-0.5, -0.5)]},
-}
-STRAIGHT = {(10, 1): (1, 0), (5, 2): (0, 1)}
-# per piece: (segment, its seams as fractions along it, its hatch's span or None)
-PANELS = {(10, 1): [(0, SEAMS, (SEAMS[0] + 3 * LINE, SEAMS[1] - 2 * LINE))],
-          (5, 2): [(0, SEAMS, (SEAMS[0] + 3 * LINE, SEAMS[1] - 2 * LINE))],
-          (9, 3): [(1, (1.5 * LINE, 1 - 1.5 * LINE), (0.22, 0.78))]}
-
-
-def _top():
-    global H
-    if H is None:
-        H = W.hull_top()
-    return H
-
-
-def _pz():
-    return 1 / core.ZPX
-
-
-def _meet(l1, l2):
-    (p, d), (q, e) = l1, l2
-    den = d[0] * e[1] - d[1] * e[0]
-    t = ((q[0] - p[0]) * e[1] - (q[1] - p[1]) * e[0]) / den
-    return (p[0] + d[0] * t, p[1] + d[1] * t)
-
-
-def _inward(d):
-    """The inward normal of a chain line (the outside on its right)."""
-    n = math.hypot(*d)
-    return (-d[1] / n, d[0] / n)
-
-
-def _chain(key, inset):
-    """The chain's points with every line moved `inset` in: the start clip's meet, the joins, the end clip's."""
-    c = CHAINS[key]
-    ls = []
-    for p, d in c["lines"]:
-        n = _inward(d)
-        ls.append(((p[0] + n[0] * inset, p[1] + n[1] * inset), d))
-    pts = [_meet(c["clips"][0], ls[0])]
-    pts += [_meet(a, b) for a, b in zip(ls, ls[1:])]
-    pts.append(_meet(ls[-1], c["clips"][1]))
-    return pts
-
-
-def _bullnose():
-    """The bullnose's levels (inset, z), from the face's top to the top's edge."""
-    h = _top()
-    return [(R_D * (1 - math.cos(math.pi / 2 * i / ROUND)), h - R_Z + R_Z * math.sin(math.pi / 2 * i / ROUND))
-            for i in range(ROUND + 1)]
+FOOT, FOOT_TOP, FOOT_SIDE, LEDGE = "stB", "stW", "stH", "stW"
 
 
 def _band(t):
-    """The bullnose's colour at t along its arc from the top edge (0) to the face (1)."""
-    for col, w in ROUND_BANDS:
+    """The bullnose's colour at t along its arc from its top edge (0) to the face (1)."""
+    for col, w in BANDS:
         if t < w:
             return col
         t -= w
-    return ROUND_BANDS[-1][0]
+    return BANDS[-1][0]
 
 
-def _section():
-    """The outer section as (inset, z, colour of the strip up to the next): the face, its bullnose (the top after)."""
-    out = [(0.0, 0.0, FACE_LO), (0.0, GROOVE, FACE)]
-    bn = _bullnose()
-    for i, (d, z) in enumerate(bn):
-        out.append((d, z, _band(1 - (i + 0.5) / ROUND) if i < ROUND else None))
-    return out
+class RoundSection(Section):
+    """wall3d_ext_geom's Section with a bullnose for its lean: upright to the bend zb, then a quarter ellipse R_D in
+    and R_Z up to the top (the armour's front d out from its own face, D on the upright)."""
+
+    def __init__(self, H):
+        super().__init__(H)
+        self.zb = H - R_Z
+        self.levels = [self.zb + R_Z * math.sin(math.pi / 2 * i / ROUND) for i in range(ROUND + 1)]
+
+    def _angle(self, z):
+        return math.asin(min(1.0, max(0.0, (z - self.zb) / R_Z)))
+
+    def lean_d(self, z):
+        return D - R_D * (1 - math.cos(self._angle(z)))
+
+    def lean(self, z0=0.0):
+        z = max(z0, self.zb)
+        return [(self.lean_d(v), v) for v in [z] + [v for v in self.levels if v > z + 1e-9]]
+
+    def front(self, z0, z1, off=0.0):
+        """The front from z0 to z1 (across the bend and over the bullnose: its facets' levels between)."""
+        lo, hi = min(z0, z1), max(z0, z1)
+        mid = [v for v in [self.zb] + self.levels if lo + 1e-9 < v < hi - 1e-9]
+        zs = [z0] + (mid if z1 >= z0 else mid[::-1]) + [z1]
+        return [(self.lean_d(z) - off, z) for z in zs]
+
+    def band_z(self, i):
+        """The height of the bullnose's band i's top edge (0 the top)."""
+        t = sum(w for _, w in BANDS[:i])
+        return self.zb + R_Z * math.sin(math.pi / 2 * (1 - t))
+
+    def chamfer(self, c):
+        return lambda z: c
+
+    def cols(self, prof, role):
+        """Edge tones by facing and height: the top TOP, the bullnose its bands, the face FACE (FACE_LO under the
+        groove); faces turned back or down unseen."""
+        n = len(prof)
+        dc, zc = sum(p[0] for p in prof) / n, sum(p[1] for p in prof) / n
+        out = []
+        for i in range(n):
+            (d0, z0), (d1, z1) = prof[i], prof[(i + 1) % n]
+            pd, pz = z1 - z0, d0 - d1
+            if pd * ((d0 + d1) / 2 - dc) + pz * ((z0 + z1) / 2 - zc) < 0:
+                pd, pz = -pd, -pz
+            h = math.hypot(pd, pz) or 1.0
+            pd, pz, zm = pd / h, pz / h, (z0 + z1) / 2
+            if pz > 0.85 and min(z0, z1) >= self.H - T.LIP - 1e-6:
+                out.append(TOP)
+            elif pd < 0.3 and pz < 0.3:
+                out.append(None)
+            elif zm > self.zb + 1e-6:
+                out.append(_band(1 - self._angle(zm) / (math.pi / 2)))
+            else:
+                out.append(FACE if zm > GROOVE else FACE_LO)
+        return out
 
 
-def _seg_out(key, i):
-    """The outward plan normal of the chain's segment i."""
-    d = CHAINS[key]["lines"][i][1]
-    n = _inward(d)
-    return (-n[0], -n[1])
+class RoundFace(Face):
+    def plumb(self, u0, u1, z0, z1, zk, col, w=None):
+        """A band [u0, u1] (its core w px, as Face.line's) up the front from z0 to z1: over zk it follows the front
+        (Face.line), under it it stands plumb on screen under where it is at zk (screen x goes as u - d: it moves
+        along the face as far as the front stands out)."""
+        u0 = u1 - (u1 - u0) * (SEAM_W if w is None else w)
+        if z1 > zk:
+            self.line(u0, u1, zk, z1, col, bevel=False, weight=1.0)
+        dk = self.sec.lean_d(zk)
+        pts = self.sec.front(z0, min(z1, zk))
+        col = T.SEAM_PASS or col
+        o, up = T.OUT(self.ax), Vector((0, 0, 1))
+        for (da, za), (db, zb) in zip(pts, pts[1:]):
+            sa, sb = da - dk, db - dk
+            q = [T.P(self.ax, self.plane, u + s, z, d + 0.001) for u, s, z, d in
+                 ((u0, sa, za, da), (u1, sa, za, da), (u1, sb, zb, db), (u0, sb, zb, db))]
+            self.k.poly(q, F, 3, o * (zb - za) + up * (da - db), fixed=col)
+
+    def at_face(self, u, zk):
+        """Where a plumb band at u (plumb under zk) stands on the upright face."""
+        return u + D - self.sec.lean_d(zk)
 
 
-def _sx(pp, f):
-    """The screen x (in plan units: x - y) of fraction f along the segment pp, and its rate along f."""
-    a = pp[0][0] - pp[0][1]
-    return a, (pp[1][0] - pp[1][1]) - a
+def _part(f, u0, u1, z0, z1, out, face, top, side, end=False):
+    """A block on the upright face over [u0, u1] x [z0, z1], out proud: its front `face`, its top `top`, its ends
+    `side`."""
+    pf = f.on(z0, z1, -0.01, out, hang=False)
+    f.part(u0, u1, pf, [None, top, face, None], side, end=end)
 
 
-def _plumb(key, i, f, d, keep):
-    """Fraction f at inset d, moved along segment i so that below inset `keep` it stands plumb on screen under where f
-    is at `keep` (a line that runs straight down there rather than following the bullnose in)."""
-    if keep is None or d >= keep:
-        return f
-    a0, b0 = _sx(_chain(key, keep)[i:i + 2], f)
-    a, b = _sx(_chain(key, d)[i:i + 2], f)
-    return (a0 + b0 * f - a) / b
+def _chamfer_part(f, t0, t1, z0, z1, out, face, top, side):
+    pf = f.on(z0, z1, -0.01, out, hang=False)
+    f.on_chamfer(t0, t1, pf, [None, top, face, None], side)
 
 
-def _paint(k, key, i, f0, f1, levels, col, lift=None, keep=None):
-    """Paint the band f0..f1 (fractions along segment i) over the section levels [(inset, z), ...], a hair out along
-    each strip's normal; below inset `keep` the band stands plumb on screen (_plumb)."""
-    lift = T.PAINT if lift is None else lift
-    o = _seg_out(key, i)
-    for (da, za), (db, zb) in zip(levels, levels[1:]):
-        no, nz = zb - za, db - da                           # the strip's normal in (out, z)
-        ln = math.hypot(no, nz)
-        if ln < 1e-9:
-            continue
-        no, nz = no / ln * lift, nz / ln * lift
-        n = Vector((o[0] * no, o[1] * no, nz))
-        pa, pb = _chain(key, da)[i:i + 2], _chain(key, db)[i:i + 2]
-
-        def at(pp, f):
-            return (pp[0][0] + (pp[1][0] - pp[0][0]) * f, pp[0][1] + (pp[1][1] - pp[0][1]) * f)
-        a0, a1 = _plumb(key, i, f0, da, keep), _plumb(key, i, f1, da, keep)
-        b0, b1 = _plumb(key, i, f0, db, keep), _plumb(key, i, f1, db, keep)
-        q = [Vector((*at(pa, a0), za)), Vector((*at(pa, a1), za)), Vector((*at(pb, b1), zb)), Vector((*at(pb, b0), zb))]
-        k.poly([v + n for v in q], "steel", 2, n, fixed=col)
-
-
-def _box(k, key, i, f0, f1, z0, z1, out, face, top, side, inset=0.0):
-    """A block standing `out` proud of the face over f0..f1 of segment i, z0..z1 (its back at `inset`)."""
-    o = _seg_out(key, i)
-    p = _chain(key, inset)[i:i + 2]
-
-    def at(f, d):
-        x = p[0][0] + (p[1][0] - p[0][0]) * f
-        y = p[0][1] + (p[1][1] - p[0][1]) * f
-        return (x + o[0] * d, y + o[1] * d)
-    a0, a1, b0, b1 = at(f0, 0), at(f1, 0), at(f0, out), at(f1, out)
-    up = Vector((0, 0, 1))
-    k.poly([Vector((*b0, z0)), Vector((*b1, z0)), Vector((*b1, z1)), Vector((*b0, z1))], "steel", 2,
-           Vector((o[0], o[1], 0)), fixed=face)
-    k.poly([Vector((*a0, z1)), Vector((*a1, z1)), Vector((*b1, z1)), Vector((*b0, z1))], "steel", 2, up, fixed=top)
-    u = (p[1][0] - p[0][0], p[1][1] - p[0][1])
-    for a, b, sg in ((a0, b0, -1), (a1, b1, 1)):
-        k.poly([Vector((*a, z0)), Vector((*b, z0)), Vector((*b, z1)), Vector((*a, z1))], "steel", 2,
-               Vector((u[0] * sg, u[1] * sg, 0)), fixed=side)
-
-
-def upper(key, name):
-    """The upper hull of a run set piece: its Relief's objects."""
-    k = T.Relief(name)
-    h = _top()
-    sec = _section()
-    lv = [(_chain(key, d), z, col) for d, z, col in sec]
-    for (pa, za, col), (pb, zb, _) in zip(lv, lv[1:]):          # the face and the bullnose, strip by strip
-        for i in range(len(pa) - 1):
-            o = _seg_out(key, i)
-            k.poly([Vector((*pa[i], za)), Vector((*pa[i + 1], za)), Vector((*pb[i + 1], zb)), Vector((*pb[i], zb))],
-                   "steel", 2, Vector((o[0], o[1], 0.0 if za < h - R_Z - 1e-6 else 0.5)), fixed=col)
-    k.poly([Vector((*p, h)) for p in lv[-1][0] + CHAINS[key]["back"]], "steel", 2, Vector((0, 0, 1)), fixed=TOP)
-    lines = CHAINS[key]["lines"]
-    for j, sg in ((0, -1), (-1, 1)):                            # the ends at the tile's edges (the section)
-        prof = [Vector((*pts[j], z)) for pts, z, _ in lv]
-        bk = CHAINS[key]["back"][0 if j == -1 else -1]
-        prof += [Vector((*bk, h)), Vector((*bk, 0.0))]
-        cd = lines[j][1]
-        k.poly(prof, "steel", 2, Vector((cd[0] * sg, cd[1] * sg, 0.0)), fixed=END)
-    _details(k, key)
-    return k.build()
-
-
-def _details(k, key):
-    h, pz = _top(), _pz()
-    segs = len(CHAINS[key]["lines"])
-    bn = _bullnose()
-    rail = DEPTH - RAIL
-    for i in range(segs):                                       # the groove near the foot, all along
-        _paint(k, key, i, 0.0, 1.0, [(0.0, GROOVE), (0.0, GROOVE + pz)], GROOVE_D)
-        _paint(k, key, i, 0.0, 1.0, [(0.0, GROOVE - pz), (0.0, GROOVE)], GROOVE_L)
-        # the line along the top's inner edge (one px, no highlight)
-        _paint(k, key, i, 0.0, 1.0, [(rail, h), (rail + LINE, h)], RAIL_D)
-    zt = h - R_Z - 3 * pz                                       # the line under the bullnose
-    ts = round((R_D + TOP_SEAM) * 32) / 32                     # (on the art px grid, as the rail: a clean iso line)
-    for i in range(segs):                                       # the seam across the top (one px, no highlight)
-        _paint(k, key, i, 0.0, 1.0, [(ts, h), (ts + LINE, h)], SEAM_D)
-    up = [(0.0, GROOVE + 3 * pz), (0.0, h - R_Z)] + bn + [(ts, h)]
-    keep = bn[PLUMB_LEVEL][0]                                   # the seams stand plumb from the stL band's top down
-    for i, seams, hatch in PANELS[key]:
-        p = _chain(key, 0.0)[i:i + 2]
-        ln = math.hypot(p[1][0] - p[0][0], p[1][1] - p[0][1])
-        L = LINE / ln                                           # one px along this segment, as a fraction
-        for f in seams:                                         # the seams (one px): up the face, over the bullnose, across the top
-            _paint(k, key, i, f - L / 2, f + L / 2, up, SEAM_D, keep=keep)
-            g = _plumb(key, i, f, 0.0, keep)                    # (where the seam stands on the face)
-            _box(k, key, i, g - 1.5 * L, g + 1.5 * L, GROOVE - 2 * pz, GROOVE + 3 * pz, LINE, TAB, TAB_TOP,
-                 TAB_SIDE)                                      # a tab where the seam crosses the groove
-        if hatch:                                               # a line under the bullnose from seam to seam, lit under
-            a0, a1 = _plumb(key, i, seams[0], 0.0, keep) + L / 2, _plumb(key, i, seams[-1], 0.0, keep) - L / 2
-            _paint(k, key, i, a0, a1, [(0.0, zt), (0.0, zt + pz)], HATCH_D)
-            _paint(k, key, i, a0, a1, [(0.0, zt - pz), (0.0, zt)], HATCH_L)
-    for i in range(segs):                                       # the bright ledge along the foot
-        _paint(k, key, i, 0.0, 1.0, [(0.0, FOOT_H), (0.0, FOOT_H + LEDGE_H * pz)], LEDGE)
-    for i in range(segs):                                       # the foot blocks
-        p = _chain(key, 0.0)[i:i + 2]
-        ln = math.hypot(p[1][0] - p[0][0], p[1][1] - p[0][1])
-        n = max(1, round(FOOT_N * ln))
-        w = FOOT_W / ln
+def build(k, ax, plane, a, b, ends, H):
+    """The station's armour over [a, b] of a face (wall3d's face arguments)."""
+    s = RoundSection(H)
+    f = RoundFace(k, ax, plane, a, b, ends, s, CORNER_C)
+    back = min((r[0][2] if ax == "y" else r[0][0]) for r in T.SHELL.rects if r[1] == "hull") - plane
+    zk = s.band_z(PLUMB_BAND)
+    zt = s.z_at(s.zb, UNDER)
+    g0, g1 = s.z_at(GROOVE, 2), s.z_at(GROOVE, -3)          # a tab over the groove
+    ts = E - round((R_D + TOP_SEAM) * 32) / 32               # (the top's lines on the art px grid: clean iso lines)
+    rail = back + RAIL
+    for s0, s1 in T.spans(a, b):
+        whole = s1 - s0 > 1 - 1e-6
+        for z0, z1 in ((0.0, GROOVE), (GROOVE, H)):
+            f.block(s0, s1, z0, z1)
+        f.line(s0, s1, GROOVE, s.z_at(GROOVE, -1), GROOVE_D, bevel=False)
+        f.line(s0, s1, s.z_at(GROOVE, 1), GROOVE, GROOVE_L, bevel=False)
+        f.line(s0, s1, FOOT_H, s.z_at(FOOT_H, -LEDGE_H), LEDGE, bevel=False)
+        f.top_line(s0, s1, ts - LINE, ts, SEAM)
+        f.top_line(s0, s1, rail - LINE, rail, SEAM)
+        if whole:
+            for fr in SEAMS:
+                u = s0 + fr - LINE / 2
+                f.plumb(u, u + LINE, s.z_at(GROOVE, -3), H, zk, SEAM)
+                f.top_line(u, u + LINE, ts, D - R_D, SEAM)
+                g = f.at_face(u + LINE / 2, zk)
+                _part(f, g - 1.5 * LINE, g + 1.5 * LINE, g0, g1, LINE, TAB, TAB_TOP, TAB_SIDE)
+            v0, v1 = (f.at_face(s0 + fr, zk) for fr in SEAMS)
+            f.line(v0 + LINE / 2, v1 - LINE / 2, zt, s.z_at(zt, -1), SEAM, bevel=False)
+            f.line(v0 + LINE / 2, v1 - LINE / 2, s.z_at(zt, 1), zt, UNDER_L, bevel=False)
+        e = f.edge_u(0.0) if f.ch and abs(s1 - b) < 1e-6 else s1     # (the foot blocks: on the flat face)
+        n = max(1, round(FOOT_N * (e - s0)))
         for j in range(n):
-            c = (j + 0.5) / n
-            _box(k, key, i, c - w / 2, c + w / 2, 0.0, FOOT_H, FOOT_OUT, FOOT, FOOT_TOP, FOOT_SIDE)
+            c = s0 + (e - s0) * (j + 0.5) / n
+            _part(f, c - FOOT_W / 2, c + FOOT_W / 2, 0.0, FOOT_H, FOOT_OUT, FOOT, FOOT_TOP, FOOT_SIDE)
+    if f.ch:
+        _corner(f, zt, g0, g1)
 
 
-def _wide(key, build):
+def _corner(f, zt, g0, g1):
+    """The outer corner's chamfer: a seam down each edge, CHAMFER_SEAM px in, with a tab over the groove; the line
+    under the bullnose across between them; two foot blocks."""
+    t, s = f.chamfer_t, f.sec
+    W = f.c * core.TILE_W
+    sf = f.on(s.z_at(GROOVE, -3), s.H, -0.01, 0.001)
+    for e in (CHAMFER_SEAM, W - CHAMFER_SEAM - 1):
+        f.on_chamfer(t(e), t(e + 1), sf, [SEAM] * len(sf), SEAM)
+        _chamfer_part(f, t(e - 1), t(e + 2), g0, g1, LINE, TAB, TAB_TOP, TAB_SIDE)
+    for z0, z1, col in ((zt, s.z_at(zt, -1), SEAM), (s.z_at(zt, 1), zt, UNDER_L)):
+        pf = f.on(z0, z1, -0.01, 0.001)
+        f.on_chamfer(t(CHAMFER_SEAM + 1), t(W - CHAMFER_SEAM - 1), pf, [col] * len(pf), col)
+    fw = FOOT_W * core.TILE_W / math.sqrt(2)                 # (px across the chamfer)
+    for c in (W / 4, 3 * W / 4):
+        _chamfer_part(f, t(c - fw / 2), t(c + fw / 2), 0.0, FOOT_H, FOOT_OUT, FOOT, FOOT_TOP, FOOT_SIDE)
+
+
+def _shell(o):
+    """The ship hull's exterior shell (its block, cut a cell short of the outline), the armour's own face at the
+    tile's middle (no BACK), in the station's tones."""
+    base = ext_shell(o)
+
+    class StationShell(base):
+        def __init__(self, *args, **kw):
+            T.Shell.__init__(self, *args, **kw)
+            f = E - D
+            out = []
+            for (x0, x1, y0, y1), fam, tp, top in self.rects:
+                if fam == "hull":
+                    x1 = f if o & 2 else x1
+                    y1 = f if o & 1 else y1
+                out.append(((x0, x1, y0, y1), fam, tp, top))
+            self.rects, self.keep, self.f = out, None, f
+
+        def col_top(self, i, j, kind, x, y):
+            return TOP
+
+        def col_face(self, face, x, y, z):
+            if abs((y if face == "y" else x) - self.f) < 1e-6:
+                return None                             # (the armour covers its outer face)
+            return END
+    return StationShell
+
+
+def _dress(k, ax, plane, a, b, ends, zs, top, full, variant=0):
+    build(k, ax, plane, a, b, ends, top)
+
+
+def _block(mask, o):
+    return T.block(mask, "hull", 0, level="up", shell=_shell(o), dress=_dress)
+
+
+def _wide(mask, o):
     """(own, wide): a straight run with a copy a tile either way along it (its edge px resolve as mid-run)."""
-    own = build(key, "st_own")
+    own = _block(mask, o)
     more = []
-    if key in STRAIGHT:
-        dx, dy = STRAIGHT[key]
-        for s in (-1, 1):
-            for ob in build(key, f"st_{s}"):
-                ob.location = ob.location + core.G(s * dx, s * dy, 0.0)
+    if (mask, o) in STRAIGHT:
+        dx, dy = STRAIGHT[(mask, o)]
+        for sg in (-1, 1):
+            for ob in _block(mask, o):
+                ob.location = ob.location + core.G(sg * dx, sg * dy, 0.0)
                 more.append(ob)
     return own, own + more
 
@@ -272,35 +251,13 @@ PIECES = ((10, 1), (5, 2), (9, 3))
 PALETTE = "only:station"
 
 
-def _join(rgba, col):
-    """Where a steep seam (one px a row) steps a px sideways, or meets the line across the top, with two px touching
-    only corner to corner, fill the px under the upper one so the line runs on side to side. A lower px in a run two
-    px a row (the iso lines across) is left as drawn."""
-    m = (rgba[..., :3] == col).all(-1) & (rgba[..., 3] > 0)
-    out = rgba.copy()
-    h, w = m.shape
-
-    def single(y, x):
-        return m[y, x] and not (x > 0 and m[y, x - 1]) and not (x + 1 < w and m[y, x + 1])
-    for y in range(h - 1):
-        for x in range(w):
-            if not m[y, x] or m[y + 1, x]:
-                continue
-            for dx in (-1, 1):
-                if 0 <= x + dx < w and single(y + 1, x + dx) and not m[y, x + dx] and rgba[y + 1, x, 3] > 0:
-                    out[y + 1, x, :3] = col
-    return out
-
-
-def _item(sid, build):
+def _item(sid, build_fn):
     from . import env_build, post
     core.clear_scene_meshes()
     post.select(PALETTE)
-    it = env_build.crop_item(sid, (1, 1), *env_build.render_sprite(sid, "wide", build()))
-    if it:
-        it["rgba"] = _join(it["rgba"], post._name_rgb(SEAM_D).astype(it["rgba"].dtype))
+    it = env_build.crop_item(sid, (1, 1), *env_build.render_sprite(sid, "wide", build_fn()))
     return [it] if it else []
 
 
 def jobs():
-    return [lambda m=m, o=o: _item(f"tile.hull.station.ext.o{o}.m{m}", lambda: _wide((m, o), upper)) for m, o in PIECES]
+    return [lambda m=m, o=o: _item(f"tile.hull.station.ext.o{o}.m{m}", lambda: _wide(m, o)) for m, o in PIECES]
