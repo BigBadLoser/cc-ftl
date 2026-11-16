@@ -17,8 +17,9 @@ export function groundMounts(base: Record<string, ModuleDef>): Record<string, Mo
     const d = base[id];
     if (!d) continue;
     // Always out (no stowed art), not upgradeable, not built by the player.
-    const { blueprint: _b, upgradeSlot: _u, category: _c, deploySec: _d, ...rest } = d;
-    out[groundMountId(id)] = { ...rest, name: `${d.name} (ground)`, asset: `${d.asset}.ground`, footprint: [3, 3], solid: true, groundMount: true };
+    const rest: Partial<ModuleDef> = { ...d };
+    for (const k of ['blueprint', 'upgradeSlot', 'category', 'deploySec'] as const) delete rest[k];
+    out[groundMountId(id)] = { ...(rest as ModuleDef), name: `${d.name} (ground)`, asset: `${d.asset}.ground`, footprint: [3, 3], solid: true, groundMount: true };
   }
   return out;
 }
