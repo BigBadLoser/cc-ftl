@@ -1,3 +1,4 @@
+import { isGroundMount } from '../sim/modules/groundMount';
 import type { World } from '../sim/ecs';
 import type { CrewLook } from './loadout';
 import { playingAt } from '../sim/ai/machines/leisureSpots';
@@ -265,6 +266,7 @@ export function showsActive(def: ModuleDef, on: boolean, crafting: boolean, mann
  *    machine `<asset>.machine.r{n}` (cut by the wall; `.machine.open.r{n}` when the walls are down, `open`), the hull's thruster block
  *    `<asset>.block.r{n}` (`engineBlock`: in every view, outside the hull) and the bell outside the hull `<asset>.bell.r{n}`, both
  *    sorted by the tile beyond the hull row (`out`); `.active` while burning.
+ *  - Ground mounts (`isGroundMount`): `<asset>.r{n}`, the 3x3 mount with its cable port on the side the rotation faces.
  *  - Weapons: the floor bay `<asset>.bay.r{n}`; the turret above it is drawn by turretView.
  *  - Consoles and seated modules (the research bench): the usual chain, then the desk-front overlay `<asset>.front.r{n}[.active]` over the seated operator.
  *  - Everything else: the usual chain from `moduleAssets`.
@@ -337,6 +339,8 @@ export function moduleLayers(world: World, id: number, m: Module, def: ModuleDef
     const stage = cropStage(plot.need ? plot.grown / plot.need : 0, plot.ready);
     return [base, { chain: [`${a}.crop.${crop}.${stage}${r}`], key: `${a}.crop`, tiles: 'all', dz: 0.01, crop: { crop, stage } }];
   }
+  // A ground turret's mount (#514): `module.<stem>.ground.r{n}`, the cable port turned with the rotation; its head is turretView's.
+  if (isGroundMount(def)) return [{ chain: [...stateArt(def, m.rot, active, look).head, `${a}${r}`, a], key: a, tiles: 'all' }];
   if (def.weapon || def.pointDefense) return [{ chain: [`${a}.bay${r}`, `${a}.bay`], key: `${a}.bay`, tiles: 'all' }];
   const main: ModuleLayer = { chain: moduleAssets(world, id, m, def, active, look), key: a, tiles: 'all', anim: stateArt(def, m.rot, active, look).anim };
   if (def.livery && livery && m.hp > 0) {

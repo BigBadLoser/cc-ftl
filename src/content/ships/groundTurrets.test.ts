@@ -5,6 +5,7 @@ import { isCabled } from '../../sim/cable';
 import type { ModuleDef } from '../../sim';
 import { ModuleC } from '../../sim/modules/components';
 import { footprintTiles } from '../../sim/modules/footprint';
+import { groundPort, isGroundMount } from '../../sim/modules/groundMount';
 import { ownerAt, shipIdOf } from '../../sim/regions';
 import { hostileAct } from '../../sim/combat/provoke';
 import { SuitC } from '../../sim/eva/components';
@@ -72,6 +73,25 @@ describe('ground turrets', () => {
       expect(run.every((c) => ownerAt(sim, c.x, c.y) === base)).toBe(true);
       expect(run.length).toBeGreaterThanOrEqual(3);
       expect(run.some((c) => N4.some(([dx, dy]) => g.get('struct', c.x + dx, c.y + dy) === Struct.Wall && ownerAt(sim, c.x + dx, c.y + dy) === base))).toBe(true);
+    }
+  });
+
+  it('every ground turret is a 3x3 ground mount, and its cable starts square on at the middle of the side its rotation faces', () => {
+    for (const seed of [1, 2, 3]) {
+      const { sim, turrets } = setup(seed);
+      expect(turrets.length).toBeGreaterThan(1);
+      const g = sim.sector.grid;
+      for (const id of turrets) {
+        const m = sim.world.get(id, ModuleC)!;
+        const def = MODS[m.def]!;
+        expect(isGroundMount(def), m.def).toBe(true);
+        expect(def.footprint).toEqual([3, 3]);
+        expect(def.asset).toMatch(/\.ground$/);
+        const port = groundPort(def, m);
+        // The port tile beside the middle of the side is cabled; the other three sides' middles are not the cable's start.
+        expect(isCabled(g, port.cable.x, port.cable.y), `${m.def}@${m.x},${m.y} r${m.rot}`).toBe(true);
+        expect(port.side).toEqual({ x: m.x + 1 + port.dir.x, y: m.y + 1 + port.dir.y });
+      }
     }
   });
 
