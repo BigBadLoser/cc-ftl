@@ -12,7 +12,7 @@ from robots_preview import ROOT, Assets, Canvas, iso  # noqa: E402
 
 N = 7                                               # rock patch, tiles 0..N-1; the mount on (2..3, 2..3), cable east
 VARIANTS = {"K1": "picked: light steel outriggers"}
-STEMS = (("burst_laser", 1), ("point_defense", 1), ("ion_cannon", 1), ("missile_launcher", 1))
+VARIANTS = {"P1": "slight chamfer", "P2": "45 chamfer", "P3": "side face"}
 ZR = 2.05
 
 
@@ -20,9 +20,9 @@ def scene(cv, G, pub, cab, ox, oy, stem, v, aim, zpx):
     for gx in range(N):
         for gy in range(N):
             cv.static(pub, "rock.ground.m15.v0", *iso(ox, oy, gx, gy))
-    for i, gx in enumerate(range(5, N)):
-        cv.static(cab, f"cable.duct.{'m10.w8' if i == 0 else 'm10'}", *iso(ox, oy, gx, 3))
     cv.static(G, f"module.{stem}.ground.{v}.r0", *iso(ox, oy, 4, 4))
+    for i, gx in enumerate(range(5, N)):                       # after the mount: a tile beside it is in front of it
+        cv.static(cab, f"cable.duct.{'m10.w8' if i == 0 else 'm10'}", *iso(ox, oy, gx, 3))
     sx, sy = iso(ox, oy, 3, 3)
     cv.static(G, f"turret.{stem}.ground.{v}.d{aim}", round(sx), round(sy))
 
@@ -35,11 +35,11 @@ def main():
     zpx = pub.m["heights"]["zPx"]
     out.mkdir(parents=True, exist_ok=True)
     W, H = 400, 290
-    cv = Canvas(W * len(STEMS), H)
-    for i, (st, am) in enumerate(STEMS):
+    cv = Canvas(W * len(VARIANTS), H)
+    for i, (v, name) in enumerate(VARIANTS.items()):
         ox, oy = W // 2 + i * W, 70
-        scene(cv, G, pub, cab, ox, oy, st, "K1", am, zpx)
-        cv.labels.append((ox - 50, H - 22, st))
+        scene(cv, G, pub, cab, ox, oy, stem, v, aim, zpx)
+        cv.labels.append((ox - 50, H - 22, f"{v}  {name}"))
     cv.save(out / "ground-turret-variants.png", 3)
     print("wrote", out)
 

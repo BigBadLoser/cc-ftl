@@ -150,22 +150,37 @@ def tripod(f, top=0.95):
 
 # Round 8: a 3x3 footprint (u, v in -1.5..1.5). The head with its ring stands in the middle; the cable comes in on the
 # centre row (v = 0) from the +u side.
-def port3(f, z=0.0, u0=1.18):
+def port3(f, z=0.0, u0=0.66, u1=1.46, w=0.22, cham=(0.0, 0.0), panel="end"):
+    """The junction box on the centre row: its body runs from inside the riser out to the tile edge, where the cable's
+    socket plugs into its end face. cham: (along u, along v) cut off its outer camera-side corner; panel: which face
+    carries the hazard plate ("end", "cham" or "side": the +v face, toward the camera)."""
     _g("port")
-    box = lambda a, b, w, z0, z1, mat, top=None: TB.prism(f, [(a, -w), (b, -w), (b, w), (a, w)], z0, z1, mat, top=top or mat)  # noqa: E731
-    box(u0, u0 + 0.26, 0.22, z, z + 0.46, "steel", "steelL")                   # junction box
-    box(u0 - 0.02, u0, 0.14, z + 0.1, z + 0.36, "steelD")                      # access plate toward the ring
-    box(u0 + 0.26, 1.5, 0.09, 0.0, z + 0.14, "dark", "steelD")                 # conduit to the edge
-    box(u0 + 0.04, u0 + 0.22, 0.2, z + 0.46, z + 0.49, "steelL")              # lid
-    box(u0 + 0.255, u0 + 0.265, 0.17, z + 0.06, z + 0.42, "dark")              # panel line round the outer face
-    box(u0 + 0.262, u0 + 0.272, 0.13, z + 0.1, z + 0.38, "steel")
-    for k in range(6):                                                         # hazard plate on the outer face
-        a, b = -0.12 + k * 0.04, -0.12 + (k + 1) * 0.04
-        c = "hazY" if k % 2 == 0 else "hazK"
-        TB.prism(f, [(u0 + 0.268, a), (u0 + 0.28, a), (u0 + 0.28, b), (u0 + 0.268, b)], z + 0.12, z + 0.2, c, top=c)
-    for o in (-0.15, 0.15):                                                    # side bolts
-        TB.prism(f, [(u0 + 0.06, o - 0.02), (u0 + 0.2, o - 0.02), (u0 + 0.2, o + 0.02), (u0 + 0.06, o + 0.02)], z, z + 0.05, "steelL", top="steelL")
-    box(u0 + 0.08, u0 + 0.16, 0.04, z + 0.49, z + 0.55, "cyan")                 # status lamp, lit
+    cx, cy = cham
+    pts = [(u0, -w), (u1, -w)] + ([(u1, w - cy), (u1 - cx, w)] if cx else [(u1, w)]) + [(u0, w)]
+    TB.prism(f, pts, z, z + 0.46, "steel", top="steelL")
+    TB.prism(f, [(x + (0.02 if x == u0 else -0.02), y * 0.9) for x, y in pts], z + 0.46, z + 0.49, "steelL", top="steel")   # lid
+    face = {"end": ((u1, -w + 0.04), (u1, w - cy - 0.02 if cx else w - 0.04)),
+            "cham": ((u1, w - cy), (u1 - cx, w)),
+            "side": ((u1 - cx - 0.04 if cx else u1 - 0.04), w)}[panel]
+    if panel == "side":
+        face = ((u1 - 0.04, w), (0.86, w))
+    (ax, ay), (bx, by) = face
+    dx, dy = bx - ax, by - ay
+    ln = math.hypot(dx, dy)
+    nx, ny = dy / ln, -dx / ln                                                    # outward normal
+    def pane(t0, t1, d0, d1, z0, z1, mat):
+        p0 = (ax + dx * t0 + nx * d0, ay + dy * t0 + ny * d0)
+        p1 = (ax + dx * t1 + nx * d0, ay + dy * t1 + ny * d0)
+        p2 = (ax + dx * t1 + nx * d1, ay + dy * t1 + ny * d1)
+        p3 = (ax + dx * t0 + nx * d1, ay + dy * t0 + ny * d1)
+        TB.prism(f, [p0, p1, p2, p3], z0, z1, mat, top=mat)
+    pane(0.08, 0.92, 0.0, 0.01, z + 0.06, z + 0.42, "dark")                      # panel line
+    pane(0.12, 0.88, 0.0, 0.016, z + 0.1, z + 0.38, "steel")                     # the panel
+    for k in range(6):                                                          # hazard plate on it
+        pane(0.18 + k * 0.107, 0.18 + (k + 1) * 0.107, 0.0, 0.024, z + 0.2, z + 0.29, "hazY" if k % 2 == 0 else "hazK")
+    for o in (-0.15, 0.15):                                                     # foot bolts
+        TB.prism(f, [(u1 - 0.3, o - 0.02), (u1 - 0.1, o - 0.02), (u1 - 0.1, o + 0.02), (u1 - 0.3, o + 0.02)], z, z + 0.05, "steelL", top="steelL")
+    TB.prism(f, [(u1 - 0.3, -0.04), (u1 - 0.2, -0.04), (u1 - 0.2, 0.04), (u1 - 0.3, 0.04)], z + 0.49, z + 0.55, "cyan")   # status lamp, lit
 
 
 # Round 9: outriggers. A round base under the ring, the turret raised on a riser, outrigger beams out past the base so
@@ -246,18 +261,28 @@ def outrigger(f, a, top, heavy=False, strut=0, tone=1, az=0.46):
         f.vcyl(jack[0], jack[1], 0, 0.16, 0.05, "gm", top="steelD", sides=12)
 
 
-def out_corners(f, arms, tone=1):
+def out_corners(f, arms, tone=1, port=None):
     """arms: (angle, where the arm meets the jack) pairs."""
-    top = GV["K1"][0]
+    top = 0.78
     riser(f, top)
     for a, az in arms:
         outrigger(f, a, top, heavy=True, tone=tone, az=az)
-    port3(f, 0.0, 1.06)
+    port3(f, 0.0, **(port or {}))
 
 
 # Picked (round 14, K1): four outriggers on the corners, light steel arms and struts, a collar and domed cap on each jack.
+# Round 18: the junction box's panel turned toward the camera: a slight chamfer (P1), a 45 degree chamfer (P2), the +v
+# side face (P3).
 _Q = math.pi / 4
-GV = {"K1": (0.78, lambda f: out_corners(f, [(_Q + k * math.pi / 2, 0.46) for k in range(4)], tone=1))}
+_ARMS = [(_Q + k * math.pi / 2, 0.46) for k in range(4)]
+
+
+def k1(f, cham=(0.0, 0.0), panel="end"):
+    out_corners(f, _ARMS, tone=1, port=dict(cham=cham, panel=panel))
+
+
+GV = {"P1": (0.78, lambda f: k1(f, (0.08, 0.2), "cham")), "P2": (0.78, lambda f: k1(f, (0.2, 0.2), "cham")),
+      "P3": (0.78, lambda f: k1(f, (0.0, 0.0), "side"))}
 
 def ground_turret(key, d, variant):
     """The head with its turntable ring (no roof coaming), standing on the variant's base."""
