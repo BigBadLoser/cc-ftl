@@ -29,8 +29,8 @@ ROUND = 16                          # its facets
 LINE = 1 / 32                       # one art px along the run
 SEAMS = (0.25, 0.75)                # seams along a straight run, as fractions of the tile
 GROOVE = 0.40                       # the groove's height over the deck
-RAIL = 5 / 32                       # the line along the top's inner edge: this far in from the back
-TOP_SEAM = 4 / 32                   # a seam across the top this far in past the bullnose's top edge (the seams end on it)
+RAIL = 3 / 32                       # the line along the top's inner edge: this far in from the back
+TOP_SEAM = 7 / 32                   # a seam across the top this far in past the bullnose's top edge (the seams end on it)
 FOOT_N, FOOT_W, FOOT_OUT, FOOT_H = 3, 0.26, 3 / 32, 0.15   # the foot blocks: a tile, wide, proud, tall
 
 FACE, FACE_LO, END = "stS", "stL", "stE"   # the face, its band under the groove, the ends
@@ -44,7 +44,7 @@ SEAM_D = "stM"
 GROOVE_D, GROOVE_L = "stD", "stH"
 TAB, TAB_TOP, TAB_SIDE = "stB", "stW", "stH"
 FOOT, FOOT_TOP, FOOT_SIDE = "stB", "stW", "stH"
-RAIL_D, RAIL_L = "stM", "stW"
+RAIL_D = "stM"
 
 # (lines as (point, direction) in plan; the chain runs with the outside on its right; clips: the tile's edges at its
 # ends; back: the footprint's points behind the chain, closing the top)
@@ -222,13 +222,12 @@ def _details(k, key):
     for i in range(segs):                                       # the groove near the foot, all along
         _paint(k, key, i, 0.0, 1.0, [(0.0, GROOVE), (0.0, GROOVE + pz)], GROOVE_D)
         _paint(k, key, i, 0.0, 1.0, [(0.0, GROOVE - pz), (0.0, GROOVE)], GROOVE_L)
-        _paint(k, key, i, 0.0, 1.0, [(rail - LINE, h), (rail, h)], RAIL_L)      # the line along the top's inner edge
+        # the line along the top's inner edge (one px, no highlight)
         _paint(k, key, i, 0.0, 1.0, [(rail, h), (rail + LINE, h)], RAIL_D)
     zt = h - R_Z - 3 * pz                                       # the line under the bullnose
     ts = round((R_D + TOP_SEAM) * 32) / 32                     # (on the art px grid, as the rail: a clean iso line)
-    for i in range(segs):                                       # the seam across the top, lit on its outer side
+    for i in range(segs):                                       # the seam across the top (one px, no highlight)
         _paint(k, key, i, 0.0, 1.0, [(ts, h), (ts + LINE, h)], SEAM_D)
-        _paint(k, key, i, 0.0, 1.0, [(ts - LINE, h), (ts, h)], RAIL_L)
     up = [(0.0, GROOVE + 3 * pz), (0.0, h - R_Z)] + bn + [(ts, h)]
     keep = bn[PLUMB_LEVEL][0]                                   # the seams stand plumb from the stL band's top down
     for i, seams, hatch in PANELS[key]:
