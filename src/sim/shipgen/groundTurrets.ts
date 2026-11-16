@@ -12,6 +12,7 @@ import type { Layout } from './layout';
  *     MIN_CABLE to MAX_CABLE tiles from the middle of a side to the nearest hull wall, bending round what is in the way;
  *   - the turrets spread evenly round the base: the first nearest the command room (they are worked from its weapons
  *     console), each next one at the bearing from the base's middle furthest from those already out;
+ *   - no cable runs to the arrivals hall (a room holding an airlock): visitors walk in there;
  *   - a turret keeps a ring of open ground round it (crew walk round it to repair it); it and its cable stand clear of
  *     the landing pads (and a tile round them) and of the ground before each airlock;
  *   - the ground stays one open walk: every pad, every airlock's outside and every turret's ring stays reachable.
@@ -65,7 +66,16 @@ export function placeGroundTurrets(lay: Layout, plan: GroundPlan): GroundFit {
       }
     }
   }
-  const wallAt = (x: number, y: number): boolean => lay.at(x, y) === '#' && (lay.occ[y * w + x] === -1 || !lay.defs[lay.modules[lay.occ[y * w + x] as number]!.def]?.airlock);
+  // The rooms visitors arrive in (those holding an airlock): no cable runs to their walls.
+  const arrivals = new Set<number>();
+  for (const m of lay.modules) if (lay.defs[m.def]?.airlock) for (const t of footprintTiles(lay.defs[m.def] as ModuleDef, m.x, m.y, m.rot)) {
+    for (const [dx, dy] of [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]] as const) { const r = lay.roomOf[(t.y + dy) * w + t.x + dx] ?? -1; if (r >= 0) arrivals.add(r); }
+  }
+  const besideArrivals = (x: number, y: number): boolean => {
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const r = lay.inBounds(x + dx, y + dy) ? (lay.roomOf[(y + dy) * w + x + dx] ?? -1) : -1; if (r >= 0 && arrivals.has(r)) return true; }
+    return false;
+  };
+  const wallAt = (x: number, y: number): boolean => lay.at(x, y) === '#' && (lay.occ[y * w + x] === -1 || !lay.defs[lay.modules[lay.occ[y * w + x] as number]!.def]?.airlock) && !besideArrivals(x, y);
   // Where the turrets gather: the command room's middle (else the middle of the floor).
   const cmd = lay.roles.map((r, i) => (r === 'bridge' ? i : -1)).filter((i) => i >= 0);
   let sx = 0, sy = 0, n = 0;

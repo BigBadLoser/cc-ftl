@@ -298,7 +298,7 @@ Each turret stands in an open pocket of ground, at least four tiles from any hul
 between pods), inside the base's bounding box, or up to six tiles past it when the box has no such pocket left (the
 site reaches ten tiles past the modules and pads). They spread evenly round the base: the first nearest the command
 room, each next one at the bearing from the box's middle furthest from those already out, with a shake by the
-station's seed so bases differ. Each keeps clear of the pads and of the ground before each airlock, and a cable of 4 to
+station's seed so bases differ. Each keeps clear of the pads and of the ground before each airlock, no cable runs to the arrivals hall, and a cable of 4 to
 16 tiles runs from the middle of one side to the nearest hull wall, bending round what is in the way (the template's `cable` rows, the sim's `cable` grid layer, `sim/cable.ts`). On the asteroid the stamp lays the cable over the
 ground and makes the cabled tiles and the turrets' tiles the base's, so the turrets draw its power, are fired from the
 command room's weapons console, are targeted as its modules and are repaired by suited crew walking out. Nothing in the sim needs a stall: the trader's stock is rolled, station life
