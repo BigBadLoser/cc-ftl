@@ -27,6 +27,7 @@ STRIPE = "cbCabO"
 CAP_TOP = TOP                            # tops of the vent rims and the breaker box
 VARIANTS = (1, 2, 3, 4)
 SZ0, SZH = 0.065, 0.045                  # stripe foot and height
+SAMPLES = 64        # at the pipeline's 4 the ambient light's noise quantises to dark specks on the plain flat top
 
 
 def _lamp(lit):
@@ -163,13 +164,33 @@ def sid(mask, walls=0, var=0, lit=True):
     return f"cable.duct.m{mask}{f'.w{walls}' if walls else ''}{f'.v{var}' if var else ''}{'' if lit else '.off'}"
 
 
+def _job(mask, walls, lit, var):
+    """One sprite as a job that renders itself, at SAMPLES (a tuple job's builder only builds: the pipeline renders after
+    it returns). The render cache keys a callable by its code, its defaults and its module's source."""
+    def run(mask=mask, walls=walls, lit=lit, var=var):
+        import bpy
+        from . import env_build, post
+        aid = sid(mask, walls, var, lit)
+        core.clear_scene_meshes()
+        post.select(PAL)
+        objs = tile(mask, walls, lit, var)
+        sc = bpy.context.scene
+        sc.cycles.samples = SAMPLES
+        try:
+            it = env_build.crop_item(aid, (1, 1), *env_build.render_sprite(aid, "block", objs))
+        finally:
+            sc.cycles.samples = core.SAMPLES
+        return [it] if it else []
+    return run
+
+
 def jobs():
     out = []
     for lit in (True, False):
         for mask in range(16):
             for walls in sorted(_subsets(mask)):
-                out.append((sid(mask, walls, 0, lit), (1, 1), "block", lambda mk=mask, w=walls, li=lit: tile(mk, w, li)))
+                out.append(_job(mask, walls, lit, 0))
             if mask in (5, 10):
                 for v in VARIANTS:
-                    out.append((sid(mask, 0, v, lit), (1, 1), "block", lambda mk=mask, vv=v, li=lit: tile(mk, 0, li, vv)))
+                    out.append(_job(mask, 0, lit, v))
     return out
