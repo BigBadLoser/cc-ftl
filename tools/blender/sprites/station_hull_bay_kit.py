@@ -2,8 +2,8 @@
 every run ending in a wall, the floor or the machine (_run: a pipe swept along a path through rounded elbows; _lathe: a
 round body up the bay): a pump on the floor, an expansion tank lying across over it; the pump's line up off its top
 and back into the wall, another off its side up into the tank, two more up off the tank's top and back into it, the
-tank's return down out of it through a valve into the floor. Under the bay, a box out from the face, a pipe off it
-into the bay."""
+tank's return down out of it through a valve into the floor. Under the bay, a half-round body against the face, a
+pipe off it into the bay."""
 import math
 
 from . import core
@@ -18,28 +18,41 @@ def machinery(f, u0, u1, zf, zl, back):
     _under(f, u0, u1, zf, back, 1 / core.ZPX)
 
 
-UNDER_BOX = (7, 4, 13)              # the box under the bay: px wide, px out from the face, px tall (its top the bay's floor)
-UNDER_TONES = ("stM", "stL", "stD")   # its front, top, ends (in the light: not the machinery's shade)
-UNDER_SEAM, UNDER_SEAM_TONES = 3, ("stD", "stE")   # a seam round it this many px under its top: on its front, its ends
+UNDER_BOX = (7, 4, 13)              # the body under the bay: px wide, px out from the face, px tall (its top the bay's floor)
+UNDER_TONES = ("stL", "stM", "stD", "stDE")  # its top; its sides by facing: the near end (+u), out, the far end (in
+                                    # the light: not the machinery's shade)
+UNDER_SEAM = 3                      # a seam round it this many px under its top (a step under its tones)
 
 
 def _under(f, u0, u1, zf, back, px):
-    """Under the bay, centred on it: a box out from the face, its top level with the bay's floor; a small pipe up off
-    its top and back into the bay."""
+    """Under the bay, centred on it: a half-round body flat against the face, its top level with the bay's floor, a
+    seam round it; a small pipe up off its top and back into the bay."""
     w, out, h = UNDER_BOX
     m = (u0 + u1) / 2
-    f.part(m - w / 2 * LINE, m + w / 2 * LINE, [(D - 0.01, zf - h * px), (D - 0.01, zf), (D + out * LINE, zf),
-                                               (D + out * LINE, zf - h * px)],
-           [None, UNDER_TONES[1], UNDER_TONES[0], None], UNDER_TONES[2], end=False)
-    a, b, z1, z0 = m - w / 2 * LINE, m + w / 2 * LINE, zf - UNDER_SEAM * px, zf - (UNDER_SEAM + 1) * px
-    SD._rect(f, a, b, z0, z1, D + out * LINE + 0.001, UNDER_SEAM_TONES[0])   # (a seam round it: its front, its ends)
-    o = T.P(f.ax, 0, 0, 0, 0)
-    for u, sg in ((a, -1), (b, 1)):
-        f.k.poly([T.P(f.ax, f.plane, u + sg * 0.001, z, d) for z, d in ((z0, D), (z0, D + out * LINE),
-                                                                         (z1, D + out * LINE), (z1, D))],
-                 F, 3, (T.P(f.ax, 0, sg, 0, 0) - o).normalized(), fixed=T.SEAM_PASS or UNDER_SEAM_TONES[1])
+    zs1, zs0 = zf - UNDER_SEAM * px, zf - (UNDER_SEAM + 1) * px
+    for z0, z1, seam in ((zf - h * px, zs0, False), (zs0, zs1, True), (zs1, zf, False)):
+        _half(f, m, z0, z1, w / 2, out, seam)
+    n = 16                                                  # (its top)
+    f.k.poly([T.P(f.ax, f.plane, m + w / 2 * LINE * math.cos(math.pi * i / n), zf, D + out * LINE * math.sin(math.pi * i / n))
+              for i in range(n + 1)], F, 3, core.Vector((0, 0, 1)), fixed=T.SEAM_PASS or UNDER_TONES[0])
     p, dc = (m - u0) / LINE, D + out / 2 * LINE
     _run(f, u0, zf, dc, [(p, -1), (p, 3), (p, 3, (back - dc) / LINE + 1)], r=1.0, R=2)
+
+
+def _half(f, m, z0, z1, ru, rd, seam, n=16):
+    """A half-round band over [z0, z1] flat against the face at m, ru px across either way, rd px out; its facets toned
+    by facing (UNDER_TONES' sides, a step under them on a seam)."""
+    o = T.P(f.ax, 0, 0, 0, 0)
+    for i in range(n):
+        a0, a1, am = (math.pi * k / n for k in (i, i + 1, i + 0.5))
+        gu, gd = math.cos(am) / ru, math.sin(am) / rd
+        ln = math.hypot(gu, gd)
+        gu, gd = gu / ln, gd / ln
+        col = UNDER_TONES[1] if gu > 0.5 else UNDER_TONES[3] if gu < -0.5 else UNDER_TONES[2]
+        col = RAMP[RAMP.index(col) - 1] if seam else col
+        q = [T.P(f.ax, f.plane, m + ru * LINE * math.cos(a), z, D + rd * LINE * math.sin(a))
+             for a, z in ((a0, z0), (a1, z0), (a1, z1), (a0, z1))]
+        f.k.poly(q, F, 3, (T.P(f.ax, 0, gu, 0, gd) - o).normalized(), fixed=T.SEAM_PASS or col)
 
 
 RAMP = ("stK", "stE", "stDE", "stD", "stM", "stS", "stL", "stH", "stB", "stW")   # the station's tones, dark to light
