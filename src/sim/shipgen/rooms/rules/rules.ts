@@ -83,7 +83,7 @@ function b4(c: Ctx): Piece[] {
   return [...bunks(beds(c), 0, w - 1, 0, 0).pieces, P(AC, left ? 0 : w - 1, h - 1, 2), P(GT, left ? w - 2 : 0, Math.max(3, h - 3), 0)];
 }
 
-/** B3: a pair in each corner of the long walls (the side walls of a room walked through), tables (or a game table) evenly spaced between. */
+/** B3: a pair in each corner of the long walls (the side walls of a room walked through), tables (or a game table) evenly spaced between; a corner left without a pair takes the game table. */
 function b3(c: Ctx): Piece[] {
   const { w, h } = c, bank = beds(c), wide = w >= h && !through(c);
   // Each corner's pair a tile in from it where the corner is cut.
@@ -92,7 +92,12 @@ function b3(c: Ctx): Piece[] {
   const parts = wide
     ? [bunks(bank, x0, x0 + 2, 0, 0), bunks(bank, x1, x1 - 2, 0, 0), bunks(bank, x2, x2 + 2, h - 2, 2), bunks(bank, x3, x3 - 2, h - 2, 2)]
     : [sidePairs(bank, true, w, y0, y0 + 2), sidePairs(bank, false, w, y1, y1 + 2), sidePairs(bank, true, w, y2 - 2, y2), sidePairs(bank, false, w, y3 - 2, y3)];
-  return [...parts.flatMap((p) => p.pieces), ...(wide ? middle(3, 0, w - 4, h - 1, true) : middle(0, 3, w - 1, h - 4, false))];
+  const mid = wide ? middle(3, 0, w - 4, h - 1, true) : middle(0, 3, w - 1, h - 4, false);
+  // A corner the beds ran out before takes the game table, end on to its wall (a player either side), unless the middle has one.
+  const corners = wide ? [P(GT, x0 + 1, 0, 1), P(GT, x1 - 1, 0, 1), P(GT, x2 + 1, h - 2, 1), P(GT, x3 - 1, h - 2, 1)]
+    : [P(GT, 0, y0 + 1, 0), P(GT, w - 2, y1 + 1, 0), P(GT, 0, y2 - 1, 0), P(GT, w - 2, y3 - 1, 0)];
+  const spare = corners.find((_, i) => parts[i]?.pairs === 0);
+  return [...parts.flatMap((p) => p.pieces), ...mid, ...(spare && !mid.some((p) => p.def === GT) ? [spare] : [])];
 }
 
 /** Med beds along the back wall, stopping short of the recovery pod in the door-side corner when the room has one. */
@@ -138,7 +143,7 @@ function m4(c: Ctx): Piece[] {
   })];
 }
 
-/** Units (gens, reactors) spread across the back wall, batteries in each gap: two stacked, or three in a row (`along`). */
+/** Units (gens, reactors) spread across the back wall, batteries in each gap side by side against it: two, or three (`along`). */
 function spread(c: Ctx, units: string[], along: boolean): Piece[] {
   const k = units.length, s = units.map((u) => size(c, u)), total = s.reduce((a, b) => a + b, 0);
   const gap = k > 1 ? Math.floor((c.w - total) / (k - 1)) : 0;
@@ -147,7 +152,8 @@ function spread(c: Ctx, units: string[], along: boolean): Piece[] {
     const at = x, w = s[i] as number;
     x += w + gap;
     if (i === k - 1) return [P(u, at, 0)];
-    const bats = along ? range(0, 2, 1).map((j) => P(BT, at + w + Math.floor((gap - 3) / 2) + j, 0)) : [P(BT, at + w + Math.floor((gap - 1) / 2), 0), P(BT, at + w + Math.floor((gap - 1) / 2), 1)];
+    // A battery stands a tile wide and two deep: side by side against the back wall.
+    const n = along ? 3 : 2, bats = range(0, n - 1, 1).map((j) => P(BT, at + w + Math.floor((gap - n) / 2) + j, 0));
     return [P(u, at, 0), ...bats];
   });
 }

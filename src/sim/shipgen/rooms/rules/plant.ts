@@ -27,7 +27,8 @@ export function core(c: Ctx): Piece[] {
 /** BA: the battery room: the console in the middle of the back wall, the cells in a bank round it, in rows with a lane between, as many as they need. */
 export function bank(c: Ctx): Piece[] {
   const { w, h } = c, cells = count(c.need, BT), cx = Math.floor(w / 2), rows = Math.max(1, Math.ceil(cells / Math.max(1, w - 1)));
-  if (2 * rows - 2 > h - 2) return [];
+  // Each row two deep (a battery stands a tile wide, two deep), a lane after it.
+  if (3 * rows - 2 > h - 2) return [];
   const per = Math.ceil(cells / rows), out: Piece[] = count(c.need, CN) > 0 ? [P(CN, cx, 0, 0)] : [];
   let left = cells;
   for (let y = 0; y < rows; y++) {
@@ -35,7 +36,7 @@ export function bank(c: Ctx): Piece[] {
     for (let k = 1; xs.length < n; k++) { xs.push(cx - k); if (xs.length < n) xs.push(cx + k); }
     // Keep the bank inside the walls: slide it toward the side with room.
     const lo = Math.min(...xs), shift = lo < 0 ? -lo : Math.max(...xs) > w - 1 ? w - 1 - Math.max(...xs) : 0;
-    out.push(...xs.map((x) => P(BT, x + shift, 2 * y, 0)));
+    out.push(...xs.map((x) => P(BT, x + shift, 3 * y, 0)));
     left -= n;
   }
   return out;

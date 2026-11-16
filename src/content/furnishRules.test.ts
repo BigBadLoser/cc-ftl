@@ -66,7 +66,7 @@ const CASES: { role: RoomRole; name: string; need: string[]; sizes: [number, num
   { role: 'core', name: 'CR', need: ['module.aiCore', 'module.pointDefense'], sizes: [[6, 3], [9, 5], [11, 5], [12, 6]] },
   { role: 'core', name: 'CR', need: ['module.aiCore', ...k(3, 'module.pointDefense')], sizes: [[12, 3], [12, 5], [14, 6]] },
   { role: 'plant', name: 'BA', need: [...k(4, 'module.battery'), 'module.console'], sizes: [[5, 4], [6, 4], [7, 5]] },
-  { role: 'plant', name: 'BA', need: [...k(8, 'module.battery'), 'module.console'], sizes: [[7, 4], [8, 5], [9, 6]] },
+  { role: 'plant', name: 'BA', need: [...k(8, 'module.battery'), 'module.console'], sizes: [[9, 4], [8, 6], [9, 6]] },
   { role: 'cargo', name: 'CG', need: k(4, 'module.storage'), sizes: [[8, 5], [10, 6], [4, 3], [5, 4]] },
   { role: 'cargo', name: 'CG', need: k(6, 'module.storage'), sizes: [[4, 3], [7, 4], [9, 5]] },
   { role: 'cargo', name: 'CG', need: k(24, 'module.storage'), sizes: [[10, 7], [12, 8], [14, 9], [16, 7]] },
