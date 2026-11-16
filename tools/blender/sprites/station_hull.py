@@ -198,8 +198,7 @@ def build(k, ax, plane, a, b, ends, H):
         else:
             for z0, z1 in ((0.0, GROOVE), (GROOVE, H)):
                 f.block(s0, s1, z0, z1)
-        for u0, u1 in (((s0, SB.span(s0)[0]), (SB.span(s0)[1], s1)) if bay else ((s0, s1),)):   # (broken by a bay)
-            f.line(u0, u1, GROOVE, s.z_at(GROOVE, -1), GROOVE_D, bevel=False)
+        f.line(s0, s1, GROOVE, s.z_at(GROOVE, -1), GROOVE_D, bevel=False)
         cut = SD.recess(s0) if whole and DESIGN[0] == SD.MODULE else None    # (the recess breaks its lit px and the
         for u0, u1 in (((s0, cut[0]), (cut[1], s1)) if cut else ((s0, s1),)):   # step's seam)
             f.line(u0, u1, s.z_at(GROOVE, 1), GROOVE, GROOVE_L, bevel=False)
