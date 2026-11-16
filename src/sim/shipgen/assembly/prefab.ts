@@ -42,7 +42,7 @@ const MARKET: [number, number] = [9, 11], TRADE_HALL: [number, number] = [7, 9];
 /** The long tube out to a compound on the ground, and the pitch of ribs hung side by side (a module and two tiles of ground). */
 const LONG = 5, RIB = OUT + 2;
 /** A greenhouse's length (long and narrow), and an ore store's side; the lobby before an outside airlock. */
-const HOUSE = 15, ORES = 7, LOBBY = 4, CLUSTER = 5;
+const HUB = 13, HOUSE = 15, ORES: [number, number] = [11, 7], LOBBY = 4, CLUSTER = 5;
 /** The command room's length (its programme floor, nine by seven). */
 const CMD = 9;
 /** Between two branches off one side of the mess. */
@@ -111,14 +111,14 @@ export function prefab(c: Ctx, rooms: readonly RoomSpec[], docks: readonly RoomS
   // The warehouse as deep as its crates need (the programme's floor for it is the old crate rooms', roomy for a module).
   const warehouse: Seg[] = pick((r) => r.dept === 'freight').map((r) => !trade ? { ...r, mods: r.mods.map((m) => (m === COLD ? CRATE : m)) } : r).map((r) => ({ spec: r, len: r.mods.includes(CRATE) ? holdDepth(r.mods.filter((m) => m === CRATE).length, PREFAB_WIDE) : lengthOf(r) }));
   // The ore store: not in the programme (the workshop's raw stock, in ore bins). A farm has none.
-  const oreStore: RoomSpec = { role: 'cargo', dept: 'works', mods: Array<string>(4).fill(ORE), w: ORES, h: ORES };
+  const oreStore: RoomSpec = { role: 'cargo', dept: 'works', mods: Array<string>(6).fill(ORE), w: ORES[0], h: ORES[1] };
   const rest = ordered(pick(() => true));
   const refinery = (r: RoomSpec): boolean => r.mods.includes('module.refinery');
   // The works, by kind: greenhouses, the refinery, the pod bay with its suit room, the ore stores, the workshop; the rest joins the medbay's branch.
   const farms = trade ? [] : rest.filter((r) => r.role === 'farm'), refineries = trade ? [] : rest.filter(refinery);
   const pods = trade ? [] : rest.filter((r) => r.role === 'hangar'), shop = trade ? [] : rest.filter((r) => r.role === 'industry' && !refinery(r));
   // The ore stores all alike: four large bins in a square room.
-  const oreRooms = trade || farming ? [] : [...rest.filter((r) => r.role === 'cargo'), oreStore].map((r) => ({ ...r, mods: oreStore.mods, w: ORES, h: ORES }));
+  const oreRooms = trade || farming ? [] : [...rest.filter((r) => r.role === 'cargo'), oreStore].map((r) => ({ ...r, mods: oreStore.mods, w: ORES[0], h: ORES[1] }));
   const used = new Set<RoomSpec>([...farms, ...refineries, ...pods, ...shop, ...rest.filter((r) => r.role === 'cargo' && !trade && !farming)]);
   const works = trade ? [...ordered(rest), oreStore, ...commons] : [];
   const extra = trade ? [] : [...rest.filter((r) => !used.has(r)), ...commons];
@@ -260,7 +260,7 @@ export function prefab(c: Ctx, rooms: readonly RoomSpec[], docks: readonly RoomS
   else if (plan === 'mineWing') {
     wing((y, west) => {
       // Workshop, refinery, the pod bay and its suit room, a lobby and an airlock out of its end; the ore stores hang below.
-      const need = 4 + RIB * (oreRooms.length - 1) + 7, segs = [...padded([...segsOf(shop), ...segsOf(refineries), ...segsOf(pods)], 6, need), lobby()];
+      const need = 4 + RIB * (oreRooms.length - 1) + 7, segs = [...padded([...segsOf(shop), ...segsOf(refineries).map((x) => ({ ...x, len: Math.max(x.len, HUB) })), ...segsOf(pods)], 6, need), lobby()];
       const m = side(hubOf(), y, west, segs);
       if (!m) return false;
       lock(m, !west);
@@ -268,15 +268,15 @@ export function prefab(c: Ctx, rooms: readonly RoomSpec[], docks: readonly RoomS
     });
   } else if (plan === 'minePit') {
     wing((y, west) => {
-      // A short tube to the refinery hub (nine tiles inside, so it clears the command line above it). Off it, dead ends: an ore
+      // A short tube to the refinery hub (nine tiles across, so it clears the command line above it; thirteen along, for two machines on its back wall). Off it, dead ends: an ore
       // store below, and a row off its far side (the workshop, the pod bay, the suit room, a lobby and an airlock out of its end)
       // with the other ore store hung below it. No ore store is a way through.
-      const [first, ...more] = segsOf(refineries), hm = side(hubOf(), y, west, first ? [{ ...first, len: 9 }] : [], LONG, 9);
+      const [first, ...more] = segsOf(refineries), hm = side(hubOf(), y, west, first ? [{ ...first, len: HUB }] : [], LONG, 9);
       if (!hm) return false;
       const rowSegs = [...padded([...segsOf(shop), ...more, ...segsOf(pods)], 6), lobby()], rm = side(hm, y, west, rowSegs);
       if (!rm) return false;
       lock(rm, !west);
-      return !!oreRooms[0] && !!below(hm, hm.box[0] + 1 + 4, segsOf([oreRooms[0]]), 9) && ribs(rm, west, oreRooms.slice(1).map((r) => [r]));
+      return !!oreRooms[0] && !!below(hm, hm.box[0] + 1 + (HUB >> 1), segsOf([oreRooms[0]])) && ribs(rm, west, oreRooms.slice(1).map((r) => [r]));
     });
   }
   if (trade) row(segsOf(works));
