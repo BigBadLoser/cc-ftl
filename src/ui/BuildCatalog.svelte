@@ -4,7 +4,7 @@
   import type { UiApi, UiMining, UiModuleDef, UiStock, UiToolState } from './api';
   import BuildCard from './BuildCard.svelte';
   import BuildPopover from './BuildPopover.svelte';
-  import { buildEntries, filterEntries, groupMembers, isSelected, visibleCategories, type CategoryId, type Entry } from './buildCatalog';
+  import { buildEntries, costForRun, DEFAULT_WINDOW_SIZE, filterEntries, groupMembers, isSelected, moduleChips, windowChips, windowSizeOf, visibleCategories, type CategoryId, type Entry } from './buildCatalog';
   import { createThumbs } from './buildThumbs';
   import HullPlanBar from './HullPlanBar.svelte';
   import Icon from './Icon.svelte';
@@ -63,12 +63,18 @@
     if (e.kind === 'module') api.setTool({ tool: 'build', build: 'module', moduleDef: e.id });
     else api.setTool({ tool: 'build', build: e.id as UiToolState['build'] });
   };
-  /** The members of a module's group (tiers lowest first). */
-  const variantsOf = (e: Entry): Entry[] => (e.def?.group ? groupMembers(entries, e.def.group) : []);
-  const showVariant = (v: Entry) => {
+  const isWindow = (e: Entry) => e.kind === 'tool' && e.id === 'window';
+  /** The popover's variant chips: a module's group (tiers lowest first), or the Window tool's sizes. */
+  const variantsOf = (e: Entry) => (isWindow(e) ? windowChips(st.windowSize) : e.def?.group ? moduleChips(groupMembers(entries, e.def.group), e.id) : []);
+  const showVariant = (id: string) => {
+    const size = windowSizeOf(id);
+    if (size) { api.setTool({ tool: 'build', build: 'window', windowSize: size }); return; }
+    const v = entries.find((e) => e.id === id && e.kind === 'module');
+    if (!v) return;
     pick(v);
     if (pop) pop = { entry: v, rect: pop.rect };
   };
+  const windowCost = $derived(costForRun(entries.find((e) => e.id === 'window' && e.kind === 'tool')?.cost ?? [], st.windowSize ?? DEFAULT_WINDOW_SIZE));
   const selectedEntry = $derived(entries.find((e) => isSelected(e, st)));
 
   // Popover: opens ~250ms after the pointer settles on a card, a pin keeps it, a long press opens it on touch.
@@ -112,13 +118,6 @@
           <button class="tab" class:on={!query && cat === c.id} data-testid="tab-{c.id}" onclick={() => { cat = c.id; query = ''; }}>{c.label}<i>{c.count}</i></button>
         {/each}
       </div>
-      {#if st.tool === 'build' && st.build === 'window'}
-        <span class="wsize" role="group" aria-label="Window size">
-          {#each [2, 3, 4] as n (n)}
-            <button class="rotb" class:on={(st.windowSize ?? 3) === n} data-testid="window-size-{n}" aria-pressed={(st.windowSize ?? 3) === n} onclick={() => api.setTool({ windowSize: n })}>{n} tiles</button>
-          {/each}
-        </span>
-      {/if}
       {#if selectedEntry?.kind === 'module'}
         <button class="rotb" use:tip={{ text: 'Rotate (Shift+R turns back)', key: 'build.rotate' }} aria-label="Rotate" data-testid="rotate" onclick={() => api.setTool({ rot: (st.rot + 1) % 4 })}><Icon name="rotate" size={16} /> {st.rot * 90}°</button>
       {/if}
@@ -129,6 +128,7 @@
 {#if st.build === 'hull'}<HullPlanBar {api} />{/if}
 {#if pop}
   <BuildPopover {api} entry={pop.entry} rect={pop.rect} rot={st.rot} thumb={pop.entry.def ? thumbOf(pop.entry.id, st.rot) : undefined} {have} {pinned} variants={variantsOf(pop.entry)} {thumbOf} onvariant={showVariant}
+    cost={isWindow(pop.entry) ? windowCost : undefined} costLabel={isWindow(pop.entry) ? `Build cost · ${st.windowSize ?? DEFAULT_WINDOW_SIZE} tiles` : undefined}
     onpin={() => (pinned = !pinned)} onenter={() => clearTimeout(closeT)} onleave={leave} />
 {/if}
 {#if hint}<div class="hint" class:ok={hint.ok} role="status" data-testid="place-hint" style:left="{hint.x}px" style:top="{hint.y}px">{hint.text}</div>{/if}
@@ -147,8 +147,6 @@
   .tab:hover { border-color: var(--build-line-hi); }
   .tab.on { background: var(--amber); border-color: var(--amber); color: var(--build-on-amber); }
   .tab.on i { color: #4a3508; }
-  .wsize { display: inline-flex; gap: 4px; }
-  .wsize .on { border-color: var(--amber); }
   .rotb { flex: none; height: 28px; min-width: 0; display: inline-flex; align-items: center; gap: 4px; }
   .search { width: 180px; flex: none; height: 26px; box-sizing: border-box; background: var(--build-fill); border: 1px solid var(--build-line); color: var(--build-ink); padding: 0 8px; font: 13px system-ui; user-select: text; -webkit-user-select: text; }
     .search:focus { outline: none; border-color: var(--amber); }

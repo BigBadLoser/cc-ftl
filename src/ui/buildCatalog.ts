@@ -87,6 +87,38 @@ export function filterEntries(entries: Entry[], cat: CategoryId, query: string, 
 export const isSelected = (e: Entry, st: UiToolState, members?: Entry[]): boolean =>
   st.tool === 'build' && (e.kind === 'module' ? st.build === 'module' && (members?.length ? members.some((m) => m.id === st.moduleDef) : st.moduleDef === e.id) : st.build === e.id);
 
+/** The sizes (tiles in the run) the Window tool offers; `UiToolState.windowSize` defaults to the middle one. */
+export const WINDOW_SIZES = [2, 3, 4] as const;
+export const DEFAULT_WINDOW_SIZE = 3;
+
+/** One chip of the popover's variant row: a tier or build of a module group, or a size of the Window tool. */
+export interface VariantChip {
+  /** Test id suffix and the id `onvariant` gets back: a module id, or `window-<tiles>`. */
+  id: string;
+  label: string;
+  locked?: boolean;
+  /** Module whose thumb the chip shows (a build variant with a `variantLabel`). */
+  thumbId?: string;
+  on: boolean;
+}
+
+/** The chips of a module group (`members`, tiers lowest first); `current` is the module being shown. */
+export const moduleChips = (members: Entry[], current: string): VariantChip[] =>
+  members.map((v) => ({ id: v.id, label: v.def?.variantLabel ?? v.def?.tier ?? v.name, locked: v.locked, thumbId: v.def?.variantLabel ? v.id : undefined, on: v.id === current }));
+
+/** The Window tool's size chips, `size` (tiles; the default when unset) highlighted. */
+export const windowChips = (size: number | undefined): VariantChip[] =>
+  WINDOW_SIZES.map((n) => ({ id: `window-${n}`, label: `${n} tiles`, on: n === (size ?? DEFAULT_WINDOW_SIZE) }));
+
+/** The size a `window-<tiles>` chip id stands for, else null. */
+export const windowSizeOf = (chipId: string): number | null => {
+  const n = /^window-(\d+)$/.exec(chipId)?.[1];
+  return n && (WINDOW_SIZES as readonly number[]).includes(+n) ? +n : null;
+};
+
+/** A per-tile cost for a run of `n` tiles. */
+export const costForRun = (perTile: UiCost[], n: number): UiCost[] => perTile.map((c) => ({ ...c, count: c.count * n }));
+
 /** Items the stock is short of for a cost list. */
 export const shortOf = (cost: UiCost[], have: (item: string) => number): UiCost[] => cost.filter((c) => have(c.item) < c.count);
 
