@@ -30,8 +30,12 @@ const STATION_GAP = 2 * REGION_PAD + MIN_SHIP_GAP + 8;
 export function spawnStation(sim: Sim, kind: string, size: StationSize, seed: number, at?: Place, name?: string, side?: Faction): number | string {
   const def = sim.content.stations?.[kind];
   if (!def) return 'badKind';
-  const gen = buildStation(def, kind, size, seed >>> 0, sim.content.modules);
-  if (gen.problems.length > 0) return 'noLayout';
+  let gen: ReturnType<typeof buildStation>;
+  try {
+    gen = buildStation(def, kind, size, seed >>> 0, sim.content.modules);
+  } catch {
+    return 'noLayout'; // no recipe of the kind stood on any try: a typed failure, not an exception out of the tick
+  }
   let { x, y } = at ? placeAt(at, gen.width, gen.height) : { x: 0, y: 0 };
   if (!at) {
     let east = 0;

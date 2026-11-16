@@ -1,24 +1,75 @@
-import type { ModuleDef } from '../../registry';
+import { airlockTiles } from '../../modules/airlock';
+import { footprintTiles } from '../../modules/footprint';
+import type { ModuleDef, ShipTemplate } from '../../registry';
 import { Rng } from '../../rng';
 import { fitShell, seedOf } from '../generate';
-import { infoOf, stationFaction, stationProblems, type StationResult } from '../stationGen';
-import { stationCrew } from '../stationPlan';
+import { SECURITY_ROLE, docksOf, stationCrew } from '../stationCrew';
 import type { RoomSpec } from '../plan';
-import type { StationDef, StationSize } from '../stationTypes';
-import type { HullFamilyDef, ShipRoleDef } from '../types';
+import type { StationDef, StationInfo, StationSize } from '../stationTypes';
+import type { FactionDef, GenResult, ShipRoleDef } from '../types';
 import { assemble } from './assemble';
 import { PREFAB_PADS } from './prefab';
-import { docksOf, stationProgram } from './program';
+import { stationProgram } from './program';
 import { recipeAt, type Recipe } from './recipe';
 
 /** What a harbour's customs hall holds: the officers' desk and their two chairs (rules: CU). */
 const CUSTOMS: RoomSpec = { role: 'plaza', mods: ['module.mess_table', 'module.chair', 'module.chair'], w: 7, h: 3 };
 
+export interface StationResult extends GenResult {
+  station: StationInfo;
+  /**
+   * A base of separate modules on open ground (a prefab base): an outpost levels the whole site under it, the ground
+   * between its modules included, and keeps its landing pads clear (template tiles; each with an airlock facing it).
+   */
+  site?: { pads: { x: number; y: number; w: number; h: number }[] };
+}
+
+/** The FactionDef the shared fit-out reads (stock, crew species, guns and shields); budgets are unused here. */
+export function stationFaction(def: StationDef): FactionDef {
+  const zero = { base: 0, perDepth: 0, max: 0 };
+  return {
+    name: def.name, side: def.side, motif: def.motif,
+    art: { hull: 'hull.clean', wall: 'wall.clean', roof: 'roof.grid', livery: 'livery.navy', signature: [] },
+    architecture: { roles: [], symmetry: 0, corridorWidth: [1, 2], strutLength: [1, 3], battery: 2, noses: [] },
+    weapons: def.weapons, shields: def.shields, stock: def.stock,
+    living: true, aiCore: true, crew: { required: def.crew.required, pool: def.crew.pool, species: def.crew.species },
+    doctrine: { targeting: 'random' },
+    budget: { weapons: zero, heavyPct: zero, shields: zero, engines: zero, reactors: zero, pointDefense: zero, crew: zero, crates: zero, size: zero },
+  };
+}
+
+/** Station rules on top of the ship validators: enough airlock docks, everything inside the template, no engine. */
+export function stationProblems(t: ShipTemplate, defs: Record<string, ModuleDef>, minDocks: number): string[] {
+  const out: string[] = [];
+  const h = t.rows.length;
+  const w = Math.max(...t.rows.map((r) => r.length));
+  const mods = t.modules ?? [];
+  const docks = mods.filter((m) => defs[m.def]?.airlock).length;
+  if (docks < minDocks) out.push(`docks: ${docks} < ${minDocks}`);
+  for (const m of mods) {
+    const def = defs[m.def];
+    if (!def) continue;
+    const tiles = [...footprintTiles(def, m.x, m.y, m.rot), ...(def.airlock ? ((a) => [a.outer, a.inner, a.inside])(airlockTiles(def, m)) : [])];
+    if (tiles.some((p) => p.x < 0 || p.y < 0 || p.x >= w || p.y >= h)) out.push(`${m.def}@${m.x},${m.y}: outside the template`);
+  }
+  if (mods.some((m) => defs[m.def]?.engine)) out.push('station has an engine');
+  return out;
+}
+
+const infoOf = (def: StationDef, size: StationSize, t: ShipTemplate, defs: Record<string, ModuleDef>): StationInfo => {
+  const mods = t.modules ?? [];
+  const n = (p: (d: ModuleDef) => boolean): number => mods.filter((m) => defs[m.def] && p(defs[m.def] as ModuleDef)).length;
+  return {
+    kind: def.kind, size, crew: (t.crew ?? []).length, security: (t.crew ?? []).filter((r) => r === SECURITY_ROLE).length,
+    docks: n((d) => !!d.airlock), guns: n((d) => !!d.weapon), shields: n((d) => !!d.shieldGen),
+  };
+};
+
 /**
- * A station of `def`'s kind at a size tier, assembled by `recipe` and fitted out as the station grammars' structures
- * are: the assembly's regions are the rooms, each with the role and planned contents it was given, and the shared
- * fit-out (`fitShell`) furnishes, validates and measures them. Deterministic from `seed`. The result lists its
- * problems; it throws only when the recipe cannot be assembled at all.
+ * A station of `def`'s kind at a size tier, assembled by `recipe` and fitted out: the assembly's regions are the rooms,
+ * each with the role and planned contents it was given, and the shared fit-out (`fitShell`) furnishes, validates and
+ * measures them. Deterministic from `seed`. The result lists its problems; it throws only when the recipe cannot be
+ * assembled at all. The game builds stations through `buildStation`, which picks the recipe and retries.
  */
 export function assembleStation(def: StationDef, id: string, size: StationSize, seed: number, defs: Record<string, ModuleDef>, recipe: Recipe): StationResult {
   const rng = new Rng(seedOf(seed, 0));
@@ -32,10 +83,9 @@ export function assembleStation(def: StationDef, id: string, size: StationSize, 
   // A hatch in the outer wall is the airlock's own door: the fit-out stands an airlock module in plain hull.
   const at = (x: number, y: number): string => snap.rows[y]?.[x] ?? '.';
   const rows = snap.rows.map((row, y) => [...row].map((c, x) => (c === 'D' && [at(x + 1, y), at(x - 1, y), at(x, y + 1), at(x, y - 1)].includes('.') ? '#' : c)).join(''));
-  const f = stationFaction(def, size);
-  const role: ShipRoleDef = { id: size, weight: ((f.hullFamilies as HullFamilyDef[])[0] as HullFamilyDef).weight, archetypes: [] };
+  const role: ShipRoleDef = { id: size, weight: { base: 1, perDepth: 0, max: 1 }, archetypes: [] };
   const made = fitShell(
-    rng, f, id, seed, role, 'sections', { crew: stationCrew(rng, def, size) },
+    rng, stationFaction(def), id, seed, role, 'sections', { crew: stationCrew(rng, def, size) },
     { rows, roomOf: snap.roomOf, width: snap.width, height: snap.height, roles: g.regions.map((r) => r.role), specs: g.regions.map((r) => r.spec ?? (r.dept === 'customs' ? CUSTOMS : undefined)) },
     `assembly ${recipe.name}`, defs, 0, { immobile: true, airlocksAnyWay: true, gunsAnywhere: true, unarmed: prefab, check: (t, d) => stationProblems(t, d, prefab ? Math.min(PREFAB_PADS, docksOf(def, size)) : docksOf(def, size)) },
   );

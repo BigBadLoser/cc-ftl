@@ -89,7 +89,6 @@ export default {
  "src/content/ships/economy.test.ts": 9.8,
  "src/content/factions/shipgen.test.ts": 9.7,
  "src/content/ships/mining.slow.test.ts": 9.7,
- "src/content/stationRings.test.ts": 9.6,
  "src/content/ships/robotBays.test.ts": 9.5,
  "src/app/scenarios/inspect.test.ts": 9.1,
  "src/content/ships/outposts.slow.test.ts": 9.1,

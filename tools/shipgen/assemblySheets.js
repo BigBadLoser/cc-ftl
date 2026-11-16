@@ -2,8 +2,8 @@
 /**
  * Station assembly sheets: the recipes of src/content/stationRecipes.ts, assembled for several seeds and drawn through
  * the original views (silhouette, structure, departments). Unfurnished: composition first.
- *   node tools/shipgen/assemblySheets.js [--seeds 1,2,3,4] [--out dir] [--family tree] [--program station.research:hub] [--versus]
- *   (--versus: the old grammar as the first row; --program: another kind and size than the family's own)
+ *   node tools/shipgen/assemblySheets.js [--seeds 1,2,3,4] [--out dir] [--family tree] [--program station.research:hub]
+ *   (--program: another kind and size than the family's own)
  * One set of sheets per family (tree: the pirate hub's rooms; spine and compound: the mining station's). A row per recipe
  * variation, a column per seed. Nothing is filtered: a seed that cannot be assembled shows as a rejected panel.
  */
@@ -17,7 +17,6 @@ const arg = (f, d) => { const i = args.indexOf(`--${f}`); return i < 0 ? d : arg
 const seeds = arg('seeds', '1,2,3,4').split(',').map(Number);
 const out = resolve(arg('out', 'tools/shipgen/out/assembly'));
 mkdirSync(out, { recursive: true });
-const VERSUS = { tree: 'stationTree', spine: 'stationSpine' };
 const PROGRAM = { tree: ['station.pirate', 'hub'], spine: ['station.mining', 'station'], compound: ['station.mining', 'station'], bazaar: ['station.trading', 'station'], crescent: ['station.trading', 'station'] };
 const only = arg('family', '');
 
@@ -46,8 +45,8 @@ function encodePng({ width, height, data }) {
 const server = await createServer({ server: { middlewareMode: true }, appType: 'custom', logLevel: 'error', optimizeDeps: { noDiscovery: true } });
 try {
   const L = (p) => server.ssrLoadModule(p);
-  const [{ content }, { stationRecipes }, sg, { Rng }, gen, { deptOf }, { stationProgram }, { assemble }, views, { hullProblems }, { Raster }, { drawStructure, drawSilhouette }, { recipeAt }] = await Promise.all([
-    '/src/content/index.ts', '/src/content/stationRecipes.ts', '/src/sim/shipgen/stationGen.ts', '/src/sim/rng.ts', '/src/sim/shipgen/generate.ts',
+  const [{ content }, { stationRecipes }, { Rng }, gen, { deptOf }, { stationProgram }, { assemble }, views, { hullProblems }, { Raster }, { drawStructure, drawSilhouette }, { recipeAt }] = await Promise.all([
+    '/src/content/index.ts', '/src/content/stationRecipes.ts', '/src/sim/rng.ts', '/src/sim/shipgen/generate.ts',
     '/src/sim/shipgen/assembly/dept.ts', '/src/sim/shipgen/assembly/program.ts', '/src/sim/shipgen/assembly/assemble.ts', '/tools/shipgen/assemblyViews.ts',
     '/src/sim/shipgen/assembly/hull.ts', '/tools/shipgen/draw.ts', '/tools/shipgen/views.ts', '/src/sim/shipgen/assembly/recipe.ts'].map(L));
   const { roomCores, drawDepartments, drawDeptKey, wallBlocks } = views;
@@ -90,18 +89,6 @@ try {
     if (only && family !== only) continue;
     const [kind, size] = arg('program') ? arg('program').split(':') : PROGRAM[family];
     const rows = [];
-    // --versus: the old grammar for the same rooms and seeds as the first row, through the whole old pipeline.
-    if (args.includes('--versus') && VERSUS[family]) {
-      const def = content.stations[kind];
-      const d2 = { ...def, tiers: { ...def.tiers, [size]: { ...def.tiers[size], grammars: [{ value: VERSUS[family], weight: 1 }] } } };
-      rows.push(seeds.map((seed) => {
-        const g = sg.generateStation(d2, kind, size, seed, content.modules);
-        g.depts = g.rooms.map((rm) => (rm.role === 'hall' ? 'circulation' : rm.role === 'plaza' ? 'commons' : deptOf({ role: rm.role })));
-        const floor = [...g.roomOf].filter((k) => k >= 0).length;
-        console.log(`${family} | OLD ${VERSUS[family]} | seed ${seed}: ${g.width}x${g.height}, rooms ${g.rooms.length}, floor ${floor}, 2x2 ${wallBlocks(g).length}`);
-        return { title: `OLD ${VERSUS[family].replace('station', '').toUpperCase()} - seed ${seed} - ${g.width}x${g.height}`, g };
-      }));
-    }
     for (const recipe of recipes) {
       const row = [];
       for (const seed of seeds) {

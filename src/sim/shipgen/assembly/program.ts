@@ -2,15 +2,13 @@ import type { ModuleDef } from '../../registry';
 import type { Rng } from '../../rng';
 import { shuffle } from '../civilKit';
 import { cargoSpec, dockSpec, pickWeighted, weaponSpec, type RoomSpec, type StationDept } from '../plan';
-import { docksOf } from '../stationCrew';
-import { stationCrew } from '../stationPlan';
+import { docksOf, stationCrew } from '../stationCrew';
 import type { StationDef, StationSize } from '../stationTypes';
 import { messSize } from '../rooms/rules/parts';
 import { barracksOf, cabinOf, sleepersIn } from './quarters';
 
 /**
  * A station's rooms as the assembly takes them: the kind's doctrine (`StationDef`) at a size tier, as a list of rooms.
- * This is the assembly's own station plan. The station grammars keep theirs (`planStation`), which goes when they do.
  */
 
 /**
@@ -24,8 +22,6 @@ function grown(rng: Rng, r: RoomSpec, s: number): RoomSpec {
   return r.w >= r.h ? { ...r, w: r.w + along, h: r.h + across } : { ...r, w: r.w + across, h: r.h + along };
 }
 
-/** The airlock docks an assembled station of this kind has at a size: its own count where the kind gives one, two at least. */
-export { docksOf };
 
 /** Reactor tiers, Mk I to Mk III (50, 100 and 180 power; 2x2, 2x3 and 2x4). */
 /** Tiles of planned room a lamp, halls' share included (measured on generated stations). */
@@ -108,7 +104,7 @@ function planned(rng: Rng, def: StationDef, size: StationSize, defs: Record<stri
   const suits = (dept: StationDept, lockers: number): RoomSpec => ({ role: 'support', dept, mods: [...Array<string>(lockers).fill('module.storage_locker'), 'module.chair', 'module.chair'], w: Math.max(4, lockers), h: 3 });
   if (size !== 'outpost') support.push(suits('harbour', 4));
 
-  for (const r of [...(def.assemblyRooms ?? def.rooms), ...(def.assemblyAlso ?? [])]) {
+  for (const r of def.rooms) {
     for (let i = 0; i < r.count[size]; i++) {
       const spec: RoomSpec = { role: r.role, ...(r.dept ? { dept: r.dept } : {}), mods: [...r.mods], w: r.w, h: r.h, ...(r.role === 'armoury' || r.items ? { stock: true } : {}), ...(r.items ? { items: r.items } : {}) };
       // A market stall keeps its planned size (a stall is small), and so does a greenhouse (its beds fill it; the wings repeat).

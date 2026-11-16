@@ -2,7 +2,8 @@
 /**
  * Ship layout contact sheets without Blender or sprite art.
  *   node tools/shipgen/cli.js <faction|all> [--from 1] [--count 12] [--depth 0] [--out dir] [--scale 10] [--views detail|silhouette|assembly|structure|all]
- *   node tools/shipgen/cli.js station.<kind>|station.all [--size outpost|station|hub|outpost,hub|all] [--layout stationWheel]: station sheets.
+ *   node tools/shipgen/cli.js station.<kind>|station.all [--size outpost|station|hub|outpost,hub|all] [--layout assembly.bazaar.1]: station
+ *   sheets, built as the game builds them, or by one assembly recipe.
  *   --views labels: one labelled image a seed (rooms named, furniture coded, a key: tools/shipgen/labels.ts).
  *   --views marks: the same with the deck's edge markings drawn (src/sim/shipgen/markings.ts).
  *   --ruin 0.2,0.5,0.9 [--cause combat|decay|both]: derelict ruin sheets instead (tools/shipgen/ruinView.ts).

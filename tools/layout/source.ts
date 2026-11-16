@@ -18,12 +18,12 @@ export interface Source {
   family: string;
   /** Station size. */
   size: string;
-  /** Station layout ('' any the size allows). */
+  /** Station layout ('' as the game builds it; `assembly.<family>[.n]` one recipe). */
   layout: string;
   seed: number;
   depth: number;
 }
-export const DEFAULT_SOURCE: Source = { kind: 'station', id: 'station.trading', family: '', size: 'station', layout: 'stationWheel', seed: 1, depth: 4 };
+export const DEFAULT_SOURCE: Source = { kind: 'station', id: 'station.trading', family: '', size: 'station', layout: '', seed: 1, depth: 4 };
 
 export const SIZES = ['outpost', 'station', 'hub'] as const;
 export const factions = (): string[] => factionIds();
@@ -34,11 +34,10 @@ export function familiesOf(faction: string): string[] {
   const f = (content.factions as Record<string, { hullFamilies?: { id: string }[] }>)[faction];
   return f?.hullFamilies?.map((h) => h.id) ?? [];
 }
-/** The layouts a station kind uses at a size, then every station assembly recipe (any kind's rooms can be assembled by any). */
+/** Every station assembly recipe (any kind's rooms can be assembled by any); '' (the kind's own, as the game picks) is the default. */
 export function layoutsOf(station: string, size: string): string[] {
   const def = (content.stations as Record<string, StationDef>)[station];
-  const tier = def?.tiers[size as keyof StationDef['tiers']];
-  return tier ? [...tier.grammars.map((g) => g.value), ...assemblyLayouts()] : [];
+  return def?.tiers[size as keyof StationDef['tiers']] ? assemblyLayouts() : [];
 }
 
 /** The side a faction (or station kind) flies for, as the game reads it: its own `side`, else 'hostile' as the game's spawn does. */

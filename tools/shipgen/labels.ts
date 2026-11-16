@@ -2,7 +2,7 @@
  * The labelled view (dev tool, not shipped): one layout per image, drawn large, every room named at its middle and every
  * piece of furniture marked with a two-letter code, with a key beside it (room colours, then the codes in use). For
  * reading a layout room by room; the contact sheets are for comparing many at a glance.
- *   node tools/shipgen/cli.js station.trading --size station --layout stationWheel --views labels --count 2
+ *   node tools/shipgen/cli.js station.trading --size station --layout assembly.bazaar --views labels --count 2
  * writes <base>-labels-s<seed>.png per seed.
  */
 import type { GenResult, ModuleDef, RoomRole } from '../../src/sim';

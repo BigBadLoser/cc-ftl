@@ -1,15 +1,18 @@
 # Station assembly
 
-One modular system for station layouts, meant to replace the station grammars one at a time (issue #460). A recipe
+One modular system for station layouts: it builds every station in the game (issue #460). A recipe
 (data) says what a station is composed of and how its parts stand to each other; one assembler builds every recipe from
 the same few elements; one wall writer turns the result into tiles.
 
-**State:** assembled and fitted out, not in the game. The assembler produces a floor plan (walls, floor, doors,
-beams) that passes its own hard checks, and `assembleStation` (`assembly/station.ts`) hands it to the shared fit-out
-(`fitShell` in `generate.ts`, the back half of `finishLayout`), which furnishes, validates and measures it as it does
-the station grammars' structures. It is not a registered grammar, so nothing in the game spawns one; the layout lab
-and the generator CLI load one by layout name (`assembly.<family>`, below). The station grammars (`stationGrammars.ts` and the files round it) are untouched and stay until a recipe replaces
-them.
+**State:** in the game, the only station generator. The assembler produces a floor plan (walls, floor, doors, beams)
+that passes its own hard checks, and `assembleStation` (`assembly/station.ts`) hands it to the shared fit-out
+(`fitShell` in `generate.ts`), which furnishes, validates and measures it. `buildStation` (`stationBuild.ts`) is how
+the game builds a station (spawns, outposts): the seed picks one of the kind's families (`assembly` on its
+`StationDef`, required), then a recipe in it; one that does not stand or has problems is tried again on the next seed,
+up to `STATION_TRIES` (8), and then it throws. A sweep of every kind and size over seeds 1 to 24 stood on the first
+try but for two pirate stations, which stood on the second. The station grammars that came before (ring, wheel,
+concentric, cross, spine, tree, welded and the rest) are deleted. The layout lab and the generator CLI build a station
+as the game does, or one recipe by layout name (`assembly.<family>`, below).
 
 ## Where things are
 
@@ -145,7 +148,7 @@ Four forms, all chosen by the user from mock sheets (`form`):
 rooms are the band of the flat face it stands on and no longer than it, customs in the band at the axis with its gate
 onto the ring, the quay along the face outside the hull. It holds the rooms the face has length for (control, then
 the armoury, then by size); the rest (`Built.left`) go to the ring's band beside it. A trade station has three
-airlocks at outpost and station size and six at hub size (`assemblyDocks`), so the quay is no longer than the face.
+airlocks at outpost and station size and six at hub size (the tier's `docks`), so the quay is no longer than the face.
 
 An airlock may face any way, east included (the user's call; the old ring generator's "never east" rule is not
 carried over). The old dock block (`docks` without
@@ -242,7 +245,7 @@ placement of any specific department, but to me that has a decent trading identi
   equal"): the widest that lets the lanes hold them all, the same number either side of a street where the count
   allows, a lane's spare length shared along its row, its other rooms (the shop) at its head by the market. An odd
   count leaves one lane a cabin short, so its cabins come out wider than those across the street. The ground between the spokes stays open.
-- A `market` department: stalls in the trade station's assembly program (`assemblyAlso`; racks and a console as
+- A `market` department: stalls among the trade station's rooms (`rooms`; racks and a console as
   placeholder fittings, no stall module exists).
 - The harbour on one side of the main axis (shape `face`, above), the warehouses as a wing on the other.
 - Outline: a square cut to eight even sides (`cut: 'octagon'`) with the corners rounded (`round`; the user: "if
@@ -374,12 +377,12 @@ differ little; no stall module exists.
 
 ## Seeing one furnished: the fit-out and the layout lab
 
-`assembleStation(def, id, size, seed, defs, recipe)` returns what `generateStation` does (a template, its rooms, its
+`assembleStation(def, id, size, seed, defs, recipe)` returns a `StationResult` (a template, its rooms, its
 problems). The assembly's regions are the rooms: each keeps the role and the planned modules it was given, so the
 fit-out needs no builder or canvas in between.
 
-- Layout lab (`npm run dev`, `/tools/layout/`): Import, Generated station, Layout `assembly.bazaar` (every recipe is
-  listed after the kind's own grammars, for any kind and size). By URL:
+- Layout lab (`npm run dev`, `/tools/layout/`): Import, Generated station, Layout `any` (as the game builds it) or
+  `assembly.bazaar` (every recipe is listed, for any kind and size). By URL:
   `/tools/layout/?station=station.trading&size=station&layout=assembly.bazaar&seed=2`. The preview pane is the game's
   renderer, and the checks panel runs the game's validators.
 - CLI: `node tools/shipgen/cli.js station.trading --size station --layout assembly.bazaar --count 4`.
@@ -427,8 +430,7 @@ call; when they come back, start from that proportion, not from a new compositio
 ## The rooms
 
 The assembly has its own station plan (`stationProgram` in `program.ts`), built from the kind's `StationDef` at a size
-tier. The station grammars keep theirs (`planStation`), which goes when they do. Nothing here is taken from that one;
-where `main` has something better or new (the arcade cabinet and game table, power-drawing grow beds) it is wired in.
+tier.
 
 - Rooms grow past what their contents need by the kind's spaciousness (`space` on the def: a navy depot and a pirate
   den are tight, a trade station roomy). Messes and rec rooms do not: they are sized to what they hold.
@@ -467,7 +469,7 @@ where `main` has something better or new (the arcade cabinet and game table, pow
 - A pod deck where the tier has mining pods (`pods`: the mining station, 2 / 4 / 6 bays): one hangar, the bays in a row
   (two rows past four) with an aisle.
 - An ore store with it: two ore bins a pod, a works room (not merged into the warehouses).
-- Shuttle bays where the tier has them (`bays`: the navy depot). Farms on the agri station (`assemblyRooms`).
+- Shuttle bays where the tier has them (`bays`: the navy depot). Farms on the agri station (its `rooms`).
 
 | Department | Rooms |
 |---|---|
@@ -513,9 +515,6 @@ differ little.
 
 ## Known limits
 
-- **Not in the game.** `assembleStation` furnishes and validates one; registering a recipe as a grammar (so the game
-  spawns it) is the step left. Only the bazaar and the crescent have been taken through the fit-out (the bazaar also
-  seen in the layout lab); the other families are untried there.
 - **Barracks need a double bunk module** (a bed's footprint, two beds). There is none, so a barracks cannot be furnished
   as drawn.
 - The mess and the rec room have no room recipe of their own (`support` furnishes as a mess), and medbays and plant

@@ -5,7 +5,7 @@
 import { content } from '../../src/content';
 import { stationRecipes } from '../../src/content/stationRecipes';
 import {
-  accessTile, adjacencyDistance, assembleStation, adjacencySignature, footprintTiles, generateShip, meanPairwise, profileDistance, rotatedSize, silhouetteDistance, silhouetteMask, generateStation, type GenResult, type Recipe, type StationDef, type StationGrammar, type StationSize, type ModuleDef, type RoomRole,
+  accessTile, adjacencyDistance, assembleStation, adjacencySignature, footprintTiles, generateShip, meanPairwise, profileDistance, rotatedSize, silhouetteDistance, silhouetteMask, buildStation, type GenResult, type Recipe, type StationDef, type StationSize, type ModuleDef, type RoomRole,
 } from '../../src/sim';
 import { drawAssemblies, drawSilhouette, drawStructure } from './views';
 
@@ -136,7 +136,8 @@ const ASSEMBLY = 'assembly.';
 export const assemblyLayouts = (): string[] => Object.entries(stationRecipes).flatMap(([family, recipes]) => recipes.map((_, i) => `${ASSEMBLY}${family}${i > 0 ? `.${i}` : ''}`));
 
 /**
- * `station.trading:hub` builds that kind at one size (`station.trading:hub@stationWheel`: one layout only); `station.trading:outpost,hub` cycles the sizes by seed (seed 1
+ * `station.trading:hub` builds that kind at one size as the game does (`buildStation`; `station.trading:hub@assembly.bazaar.1`: that recipe
+ * only); `station.trading:outpost,hub` cycles the sizes by seed (seed 1
  * the first size, seed 2 the second...), so one sheet shows the smallest and largest side by side. No size: all three.
  */
 export function genStation(spec: string, seed: number): GenResult {
@@ -146,16 +147,12 @@ export function genStation(spec: string, seed: number): GenResult {
   if (!def0) throw new Error(`unknown station ${id}; try ${stationIds().join(', ')}`);
   const list = (sizes ? sizes.split(',') : ['outpost', 'station', 'hub']) as StationSize[];
   const size = list[(seed - 1) % list.length] as StationSize;
-  // `@assembly.bazaar` (or `@assembly.tree.2`: that family's third recipe): the station assembly, not a station grammar.
-  if (layout?.startsWith(ASSEMBLY)) {
-    const [family, n] = layout.slice(ASSEMBLY.length).split('.') as [string, string | undefined];
-    const recipe = (stationRecipes as Record<string, readonly Recipe[]>)[family]?.[Number(n ?? 0)];
-    if (!recipe) throw new Error(`unknown assembly recipe ${layout}; try ${assemblyLayouts().join(', ')}`);
-    return assembleStation(def0, id, size, seed, defs, recipe);
-  }
-  // `@stationWheel` forces one layout (a layout's sheet).
-  const def = layout ? { ...def0, tiers: { ...def0.tiers, [size]: { ...def0.tiers[size], grammars: [{ value: layout as StationGrammar, weight: 1 }] } } } : def0;
-  return generateStation(def, id, size, seed, defs);
+  if (!layout) return buildStation(def0, id, size, seed, defs);
+  // `@assembly.bazaar` (or `@assembly.tree.2`: that family's third recipe): one recipe only.
+  const [family, n] = layout.startsWith(ASSEMBLY) ? (layout.slice(ASSEMBLY.length).split('.') as [string, string | undefined]) : ['', undefined];
+  const recipe = (stationRecipes as Record<string, readonly Recipe[]>)[family]?.[Number(n ?? 0)];
+  if (!recipe) throw new Error(`unknown assembly recipe ${layout}; try ${assemblyLayouts().join(', ')}`);
+  return assembleStation(def0, id, size, seed, defs, recipe);
 }
 
 /** Draw one layout at (ox, oy), `s` px per tile. */
