@@ -61,11 +61,17 @@ describe('ground turrets', () => {
       const tiles = footprintTiles(MODS[m.def]!, m.x, m.y, m.rot);
       expect(tiles.every((t) => g.get('struct', t.x, t.y) === Struct.Ground && ownerAt(sim, t.x, t.y) === base)).toBe(true);
       expect(shipIdOf(sim, m)).toBe(base);
-      // A cabled tile beside it, owned by the base, beside one of the base's walls.
+      // A cable from beside it, every tile the base's, run out a few tiles over the ground to one of the base's walls.
       const wire = tiles.flatMap((t) => N4.map(([dx, dy]) => ({ x: t.x + dx, y: t.y + dy }))).find((c) => isCabled(g, c.x, c.y));
       expect(wire).toBeDefined();
-      expect(ownerAt(sim, wire!.x, wire!.y)).toBe(base);
-      expect(N4.some(([dx, dy]) => g.get('struct', wire!.x + dx, wire!.y + dy) === Struct.Wall && ownerAt(sim, wire!.x + dx, wire!.y + dy) === base)).toBe(true);
+      const run = [wire!], seen = new Set([`${wire!.x},${wire!.y}`]);
+      for (let k = 0; k < run.length; k++) for (const [dx, dy] of N4) {
+        const c = { x: run[k]!.x + dx, y: run[k]!.y + dy };
+        if (!seen.has(`${c.x},${c.y}`) && isCabled(g, c.x, c.y)) { seen.add(`${c.x},${c.y}`); run.push(c); }
+      }
+      expect(run.every((c) => ownerAt(sim, c.x, c.y) === base)).toBe(true);
+      expect(run.length).toBeGreaterThanOrEqual(3);
+      expect(run.some((c) => N4.some(([dx, dy]) => g.get('struct', c.x + dx, c.y + dy) === Struct.Wall && ownerAt(sim, c.x + dx, c.y + dy) === base))).toBe(true);
     }
   });
 
