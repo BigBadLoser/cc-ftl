@@ -192,7 +192,12 @@ function tryOnce(rng: Rng, recipe: Recipe, all: readonly RoomSpec[], attempt: nu
 export function recipeRooms(recipe: Recipe, rooms: readonly RoomSpec[]): readonly RoomSpec[] {
   if (recipe.root.kind !== 'prefab') return rooms;
   const docks = rooms.filter((r) => r.role === 'dock').slice(0, PREFAB_PADS);
-  return rooms.filter((r) => !r.mods.includes('module.vehicle_bay') && (r.role !== 'dock' || docks.includes(r)) && r.role !== 'weapons' && deptOf(r) !== 'market');
+  // Point defence goes with the guns: turrets out on the ground (#514), not mounts in the core room.
+  const noPd = (r: RoomSpec): RoomSpec => {
+    const pd = r.mods.filter((m) => m === 'module.pointDefense').length;
+    return pd === 0 ? r : { ...r, mods: r.mods.filter((m) => m !== 'module.pointDefense'), w: Math.max(3, r.w - 3 * pd) };
+  };
+  return rooms.filter((r) => !r.mods.includes('module.vehicle_bay') && (r.role !== 'dock' || docks.includes(r)) && r.role !== 'weapons' && deptOf(r) !== 'market').map(noPd);
 }
 
 /**
