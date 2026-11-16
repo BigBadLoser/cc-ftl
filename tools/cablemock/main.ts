@@ -33,9 +33,7 @@ export const ROWS = [
 function tubeRows(beam: boolean): string[] {
   const mod = ['.#######.', '##_____##', '#_______#', '#_______#', '#_______#', '#_______#', '#_______#', '##_____##', '.#######.'];
   const tube = beam ? ['...', '...', '...', '...', '===', '...', '...', '...', '...'] : ['...', '...', '...', '###', '___', '###', '...', '...', '...'];
-  // ?nowall=1: the near module's wall on the tube's side left out (the door kept), to see the tube's end and its port
-  const near = (m: string, y: number) => (y === 4 ? `D${m.slice(1)}` : q.get('nowall') === '1' ? `.${m.slice(1)}` : m);
-  const rows = mod.map((m, y) => `.${y === 4 ? `${m.slice(0, 8)}D` : m}${tube[y]}${near(m, y)}.`);
+  const rows = mod.map((m, y) => `.${y === 4 ? `${m.slice(0, 8)}D` : m}${tube[y]}${y === 4 ? `D${m.slice(1)}` : m}.`);
   const blank = '.'.repeat(rows[0]!.length);
   return [blank, ...rows, blank];
 }
@@ -65,6 +63,9 @@ if (g) r.setGrid(g);
 r.showBackdrop(false);
 r.setWorldGrid(false);
 r.setRoofPlayer(q.get('roof') === '1');
+// ?cut=down|up: the wall view (default auto, the cutaway); down: every wall collapsed to its stub
+const cut = q.get('cut');
+if (cut === 'down' || cut === 'up') r.setCutaway(cut);
 r.resize();
 const zoom = Number(q.get('zoom') ?? 1);
 for (let i = 0; i < 24 && r.info().zoom < zoom - 1e-9; i++) r.zoomAt(1.2, 0, 0);
