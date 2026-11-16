@@ -173,7 +173,7 @@ def riser(f, top, ribs=0):
         obox(f, a, 0.78, 0.86, 0.04, 0.14, top - 0.1, "steel", top="steelL")
 
 
-def outrigger(f, a, top, heavy=False, strut=0, tone=1):
+def outrigger(f, a, top, heavy=False, strut=0, tone=1, az=0.46):
     """One outrigger at angle a: a beam from the riser out and down to a jack and foot pad on the rock."""
     from . import detail as D
     c, s_ = math.cos(a), math.sin(a)
@@ -183,7 +183,7 @@ def outrigger(f, a, top, heavy=False, strut=0, tone=1):
     _g("outrigger")
     if heavy:
         JZ = 0.62                                                                           # the jack's top
-        AZ = 0.46                                                                           # where the arm meets it
+        AZ = az                                                                             # where the arm meets it
         end = (jack[0] - 0.1 * c, jack[1] - 0.1 * s_, AZ)                                   # arm stops at the jack's side
         arm = {1: "steelL", 2: "hazY", 3: "orange"}.get(tone, "steel")                      # round 14: arm paint
         D.seg(f, hip, end, 0.11, arm, 4)
@@ -213,17 +213,22 @@ def outrigger(f, a, top, heavy=False, strut=0, tone=1):
         f.vcyl(jack[0], jack[1], 0, 0.16, 0.05, "gm", top="steelD", sides=12)
 
 
-def out_tone(f, k):
-    top = GV["K1"][0]
+def out_corners(f, arms):
+    """arms: (angle, where the arm meets the jack) pairs."""
+    top = GV["V1"][0]
     riser(f, top)
-    for j in range(4):
-        outrigger(f, math.pi / 4 + j * math.pi / 2, top, heavy=True, tone=k)
+    for a, az in arms:
+        outrigger(f, a, top, heavy=True, tone=2, az=az)
     port3(f, 0.0, 1.06)
 
 
-# Round 13: J1 + J3 (collar and domed cap). Colour: mid-steel arms (C1), dark arms with a light top rail (C2), mid-steel
-# arms and hazard-striped collars (C3).
-GV = {"K1": (0.78, lambda f: out_tone(f, 1)), "K2": (0.78, lambda f: out_tone(f, 2)), "K3": (0.78, lambda f: out_tone(f, 3))}
+# Round 16: the corners are the only place with reach; the front corner (+u +v, toward the camera) is the problem in
+# every rotation. Three arms with the front corner open (V1); four, the front arm meeting its jack low (V2); four, the
+# front arm swung 20 degrees off the camera line, away from the cable (V3).
+_Q = math.pi / 4
+GV = {"V1": (0.78, lambda f: out_corners(f, [(_Q + k * math.pi / 2, 0.46) for k in (1, 2, 3)])),
+      "V2": (0.78, lambda f: out_corners(f, [(_Q, 0.24)] + [(_Q + k * math.pi / 2, 0.46) for k in (1, 2, 3)])),
+      "V3": (0.78, lambda f: out_corners(f, [(_Q + math.radians(20), 0.46)] + [(_Q + k * math.pi / 2, 0.46) for k in (1, 2, 3)]))}
 
 def ground_turret(key, d, variant):
     """The head with its turntable ring (no roof coaming), standing on the variant's base."""
