@@ -43,8 +43,10 @@ PLATE_Z = lambda s, zt: (s.z_at(zt, 3), s.z_at(zt, -3))   # noqa: E731  the plat
                                     # its foot and top on screen, px under / over zt (6 px, centred on the line and
                                     # its lit px under it)
 TAB_W, TAB_IN = 3, 4                # the tabs on the groove: px wide, px in from their seam toward the tile's middle
-FOOT, FOOT_TOP = "stB", "stW"       # the step: its front a shade under its top
-BLOCK, BLOCK_LIT = FACE, "stH"      # its blocks: the face's tone, lit along their front's top edge
+FOOT, FOOT_TOP, STEP_SLOPE = "stB", "stW", "stL"   # the step: its front a shade under its top, its slope under
+STEP_FRONT, STEP_LIP = 3, 0        # its front px tall; the slope's lip off the belly's face, px
+BLOCK, BLOCK_LIT, BLOCK_SLOPE = FACE, "stH", "stM"     # its blocks: the face's tone, lit along their front's top
+                                                        # edge, their slope a shade under
 
 
 def _band(t):
@@ -146,16 +148,30 @@ def _part(f, u0, u1, z0, z1, out, face, top, side, end=False):
     f.part(u0, u1, pf, [None, top, face, None], side, end=end)
 
 
+def _step_prof(s):
+    """The step's section: its top and a front STEP_FRONT px tall, then a slope (at 45 degrees) down and back to the
+    belly's face under it (D), or to STEP_LIP px off it with a flat underside back from there."""
+    zf = s.z_at(FOOT_H, STEP_FRONT)
+    lip = STEP_LIP * LINE
+    zs = zf - (FOOT_OUT - lip)
+    return [(D - 0.01, zs), (D - 0.01, FOOT_H), (D + FOOT_OUT, FOOT_H), (D + FOOT_OUT, zf), (D + lip, zs)]
+
+
+STEP_COLS = [None, FOOT_TOP, FOOT, STEP_SLOPE, None]
+
+
 def _block_prof(s):
-    """A foot block's section: a px proud of the step's top and front; its front's top px a lit edge; the back of its
+    """A foot block's section: the step's, a px proud of its top and front; its front's top px a lit edge; the back of its
     top (a px out from the face: its px on screen in line with the face's seam a px over the step) carries on the
     seam where the step meets the face, through the block on screen."""
     zt, out = s.z_at(FOOT_H, -1), FOOT_OUT + LINE
-    return [(D - 0.01, 0.0), (D - 0.01, zt), (D + LINE, zt), (D + out, zt), (D + out, s.z_at(zt, 1)),
-            (D + out, 0.0)]
+    zf, lip = s.z_at(FOOT_H, STEP_FRONT), STEP_LIP * LINE       # (its foot the step's: its front down as far, then
+    zs = zf - (out - lip)                                       # its slope, a px out)
+    return [(D - 0.01, zs), (D - 0.01, zt), (D + LINE, zt), (D + out, zt), (D + out, s.z_at(zt, 1)), (D + out, zf),
+            (D + lip, zs)]
 
 
-BLOCK_COLS = [None, GROOVE_D, BLOCK, BLOCK_LIT, BLOCK, None]
+BLOCK_COLS = [None, GROOVE_D, BLOCK, BLOCK_LIT, BLOCK, BLOCK_SLOPE, None]
 
 
 def _chamfer_part(f, t0, t1, z0, z1, out, face, top, side):
@@ -194,8 +210,8 @@ def build(k, ax, plane, a, b, ends, H):
             f.line(v0 + LINE / 2, v1 - LINE / 2, s.z_at(zt, 1), zt, UNDER_L, bevel=False)
             m, hw = (v0 + v1) / 2, (TAB_W / 2 + 1) * LINE           # a plate on it, in the middle, a px wider
             _part(f, m - hw, m + hw, *PLATE_Z(s, zt), LINE, TAB, TAB_TOP, TAB_SIDE)
-        pf = f.on(0.0, FOOT_H, -0.01, FOOT_OUT, hang=False)       # the step along the foot, one piece (open
-        f.part(s0, s1, pf, [None, FOOT_TOP, FOOT, None], False)    # ends: it runs on; round an outer corner)
+        f.part(s0, s1, _step_prof(s), STEP_COLS, False)          # the step along the foot, one piece (open
+                                                                # ends: it runs on; round an outer corner)
         if whole:
             u = s0
             for i, w in enumerate(FOOT_BLOCKS):
