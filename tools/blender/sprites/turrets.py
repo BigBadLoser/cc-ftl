@@ -65,6 +65,6 @@ for _stem, (_key, _r, _n) in PICKS.items():
         SPRITES.append((f"turret.{_stem}.deploy.f{_f}", _fp, "prop", lambda a=_des, b=_kind, r=_r, f=_f: TB.deploy(a, f, b, r)))
     for _rot in ((0,) if QUICK else range(4)):
         SPRITES.append((f"module.{_stem}.bay.r{_rot}", _fp, "prop", lambda k=_key, rot=_rot, n=_n: _shift(TB.BAYS[k](rot), n)))
-    # The ground mount out on an asteroid's rock (#514), its cable port on the side the rotation faces.
-    for _rot in (() if _n != 2 else (0,) if QUICK else range(4)):
-        SPRITES.append((f"module.{_stem}.ground.r{_rot}", _fp, "prop", lambda rot=_rot, n=_n: _shift(TG.mount(rot), n)))
+    # Ground mount prototypes out on an asteroid's rock (#514): variants A-C, cable side r0 only.
+    for _v in (() if _n != 2 else TG.VARIANTS):
+        SPRITES.append((f"module.{_stem}.ground.{_v}.r0", _fp, "prop", lambda v=_v, n=_n: _shift(TG.mount(0, v), n)))
