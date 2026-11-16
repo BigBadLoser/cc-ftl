@@ -50,13 +50,23 @@ export function ore(c: Ctx): Piece[] {
   const { w, h } = c, total = count(c.need, OB), rows = w >= h, f = rows ? FACING.rows : FACING.cols;
   const U = rows ? w : h, V = rows ? h : w;
   const at = (u: number, v: number, rot: number): Piece => P(OB, rows ? u : v, rows ? v : u, rot);
-  const blocked = new Set([`${c.d},${h - 1}`, ...(c.doors ?? []).map((e) => `${e.x},${e.y}`)]);
+  const blocked = new Set([`${c.d},${h - 1}`, ...[...(c.doors ?? []), ...(c.cut ?? [])].map((e) => `${e.x},${e.y}`)]);
   const free = (u: number, v: number): boolean => ![0, 1].some((a) => [0, 1].some((b) => blocked.has(rows ? `${u + a},${v + b}` : `${v + b},${u + a}`)));
-  const half = Math.ceil(total / 2), o = Math.max(0, Math.floor((U - 2 * half) / 2));
+  const half = Math.ceil(total / 2);
+  // Bins along a wall from both ends inward in mirrored pairs (the room's corners first, an aisle left in the middle).
   const wall = (v: number, rot: number): Piece[] => {
-    const out: Piece[] = [];
-    for (let u = o; u + 2 <= U; u += free(u, v) ? 2 : 1) if (free(u, v)) out.push(at(u, v, rot));
-    return out;
+    const us: number[] = [];
+    let l = 0, r = U - 2;
+    for (;;) {
+      while (l <= r && !free(l, v)) l++;
+      while (r > l && !free(r, v)) r--;
+      if (l > r) break;
+      us.push(l);
+      if (r >= l + 2) us.push(r);
+      l += 2;
+      r -= 2;
+    }
+    return us.map((u) => at(u, v, rot));
   };
   const back = wall(0, f.v), nb = Math.min(back.length, half);
   // The door's floor tile cuts the front row short: then the whole row stands a tile off the wall, a lane behind it.

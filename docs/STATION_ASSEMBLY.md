@@ -279,10 +279,12 @@ about its middle (the longest pair on one side, each side's longer branch in its
 branches need: the dial for size).
 
 Circulation rule: walking through rooms happens only inside one department, and a room that serves another hangs
-off it as a dead end. Each branch starts at its front room: medbay, trauma; barracks, barracks, the chief's cabin;
-fire control (the office's weapons console moved there), core, shields, reactors; workshop, ore store (not in the
-programme: four ore bins). Per seed (tidy patterns only): no turns, every lower branch turned down off its tube (an
-L, its front room square on the tube), or only the longest.
+off it as a dead end (the pantry built onto the mess's far end, its full width). Each branch starts at its front room:
+medbay, trauma; barracks, barracks, the chief's cabin; workshop, ore store (not in the programme: four ore bins).
+Command is a junction of its own, always in a lower slot: the command room (the station's weapons and shield consoles;
+no helm anywhere on a base, and the harbour office keeps only a desk), the core and shields built onto its outer wall
+side by side, each with its own door into it, the reactors off its far end on a tube. Per seed (tidy patterns only):
+no turns, or the other lower branch turned down off its tube (an L, its front room square on the tube).
 
 No hangar, no stalls, no gun rooms (`recipeRooms`; the fit-out's `unarmed`): the guns are meant as turrets out on the
 ground worked from fire control, but a module on ground outside the hull belongs to no ship in the sim (the stamp

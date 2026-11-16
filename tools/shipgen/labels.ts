@@ -28,8 +28,8 @@ export function roomKind(role: string, mods: readonly string[]): string {
   const has = (m: string): boolean => mods.includes(`module.${m}`);
   const sleepers = mods.filter((m) => m === 'module.bed').length + 2 * mods.filter((m) => m === 'module.bunk').length;
   if (role === 'hall') return 'corridor';
-  // Fire control: a prefab base's ops room, the weapons console without the helm.
-  if (role === 'bridge') return has('weaponsConsole') && !has('helm') ? 'fire ctl' : 'office';
+  // A prefab base's command room: the consoles without the helm.
+  if (role === 'bridge') return has('weaponsConsole') && !has('helm') ? 'command' : 'office';
   if (role === 'plaza' && has('mess_table')) return 'customs';
   // A prefab base's market hall: trade counters in a court.
   if (role === 'plaza' && has('console')) return 'market';

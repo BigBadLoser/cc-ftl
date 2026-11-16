@@ -49,18 +49,27 @@ export function bank(c: Ctx): Piece[] {
 export function crates(c: Ctx): Piece[] {
   const { w, h, d } = c, planned = count(c.need, CR);
   const rows: { y: number; rot: number }[] = [];
-  for (let y = 0; y + 1 <= h - 2; y += 4) {
-    rows.push({ y, rot: 0 });
-    if (y + 2 <= h - 3) rows.push({ y: y + 2, rot: 2 });
+  if (h >= 5) {
+    // A row on the back wall, then rows back to back, an aisle between each pair (each crate faces an aisle).
+    rows.push({ y: 0, rot: 0 });
+    for (let y = 2; y <= h - 2; y += 3) {
+      rows.push({ y, rot: 2 });
+      if (y + 1 <= h - 2) rows.push({ y: y + 1, rot: 0 });
+    }
+  } else {
+    for (let y = 0; y + 1 <= h - 2; y += 4) {
+      rows.push({ y, rot: 0 });
+      if (y + 2 <= h - 3) rows.push({ y: y + 2, rot: 2 });
+    }
+    if (h >= 3) rows.push({ y: h - 1, rot: 2 });
   }
-  if (h >= 3 && h <= 4) rows.push({ y: h - 1, rot: 2 });
   const m = Math.max(1, Math.ceil((w + 1) / 5)), cols = w - (m - 1), xs: number[] = [];
   for (let s = 0, x = 0; s < m; s++) {
     const len = Math.floor(cols / m) + (s < cols % m ? 1 : 0);
     for (let i = 0; i < len; i++) xs.push(x + i);
     x += len + 1;
   }
-  const clear = new Set<string>([`${d},${h - 1}`, ...(c.doors ?? []).map((e) => `${e.x},${e.y}`)]);
+  const clear = new Set<string>([`${d},${h - 1}`, ...[...(c.doors ?? []), ...(c.cut ?? [])].map((e) => `${e.x},${e.y}`)]);
   const slots = rows.flatMap((r) => xs.map((x) => P(CR, x, r.y, r.rot))).filter((p) => !clear.has(`${p.x},${p.y}`));
   return slots.slice(0, Math.max(planned, Math.min(slots.length, Math.round(w * h * 0.25))));
 }

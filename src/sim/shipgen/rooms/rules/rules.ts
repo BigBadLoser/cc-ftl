@@ -20,7 +20,11 @@ import { bk, lb, rf, rf2, rf2Fits, su, ws } from './works';
  * What a rule sees: the room's frame size, the door's column under the bottom wall (d), the planned modules, and the
  * floor tiles just inside the room's other doors, in frame tiles (a through room: what stands there would block them).
  */
-export interface Ctx { w: number; h: number; d: number; need: readonly string[]; defs: Record<string, ModuleDef>; doors?: readonly { x: number; y: number }[] }
+export interface Ctx {
+  w: number; h: number; d: number; need: readonly string[]; defs: Record<string, ModuleDef>; doors?: readonly { x: number; y: number }[];
+  /** The frame's corner tiles that are wall (a cut or round corner): nothing stands there. */
+  cut?: readonly { x: number; y: number }[];
+}
 
 export interface RuleArrangement {
   name: string;
@@ -37,6 +41,10 @@ const pieces = (need: readonly string[], defs: Record<string, ModuleDef>): numbe
 const size = (c: Ctx, id: string): number => c.defs[id]?.footprint[0] ?? 2;
 const isGun = (c: Ctx, id: string): boolean => !!(c.defs[id]?.weapon || c.defs[id]?.pointDefense);
 const guns = (c: Ctx): string[] => c.need.filter((m) => isGun(c, m));
+/** Whether a frame tile is a cut corner (wall: nothing stands there). */
+const isCut = (c: Ctx, x: number, y: number): boolean => (c.cut ?? []).some((t) => t.x === x && t.y === y);
+/** A tile in from a cut corner: `v` when the corner at (x, y) stands, else `v` moved a tile toward the room by `step`. */
+const off = (c: Ctx, x: number, y: number, v: number, step: number): number => (isCut(c, x, y) ? v + step : v);
 
 /** B1: bed pairs on the long walls (the door wall leaves a gap at the door), a game table in any stretch too short for a pair. */
 function b1(c: Ctx): Piece[] {
@@ -104,7 +112,10 @@ function d3(c: Ctx): Piece[] {
  */
 function m4(c: Ctx): Piece[] {
   const tall = c.h > c.w, across = tall ? c.w : c.h, lines = across >= 9 ? 2 : 1, span = Math.floor(across / lines);
-  const galleys = tall ? [P(G, 0, 0, 0), ...(c.w >= 5 ? [P(G, c.w - 2, 0, 0)] : [])] : [P(G, 0, 0, 3), ...(c.h >= 5 ? [P(G, 0, c.h - 2, 3)] : [])];
+  // In the corners of the short wall, a tile in where a corner is cut.
+  const galleys = tall
+    ? [P(G, off(c, 0, 0, 0, 1), 0, 0), ...(c.w >= 5 ? [P(G, off(c, c.w - 1, 0, c.w - 2, -1), 0, 0)] : [])]
+    : [P(G, 0, off(c, 0, 0, 0, 1), 3), ...(c.h >= 5 ? [P(G, 0, off(c, 0, c.h - 1, c.h - 2, -1), 3)] : [])];
   return [...galleys, ...range(0, lines - 1, 1).flatMap((k) => (tall
     ? middle(k * span, 2, k * span + span - 1, c.h - 1, false, true)
     : middle(2, k * span, c.w - 1, k * span + span - 1, true, true)).filter((p) => p.def !== GT))];
@@ -157,6 +168,14 @@ function g3(c: Ctx): Piece[] {
 
 const has = (id: string) => (need: readonly string[]): boolean => need.includes(id);
 
+/** Consoles a station's bridge holds besides the helm. */
+const OPS: readonly string[] = ['module.weaponsConsole', 'module.shieldConsole'];
+/** OP: an ops room (a bridge with no helm: a base's command room): its consoles on the back wall, a tile apart and centred, a table in the middle. */
+function op(c: Ctx): Piece[] {
+  const list = c.need.filter((m) => OPS.includes(m)), x0 = Math.floor((c.w - (2 * list.length - 1)) / 2);
+  return [...list.map((m, i) => P(m, x0 + 2 * i, 0, 0)), ...tables(1, c.w - 2, Math.floor(c.h / 2), 1)];
+}
+
 /** Arrangements by room role. A room takes one that suits it (seeded), else the plain fallback (place.ts). */
 export const RULES: Partial<Record<RoomRole, readonly RuleArrangement[]>> = {
   quarters: [
@@ -166,10 +185,14 @@ export const RULES: Partial<Record<RoomRole, readonly RuleArrangement[]>> = {
     { name: 'C1 cabin', weight: 1, when: (n, r) => pieces(n, r.defs) === 1, rule: (c) => [P(sleeper(c.need, c.defs), 0, 0, 0), P('module.storage_locker', c.w - 1, 0, 0)] },
   ],
   support: [
-    { name: 'M1 table grid', weight: 1, when: has(G), rule: (c) => [P(G, 0, 0, 0), P(G, 2, 0, 0), P(LS, 0, c.h - 2, 0), ...rowsOf(c.h).flatMap((y) => tables(5, c.w - 1, y + (c.h <= 5 ? 1 : 0), 1))] },
-    { name: 'M2 tables in pairs', weight: 1, when: has(G), rule: (c) => [...range(0, c.h - 2, 3).map((y) => P(G, 0, y, 3)), ...rowsOf(c.h).flatMap((y) => tables(3, c.w - 1, y + (c.h <= 5 ? 1 : 0), 2))] },
     {
-      name: 'M3 galley corner, tables in line', weight: 1, when: has(G),
+      name: 'M1 table grid', weight: 1, when: has(G),
+      rule: (c) => { const x = off(c, 0, 0, 0, 1); return [P(G, x, 0, 0), P(G, x + 2, 0, 0), P(LS, off(c, 0, c.h - 1, 0, 1), c.h - 2, 0), ...rowsOf(c.h).flatMap((y) => tables(5, c.w - 1, y + (c.h <= 5 ? 1 : 0), 1))]; },
+    },
+    { name: 'M2 tables in pairs', weight: 1, when: has(G), rule: (c) => [...range(off(c, 0, 0, 0, 1), c.h - 2, 3).filter((y) => !isCut(c, 0, y + 1)).map((y) => P(G, 0, y, 3)), ...rowsOf(c.h).flatMap((y) => tables(3, c.w - 1, y + (c.h <= 5 ? 1 : 0), 2))] },
+    {
+      // One line of tables: a small mess only (a deep one would stand half empty).
+      name: 'M3 galley corner, tables in line', weight: 1, when: (n, r) => n.includes(G) && Math.min(r.w, r.h) <= 7,
       rule: (c) => [P(G, 0, 0, 3), P(G, 0, 2, 3), P(LS, 0, c.h - 1, 1), P(GT, 4, 1, 0), ...tables(7, c.w - 1, 1, 1), P('module.arcade', c.w - 1, c.h - 1, 2)],
     },
     { name: 'M4 tables down the long axis', weight: 2, when: has(G), rule: m4 },
@@ -189,7 +212,10 @@ export const RULES: Partial<Record<RoomRole, readonly RuleArrangement[]>> = {
   ],
   shields: [{ name: 'S1 gens, batteries between', weight: 1, rule: (c) => spread(c, c.need.filter((m) => c.defs[m]?.shieldGen), false) }],
   farm: [{ name: 'F1 greenhouse: beds on end down both long walls', weight: 1, when: (_, r) => r.h > r.w && r.w >= 4, rule: f1 }],
-  bridge: [{ name: "CO chief's office, desk and planters", weight: 1, when: (n, r) => !n.includes('module.helm') && r.w >= 5 && r.w <= 10 && r.h >= 4 && r.h <= 6, rule: co }],
+  bridge: [
+    { name: "CO chief's office, desk and planters", weight: 1, when: (n, r) => !n.includes('module.helm') && !n.some((m) => OPS.includes(m)) && r.w >= 5 && r.w <= 10 && r.h >= 4 && r.h <= 6, rule: co },
+    { name: 'OP ops room, consoles on the back wall, a table', weight: 1, when: (n, r) => !n.includes('module.helm') && n.some((m) => OPS.includes(m)) && r.w >= 5 && r.h >= 5, rule: op },
+  ],
   cargo: [{
     name: 'PA pantry, cold stores along the back wall', weight: 1,
     when: (n, r) => n.length > 0 && n.every((m) => m === RK || m === CD) && r.h >= 3 && r.h <= 4 && count(n, RK) + count(n, CD) <= shelfSlots(r.w).length,

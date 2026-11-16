@@ -23,8 +23,11 @@ const FACE: readonly Tile[] = [{ x: 0, y: 1 }, { x: -1, y: 0 }, { x: 0, y: -1 },
 /** A door's approach: the floor tile inside it and the way out through the door. */
 export interface Entry { at: Tile; out: Tile }
 
-/** A room frame on the layout: size, door column, and the map from frame tiles to layout tiles. */
-export interface Frame { w: number; h: number; d: number; map: (x: number, y: number) => Tile; dir: (x: number, y: number) => Tile }
+/**
+ * A room frame on the layout: size, door column, and the map from frame tiles to layout tiles. `cut`: its corner tiles
+ * that are not floor (a cut or round corner: the wall steps in there), in frame tiles.
+ */
+export interface Frame { w: number; h: number; d: number; map: (x: number, y: number) => Tile; dir: (x: number, y: number) => Tile; cut: Tile[] }
 
 /** Floor tiles of a room just inside each of its doors. */
 export function entriesOf(lay: Layout, room: number): Entry[] {
@@ -38,24 +41,32 @@ export function entriesOf(lay: Layout, room: number): Entry[] {
 
 /**
  * The frame of a room seen from one door: the largest rectangle of floor whose bottom row holds the door's approach
- * tile, the door below it. `mirror` flips it left to right. `floor` says which layout tiles are the room's.
+ * tile, the door below it. `mirror` flips it left to right. `floor` says which layout tiles are the room's. With
+ * `notched` the rectangle's corner tiles may be wall (a room with cut or round corners keeps its full width and depth:
+ * the rules keep off the missing corners).
  */
-export function frameOf(floor: (x: number, y: number) => boolean, e: Entry, mirror: boolean): Frame {
+export function frameOf(floor: (x: number, y: number) => boolean, e: Entry, mirror: boolean, notched = false): Frame {
   const u = { x: -e.out.x, y: -e.out.y };
   const r = mirror ? { x: u.y, y: -u.x } : { x: -u.y, y: u.x };
   const at = (a: number, b: number): Tile => ({ x: e.at.x + a * r.x + b * u.x, y: e.at.y + a * r.y + b * u.y });
-  const ok = (a: number, rows: number): boolean => { for (let b = 0; b < rows; b++) { const t = at(a, b); if (!floor(t.x, t.y)) return false; } return true; };
+  const on = (a: number, b: number): boolean => { const t = at(a, b); return floor(t.x, t.y); };
+  const ok = (a: number, rows: number): boolean => { for (let b = 0; b < rows; b++) if (!on(a, b)) return false; return true; };
+  // An end column of a notched frame: floor but for its end tiles.
+  const edge = (a: number, rows: number): boolean => { if (rows < 3) return false; for (let b = 1; b < rows - 1; b++) if (!on(a, b)) return false; return true; };
   let best = { a0: 0, a1: 0, h: 1, area: 0 };
-  for (let rows = 1; ok(0, rows) && rows < 64; rows++) {
+  for (let rows = 1; rows < 64 && ok(0, rows); rows++) {
     let a0 = 0, a1 = 0;
     while (a0 > -64 && ok(a0 - 1, rows)) a0--;
     while (a1 < 64 && ok(a1 + 1, rows)) a1++;
+    if (notched && edge(a0 - 1, rows)) a0--;
+    if (notched && edge(a1 + 1, rows)) a1++;
     if ((a1 - a0 + 1) * rows > best.area) best = { a0, a1, h: rows, area: (a1 - a0 + 1) * rows };
   }
   const { a0, a1, h } = best;
+  const map = (x: number, y: number): Tile => at(x + a0, h - 1 - y);
+  const cut = [[0, 0], [a1 - a0, 0], [0, h - 1], [a1 - a0, h - 1]].filter(([x, y]) => { const t = map(x as number, y as number); return !floor(t.x, t.y); }).map(([x, y]) => ({ x: x as number, y: y as number }));
   return {
-    w: a1 - a0 + 1, h, d: -a0,
-    map: (x, y) => at(x + a0, h - 1 - y),
+    w: a1 - a0 + 1, h, d: -a0, map, cut,
     dir: (dx, dy) => ({ x: dx * r.x - dy * u.x, y: dx * r.y - dy * u.y }),
   };
 }
@@ -100,10 +111,12 @@ export function furnishByRule(
   if (pointed) return pointed;
   const floor = (x: number, y: number): boolean => lay.inBounds(x, y) && lay.at(x, y) === '_' && lay.roomOf[y * lay.w + x] === room;
   // No arrangement suits any frame's size: nothing to try (and no draw from the seed, so such a room leaves the rest as it was).
-  const sizes = entries.flatMap((e) => [frameOf(floor, e, false)]);
+  const sizes = entries.flatMap((e) => [frameOf(floor, e, false), frameOf(floor, e, false, true)]);
   if (!list.some((a) => !a.when || sizes.some((f) => a.when?.(need, { ...f, defs: lay.defs })))) return null;
   const flip = rng.chance(0.5);
-  const frames = entries.flatMap((e) => [frameOf(floor, e, flip), frameOf(floor, e, !flip)]);
+  // Every door's frames, plain and notched, the largest first (a room with cut corners is furnished to its walls).
+  const frames = entries.flatMap((e) => [frameOf(floor, e, flip), frameOf(floor, e, !flip), ...[frameOf(floor, e, flip, true), frameOf(floor, e, !flip, true)].filter((f) => f.cut.length > 0)])
+    .map((f, i) => ({ f, i })).sort((a, b) => b.f.w * b.f.h - a.f.w * a.f.h || a.i - b.i).map((q) => q.f);
   const want = tally(need), at = entries.map((e) => e.at);
   const start = lay.modules.length;
   const undo = (): void => { while (lay.modules.length > start) lay.pop(); };
@@ -115,7 +128,7 @@ export function furnishByRule(
         const t = f.map(x, y);
         if ((x !== f.d || y !== f.h - 1) && at.some((e) => e.x === t.x && e.y === t.y)) doors.push({ x, y });
       }
-      const pieces = arr.rule({ w: f.w, h: f.h, d: f.d, need, defs: lay.defs, doors });
+      const pieces = arr.rule({ w: f.w, h: f.h, d: f.d, need, defs: lay.defs, doors, ...(f.cut.length > 0 ? { cut: f.cut } : {}) });
       // A rule with nothing to place for a planned room does not fit this frame.
       if (pieces.length === 0 && need.length > 0) continue;
       const got = tally(pieces.map((p) => p.def));
@@ -138,10 +151,11 @@ export function furnishByRule(
           if (!q || lay.fitError(q.def, q.x, q.y, q.rot, room) !== null) { ok = false; break; }
           lay.push(q);
         }
-        for (const [id, n] of want) {
-          for (let k = got.get(id) ?? 0; ok && k < n; k++) ok = !!placeOne(lay, rng, id, [room], { rots: rots(id) });
-        }
         const works = (): boolean => roomProblems(floor, at, lay.modules.slice(start), lay.defs).length === 0;
+        // The rest where the room still works with them (a spot by a wall can block its own way in).
+        for (const [id, n] of want) {
+          for (let k = got.get(id) ?? 0; ok && k < n; k++) ok = !!placeOne(lay, rng, id, [room], { rots: rots(id), ok: works });
+        }
         if (ok && works()) {
           for (const q of extras) {
             if (lay.fitError(q.def, q.x, q.y, q.rot, room) !== null) continue;
