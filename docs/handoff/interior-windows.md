@@ -2,7 +2,7 @@
 
 Branch `art/hull-windows`. Read this before touching interior windows. Keep it current: add a line at every step.
 
-## Pick up here (state at 2026-11-15: drone approved at d32; civil approved at c17)
+## Pick up here (state at 2026-11-15: drone approved at d32; civil approved at c17; bastion revisited, b0)
 - Branch `art/hull-windows` (worktree `/home/user/cc-ftl-windows`), everything committed and pushed; the dated log at
   the end of this file has every step. Nothing here is in the sprite pipeline yet: window pieces render only through
   the preview jobs files.
@@ -77,7 +77,7 @@ Uploads dir: `/root/.claude/uploads/d90bd30e-5bfe-51f0-9d45-019095d96471/`.
 | 122 (set 4) | navy | 2772 / 2771 / 2862 | parked at nw13, **flagged ugly** (the user, 2026-11-09): the navy set (walls and window) wants a rethink before shipping (see "Navy window") |
 | 423 (set 5) | drone | 2765 / 2764 / 2863 | done: approved at d32 (the user, 2026-11-15: "good enough"): `sprites/wall3d_iwin_drone.py` + `wall3d_iwin_drone_vents.py`; the header rail kept (no pipe beam) |
 | 428 (set 6) | civil | 2770 / 2769 / 2864 | approved (c17, 2026-11-15): `sprites/wall3d_iwin_civil.py`, jobs `preview/jobs_cvwin.py` (civil.v1) |
-| 3295 (set 8) | bastion | 3296 / 3297 / 3298 | no window (the user) |
+| 3295 (set 8) | bastion | 3296 / 3297 / 3298 | revisited (b0, 2026-11-16): `sprites/wall3d_iwin_bastion.py`, jobs `preview/jobs_bswin.py` |
 | none | scrap | | no ref |
 
 Slate's ref (44) at a glance. T layer: grey posts with a stepped foot; a blue beam with a raised block over the
@@ -242,7 +242,7 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
 - Ours (sw12): post block (blue) 0-11 (12) | grey 12-14 | pocket l 15-27 (13) | rib l28-m2 (7) | pockets m 3-14,
   rib 15-16, 17-28 | rib m29-r3 (7) | pocket r 4-16 (13) | grey 17-19 | post block r 20-31 (12).
 
-## Bastion window (ref 3295): dropped, no window (the user); notes kept for the record
+## Bastion window (ref 3295): first try (bw4-bw8) dropped; revisited from b0 on 2026-11-16 (see the log)
 Our wall: `factions_relief.bastion` (face parts: lower wall band, posts `BAST_P`, the cut, cornice) on the `Recessed`
 shell; its ramp's design is `factions_variants.bastion_ramp` (base: the outlined panel). Plain wall render for
 comparison: SS=4 npz `/tmp/claude-0/-home-user/62f72465-c138-4e94-9892-01799f49ef8a/scratchpad/bw1/tile.wall.bastion.full.m10.npz` (jobs `/tmp/claude-0/-home-user/62f72465-c138-4e94-9892-01799f49ef8a/scratchpad/jobs_bwall.py`).
@@ -797,3 +797,4 @@ Marked ref (both layers, numbered): scratchpad
 - 2026-11-15: c16 (the user: drop it further; the corners' and drop's white differ from the wall's): BEAM 3 -> 8 (about 2 px of it go under the band's painted edge: 6 showed 3 rows; 8 shows about 5, the ref's beam); the corners' fronts in the look's wall face step (FACE 3: civil paints its faces W3; toned by level they came out W2, a step lighter); the strip itself is the wall's own face (ccd1d5 as the plain wall). The plain wall pixel-identical. Renders: scratchpad `cv16`, corner `corner_cmp16.png`.
 - 2026-11-15: c17 (the user: about 5 px): BEAM 8 -> 5. The plain wall pixel-identical. Renders: scratchpad `cv17`.
 - 2026-11-15: the user: civil looks fine at c17 (approved).
+- 2026-11-16: the user: revisit bastion (the earlier no was the bad job, not the look). b0: `sprites/wall3d_iwin_bastion.py` (civil's c2 core: POST from `BAST_P` (4 px), end blocks BLOCK 12 / END 16, floor FLOOR_DOWN 6, the opening up to the cornice's foot (`wall_top - BAST_HB`), the pane, its edge up the posts; no rounded corners), jobs `preview/jobs_bswin.py` (bastion). The wall's own face and ramp panels kept for now. Renders: scratchpad `bs0`.
