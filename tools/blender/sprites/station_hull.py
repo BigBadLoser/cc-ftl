@@ -53,8 +53,8 @@ BLOCK, BLOCK_LIT = FACE, "stH"      # its blocks: the face's tone, lit along the
 # as a shallow pit: its lit lower lip, a darker ring, its shaded upper inside
 DENTS = ((7, 3, 3, 1.7, (1.0, 1.25, 0.8, 0.9, 1.15, 0.7, 0.95, 1.05), 15),
          (13, 29.5, 2.6, 1.5, (1.0, 0.7, 1.05, 1.3, 0.9, 1.0, 0.75, 1.15), -12),
-         (25, 45.5, 2.4, 1.9, (0.8, 1.15, 1.2, 0.85, 0.7, 1.05, 1.3, 0.9), 35))
-GOUGE = (27, 25, 4, 1.0, (1.0, 0.75, 1.1, 1.0, 0.85, 1.25, 0.8, 1.0), 6)                                  # a long shallow dent near the tile's end
+         (25, 49, 2.4, 1.9, (0.8, 1.15, 1.2, 0.85, 0.7, 1.05, 1.3, 0.9), 35))
+GOUGE = (28, 25, 5, 1.0, (1.0, 0.75, 1.1, 1.0, 0.85, 1.25, 0.8, 1.0), 6)   # (run out to the tile's edge)                                  # a long shallow dent near the tile's end
 DESIGNS = {1: DENTS + (GOUGE,), 2: DENTS}   # (its outline: radius scales round it from +u, eased between; its tilt,
                                             # degrees on the face)
 DENT_LIP, DENT_RING, DENT_PIT = "stL", "stM", "stD"
@@ -234,9 +234,9 @@ def build(k, ax, plane, a, b, ends, H):
         _corner(f, zt, g0, g1)
 
 
-def _blob(f, uc, zc, ru, rz, shape, tilt, d, col, n=32):
+def _blob(f, s0, uc, zc, ru, rz, shape, tilt, d, col, n=32):
     """A painted blob on the upright front: an ellipse (radii ru along, rz up, art px) its radius scaled round it by
-    shape (eased between), tilted `tilt` degrees, centred (uc, zc), d out."""
+    shape (eased between), tilted `tilt` degrees, centred (uc, zc), d out; cut at the tile's edges (s0, s0 + 1)."""
     px = 1 / core.ZPX
     k, ca, sa = len(shape), math.cos(math.radians(tilt)), math.sin(math.radians(tilt))
     pts = []
@@ -248,7 +248,8 @@ def _blob(f, uc, zc, ru, rz, shape, tilt, d, col, n=32):
         r = shape[j] * (1 - w) + shape[(j + 1) % k] * w
         x, y = ru * r * math.cos(a), rz * r * math.sin(a)
         x, y = x * ca - y * sa, x * sa + y * ca
-        pts.append(T.P(f.ax, f.plane, uc - x * LINE, zc + y * px, d))   # (-x: the art's +x runs to -u, see _dent)
+        u = min(max(uc - x * LINE, s0), s0 + 1)
+        pts.append(T.P(f.ax, f.plane, u, zc + y * px, d))   # (-x: the art's +x runs to -u, see _dent)
     f.k.poly(pts, F, 3, T.OUT(f.ax), fixed=T.SEAM_PASS or col)
 
 
@@ -259,9 +260,9 @@ def _dent(f, s0, u, n, ru, rz, shape, tilt):
     uc, zc = s0 + 1 - u * LINE, s.z_at(s.zb, n)     # (u px from the end at the screen-left of the face rising to the
                                                     # right, as the ref's; the other face its mirror, as hull 46's art)
     pit = shape[3:] + shape[:3]
-    _blob(f, uc - 0.5 * LINE, zc - px, ru, rz, shape, tilt, D + 0.001, DENT_LIP)
-    _blob(f, uc, zc, ru, rz, shape, tilt, D + 0.0015, DENT_RING)
-    _blob(f, uc + 0.5 * LINE, zc + 0.5 * px, ru - 1.2, rz - 0.6, pit, tilt, D + 0.002, DENT_PIT)
+    _blob(f, s0, uc - 0.5 * LINE, zc - px, ru, rz, shape, tilt, D + 0.001, DENT_LIP)
+    _blob(f, s0, uc, zc, ru, rz, shape, tilt, D + 0.0015, DENT_RING)
+    _blob(f, s0, uc + 0.5 * LINE, zc + 0.5 * px, ru - 1.2, rz - 0.6, pit, tilt, D + 0.002, DENT_PIT)
 
 
 def _corner(f, zt, g0, g1):
