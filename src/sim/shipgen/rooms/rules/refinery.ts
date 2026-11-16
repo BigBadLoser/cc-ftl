@@ -1,6 +1,6 @@
 /**
  * RW: a refinery hall's machines against the walls, the doorways clear. Each refinery stands flush to a wall (back, side
- * or front), its working tile free and off every doorway (three wide, two deep), off the other machines and their working tiles; its ore bin
+ * or front), its working tile free and off every doorway (three wide, two deep), off the other machines and their working tiles, turned so its long side runs along the wall; its ore bin
  * (its feed) flush beside it, also off the doorways. Placed one at a time where it is furthest from the doors and the
  * machines already standing; left out (the room is tried another way) when a refinery finds no spot.
  * Room frame of parts.ts: (0, 0) the top-left floor tile, the main door under the bottom wall at column d.
@@ -30,7 +30,11 @@ export function rw(c: Ctx): Piece[] {
     for (let rot = 0; rot < 4; rot++) for (let y = 0; y < c.h; y++) for (let x = 0; x < c.w; x++) {
       const fp = footprintTiles(rf, x, y, rot), acc = accessTiles(rf, x, y, rot);
       if (!spare(fp) || !against(fp) || !spare(acc)) continue;
-      const s = 3 * apart([...fp, ...acc], doors) + apart(fp, machines) - 0.01 * (x + y * c.w);
+      // Turned so its long side runs along the wall it stands against.
+      const xs = fp.map((t) => t.x), ys = fp.map((t) => t.y), fw = Math.max(...xs) - Math.min(...xs) + 1, fh = Math.max(...ys) - Math.min(...ys) + 1;
+      const flat = fp.some((t) => !floor(t.x, t.y - 1) || !floor(t.x, t.y + 1)), tall = fp.some((t) => !floor(t.x - 1, t.y) || !floor(t.x + 1, t.y));
+      const along = (flat && fw > fh) || (tall && fh > fw) ? 20 : 0;
+      const s = along + 3 * apart([...fp, ...acc], doors) + apart(fp, machines) - 0.01 * (x + y * c.w);
       if (s > score) { score = s; best = { x, y, rot, fp, acc }; }
     }
     if (!best) return [];

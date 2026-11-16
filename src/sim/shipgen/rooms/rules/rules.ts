@@ -297,7 +297,7 @@ export const RULES: Partial<Record<RoomRole, readonly RuleArrangement[]>> = {
     { name: 'BG brig, stasis wheel at the back', weight: 1, when: (n, r) => count(n, SW) === 1 && r.w >= 7 && r.h >= 6, rule: bg },
   ],
   industry: [
-    { name: 'RW refinery hall, the machines against the walls, doorways clear', weight: 100, when: (n, r) => n.includes(RF) && Math.min(r.w, r.h) >= 7 && r.w * r.h >= 80, rule: rw },
+    { name: 'RW refinery hall, the machines against the walls, doorways clear', weight: 100, when: (n, r) => n.includes(RF) && Math.min(r.w, r.h) >= 7 && Math.max(r.w, r.h) >= 13, rule: rw },
     { name: 'RF refinery, an ore bin flush under each', weight: 1, when: (n, r) => n.includes(RF) && r.h >= 7 && r.w >= 4 * count(n, RF), rule: rf },
     { name: 'RF2 refineries in rows, an ore bin flush beside each (deep rooms)', weight: 1, when: (n, r) => n.includes(RF) && rf2Fits(r.w, r.h) >= count(n, RF), rule: rf2 },
     { name: 'WS workshop, fabricator between the racks', weight: 1, when: (n, r) => n.includes(FB) && !n.includes(SP) && !n.includes(RS) && r.h >= 4 && r.w >= 4 + 2 * count(n, FB), rule: ws },

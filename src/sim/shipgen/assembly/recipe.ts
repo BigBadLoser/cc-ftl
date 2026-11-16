@@ -68,9 +68,9 @@ export interface BranchRule {
 
 /**
  * Which base a prefab recipe builds (prefab.ts): the trading post (the default), a farm with a hall of greenhouse ribs or a
- * cluster of greenhouses down a long tube, a mine with a refinery wing or a pithead compound.
+ * cluster of greenhouses down a long tube, a mine with a refinery wing.
  */
-export type PrefabPlan = 'trade' | 'farmRows' | 'farmCluster' | 'mineWing' | 'minePit';
+export type PrefabPlan = 'trade' | 'farmRows' | 'farmCluster' | 'mineWing';
 
 export interface Recipe {
   name: string;

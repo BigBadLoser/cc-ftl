@@ -198,7 +198,9 @@ export function recipeRooms(recipe: Recipe, rooms: readonly RoomSpec[]): readonl
     const pd = r.mods.filter((m) => m === 'module.pointDefense').length;
     return pd === 0 ? r : { ...r, mods: r.mods.filter((m) => m !== 'module.pointDefense'), w: Math.max(3, r.w - 3 * pd) };
   };
-  return rooms.filter((r) => !r.mods.includes('module.vehicle_bay') && (r.role !== 'dock' || docks.includes(r)) && r.role !== 'weapons' && deptOf(r) !== 'market').map(noPd);
+  // The pods park outside (later), so no pod bay: the suit room that was its annex stays.
+  const noPods = (r: RoomSpec): RoomSpec => (r.role === 'hangar' && r.annex ? { ...r.annex } : r);
+  return rooms.filter((r) => !r.mods.includes('module.vehicle_bay') && (r.role !== 'dock' || docks.includes(r)) && r.role !== 'weapons' && deptOf(r) !== 'market').map(noPods).filter((r) => r.role !== 'hangar').map(noPd);
 }
 
 /**
