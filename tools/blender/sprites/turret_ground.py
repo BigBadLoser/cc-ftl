@@ -83,17 +83,14 @@ def bunker(f):
 
 # Round 4: supports that grow into the head. The head (TC turntable, R * rig scale = about 0.9) sits on a collar of its own
 # width, no roof ring. (deck top, builder)
-COLLAR = 0.92
+COLLAR = 0.52                                                   # round 5: the head's drum (0.36 * rig scale 1.45), no turntable
+HEAD_DROP = 0.29 * 1.45                                         # the drum's foot above the rig origin (turret_concepts._drum z0)
 
 
 def collar(f, top, ribs=12):
-    """The ring the head's turntable sits on: as wide as its skirt, dark, ribbed like it, a lit rim."""
-    _g("collar")
-    f.vcyl(0, 0, top - 0.14, COLLAR, 0.1, "dark", top="steel", sides=28)
-    for k in range(ribs):
-        a = (k + 0.5) * math.tau / ribs
-        obox(f, a, COLLAR - 0.02, COLLAR + 0.03, 0.035, top - 0.14, top - 0.04, "steelD")
-    TC.vannulus(f, COLLAR + 0.01, COLLAR - 0.1, top - 0.04, top, "steelL", "steel")
+    """Round 5: no ring. The support's top is a plain cap the drum stands on."""
+    _g("cap")
+    f.vcyl(0, 0, top - 0.05, COLLAR + 0.02, 0.05, "steel", top="steelD", sides=28)
 
 
 def pintle(f, top=0.9):
@@ -110,7 +107,7 @@ def pintle(f, top=0.9):
         obox(f, a, 0.3, 0.72, 0.03, 0.08, 0.2, "steel", top="steelL")
         obox(f, a, 0.3, 0.5, 0.03, 0.2, 0.36, "steel", top="steelL")
     _g("flare")
-    for k, (r, z) in enumerate(((0.38, top - 0.34), (0.55, top - 0.27), (0.72, top - 0.2))):
+    for k, (r, z) in enumerate(((0.36, top - 0.3), (0.44, top - 0.22), (0.5, top - 0.14))):
         f.vcyl(0, 0, z, r, 0.07, "steelD", top="steel", sides=28)
     collar(f, top)
     port(f, 0.36)
@@ -122,11 +119,12 @@ def casemate(f, top=0.62):
     TB.prism(f, octagon(0.98), 0, 0.06, "gm", top="steelD")
     f.vcyl(0, 0, 0.06, 0.97, 0.08, "steelD", top="steel", sides=28)
     _g("drum")
-    f.vcyl(0, 0, 0.14, COLLAR - 0.02, top - 0.28, "dark", top="steelD", sides=28)
+    f.vcyl(0, 0, 0.14, 0.86, 0.12, "dark", top="steelD", rtop=0.7, sides=28)       # a sloped shoulder up to the drum
+    f.vcyl(0, 0, 0.26, COLLAR - 0.02, top - 0.4, "dark", top="steelD", sides=28)
     for k in range(12):                                                         # the skirt's ribs, full height
         a = (k + 0.5) * math.tau / 12
-        obox(f, a, COLLAR - 0.04, COLLAR + 0.02, 0.04, 0.14, top - 0.14, "steelD", top="steel")
-    f.vcyl(0, 0, 0.3, COLLAR + 0.005, 0.04, "steel", sides=28)                  # a band round it
+        obox(f, a, COLLAR - 0.04, COLLAR + 0.02, 0.04, 0.26, top - 0.06, "steelD", top="steel")
+    f.vcyl(0, 0, top - 0.24, COLLAR + 0.005, 0.04, "steel", sides=28)          # a band round it
     collar(f, top)
     port(f, 0.4)
 
@@ -138,14 +136,14 @@ def tripod(f, top=0.95):
     for k in range(3):
         a = math.pi / 2 + k * math.tau / 3 + math.pi
         c, s_ = math.cos(a), math.sin(a)
-        foot, knee, hip = (0.96 * c, 0.96 * s_, 0.06), (0.9 * c, 0.9 * s_, 0.42), (0.62 * c, 0.62 * s_, top - 0.16)
+        foot, knee, hip = (0.96 * c, 0.96 * s_, 0.06), (0.86 * c, 0.86 * s_, 0.42), (0.42 * c, 0.42 * s_, top - 0.1)
         f.box(foot[0], foot[1], 0, 0.2, 0.2, 0.07, "gm", top="steelD")
         D.seg(f, foot, knee, 0.09, "steelD", 10)
         f.vcyl(knee[0], knee[1], knee[2] - 0.08, 0.12, 0.16, "steel", top="steelL", sides=14)   # knee joint
         D.seg(f, knee, hip, 0.085, "steelD", 10)
-        D.seg(f, (0.95 * c, 0.95 * s_, 0.2), (0.25 * c, 0.25 * s_, top - 0.3), 0.04, "steel", 8)   # hydraulic strut
+        D.seg(f, (0.95 * c, 0.95 * s_, 0.2), (0.2 * c, 0.2 * s_, top - 0.3), 0.04, "steel", 8)   # hydraulic strut
     _g("hub")
-    f.vcyl(0, 0, top - 0.42, 0.26, 0.28, "steelD", top="steel", sides=20)
+    f.vcyl(0, 0, top - 0.42, 0.44, 0.38, "steelD", top="steel", sides=20)
     collar(f, top)
     port(f, 0.36)
 
@@ -154,9 +152,14 @@ GV = {"G1": (0.9, pintle), "G2": (0.62, casemate), "G3": (0.95, tripod)}
 
 
 def ground_turret(key, d, variant):
-    """The turret head for a ground variant: built on the support's top, without its roof race ring."""
+    """The weapon head alone (no roof race ring, no turntable), its drum's foot on the support's top."""
     top = GV[variant][0]
-    return TC.place(TC.PICKS[key](False), d, z0=top, parts=("head", "gun"))
+    keep, TC.turntable = TC.turntable, lambda *a, **k: None
+    try:
+        rig = TC.PICKS[key](False)
+    finally:
+        TC.turntable = keep
+    return TC.place(rig, d, z0=top - HEAD_DROP, parts=("head", "gun"))
 
 
 def plinth(f):
