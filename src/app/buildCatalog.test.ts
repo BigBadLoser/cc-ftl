@@ -21,7 +21,7 @@ describe('build catalog', () => {
   it('puts every module in a known category and reaches it from some tab', () => {
     const known = new Set(CATEGORIES.map((c) => c.id as string));
     const tabs = visibleCategories(entries, true);
-    for (const id of Object.keys(content.modules).filter((k) => !(content.modules as Record<string, ModuleDef>)[k]?.groundMount)) {
+    for (const id of Object.keys(content.modules).filter((k) => !(content.modules as Record<string, ModuleDef>)[k]?.groundMount && !(content.modules as Record<string, ModuleDef>)[k]?.vehicleBay?.pad)) {
       const e = entries.find((x) => x.id === id && x.kind === 'module');
       expect(e, id).toBeDefined();
       expect(known.has(e!.category), `${id} category`).toBe(true);

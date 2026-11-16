@@ -4,6 +4,10 @@ import { FighterC } from '../fight/components';
 import { isIncapacitated } from '../crew/helpers';
 import { airlockWorking } from '../modules/airlock';
 import type { Sim } from '../sim';
+import { startErrand } from '../ai/machines/eva';
+import { findSuitSource } from '../eva/errands';
+import { isSuited, needsAir, suitNeeded } from '../eva/suit';
+import { shipGrid, shipIdOf } from '../regions';
 import { AboardC, EmbarkOrderC, VehicleC } from './components';
 import { boardingTile } from './geometry';
 import { occupants, vehicleDefOf } from './lifecycle';
@@ -31,8 +35,27 @@ export function sendToEmbark(sim: Sim, crew: number, vehicle: number): string | 
   }
   drafted.target = { x: at.x, y: at.y };
   delete drafted.planned;
+  const suit = suitFirst(sim, crew, at);
+  if (suit === 'none') return 'noSuit';
   const fighter = sim.world.get(crew, FighterC);
   if (fighter) fighter.ordered = 0; // climbing in replaces an attack order
-  sim.world.add(crew, EmbarkOrderC, { vehicle });
+  sim.world.add(crew, EmbarkOrderC, { vehicle, ...(suit === 'ready' ? { suited: true as const } : {}) });
   return null;
+}
+
+/**
+ * A walk to a boarding tile out on open ground (a landing pad, #509) is made in a suit: someone who breathes and wears none first goes for one
+ * at the nearest airlock (the ordinary suit-up errand, which drops the walk; the vehicle system sets it again once the suit is on). 'ready':
+ * the walk can start now (suited, airless, or the tile has air); 'errand': off for a suit; 'none': there is no suit to be had.
+ */
+function suitFirst(sim: Sim, crew: number, at: { shipId: number; x: number; y: number }): 'ready' | 'errand' | 'none' {
+  const grid = shipGrid(sim, at.shipId);
+  const pos = sim.world.get(crew, PositionC);
+  if (!grid || !pos || !needsAir(sim, crew) || isSuited(sim, crew) || !suitNeeded(grid, at.x, at.y)) return 'ready';
+  const src = findSuitSource(sim, crew, pos);
+  if (!src || shipIdOf(sim, pos) !== at.shipId) return 'none';
+  const drafted = sim.world.get(crew, DraftedC);
+  if (drafted) { drafted.target = null; delete drafted.planned; }
+  startErrand(sim, crew, 'suitUp', src, at.shipId);
+  return 'errand';
 }

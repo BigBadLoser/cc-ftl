@@ -5,6 +5,7 @@ import { storageTake } from '../items/storage';
 import { ModuleC } from '../modules/components';
 import { isTileWalkable } from '../modules/walk';
 import { airlockWorking } from '../modules/airlock';
+import { airlockPad } from '../modules/landingPad';
 import { AirlockC } from '../modules/airlock';
 import { shipById } from '../combat/ships';
 import { outsideCrew } from '../eva/shuttle';
@@ -41,7 +42,13 @@ export function dockError(sim: Sim, id: number, airlock: number): string | null 
   const host = shipById(sim, shipIdOf(sim, m));
   if (host?.state === 'fled') return 'badTarget';
   // An asteroid outpost has one dock (on its rock face, open to space); its other airlocks open onto ground.
-  if (host?.outpost?.dock && host.outpost.dock !== airlock) return 'notDock';
+  // A surface base's pads are its docks: a shuttle lands on a pad whose home is free (the home shuttle's own is never given away), and its crew walk to the airlock beside it (#509).
+  const pad = airlockPad(sim, airlock);
+  if (pad) {
+    const home = sim.world.get(pad, VehicleBayC)?.vehicle ?? 0;
+    if (home !== 0 && home !== id) return 'padTaken';
+    if (!bayWorking(sim, pad)) return 'bayDown';
+  } else if (host?.outpost?.dock && host.outpost.dock !== airlock) return 'notDock';
   for (const other of sim.world.query(VehicleC)) {
     const o = sim.world.get(other, VehicleC) as Vehicle;
     if (other !== id && (o.dock === airlock || (o.dest?.type === 'dock' && o.dest.airlock === airlock))) return 'occupied';

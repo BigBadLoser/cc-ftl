@@ -1,5 +1,6 @@
 import { airlockTiles } from '../../modules/airlock';
 import { footprintTiles } from '../../modules/footprint';
+import { LANDING_PAD } from '../../modules/landingPad';
 import type { ModuleDef, ShipTemplate } from '../../registry';
 import { Rng } from '../../rng';
 import { fitShell, seedOf } from '../generate';
@@ -101,6 +102,9 @@ export function assembleStation(def: StationDef, id: string, size: StationSize, 
   if (g.crewLocks.size > 0) made.template.modules = (made.template.modules ?? []).map((m) => (defs[m.def]?.airlock && footprintTiles(defs[m.def] as ModuleDef, m.x, m.y, m.rot).some((t) => g.crewLocks.has(snap.roomOf[t.y * snap.width + t.x] ?? -1)) ? { ...m, crew: true as const } : m));
   // An asteroid farm's beds are set to the kind's crops, in turn: its crew farm them out of the box.
   if (prefab && def.crops?.length) { let bed = 0; made.template.modules = (made.template.modules ?? []).map((m) => (defs[m.def]?.plot ? { ...m, crop: def.crops?.[bed++ % def.crops.length] as string } : m)); }
+  // A prefab base keeps its shuttle on a landing pad (#509): the first pad is home to it, the others stay free for visitors. The pad's access side faces its airlock
+  // (the first pad lies west of arrivals, the airlock to its east: rotation 0; the other lies east of it: rotation 2).
+  if (prefab) made.template.modules = [...(made.template.modules ?? []), ...pads.map((p, i) => ({ def: LANDING_PAD, x: p[0] - snap.x0, y: p[1] - snap.y0, rot: i % 2 === 0 ? 0 : 2, ground: true as const, ...(i === 0 ? { vehicle: 'vehicle.shuttle' } : {}) }))];
   made.template.name = `${def.name} ${size === 'station' ? '' : `${size} `}${(seed >>> 0).toString(16).toUpperCase().padStart(4, '0').slice(-4)}`;
   const site = { pads: pads.map((p) => ({ x: p[0] - snap.x0, y: p[1] - snap.y0, w: p[2] - p[0], h: p[3] - p[1] })) };
   return { ...made, failures: rejected, station: infoOf(def, size, made.template, defs), ...(prefab ? { site } : {}) };

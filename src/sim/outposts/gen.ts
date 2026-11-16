@@ -18,7 +18,7 @@ import { buildStation } from '../shipgen/stationBuild';
 import type { StationResult } from '../shipgen/assembly/station';
 import type { StationDef } from '../shipgen/stationTypes';
 import { isAsteroidRock, Struct } from '../structure';
-import { builtOf, carveInRock, dropBuriedAirlocks, pickDock, placeAt, type Dock } from './site';
+import { builtOf, carveInRock, withoutVehicles, dropBuriedAirlocks, pickDock, placeAt, type Dock } from './site';
 
 export type OutpostStyle = 'surface' | 'dug';
 export type OutpostKind = 'trading' | 'farming' | 'mining' | 'pirate' | 'criminal' | 'covert';
@@ -124,7 +124,7 @@ export function generateOutpost(style: OutpostStyle, seed: number, content: Outp
       dock = pickDock(station.template, content.modules);
     }
     if (!dock) continue;
-    const template = { ...(style === 'dug' ? carveInRock(station.template, content.modules) : station.template), name: `${k} outpost` };
+    const template = { ...(style === 'dug' ? withoutVehicles(carveInRock(station.template, content.modules), content.modules) : station.template), name: `${k} outpost` };
     const site = !!station.site && style === 'surface', b = builtOf(template, site);
     for (let t = 0; t < OUTPOST.tries; t++) {
       const plan = generateAsteroid('big', (seed + (s * OUTPOST.tries + t) * 7919) >>> 0, content.ores, { coverage: style === 'surface' ? 'open' : 'dense', minSize: Math.max(b.w, b.h) + 12 });
