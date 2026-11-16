@@ -31,35 +31,43 @@ def _disc(f, uc, zc, r, d, col, n=24):
 
 
 def _fillet(pts, R, k=4):
-    """A path through `pts` ((p, z) px) with its corners rounded R px."""
+    """A path through `pts` ((p, z, k) px) with its corners rounded R px."""
     out = [pts[0]]
-    for (ax, az), (bx, bz), (cx, cz) in zip(pts, pts[1:], pts[2:]):
-        l0, l1 = math.hypot(bx - ax, bz - az), math.hypot(cx - bx, cz - bz)
+    for A, B, C in zip(pts, pts[1:], pts[2:]):
+        l0, l1 = math.dist(A, B), math.dist(B, C)
         r = min(R, l0 / 2, l1 / 2)
-        p0 = (bx + (ax - bx) * r / l0, bz + (az - bz) * r / l0)
-        p1 = (bx + (cx - bx) * r / l1, bz + (cz - bz) * r / l1)
+        p0 = [b + (a - b) * r / l0 for a, b in zip(A, B)]
+        p1 = [b + (c - b) * r / l1 for b, c in zip(B, C)]
         for i in range(k + 1):                              # (a quadratic bend through the corner)
             t = i / k
-            out.append(((1 - t) ** 2 * p0[0] + 2 * t * (1 - t) * bx + t * t * p1[0],
-                        (1 - t) ** 2 * p0[1] + 2 * t * (1 - t) * bz + t * t * p1[1]))
+            out.append(tuple((1 - t) ** 2 * x0 + 2 * t * (1 - t) * xb + t * t * x1 for x0, xb, x1 in zip(p0, B, p1)))
     return out + [pts[-1]]
 
 
 def _run(f, u0, zf, dc, pts, r=1.5, R=3, n=10):
-    """A pipe r px round swept along the path `pts` ((p px across from u0, z px over zf)) at depth dc, its corners
-    rounded R px; its facets toned by facing (up lit, the near end (+u) lit, down and the far end dark)."""
+    """A pipe r px round swept along the path `pts` ((p px across from u0, z px over zf[, k px out from dc: < 0 back
+    toward the bay's back])), its corners rounded R px; its facets toned by facing (up lit, the near end (+u) lit,
+    down and the far end dark)."""
     px, o = 1 / core.ZPX, T.P(f.ax, 0, 0, 0, 0)
-    path = _fillet(pts, R)
+    path = _fillet([tuple(q) + (0.0,) * (3 - len(q)) for q in pts], R)
     rings = []
-    for i, (p, z) in enumerate(path):
+    for i, c in enumerate(path):
         a, b = path[max(i - 1, 0)], path[min(i + 1, len(path) - 1)]
-        tu, tz = b[0] - a[0], b[1] - a[1]
-        ln = math.hypot(tu, tz) or 1.0
-        nu, nz = -tz / ln, tu / ln                          # (the path's normal in the plane of the face)
-        rings.append([(p + nu * r * math.cos(2 * math.pi * j / n), z + nz * r * math.cos(2 * math.pi * j / n),
-                       r * math.sin(2 * math.pi * j / n), nu * math.cos(2 * math.pi * (j + 0.5) / n),
-                       nz * math.cos(2 * math.pi * (j + 0.5) / n), math.sin(2 * math.pi * (j + 0.5) / n))
-                      for j in range(n)])
+        t = [y - x for x, y in zip(a, b)]
+        ln = math.sqrt(sum(v * v for v in t)) or 1.0
+        t = [v / ln for v in t]
+        ref = (0.0, 0.0, 1.0) if abs(t[2]) < 0.9 else (0.0, 1.0, 0.0)   # (its frame: across the path, in (u, z, d))
+        n1 = [t[1] * ref[2] - t[2] * ref[1], t[2] * ref[0] - t[0] * ref[2], t[0] * ref[1] - t[1] * ref[0]]
+        l1 = math.sqrt(sum(v * v for v in n1))
+        n1 = [v / l1 for v in n1]
+        n2 = [t[1] * n1[2] - t[2] * n1[1], t[2] * n1[0] - t[0] * n1[2], t[0] * n1[1] - t[1] * n1[0]]
+        ring = []
+        for j in range(n):
+            ca, sa = math.cos(2 * math.pi * j / n), math.sin(2 * math.pi * j / n)
+            cm, sm = math.cos(2 * math.pi * (j + 0.5) / n), math.sin(2 * math.pi * (j + 0.5) / n)
+            ring.append(tuple(c[k] + r * (n1[k] * ca + n2[k] * sa) for k in range(3))
+                        + tuple(n1[k] * cm + n2[k] * sm for k in range(3)))
+        rings.append(ring)
     w = lambda q: T.P(f.ax, f.plane, u0 + q[0] * LINE, zf + q[1] * px, dc + q[2] * LINE)   # noqa: E731
     for ra, rb in zip(rings, rings[1:]):
         for j in range(n):
@@ -121,7 +129,8 @@ def _filters(f, u0, u1, zf, zl, back, px):
         _gauge(f, uc + LINE, zf + 12 * px, dc + 2.8 * LINE)
     _run(f, u0, zf, dc, [(4, zt - 1), (4, zt + 6), (W - 3, zt + 6), (W - 3, zt - 1)], r=1.3, R=3)   # (the U)
     _run(f, u0, zf, D - 2 * LINE, [(-1, 6), (W + 1, 6)], r=1.2)   # (the line in and out of their feet)
-    _run(f, u0, zf, dc, [(W / 2 + 0.5, zt + 6), (W / 2 + 0.5, top + 2)], r=1.0)   # (a vent up off the U)
+    _run(f, u0, zf, dc, [(W / 2 + 0.5, zt + 6), (W / 2 + 0.5, top - 3), (W / 2 + 0.5, top - 3, (back - dc) / LINE - 1)],
+         r=1.0, R=2)                                       # (a vent up off the U, back into the wall)
 
 
 def _manifold2(f, u0, u1, zf, zl, back, px):
@@ -133,7 +142,8 @@ def _manifold2(f, u0, u1, zf, zl, back, px):
     for k, p in enumerate((3, W / 2 + 0.5, W - 2)):
         _run(f, u0, zf, D - 4 * LINE, [(p, zh), (p, 6)], r=1.0)
         _wheel(f, u0 + p * LINE, zf + (15 + 3 * (k % 2)) * px, D - 2 * LINE, 2.2)
-    _run(f, u0, zf, D - 4 * LINE, [(W - 4, zh), (W - 4, zh + 8), (4, zh + 12), (4, top + 2)], r=1.4, R=3)   # (its feed)
+    _run(f, u0, zf, D - 4 * LINE, [(W - 4, zh), (W - 4, zh + 8), (4, zh + 12), (4, top - 3),
+                                   (4, top - 3, (back - D) / LINE + 3)], r=1.4, R=3)   # (its feed, back into the wall)
     _gauge(f, u0 + (W / 2 + 0.5) * LINE, zf + (zh + 5) * px, D - 2 * LINE)
 
 
@@ -149,5 +159,6 @@ def _exchanger(f, u0, u1, zf, zl, back, px):
         _run(f, u0, zf, D - 6 * LINE, [(p + (2 if p < W / 2 else -2), a), (p, a), (p, b), (p + (2 if p < W / 2 else -2), b)],
              r=1.3, R=2)
     _run(f, u0, zf, D - 6 * LINE, [(2, z0 + 3), (2, -1)], r=1.3)          # (out through the floor)
-    _run(f, u0, zf, D - 6 * LINE, [(W - 1, z1 - 3), (W - 1, top + 2)], r=1.3)   # (out through the top)
+    _run(f, u0, zf, D - 6 * LINE, [(W - 1, z1 - 3), (W - 1, top - 3), (W - 1, top - 3, (back - D) / LINE + 5)], r=1.3,
+         R=2)                                              # (up and back into the wall)
     _box(f, u0 + LINE, u1 - LINE, zf, zf + 3 * px, back, D - LINE, "stM", "stL", "stD")
