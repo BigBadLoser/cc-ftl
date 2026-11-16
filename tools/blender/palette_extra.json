@@ -4023,5 +4023,11 @@
   "cbDuctL": {"hex": "#7d98b4", "set": "cable"},
   "cbDuctD": {"hex": "#3c536b", "set": "cable"},
   "cbCryo": {"hex": "#d3dde3", "set": "cable"},
-  "cbCryoD": {"hex": "#98a8b3", "set": "cable"}
+  "cbCryoD": {"hex": "#98a8b3", "set": "cable"},
+  "cbGraph": {"hex": "#41474e", "set": "cable"},
+  "cbGraphD": {"hex": "#2a2e33", "set": "cable"},
+  "cbSafe": {"hex": "#d2a72c", "set": "cable"},
+  "cbSafeD": {"hex": "#9a7a1f", "set": "cable"},
+  "cbSand": {"hex": "#8a7f6c", "set": "cable"},
+  "cbSandD": {"hex": "#625a4b", "set": "cable"}
 }

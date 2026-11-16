@@ -63,23 +63,35 @@ def _duct_box(f, u, v, du, length, w, z0, h, side, top):
     f.box(u, v, z0, length if du else w, w if du else length, h, side, top=top)
 
 
-def _duct_run(f, path, lit, var=0):
+# Colour schemes of the duct (round 5): body side and top, joint frame side and top, an optional power stripe along the sides.
+SCHEMES = {
+    "blue": dict(body=("cbDuctD", "cbDuct"), frame=("cbDuctD", "cbDuctL"), stripe=None),
+    "steel": dict(body=("cbPipeD", "cbPipe"), frame=("cbBandK", "cbBand"), stripe=None),
+    "graphite": dict(body=("cbGraphD", "cbGraph"), frame=("cbPipeD", "cbPipe"), stripe="cbCabO"),
+    "safety": dict(body=("cbSafeD", "cbSafe"), frame=("cbBandK", "cbClampD"), stripe=None),
+    "sand": dict(body=("cbSandD", "cbSand"), frame=("cbPipeD", "cbPipe"), stripe="cbCabO"),
+}
+
+
+def _duct_run(f, path, sc):
     """One arm of box duct from the tile edge (path start) in, with the joint frame on that edge."""
     (u0, v0), (u1, v1) = path[0], path[-1]
     du, dv = (u1 - u0), (v1 - v0)
     L = abs(du) + abs(dv)
     ax = 1 if abs(du) > 0 else 0
     cu, cv = (u0 + u1) / 2, (v0 + v1) / 2
-    _duct_box(f, cu, cv, ax, L, 2 * DW, 0.0, DH, "cbDuctD", "cbDuct")
+    _duct_box(f, cu, cv, ax, L, 2 * DW, 0.0, DH, *sc["body"])
+    if sc["stripe"]:                                                          # the power stripe along both sides
+        _duct_box(f, cu, cv, ax, L, 2 * DW + 0.008, 0.065, 0.045, sc["stripe"], sc["body"][1])
     s = 1 if (du + dv) > 0 else -1
     eu, ev = u0 + (0.04 * s if ax else 0), v0 + (0 if ax else 0.04 * s)
-    _duct_box(f, eu, ev, ax, 0.08, 2 * DW + 0.04, 0.0, DH + 0.025, "cbDuctD", "cbDuctL")  # joint frame at the edge
+    _duct_box(f, eu, ev, ax, 0.08, 2 * DW + 0.04, 0.0, DH + 0.025, *sc["frame"])  # joint frame at the edge
 
 
-def _duct_extra(f, ax, lit, var):
+def _duct_extra(f, ax, lit, var, sc):
     """A straight tile's detail at its middle: an access panel with a lamp (v1) or vents (v2)."""
     if var == 1:
-        _duct_box(f, 0, 0, ax, 0.3, 2 * DW - 0.08, DH, 0.012, "cbDuctD", "cbDuctD")
+        _duct_box(f, 0, 0, ax, 0.3, 2 * DW - 0.08, DH, 0.012, sc["body"][0], sc["body"][0])
         f.box(0, 0, DH + 0.012, 0.06, 0.06, 0.025, "cbClampD", top=_lamp(lit))
     if var == 2:
         for k in (-1, 0, 1):
@@ -87,22 +99,25 @@ def _duct_extra(f, ax, lit, var):
             _duct_box(f, pu, pv, ax, 0.05, 2 * DW - 0.1, DH, 0.01, "cbTrench", "cbTrench")
 
 
-def duct(mask, lit, var=0):
-    m = core.Mesh(f"cable_duct_{mask}_{lit}_{var}")
+def duct(mask, lit, var=0, scheme="blue"):
+    sc = SCHEMES[scheme]
+    m = core.Mesh(f"cable_duct_{scheme}_{mask}_{lit}_{var}")
     f = _frame(m)
     arms = _arms(mask)
     straight = mask in (5, 10)
     if straight:
         a = arms[0]
         for p in ([(-0.5 * a[0], -0.5 * a[1]), (0.0, 0.0)], [(0.5 * a[0], 0.5 * a[1]), (0.0, 0.0)]):
-            _duct_run(f, p, lit, 0)
+            _duct_run(f, p, sc)
         if var:
-            _duct_extra(f, abs(a[0]), lit, var)
+            _duct_extra(f, abs(a[0]), lit, var, sc)
     else:
         for d in arms:
-            _duct_run(f, [(0.5 * d[0], 0.5 * d[1]), (0.0, 0.0)], lit, 0)
-        f.box(0, 0, 0.0, 2 * DW + 0.08, 2 * DW + 0.08, DH + 0.06, "cbDuctD", top="cbDuct")       # junction box
-        f.box(0, 0, DH + 0.06, 2 * DW - 0.04, 2 * DW - 0.04, 0.015, "cbDuctD", top="cbDuctL")
+            _duct_run(f, [(0.5 * d[0], 0.5 * d[1]), (0.0, 0.0)], sc)
+        f.box(0, 0, 0.0, 2 * DW + 0.08, 2 * DW + 0.08, DH + 0.06, sc["body"][0], top=sc["body"][1])     # junction box
+        if sc["stripe"]:
+            f.box(0, 0, 0.065, 2 * DW + 0.088, 2 * DW + 0.088, 0.045, sc["stripe"], top=sc["body"][1])
+        f.box(0, 0, DH + 0.06, 2 * DW - 0.04, 2 * DW - 0.04, 0.015, *sc["frame"][:1], top=sc["frame"][1])
         f.box(0.08, 0.08, DH + 0.075, 0.06, 0.06, 0.025, "cbClampD", top=_lamp(lit))
     return [m.build()]
 
@@ -159,8 +174,9 @@ def plug(look, dname, lit):
         z0, h, w, col, top = 0.0, 0.3, 0.36, "cbArmourD", "cbArmour"
         sweep(f, _sub(_line((du * 0.47, dv * 0.47), (du * 0.3, dv * 0.3)), 0, 0.17, 0.06), _round(SR + 0.03, SZ, HS),
               ["cbArmourD"], caps="cbArmourD")
-    elif look == "duct":
-        z0, h, w, col, top = 0.0, DH + 0.1, 2 * DW + 0.12, "cbDuctD", "cbDuctL"
+    elif look.startswith("duct"):
+        sc = SCHEMES[look[5:] or "blue"]
+        z0, h, w, col, top = 0.0, DH + 0.1, 2 * DW + 0.12, sc["frame"][0], sc["frame"][1]
     else:
         z0, h, w, col, top = 0.0, 0.32, 0.3, "cbCryoD", "cbCryo"
         sweep(f, _sub(_line((du * 0.47, dv * 0.47), (du * 0.32, dv * 0.32)), 0, 0.15, 0.05), _round(YR + 0.03, YZ, HS),
@@ -171,6 +187,10 @@ def plug(look, dname, lit):
 
 
 BUILD = {"spine": spine, "duct": duct, "cryo": cryo}
+for _sc in SCHEMES:
+    if _sc != "blue":
+        BUILD[f"duct.{_sc}"] = lambda mask, lit, var=0, sc=_sc: duct(mask, lit, var, sc)
+LOOKS = LOOKS + tuple(f"duct.{k}" for k in SCHEMES if k != "blue")
 
 
 def jobs():
