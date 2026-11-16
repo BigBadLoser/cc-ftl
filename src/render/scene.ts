@@ -367,7 +367,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     frame: () => ({ x0: -placed.originX / placed.scale, y0: -placed.originY / placed.scale, x1: (placed.w - placed.originX) / placed.scale, y1: (placed.h - placed.originY) / placed.scale }),
     shipCenter: (id) => { const sh = shipOf(id); const o = sh && origin(id); return sh && o ? { x: o.x + sh.width / 2 - 0.5, y: o.y + sh.height / 2 - 0.5 } : null; } }, SL.ui);
   const moduleGhost = createModuleGhost(SL.ui, thumbs, content.modules);
-  const windowGhost = createWindowGhost(SL.ui, atlas);
+  const windowGhost = createWindowGhost(SL.ui, atlas, (id) => scenes.get(id)?.grid);
   /** Where a crew member's feet are drawn, in the sector-frame art px the overlays use (the sprite's own smoothed position). */
   const crewSpritePos = (id: number): { x: number; y: number; h: number; bars: number } | null => {
     for (const [gid, sc] of scenes) {

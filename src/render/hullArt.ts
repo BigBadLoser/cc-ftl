@@ -88,6 +88,19 @@ export function pickDesign(x: number, y: number, n: number, salt: number): numbe
 }
 
 /**
+ * The exterior piece of a window tile on a straight near run (w1 the lower-coordinate end, w3 the higher, w2 the middles), or null for
+ * any other tile or window (a corner, a far run, art missing): those keep their other pieces. `win` must match the run's axis.
+ */
+export function windowExteriorId(h: HullKeys, x: number, y: number, has: (id: string) => boolean, win: WindowTile | null): string | null {
+  const k = h.at(x, y);
+  if (!win || !k || hullKeyGeneric(k)) return null;
+  const id = runSetId(h, x, y);
+  if (!STRAIGHT.has(id) || id !== (win.axis === "x" ? "tile.hull.ext.o1.m10" : "tile.hull.ext.o2.m5")) return null;
+  const w = `${id}.w${{ l: 1, m: 2, r: 3 }[windowPiece(win)]}`;
+  return has(w) ? w : null;
+}
+
+/**
  * The exterior sprites of a hull tile (the ship roofed), back to front: a near run or corner the run set's piece (a
  * straight run in one of its designs), anything else the generic piece and its roof over the rest of the tile. Null
  * for no key (plain roof) or no art. `win`: the tile's window (sim/windows.ts), drawn instead of the design on a straight near run.
@@ -97,11 +110,9 @@ export function exteriorIds(h: HullKeys, x: number, y: number, has: (id: string)
   if (!k) return null;
   if (!hullKeyGeneric(k)) {
     const id = runSetId(h, x, y);
-    // A window tile of a straight near run: its window piece (w1 the lower-coordinate end, w3 the higher, w2 the middles), else the design pick.
-    if (win && !base && STRAIGHT.has(id)) {
-      const w = `${id}.w${{ l: 1, m: 2, r: 3 }[windowPiece(win)]}`;
-      if (has(w)) return [w];
-    }
+    // A window tile of a straight near run: its window piece, else the design pick.
+    const w = base ? null : windowExteriorId(h, x, y, has, win);
+    if (w) return [w];
     const v = STRAIGHT.has(id) && !base ? ["", ".a1", ".a2", ".a3"][pickDesign(x, y, 4, 1)] : "";
     for (const c of [id + v, id]) if (has(c)) return [c];
   }

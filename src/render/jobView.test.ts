@@ -68,12 +68,12 @@ describe("queued window ghosts", () => {
     const plain = ghostsFor(far, "sorted", [], true) as Sprite[];
     expect(plain.every((s) => s.blendMode === "normal")).toBe(true);
   });
-  it("on the near hull draws the rim ghost the built tile shows, not a full-height wall frame", () => {
+  it("on the near hull draws the hull window's exterior pieces, not a full-height wall frame", () => {
     const ids = idsFor(near, "sorted", codes);
     expect(ids.length).toBeGreaterThan(0);
-    expect(ids.some((id) => id.startsWith("tile.hull.belly.low."))).toBe(true);
-    expect(ids.some((id) => id.startsWith("tile.wall.full") || id.includes(".win."))).toBe(false);
-    expect(ids).toEqual(idsFor(near));
+    expect(ids).toEqual(["tile.hull.ext.o1.m10.w1", "tile.hull.ext.o1.m10.w2", "tile.hull.ext.o1.m10.w3"]);
+    expect(ids.some((id) => id.startsWith("tile.wall.full"))).toBe(false);
+    expect(idsFor(near).some((id) => id.startsWith("tile.hull.belly.low."))).toBe(true); // a plain wall keeps its rim ghost
   });
   it("on the far hull draws the window piece the built tile shows (the hull is always full height)", () => {
     expect(idsFor(far, "sorted", codes).filter((id) => id.includes(".win.")).length).toBe(3);

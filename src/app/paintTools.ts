@@ -125,7 +125,7 @@ export function createPaintTools(sim: Sim, bridge: Bridge, deps: PaintDeps): Pic
     if (windowMode()) {
       const plan = windowAtCursor();
       deps.renderer()?.setPreview(plan?.tiles ?? [], plan ? plan.error === null : true);
-      deps.renderer()?.setWindowGhost(plan ? { tiles: plan.tiles, axis: plan.axis, size: plan.size, valid: plan.error === null } : null);
+      deps.renderer()?.setWindowGhost(plan ? { ship: plan.ship, tiles: plan.tiles, axis: plan.axis, size: plan.size, valid: plan.error === null } : null);
       const rr = deps.renderer();
       const at = plan?.error && rr && hover ? rr.screenOf(plan.ship, hover.x, hover.y) : null;
       placeHint.set(plan?.error && at ? { x: at.x, y: at.y, text: rejectionMessage(plan.error), ok: false } : null);

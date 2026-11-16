@@ -6,6 +6,7 @@ import { Struct } from "../sim/structure";
 import { decodeWindow } from "../sim/windows";
 import type { Atlas } from "./assets/loader";
 import { PREVIEW_OK } from "./markers";
+import { windowExteriorId } from "./hullArt";
 import { keepsOldPiece, pendingHull, pendingHullKeys } from "./jobHull";
 import type { HullKeys } from "./hullArt";
 import { depthKey, iso } from "./iso";
@@ -135,7 +136,10 @@ export function createJobView(
           const tint = win ? WINDOW_GHOST : build ? BUILD : DECON;
           const alpha = win ? 0.5 + 0.4 * frac : build ? 0.3 + 0.5 * frac : 0.65;
           const blend = win ? "add" : "normal";
-          if (hg) {
+          // A window on a straight near run: the hull window's exterior piece (what the roofed ship draws), else the pieces below.
+          const ext = win && hull ? windowExteriorId(hull, lx, ly, has, win) : null;
+          if (ext) draw([[ext]], lx, ly, tint, alpha, key, L.sorted, blend);
+          else if (hg) {
             if (kind === Struct.Floor) draw([floorChain(lx, ly)], lx, ly, tint, alpha, key - 0.9);
             if (hg.under) draw([[hg.under]], lx, ly, tint, alpha, key, L.under, blend);
             if (hg.low) draw([[hg.low]], lx, ly, tint, alpha, key + 0.001, L.sorted, blend);
