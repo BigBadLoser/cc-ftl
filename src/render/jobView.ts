@@ -125,28 +125,27 @@ export function createJobView(
           const build = j.kind === "build";
           const kind = artKind(build ? j.struct : grid.get("struct", j.x, j.y));
           const frac = j.work > 0 ? Math.min(1, j.progress / j.work) : 0;
-          const tint = build ? BUILD : DECON;
-          const alpha = build ? 0.3 + 0.5 * frac : 0.65;
           const lx = j.x - x0, ly = j.y - y0;
           const key = depthKey(lx, ly) + 0.02;
-          // A window build draws as the window piece (the wall is already there, so no new hull), a pending window not a plain wall ghost.
+          // A queued window draws the pieces the built tile will (a near hull tile its rim ghost, else its wall piece at the cut level),
+          // in the window tint: the same owners as a plain wall ghost (pendingHull, wallPieces), so it never stands taller than the tile will.
           const win = build && j.window ? decodeWindow(j.window) : null;
-          const hg = !win && build && (kind === Struct.Floor || kind === Struct.Wall || kind === Struct.Door) ? pendingHull(hull, final, lx, ly, kind, has) : null;
-          if (win && kind === Struct.Wall) {
-            for (const pc of wallPieces(kindAt, lx, ly, kind, "up", false, undefined, win))
-              draw([pc.chain], lx, ly, WINDOW_GHOST, 0.5 + 0.4 * frac, key + pc.order * 0.001, L.sorted, "add");
-          } else if (hg) {
+          const hg = build && (kind === Struct.Floor || kind === Struct.Wall || kind === Struct.Door) ? pendingHull(hull, final, lx, ly, kind, has) : null;
+          const tint = win ? WINDOW_GHOST : build ? BUILD : DECON;
+          const alpha = win ? 0.5 + 0.4 * frac : build ? 0.3 + 0.5 * frac : 0.65;
+          const blend = win ? "add" : "normal";
+          if (hg) {
             if (kind === Struct.Floor) draw([floorChain(lx, ly)], lx, ly, tint, alpha, key - 0.9);
-            if (hg.under) draw([[hg.under]], lx, ly, tint, alpha, key, L.under);
-            if (hg.low) draw([[hg.low]], lx, ly, tint, alpha, key + 0.001);
+            if (hg.under) draw([[hg.under]], lx, ly, tint, alpha, key, L.under, blend);
+            if (hg.low) draw([[hg.low]], lx, ly, tint, alpha, key + 0.001, L.sorted, blend);
             if (kind === Struct.Door)
               for (const pc of wallPieces(kindAt, lx, ly, kind, "down", false))
                 if (keepsOldPiece(kind, true, pc.under)) draw([pc.chain], lx, ly, tint, alpha, key + pc.order * 0.001);
           } else if (kind === Struct.Floor)
             draw([floorChain(lx, ly)], lx, ly, tint, alpha, key - 0.9);
           else if (kind === Struct.Wall || kind === Struct.Door) {
-            for (const pc of wallPieces(kindAt, lx, ly, kind, "down", false))
-              draw([pc.chain], lx, ly, tint, alpha, key + pc.order * 0.001);
+            for (const pc of wallPieces(kindAt, lx, ly, kind, win ? "auto" : "down", false, undefined, win))
+              draw([pc.chain], lx, ly, tint, alpha, key + pc.order * 0.001, L.sorted, blend);
           }
         }
       }

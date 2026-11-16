@@ -57,18 +57,25 @@ describe("blueprint ghosts of new hull", () => {
 });
 
 describe("queued window ghosts", () => {
-  // The top rim (y 1) is a straight wall run: a window on 3..5 along x.
-  const run: [number, number, number][] = [[3, 1, Struct.Wall], [4, 1, Struct.Wall], [5, 1, Struct.Wall]];
+  // The top rim (y 1) is a far hull run, the bottom rim (y 6) near hull: a window on 3..5 along x.
   const codes = [0, 1, 2].map((i) => windowCode("x", 3, i));
-  it("draws the window piece, tinted in the build preview colour, where a plain wall draws the plain piece", () => {
-    const ids = idsFor(run, "sorted", codes);
-    expect(ids.filter((id) => id.includes(".win.")).length).toBe(3);
-    const plain = idsFor(run);
-    expect(plain.some((id) => id.includes(".win."))).toBe(false);
-    const sprites = ghostsFor(run, "sorted", codes, true) as Sprite[];
-    expect(sprites.every((s) => s.tint === 0x22d3ee && s.blendMode === "add")).toBe(true);
+  const far: [number, number, number][] = [[3, 1, Struct.Wall], [4, 1, Struct.Wall], [5, 1, Struct.Wall]];
+  const near: [number, number, number][] = [[3, 6, Struct.Wall], [4, 6, Struct.Wall], [5, 6, Struct.Wall]];
+  it("draws in the window tint, added over the wall, where a plain wall ghost is the normal cyan", () => {
+    const win = ghostsFor(far, "sorted", codes, true) as Sprite[];
+    expect(win.length).toBeGreaterThan(0);
+    expect(win.every((s) => s.tint === 0x22d3ee && s.blendMode === "add")).toBe(true);
+    const plain = ghostsFor(far, "sorted", [], true) as Sprite[];
+    expect(plain.every((s) => s.blendMode === "normal")).toBe(true);
   });
-  it("window code 0 (a window deconstruct's) draws no window piece", () => {
-    expect(idsFor(run, "sorted", [0, 0, 0]).some((id) => id.includes(".win."))).toBe(false);
+  it("on the near hull draws the rim ghost the built tile shows, not a full-height wall frame", () => {
+    const ids = idsFor(near, "sorted", codes);
+    expect(ids.length).toBeGreaterThan(0);
+    expect(ids.some((id) => id.startsWith("tile.hull.belly.low."))).toBe(true);
+    expect(ids.some((id) => id.startsWith("tile.wall.full") || id.includes(".win."))).toBe(false);
+    expect(ids).toEqual(idsFor(near));
+  });
+  it("on the far hull draws the window piece the built tile shows (the hull is always full height)", () => {
+    expect(idsFor(far, "sorted", codes).filter((id) => id.includes(".win.")).length).toBe(3);
   });
 });
