@@ -54,6 +54,11 @@ move in a browser).
 - `deck-marks`: the deck markings joined from their quarter pieces on test shapes (a room with a T corridor and a door gap, a diagonal
   staircase, a hazard room beside a hall, keep-clear boxes), the masks set the way the generator will; `kinds=walkway,hazard,keepClear`,
   `paint=b0443a` tints the walkway line.
+- `windows-tool`: the Window build tool (#516) as the game draws it, on a ship section (an interior wall along x and one along y meeting in a
+  T, the hull around them). A DOM page like `build`: one renderer over the layout lab's stamped world, and the game's own `createPaintTools`
+  put on build > window at each size and hovered over a tile, so the preview tint and the hint (the build menu's own element) are the game's.
+  Cells: valid size 2/3/4 on both interior axes and on the hull, invalid (on floor, T-junction, hull corner, over a built window, a job pending),
+  and built windows walls up and roofed. `zoom=4` sets the renderer camera zoom (its own steps; the default is its widest, 2), not the page scale. Slow (about a minute): each cell settles for a second.
 
 ## Add a panel
 

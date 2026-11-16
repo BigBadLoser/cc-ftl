@@ -136,6 +136,7 @@ export function damageStruct(grid: Grid, x: number, y: number, amount: number): 
   grid.set('door', x, y, 0);
   if (grid.has('jam')) grid.set('jam', x, y, 0);
   if (grid.has('vent')) grid.set('vent', x, y, 0);
+  if (grid.has('window')) grid.set('window', x, y, 0);
   syncOwner(grid, x, y);
   return true;
 }

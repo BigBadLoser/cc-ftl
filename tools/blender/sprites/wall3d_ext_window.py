@@ -1,0 +1,381 @@
+"""The exterior hull's window (after Space Haven's hull windows): a straight run's design over two or more tiles, an
+end piece at each end (W1 the run's start, W3 its end) and middle pieces (W2) between. The base hull (wall3d_ext_t3's
+section) cut down to: a sill (the upright part, cut low, its top sloping up to the frame's front, flat behind), a
+window cut through the wall (a pane of glass in it) and a header over it (the lean's top 5 px, then upright; its
+underside flat). An end piece keeps an outer frame of the whole base section at its outer end and the window frame's
+side inside it (a jamb, its front the header's). A window piece builds its tile's whole section itself
+(wall3d_ext's shell builds nothing for it), its back the wall's: 5 px behind the pane, the pane 5 px behind the
+frame's front.
+
+Measured off the reference (its top and the upright part's front sit where the base hull's do; the section off the
+pieces' cut sides): the header's foot 21 px down the base lean's front; the sill's front 25 px tall, its top's slope
+rising 7.5 px over its depth; W1's outer frame 3 px, its jamb 9 px (ours
+2 px and 5 px: narrower); the window's corner at the jamb's foot a slope onto a
+small foot."""
+from . import core
+from . import wall3d as T
+from . import wall3d_ext_t3 as T3
+from . import wall3d_ext_window_end as EN
+from .wall3d_ext_geom import LEAN_RISE, LINE, YS, D, Face, Section
+
+PART = None                         # the piece being built: "w1" | "w2" | "w3" (None: not a window)
+HEAD = 21                           # the header: the lean's top this many px on screen (down its front)
+GLASS_IN = 3 / 32                   # the glass this far behind the armour's own face
+SILL = 25                           # the sill's front, px tall (as measured: the slope's top set off it)
+SILL_UP = -2                        # ours: the front this many px taller (< 0: shorter), the slope's top where it
+                                    # was (its slope the steeper)
+SILL_RISE = 7.5                     # its top's slope: its rise from the front to the glass, px of height; cut off
+                                    # level with the frame's front (behind it the top flat, to the glass)
+SILL_FLAT = "hsXS"                  # that flat (shaded under the header; well under the slope's)
+SILL_SLOPE = YS[5]                  # the slope (the header's lean's tone)
+FRAME = 2 / 32                      # an end piece's outer frame (the whole base section), along the face
+JAMB = 5 / 32                       # the window frame's side (W1: its left) inside it, along the face: upright from
+                                    # the sill to the header, its front the header's
+BEVEL = 5 / 32                      # the header: its lean only this far out from the top's front edge, then cut
+                                    # upright (its front)
+SIDE = "hsXL"                       # the sides facing the window (the outer frame's, the jamb's): one plane, one
+                                    # tone, between the fronts'
+HEAD_FRONT = YS[4]                  # the header's upright front (a step under the lean over it)
+PANE = 1 / 32                       # the glass: a pane this thick, see-through and tinted (its own object: the
+                                    # render's glass pass),
+PANE_IN = 5 / 32                    # its front this far behind the frame's front (on whole px, so its edges
+                                    # draw 1 px lines)
+WALL_BACK = 5 / 32                  # the wall's back this far behind the pane's back (the window cut through to it)
+EDGE = YS[0]                        # the pane's edges (all but its two faces): dark and opaque, a hair proud of
+EDGE_OUT = 0.002                    # the frame they sit on, so each draws a dark line on it
+SLOPE = 4 / 32                      # the window's corner at the jamb's foot: a slope this far along and
+SLOPE_H = 5                         # this many px down (the jamb's side down to it, through the jamb's depth), ending
+FOOT_H = 3                          # on a foot this many px tall, this far on from the slope's end; then down to the
+FOOT_W = 5 / 32                     # sill's flat top (the slope measured off the reference's glass line)
+SLOPE_COL = YS[2]                   # the slope (between the side's tone and the flat's)
+SLOPE_TOP = "hsXS"                  # the top corner's slope (the same slope, under the header: facing down, darker)
+JAMB_SEAM = YS[3]                   # W1's jamb: a seam across its front (the base's front lines' tone)
+RIB_PLATE = 3                       # W1's outer frame: a plate on its side, its top this many px under the jamb's
+RIB_PLATE_TONE = "hsXS"             # seam, down to the sill; REC proud, its face darker than the side's
+MID_PLATE = (3, 0, 5)               # W2's sill: a plate on its slope, these px in from the tile's sides, from this
+MID_PLATE_RISE = 1                  # many px down it on screen (from its top) this many px on down it; this many
+MID_PLATE_SIDE = YS[1]              # px proud, its sides in this tone
+FRONT_PLATES = (6, 4, 14, 3)        # W2's sill front: two plates, from these px either side of the tile's centre,
+                                    # this many px wide, from its top this many px down, wrapping over onto the
+                                    # slope this many px up it on screen; REC proud (on the slope MID_PLATE_RISE),
+                                    # toned as the base's plates
+FRAME_BOX = (4, 2, 14)              # W2's sill front: a frame between those plates, this many px either side of the
+                                    # centre (its outer edge), from this many px down from the front's top to this
+                                    # many (the plates' foot); a px wide, REC proud, in the plates' tone; inside it the
+                                    # front recessed REC
+B_SIDES = (9, 19)                   # W1's header: B, a panel outlined across its top (B_BACK px out from the
+B_BACK = 1                          # block's face, TOP_PX deep) and down both sides (px from the tile's edge) to
+C_SIDE = 22                         # the header's foot; C, a strip on from B's right side to C_SIDE (and its mirror
+                                    # on B's left, the user), from the base's upper
+                                    # lean line down (measured off the reference; the base's two lines across its
+                                    # lean run on up to B and on from C)
+W2_PLATE_SHIFT = -2                 # px it moves along the face (the user: 2 px left, off centre under the group)
+W2_PLATE_TRIM = 2                   # px then taken off its left edge (the user)
+END_SEAM_UP = 1                     # W1's and W3's header: the group's seams end this many px over the header's
+                                    # foot, a line across them there (the user)
+END_PLATE_SHORTER = 3               # W1's and W3's: the same plate, this many px shorter, centred on the inner C
+W2_PLATE = (3, 5)                   # W2's header: a plate over B and both Cs, on screen from the Cs' outer seams
+                                    # (REC proud, it draws a px left of where it stands: set a px right), on the
+                                    # header's upright face, from this many px under its top (the user's option 2),
+                                    # this many px tall; REC proud, in the upright part's tone (the user)
+E_RIBS = (11, 15)                   # W1's sill: E, a recess in its slope under B (its sides B's), from the slope's
+E_RIB = 2                           # top edge to a px short of its front (a lip), REC deep, a step darker; two ribs
+E_IN, E_SHORT = 1, 2                # standing in it at the slope's level, E_RIB px wide from these px from the
+E_TONE = "hsL"                      # tile's edge, from E_IN px out from its back to E_SHORT px short of its front
+E_TOP = 1                           # (its top edge this many px down the slope on screen from the slope's top)
+F_U, F_Z = (8, 24), (4, 18)         # W1's sill front: F, a plain plate over these px from the tile's edge, these px
+                                    # down from the front's top; REC proud, toned as the base's plates
+F_FLOOR = YS[3]                     # (the body's front behind the sill's slab: unseen)
+GLASS = None                        # the pane's builder while a piece is built (its caller renders it apart)
+
+
+def build(k, ax, plane, a, b, ends, H):
+    global GLASS
+    s = Section(H, T3.BACK)
+    f = Face(k, ax, plane, a, b, ends, s, T3.CORNER_C)
+    zb, fr = s.zb, D + T3.BACK                          # (fr: the upright part's front, out from the block's face)
+    zh = s.z_at(H, HEAD)                                # the header's foot
+    zs = (SILL + SILL_UP) / core.ZPX                    # the sill's front top
+    gl = T3.BACK - GLASS_IN
+    dv = T3.BACK + BEVEL                                # the header's upright front (and the jamb's)
+    zj = (SILL + SILL_RISE * (fr - dv) / (fr - gl)) / core.ZPX   # the sill's top level with it (the slope's top)
+    zc = H - LEAN_RISE * BEVEL / D
+    dp = dv - PANE_IN - PANE / 2                        # the pane's centre
+    db = dp - PANE / 2 - WALL_BACK                      # the wall's back (the section reaches back to it)
+    GLASS = T.Relief("window_glass")
+    back = min((r[0][2] if ax == "y" else r[0][0]) for r in T.SHELL.rects if r[1] == "hull") - plane   # (the
+                                                        # tile's back: the header's top runs back to it, the base's)
+    for s0, s1 in T.spans(a, b):
+        end = PART in ("w1", "w3")                      # (an end piece: W3 W1 mirrored, built in W1's u then
+        mu = (lambda u: s0 + s1 - u) if PART == "w3" else (lambda u: u)     # flipped by mu)
+
+        def seg(u0, u1, cap=None):                      # a span in W1's u and its (start, end) caps, in the tile's
+            if PART != "w3":
+                return u0, u1, cap
+            return mu(u1), mu(u0), cap[::-1] if isinstance(cap, tuple) else cap
+
+        fm = _Mirror(f, seg) if PART == "w3" else f     # (W1's details drawn in W1's u: on W3 mirrored)
+
+        h0, w0, w1 = s0, s0, s1                         # (h0: the header's and the sill's start; w0: the glass's)
+        if end:
+            for z0, z1, d0 in ((0.0, zb, db), (zb, H, back)):     # the outer frame: the base section, whole
+                pf = s.sec(z0, z1)                                  # (over the bend back as the header)
+                cols = s.cols(pf, "face")
+                pf = [(d0, pf[0][1])] + pf[1:-1] + [(d0, pf[-1][1])]
+                u0, u1, cp = seg(s0, s0 + FRAME, (None, SIDE))
+                f.part(u0, u1, pf, cols, cp, end=False)
+            gz, L = T3.UPRIGHT_SEAM, T3.Layout(s)                # the base's upright seam on across its front
+            u0, u1, _ = seg(s0, s0 + FRAME)
+            f.line(u0, u1, gz, L.px(gz, -1), YS[1], bevel=False)
+            f.line(u0, u1, L.px(gz, 1), gz, YS[4], bevel=False)
+            h0, w0 = s0 + FRAME, s0 + FRAME + JAMB
+        u0, u1, _ = seg(h0, w1)
+        pf = [(db, 0.0), (fr, 0.0), (fr, zs), (dv, zj), (db, zj)]       # the sill: its slope, then flat back
+        cols = s.cols(pf, "face")
+        cols[2], cols[3] = SILL_SLOPE, SILL_FLAT
+        if end:                                         # (E's recess cut in its slope, F on its front)
+            _w1_sill(fm, s0, h0, w1, db, fr, zs, dv, zj, cols[1])
+        elif PART == "w2":                              # (the frame's recess cut in its front)
+            _w2_sill(f, s, s0, s1, u0, u1, pf, cols, db, fr, zs)
+        else:
+            f.part(u0, u1, pf, cols, None, end=False)
+        if PART == "w2":
+            _w2_plate(f, s, s0, s1, fr, zs, dv, zj)
+        pf = [(back, zh), (dv, zh), (dv, zc), (T3.BACK, H), (back, H)]  # the header: the lean's top, then upright
+        cols = s.cols(pf, "face")                                       # down to its foot; its top back to the
+                                                                        # tile's back, as the base's
+        cols[1] = HEAD_FRONT
+        f.part(u0, u1, pf, cols, None, end=False)
+        def sides(pts, col):                            # (none where the pane runs on into the next tile)
+            return [False if abs(p[0] - q[0]) < 1e-6 and (abs(p[0] - w1) < 1e-2 or (not end and abs(p[0] - w0) < 1e-2))
+                    else col for p, q in zip(pts, pts[1:] + pts[:1])]
+        f.top_line(s0, s1, back + 2 * T3.TOP_PX, back + 2.75 * T3.TOP_PX, YS[2])   # A: the top's seam along its
+                                                                                    # back, the base's own
+        _w1_header(fm, s, s0, s1, dv, zc, zh)           # (W1's header on all three)
+        win = _opening(w0, w1, zj, zh, end)
+        _slab(GLASS, ax, plane, win, dp - PANE / 2, dp + PANE / 2, "glassL", [False] * len(win), back=False,
+              mu=mu)                                    # the pane: its front only (one tinted layer: with its back,
+                                                        # a px column more, which the next tile's pane covers too)
+        pts = _inset(win, EDGE_OUT)                                     # its edges
+        _slab(k, ax, plane, pts, dp - PANE / 2, dp + PANE / 2, False, sides(pts, EDGE), mu=mu)
+        if end:                                                         # the slope and its foot (and the top's)
+            fh, sh, ut = FOOT_H / core.ZPX, SLOPE_H / core.ZPX, w0 + SLOPE + FOOT_W
+            _slab(k, ax, plane, [(w0, zj), (ut, zj), (ut, zj + fh), (w0 + SLOPE, zj + fh), (w0, zj + fh + sh)],
+                  db, dv, HEAD_FRONT, [False, SIDE, SILL_FLAT, SLOPE_COL, False], back=False, mu=mu)
+            _slab(k, ax, plane, [(w0, zh), (w0, zh - sh), (w0 + SLOPE, zh)], db, dv, HEAD_FRONT,   # the top corner's
+                  [False, SLOPE_TOP, False], back=False, mu=mu)                                  # slope
+            zl = zj + fh + sh                           # a seam across the jamb's front where its foot's slope
+            pf = [(dp + PANE / 2, zl), (dv + 0.001, zl), (dv + 0.001, zl + 1 / core.ZPX), (dp + PANE / 2,
+                  zl + 1 / core.ZPX)]                   # starts, from the outer frame round its side to the glass
+            fm.part(s0 + FRAME, w0 + 0.001, pf, [JAMB_SEAM] * 4, (None, JAMB_SEAM), end=False)
+            EN.jamb(fm, s0 + FRAME, s0 + FRAME + JAMB, db, dv, zl, zh, HEAD_FRONT, SIDE)   # the frame's side (jamb),
+            EN.studs(fm, s, s0 + FRAME, dv, zl, zh)                                     # under the header; studs
+                                                                                        # on the outer frame's side
+            zt = zl - RIB_PLATE / core.ZPX              # a plate on the outer frame's side, across it (from the
+            pf = [(dv, zj)] + s.front(zs, zt) + [(dv, zt)]              # jamb's front to the frame's), its top
+                                                        # RIB_PLATE px under that seam, down to the sill's slope
+            cols = s.cols(pf, "face")
+            fm.part(s0 + FRAME, s0 + FRAME + T3.REC, pf, cols, (None, RIB_PLATE_TONE), end=False)
+
+
+class _Mirror:
+    """A face drawn on in W1's u, mirrored onto W3's tile by seg (its spans flipped, their caps swapped)."""
+
+    def __init__(self, f, seg):
+        self.f, self.seg, self.sec = f, seg, f.sec
+
+    def part(self, u0, u1, prof, cols=None, cap=None, **kw):
+        a, b, cp = self.seg(u0, u1, cap)
+        self.f.part(a, b, prof, cols, cp, **kw)
+
+    def line(self, u0, u1, *args, **kw):
+        a, b, _ = self.seg(u0, u1)
+        self.f.line(a, b, *args, **kw)
+
+    def top_line(self, u0, u1, *args, **kw):
+        a, b, _ = self.seg(u0, u1)
+        self.f.top_line(a, b, *args, **kw)
+
+
+def _w2_sill(f, s, s0, s1, u0, u1, pf, cols, db, fr, zs):
+    """W2's sill over [u0, u1] (its section pf, its tones cols), its front recessed REC inside FRAME_BOX's frame."""
+    R, c, (half, top, foot) = T3.REC, (s0 + s1) / 2, FRAME_BOX
+    a, b = c - T3.px(half - 1), c + T3.px(half - 1)     # (the recess: the frame's inside)
+    z0, z1 = zs - (foot - 1) / core.ZPX, zs - (top + 1) / core.ZPX
+    f.part(u0, a, pf, cols, (None, MID_PLATE_SIDE), end=False)          # either side, their ends its walls
+    f.part(b, u1, pf, cols, (MID_PLATE_SIDE, None), end=False)
+    lo = [(db, 0.0), (fr, 0.0), (fr, z0), (db, z0)]                     # under it, its floor, over it
+    f.part(a, b, lo, [cols[0], cols[1], s.cols(lo, "face")[2], False], False, end=False)
+    f.part(a, b, [(db, z0), (fr - R, z0), (fr - R, z1), (db, z1)], [False, cols[1], False, False], False,
+           end=False)
+    up = [(db, z1)] + pf[1:]
+    up[1] = (fr, z1)
+    f.part(a, b, up, [MID_PLATE_SIDE] + cols[1:], False, end=False)
+
+
+def _w2_plate(f, s, s0, s1, fr, zs, dv, zj):
+    """W2's plates. One on its sill's slope: MID_PLATE[1] px down it on screen from its top, MID_PLATE[2] px on
+    down it, MID_PLATE_RISE px proud (straight up), MID_PLATE[0] px in from the tile's sides, its sides (and foot)
+    darker. Two on its front (FRONT_PLATES), over its top onto the slope."""
+    k = (zs - zj) / (fr - dv)                           # (the slope's dz per unit out)
+    dy = -k * core.ZPX + core.TILE_H / 2                # (px down on screen per unit out along it)
+    d0 = dv + MID_PLATE[1] / dy
+    d1 = min(fr, d0 + MID_PLATE[2] / dy)
+    z0, z1, r = zj + k * (d0 - dv), zj + k * (d1 - dv), MID_PLATE_RISE / core.ZPX
+    pf = [(d0, z0), (d1, z1), (d1, z1 + r), (d0, z0 + r)]
+    cols = s.cols(pf, "face")
+    cols[1], cols[2], cols[3] = MID_PLATE_SIDE, SILL_SLOPE, MID_PLATE_SIDE     # (its foot's and head's faces sides
+                                                                            # too)
+    f.part(s0 + T3.px(MID_PLATE[0]), s1 - T3.px(MID_PLATE[0]), pf, cols, MID_PLATE_SIDE, end=False)
+    off, w, down, up = FRONT_PLATES                     # the front's two plates, wrapping over onto the slope
+    R, zd = T3.REC, zs - down / core.ZPX
+    d3 = fr - up / dy
+    pf = [(fr, zd), (fr + R, zd), (fr + R, zs + k * R + r), (d3, zj + k * (d3 - dv) + r), (d3, zj + k * (d3 - dv)),
+          (fr, zs)]
+    cols = [False] + s.cols(pf, "plate")[1:3] + [False] * 3            # (toned as the base's plates)
+    c = (s0 + s1) / 2
+    for u0, u1 in ((c - T3.px(off + w), c - T3.px(off)), (c + T3.px(off), c + T3.px(off + w))):
+        f.part(u0, u1, pf, cols, MID_PLATE_SIDE, end=False)
+    half, top, foot = FRAME_BOX                         # the frame between them
+    za, zb, zc, zd = (zs - n / core.ZPX for n in (foot, foot - 1, top + 1, top))
+    a, b = c - T3.px(half), c + T3.px(half)
+    for u0, u1, z0, z1 in ((a, b, za, zb), (a, b, zc, zd), (a, a + T3.px(1), zb, zc), (b - T3.px(1), b, zb, zc)):
+        pf = [(fr, z0), (fr + R, z0), (fr + R, z1), (fr, z1)]
+        f.part(u0, u1, pf, [False] + s.cols(pf, "plate")[1:3] + [False],
+               MID_PLATE_SIDE, end=False)
+
+
+def _w1_header(f, s, s0, s1, dv, zc, zh):
+    """B and C on W1's header, and the base's lines across its lean run on to them (painted lines, as the base's:
+    on its top in YS[2], down its front in YS[3])."""
+    ln, H = LINE, s.H
+    dk = (dv - T3.BACK) / (H - zc)                      # (the header's lean: out per unit down)
+
+    def band(u0, u1, z0, z1, col):                      # a painted band on the header's front over [z0, z1]
+        def d(z):
+            return T3.BACK + (H - z) * dk if z > zc else dv
+        cuts = [z1] + [z for z in (zc,) if z0 < z < z1] + [z0]
+        for za, zb in zip(cuts, cuts[1:]):
+            pf = [(d(za) - 0.01, za), (d(za) + 0.001, za), (d(zb) + 0.001, zb), (d(zb) - 0.01, zb)]
+            f.part(u0, u1, pf, [col] * 4, col, end=False)
+
+    b0, b1 = s0 + T3.px(B_SIDES[0]), s0 + T3.px(B_SIDES[1])
+    dl = T3.px(B_BACK)
+    zf = zh + (END_SEAM_UP / core.ZPX if PART in ("w1", "w3") else 0.0)  # (the seams' foot: on the ends over the
+    f.top_line(b0, b1 + ln, dl, dl + T3.TOP_PX, YS[2])                  # header's, a line across)
+    for u in (b0, b1):                                                  # B: across the top,
+        f.top_line(u, u + ln, dl + T3.TOP_PX, T3.BACK, YS[2])           # down its sides, over the top
+        band(u, u + ln, zf, H, YS[3])                                   # and the front, to the seams' foot
+    L = T3.Layout(s)
+    zt = L.px(L.zr, -2)                                 # the base's lines across its lean (its own calls): the one
+    c1 = s0 + T3.px(C_SIDE)                             # its top panel stands on (C's top), its seam; C on both
+    c0 = b0 - (c1 - b1)                                 # of B's sides (the user), its seams c0 and c1
+    for u0, u1 in ((s0, b0), (b1 + ln, s1)):
+        f.line(u0, u1, zt, L.px(zt, -1), YS[4], bevel=False)
+    for u0, u1 in ((s0, c0), (c1 + ln, s1)):
+        f.line(u0, u1, L.px(L.l1, 1), L.l1, YS[3], wrap=False)
+    for u in (c0, c1):
+        band(u, u + ln, zf, L.px(zt, -1), YS[3])                        # C: its side, to the seams' foot
+    if zf > zh:
+        band(c0, c1 + ln, zf, zf + 1 / core.ZPX, YS[3])                 # the ends: a line across their foot
+    d_of = lambda z: T3.BACK + (H - z) * dk if z > zc else dv               # noqa: E731
+    sh = 1 + W2_PLATE_SHIFT                             # (REC proud, it draws a px left: set a px right)
+    a, b = c0 + T3.px(sh + W2_PLATE_TRIM), c1 + ln + T3.px(sh)
+    if PART == "w2":
+        _w2_head_plate(f, s, a, b, d_of=d_of, zc=zc, zh=zh)
+    elif PART in ("w1", "w3"):                          # the ends: centred on the inner C (W1's right; on W3,
+        m, h = (b1 + c1 + ln) / 2, (b - a - T3.px(END_PLATE_SHORTER)) / 2      # mirrored, its left)
+        _w2_head_plate(f, s, m - h, m + h, d_of=d_of, zc=zc, zh=zh)
+
+
+def _w2_head_plate(f, s, u0, u1, d_of, zc, zh):
+    """W2_PLATE on W2's header front over [u0, u1]: on its upright face, from n0 px under that face's top, n px tall
+    (on past the header's foot: hanging under it), REC proud, its front in the upright part's tone (YS[2]), its top
+    a step over, its sides MID_PLATE_SIDE."""
+    n0, n = W2_PLATE
+    up = int((zc - zh) * core.ZPX - n0 + 1e-6)          # (on whole px from the header's foot, which is on the
+    za = zh + up / core.ZPX                             # grid; the face is 6.5 px tall, its top on a half px: the
+    zb = za - n / core.ZPX                              # plate 3.5 px under it, hanging 2 px under the header)
+    d, R = d_of(za), T3.REC
+    pf = [(d, za), (d + R, za), (d + R, zb), (d, zb)]
+    f.part(u0, u1, pf, [YS[3], YS[2], False, False], MID_PLATE_SIDE, end=False)
+
+
+def _w1_sill(f, s0, u0, u1, db, fr, zs, dv, zj, front):
+    """W1's sill over [u0, u1]: its body, its front a slab REC thick before it; E, its slope recessed over B's span
+    (the slab its lip), two ribs standing in it; F on its front, a plain plate."""
+    R, Z = T3.REC, core.ZPX
+
+    def z(d):                                           # the slope's top at d
+        return zs + (fr - d) * (zj - zs) / (fr - dv)
+
+    def px(n):
+        return s0 + T3.px(n)
+
+    df = fr - R                                         # the slab's back, the body's front
+    e0, e1 = px(B_SIDES[0]), px(B_SIDES[1] + 1)
+    body, bc = [(db, 0.0), (df, 0.0), (df, z(df)), (dv, zj), (db, zj)], [None, F_FLOOR, SILL_SLOPE, SILL_FLAT, None]
+    f.part(u0, e0, body, bc, (None, SIDE), end=False)
+    f.part(e1, u1, body, bc, None, end=False)
+    dt = dv + E_TOP / ((zj - zs) / (fr - dv) * Z + core.TILE_H / 2)     # E: its top edge E_TOP px down the slope
+    dr, di = fr - T3.px(E_SHORT), dt + T3.px(E_IN)
+    f.part(e0, e1, [(db, 0.0), (dt, 0.0), (dt, z(dt)), (dv, zj), (db, zj)], [False, YS[2], SILL_SLOPE, SILL_FLAT,
+           None], None, end=False)                                      # (the slope over it)
+    f.part(e0, e1, [(dt, 0.0), (df, 0.0), (df, z(df) - R), (dt, z(dt) - R)], [False, F_FLOOR, E_TONE, False], None,
+           end=False)                                                   # its floor
+    for n in E_RIBS:
+        u = px(n)
+        f.part(u, u + T3.px(E_RIB), [(di, z(di) - R), (dr, z(dr) - R), (dr, z(dr)), (di, z(di))],
+               [False, YS[2], SILL_SLOPE, YS[2]], (False, SIDE), end=False)     # its ribs
+    f.part(u0, u1, [(df, 0.0), (fr, 0.0), (fr, zs), (df, z(df))], [False, front, SILL_SLOPE, False], None,
+           end=False)                                                   # the slab
+    za, zb = zs - F_Z[1] / Z, zs - F_Z[0] / Z                           # F
+    pf = [(fr, za), (fr + R, za), (fr + R, zb), (fr, zb)]
+    f.part(px(F_U[0]), px(F_U[1]), pf, f.sec.cols(pf, "plate"), None, end=False)     # (toned as the base's plates)
+
+
+def _opening(u0, u1, z0, z1, corner):
+    """The window's opening in (u, z), anticlockwise from its top left (corner: the slope and its foot at its bottom
+    left, the slope at its top left)."""
+    if not corner:
+        return [(u0, z1), (u0, z0), (u1, z0), (u1, z1)]
+    fh, sh, ut = FOOT_H / core.ZPX, SLOPE_H / core.ZPX, u0 + SLOPE + FOOT_W
+    return [(u0 + SLOPE, z1), (u0, z1 - sh), (u0, z0 + fh + sh), (u0 + SLOPE, z0 + fh), (ut, z0 + fh), (ut, z0),
+            (u1, z0), (u1, z1)]
+
+
+def _inset(pts, e):
+    """An anticlockwise polygon's sides each moved e inward (its corners where they meet)."""
+    n, out = len(pts), []
+    for i in range(n):
+        lines = []
+        for a, b in ((pts[i - 1], pts[i]), (pts[i], pts[(i + 1) % n])):
+            du, dz = b[0] - a[0], b[1] - a[1]
+            ln = (du * du + dz * dz) ** 0.5
+            nu, nz = -dz / ln, du / ln                  # (inward: left of the way round)
+            lines.append(((a[0] + nu * e, a[1] + nz * e), (du, dz)))
+        (p, d), (q, f) = lines
+        den = d[0] * f[1] - d[1] * f[0]
+        t = ((q[0] - p[0]) * f[1] - (q[1] - p[1]) * f[0]) / den
+        out.append((p[0] + d[0] * t, p[1] + d[1] * t))
+    return out
+
+
+def _slab(k, ax, plane, pts, d0, d1, face, edges, back=True, fam="steel", lvl=3, mu=None):
+    """A (u, z) polygon (any simple one) through d0..d1: its front (and back) faces `face` (False: left out), its sides
+    edges[i] (the one from pts[i] to pts[i + 1]; False: left out); mu: its u mapped (a mirrored piece)."""
+    pts = [(mu(u), z) for u, z in pts] if mu else pts
+    from mathutils import Vector
+    from .faction.parts import ALONG
+    o, up, al = T.OUT(ax), Vector((0, 0, 1)), ALONG(ax)
+    ccw = sum(a[0] * b[1] - b[0] * a[1] for a, b in zip(pts, pts[1:] + pts[:1])) > 0
+    if face is not False:
+        k.poly([T.P(ax, plane, u, z, d1) for u, z in pts], fam, lvl, o, fixed=face)
+        if back:
+            k.poly([T.P(ax, plane, u, z, d0) for u, z in pts], fam, lvl, -o, fixed=face)
+    for i, (a, b) in enumerate(zip(pts, pts[1:] + pts[:1])):
+        if edges[i] is False:
+            continue
+        nu, nz = (b[1] - a[1], a[0] - b[0]) if ccw else (a[1] - b[1], b[0] - a[0])     # (outward)
+        k.poly([T.P(ax, plane, a[0], a[1], d0), T.P(ax, plane, b[0], b[1], d0), T.P(ax, plane, b[0], b[1], d1),
+                T.P(ax, plane, a[0], a[1], d1)], fam, lvl, al * nu + up * nz, fixed=edges[i])

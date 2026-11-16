@@ -9,6 +9,7 @@
 	import MousePointer2 from '@lucide/svelte/icons/mouse-pointer-2';
 	import SquareDashed from '@lucide/svelte/icons/square-dashed';
 	import StickyNote from '@lucide/svelte/icons/sticky-note';
+	import PanelTop from '@lucide/svelte/icons/panel-top';
 	import BrickWall from '@lucide/svelte/icons/brick-wall';
 	import type { Component } from 'svelte';
 	import { Badge } from '$lib/components/ui/badge/index.js';
@@ -31,6 +32,7 @@
 		{ id: 'floor', name: 'Floor', tip: 'Paint floor (F)', icon: Grid2x2 },
 		{ id: 'wall', name: 'Wall', tip: 'Paint an interior wall (W)', icon: BrickWall },
 		{ id: 'door', name: 'Door', tip: 'Place a door (D)', icon: DoorOpen },
+		{ id: 'window', name: 'Window', tip: 'Add a window to a wall; click one to remove it (X)', icon: PanelTop },
 		{ id: 'beam', name: 'Beam', tip: 'Paint frame beams for containers (B)', icon: Equal },
 		{ id: 'space', name: 'Erase', tip: 'Erase to open space (E)', icon: Eraser },
 		{ id: 'room', name: 'Room', tip: 'Draw a room (G)', icon: SquareDashed },
@@ -80,6 +82,14 @@
 			{/each}
 		</ToggleGroup.Root>
 
+		{#if lab.tool === 'window'}
+			<div class="flex items-center gap-2 text-sm">
+				<span class="text-xs text-muted-foreground">Size</span>
+				<ToggleGroup.Root type="single" value={String(lab.windowSize)} onValueChange={(v) => v && (lab.windowSize = Number(v))} variant="outline" size="sm" spacing={1}>
+					{#each [2, 3, 4] as n (n)}<ToggleGroup.Item value={String(n)} aria-label="{n} tiles">{n}</ToggleGroup.Item>{/each}
+				</ToggleGroup.Root>
+			</div>
+		{/if}
 		<Separator />
 		<Collapsible.Root open={docks.state.groups.modules} onOpenChange={(open) => docks.dispatch({ type: 'group', group: 'modules', open })}>
 			<Collapsible.Trigger class="flex w-full items-center gap-1 text-xs font-medium tracking-wide text-muted-foreground uppercase">
