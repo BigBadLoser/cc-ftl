@@ -9,8 +9,8 @@ that passes its own hard checks, and `assembleStation` (`assembly/station.ts`) h
 (`fitShell` in `generate.ts`), which furnishes, validates and measures it. `buildStation` (`stationBuild.ts`) is how
 the game builds a station (spawns, outposts): the seed picks one of the kind's families (`assembly` on its
 `StationDef`, required), then a recipe in it; one that does not stand or has problems is tried again on the next seed,
-up to `STATION_TRIES` (8), and then it throws. A sweep of every kind and size over seeds 1 to 24 stood on the first
-try but for two pirate stations, which stood on the second. The station grammars that came before (ring, wheel,
+up to `STATION_TRIES` (8), and then it throws. A sweep of every kind and size over seeds 1 to 24 stands on the first
+try (`node tools/shipgen/bench.js --seeds 24`). The station grammars that came before (ring, wheel,
 concentric, cross, spine, tree, welded and the rest) are deleted. The layout lab and the generator CLI build a station
 as the game does, or one recipe by layout name (`assembly.<family>`, below).
 
