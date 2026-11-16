@@ -7,7 +7,8 @@ import type { Layout } from './layout';
  * Turrets on open ground (#514): an asteroid base's guns and point defence, standing out on the levelled rock round its
  * modules (the layout's '.' tiles: the whole site is ground once the base stands), each wired to a hull wall by a cable
  * run over the ground. The asteroid base generator's choice, not a rule of the game:
- *   - a turret tucks into the open ground inside the base's bounding box (the pockets between its modules), its cable
+ *   - a turret stands in an open pocket of ground (OPEN tiles from any hull on every side: not an alley between pods)
+ *     inside the base's bounding box, else up to OUTSIDE tiles past it; its cable
  *     MIN_CABLE to MAX_CABLE tiles from the middle of a side to the nearest hull wall, bending round what is in the way;
  *   - the turrets spread evenly round the base: the first nearest the command room (they are worked from its weapons
  *     console), each next one at the bearing from the base's middle furthest from those already out;
@@ -21,6 +22,8 @@ export interface GroundPlan {
   mods: readonly string[];
   /** Boxes kept clear (the landing pads), [x0, y0, x1, y1) in layout tiles. */
   keep: readonly (readonly [number, number, number, number])[];
+  /** Varies the spots from base to base (the station's seed). */
+  seed?: number;
 }
 
 export interface GroundFit {
@@ -32,8 +35,12 @@ export interface GroundFit {
 
 /** Ground kept clear before an airlock's outer door, in tiles (its collar and the walk out from it). */
 const APPROACH = 3;
-/** A turret's cable, in tiles from its side to the hull wall: a short run out from the base, not against it. */
-const MIN_CABLE = 4, MAX_CABLE = 14;
+/** A turret's cable, in tiles from its side to the hull wall: out from the base, not against it. */
+const MIN_CABLE = 4, MAX_CABLE = 16;
+/** Open ground a turret keeps from any hull on every side (tiles, eight ways): an open pocket, not an alley between pods. */
+const OPEN = 4;
+/** How far past the base's bounding box a turret may stand when the pockets inside it are too cramped. */
+export const OUTSIDE = 6;
 
 /** Place the plan's turrets on the layout's open ground and lay their cables. Turrets that find no spot are left out. */
 export function placeGroundTurrets(lay: Layout, plan: GroundPlan): GroundFit {
@@ -78,31 +85,42 @@ export function placeGroundTurrets(lay: Layout, plan: GroundPlan): GroundFit {
   const ox = (bx0 + bx1) / 2, oy = (by0 + by1) / 2;
   const bearing = (x: number, y: number): number => Math.atan2(y - oy, x - ox);
   const gap = (a: number, b: number): number => { const d = Math.abs(a - b) % (2 * Math.PI); return Math.min(d, 2 * Math.PI - d); };
+  const open = openness();
+  // A small per-base shake on each spot's score (the seed), so bases of the same plan do not all stand them alike.
+  const shake = (x: number, y: number): number => { let k = (((plan.seed ?? 0) * 73856093) ^ (x * 19349663) ^ (y * 83492791)) >>> 0; k = Math.imul(k ^ (k >>> 15), 0x2c1b3c6d) >>> 0; return ((k ^ (k >>> 12)) >>> 0) / 0xffffffff; };
   for (const id of plan.mods) {
     const def = lay.defs[id] as ModuleDef | undefined;
     if (!def) continue;
     const [fw, fh] = rotatedSize(def, 0);
     const reach = hullReach();
-    const spots: { x: number; y: number; score: number; from: number }[] = [];
     const others = out.placed.map((k) => { const m = lay.modules[k]!, [pw, ph] = rotatedSize(lay.defs[m.def] as ModuleDef, m.rot); return { x: m.x + pw / 2, y: m.y + ph / 2 }; });
-    for (let y = Math.max(1, by0 + 1); y + fh <= by1; y++) for (let x = Math.max(1, bx0 + 1); x + fw <= bx1; x++) {
-      const from = spot(x, y, fw, fh, reach);
-      if (from < 0) continue;
-      const mx = x + fw / 2, my = y + fh / 2, len = reach[from] as number;
-      // The first nearest the command room; each next one at the bearing furthest from those already out (and well apart).
-      const score = others.length === 0 ? -0.5 * Math.hypot(mx - cx, my - cy)
-        : 20 * Math.min(...others.map((o) => gap(bearing(mx, my), bearing(o.x, o.y)))) + 0.2 * Math.min(...others.map((o) => Math.hypot(mx - o.x, my - o.y)));
-      spots.push({ x, y, from, score: score - 0.5 * Math.abs(len - 7) });
-    }
-    spots.sort((a, b) => b.score - a.score || a.y - b.y || a.x - b.x);
-    for (const s of spots) {
-      const run = cableFrom(s.from, reach);
-      if (run.some((c) => { const x = c % w, y = Math.floor(c / w); return x >= s.x && x < s.x + fw && y >= s.y && y < s.y + fh; })) continue;
-      lay.push({ def: id, x: s.x, y: s.y, rot: 0 });
-      for (const c of run) out.cable.add(c);
-      if (opens()) { out.placed.push(lay.modules.length - 1); break; }
-      for (const c of run) out.cable.delete(c);
-      lay.pop();
+    // Inside the box first; past its edge only when nothing inside stands.
+    for (const pad of [0, OUTSIDE]) {
+      const spots: { x: number; y: number; score: number; from: number }[] = [];
+      for (let y = Math.max(1, by0 + 1 - pad); y + fh <= Math.min(h - 1, by1 + pad); y++) for (let x = Math.max(1, bx0 + 1 - pad); x + fw <= Math.min(w - 1, bx1 + pad); x++) {
+        const from = spot(x, y, fw, fh, reach);
+        if (from < 0) continue;
+        let room = Infinity;
+        for (let ty = y; ty < y + fh; ty++) for (let tx = x; tx < x + fw; tx++) room = Math.min(room, open[ty * w + tx] as number);
+        if (room < OPEN) continue;
+        const mx = x + fw / 2, my = y + fh / 2;
+        // The first nearest the command room; each next one at the bearing furthest from those already out (and well apart).
+        const spread = others.length === 0 ? -0.3 * Math.hypot(mx - cx, my - cy)
+          : 20 * Math.min(...others.map((o) => gap(bearing(mx, my), bearing(o.x, o.y)))) + 0.2 * Math.min(...others.map((o) => Math.hypot(mx - o.x, my - o.y)));
+        spots.push({ x, y, from, score: spread + Math.min(room, 8) + 6 * shake(x, y) });
+      }
+      spots.sort((a, b) => b.score - a.score || a.y - b.y || a.x - b.x);
+      let done = false;
+      for (const s of spots) {
+        const run = cableFrom(s.from, reach);
+        if (run.some((c) => { const x = c % w, y = Math.floor(c / w); return x >= s.x && x < s.x + fw && y >= s.y && y < s.y + fh; })) continue;
+        lay.push({ def: id, x: s.x, y: s.y, rot: 0 });
+        for (const c of run) out.cable.add(c);
+        if (opens()) { out.placed.push(lay.modules.length - 1); done = true; break; }
+        for (const c of run) out.cable.delete(c);
+        lay.pop();
+      }
+      if (done) break;
     }
   }
   return out;
@@ -111,6 +129,22 @@ export function placeGroundTurrets(lay: Layout, plan: GroundPlan): GroundFit {
   function runs(i: number): boolean {
     const x = i % w, y = Math.floor(i / w);
     return free(x, y) && !plan.keep.some(([x0, y0, x1, y1]) => x >= x0 && x < x1 && y >= y0 && y < y1);
+  }
+
+  /** Each tile's open ground to the nearest hull tile, eight ways (1 beside the hull). */
+  function openness(): Int32Array {
+    const d = new Int32Array(w * h).fill(-1);
+    const queue: number[] = [];
+    for (let i = 0; i < w * h; i++) if (lay.cells[i] !== '.') { d[i] = 0; queue.push(i); }
+    for (let q = 0; q < queue.length; q++) {
+      const i = queue[q] as number, x = i % w, y = Math.floor(i / w);
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+        const nx = x + dx, ny = y + dy, j = ny * w + nx;
+        if ((dx || dy) && nx >= 0 && ny >= 0 && nx < w && ny < h && d[j] === -1) { d[j] = (d[i] as number) + 1; queue.push(j); }
+      }
+    }
+    for (let i = 0; i < w * h; i++) if (d[i] === -1) d[i] = 99;
+    return d;
   }
 
   /** Each tile's cable length to a hull wall (1 beside one, four ways), over tiles a cable may run on; 0 where none reaches. */

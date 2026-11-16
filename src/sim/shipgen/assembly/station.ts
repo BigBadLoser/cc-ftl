@@ -11,9 +11,10 @@ import { assemble, groundTurrets } from './assemble';
 import { PREFAB_PADS } from './prefab';
 import { stationProgram } from './program';
 import { recipeAt, type Recipe } from './recipe';
+import { OUTSIDE } from '../groundTurrets';
 
 /** Ground round a prefab base's modules and pads, for its turrets (a ring of ground, a turret, a tile to its cable and the hull's). */
-const GROUND_MARGIN = 4;
+const GROUND_MARGIN = 4 + OUTSIDE;
 
 /** What a harbour's customs hall holds: the officers' desk and their two chairs (rules: CU). */
 const CUSTOMS: RoomSpec = { role: 'plaza', mods: ['module.mess_table', 'module.chair', 'module.chair'], w: 7, h: 3 };
@@ -94,7 +95,7 @@ export function assembleStation(def: StationDef, id: string, size: StationSize, 
   const made = fitShell(
     rng, stationFaction(def), id, seed, role, 'sections', { crew: stationCrew(rng, def, size) },
     { rows, roomOf: snap.roomOf, width: snap.width, height: snap.height, roles: g.regions.map((r) => r.role), specs: g.regions.map((r) => r.spec ?? (r.dept === 'customs' ? CUSTOMS : undefined)) },
-    `assembly ${recipe.name}`, defs, 0, { immobile: true, airlocksAnyWay: true, gunsAnywhere: true, ...(prefab ? { ground: { mods: groundTurrets(ok.recipe, program, defs), keep: pads.map((p) => [p[0] - snap.x0, p[1] - snap.y0, p[2] - snap.x0, p[3] - snap.y0] as const) } } : {}), check: (t, d) => stationProblems(t, d, prefab ? Math.min(PREFAB_PADS, docksOf(def, size)) : docksOf(def, size)) },
+    `assembly ${recipe.name}`, defs, 0, { immobile: true, airlocksAnyWay: true, gunsAnywhere: true, ...(prefab ? { ground: { mods: groundTurrets(ok.recipe, program, defs), keep: pads.map((p) => [p[0] - snap.x0, p[1] - snap.y0, p[2] - snap.x0, p[3] - snap.y0] as const), seed } } : {}), check: (t, d) => stationProblems(t, d, prefab ? Math.min(PREFAB_PADS, docksOf(def, size)) : docksOf(def, size)) },
   );
   made.template.name = `${def.name} ${size === 'station' ? '' : `${size} `}${(seed >>> 0).toString(16).toUpperCase().padStart(4, '0').slice(-4)}`;
   const site = { pads: pads.map((p) => ({ x: p[0] - snap.x0, y: p[1] - snap.y0, w: p[2] - p[0], h: p[3] - p[1] })) };

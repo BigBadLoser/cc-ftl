@@ -294,11 +294,12 @@ the other lower branch turned down off its tube (an L, its front room square on 
 
 No hangar, no stalls, no gun rooms (`recipeRooms`): the guns and the point defence are turrets out on the ground
 (#514, `groundTurrets` in `assemble.ts`, placed by `shipgen/groundTurrets.ts` through the fit-out's `ground` option).
-The turrets tuck into the open ground inside the base's bounding box (the pockets between its modules), spread evenly
-round it: the first nearest the command room, each next one at the bearing from the box's middle furthest from those
-already out. Each keeps a ring of open ground round it, clear of the pads and of the ground before each airlock, and a
-cable of 4 to 14 tiles (about 7 preferred) runs from the middle of one side to the nearest hull wall, bending round what
-is in the way (the template's `cable` rows, the sim's `cable` grid layer, `sim/cable.ts`). On the asteroid the stamp lays the cable over the
+Each turret stands in an open pocket of ground, at least four tiles from any hull on every side (never in an alley
+between pods), inside the base's bounding box, or up to six tiles past it when the box has no such pocket left (the
+site reaches ten tiles past the modules and pads). They spread evenly round the base: the first nearest the command
+room, each next one at the bearing from the box's middle furthest from those already out, with a shake by the
+station's seed so bases differ. Each keeps clear of the pads and of the ground before each airlock, and a cable of 4 to
+16 tiles runs from the middle of one side to the nearest hull wall, bending round what is in the way (the template's `cable` rows, the sim's `cable` grid layer, `sim/cable.ts`). On the asteroid the stamp lays the cable over the
 ground and makes the cabled tiles and the turrets' tiles the base's, so the turrets draw its power, are fired from the
 command room's weapons console, are targeted as its modules and are repaired by suited crew walking out. Nothing in the sim needs a stall: the trader's stock is rolled, station life
 needs only room roles (courts, posts).
