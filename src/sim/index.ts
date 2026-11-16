@@ -176,6 +176,7 @@ export { portNode, type Port } from './galaxy/ports';
 export { econOf, stockAt, factorAt, quoteAt, moveStock, advance, capOf, type Econ } from './galaxy/market';
 export { bindMarkets, bindStation, unbindMarkets } from './galaxy/marketLive';
 export { populateNode } from './galaxy/populate';
+export { populateCargo } from './galaxy/populateCargo';
 export { newsFeed, report as reportNews } from './galaxy/news';
 export { clash, fleetPower, shipPower, atWar, wouldFight, type Clash } from './galaxy/clash';
 export { resolveMeetings, findMeetings } from './galaxy/meetings';

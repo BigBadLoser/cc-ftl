@@ -44,7 +44,7 @@ describe('node content table', () => {
   it('leaves a quiet share by tier, matching the sampled draws', () => {
     for (let t = 0; t <= DANGER_MAX; t++) {
       const q = quietShare(table, { tier: t, ...calm });
-      expect(q).toBeGreaterThan(0.5);
+      expect(q).toBeGreaterThan(0.45);
       expect(q).toBeLessThan(0.6);
       expect(shares(table, t)['quiet'] ?? 0).toBeCloseTo(q, 2);
     }

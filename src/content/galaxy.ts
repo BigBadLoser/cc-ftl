@@ -131,6 +131,7 @@ const structures = {
   'structure.station_trade': { name: 'Trade station', kind: 'station', station: 'trade', badge: 'T', resources: ['item.fuel'], services: ['fuel', 'trade', 'repair', 'recruit'] },
   'structure.station_military': { name: 'Military station', kind: 'station', station: 'military', badge: 'M', resources: [], services: ['fuel', 'repair', 'blueprints'] },
   'structure.station_research': { name: 'Research station', kind: 'station', station: 'research', badge: 'R', resources: ['item.electronics'], services: ['trade', 'blueprints'] },
+  'structure.lost_cargo': { name: 'Lost cargo', kind: 'cargo', badge: 'C', resources: ['item.metal', 'item.parts'] },
   'structure.derelict': { name: 'Old derelict', kind: 'derelict', badge: 'D', resources: ['item.scrap_hull', 'item.scrap_tech', 'item.scrap_energy', 'item.parts'] },
 } satisfies Record<string, StructureDef>;
 
@@ -143,7 +144,7 @@ const structures = {
  */
 // Order matters: one draw walks the entries in order, so `research` stays first (its placement is the old research roll's, see ARCHITECTURE.md).
 const nodeContents = {
-  quiet: { base: 0.55, perTier: -0.002 },
+  quiet: { base: 0.51, perTier: -0.002 },
   entries: {
     research: {
       structure: 'structure.station_research', danger: { min: 0 }, weight: { base: 0.1, perTier: -0.01 }, owner: 'territoryOrCivilian',
@@ -151,6 +152,8 @@ const nodeContents = {
     },
     asteroids: { structure: 'structure.asteroids', danger: { min: 0 }, weight: { base: 0.3 }, owner: 'territory' },
     derelict: { structure: 'structure.derelict', danger: { min: 0 }, weight: { base: 0.05, perTier: 0.012 }, owner: 'none', notAtStart: true },
+    // Sealed containers adrift with no ship (#503). Its 0.04 comes out of `quiet`; it comes last so the draws that land on the kinds above stay put.
+    lostCargo: { structure: 'structure.lost_cargo', danger: { min: 0 }, weight: { base: 0.04 }, owner: 'none' },
   },
 } satisfies NodeContentTable;
 

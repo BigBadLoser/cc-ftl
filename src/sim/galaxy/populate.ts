@@ -1,4 +1,5 @@
 import { stationKindOf, eastEdge, populateDerelict, populateField, populateOutpost, populateStation, sizeOf, structureSeed } from './populateSpawn';
+import { populateCargo } from './populateCargo';
 import { strHash, unit } from './hash';
 import { portsAt } from './portIndex';
 import { nodeOf, nodeState } from './state';
@@ -15,6 +16,7 @@ import type { Port } from './ports';
  *   port's market (`bindStation`), so what the player trades moves the world economy.
  * - An asteroid field becomes a field of loose rocks. A field that is a mining outpost port also gets a surface mining outpost on a big asteroid. A pirate den in a
  *   node with a field is not an orbital station but a dug base hidden in a big asteroid (the existing outpost style for pirates).
+ * - Lost cargo becomes one or two sealed containers adrift (populateCargo.ts).
  * - A derelict becomes a ruined wreck of the node's faction (or any faction's); a drone nest (a derelict in rogue space) is a heavier ruin full of robots.
  * Layout: west to east in structure order, each at least SLOT_GAP tiles east of everything before it and never nearer the west edge than WEST_MARGIN (the free
  * water the player deploys in), centred on a line with a small hashed offset. The sector grows to hold them, as it does for hubs.
@@ -25,7 +27,7 @@ export const WEST_MARGIN = 70;
 /** Tiles of open space between one structure and the next. */
 export const SLOT_GAP = 30;
 const MID_Y = 60;
-const SALT = { place: 81, station: 91, field: 92, outpost: 93, derelict: 94, dug: 95 } as const;
+const SALT = { place: 81, station: 91, field: 92, outpost: 93, derelict: 94, dug: 95, cargo: 96 } as const;
 
 /** Where the next structure goes: east of everything, centred on the mid line with a hashed offset. */
 export function slot(sim: Sim, node: string, index: number): (w: number, h: number) => { x: number; y: number } {
@@ -65,6 +67,8 @@ export function populateNode(sim: Sim, id: string): number {
     } else if (def.kind === 'asteroids') {
       ok = populateField(sim, structureSeed(sim, id, i, SALT.field), at);
       if (port?.kind === 'outpost') ok = populateOutpost(sim, port, 'surface', 'mining', structureSeed(sim, id, i, SALT.outpost), slot(sim, id, i)) || ok;
+    } else if (def.kind === 'cargo') {
+      ok = populateCargo(sim, node, structureSeed(sim, id, i, SALT.cargo), at);
     } else {
       ok = populateDerelict(sim, node, port?.kind === 'nest', structureSeed(sim, id, i, SALT.derelict), at);
     }

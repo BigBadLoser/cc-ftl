@@ -50,7 +50,8 @@ export function iconOf(sim: Sim, def: string, faction: string | null): UiStarIco
   const d = content?.structures[def];
   const kind = faction ? content?.factions[faction]?.kind : undefined;
   const name = d?.name ?? def;
-  if (d?.kind !== 'station') return { sprite: `starmap.struct.${d?.kind ?? 'derelict'}`, tone: null, name };
+  // Lost cargo has no starmap art yet: it wears the derelict's.
+  if (d?.kind !== 'station') return { sprite: `starmap.struct.${d?.kind === 'cargo' ? 'derelict' : d?.kind ?? 'derelict'}`, tone: null, name };
   return { sprite: kind === 'pirates' ? 'starmap.struct.den' : `starmap.struct.station_${d.station ?? 'trade'}`, tone: toneOf(kind), name };
 }
 
