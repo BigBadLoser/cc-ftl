@@ -11,7 +11,7 @@
   const cutting = $derived(container.state === 'cutting');
   const message = $derived(cutting ? 'A crew member is cutting it open…' : (reason ?? 'Crew cut it open in spacesuits'));
   const buttons = $derived([
-    { label: cutting ? 'Cutting…' : 'Open', testid: 'container-open', commit: true, disabled: cutting || !!reason, title: 'Crew go out by shuttle and cut it open; the goods spill for loading', onclick: () => api.openContainer(container.entity) },
+    { label: cutting ? 'Cutting…' : 'Open', testid: 'container-open', action: true, disabled: cutting || !!reason, title: 'Crew go out by shuttle and cut it open; the goods spill for loading', onclick: () => api.openContainer(container.entity) },
   ]);
 </script>
 
