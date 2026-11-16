@@ -148,7 +148,74 @@ def tripod(f, top=0.95):
     port(f, 0.36)
 
 
-GV = {"G1": (0.9, pintle), "G2": (0.62, casemate), "G3": (0.95, tripod)}
+def hub(f, top, r=0.5, h=0.34):
+    """The housing the legs bolt into, under the drum: eight-sided, banded."""
+    _g("hub")
+    TB.prism(f, octagon(r), top - h, top - 0.05, "steelD", top="steel")
+    TB.prism(f, octagon(r + 0.03), top - h + 0.06, top - h + 0.12, "steel", top="steelL")
+    TB.prism(f, octagon(r * 0.7), top - h - 0.1, top - h, "steelD", top="steelD")
+    collar(f, top)
+
+
+def foot(f, u, v, r=0.2):
+    f.vcyl(u, v, 0, r, 0.06, "gm", top="steelD", sides=12)
+    f.vcyl(u, v, 0.06, r * 0.6, 0.08, "steelD", top="steel", sides=12)
+
+
+def legs_box(f, top=0.98):
+    """L1: four heavy square-section legs to the corners, knee braces up into the hub."""
+    from . import detail as D
+    _g("legs")
+    for k in range(4):
+        a = math.pi / 4 + k * math.pi / 2
+        c, s_ = math.cos(a), math.sin(a)
+        fu, fv = 0.86 * c * math.sqrt(2) * 0.82, 0.86 * s_ * math.sqrt(2) * 0.82
+        foot(f, fu, fv, 0.22)
+        D.seg(f, (fu, fv, 0.12), (0.36 * c, 0.36 * s_, top - 0.3), 0.13, "steelD", 4)
+        D.seg(f, (fu * 0.62, fv * 0.62, 0.4), (0.2 * c, 0.2 * s_, top - 0.42), 0.06, "steel", 6)        # knee brace
+        f.vcyl(fu * 0.62, fv * 0.62, 0.34, 0.1, 0.12, "steel", top="steelL", sides=12)               # brace pin
+    hub(f, top)
+    port(f, 0.36)
+
+
+def legs_hydraulic(f, top=1.0):
+    """L2: three hydraulic legs, a thick cylinder below and a narrower piston above, round feet."""
+    from . import detail as D
+    _g("legs")
+    for k in range(3):
+        a = math.pi / 2 + k * math.tau / 3 + math.pi
+        c, s_ = math.cos(a), math.sin(a)
+        fu, fv = 0.95 * c, 0.95 * s_
+        foot(f, fu, fv, 0.24)
+        mid = (0.68 * c, 0.68 * s_, 0.5)
+        D.seg(f, (fu, fv, 0.14), mid, 0.13, "steelD", 12, cap="steel")                              # cylinder
+        D.seg(f, (0.8 * c, 0.8 * s_, 0.36), (0.82 * c, 0.82 * s_, 0.4), 0.15, "steel", 12)        # cylinder band
+        D.seg(f, mid, (0.36 * c, 0.36 * s_, top - 0.3), 0.075, "steelL", 10)                       # piston
+        D.seg(f, (fu * 0.9, fv * 0.9, 0.16), (fu * 0.4, fv * 0.4, 0.06), 0.05, "dark", 8)           # hose to the foot
+    hub(f, top, 0.48)
+    port(f, 0.36)
+
+
+def legs_twin(f, top=0.96):
+    """L3: four outrigger legs, each two beams tied by cross plates."""
+    from . import detail as D
+    _g("legs")
+    for k in range(4):
+        a = math.pi / 4 + k * math.pi / 2
+        c, s_ = math.cos(a), math.sin(a)
+        n = (-s_, c)                                                                                # across the leg
+        fu, fv = 0.9 * c * 1.1, 0.9 * s_ * 1.1
+        f.box(fu, fv, 0, 0.34, 0.34, 0.08, "gm", top="steelD")
+        for o in (-0.09, 0.09):
+            D.seg(f, (fu + n[0] * o, fv + n[1] * o, 0.08), (0.4 * c + n[0] * o, 0.4 * s_ + n[1] * o, top - 0.3), 0.06, "steelD", 6)
+        for t in (0.3, 0.62):                                                                       # cross plates
+            p = (fu + (0.4 * c - fu) * t, fv + (0.4 * s_ - fv) * t, 0.08 + (top - 0.38) * t)
+            D.seg(f, (p[0] - n[0] * 0.12, p[1] - n[1] * 0.12, p[2]), (p[0] + n[0] * 0.12, p[1] + n[1] * 0.12, p[2]), 0.05, "steel", 4)
+    hub(f, top)
+    port(f, 0.36)
+
+
+GV = {"L1": (0.98, legs_box), "L2": (1.0, legs_hydraulic), "L3": (0.96, legs_twin)}
 
 
 def ground_turret(key, d, variant):

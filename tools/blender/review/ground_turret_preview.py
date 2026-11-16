@@ -11,7 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from robots_preview import ROOT, Assets, Canvas, iso  # noqa: E402
 
 N = 6                                               # rock patch, tiles 0..N-1; the mount on (2..3, 2..3), cable east
-VARIANTS = {"G1": "pintle", "G2": "casemate", "G3": "tripod yoke"}
+VARIANTS = {"L1": "box legs", "L2": "hydraulic tripod", "L3": "twin-beam outriggers"}
 ZR = 2.05
 
 
