@@ -1,15 +1,18 @@
 <script lang="ts">
   import { tip } from './kit';
-  import type { UiApi, UiThumb } from './api';
-  import { CATEGORIES, shortOf, type Entry } from './buildCatalog';
+  import type { UiApi, UiCost, UiThumb } from './api';
+  import { CATEGORIES, shortOf, type Entry, type VariantChip } from './buildCatalog';
   import BuildPreview from './BuildPreview.svelte';
   import Icon from './Icon.svelte';
   import ItemIcon from './ItemIcon.svelte';
+  import VariantRow from './VariantRow.svelte';
 
-  let { api, entry, rect, rot, thumb, have, variants = [], onvariant, thumbOf, pinned, onpin, onenter, onleave }: {
+  let { api, entry, rect, rot, thumb, have, variants = [], onvariant, cost, costLabel, thumbOf, pinned, onpin, onenter, onleave }: {
     api: UiApi; entry: Entry; rect: DOMRect; rot: number; thumb?: UiThumb; have: (item: string) => number;
-    /** The tiers of the module's family (itself included), lowest first; empty when it has none. */
-    variants?: Entry[]; onvariant?: (v: Entry) => void;
+    /** The chips of the variant row: the module's family (itself included), or the Window tool's sizes; none for a lone card. */
+    variants?: VariantChip[]; onvariant?: (id: string) => void;
+    /** Build cost to show when it is not the entry's own (the Window tool's per-run cost), with a label for the table's heading. */
+    cost?: UiCost[]; costLabel?: string;
     /** A member's thumb (the art on a chip that has a `variantLabel`). */
     thumbOf?: (id: string, rot: number) => UiThumb | undefined;
     pinned: boolean; onpin: () => void; onenter: () => void; onleave: () => void;
@@ -22,7 +25,8 @@
   /** Biased toward the screen centre: the card's x fraction of the viewport decides how much of the popover lies left of the card. */
   const left = $derived(Math.max(8, Math.min(vw - W - 8, cx - W * Math.min(1, Math.max(0, cx / vw)))));
   const narrow = $derived(W < 540);
-  const miss = $derived(new Set(shortOf(entry.cost, have).map((c) => c.item)));
+  const shownCost = $derived(cost ?? entry.cost);
+  const miss = $derived(new Set(shortOf(shownCost, have).map((c) => c.item)));
   const catLabel = $derived(CATEGORIES.find((c) => c.id === entry.category)?.label ?? '');
   const def = $derived(entry.def);
 </script>
@@ -36,21 +40,11 @@
       {#if def}
         <BuildPreview {def} {thumb} {rot} />
         <div class="legend"><span><i class="k f"></i>Footprint</span>{#if def.access.length}<span><i class="k acc"></i>Access: keep clear</span>{/if}<span class="rot"><Icon name="rotate" size={13} /> R to rotate</span></div>
-        {#if variants.length > 1}
-          <div class="vars" data-testid="popover-variants">
-            {#each variants as v (v.key)}
-              <button class="v" class:on={v.id === entry.id} class:lock={v.locked} data-testid="variant-{v.id}" aria-pressed={v.id === entry.id} onclick={() => onvariant?.(v)}>
-                {#if v.locked}<Icon name="lock" size={12} />{/if}
-                {#if v.def?.variantLabel}{@const vt = thumbOf?.(v.id, 0)}{#if vt && vt.w}<img src={vt.url} alt="" draggable="false" />{/if}{/if}
-                <span>{v.def?.variantLabel ?? v.def?.tier ?? v.name}</span>
-              </button>
-            {/each}
-          </div>
-        {/if}
       {:else if entry.icon}
         <div class="toolart"><Icon name={entry.icon} size={72} /></div>
-        <div class="legend"><span>Drag to paint it</span></div>
+        <div class="legend"><span>{entry.id === 'window' ? 'Click a straight wall to place it' : 'Drag to paint it'}</span></div>
       {/if}
+      <VariantRow chips={variants} onpick={(id) => onvariant?.(id)} {thumbOf} />
     </div>
     <div class="right">
       <p class="desc">{entry.description}</p>
@@ -58,9 +52,9 @@
       {#if def}
         <div class="facts">{#each def.facts as f (f.label)}<div><span>{f.label}</span><b class:warn={f.tone === 'warn'}>{f.value}</b></div>{/each}</div>
       {/if}
-      {#if entry.cost.length}
-        <table class="ct"><thead><tr><th class="sec">Build cost</th><th>Need</th><th>Stock</th></tr></thead>
-          <tbody>{#each entry.cost as c (c.item)}
+      {#if shownCost.length}
+        <table class="ct"><thead><tr><th class="sec">{costLabel ?? 'Build cost'}</th><th>Need</th><th>Stock</th></tr></thead>
+          <tbody>{#each shownCost as c (c.item)}
             <tr class:short={miss.has(c.item)}><td><ItemIcon {api} item={c.item} size={18} />{c.name}</td><td>{c.count}</td><td>{have(c.item)}</td></tr>
           {/each}</tbody></table>
       {/if}
@@ -85,12 +79,6 @@
   .k { display: inline-block; width: 12px; height: 8px; margin-right: 4px; vertical-align: middle; }
   .k.f { background: rgba(54, 212, 255, 0.27); border: 1px solid #36d4ff; }
   .k.acc { background: rgba(240, 177, 58, 0.2); border: 1px dashed #f0b13a; }
-  .vars { display: flex; gap: 4px; margin-top: 6px; }
-  .v { flex: 1; height: 40px; min-height: 0; padding: 0 4px; display: flex; align-items: center; justify-content: center; gap: 4px; border: 1px solid var(--build-line); background: var(--build-fill-2); font-size: 12px; color: var(--build-ink); }
-  .v img { max-width: 34px; max-height: 32px; image-rendering: pixelated; }
-  .v span { text-transform: uppercase; }
-  .v.lock { color: #7a7a7a; border-style: dashed; }
-  .v.on { border-color: var(--amber); background: var(--build-bg-solid); color: var(--amber); }
   .lockline { margin: 0 0 8px; display: flex; align-items: center; gap: 5px; color: var(--amber); font-size: 12.5px; }
   .toolart { height: 200px; width: 300px; display: flex; align-items: center; justify-content: center; color: var(--amber); background: var(--build-bg-solid); border: 1px solid var(--build-line); }
   .toolart :global(svg) { fill: none; stroke: currentColor; }

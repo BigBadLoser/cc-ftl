@@ -6,8 +6,11 @@ import { iso } from './iso';
 /** `lift`: tiles of height above the ground the marker is drawn at (the top of a rock block). */
 type Tile = { x: number; y: number; lift?: number };
 
-const CYAN = 0x22d3ee;
-const BAD = 0xff4d4d;
+/** The build preview's tints (valid, invalid): also the Window tool's placement ghost and queued-window ghost. */
+export const PREVIEW_OK = 0x22d3ee;
+export const PREVIEW_BAD = 0xff4d4d;
+const CYAN = PREVIEW_OK;
+const BAD = PREVIEW_BAD;
 
 /** Pixel-stepped diamond outlines for selection, hover and the drag/footprint build preview. */
 export interface Markers {

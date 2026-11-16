@@ -12,6 +12,7 @@ Each owns its question (see "One answer per question" in `docs/ARCHITECTURE.md`)
 | Atmosphere | `atmosphereSystem` | O2 and CO2 gas diffusion through doors and breaches; vented space | In game | sim/systems/atmosphere.ts, diffusion.ts; life support module |
 | Life support | `modulesSystem` | Makes air per room; bottled oxygen doubles output | In game | sim/systems/modules.ts; module.lifeSupport |
 | Doors | `doorsSystem` | Crew-opened doors; forced doors; airlock doors | In game | sim/systems/doors.ts, crew/forceDoor.ts |
+| Windows | `window` grid field, `job.window` | Player-built 2, 3 or 4 tile windows on straight wall runs; a wall in every system. Interior window at full, cut and low height, the hull window on straight near runs (roofed), placement and queued ghosts | In game | sim/windows.ts, app/windowTool.ts; ARCHITECTURE.md "Windows" |
 | Airlocks and air stores | `airlockSystem, airStoresSystem` | Chamber cycling, shuttle and airlock air refills | In game | sim/systems/airlock.ts, airStores.ts, modules/airlock.ts, eva/air*.ts |
 | Suits and EVA | `suitsSystem` | Suit air drains; don and doff; space walking | In game | sim/systems/suits.ts, eva/*; content/suit.ts |
 | Fire | `fireSystem` | Fire burns O2 and spreads; heat, smoke; crew and drones fight it | In game | sim/systems/fire.ts, itemFire.ts; scenario damage |

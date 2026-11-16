@@ -85,6 +85,8 @@ export const SHIP_FIELDS = {
   markApron: 'u8',
   markKeepClear: 'u8',
   markHazard: 'u8',
+  /** A window on a Wall tile (windows.ts: axis, size, index; 0 = none). The tile stays a wall in every system; cleared whenever the tile's struct is written or breached. */
+  window: 'u8',
   /** A power cable laid over a Ground tile (1, else 0): see sim/cable.ts, the one owner of what it means. */
   cable: 'u8',
 } as const satisfies FieldSpec;
@@ -116,6 +118,7 @@ export const SHIP_EMPTY = {
   markApron: 0,
   markKeepClear: 0,
   markHazard: 0,
+  window: 0,
   cable: 0,
 } as const satisfies Record<keyof typeof SHIP_FIELDS, number>;
 
@@ -209,6 +212,7 @@ export function writeStruct(grid: GridLike, x: number, y: number, kind: number):
   if (grid.has('hp') && grid.get('hp', x, y) !== hp) grid.set('hp', x, y, hp);
   if (grid.has('jam') && grid.get('jam', x, y) !== 0) grid.set('jam', x, y, 0);
   if (grid.has('vent') && grid.get('vent', x, y) !== 0) grid.set('vent', x, y, 0);
+  if (grid.has('window') && grid.get('window', x, y) !== 0) grid.set('window', x, y, 0);
   syncOwner(grid, x, y);
 }
 
