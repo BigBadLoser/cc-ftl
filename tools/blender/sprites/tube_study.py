@@ -118,13 +118,6 @@ def segment(part, axis="x"):
     f.box((u0 + u1) / 2, 0, DECK - 0.12, u1 - u0, w, 0.12, "tbDeckD", top="tbDeck")
     for c in (-1, 1):
         f.box(0.0, c * 0.33, DECK, 0.08, 0.05, 0.02, "tbDeckD", top="tbLamp")
-    th, k = 0.215, 7                                     # the hatch's threshold on the walkway at a port end (the
-    for at, sg in ((u0, 1), (u1, -1)):                   # junction's: its hazard blocks, square to the grid; seen
-        if (sg > 0 and part in ("west", "one")) or (sg < 0 and part in ("east", "one")):   # through the glass)
-            uc = at + sg * th / 2
-            f.box(uc, 0, DECK, th, w, 0.003, "tbIn", top="tbIn")
-            for i in range(0, k, 2):
-                f.box(uc, -w / 2 + w * (i + 0.5) / k, DECK, th, w / k, 0.004, "tbAmb", top="tbAmb")
     b = _belly_angle(ZB)
     _skin(f, u0, u1, _arc(_circle, math.pi - b, math.tau + b), "tbHull")
     _skin(g, u0, u1, _arc(_circle, b, math.pi - b), "tbGlass")
