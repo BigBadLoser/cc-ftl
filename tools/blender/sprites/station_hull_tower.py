@@ -9,10 +9,13 @@ from .wall3d_ext_geom import LINE, D
 
 TOWER_OUT = 4                       # px off the face
 WIDE = 11                           # the vent and the block: px across, centred on the box's front
-VENT = (5, 22)                      # the vent's frame: rows
+VENT = (4, 14)                      # the vent's frame: rows
 SLATS = 2                           # a slat every this many rows inside it
 SLAT_LIT = "stL"
-BLOCK = (25, 54, 2)                 # the block: rows, px proud of the box's front; a seam across its middle
+BLOCK = (54, 2)                     # the block: its bottom row, px proud of the box's front; a seam across its middle.
+                                    # Its top's dark line on the box's front, across it, stands where the base's line
+                                    # under the bullnose (the one with the plate) would show
+JOIN_UP = 3                         # (rows up: the box's front stands out, so its sloped line shows lower; measured)
 BLOCK_FACE, BLOCK_SIDE, BLOCK_SEAM = SH.SEAM, SH.GROOVE_D, SH.GROOVE_D   # its front and top; its ends; the seam
 BLOCK_LIT, BLOCK_JOIN = "stL", SH.GROOVE_D   # a lit px along its front's top edge; a dark one on the box's front over
                                     # its top
@@ -39,14 +42,15 @@ def tower(f, s0, zk):
         SD._rect(f, u0 + LINE, u1 - LINE, row(n + 1), row(n), fd, SH.GROOVE_D)
         SD._rect(f, u0 + LINE, u1 - LINE, row(n + 2), row(n + 1), fd, SLAT_LIT)
     # the dark block under it, a seam across its middle
-    r0, r1, n = BLOCK
+    r1, n = BLOCK
     lift2 = 0.5 * n * px                                    # (its front stands lower still on screen)
+    r0 = rows - round((s.z_at(s.zb, SH.UNDER) + lift - px - lift2 - z0) / px) - JOIN_UP
     _raise(f, u0, u1, row(r1) + lift2, row(r0) + lift2, out, n, BLOCK_FACE, BLOCK_FACE, BLOCK_SIDE)
     bd = out + n * LINE + 0.001
     m = (r0 + r1) // 2
     SD._rect(f, u0, u1, row(m + 1) + lift2, row(m) + lift2, bd, BLOCK_SEAM)
     SD._rect(f, u0, u1, row(r0 + 1) + lift2, row(r0) + lift2, bd, BLOCK_LIT)
-    SD._rect(f, u0, u1, row(r0) + lift2, row(r0 - 1) + lift2, fd, BLOCK_JOIN)
+    SD._rect(f, a, b, row(r0) + lift2, row(r0 - 1) + lift2, fd, BLOCK_JOIN)
 
 
 def _raise(f, u0, u1, z0, z1, base, n, face, top, side):
