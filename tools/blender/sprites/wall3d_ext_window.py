@@ -70,7 +70,7 @@ C_SIDE = 22                         # the header's foot; C, a strip on from B's 
                                     # lean run on up to B and on from C)
 W2_PLATE_SHIFT = -2                 # px it moves along the face (the user: 2 px left, off centre under the group)
 W2_PLATE_TRIM = 2                   # px then taken off its left edge (the user)
-END_SEAM_UP = 2                     # W1's and W3's header: the group's seams end this many px over the header's
+END_SEAM_UP = 1                     # W1's and W3's header: the group's seams end this many px over the header's
                                     # foot, a line across them there (the user)
 END_PLATE_SHORTER = 3               # W1's and W3's: the same plate, this many px shorter, centred on the inner C
 W2_PLATE = (3, 5)                   # W2's header: a plate over B and both Cs, on screen from the Cs' outer seams
