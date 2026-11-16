@@ -185,14 +185,14 @@ def outrigger(f, a, top, heavy=False, strut=0, tone=1):
         JZ = 0.62                                                                           # the jack's top
         AZ = 0.46                                                                           # where the arm meets it
         end = (jack[0] - 0.1 * c, jack[1] - 0.1 * s_, AZ)                                   # arm stops at the jack's side
-        arm = "steelD" if tone == 2 else "steel"
+        arm = {1: "steelL", 2: "hazY", 3: "orange"}.get(tone, "steel")                      # round 14: arm paint
         D.seg(f, hip, end, 0.11, arm, 4)
-        if tone == 2:                                                                       # C2: a light rail along the top
+        if False:                                                                           # (C2's top rail, dropped)
             D.seg(f, (hip[0], hip[1], hip[2] + 0.1), (end[0], end[1], end[2] + 0.1), 0.035, "steelL", 6)
         f.vcyl(jack[0], jack[1], 0.04, 0.12, JZ - 0.04, "steel", top="steelL", sides=14)    # screw jack, taller
         for z in (0.12, 0.2, 0.28):
             f.vcyl(jack[0], jack[1], z, 0.135, 0.025, "steelD", sides=14)
-        if tone == 3:                                                                       # C3: a hazard-striped collar
+        if False:                                                                           # (C3's hazard collar, dropped)
             for k in range(12):
                 a0, a1 = k * math.tau / 12, (k + 1) * math.tau / 12
                 col = "hazY" if k % 2 == 0 else "hazK"
@@ -205,7 +205,7 @@ def outrigger(f, a, top, heavy=False, strut=0, tone=1):
         # Cross strut from the riser's foot up into the arm's underside (a point on the arm, not short of it).
         t = 0.55
         on = (hip[0] + (end[0] - hip[0]) * t, hip[1] + (end[1] - hip[1]) * t, hip[2] + (end[2] - hip[2]) * t - 0.08)
-        D.seg(f, (0.84 * c, 0.84 * s_, 0.16), on, 0.045, "steelL" if tone == 2 else "steel", 6)
+        D.seg(f, (0.84 * c, 0.84 * s_, 0.16), on, 0.045, arm, 6)
     else:
         D.seg(f, hip, (jack[0], jack[1], 0.24), 0.07, "steelD", 6)
         D.seg(f, (0.86 * c, 0.86 * s_, 0.16), (jack[0] * 0.8, jack[1] * 0.8, 0.3), 0.04, "steel", 6)   # strut
@@ -214,7 +214,7 @@ def outrigger(f, a, top, heavy=False, strut=0, tone=1):
 
 
 def out_tone(f, k):
-    top = GV["C1"][0]
+    top = GV["K1"][0]
     riser(f, top)
     for j in range(4):
         outrigger(f, math.pi / 4 + j * math.pi / 2, top, heavy=True, tone=k)
@@ -223,7 +223,7 @@ def out_tone(f, k):
 
 # Round 13: J1 + J3 (collar and domed cap). Colour: mid-steel arms (C1), dark arms with a light top rail (C2), mid-steel
 # arms and hazard-striped collars (C3).
-GV = {"C1": (0.78, lambda f: out_tone(f, 1)), "C2": (0.78, lambda f: out_tone(f, 2)), "C3": (0.78, lambda f: out_tone(f, 3))}
+GV = {"K1": (0.78, lambda f: out_tone(f, 1)), "K2": (0.78, lambda f: out_tone(f, 2)), "K3": (0.78, lambda f: out_tone(f, 3))}
 
 def ground_turret(key, d, variant):
     """The head with its turntable ring (no roof coaming), standing on the variant's base."""

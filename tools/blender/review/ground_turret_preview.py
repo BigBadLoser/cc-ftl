@@ -11,7 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from robots_preview import ROOT, Assets, Canvas, iso  # noqa: E402
 
 N = 7                                               # rock patch, tiles 0..N-1; the mount on (2..3, 2..3), cable east
-VARIANTS = {"C1": "mid-steel arms", "C2": "light top rail", "C3": "hazard collars"}
+VARIANTS = {"K1": "light steel arms", "K2": "yellow arms", "K3": "orange arms"}
 ZR = 2.05
 
 
