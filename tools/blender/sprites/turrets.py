@@ -24,6 +24,7 @@ from . import turret_bay_incendiary  # noqa: F401  (the incendiary launcher bay)
 from . import turret_bay_missile  # noqa: F401  (the missile launcher bay)
 from . import turret_bay_driver  # noqa: F401  (the mass driver bay)
 from . import turret_bay_flak  # noqa: F401  (the flak cannon bay)
+from . import turret_ground as TG
 
 # stem -> (bay key, turret builder, race radius in rig units, footprint side)
 PICKS = {"burst_laser": ("laser", 0.62, 2), "mass_driver": ("driver", 0.92, 3), "point_defense": ("pd", 0.64, 2),
@@ -64,3 +65,6 @@ for _stem, (_key, _r, _n) in PICKS.items():
         SPRITES.append((f"turret.{_stem}.deploy.f{_f}", _fp, "prop", lambda a=_des, b=_kind, r=_r, f=_f: TB.deploy(a, f, b, r)))
     for _rot in ((0,) if QUICK else range(4)):
         SPRITES.append((f"module.{_stem}.bay.r{_rot}", _fp, "prop", lambda k=_key, rot=_rot, n=_n: _shift(TB.BAYS[k](rot), n)))
+    # The ground mount out on an asteroid's rock (#514), its cable port on the side the rotation faces.
+    for _rot in (() if _n != 2 else (0,) if QUICK else range(4)):
+        SPRITES.append((f"module.{_stem}.ground.r{_rot}", _fp, "prop", lambda rot=_rot, n=_n: _shift(TG.mount(rot), n)))
