@@ -35,7 +35,10 @@ NO_TABS = {MODULE}                  # designs without the groove's tabs (the rec
 BOX_OUT, BOX_UP, BOX_GAP = 1, 1, 2   # the middle slot's boxes: px off the face, the top one's top px over the top's, the
                                     # gap between them (the line under the bullnose)
 BOX_SIDE = SH.SEAM                  # their ends (the seams')
-BOX_LINE = SH.GROOVE_D              # the lines on them (the darker seam tone), down their unseen end's edge too
+BOX_LINE = SH.SEAM                  # the lines on them, down their unseen end's edge too (over the top box's chamfer and
+                                    # along its top)
+PLATE_BACK, PLATE_R = 4, 2          # the top box's top runs this many px back past the top's seam, its back corners
+                                    # rounded this many px
 BOX_CHAMFER = 2                     # the top box's top front edge chamfered this many px, in the bullnose's top band's tone
 VENTS = (7, 10)                     # its vent's slots, px under the top
 VENT_W = 5
@@ -73,6 +76,40 @@ def _rect(f, u0, u1, z0, z1, d, col):
     f.k.poly(pts, F, 3, T.OUT(f.ax), fixed=T.SEAM_PASS or col)
 
 
+def _plate(f, a, b, back, top, n=4):
+    """The top box's top carried PLATE_BACK px back past `back` as a slab off the hull's top (its back corners rounded
+    PLATE_R px): its top TOP, its sides the boxes' ends' tone."""
+    r, d0 = PLATE_R * LINE, back - PLATE_BACK * LINE
+    pl = [(b, back + 0.001)]
+    for c, sg in ((b - r, 1), (a + r, -1)):                  # (round its two back corners)
+        for i in range(n + 1):
+            t = math.pi / 2 * i / n
+            if sg > 0:
+                pl.append((c + r * math.cos(t), d0 + r - r * math.sin(t)))
+            else:
+                pl.append((c - r * math.sin(t), d0 + r - r * math.cos(t)))
+    pl.append((a, back + 0.001))
+    H = f.sec.H
+    f.k.poly([T.P(f.ax, f.plane, u, top, d) for u, d in pl], F, 3, core.Vector((0, 0, 1)),
+             fixed=T.SEAM_PASS or SH.TOP)
+    cu, cd = sum(p[0] for p in pl) / len(pl), sum(p[1] for p in pl) / len(pl)
+    o = T.P(f.ax, 0, 0, 0, 0)
+    for (u0, d0_), (u1, d1) in zip(pl, pl[1:]):
+        nu, nd = d1 - d0_, -(u1 - u0)
+        if nu * ((u0 + u1) / 2 - cu) + nd * ((d0_ + d1) / 2 - cd) < 0:
+            nu, nd = -nu, -nd
+        q = [T.P(f.ax, f.plane, u, z, d) for u, z, d in ((u0, H, d0_), (u1, H, d1), (u1, top, d1), (u0, top, d0_))]
+        f.k.poly(q, F, 3, (T.P(f.ax, 0, nu, 0, nd) - o).normalized(), fixed=T.SEAM_PASS or BOX_SIDE)
+    for (u0, d0_), (u1, d1) in zip(pl[1:-2], pl[2:-1]):      # its back and back corners outlined on its top (its far
+        ln = math.hypot(u1 - u0, d1 - d0_)                  # end's edge is BOX_LINE's; its near end shows its side)
+        iu, idd = -(d1 - d0_) / ln * LINE, (u1 - u0) / ln * LINE
+        if iu * (cu - u0) + idd * (cd - d0_) < 0:
+            iu, idd = -iu, -idd
+        q = [T.P(f.ax, f.plane, u, top + T.PAINT, d) for u, d in ((u0, d0_), (u1, d1), (u1 + iu, d1 + idd),
+                                                                   (u0 + iu, d0_ + idd))]
+        f.k.poly(q, F, 3, core.Vector((0, 0, 1)), fixed=T.SEAM_PASS or BOX_LINE)
+
+
 def gap(s):
     """The gap between the module's boxes (z0, z1): the seams up the face break across it."""
     zl = s.z_at(s.z_at(s.zb, SH.UNDER), -1)
@@ -95,7 +132,16 @@ def _module(f, s0, zk):
     c = BOX_CHAMFER
     f.part(a, b, [(back, z0), (back, top), (out - c * LINE, top), (out, top - c * px), (out, z0)],
            [None, SH.TOP, SH.BANDS[0][0], SH.FACE, None], BOX_SIDE, end=False)
-    _rect(f, a, a + LINE, z0, top - BOX_CHAMFER * px, out + 0.001, BOX_LINE)    # (a: the end turned from view)
+    _plate(f, a, b, back, top)
+    _rect(f, a, a + LINE, z0, top - c * px, out + 0.001, BOX_LINE)              # (a: the end turned from view)
+    e = 0.001
+    f.k.poly([T.P(f.ax, f.plane, u, z, d) for u, z, d in ((a, top + e, out - c * LINE + e), (a + LINE, top + e,
+              out - c * LINE + e), (a + LINE, top - c * px + e, out + e), (a, top - c * px + e, out + e))],
+             F, 3, T.OUT(f.ax), fixed=T.SEAM_PASS or BOX_LINE)
+    d0 = back - PLATE_BACK * LINE + PLATE_R * LINE
+    f.k.poly([T.P(f.ax, f.plane, u, top + T.PAINT, d) for u, d in ((a, d0), (a + LINE, d0),
+              (a + LINE, out - c * LINE), (a, out - c * LINE))], F, 3, core.Vector((0, 0, 1)),
+             fixed=T.SEAM_PASS or BOX_LINE)
     m = (a + b) / 2
     for n in VENTS:                                         # its vent (px rows under its top on screen)
         zv = zl + lift + round((top - zl) / px) * px - n * px
