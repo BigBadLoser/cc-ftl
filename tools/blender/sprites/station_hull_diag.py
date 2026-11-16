@@ -24,7 +24,8 @@ EDGE = 1e-6
 # on whole px rows as the run set's slant ones come out: px rows from the one over its line down, by line.
 LEVEL_LINE = ("stM", "stLnCore", "stLnLit")         # the groove, the line under the bullnose (a dark line, lit under)
 LEVEL_FOOT = ("stLnSoft", "stLnMid")                # the seam where the step meets the face (over the step's lit top)
-TOP_PHASE = 0.25                    # px: the top's rows off the groove's (measured)
+TOP_PHASE = 0.25                    # px: the top's rows off the groove's (measured: lines land on whole rows)
+TOP_UP = 1                          # rows up, to meet the side diagonals' top lines
 
 
 def _sec(H):
@@ -138,7 +139,7 @@ def _top_row(sec, c, d):
     groove's: its line lies on whole rows; a depth is 16 px a unit down the screen, a height ZPX up)."""
     k = 16 * c - sec.H * core.ZPX                           # (screen y of the top's front, down)
     phase = (16 * c - SH.GROOVE * core.ZPX + TOP_PHASE) % 1
-    n = round(k - 16 * d - phase)
+    n = round(k - 16 * d - phase) - TOP_UP
     return (k - n - 1 - phase) / 16, (k - n - phase) / 16
 
 
