@@ -49,11 +49,11 @@ def _collar(b):
 
 
 def _builder(o, name, centred=False):
-    """hull_engine's builder. o 8 (a wall facing -x, away from the camera: the near module's end of the tube), or
+    """hull_engine's builder. o 8 / 4 (a wall facing -x / -y, away from the camera: the near module's end of the tube), or
     `centred`: on a frame of its own, d out along the wall's outward normal, r along the wall, the axis on the origin
     (not half a tile back as hull_engine's)."""
-    b = HE._Builder(2 if o == 8 else o, name)
-    if o == 8 or centred:
+    b = HE._Builder(2 if o == 8 else 1 if o == 4 else o, name)
+    if o in (8, 4) or centred:
         (ox, oy), (rx, ry) = {2: ((1, 0), (0, 1)), 8: ((-1, 0), (0, 1)), 1: ((0, 1), (1, 0)), 4: ((0, -1), (1, 0))}[o]
         b.pt = lambda d, r, z: core.G(ox * d + rx * r, oy * d + ry * r, z)
     return b
@@ -120,8 +120,8 @@ def clip_ground(ob):
 def piece(o, at=(0.0, 0.0)):
     """(own, wide) for an "over" sprite: the block and the five hull tiles of the run round the door tile, the door
     tile's centre at grid offset `at` from the sprite's origin. o 8 (the wall faces away: the module's wall, drawn after
-    it, covers what lies behind): the block alone, (own, own)."""
-    if o == 8:
+    it, covers what lies behind; o 4 the same): the block alone, (own, own)."""
+    if o in (8, 4):
         own = housing(o)
         own.location = own.location + core.G(at[0], at[1], 0.0)
         return [own], [own]

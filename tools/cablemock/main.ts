@@ -31,7 +31,8 @@ export const ROWS = [
  * `?len=` tiles long (default 3), a floor tile between two wall tiles, a door in each module's wall. `tubeart`: the tube's
  * tiles are frame (Beam) tiles instead, for a preview asset base whose beam ids draw the tube study's sprites; with
  * `?junction=1` only the tube's last tile and the near module's three wall tiles round its door are frame tiles (unique
- * frame ids: the tube m2, the junction m4 / m13 / m1), the rest of the tube empty. */
+ * frame ids: the tube m2, the junction m4 / m13 / m1), the rest of the tube empty. `?axis=y`: the layout transposed, the
+ * tube along +y (the tube m4, the junction m2 / m11 / m8). */
 function tubeRows(beam: boolean): string[] {
   const mod = ['.#######.', '##_____##', '#_______#', '#_______#', '#_______#', '#_______#', '#_______#', '##_____##', '.#######.'];
   const n = Math.max(1, Math.min(8, Number(q.get('len') ?? 3)));
@@ -42,7 +43,9 @@ function tubeRows(beam: boolean): string[] {
   const near = (m: string, y: number) => (jn && y >= 3 && y <= 5 ? `=${m.slice(1)}` : y === 4 ? `D${m.slice(1)}` : m);
   const rows = mod.map((m, y) => `.${y === 4 ? `${m.slice(0, 8)}D` : m}${tube(y)}${near(m, y)}.`);
   const blank = '.'.repeat(rows[0]!.length);
-  return [blank, ...rows, blank];
+  const out = [blank, ...rows, blank];
+  if (q.get('axis') !== 'y') return out;
+  return [...out[0]!].map((_, x) => out.map((r) => r[x]).join(''));   // (`?axis=y`: the same run along +y, transposed)
 }
 const O = 8;
 const q = new URLSearchParams(location.search);

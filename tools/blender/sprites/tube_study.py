@@ -19,6 +19,7 @@ import numpy as np
 
 from . import core
 from .cable_study import _frame
+from .cmbkit import Frame
 
 PAL = "tube"
 L0, L1 = -3 + 0.71875 + 0.07, 1 - 0.71875 - 0.07   # the run along u: between the two hull ports' collars (tube_port)
@@ -102,13 +103,17 @@ END = 1 - 0.71875 - 0.07                 # an end tile's run stops here: the por
 PARTS = {"mid": (-0.5, 0.5), "west": (-END, 0.5), "east": (-0.5, END), "one": (-END, END)}   # per tile, along u
 
 
-def segment(part):
+NAMES = {"x": {"west": "west", "east": "east"}, "y": {"west": "north", "east": "south"}}   # (the y tube's runs -y to +y)
+
+
+def segment(part, axis="x"):
     """One tile of the picked glass tube (tube.x.<part>): the run along u PARTS[part] from the tile's middle, its walkway,
     the belly and glass, ribs at u +-0.25 (so none falls on a tile's edge), an amber end band where it is seated in a
-    port. A tube of any length is its tiles' segments side by side: west, mid ..., east (one: a single tile)."""
+    port. A tube of any length is its tiles' segments side by side: west, mid ..., east (one: a single tile). axis y:
+    the same along grid +y (tube.y.<north|mid|south|one>; the tube is the same either side of its axis)."""
     u0, u1 = PARTS[part]
     m, mg = core.Mesh(f"tube_{part}"), core.Mesh(f"tube_{part}_glass")
-    f, g = _frame(m), _frame(mg)
+    f, g = (_frame(m), _frame(mg)) if axis == "x" else (Frame(m, 2, square=True), Frame(mg, 2, square=True))
     w = 2 * math.sqrt(R * R - (ZC - DECK) ** 2)
     f.box((u0 + u1) / 2, 0, DECK - 0.12, u1 - u0, w, 0.12, "tbDeckD", top="tbDeck")
     for c in (-1, 1):
@@ -129,20 +134,20 @@ def segment(part):
     return [clip_ground(m.build()), glassy]
 
 
-def _seg_job(part):
-    def run(part=part):
+def _seg_job(part, axis="x"):
+    def run(part=part, axis=axis):
         import bpy
         from . import post
-        aid = f"tube.x.{part}"
+        aid = f"tube.{axis}.{NAMES[axis].get(part, part)}"
         core.clear_scene_meshes()
         post.select(PAL)
         extras = []                                     # (the next tiles' segments either side, where the tube runs on)
         for k, nb in ((-1, part in ("mid", "east")), (1, part in ("mid", "west"))):
             if nb:
-                for ob in segment("mid"):
-                    ob.location = ob.location + core.G(k, 0.0, 0.0)
+                for ob in segment("mid", axis):
+                    ob.location = ob.location + (core.G(k, 0.0, 0.0) if axis == "x" else core.G(0.0, k, 0.0))
                     extras.append(ob)
-        objs = segment(part)
+        objs = segment(part, axis)
         sc = bpy.context.scene
         sc.cycles.samples = SAMPLES
         try:
@@ -250,12 +255,12 @@ def _port_job(o, door=False):
     def run(o=o, door=door):
         import bpy
         from . import env_build as E, post, tube_port
-        aid = f"tube.port.{ {2: 'e', 1: 's', 8: 'w'}[o] }" + (".open" if door else "")
+        aid = f"tube.port.{ {2: 'e', 1: 's', 8: 'w', 4: 'n'}[o] }" + (".open" if door else "")
         core.clear_scene_meshes()
         post.select("tube+hull+walls")
-        at = {2: (-1.0, 0.0), 1: (0.0, -1.0), 8: (1.0, 0.0)}[o]   # (the door tile, from the tube's tile next to it:
+        at = {2: (-1.0, 0.0), 1: (0.0, -1.0), 8: (1.0, 0.0), 4: (0.0, 1.0)}[o]   # (the door tile, from the tube's tile next to it:
         own, wide = tube_port.piece(o, at=at)                    #  the sprite's origin)
-        inside, mouth = tube_port.through(o, at, door) if o != 8 else ([], None)
+        inside, mouth = tube_port.through(o, at, door) if o in (2, 1) else ([], None)
         for ob in inside + ([mouth] if mouth else []):
             ob.hide_render = True
         sc = bpy.context.scene
@@ -295,15 +300,16 @@ def _mouth(own, wide, inside, mouth, c, op):
 
 
 def _junction_job(o, t):
-    """tube.junction.<e|w>[.open] (on a wall facing +x / -x): the junction's inboard piece with its hatch (tube_junction), anchored at its front tile
-    (the door tile's +y neighbour: drawn after the wall row it stands in)."""
+    """tube.junction.<e|w|s|n>[.open] (on a wall facing +x / -x / +y / -y): the junction's inboard piece with its hatch
+    (tube_junction), anchored at its front tile (the door tile's +y neighbour, on a y wall its +x one: drawn after the
+    wall row it stands in)."""
     def run(o=o, t=t):
         import bpy
         from . import env_build as E, post, tube_junction
-        aid = f"tube.junction.{ {2: 'e', 8: 'w'}[o] }" + (".open" if t else "")
+        aid = f"tube.junction.{ {2: 'e', 8: 'w', 1: 's', 4: 'n'}[o] }" + (".open" if t else "")
         core.clear_scene_meshes()
         post.select("tube+hull+walls")
-        objs = tube_junction.piece(o, t, at=(0.0, -1.0))
+        objs = tube_junction.piece(o, t, at=(0.0, -1.0) if o in (2, 8) else (-1.0, 0.0))
         sc = bpy.context.scene
         sc.cycles.samples = SAMPLES
         try:
@@ -315,5 +321,6 @@ def _junction_job(o, t):
 
 
 def jobs():
-    return ([_seg_job(p) for p in PARTS] + [_port_job(2, d) for d in (False, True)] + [_port_job(8)] +
-            [_junction_job(o, t) for o in (2, 8) for t in (0.0, 1.0)])
+    return ([_seg_job(p, a) for a in ("x", "y") for p in PARTS] +
+            [_port_job(o, d) for o in (2, 1) for d in (False, True)] + [_port_job(8), _port_job(4)] +
+            [_junction_job(o, t) for o in (2, 8, 1, 4) for t in (0.0, 1.0)])
