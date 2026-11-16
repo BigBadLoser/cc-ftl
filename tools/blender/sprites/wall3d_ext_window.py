@@ -15,6 +15,7 @@ small foot."""
 from . import core
 from . import wall3d as T
 from . import wall3d_ext_t3 as T3
+from . import wall3d_ext_window_end as EN
 from .wall3d_ext_geom import LEAN_RISE, LINE, YS, D, Face, Section
 
 PART = None                         # the piece being built: "w1" | "w2" | "w3" (None: not a window)
@@ -127,9 +128,6 @@ def build(k, ax, plane, a, b, ends, H):
             u0, u1, _ = seg(s0, s0 + FRAME)
             f.line(u0, u1, gz, L.px(gz, -1), YS[1], bevel=False)
             f.line(u0, u1, L.px(gz, 1), gz, YS[4], bevel=False)
-            pf = [(db, 0.0), (dv, 0.0), (dv, zh), (db, zh)]     # the frame's side (jamb), under the header
-            u0, u1, cp = seg(s0 + FRAME, s0 + FRAME + JAMB, (None, SIDE))
-            f.part(u0, u1, pf, [None, HEAD_FRONT, None, None], cp, end=False)
             h0, w0 = s0 + FRAME, s0 + FRAME + JAMB
         u0, u1, _ = seg(h0, w1)
         pf = [(db, 0.0), (fr, 0.0), (fr, zs), (dv, zj), (db, zj)]       # the sill: its slope, then flat back
@@ -170,6 +168,9 @@ def build(k, ax, plane, a, b, ends, H):
             pf = [(dp + PANE / 2, zl), (dv + 0.001, zl), (dv + 0.001, zl + 1 / core.ZPX), (dp + PANE / 2,
                   zl + 1 / core.ZPX)]                   # starts, from the outer frame round its side to the glass
             fm.part(s0 + FRAME, w0 + 0.001, pf, [JAMB_SEAM] * 4, (None, JAMB_SEAM), end=False)
+            EN.jamb(fm, s0 + FRAME, s0 + FRAME + JAMB, db, dv, zl, zh, HEAD_FRONT, SIDE)   # the frame's side (jamb),
+            EN.studs(fm, s, s0 + FRAME, dv, zl, zh)                                     # under the header; studs
+                                                                                        # on the outer frame's side
             zt = zl - RIB_PLATE / core.ZPX              # a plate on the outer frame's side, across it (from the
             pf = [(dv, zj)] + s.front(zs, zt) + [(dv, zt)]              # jamb's front to the frame's), its top
                                                         # RIB_PLATE px under that seam, down to the sill's slope
