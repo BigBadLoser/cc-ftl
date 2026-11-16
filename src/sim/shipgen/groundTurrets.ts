@@ -9,7 +9,8 @@ import type { Layout } from './layout';
  * run over the ground. The asteroid base generator's choice, not a rule of the game:
  *   - a turret stands in an open pocket of ground (OPEN tiles from any hull on every side: not an alley between pods)
  *     inside the base's bounding box, else up to OUTSIDE tiles past it; its cable
- *     MIN_CABLE to MAX_CABLE tiles from the middle of a side to the nearest hull wall, bending round what is in the way;
+ *     MIN_CABLE to MAX_CABLE tiles from the middle of a side to the nearest hull wall: straight out, at most one
+ *     turn, into the wall square on (round what is in the way only where no such run reaches);
  *   - the turrets spread evenly round the base: the first nearest the command room (they are worked from its weapons
  *     console), each next one at the bearing from the base's middle furthest from those already out;
  *   - no cable runs to the arrivals hall (a room holding an airlock): visitors walk in there;
@@ -106,10 +107,10 @@ export function placeGroundTurrets(lay: Layout, plan: GroundPlan): GroundFit {
     const others = out.placed.map((k) => { const m = lay.modules[k]!, [pw, ph] = rotatedSize(lay.defs[m.def] as ModuleDef, m.rot); return { x: m.x + pw / 2, y: m.y + ph / 2 }; });
     // Inside the box first; past its edge only when nothing inside stands.
     for (const pad of [0, OUTSIDE]) {
-      const spots: { x: number; y: number; score: number; from: number }[] = [];
+      const spots: { x: number; y: number; score: number; run: number[] }[] = [];
       for (let y = Math.max(1, by0 + 1 - pad); y + fh <= Math.min(h - 1, by1 + pad); y++) for (let x = Math.max(1, bx0 + 1 - pad); x + fw <= Math.min(w - 1, bx1 + pad); x++) {
-        const from = spot(x, y, fw, fh, reach);
-        if (from < 0) continue;
+        const run = spot(x, y, fw, fh, reach);
+        if (!run) continue;
         let room = Infinity;
         for (let ty = y; ty < y + fh; ty++) for (let tx = x; tx < x + fw; tx++) room = Math.min(room, open[ty * w + tx] as number);
         if (room < OPEN) continue;
@@ -117,12 +118,12 @@ export function placeGroundTurrets(lay: Layout, plan: GroundPlan): GroundFit {
         // The first nearest the command room; each next one at the bearing furthest from those already out (and well apart).
         const spread = others.length === 0 ? -0.3 * Math.hypot(mx - cx, my - cy)
           : 20 * Math.min(...others.map((o) => gap(bearing(mx, my), bearing(o.x, o.y)))) + 0.2 * Math.min(...others.map((o) => Math.hypot(mx - o.x, my - o.y)));
-        spots.push({ x, y, from, score: spread + Math.min(room, 8) + 6 * shake(x, y) });
+        spots.push({ x, y, run, score: spread + Math.min(room, 8) + 6 * shake(x, y) });
       }
       spots.sort((a, b) => b.score - a.score || a.y - b.y || a.x - b.x);
       let done = false;
       for (const s of spots) {
-        const run = cableFrom(s.from, reach);
+        const run = s.run;
         if (run.some((c) => { const x = c % w, y = Math.floor(c / w); return x >= s.x && x < s.x + fw && y >= s.y && y < s.y + fh; })) continue;
         lay.push({ def: id, x: s.x, y: s.y, rot: 0 });
         for (const c of run) out.cable.add(c);
@@ -187,17 +188,43 @@ export function placeGroundTurrets(lay: Layout, plan: GroundPlan): GroundFit {
     return run;
   }
 
-  /** The tile its cable leaves the turret at (the middle of the side with the shortest run to the hull), or -1 when it may not stand there. */
-  function spot(x: number, y: number, fw: number, fh: number, reach: Int32Array): number {
+  /**
+   * The cable for a turret at (x, y), or null when it may not stand there. The shortest run of at most one bend: out from
+   * the middle of a side, then (where it must) one turn and straight into a hull wall, square on. Where no such run
+   * reaches a wall, the shortest way round what is in the way (`cableFrom`).
+   */
+  function spot(x: number, y: number, fw: number, fh: number, reach: Int32Array): number[] | null {
     // Its footprint and a ring of ground round it: open, unclaimed, nothing built (the ring keeps it off the hull and other turrets).
-    for (let ty = y - 1; ty <= y + fh; ty++) for (let tx = x - 1; tx <= x + fw; tx++) if (!free(tx, ty) || clear[ty * w + tx]) return -1;
+    for (let ty = y - 1; ty <= y + fh; ty++) for (let tx = x - 1; tx <= x + fw; tx++) if (!free(tx, ty) || clear[ty * w + tx]) return null;
     const mx = x + Math.floor((fw - 1) / 2), my = y + Math.floor((fh - 1) / 2);
-    let best = -1;
-    for (const i of [(y - 1) * w + mx, (y + fh) * w + mx, my * w + x - 1, my * w + x + fw]) {
-      const r = reach[i] as number;
-      if (r >= MIN_CABLE && r <= MAX_CABLE && (best < 0 || r < (reach[best] as number))) best = i;
+    const sides = [[mx, y - 1, 0, -1], [mx, y + fh, 0, 1], [x - 1, my, -1, 0], [x + fw, my, 1, 0]] as const;
+    const ok = (tx: number, ty: number): boolean => lay.inBounds(tx, ty) && runs(ty * w + tx);
+    let best: number[] | null = null;
+    for (const [sx, sy, dx, dy] of sides) {
+      const leg: number[] = [];
+      for (let k = 0, tx = sx, ty = sy; k < MAX_CABLE && ok(tx, ty); k++, tx += dx, ty += dy) {
+        leg.push(ty * w + tx);
+        if (best && leg.length >= best.length) break;
+        // Straight on into a wall, or a turn either way and straight into one.
+        if (wallAt(tx + dx, ty + dy)) { if (leg.length >= MIN_CABLE) best = [...leg]; break; }
+        for (const [ex, ey] of [[dy, dx], [-dy, -dx]] as const) {
+          const run = [...leg];
+          let ux = tx + ex, uy = ty + ey;
+          while (run.length < MAX_CABLE && (!best || run.length < best.length) && ok(ux, uy)) {
+            run.push(uy * w + ux);
+            if (wallAt(ux + ex, uy + ey)) { if (run.length >= MIN_CABLE) best = run; break; }
+            ux += ex; uy += ey;
+          }
+        }
+      }
     }
-    return best;
+    if (best) return best;
+    let from = -1;
+    for (const [sx, sy] of sides) {
+      const i = sy * w + sx, r = reach[i] as number;
+      if (r >= MIN_CABLE && r <= MAX_CABLE && (from < 0 || r < (reach[from] as number))) from = i;
+    }
+    return from < 0 ? null : cableFrom(from, reach);
   }
 
   /** True while the ground is one open walk: every airlock's outside reaches every pad and every turret's ring. */
