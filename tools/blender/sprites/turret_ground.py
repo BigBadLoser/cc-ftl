@@ -81,27 +81,45 @@ def bunker(f):
     port(f, 0.36)
 
 
-def trestle(f):
-    top = TOPS["B"]
-    _g("pads")
-    legs = [(0.72 * math.cos(math.pi / 4 + k * math.pi / 2) / 0.7071 * 0.7071, 0.72 * math.sin(math.pi / 4 + k * math.pi / 2) / 0.7071 * 0.7071) for k in range(4)]
-    for u, v in legs:
-        f.box(u, v, 0, 0.14, 0.14, 0.08, "gm", top="steelD")
-    _g("legs")
+# Trestle round 3: (deck top, foot radius, deck apothem, turret scale, keep the turret's own race ring)
+TRESTLE = {"T1": (0.95, 0.86, 0.7, 1.0, False), "T2": (0.95, 0.86, 0.62, 0.8, False), "T3": (0.7, 0.9, 0.76, 0.85, True)}
+
+
+def trestle(f, top=0.95, feet=0.72, deck=0.66, skirt=False):
     from . import detail as D
+    dia = [(math.cos(math.pi / 4 + k * math.pi / 2), math.sin(math.pi / 4 + k * math.pi / 2)) for k in range(4)]
+    legs = [(c * feet * math.sqrt(2), s_ * feet * math.sqrt(2)) for c, s_ in dia]   # feet: how far out toward the footprint corner (1 = the corner)
+    heads = [(c * deck * 0.8, s_ * deck * 0.8) for c, s_ in dia]
+    _g("pads")
     for u, v in legs:
-        D.seg(f, (u, v, 0.08), (u * 0.55, v * 0.55, top - 0.14), 0.06, "steelD", 8)
+        f.box(u, v, 0, 0.16, 0.16, 0.08, "gm", top="steelD")
+    _g("legs")
+    for (u, v), (hu, hv) in zip(legs, heads):
+        D.seg(f, (u, v, 0.08), (hu, hv, top - 0.14), 0.065, "steelD", 8)
     for k in range(4):                                                          # cross bracing between legs
         (u0, v0), (u1, v1) = legs[k], legs[(k + 1) % 4]
-        D.seg(f, (u0 * 0.85, v0 * 0.85, 0.22), (u1 * 0.7, v1 * 0.7, top - 0.32), 0.03, "steel", 6)
-        D.seg(f, (u1 * 0.85, v1 * 0.85, 0.22), (u0 * 0.7, v0 * 0.7, top - 0.32), 0.03, "steel", 6)
+        (h0, g0), (h1, g1) = heads[k], heads[(k + 1) % 4]
+        lo = 0.2
+        a0 = (u0 + (h0 - u0) * lo, v0 + (g0 - v0) * lo)
+        a1 = (u1 + (h1 - u1) * lo, v1 + (g1 - v1) * lo)
+        D.seg(f, (a0[0], a0[1], 0.08 + (top - 0.22) * lo), (h1, g1, top - 0.2), 0.03, "steel", 6)
+        D.seg(f, (a1[0], a1[1], 0.08 + (top - 0.22) * lo), (h0, g0, top - 0.2), 0.03, "steel", 6)
     _g("deck")
-    TB.prism(f, octagon(0.62), top - 0.16, top - 0.05, "steelD", top="steel")
-    TB.prism(f, octagon(0.66), top - 0.05, top, "steel", top="steelL")
-    race(f, top + 0.02)
+    TB.prism(f, octagon(deck - 0.04), top - 0.16, top - 0.05, "steelD", top="steel")
+    TB.prism(f, octagon(deck), top - 0.05, top, "steel", top="steelL")
+    if skirt:
+        TC.vannulus(f, deck + 0.02, deck - 0.08, top - 0.3, top - 0.16, "steelD", "steel", sides=8)
     _g("riser")
-    D.seg(f, (0.72, PORT_V, 0.4), (0.4, PORT_V * 0.6, top - 0.16), 0.045, "dark", 8)
+    D.seg(f, (0.72, PORT_V, 0.4), (deck * 0.7, PORT_V * 0.6, top - 0.16), 0.045, "dark", 8)
     port(f, 0.4)
+
+
+def ground_turret(key, d, variant):
+    """The turret head for a trestle variant: built on the deck's top, scaled, with or without its own race ring."""
+    top, _, _, scale, ring = TRESTLE[variant]
+    rig = TC.PICKS[key](False)
+    rig.scale *= scale
+    return TC.place(rig, d, z0=top, parts=("fixed", "head", "gun") if ring else ("head", "gun"))
 
 
 def plinth(f):
@@ -128,7 +146,7 @@ def plinth(f):
     port(f, 0.4)
 
 
-VARIANTS = {"A": bunker, "B": trestle, "C": plinth}
+VARIANTS = {v: (lambda f, a=a: trestle(f, a[0], a[1], a[2], a[4])) for v, a in TRESTLE.items()}
 
 
 def mount(rot=0, variant="A"):

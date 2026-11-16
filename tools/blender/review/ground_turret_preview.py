@@ -10,8 +10,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from robots_preview import ROOT, Assets, Canvas, iso  # noqa: E402
 
-N = 5                                               # rock patch, tiles 0..N-1; the mount on (2..3, 2..3), cable east
-VARIANTS = {"A": ("bunker", 1.0), "B": ("trestle", 0.97), "C": ("plinth", 0.72)}   # turret_ground.TOPS (+ the race lift on C)
+N = 6                                               # rock patch, tiles 0..N-1; the mount on (2..3, 2..3), cable east
+VARIANTS = {"T1": "wide legs, no roof ring", "T2": "wide legs, turret 0.8", "T3": "low and stocky, turret 0.85"}
 ZR = 2.05
 
 
@@ -23,7 +23,7 @@ def scene(cv, G, pub, cab, ox, oy, stem, v, aim, zpx):
         cv.static(cab, f"cable.duct.{'m10.w8' if i == 0 else 'm10'}", *iso(ox, oy, gx, 2))
     cv.static(G, f"module.{stem}.ground.{v}.r0", *iso(ox, oy, 3, 3))
     sx, sy = iso(ox, oy, 2.5, 2.5)
-    cv.static(G, f"turret.{stem}.d{aim}", round(sx), round(sy + (ZR - VARIANTS[v][1]) * zpx))
+    cv.static(G, f"turret.{stem}.ground.{v}.d{aim}", round(sx), round(sy))
 
 
 def main():
@@ -33,12 +33,12 @@ def main():
     pub = Assets(ROOT / "public/assets/1x")
     zpx = pub.m["heights"]["zPx"]
     out.mkdir(parents=True, exist_ok=True)
-    W, H = 300, 250
+    W, H = 330, 250
     cv = Canvas(W * len(VARIANTS), H)
-    for i, (v, (name, _)) in enumerate(VARIANTS.items()):
+    for i, (v, name) in enumerate(VARIANTS.items()):
         ox, oy = W // 2 + i * W, 70
         scene(cv, G, pub, cab, ox, oy, stem, v, aim, zpx)
-        cv.labels.append((ox - 40, H - 22, f"{v}  {name}"))
+        cv.labels.append((ox - 70, H - 22, f"{v}  {name}"))
     cv.save(out / "ground-turret-variants.png", 3)
     print("wrote", out)
 

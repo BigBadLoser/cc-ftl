@@ -68,3 +68,4 @@ for _stem, (_key, _r, _n) in PICKS.items():
     # Ground mount prototypes out on an asteroid's rock (#514): variants A-C, cable side r0 only.
     for _v in (() if _n != 2 else TG.VARIANTS):
         SPRITES.append((f"module.{_stem}.ground.{_v}.r0", _fp, "prop", lambda v=_v, n=_n: _shift(TG.mount(0, v), n)))
+        SPRITES.append((f"turret.{_stem}.ground.{_v}.d1", _fp, "prop", lambda k=_key, v=_v: TG.ground_turret(k, 1, v)))
