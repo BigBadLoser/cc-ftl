@@ -67,7 +67,10 @@ B_BACK = 1                          # block's face, TOP_PX deep) and down both s
 C_SIDE = 22                         # its foot; C, a strip on from B's right side to C_SIDE, from the base's upper
                                     # lean line down (measured off the reference; the base's two lines across its
                                     # lean run on up to B and on from C)
-PLATE_FOOT = 2                      # B and C end on a line this many px down the header's upright face
+PLATE_FOOT = 2                      # the header's foot plates: their top this many px down its upright face
+HANG = 2                            # px they hang under the header's underside (the user: a pixel or two; split
+                                    # at the header's seams, which run on down to its foot)
+HANG_OUT = 2                        # px they stand proud of the header's front (at 1 their top edge didn't show)
 E_RIBS = (11, 15)                   # W1's sill: E, a recess in its slope under B (its sides B's), from the slope's
 E_RIB = 2                           # top edge to a px short of its front (a lip), REC deep, a step darker; two ribs
 E_IN, E_SHORT = 1, 2                # standing in it at the slope's level, E_RIB px wide from these px from the
@@ -144,7 +147,7 @@ def build(k, ax, plane, a, b, ends, H):
                     else col for p, q in zip(pts, pts[1:] + pts[:1])]
         f.top_line(s0, s1, back + 2 * T3.TOP_PX, back + 2.75 * T3.TOP_PX, YS[2])   # A: the top's seam along its
                                                                                     # back, the base's own
-        _w1_header(fm, s, s0, s1, dv, zc, zh)           # (W1's header on all three)
+        _w1_header(fm, s, s0, s1, dv, zc, zh, s0 + FRAME + JAMB if end else s0)   # (W1's header on all three)
         win = _opening(w0, w1, zj, zh, end)
         _slab(GLASS, ax, plane, win, dp - PANE / 2, dp + PANE / 2, "glassL", [False] * len(win), back=False,
               mu=mu)                                    # the pane: its front only (one tinted layer: with its back,
@@ -235,9 +238,10 @@ def _w2_plate(f, s, s0, s1, fr, zs, dv, zj):
                MID_PLATE_SIDE, end=False)
 
 
-def _w1_header(f, s, s0, s1, dv, zc, zh):
+def _w1_header(f, s, s0, s1, dv, zc, zh, st):
     """B and C on W1's header, and the base's lines across its lean run on to them (painted lines, as the base's:
-    on its top in YS[2], down its front in YS[3])."""
+    on its top in YS[2], down its front in YS[3]); B's and C's sides run on down to the header's foot, and between
+    them along its foot (from st, the opening's start on an end piece) raised plates hang HANG px under it."""
     ln, H = LINE, s.H
     dk = (dv - T3.BACK) / (H - zc)                      # (the header's lean: out per unit down)
 
@@ -252,10 +256,10 @@ def _w1_header(f, s, s0, s1, dv, zc, zh):
     b0, b1 = s0 + T3.px(B_SIDES[0]), s0 + T3.px(B_SIDES[1])
     dl = T3.px(B_BACK)
     f.top_line(b0, b1 + ln, dl, dl + T3.TOP_PX, YS[2])                  # B: across the top
-    zl = zc - (PLATE_FOOT + 1) / core.ZPX                # (B and C's foot: on the upright face, a px tall)
+    zl = zc - PLATE_FOOT / core.ZPX                     # (the foot plates' top)
     for u in (b0, b1):
         f.top_line(u, u + ln, dl + T3.TOP_PX, T3.BACK, YS[2])           # down its sides, over the top
-        band(u, u + ln, zl, H, YS[3])                                   # and the front
+        band(u, u + ln, zh, H, YS[3])                                   # and the front, to the foot
     L = T3.Layout(s)
     zt = L.px(L.zr, -2)                                 # the base's lines across its lean (its own calls): the one
     c1 = s0 + T3.px(C_SIDE)                             # its top panel stands on (C's top), its seam
@@ -263,8 +267,13 @@ def _w1_header(f, s, s0, s1, dv, zc, zh):
         f.line(u0, u1, zt, L.px(zt, -1), YS[4], bevel=False)
     for u0, u1 in ((s0, b0), (c1 + ln, s1)):
         f.line(u0, u1, L.px(L.l1, 1), L.l1, YS[3], wrap=False)
-    band(c1, c1 + ln, zl, L.px(zt, -1), YS[3])                          # C: its side
-    band(b0, c1 + ln, zl, zl + 1 / core.ZPX, YS[3])                     # their foot, across both
+    band(c1, c1 + ln, zh, L.px(zt, -1), YS[3])                          # C: its side
+    R, zp = T3.px(HANG_OUT), zh - HANG / core.ZPX                               # the foot plates, split at the seams
+    pf = [(dv, zp), (dv + R, zp), (dv + R, zl), (dv, zl)]
+    cols = [False] + s.cols(pf, "plate")[1:3] + [False]
+    for u0, u1 in ((st, b0), (b0 + ln, b1), (b1 + ln, c1), (c1 + ln, s1)):
+        f.part(u0, u1, pf, cols, (MID_PLATE_SIDE if u0 > s0 + 1e-6 else None, MID_PLATE_SIDE if u1 < s1 - 1e-6
+               else None), end=False)
 
 
 def _w1_sill(f, s0, u0, u1, db, fr, zs, dv, zj, front):
