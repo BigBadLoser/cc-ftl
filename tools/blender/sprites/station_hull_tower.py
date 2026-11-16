@@ -22,8 +22,9 @@ BLOCK = (54, 2)                     # the block: its bottom row, px proud of the
 JOIN_UP = 3                         # (rows up: the box's front stands out, so its sloped line shows lower; measured)
 BLOCK_FACE, BLOCK_SIDE, BLOCK_SEAM = SH.SEAM, SH.GROOVE_D, SH.GROOVE_D   # its front and top; its ends; the seam
 BLOCK_SLOPE = "stE"                 # its foot, sloped back down to the box's front
-PLATE_UP, PLATE_CLEAR = 1, 2        # a plate on the box's top: px proud; px clear of its chamfer, its edge lines, its
-                                    # top plate's back
+BLOCK_EDGE = SH.GROOVE_D            # a dark line down its front's edge at its end turned from view
+PLATE_UP, PLATE_CLEAR, PLATE_DEEP = 1, 2, 4   # a plate on the box's top: px proud; px clear of its chamfer and its
+                                    # edge lines; px deep
 PLATE_SIDE, PLATE_LINE = SH.GROOVE_D, SH.SEAM   # its sides; the lines round its top's edges
 BLOCK_LIT, BLOCK_JOIN = "stL", SH.GROOVE_D   # a lit px along its front's top edge; a dark one on the box's front over
                                     # its top
@@ -67,16 +68,17 @@ def tower(f, s0, zk):
     m = (r0 + r1) // 2
     SD._rect(f, u0, u1, row(m + 1) + lift2, row(m) + lift2, bd, BLOCK_SEAM)
     SD._rect(f, u0, u1, row(r0 + 1) + lift2, row(r0) + lift2, bd, BLOCK_LIT)
+    SD._rect(f, u0, u0 + LINE, row(r1) + lift2, row(r0 + 1) + lift2, bd, BLOCK_EDGE)   # (u0: its end turned from view)
     SD._rect(f, a, b, row(r0) + lift2, row(r0 - 1) + lift2, fd, BLOCK_JOIN)   # (its row on the box's front: r0 - 2)
 
 
 def _top_plate(f, a, b, top, front):
-    """A plate PLATE_UP px proud of the box's top, PLATE_CLEAR px clear of its chamfer, its edge lines and its top
-    plate's back; its sides and its edges' lines dark."""
+    """A plate PLATE_UP px proud of the box's top, PLATE_CLEAR px clear of its chamfer and its edge lines, PLATE_DEEP px
+    deep; its sides and its edges' lines dark."""
     px, k = 1 / core.ZPX, (1 + PLATE_CLEAR) * LINE
     u0, u1 = a + k, b - k
     d1 = front - PLATE_CLEAR * LINE
-    d0 = SD._box_back() - SD.PLATE_BACK * LINE + PLATE_CLEAR * LINE
+    d0 = d1 - PLATE_DEEP * LINE
     z1 = top + PLATE_UP * px
     f.part(u0, u1, [(d0, top - 0.01), (d0, z1), (d1, z1), (d1, top - 0.01)], [None, SH.TOP, PLATE_SIDE, None],
            PLATE_SIDE, end=False)
