@@ -12,6 +12,7 @@ from robots_preview import ROOT, Assets, Canvas, iso  # noqa: E402
 
 N = 7                                               # rock patch, tiles 0..N-1; the mount on (2..3, 2..3), cable east
 VARIANTS = {"K1": "picked: light steel outriggers"}
+STEMS = (("burst_laser", 1), ("point_defense", 1), ("ion_cannon", 1), ("missile_launcher", 1))
 ZR = 2.05
 
 
@@ -34,11 +35,11 @@ def main():
     zpx = pub.m["heights"]["zPx"]
     out.mkdir(parents=True, exist_ok=True)
     W, H = 400, 290
-    cv = Canvas(W * len(VARIANTS), H)
-    for i, (v, name) in enumerate(VARIANTS.items()):
+    cv = Canvas(W * len(STEMS), H)
+    for i, (st, am) in enumerate(STEMS):
         ox, oy = W // 2 + i * W, 70
-        scene(cv, G, pub, cab, ox, oy, stem, v, aim, zpx)
-        cv.labels.append((ox - 70, H - 22, f"{v}  {name}"))
+        scene(cv, G, pub, cab, ox, oy, st, "K1", am, zpx)
+        cv.labels.append((ox - 50, H - 22, st))
     cv.save(out / "ground-turret-variants.png", 3)
     print("wrote", out)
 

@@ -156,12 +156,21 @@ def port3(f, z=0.0, u0=1.18):
     box(u0, u0 + 0.26, 0.22, z, z + 0.46, "steel", "steelL")                   # junction box
     box(u0 - 0.02, u0, 0.14, z + 0.1, z + 0.36, "steelD")                      # access plate toward the ring
     box(u0 + 0.26, 1.5, 0.09, 0.0, z + 0.14, "dark", "steelD")                 # conduit to the edge
-    box(u0 + 0.06, u0 + 0.16, 0.05, z + 0.46, z + 0.5, "dark")                 # status lamp (idle: dark)
+    box(u0 + 0.04, u0 + 0.22, 0.2, z + 0.46, z + 0.49, "steelL")              # lid
+    box(u0 + 0.255, u0 + 0.265, 0.17, z + 0.06, z + 0.42, "dark")              # panel line round the outer face
+    box(u0 + 0.262, u0 + 0.272, 0.13, z + 0.1, z + 0.38, "steel")
+    for k in range(6):                                                         # hazard plate on the outer face
+        a, b = -0.12 + k * 0.04, -0.12 + (k + 1) * 0.04
+        c = "hazY" if k % 2 == 0 else "hazK"
+        TB.prism(f, [(u0 + 0.268, a), (u0 + 0.28, a), (u0 + 0.28, b), (u0 + 0.268, b)], z + 0.12, z + 0.2, c, top=c)
+    for o in (-0.15, 0.15):                                                    # side bolts
+        TB.prism(f, [(u0 + 0.06, o - 0.02), (u0 + 0.2, o - 0.02), (u0 + 0.2, o + 0.02), (u0 + 0.06, o + 0.02)], z, z + 0.05, "steelL", top="steelL")
+    box(u0 + 0.08, u0 + 0.16, 0.04, z + 0.49, z + 0.55, "cyan")                 # status lamp, lit
 
 
 # Round 9: outriggers. A round base under the ring, the turret raised on a riser, outrigger beams out past the base so
 # their feet stand on the rock.
-def riser(f, top, ribs=0):
+def riser(f, top, ribs=0, detail=True):
     _g("base")
     f.vcyl(0, 0, 0, 1.0, 0.06, "gm", top="steelD", sides=32)
     f.vcyl(0, 0, 0.06, 0.94, 0.08, "steelD", top="steel", sides=32)
@@ -171,6 +180,27 @@ def riser(f, top, ribs=0):
     for k in range(ribs):
         a = (k + 0.5) * math.tau / ribs
         obox(f, a, 0.78, 0.86, 0.04, 0.14, top - 0.1, "steel", top="steelL")
+    if not detail:
+        return
+    _g("seams")
+    for k in range(8):                                                          # panel seams, between the arms
+        a = k * math.tau / 8
+        obox(f, a, 0.795, 0.81, 0.008, 0.16, top - 0.12, "dark")
+    TB.prism(f, octagon(0.807), 0.32, 0.335, "dark")                            # a horizontal seam
+    _g("rivets")
+    for k in range(32):
+        a = (k + 0.5) * math.tau / 32
+        f.vcyl(0.805 * math.cos(a), 0.805 * math.sin(a), top - 0.16, 0.014, 0.014, "steelL", sides=4)
+    _g("hatch")
+    HA = math.radians(112)                                                      # left of the camera, clear of the arms
+    obox(f, HA, 0.8, 0.825, 0.17, 0.2, 0.6, "steel", top="steelL")              # access hatch
+    obox(f, HA, 0.825, 0.835, 0.13, 0.24, 0.56, "steelD")
+    obox(f, HA, 0.83, 0.86, 0.025, 0.36, 0.44, "steelL")                        # its handle
+    _g("vent")
+    VA = math.radians(-22)                                                      # right of the camera, beside the port
+    for k in range(4):
+        z = 0.3 + k * 0.07
+        obox(f, VA, 0.8, 0.83, 0.13, z, z + 0.035, "dark")
 
 
 def outrigger(f, a, top, heavy=False, strut=0, tone=1, az=0.46):
@@ -191,7 +221,7 @@ def outrigger(f, a, top, heavy=False, strut=0, tone=1, az=0.46):
             D.seg(f, (hip[0], hip[1], hip[2] + 0.1), (end[0], end[1], end[2] + 0.1), 0.035, "steelL", 6)
         f.vcyl(jack[0], jack[1], 0.04, 0.12, JZ - 0.04, "steel", top="steelL", sides=14)    # screw jack, taller
         for z in (0.12, 0.2, 0.28):
-            f.vcyl(jack[0], jack[1], z, 0.135, 0.025, "steelD", sides=14)
+            f.vcyl(jack[0], jack[1], z, 0.135, 0.025, "rust" if z == 0.2 else "steelD", sides=14)
         if False:                                                                           # (C3's hazard collar, dropped)
             for k in range(12):
                 a0, a1 = k * math.tau / 12, (k + 1) * math.tau / 12
@@ -202,6 +232,9 @@ def outrigger(f, a, top, heavy=False, strut=0, tone=1, az=0.46):
             f.vcyl(jack[0], jack[1], AZ - 0.12, 0.17, 0.24, "steelD", top="steel", sides=14)   # collar where the arm meets
         f.vcyl(jack[0], jack[1], JZ, 0.12, 0.05, "steelL", top="steel", rtop=0.07, sides=14)  # domed cap
         f.vcyl(jack[0], jack[1], 0, 0.22, 0.05, "gm", top="steelD", sides=14)               # foot
+        for k in range(4):                                                                  # anchor bolts
+            b = a + math.pi / 4 + k * math.pi / 2
+            f.vcyl(jack[0] + 0.17 * math.cos(b), jack[1] + 0.17 * math.sin(b), 0.05, 0.025, 0.035, "steelL", top="steel", sides=6)
         # Cross strut from the riser's foot up into the arm's underside (a point on the arm, not short of it).
         t = 0.55
         on = (hip[0] + (end[0] - hip[0]) * t, hip[1] + (end[1] - hip[1]) * t, hip[2] + (end[2] - hip[2]) * t - 0.08)

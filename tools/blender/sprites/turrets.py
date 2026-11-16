@@ -66,6 +66,6 @@ for _stem, (_key, _r, _n) in PICKS.items():
     for _rot in ((0,) if QUICK else range(4)):
         SPRITES.append((f"module.{_stem}.bay.r{_rot}", _fp, "prop", lambda k=_key, rot=_rot, n=_n: _shift(TB.BAYS[k](rot), n)))
     # Ground mount prototypes out on an asteroid's rock (#514): variants A-C, cable side r0 only.
-    for _v in (() if _n != 2 else TG.VARIANTS):           # round 8: every ground turret is 3x3
+    for _v in TG.VARIANTS:                                 # every ground turret is 3x3, whatever its roof bay
         SPRITES.append((f"module.{_stem}.ground.{_v}.r0", (3, 3), "prop", lambda v=_v: _shift(TG.mount(0, v), 3)))
         SPRITES.append((f"turret.{_stem}.ground.{_v}.d1", (3, 3), "prop", lambda k=_key, v=_v: TG.ground_turret(k, 1, v)))
