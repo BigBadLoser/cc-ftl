@@ -24,7 +24,7 @@ JW, JL = 0.02, 0.045                     # joint frame: how far it stands proud,
 BODY, TOP = "cbGraphD", "cbGraph"
 FRAME, FRAME_TOP = "cbPipeD", "cbPipe"
 STRIPE = "cbCabO"
-CAP, CAP_TOP = 0.02, TOP                   # the top cap: height, colour (the body top's: the step reads as an edge, not a tone)
+CAP_TOP = TOP                            # tops of the vent rims and the breaker box
 VARIANTS = (1, 2, 3, 4)
 SZ0, SZH = 0.065, 0.045                  # stripe foot and height
 
@@ -51,9 +51,8 @@ def _span(f, ax, p0, p1, length=None, across=0.0, w=2 * DW, z0=0.0, h=DH, side=B
 
 
 def _section(f, ax, p0, p1):
-    """Plain duct from p0 to p1 along the axis: the body, its top cap (a ledge along each side) and the stripe."""
-    _span(f, ax, p0, p1, h=DH - CAP)
-    _span(f, ax, p0, p1, w=2 * DW - 0.05, z0=DH - CAP, h=CAP, side=CAP_TOP, top=CAP_TOP)
+    """Plain duct from p0 to p1 along the axis: the body (one flat top) and the stripe."""
+    _span(f, ax, p0, p1)
     _span(f, ax, p0, p1, w=2 * DW + 0.008, z0=SZ0, h=SZH, side=STRIPE)
 
 
