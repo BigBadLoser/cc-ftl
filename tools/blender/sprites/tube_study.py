@@ -4,13 +4,14 @@ through), so one sprite serves the roofed and the cut view.
 
   tube.<look>
     glass     a clear round tube with metal ribs, a metal belly under the deck, end collars seated in a hull port at
-              each module wall (picked); the hull port itself is tube_port's (tube.port.e: on a wall facing +x)
+              each module wall (picked); the hull ports are tube_port's (tube.port.e on a wall facing +x, tube.port.w
+              on one facing -x)
     canopy    a solid lower hull with an amber stripe, a glass dome over it, arched ribs
     lattice   an octagonal glass tube, metal bars along its corners, ribs, a metal belly
 
 The deck inside is in the sprite for the study only (in the game the floor tiles and the crew go under the glass). One
 sprite draws the whole tube (no seams between tile sprites), anchored at the centre of its east tile: it runs along grid
-+x from the west port's collar to the east door's frame, centred on v = 0. Palette set tube."""
++x between the collars of the two hull ports, centred on v = 0. Palette set tube."""
 import math
 
 import numpy as np
@@ -19,9 +20,7 @@ from . import core
 from .cable_study import _frame
 
 PAL = "tube"
-L0, L1 = -3 + 0.71875 + 0.07, 0.84375    # the run along u: from the west hull port's collar (tube_port) to the east
-                                         # wall's outer face (the door's frame back, doors.planes: 1 - 0.15625), so
-                                         # the open door shows the tube's inside, no ground between
+L0, L1 = -3 + 0.71875 + 0.07, 1 - 0.71875 - 0.07   # the run along u: between the two hull ports' collars (tube_port)
 ZC, R = 1.0, 0.8                         # shell centre height and radius: the hull port's axis and port radius
 OCT = 0.76                               # the lattice's apothem
 ZB = 0.62                                # top of the metal belly (below it the shell is opaque): a kick panel
@@ -92,8 +91,9 @@ def glass(f, g):
     for k in range(1, 6):
         u = L0 + 0.5 * k
         _band(f, u - 0.03, u + 0.03, _circle, 0.0, math.tau, 0.03, "tbHull", "tbHullD")
-    _band(f, L0, L0 + 0.1, _circle, 0.0, math.tau, 0.05, "tbAmb", "tbRib")          # the end seated in the port
-    for u in (L0 + 0.75, L1 - 0.95):                                           # saddles to the ground
+    for u in (L0, L1 - 0.1):                                                   # the ends seated in the ports
+        _band(f, u, u + 0.1, _circle, 0.0, math.tau, 0.05, "tbAmb", "tbRib")
+    for u in ((2 * L0 + L1) / 3, (L0 + 2 * L1) / 3):                         # saddles to the ground
         f.box(u, 0, 0.0, 0.14, 1.2, ZC - R + 0.12, "tbRib", top="tbRibL")
 
 
@@ -173,25 +173,26 @@ def _job(look):
 
 
 def _port_job(o, door=False):
-    """tube.port.<e|s>[.open], drawn in every view over the hull row (which stands full height there in every view, as
+    """tube.port.w (o 8: a wall facing away, the block alone, drawn before the wall); tube.port.<e|s>[.open], drawn in every view over the hull row (which stands full height there in every view, as
     the airlock's: its hull sprite module.airlock.hull.r<n>): the bore through the door tile's hull with the corridor
     door (closed / open) in it and the room's dark behind."""
     def run(o=o, door=door):
         import bpy
         from . import env_build as E, post, tube_port
-        aid = f"tube.port.{'e' if o == 2 else 's'}" + (".open" if door else "")
+        aid = f"tube.port.{ {2: 'e', 1: 's', 8: 'w'}[o] }" + (".open" if door else "")
         core.clear_scene_meshes()
         post.select("tube+hull+walls")
-        at = (-1.0, 0.0) if o == 2 else (0.0, -1.0)     # (the door tile behind the tube's first tile, the origin)
-        own, wide = tube_port.piece(o, at=at)
-        inside, mouth = tube_port.through(o, at, door)
-        for ob in inside + [mouth]:
+        at = {2: (-1.0, 0.0), 1: (0.0, -1.0), 8: (1.0, 0.0)}[o]   # (the door tile, from the tube's tile next to it:
+        own, wide = tube_port.piece(o, at=at)                    #  the sprite's origin)
+        inside, mouth = tube_port.through(o, at, door) if o != 8 else ([], None)
+        for ob in inside + ([mouth] if mouth else []):
             ob.hide_render = True
         sc = bpy.context.scene
         sc.cycles.samples = SAMPLES
         try:
             c, op, g, ox, oy = E.render_sprite(aid, "over", (own, wide))[:5]
-            c, op = _mouth(own, wide, inside, mouth, c, op)
+            if mouth:                                   # (o 8: the bore faces away, the tube in it: no door to show)
+                c, op = _mouth(own, wide, inside, mouth, c, op)
             it = E.crop_item(aid, (1, 1), c, op, g, ox, oy)
         finally:
             sc.cycles.samples = core.SAMPLES
@@ -223,4 +224,4 @@ def _mouth(own, wide, inside, mouth, c, op):
 
 
 def jobs():
-    return [_job(look) for look in STUDY] + [_port_job(2, d) for d in (False, True)]
+    return [_job(look) for look in STUDY] + [_port_job(2, d) for d in (False, True)] + [_port_job(8)]

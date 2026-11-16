@@ -46,9 +46,19 @@ def _collar(b):
                (0, -(c0 + c1), -(s0 + s1)), RAMP[0])
 
 
+def _builder(o, name):
+    """hull_engine's builder; o 8 (a wall facing -x, away from the camera: the near module's end of the tube) on a frame
+    of its own, d out along -x, the axis on the origin (not half a tile back as hull_engine's)."""
+    b = HE._Builder(2 if o == 8 else o, name)
+    if o == 8:
+        b.pt = lambda d, r, z: core.G(-d, r, z)
+    return b
+
+
 def housing(o):
-    """The block, one mesh, at hull_engine's frame (the port's axis half a tile back along the run from the origin)."""
-    b = HE._Builder(o, f"tube_port_{o}")
+    """The block, one mesh, at hull_engine's frame (the port's axis half a tile back along the run from the origin; o 8:
+    _builder's, on it)."""
+    b = _builder(o, f"tube_port_{o}")
     prof = [(0.0, ZF), (DF - C, ZF), (DF, ZF + C), (DF, ZT - C), (DF - C, ZT), (0.0, ZT)]
     b.prism(prof, -W, W, skip=(2, 5))                   # (its front: below, with the port; no back: against the hull)
     ts = {math.tau * i / N for i in range(N)}
@@ -81,7 +91,12 @@ def housing(o):
 
 def piece(o, at=(0.0, 0.0)):
     """(own, wide) for an "over" sprite: the block and the five hull tiles of the run round the door tile, the door
-    tile's centre at grid offset `at` from the sprite's origin."""
+    tile's centre at grid offset `at` from the sprite's origin. o 8 (the wall faces away: the module's wall, drawn after
+    it, covers what lies behind): the block alone, (own, own)."""
+    if o == 8:
+        own = housing(o)
+        own.location = own.location + core.G(at[0], at[1], 0.0)
+        return [own], [own]
     mask = 5 if o == 2 else 10
     dx, dy = X.STRAIGHT[(mask, o)]
     was, T.VARIANT = T.VARIANT, (0, 0)
