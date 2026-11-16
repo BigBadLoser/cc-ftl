@@ -34,6 +34,8 @@ export class Layout {
   roles: RoomRole[];
   /** The generator's own choice, not a rule of the game: a gun stands beside the hull. Off for the station assembly. */
   gunsOnHull = true;
+  /** Rooms where a module standing apart on open ground is entered (its airlock): each is the start of a walk of its own. */
+  entries = new Set<number>();
 
   constructor(rows: string[], roomOf: Int16Array, roles: RoomRole[], defs: Record<string, ModuleDef>) {
     this.h = rows.length;
@@ -212,14 +214,26 @@ export class Layout {
     const visit = (j: number): void => {
       if (!seen[j] && this.walkable(j)) { seen[j] = 1; stack.push(j); }
     };
-    while (stack.length > 0) {
-      const i = stack.pop() as number;
-      count++;
-      const x = i % W;
-      if (x > 0) visit(i - 1);
-      if (x < W - 1) visit(i + 1);
-      if (i >= W) visit(i - W);
-      if (i + W < n) visit(i + W);
+    const flood = (): void => {
+      while (stack.length > 0) {
+        const i = stack.pop() as number;
+        count++;
+        const x = i % W;
+        if (x > 0) visit(i - 1);
+        if (x < W - 1) visit(i + 1);
+        if (i >= W) visit(i - W);
+        if (i + W < n) visit(i + W);
+      }
+    };
+    flood();
+    // A module standing apart is its own walk, from its airlock.
+    if (this.entries.size > 0) {
+      for (let i = 0; i < n; i++) {
+        if (seen[i] || !this.walkable(i) || !this.entries.has(this.roomOf[i] as number)) continue;
+        seen[i] = 1;
+        stack.push(i);
+        flood();
+      }
     }
     return total - count + bad;
   }

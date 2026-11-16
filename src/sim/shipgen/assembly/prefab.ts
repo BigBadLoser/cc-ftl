@@ -202,6 +202,7 @@ export function prefab(c: Ctx, rooms: readonly RoomSpec[], docks: readonly RoomS
     const id = g.hall('dock', 'airlock', { ...d, w: 3, h: 3 });
     g.rect(id, ax, cy - 1, ax + 3, cy + 2);
     g.gate(wx, cy);
+    g.crewLocks.add(id);
     return id;
   };
   /** The last room of a run at least `n` long (a unit carved in it leaves room), and the run at least `need` altogether. */
@@ -265,7 +266,9 @@ export function prefab(c: Ctx, rooms: readonly RoomSpec[], docks: readonly RoomS
         const off = (j % 2 === 1 ? (j + 1) >> 1 : -(j >> 1)) * RIB, gs = [...house([f]), lobby()], len = run(gs) + 2;
         const gh = module(west ? ends - len : ends, cy - (OUT >> 1) + off, 'h', west ? gs : [...gs].reverse());
         if (!gh) return false;
-        for (const id of [...gh.ids, lock(gh, west)]) if (id !== null) g.apart.add(id);
+        const door = lock(gh, west);
+        for (const id of [...gh.ids, door]) if (id !== null) g.apart.add(id);
+        if (door !== null) g.entries.add(door);
       }
       return true;
     });

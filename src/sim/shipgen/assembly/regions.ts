@@ -133,6 +133,10 @@ export class RegionGrid {
 
   /** Regions of modules that stand apart on open ground, reached suited from outside, not walked to inside (`stranded` leaves them). */
   readonly apart = new Set<number>();
+  /** The airlock rooms among them: where a walk inside such a module starts. */
+  readonly entries = new Set<number>();
+  /** Airlock rooms for the crew's walks outside (not berths for ships). */
+  readonly crewLocks = new Set<number>();
 
   /** A hall; with a spec, a fixture that stands in one (an airlock unit on a quay): open to the halls round it, and a room of the program. */
   hall(role: RoomRole = 'hall', dept?: string, spec?: RoomSpec): number {

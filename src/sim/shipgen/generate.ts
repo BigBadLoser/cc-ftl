@@ -68,10 +68,11 @@ interface Fitted {
 /** Place every room's planned modules in that room; a reason string when something essential does not fit. */
 function fitOut(
   rng: Rng, f: FactionDef, rows: string[], roomOf: Int16Array, roles: RoomRole[], specs: (RoomSpec | undefined)[], defs: Record<string, ModuleDef>,
-  recipes = RECIPES, o: Pick<FinishOpts, 'airlocksAnyWay' | 'gunsAnywhere' | 'immobile' | 'ground'> = {},
+  recipes = RECIPES, o: Pick<FinishOpts, 'airlocksAnyWay' | 'gunsAnywhere' | 'immobile' | 'ground' | 'entries'> = {},
 ): Fitted {
   const lay = new Layout(rows, roomOf, roles, defs);
   lay.gunsOnHull = !o.gunsAnywhere;
+  for (const e of o.entries ?? []) lay.entries.add(e);
   const out: Fitted = { lay, stock: new Map(), vehicles: new Map(), drones: new Map() };
   const jobs: { room: number; def: string; spec: RoomSpec }[] = [];
   specs.forEach((spec, room) => { for (const def of spec?.mods ?? []) jobs.push({ room, def, spec: spec as RoomSpec }); });
@@ -321,6 +322,8 @@ export interface FinishOpts {
   gunsAnywhere?: boolean;
   /** Turrets to stand on open ground outside the hull, cabled to it (a prefab asteroid base's guns and point defence: groundTurrets.ts). */
   ground?: GroundPlan;
+  /** Rooms where a module standing apart on open ground is entered: the fit-out checks its walk from there (a prefab farm's greenhouses). */
+  entries?: ReadonlySet<number>;
 }
 
 /**
@@ -393,6 +396,7 @@ export function fitShell(
   const dockTile = new Set(opened.tiles);
   const fitted = opened.merged > 0 ? rows.map((r, y) => d.lay.cells.slice(y * d.lay.w, y * d.lay.w + r.length).join('')) : rows;
   const template = toTemplate(f, role, factionId, seed, plan, fitted, d);
+  if ((opts.entries?.size ?? 0) > 0) template.apart = true;
   template.modules = [...(template.modules ?? []), ...(shell.containers ?? []).map((k) => ({ ...k, ...stockOf(rng, f, defs[k.def]) }))];
   const problems = d.error ? [d.error] : validateTemplate(template, defs, opts.immobile ? { immobile: true } : {});
   if (problems.length === 0 && opts.check) problems.push(...opts.check(template, defs));

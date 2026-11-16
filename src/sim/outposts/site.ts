@@ -44,7 +44,7 @@ export function pickDock(t: ShipTemplate, defs: Record<string, ModuleDef>): Dock
   for (const m of t.modules ?? []) {
     const def = defs[m.def];
     const side = def?.airlock ? hullSide(def, m.rot) : null;
-    if (!def || !side) continue;
+    if (!def || !side || m.crew) continue;
     const outer = airlockTiles(def, m).outer;
     const out = hullOutward(side);
     const collar = { x: outer.x + out.x, y: outer.y + out.y };

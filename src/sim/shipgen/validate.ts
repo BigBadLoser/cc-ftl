@@ -108,8 +108,9 @@ export function validateTemplate(t: ShipTemplate, defs: Record<string, ModuleDef
   if (start < 0) problems.push('no door');
   else {
     const seen = new Uint8Array(w * h);
-    const stack = [start];
-    seen[start] = 1;
+    // Modules standing apart on open ground are each a walk of their own, from their doors.
+    const stack = t.apart ? Array.from({ length: w * h }, (_, i) => i).filter((i) => cells[i] === 'D' && walk(i % w, Math.floor(i / w))) : [start];
+    for (const i of stack) seen[i] = 1;
     let reached = 0;
     while (stack.length > 0) {
       const i = stack.pop() as number;
@@ -125,7 +126,7 @@ export function validateTemplate(t: ShipTemplate, defs: Record<string, ModuleDef
   }
   // One structure: hull, walls, floors, doors and beams all 4-connected (no pod or beam floating a tile off).
   const parts = structureParts(cells, w, h);
-  if (parts > 1) problems.push(`disconnected: ${parts} separate structures`);
+  if (parts > 1 && !t.apart) problems.push(`disconnected: ${parts} separate structures`);
   const leak = sealProblem(cells, w, h);
   if (leak) problems.push(leak);
   const width = widthProblem(cells, w, h);
