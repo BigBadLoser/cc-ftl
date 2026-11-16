@@ -131,19 +131,15 @@ def _middle(f, ax, lit, var):
                       top="cbBoxL")                                              # the bolt into the rock
 
 
+LID = 1.1 / core.ZPX                     # a plain straight's lid: how far it stands proud (1 px)
 TOPS = (1, 2, 3)     # study (remove once one is picked): the plain straight's top, cable.duct.m<5|10>.t<k>
 
 
 def _plain_top(f, ax, style):
-    """A plain straight's top detail, by style: 1 a lid panel (two seams across it, a bolt at each corner), 2 painted
+    """A plain straight's top detail, by style: 1 a lid panel raised 1 px, 2 painted
     power bands (two orange bars across, a dark tag between), 3 rivet rows along both top edges."""
-    if style == 1:
-        for p in (-0.15, 0.15):
-            _span(f, ax, p, 0, length=0.03, w=2 * DW - 0.04, z0=DH, h=0.004, side=BODY, top=BODY)
-        for p in (-0.11, 0.11):
-            for c in (-1, 1):
-                u, v = _at(ax, p, c * (DW - 0.05))
-                f.box(u, v, DH, 0.045, 0.045, 0.02, FRAME, top="cbBoxL")
+    if style == 1:                                                              # the lid, 1 px proud
+        _span(f, ax, 0, 0, length=0.3, w=2 * DW - 0.04, z0=DH, h=LID)
     if style == 2:
         for p in (-0.1, 0.1):
             _span(f, ax, p, 0, length=0.05, w=2 * DW - 0.03, z0=DH, h=0.004, side=STRIPE, top=STRIPE)
