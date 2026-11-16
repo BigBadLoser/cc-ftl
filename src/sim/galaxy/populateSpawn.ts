@@ -14,6 +14,7 @@ import { spawnStation } from '../stations/spawn';
 import { hash32, strHash, unit } from './hash';
 import { bindStation } from './marketLive';
 import { profileOf } from './market';
+import { oreMixFor } from './nodeContent';
 import { pickWeighted } from './sector';
 import type { Port } from './ports';
 import { isHostileFaction } from './standing';
@@ -90,8 +91,10 @@ export function populateOutpost(sim: Sim, port: Port | undefined, style: Outpost
 }
 
 /** A field of loose rocks. */
-export function populateField(sim: Sim, seed: number, at: Place): boolean {
-  const plan = generateAsteroid('field', seed, Object.values(sim.content.ores ?? {}) as Parameters<typeof generateAsteroid>[2]);
+export function populateField(sim: Sim, seed: number, at: Place, structure?: string): boolean {
+  const all = sim.content.ores ?? {};
+  const ores = oreMixFor(sim.content.galaxy?.nodeContents, all, structure) ?? Object.values(all);
+  const plan = generateAsteroid('field', seed, ores as Parameters<typeof generateAsteroid>[2]);
   const { x, y } = typeof at === 'function' ? at(plan.w, plan.h) : at;
   if (asteroidGapError(sim, placedParts(plan, x, y))) return false;
   growSector(sim, x, y, plan.w, plan.h);

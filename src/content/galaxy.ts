@@ -127,7 +127,11 @@ const factions = {
 
 /** Fixed structures a node can hold. Descriptors only until node grids can place them (sector refactor). */
 const structures = {
-  'structure.asteroids': { name: 'Asteroid field', kind: 'asteroids', badge: 'A', resources: ['item.metal', 'item.ice'] },
+  // The four field kinds share a badge; the name says which (the yield mix is on the node-content entry).
+  'structure.asteroids': { name: 'Rocky field', kind: 'asteroids', badge: 'A', resources: ['item.iron_ore', 'item.ice'] },
+  'structure.asteroids_ice': { name: 'Ice-rich field', kind: 'asteroids', badge: 'A', resources: ['item.ice'] },
+  'structure.asteroids_crystal': { name: 'Crystal field', kind: 'asteroids', badge: 'A', resources: ['item.energy_crystal'] },
+  'structure.asteroids_rare': { name: 'Rare-ore field', kind: 'asteroids', badge: 'A', resources: ['item.rare_ore', 'item.iron_ore'] },
   'structure.station_trade': { name: 'Trade station', kind: 'station', station: 'trade', badge: 'T', resources: ['item.fuel'], services: ['fuel', 'trade', 'repair', 'recruit'] },
   'structure.station_military': { name: 'Military station', kind: 'station', station: 'military', badge: 'M', resources: [], services: ['fuel', 'repair', 'blueprints'] },
   'structure.station_research': { name: 'Research station', kind: 'station', station: 'research', badge: 'R', resources: ['item.electronics'], services: ['trade', 'blueprints'] },
@@ -149,7 +153,30 @@ const nodeContents = {
       structure: 'structure.station_research', danger: { min: 0 }, weight: { base: 0.1, perTier: -0.01 }, owner: 'territoryOrCivilian',
       notIn: ['pirates', 'rogue'],
     },
-    asteroids: { structure: 'structure.asteroids', danger: { min: 0 }, weight: { base: 0.3 }, owner: 'territory' },
+    // The field kinds add up to the old 0.30 asteroid share at every tier (which keeps the other kinds' odds, and research placement, as they
+    // were). `ores` is each kind's yield mix by ore id: pocket weights read by the asteroid generator (oreMixFor). Rocky is two entries with
+    // one structure and one mix, because it gives rare ore its share from tier 3 on and a single linear curve cannot bend there.
+    asteroids: {
+      structure: 'structure.asteroids', danger: { max: 2 }, weight: { base: 0.19 }, owner: 'territory',
+      ores: { 'ore.iron': 5, 'ore.ice': 4 },
+    },
+    asteroids_deep: {
+      structure: 'structure.asteroids', danger: { min: 3 }, weight: { base: 0.19, perTier: -0.006 }, owner: 'territory',
+      ores: { 'ore.iron': 5, 'ore.ice': 4 },
+    },
+    asteroids_ice: {
+      structure: 'structure.asteroids_ice', danger: { min: 0 }, weight: { base: 0.07 }, owner: 'territory',
+      ores: { 'ore.ice': 8, 'ore.iron': 1 },
+    },
+    asteroids_crystal: {
+      structure: 'structure.asteroids_crystal', danger: { min: 0 }, weight: { base: 0.04 }, owner: 'territory',
+      ores: { 'ore.crystal': 7, 'ore.iron': 2, 'ore.ice': 1 },
+    },
+    // Rare-ore veins start at tier 3: item.rare_ore (refined to electronics) is the valuable raw item that already exists.
+    asteroids_rare: {
+      structure: 'structure.asteroids_rare', danger: { min: 3 }, weight: { base: 0, perTier: 0.006 }, owner: 'territory',
+      ores: { 'ore.rare': 5, 'ore.iron': 3 },
+    },
     derelict: { structure: 'structure.derelict', danger: { min: 0 }, weight: { base: 0.05, perTier: 0.012 }, owner: 'none', notAtStart: true },
   },
 } satisfies NodeContentTable;
