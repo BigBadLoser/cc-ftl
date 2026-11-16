@@ -3994,5 +3994,14 @@
   "pfRecess": {"hex": "#222e36", "set": "purifier"},
   "pfAmber": {"hex": "#cdb86c", "emissive": 0.9, "set": "purifier"},
   "pfCyan": {"hex": "#76c5dc", "emissive": 1.0, "set": "purifier"},
-  "pfTrim": {"hex": "#66798a", "flat": true, "set": "purifier"}
+  "pfTrim": {"hex": "#66798a", "flat": true, "set": "purifier"},
+  "stK": {"hex": "#1d222d", "set": "station"},
+  "stE": {"hex": "#353c47", "set": "station"},
+  "stD": {"hex": "#425569", "set": "station"},
+  "stM": {"hex": "#5c7585", "set": "station"},
+  "stS": {"hex": "#6e8694", "set": "station"},
+  "stL": {"hex": "#8699a4", "set": "station"},
+  "stH": {"hex": "#9fadb4", "set": "station"},
+  "stB": {"hex": "#b7c0c4", "set": "station"},
+  "stW": {"hex": "#d0d4d4", "set": "station"}
 }

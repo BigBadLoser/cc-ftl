@@ -137,9 +137,9 @@ def jobs(name):
                                             sel("CONT_STATES", ("intact", "damaged", "destroyed", "patched"))),
                                variants=tuple(int(v) for v in sel("CONT_VARIANTS", ("0", "1", "2"))))
         return jobs, True
-    if name == "station_hull":      # the station hull look (#524; prototype: straight runs, the outer corner, belly)
+    if name == "station_hull":      # the station hull look (#524; prototype: straight runs, the outer corner; the ship belly)
         from . import station_hull
-        return station_hull.jobs(), "hull"              # (callables: each selects "hull" itself)
+        return station_hull.jobs(), station_hull.PALETTE  # (callables: each selects it itself)
     if name == "structure":
         from . import structure
         return structure.jobs(), "walls+hull"

@@ -1,18 +1,18 @@
-"""Station hull look, prototype (#524; family `station_hull`): the free-floating station's hull from outside (roofed)
-on its platform belly. After Space Haven's station hull 1144 (a design reference only: our own geometry here): a
-block at the ship hull's height and footprint (tile.hull.ext: out to the outline E, the roof's height), its outer
-edge rounded over into the top (a bullnose all along it), the outer corner cut on the diagonal, and under the deck a
-dark platform: a pedestal with posts round it on a wider base plate.
+"""Station hull look (#524; family `station_hull`): a station's hull from outside (roofed), on the ship hull's own belly.
+After the user's station hull reference (design reference only: our own geometry here): a block at the ship hull's
+height and footprint (tile.hull.ext: out to the outline E, the roof's height), its outer edge rounded over into the
+top in a big bullnose, two seams a tile running up the face and over the bullnose onto the top, a groove near the
+foot with tabs where the seams cross it, a row of chunky light blocks along the foot, and a line along the top's inner
+edge. Its own palette set (`station`, a darker blue-grey than the ship hull's).
 
 Ids follow the faction looks' scheme (structure.py: tile.<fam>.<look>.<rest of the default id>), look `station`:
 
-  tile.hull.station.ext.o<o>.m<mask>        the upper hull (as tile.hull.ext.o<o>.m<mask>: o 1 space at +y, 2 at +x,
-                                            3 both, the outer corner; mask the hull ring's neighbours)
-  tile.hull.station.belly.under.<key>       the platform under it (as tile.hull.belly.under.<key>, by hull key)
+  tile.hull.station.ext.o<o>.m<mask>   the upper hull (as tile.hull.ext.o<o>.m<mask>: o 1 space at +y, 2 at +x, 3 both,
+                                       the outer corner; mask the hull ring's neighbours); the belly is the ship's.
 
-The prototype renders the straight runs (o1.m10 along x, o2.m5 along y) and the outer corner (o3.m9), each belly by
-its key. Geometry: a piece's outer face is a chain of plan lines (CHAINS) clipped at the tile's edges; the section
-(the face upright, then ROUND facets over into the top) is laid along it, each level's line moved in and mitred."""
+Geometry: a piece's outer face is a chain of plan lines (CHAINS) clipped at the tile's edges; the section (the face
+upright, then ROUND facets over into the top) is laid along it, each level's line moved in and mitred. Detail is
+painted on that section (a flat inlay a hair out along each strip's normal) or stands proud of it."""
 import math
 
 from mathutils import Vector
@@ -22,22 +22,24 @@ from . import walls as W
 from . import wall3d as T
 
 E = 0.5 - 1 / 32                    # the outline (the ship hull's: wall3d_ext_geom.E)
+DEPTH = E + 0.5                     # the block from its outer face back to the tile's back edge
 H = None                            # the top: the roof's height (walls.hull_top(), set on first use)
-R_D, R_Z = 0.36, 0.36               # the bullnose: this far in along the top, this far down the face (tiles)
-ROUND = 5                           # its facets
-PLINTH = 0.32                       # the face's foot: a band this high, a px proud, its top edge lit
-SEAMS = (1 / 3, 2 / 3)              # upright seams along a straight run, as fractions of the tile
-LINE = 1 / 32
-FACE, PLINTH_COL, PLINTH_TOP, SEAM, END = "hsS", "hsM", "hsH", "hsD", "hsXD"
-ROUND_COLS = ("hsS", "hsL", "hsL", "hsH", "hsW")   # the bullnose from the face up to the top
-TOP_COL, TOP_LINE = "hsH", "hsL"
-# the platform (under the deck)
-PED_Z, PLATE_Z = -0.30, -0.42       # the pedestal from the deck down to PED_Z; the plate under it to PLATE_Z
-PLATE_OUT = 3 / 32                  # the plate past the pedestal's face
-POST_W, POST_N = 3 / 32, 4          # posts down the pedestal's face: this wide, this many a tile
-PED_FACE, PED_TOP, POST, PLATE_FACE, PLATE_TOP, PLATE_EDGE = "hbRim", "hbRim", "hbD", "hbRim", "hbK", "hbM"
-BUMP_W, BUMP_D, BUMP_H, BUMP_N = 4 / 32, 2 / 32, 0.10, 3   # light blocks along the face's foot: wide, proud, tall,
-BUMP_FACE, BUMP_TOP = "hsL", "hsW"                          # this many a tile
+R_D, R_Z = 0.38, 0.54               # the bullnose: this far in along the top, this far down the face (tiles)
+ROUND = 8                           # its facets
+LINE = 1 / 32                       # one art px along the run
+SEAMS = (0.25, 0.75)                # seams along a straight run, as fractions of the tile
+GROOVE = 0.40                       # the groove's height over the deck
+RAIL = 5 / 32                       # the line along the top's inner edge: this far in from the back
+FOOT_N, FOOT_W, FOOT_OUT, FOOT_H = 3, 0.26, 3 / 32, 0.15   # the foot blocks: a tile, wide, proud, tall
+
+FACE, END = "stS", "stE"
+ROUND_COLS = ("stS", "stS", "stL", "stL", "stH", "stH", "stB", "stB")   # the bullnose from the face up to the top
+TOP = "stB"
+SEAM_D, SEAM_L = "stM", "stH"
+GROOVE_D, GROOVE_L = "stD", "stH"
+TAB, TAB_TOP, TAB_SIDE = "stB", "stW", "stH"
+FOOT, FOOT_TOP, FOOT_SIDE = "stB", "stW", "stH"
+RAIL_D, RAIL_L = "stM", "stW"
 
 # (lines as (point, direction) in plan; the chain runs with the outside on its right; clips: the tile's edges at its
 # ends; back: the footprint's points behind the chain, closing the top)
@@ -58,6 +60,10 @@ def _top():
     if H is None:
         H = W.hull_top()
     return H
+
+
+def _pz():
+    return 1 / core.ZPX
 
 
 def _meet(l1, l2):
@@ -86,36 +92,81 @@ def _chain(key, inset):
     return pts
 
 
-def _section():
-    """The outer section as (inset, z, colour of the strip up to the next): the face, its bullnose, the top."""
+def _bullnose():
+    """The bullnose's levels (inset, z), from the face's top to the top's edge."""
     h = _top()
+    return [(R_D * (1 - math.cos(math.pi / 2 * i / ROUND)), h - R_Z + R_Z * math.sin(math.pi / 2 * i / ROUND))
+            for i in range(ROUND + 1)]
+
+
+def _section():
+    """The outer section as (inset, z, colour of the strip up to the next): the face, its bullnose (the top after)."""
     out = [(0.0, 0.0, FACE)]
-    for i in range(ROUND + 1):
-        a = math.pi / 2 * i / ROUND
-        out.append((R_D * (1 - math.cos(a)), h - R_Z + R_Z * math.sin(a), ROUND_COLS[i] if i < ROUND else None))
+    bn = _bullnose()
+    for i, (d, z) in enumerate(bn):
+        out.append((d, z, ROUND_COLS[i] if i < ROUND else None))
     return out
 
 
-def _out(p, q, z):
-    """The outward normal of a strip between plan points p -> q (the chain's right)."""
-    d = (q[0] - p[0], q[1] - p[1])
+def _seg_out(key, i):
+    """The outward plan normal of the chain's segment i."""
+    d = CHAINS[key]["lines"][i][1]
     n = _inward(d)
-    return Vector((-n[0], -n[1], z))
+    return (-n[0], -n[1])
+
+
+def _paint(k, key, i, f0, f1, levels, col, lift=None):
+    """Paint the band f0..f1 (fractions along segment i) over the section levels [(inset, z), ...], a hair out along
+    each strip's normal."""
+    lift = T.PAINT if lift is None else lift
+    o = _seg_out(key, i)
+    for (da, za), (db, zb) in zip(levels, levels[1:]):
+        no, nz = zb - za, db - da                           # the strip's normal in (out, z)
+        ln = math.hypot(no, nz)
+        if ln < 1e-9:
+            continue
+        no, nz = no / ln * lift, nz / ln * lift
+        n = Vector((o[0] * no, o[1] * no, nz))
+        pa, pb = _chain(key, da)[i:i + 2], _chain(key, db)[i:i + 2]
+
+        def at(pp, f):
+            return (pp[0][0] + (pp[1][0] - pp[0][0]) * f, pp[0][1] + (pp[1][1] - pp[0][1]) * f)
+        q = [Vector((*at(pa, f0), za)), Vector((*at(pa, f1), za)), Vector((*at(pb, f1), zb)), Vector((*at(pb, f0), zb))]
+        k.poly([v + n for v in q], "steel", 2, n, fixed=col)
+
+
+def _box(k, key, i, f0, f1, z0, z1, out, face, top, side, inset=0.0):
+    """A block standing `out` proud of the face over f0..f1 of segment i, z0..z1 (its back at `inset`)."""
+    o = _seg_out(key, i)
+    p = _chain(key, inset)[i:i + 2]
+
+    def at(f, d):
+        x = p[0][0] + (p[1][0] - p[0][0]) * f
+        y = p[0][1] + (p[1][1] - p[0][1]) * f
+        return (x + o[0] * d, y + o[1] * d)
+    a0, a1, b0, b1 = at(f0, 0), at(f1, 0), at(f0, out), at(f1, out)
+    up = Vector((0, 0, 1))
+    k.poly([Vector((*b0, z0)), Vector((*b1, z0)), Vector((*b1, z1)), Vector((*b0, z1))], "steel", 2,
+           Vector((o[0], o[1], 0)), fixed=face)
+    k.poly([Vector((*a0, z1)), Vector((*a1, z1)), Vector((*b1, z1)), Vector((*b0, z1))], "steel", 2, up, fixed=top)
+    u = (p[1][0] - p[0][0], p[1][1] - p[0][1])
+    for a, b, sg in ((a0, b0, -1), (a1, b1, 1)):
+        k.poly([Vector((*a, z0)), Vector((*b, z0)), Vector((*b, z1)), Vector((*a, z1))], "steel", 2,
+               Vector((u[0] * sg, u[1] * sg, 0)), fixed=side)
 
 
 def upper(key, name):
     """The upper hull of a run set piece: its Relief's objects."""
     k = T.Relief(name)
+    h = _top()
     sec = _section()
     lv = [(_chain(key, d), z, col) for d, z, col in sec]
     for (pa, za, col), (pb, zb, _) in zip(lv, lv[1:]):          # the face and the bullnose, strip by strip
         for i in range(len(pa) - 1):
-            out = _out(pa[i], pa[i + 1], 0.0 if za < _top() - R_Z - 1e-6 else 0.5)
+            o = _seg_out(key, i)
             k.poly([Vector((*pa[i], za)), Vector((*pa[i + 1], za)), Vector((*pb[i + 1], zb)), Vector((*pb[i], zb))],
-                   "steel", 2, out, fixed=col)
-    top = lv[-1][0]
-    h = _top()
-    k.poly([Vector((*p, h)) for p in top + CHAINS[key]["back"]], "steel", 2, Vector((0, 0, 1)), fixed=TOP_COL)
+                   "steel", 2, Vector((o[0], o[1], 0.0 if za < h - R_Z - 1e-6 else 0.5)), fixed=col)
+    k.poly([Vector((*p, h)) for p in lv[-1][0] + CHAINS[key]["back"]], "steel", 2, Vector((0, 0, 1)), fixed=TOP)
     lines = CHAINS[key]["lines"]
     for j, sg in ((0, -1), (-1, 1)):                            # the ends at the tile's edges (the section)
         prof = [Vector((*pts[j], z)) for pts, z, _ in lv]
@@ -128,87 +179,35 @@ def upper(key, name):
 
 
 def _details(k, key):
-    """The face's plinth (a px proud, its top edge lit), its upright seams, the top's line along the bullnose."""
-    e = T.PAINT
-    base = _chain(key, 0.0)
-    proud = _chain(key, -LINE)
-    for i in range(len(base) - 1):
-        out = _out(base[i], base[i + 1], 0.0)
-        k.poly([Vector((*proud[i], 0.0)), Vector((*proud[i + 1], 0.0)), Vector((*proud[i + 1], PLINTH)),
-                Vector((*proud[i], PLINTH))], "steel", 2, out, fixed=PLINTH_COL)
-        k.poly([Vector((*proud[i], PLINTH)), Vector((*proud[i + 1], PLINTH)), Vector((*base[i + 1], PLINTH)),
-                Vector((*base[i], PLINTH))], "steel", 2, Vector((0, 0, 1)), fixed=PLINTH_TOP)
-    if key in STRAIGHT:                                         # upright seams, painted on the face
-        p, q = base[0], base[1]
-        n = _out(p, q, 0.0) * e
-        for f in SEAMS:
-            a = [p[0] + (q[0] - p[0]) * f, p[1] + (q[1] - p[1]) * f]
-            dx, dy = (q[0] - p[0]), (q[1] - p[1])
-            ln = math.hypot(dx, dy)
-            w = (dx / ln * LINE / 2, dy / ln * LINE / 2)
-            z0, z1 = PLINTH, _top() - R_Z
-            k.poly([Vector((a[0] - w[0] + n.x, a[1] - w[1] + n.y, z0)), Vector((a[0] + w[0] + n.x, a[1] + w[1] + n.y, z0)),
-                    Vector((a[0] + w[0] + n.x, a[1] + w[1] + n.y, z1)), Vector((a[0] - w[0] + n.x, a[1] - w[1] + n.y, z1))],
-                   "steel", 2, n, fixed=SEAM)
-    for i in range(len(base) - 1):                              # light blocks along the foot, on the plinth
-        p, q = proud[i], proud[i + 1]
-        dx, dy = q[0] - p[0], q[1] - p[1]
-        ln = math.hypot(dx, dy)
-        o = _out(p, q, 0.0)
-        u = (dx / ln, dy / ln)
-        for j in range(max(1, round(BUMP_N * ln))):
-            c = (p[0] + dx * (j + 0.5) / max(1, round(BUMP_N * ln)), p[1] + dy * (j + 0.5) / max(1, round(BUMP_N * ln)))
-            a0 = (c[0] - u[0] * BUMP_W / 2, c[1] - u[1] * BUMP_W / 2)
-            a1 = (c[0] + u[0] * BUMP_W / 2, c[1] + u[1] * BUMP_W / 2)
-            f0 = (a0[0] + o.x * BUMP_D, a0[1] + o.y * BUMP_D)
-            f1 = (a1[0] + o.x * BUMP_D, a1[1] + o.y * BUMP_D)
-            k.poly([Vector((*f0, 0.0)), Vector((*f1, 0.0)), Vector((*f1, BUMP_H)), Vector((*f0, BUMP_H))], "steel", 2, o,
-                   fixed=BUMP_FACE)
-            k.poly([Vector((*a0, BUMP_H)), Vector((*a1, BUMP_H)), Vector((*f1, BUMP_H)), Vector((*f0, BUMP_H))], "steel",
-                   2, Vector((0, 0, 1)), fixed=BUMP_TOP)
-            for a_, f_, sg in ((a0, f0, -1), (a1, f1, 1)):
-                k.poly([Vector((*a_, 0.0)), Vector((*f_, 0.0)), Vector((*f_, BUMP_H)), Vector((*a_, BUMP_H))], "steel",
-                       2, Vector((u[0] * sg, u[1] * sg, 0)), fixed=PLINTH_COL)
-    ln = _chain(key, R_D + 3 / 32)                              # a line along the top, in from the bullnose
-    ln2 = _chain(key, R_D + 4 / 32)
-    h = _top() + 0.002
-    for i in range(len(ln) - 1):
-        k.poly([Vector((*ln[i], h)), Vector((*ln[i + 1], h)), Vector((*ln2[i + 1], h)), Vector((*ln2[i], h))],
-               "steel", 2, Vector((0, 0, 1)), fixed=TOP_LINE)
-
-
-def belly(key, name):
-    """The platform under a piece: the pedestal under the hull's footprint (its posts down the outer faces) on a
-    plate a little wider."""
-    k = T.Relief(name)
-    ped = _chain(key, 0.0)
-    plate = _chain(key, -PLATE_OUT)
-    back = CHAINS[key]["back"]
-    for pts, z0, z1, face, top in ((ped, PED_Z, 0.0, PED_FACE, PED_TOP), (plate, PLATE_Z, PED_Z, PLATE_FACE, PLATE_TOP)):
-        for i in range(len(pts) - 1):
-            k.poly([Vector((*pts[i], z0)), Vector((*pts[i + 1], z0)), Vector((*pts[i + 1], z1)), Vector((*pts[i], z1))],
-                   "steel", 2, _out(pts[i], pts[i + 1], 0.0), fixed=face)
-        k.poly([Vector((*p, z1 - 0.001)) for p in pts + back], "steel", 2, Vector((0, 0, 1)), fixed=top)
-    for i in range(len(plate) - 1):                             # the plate's lit top edge
-        a, b = plate[i], plate[i + 1]
-        a2, b2 = _chain(key, -PLATE_OUT + LINE)[i:i + 2]
-        k.poly([Vector((*a, PED_Z + 0.001)), Vector((*b, PED_Z + 0.001)), Vector((*b2, PED_Z + 0.001)),
-                Vector((*a2, PED_Z + 0.001))], "steel", 2, Vector((0, 0, 1)), fixed=PLATE_EDGE)
-    for i in range(len(ped) - 1):                               # the posts
-        p, q = ped[i], ped[i + 1]
-        dx, dy = q[0] - p[0], q[1] - p[1]
-        ln = math.hypot(dx, dy)
-        n = max(1, round(POST_N * ln))
-        o = _out(p, q, 0.0)
+    h, pz = _top(), _pz()
+    segs = len(CHAINS[key]["lines"])
+    bn = _bullnose()
+    rail = DEPTH - RAIL
+    for i in range(segs):                                       # the groove near the foot, all along
+        _paint(k, key, i, 0.0, 1.0, [(0.0, GROOVE), (0.0, GROOVE + pz)], GROOVE_D)
+        _paint(k, key, i, 0.0, 1.0, [(0.0, GROOVE - pz), (0.0, GROOVE)], GROOVE_L)
+        _paint(k, key, i, 0.0, 1.0, [(rail - LINE, h), (rail, h)], RAIL_L)      # the line along the top's inner edge
+        _paint(k, key, i, 0.0, 1.0, [(rail, h), (rail + LINE, h)], RAIL_D)
+    if key in STRAIGHT:
+        up = [(0.0, GROOVE + 3 * pz), (0.0, h - R_Z)] + bn + [(rail - LINE, h)]
+        for f in SEAMS:                                         # the seams: up the face, over the bullnose, across the top
+            _paint(k, key, 0, f - LINE / 2, f + LINE / 2, up, SEAM_D)
+            _paint(k, key, 0, f + LINE / 2, f + 1.5 * LINE, up, SEAM_L)
+            _box(k, key, 0, f - 1.5 * LINE, f + 1.5 * LINE, GROOVE - 2 * pz, GROOVE + 3 * pz, LINE, TAB, TAB_TOP,
+                 TAB_SIDE)                                      # a tab where the seam crosses the groove
+        zb = h - R_Z - 3 * pz                                   # a bracket under the bullnose across the mid panel:
+        a0, a1 = SEAMS[0] + 3 * LINE, SEAMS[1] - 2 * LINE       # a line, lit under, a tab proud at its middle
+        _paint(k, key, 0, a0, a1, [(0.0, zb), (0.0, zb + pz)], SEAM_D)
+        _paint(k, key, 0, a0, a1, [(0.0, zb - pz), (0.0, zb)], SEAM_L)
+        _box(k, key, 0, 0.5 - 2 * LINE, 0.5 + 2 * LINE, zb - 3 * pz, zb + 2 * pz, LINE, TAB, TAB_TOP, TAB_SIDE)
+    for i in range(segs):                                       # the foot blocks
+        p = _chain(key, 0.0)[i:i + 2]
+        ln = math.hypot(p[1][0] - p[0][0], p[1][1] - p[0][1])
+        n = max(1, round(FOOT_N * ln))
+        w = FOOT_W / ln
         for j in range(n):
-            f = (j + 0.5) / n
-            c = (p[0] + dx * f, p[1] + dy * f)
-            u = (dx / ln * POST_W / 2, dy / ln * POST_W / 2)
-            s = (o.x * LINE, o.y * LINE)
-            quad = [(c[0] - u[0] + s[0], c[1] - u[1] + s[1]), (c[0] + u[0] + s[0], c[1] + u[1] + s[1])]
-            k.poly([Vector((*quad[0], PED_Z)), Vector((*quad[1], PED_Z)), Vector((*quad[1], -0.02)),
-                    Vector((*quad[0], -0.02))], "steel", 2, o, fixed=POST)
-    return k.build()
+            c = (j + 0.5) / n
+            _box(k, key, i, c - w / 2, c + w / 2, 0.0, FOOT_H, FOOT_OUT, FOOT, FOOT_TOP, FOOT_SIDE)
 
 
 def _wide(key, build):
@@ -224,21 +223,17 @@ def _wide(key, build):
     return own, own + more
 
 
-BELLY_KEY = {(10, 1): "0_1_15", (5, 2): "1_0_15", (9, 3): "0_1_15~1_0_15"}   # (hull_outline.name of each piece's key)
+PIECES = ((10, 1), (5, 2), (9, 3))
+PALETTE = "only:station"
 
 
 def _item(sid, build):
     from . import env_build, post
     core.clear_scene_meshes()
-    post.select("hull")
+    post.select(PALETTE)
     it = env_build.crop_item(sid, (1, 1), *env_build.render_sprite(sid, "wide", build()))
     return [it] if it else []
 
 
 def jobs():
-    out = []
-    for (m, o), key in BELLY_KEY.items():
-        out.append(lambda m=m, o=o: _item(f"tile.hull.station.ext.o{o}.m{m}", lambda: _wide((m, o), upper)))
-        out.append(lambda m=m, o=o, key=key: _item(f"tile.hull.station.belly.under.{key}",
-                                                   lambda: _wide((m, o), belly)))
-    return out
+    return [lambda m=m, o=o: _item(f"tile.hull.station.ext.o{o}.m{m}", lambda: _wide((m, o), upper)) for m, o in PIECES]
