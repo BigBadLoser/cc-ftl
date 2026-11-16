@@ -107,8 +107,18 @@ export function outward(kindAt: KindAt, x: number, y: number): number {
   return o || (kindAt(x + 1, y + 1) === Struct.Space ? 4 : 0);
 }
 
-/** How far `clearTo` looks (tiles). gridView keys its chunks on the struct this far round them. */
+/** The fewest connected tiles of the back edge that stand full height in cutaway (`backEdge`). */
+const BACK_MIN = 3;
+
+/** How far `clearTo` and `hidesShip` look (tiles). */
 export const HULL_RAY = 16;
+
+/**
+ * How far a tile's `hullSide` can depend on the struct (tiles): the rays (HULL_RAY) of tiles up to BACK_MIN away (the
+ * back edge's connected bits, `backEdge`; a notch corner's neighbours). gridView keys its chunks on the struct this far
+ * round them.
+ */
+export const HULL_REACH = HULL_RAY + BACK_MIN + 1;
 
 /**
  * True if the ray from (x, y) toward (dx, dy) leaves the ship crossing only solid tiles: no floor of this ship lies that
@@ -134,27 +144,74 @@ export const HullSide = { None: 0, Far: 1, Near: 2 } as const;
  * and thick hull keep their outline.
  */
 export function hullSide(kindAt: KindAt, x: number, y: number): number {
+  return sideOf(kindAt, x, y, true);
+}
+
+/** `hullSide`; `corners` false leaves out the notch corner rule (it asks the sides of the corner's two neighbours). */
+function sideOf(kindAt: KindAt, x: number, y: number, corners: boolean): number {
   if (isNear(kindAt, x, y)) return HullSide.Near;
   if (kindAt(x, y) === Struct.RockWall || !touchesSpace(kindAt, x, y)) return HullSide.None;
+  // Only the ship's top and back edges stand full: a far wall with the ship behind it on screen is cut (`hidesShip`),
+  // and so is what is left of the back edge in bits of fewer than BACK_MIN tiles (no lone pillars).
+  if (farOutline(kindAt, x, y)) return backEdge(kindAt, x, y) ? HullSide.Far : HullSide.Near;
+  // A notch's inner corner (space only diagonally at +x -y or -x +y, facing none itself) where the hull on both sides
+  // of it is cut is cut with it, not left standing as a partition stub.
+  const sp = (dx: number, dy: number) => kindAt(x + dx, y + dy) === Struct.Space;
+  const cut = (i: number, j: number) => (kindAt(i, j) === Struct.Wall || kindAt(i, j) === Struct.Door) && sideOf(kindAt, i, j, false) === HullSide.Near;
+  if (corners && !outward(kindAt, x, y))
+    for (const [dx, dy] of [[1, -1], [-1, 1]] as const) if (sp(dx, dy) && cut(x + dx, y) && cut(x, y + dy)) return HullSide.Near;
+  return HullSide.None;
+}
+
+/**
+ * Whether the wall at (x, y), touching space and not near hull, lies on the far side of the outline: space right behind
+ * its run (-y of a run along x, -x of a run along y), or diagonally behind with nothing of the ship between (the
+ * outline's corners and steps). Space only beside the run (a breach, a notch) does not count.
+ */
+function farOutline(kindAt: KindAt, x: number, y: number): boolean {
   const m = wallMask(kindAt, x, y);
   const alongX = (m & 10) !== 0 || (m & 5) === 0;
   const alongY = (m & 5) !== 0 || (m & 10) === 0;
-  // Far: space right behind the run (-y of a run along x, -x of a run along y), or diagonally behind with nothing of
-  // the ship between (the outline's corners and steps). Space only beside the run (a breach, a notch) does not count.
-  // A corner with space only diagonally behind it is the end of the back run it turns into (+x of it for space at
-  // +x -y, +y of it for space at -x +y); where that tile is near hull (a step one tile deep: a 45 degree staircase,
-  // a nub) there is no back run, and the corner, boxed in by near hull, is near hull with it instead of standing full
-  // height. (It faces no space itself: `outward` 0.)
   const sp = (dx: number, dy: number) => kindAt(x + dx, y + dy) === Struct.Space;
-  const nearWall = (i: number, j: number) => kindAt(i, j) !== Struct.Floor && kindAt(i, j) !== Struct.Space && isNear(kindAt, i, j);
   const backY = alongX && clearTo(kindAt, x, y, 0, -1);
   const backX = alongY && clearTo(kindAt, x, y, -1, 0);
-  const behind = (sp(0, -1) && alongX) || (sp(-1, 0) && alongY);
-  const stepY = sp(1, -1) && backY;
-  const stepX = sp(-1, 1) && backX;
-  if (!behind && !sp(-1, -1) && !outward(kindAt, x, y) && ((stepY && nearWall(x + 1, y)) || (stepX && nearWall(x, y + 1)))) return HullSide.Near;
-  if (behind || (sp(-1, -1) && (backY || backX)) || stepY || stepX) return HullSide.Far;
-  return HullSide.None;
+  return (sp(0, -1) && alongX) || (sp(-1, 0) && alongY) || (sp(-1, -1) && (backY || backX)) || (sp(1, -1) && backY) || (sp(-1, 1) && backX);
+}
+
+
+/**
+ * Whether the far hull wall at (x, y) stands full height: nothing of the ship lies behind it on screen, and it joins at
+ * least BACK_MIN such walls (4-connected, so a 45 degree staircase's steps join through their corners).
+ */
+function backEdge(kindAt: KindAt, x: number, y: number): boolean {
+  const stands = (i: number, j: number) => {
+    const k = kindAt(i, j);
+    return (k === Struct.Wall || k === Struct.Door) && touchesSpace(kindAt, i, j) && !isNear(kindAt, i, j) && farOutline(kindAt, i, j) && !hidesShip(kindAt, i, j);
+  };
+  if (!stands(x, y)) return false;
+  const seen = new Set([`${x},${y}`]);
+  const todo: [number, number][] = [[x, y]];
+  while (todo.length && seen.size < BACK_MIN) {
+    const [i, j] = todo.pop()!;
+    for (const [di, dj] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+      const key = `${i + di},${j + dj}`;
+      if (seen.has(key) || !stands(i + di, j + dj)) continue;
+      seen.add(key);
+      todo.push([i + di, j + dj]);
+    }
+  }
+  return seen.size >= BACK_MIN;
+}
+
+/**
+ * Whether a far hull wall at (x, y) stands in front of the ship on screen: some ship tile lies straight behind it (up the
+ * screen, toward -x -y). Only the ship's top and back edges, with nothing of it behind them, stand full height in
+ * cutaway; a far wall that would hide part of the ship (a step in a side, the back wall across a notch) is cut with
+ * the near hull instead.
+ */
+function hidesShip(kindAt: KindAt, x: number, y: number): boolean {
+  for (let k = 1; k <= HULL_RAY; k++) if (kindAt(x - k, y - k) !== Struct.Space) return true;
+  return false;
 }
 
 /**

@@ -61,10 +61,10 @@ export interface RegionTiles {
    */
   scan(fn: (lx: number, ly: number, idx: number, ci: number, c: ChunkRef) => void, all?: boolean): void;
   /**
-   * Change key of `field` for a view of chunk `c` whose tiles look up to `margin` (at most 16) tiles past it: the chunk's
+   * Change key of `field` for a view of chunk `c` whose tiles look up to `margin` tiles past it: the chunk's
    * own revision plus a hash of the margin strip in the neighbouring chunks (region tiles only). A write deep inside a
    * neighbour leaves it alone, so a tile edit rebuilds one chunk unless it is near a chunk edge. The hash is recomputed
-   * only when a neighbour's revision moves.
+   * only when the revision of a chunk the strip reaches moves.
    */
   key(field: string, c: ChunkRef, margin?: number): string;
   /** `chunkData` of a field, or undefined for an unallocated chunk. */
@@ -98,7 +98,7 @@ export function createRegionTiles(src: ChunkSource, ox: number, oy: number, widt
   const strips = new Map<string, { rev: number; hash: number }>();
   const strip = (field: string, c: ChunkRef, m: number): number => {
     const k = `${field}|${m}|${c.cx},${c.cy}`;
-    const rev = self.rev(field, c, 1) - src.chunkRevision(field, c.cx, c.cy);
+    const rev = self.rev(field, c, Math.ceil(m / C)) - src.chunkRevision(field, c.cx, c.cy);
     const e = strips.get(k);
     if (e && e.rev === rev) return e.hash;
     const r = self.chunkRect(c);

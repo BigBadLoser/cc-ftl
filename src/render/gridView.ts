@@ -17,7 +17,7 @@ import { addStatic } from "./sprites";
 import { haloTex } from "./haloTex";
 import { beamIds, DEFAULT_BEAM_LOOK, type BeamLook } from "./beamArt";
 import { createChunkViews, regionTiles, type ChunkRef } from "./regionTiles";
-import { artKind, floorChain, ghostVertsIn, HULL_RAY, HullSide, hullSide, replacesFloor, wallPieces, type CutawayMode } from "./tiles";
+import { artKind, floorChain, ghostVertsIn, HULL_REACH, HullSide, hullSide, replacesFloor, wallPieces, type CutawayMode } from "./tiles";
 import { CarpetSprite } from "./carpetPaint";
 import { DRAWN_MARKINGS, markPieces, WALKWAY_PAINT } from "./deckMarks";
 import { HullSprite } from "./hullPaint";
@@ -489,7 +489,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
       if (built !== builtKey) {
         builtKey = built;
         hull = gridHullKeys(grid, wallAt, width, height);
-        const n = chunks.sync(tiles.chunks(1), (c) => `${base}|${tiles.key("struct", c, HULL_RAY)}|${tiles.rev("floor", c)}|${tiles.rev("window", c)}|${DRAWN_MARKINGS.map((kind) => tiles.rev(MARK_FIELDS[kind], c, 1)).join(",")}|${specialsNear(c)}|${hullKeysIn(c)}`, buildChunk, host.gate);
+        const n = chunks.sync(tiles.chunks(1), (c) => `${base}|${tiles.key("struct", c, HULL_REACH)}|${tiles.rev("floor", c)}|${tiles.rev("window", c)}|${DRAWN_MARKINGS.map((kind) => tiles.rev(MARK_FIELDS[kind], c, 1)).join(",")}|${specialsNear(c)}|${hullKeysIn(c)}`, buildChunk, host.gate);
         if (chunks.pending > 0) builtKey = ""; // the rest on a later update
         if (n > 0) frameKey = "";
       }
