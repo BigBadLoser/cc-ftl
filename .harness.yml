@@ -3,3 +3,4 @@
 visual_paths:
   - tools/blender/**
   - public/assets/**
+  - artifacts/**
