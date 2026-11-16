@@ -70,6 +70,7 @@ C_SIDE = 22                         # the header's foot; C, a strip on from B's 
                                     # lean run on up to B and on from C)
 W2_PLATE_SHIFT = -2                 # px it moves along the face (the user: 2 px left, off centre under the group)
 W2_PLATE_TRIM = 2                   # px then taken off its left edge (the user)
+END_PLATE_SHORTER = 3               # W1's and W3's: the same plate, this many px shorter, centred on the outer C
 W2_PLATE = (3, 5)                   # W2's header: a plate over B and both Cs, on screen from the Cs' outer seams
                                     # (REC proud, it draws a px left of where it stands: set a px right), on the
                                     # header's upright face, from this many px under its top (the user's option 2),
@@ -271,10 +272,14 @@ def _w1_header(f, s, s0, s1, dv, zc, zh):
         f.line(u0, u1, L.px(L.l1, 1), L.l1, YS[3], wrap=False)
     for u in (c0, c1):
         band(u, u + ln, zh, L.px(zt, -1), YS[3])                        # C: its side, to the header's foot
+    d_of = lambda z: T3.BACK + (H - z) * dk if z > zc else dv               # noqa: E731
+    sh = 1 + W2_PLATE_SHIFT                             # (REC proud, it draws a px left: set a px right)
+    a, b = c0 + T3.px(sh + W2_PLATE_TRIM), c1 + ln + T3.px(sh)
     if PART == "w2":
-        sh = 1 + W2_PLATE_SHIFT                         # (REC proud, it draws a px left: set a px right)
-        _w2_head_plate(f, s, c0 + T3.px(sh + W2_PLATE_TRIM), c1 + ln + T3.px(sh),
-                       d_of=lambda z: T3.BACK + (H - z) * dk if z > zc else dv, zc=zc, zh=zh)
+        _w2_head_plate(f, s, a, b, d_of=d_of, zc=zc, zh=zh)
+    elif PART in ("w1", "w3"):                          # the ends: centred on the outer C (W1's left; on W3,
+        m, h = (c0 + b0 + ln) / 2, (b - a - T3.px(END_PLATE_SHORTER)) / 2      # mirrored, its right)
+        _w2_head_plate(f, s, m - h, m + h, d_of=d_of, zc=zc, zh=zh)
 
 
 def _w2_head_plate(f, s, u0, u1, d_of, zc, zh):
