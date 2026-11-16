@@ -146,9 +146,10 @@ export function placeGroundTurrets(lay: Layout, plan: GroundPlan): GroundFit {
   /**
    * The cable of each module standing apart, a staple: out of a wall of the base square on for two tiles, across the open ground,
    * and into the pod's wall facing the same way for two tiles (the longer leg takes up any difference in height), out of a top
-   * wall and into a top wall, or out of a bottom wall and into a bottom wall. The shortest staple of the two sides wins. Never
-   * from or into a wall beside an airlock room. Where no staple fits, a short straight cable across the gap into a module already
-   * wired. A module neither reaches is counted in `unwired`.
+   * wall and into a top wall, or out of a bottom wall and into a bottom wall (the shortest of the two sides). Only the first module
+   * takes a staple from the base; each other is ganged on at the back by one the same way, out of the back end wall (facing away
+   * from the base) of the module wired before it and into its own (a staple from the base where that does not fit). Never from or into a wall beside an airlock room. A module none reaches is
+   * counted in `unwired`.
    */
   function wireApart(): void {
     const mods = (plan.apart ?? []).map((ids) => new Set(ids));
@@ -172,49 +173,64 @@ export function placeGroundTurrets(lay: Layout, plan: GroundPlan): GroundFit {
       [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(([dx, dy], k) => { if (lay.inBounds(x + dx!, y + dy!) && lay.cells[(y + dy!) * w + x + dx!] !== '.') m |= 1 << k; });
       return m;
     };
-    /** A leg tile on side `s` (-1 above, 1 below) of the wall at (x, y): ground, with that one wall alone touching it. */
-    const leg = (x: number, y: number, s: number): boolean => ok(x, y + s) && hullAt(x, y + s) === (s < 0 ? 4 : 8);
+    // A staple is worked in (u, v): u runs along its legs (up/down, or east/west when `side` is true), v along its run.
+    const at = (side: boolean, u: number, v: number): number => (side ? v * w + u : u * w + v);
+    const uOf = (side: boolean, i: number): number => (side ? i % w : Math.floor(i / w)), vOf = (side: boolean, i: number): number => (side ? Math.floor(i / w) : i % w);
+    /** The hull bit a leg's first tile touches: the wall behind it (leg on side `s` of the wall: -1 above or west, 1 below or east). */
+    const behind = (side: boolean, s: number): number => (side ? (s < 0 ? 1 : 2) : s < 0 ? 4 : 8);
+    /** A leg tile on side `s` of the wall at `i`: ground, with that one wall alone touching it. */
+    const leg = (side: boolean, i: number, s: number): boolean => {
+      const u = uOf(side, i) + s, v = vOf(side, i), j = at(side, u, v), x = j % w, y = Math.floor(j / w);
+      return ok(x, y) && hullAt(x, y) === behind(side, s);
+    };
     /** The staple from wall `bi` to wall `pi` on side `s`, or null: tiles in order, every one clear of any hull but each leg's first. */
-    const staple = (bi: number, pi: number, s: number): number[] | null => {
-      const xb = bi % w, yb = Math.floor(bi / w), xp = pi % w, yp = Math.floor(pi / w);
-      if (xb === xp) return null;
-      const yh = s < 0 ? Math.min(yb, yp) - 2 : Math.max(yb, yp) + 2;
+    const staple = (side: boolean, bi: number, pi: number, s: number): number[] | null => {
+      const ub = uOf(side, bi), vb = vOf(side, bi), up = uOf(side, pi), vp = vOf(side, pi);
+      if (vb === vp) return null;
+      const uh = s < 0 ? Math.min(ub, up) - 2 : Math.max(ub, up) + 2;
       const tiles: number[] = [];
-      const add = (x: number, y: number, first: boolean): boolean => {
-        if (!ok(x, y) || hullAt(x, y) !== (first ? (s < 0 ? 4 : 8) : 0)) return false;
-        tiles.push(y * w + x);
+      const add = (u: number, v: number, first: boolean): boolean => {
+        const j = at(side, u, v);
+        if (!ok(j % w, Math.floor(j / w)) || hullAt(j % w, Math.floor(j / w)) !== (first ? behind(side, s) : 0)) return false;
+        tiles.push(j);
         return true;
       };
-      for (let y = yb + s; s < 0 ? y >= yh : y <= yh; y += s) if (!add(xb, y, y === yb + s)) return null;
-      for (let x = xb + Math.sign(xp - xb); xb !== xp && (xp > xb ? x <= xp : x >= xp); x += Math.sign(xp - xb)) if (!add(x, yh, false)) return null;
-      for (let y = yh - s; s < 0 ? y < yp : y > yp; y -= s) if (!add(xp, y, y === yp + s)) return null;
+      for (let u = ub + s; s < 0 ? u >= uh : u <= uh; u += s) if (!add(u, vb, u === ub + s)) return null;
+      for (let v = vb + Math.sign(vp - vb); vp > vb ? v <= vp : v >= vp; v += Math.sign(vp - vb)) if (!add(uh, v, false)) return null;
+      for (let u = uh - s; s < 0 ? u < up : u > up; u -= s) if (!add(u, vp, u === up + s)) return null;
       return tiles;
     };
-    for (const [k] of mods.entries()) {
+    /** The shortest staple on side `s` from any of the walls `from` to any wall of module `k`, or null. */
+    const between = (side: boolean, from: readonly number[], k: number, s: number): number[] | null => {
       let best: number[] | null = null;
-      for (const s of [-1, 1]) {
-        const pods = (own[k] as number[]).filter((i) => wallAt(i % w, Math.floor(i / w)) && leg(i % w, Math.floor(i / w), s));
-        const bases = baseWalls.filter((i) => leg(i % w, Math.floor(i / w), s));
-        for (const pi of pods) for (const bi of bases) {
-          // A cheap bound first: the staple is at least this long.
-          const lower = Math.abs((pi % w) - (bi % w)) + Math.abs(Math.floor(pi / w) - Math.floor(bi / w));
-          if (best && lower >= best.length) continue;
-          const t = staple(bi, pi, s);
-          if (t && (!best || t.length < best.length)) best = t;
-        }
+      const pods = (own[k] as number[]).filter((i) => wallAt(i % w, Math.floor(i / w)) && leg(side, i, s));
+      const bases = from.filter((i) => wallAt(i % w, Math.floor(i / w)) && leg(side, i, s));
+      for (const pi of pods) for (const bi of bases) {
+        // A cheap bound first: the staple is at least this long.
+        if (best && Math.abs(uOf(side, pi) - uOf(side, bi)) + Math.abs(vOf(side, pi) - vOf(side, bi)) >= best.length) continue;
+        const t = staple(side, bi, pi, s);
+        if (t && (!best || t.length < best.length)) best = t;
       }
-      // Else straight across the gap into a module already wired.
-      for (const s of best ? [] : [-1, 1]) {
-        for (const pi of own[k] as number[]) {
-          const x = pi % w, y0 = Math.floor(pi / w);
-          if (!wallAt(x, y0) || !leg(x, y0, s)) continue;
-          const tiles: number[] = [];
-          let y = y0 + s;
-          while (ok(x, y) && hullAt(x, y) === (tiles.length === 0 ? (s < 0 ? 4 : 8) : 0)) { tiles.push(y * w + x); y += s; }
-          const end = y * w + x;
-          if (tiles.length > 0 && wired.some((m) => (own[m] as number[]).includes(end)) && wallAt(x, y) && (hullAt(x, y - s) === (s < 0 ? 8 : 4) || hullAt(x, y - s) === 12) && (!best || tiles.length < best.length)) best = tiles;
-        }
-      }
+      return best;
+    };
+    /** The shortest staple from the base, out of a top or a bottom wall. */
+    const stapled = (k: number): number[] | null => {
+      let best: number[] | null = null;
+      for (const s of [-1, 1]) { const t = between(false, baseWalls, k, s); if (t && (!best || t.length < best.length)) best = t; }
+      return best;
+    };
+    // The base's middle, to tell which end of a pod is its back (the end walls facing away from the base).
+    const baseX = baseWalls.reduce((n, i) => n + (i % w), 0) / Math.max(1, baseWalls.length);
+    /** A staple at the pods' back: out of the back end wall of the module wired last, along, and into the back end wall of module `k`. */
+    const ganged = (k: number): number[] | null => {
+      const prev = wired[wired.length - 1];
+      if (prev === undefined) return null;
+      const mid = (m: number): number => (own[m] as number[]).reduce((n, i) => n + (i % w), 0) / Math.max(1, (own[m] as number[]).length);
+      return between(true, own[prev] as number[], k, mid(k) < baseX ? -1 : 1);
+    };
+    // The first is stapled to the base; the rest are ganged on at the back, each to the one wired before it (else a staple of its own).
+    for (const [k] of mods.entries()) {
+      const best = k === 0 ? stapled(k) : ganged(k) ?? stapled(k);
       if (best) { for (const i of best) out.cable.add(i); wired.push(k); } else out.unwired++;
     }
   }
