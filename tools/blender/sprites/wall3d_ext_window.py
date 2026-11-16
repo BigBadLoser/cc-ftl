@@ -70,6 +70,8 @@ C_SIDE = 22                         # the header's foot; C, a strip on from B's 
                                     # lean run on up to B and on from C)
 W2_PLATE_SHIFT = -2                 # px it moves along the face (the user: 2 px left, off centre under the group)
 W2_PLATE_TRIM = 2                   # px then taken off its left edge (the user)
+END_SEAM_UP = 2                     # W1's and W3's header: the group's seams end this many px over the header's
+                                    # foot, a line across them there (the user)
 END_PLATE_SHORTER = 3               # W1's and W3's: the same plate, this many px shorter, centred on the inner C
 W2_PLATE = (3, 5)                   # W2's header: a plate over B and both Cs, on screen from the Cs' outer seams
                                     # (REC proud, it draws a px left of where it stands: set a px right), on the
@@ -258,10 +260,11 @@ def _w1_header(f, s, s0, s1, dv, zc, zh):
 
     b0, b1 = s0 + T3.px(B_SIDES[0]), s0 + T3.px(B_SIDES[1])
     dl = T3.px(B_BACK)
-    f.top_line(b0, b1 + ln, dl, dl + T3.TOP_PX, YS[2])                  # B: across the top
-    for u in (b0, b1):
+    zf = zh + (END_SEAM_UP / core.ZPX if PART in ("w1", "w3") else 0.0)  # (the seams' foot: on the ends over the
+    f.top_line(b0, b1 + ln, dl, dl + T3.TOP_PX, YS[2])                  # header's, a line across)
+    for u in (b0, b1):                                                  # B: across the top,
         f.top_line(u, u + ln, dl + T3.TOP_PX, T3.BACK, YS[2])           # down its sides, over the top
-        band(u, u + ln, zh, H, YS[3])                                   # and the front, to the header's foot
+        band(u, u + ln, zf, H, YS[3])                                   # and the front, to the seams' foot
     L = T3.Layout(s)
     zt = L.px(L.zr, -2)                                 # the base's lines across its lean (its own calls): the one
     c1 = s0 + T3.px(C_SIDE)                             # its top panel stands on (C's top), its seam; C on both
@@ -271,7 +274,9 @@ def _w1_header(f, s, s0, s1, dv, zc, zh):
     for u0, u1 in ((s0, c0), (c1 + ln, s1)):
         f.line(u0, u1, L.px(L.l1, 1), L.l1, YS[3], wrap=False)
     for u in (c0, c1):
-        band(u, u + ln, zh, L.px(zt, -1), YS[3])                        # C: its side, to the header's foot
+        band(u, u + ln, zf, L.px(zt, -1), YS[3])                        # C: its side, to the seams' foot
+    if zf > zh:
+        band(c0, c1 + ln, zf, zf + 1 / core.ZPX, YS[3])                 # the ends: a line across their foot
     d_of = lambda z: T3.BACK + (H - z) * dk if z > zc else dv               # noqa: E731
     sh = 1 + W2_PLATE_SHIFT                             # (REC proud, it draws a px left: set a px right)
     a, b = c0 + T3.px(sh + W2_PLATE_TRIM), c1 + ln + T3.px(sh)
