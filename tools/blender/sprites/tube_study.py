@@ -21,11 +21,11 @@ from .cable_study import _frame
 
 PAL = "tube"
 L0, L1 = -3 + 0.71875 + 0.07, 1 - 0.71875 - 0.07   # the run along u: between the two hull ports' collars (tube_port)
-ZC, R = 1.0, 0.8                         # shell centre height and radius: the hull port's axis and port radius
+ZC, R = 0.78, 0.95                       # shell centre height and radius: the hull port's axis and port radius; the
+                                         # walkway (the chord at z 0) flush with the rooms' floor, 1.08 wide, 1.73 high
 OCT = 0.76                               # the lattice's apothem
-ZB = 0.62                                # top of the metal belly (below it the shell is opaque): a kick panel
-                                         # a third of crew height over the deck, so the ground does not show low
-DECK = 0.3                               # the deck's top: the hull's floor height (walls.ZG)
+ZB = 0.35                                # top of the metal belly (below it the shell is opaque): a kick panel
+DECK = 0.0                               # the walkway: the rooms' floor (the shell under the ground is cut off)
 GLASS_ALPHA, GLASS_RIM = 0.18, 0.35      # the glass's opacity, and how much more at grazing angles
 SIDES = 32
 SAMPLES = 64
@@ -72,7 +72,7 @@ def _belly_angle(zb):
 
 def _deck(f):
     """The walkway inside (study only): a deck plate, lamps along its edges."""
-    f.box((L0 + L1) / 2, 0, DECK - 0.12, L1 - L0, 0.76, 0.12, "tbDeckD", top="tbDeck")
+    f.box((L0 + L1) / 2, 0, DECK - 0.12, L1 - L0, 1.04, 0.12, "tbDeckD", top="tbDeck")
     for c in (-1, 1):
         for k in range(5):
             f.box(L0 + 0.3 + 0.55 * k, c * 0.33, DECK, 0.08, 0.05, 0.02, "tbDeckD", top="tbLamp")
@@ -93,8 +93,6 @@ def glass(f, g):
         _band(f, u - 0.03, u + 0.03, _circle, 0.0, math.tau, 0.03, "tbHull", "tbHullD")
     for u in (L0, L1 - 0.1):                                                   # the ends seated in the ports
         _band(f, u, u + 0.1, _circle, 0.0, math.tau, 0.05, "tbAmb", "tbRib")
-    for u in ((2 * L0 + L1) / 3, (L0 + 2 * L1) / 3):                         # saddles to the ground
-        f.box(u, 0, 0.0, 0.14, 1.2, ZC - R + 0.12, "tbRib", top="tbRibL")
 
 
 def canopy(f, g):
@@ -129,9 +127,10 @@ def tube(look):
     f, g = _frame(m), _frame(mg)
     _deck(f)
     {"glass": glass, "canopy": canopy, "lattice": lattice}[look](f, g)
-    glassy = mg.build()
+    from .tube_port import clip_ground
+    glassy = clip_ground(mg.build())
     glassy["alpha"], glassy["rim"] = GLASS_ALPHA, GLASS_RIM
-    return [m.build(), glassy]
+    return [clip_ground(m.build()), glassy]
 
 
 def _render(aid, objs):

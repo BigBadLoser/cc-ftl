@@ -13,10 +13,12 @@ from . import hull_engine as HE
 from . import wall3d as T
 from . import wall3d_ext as X
 
-AXIS, RS = HE.AXIS, HE.RS              # the port: the engine's axis height and radius (the tube's)
-W = HE.W                               # the block's half width along the run
+AXIS, RS = 0.78, 0.95                  # the port: the tube's axis height and radius (its walkway flush with the
+                                       # rooms' floor, z 0: tube_study)
+W = 1.0                                # the block's half width along the run (the port and a rim; the full-height
+                                       # hull run behind it is the door tile and half of either neighbour, 1.0)
 DF, ZT, C = HE.DF, HE.ZT, HE.C
-ZF = 0.0                               # its foot: on the ground (a base on rock: the hull's belly is buried)
+ZF = AXIS - RS - 0.15                  # its foot: under the ground, clipped there (clip_ground) with the port's bottom
 RD = DF                                # the port's depth: right through the block (the door shows through it)
 COLLAR = HE.COLLAR
 N = HE.N
@@ -78,7 +80,7 @@ def housing(o):
         rr = RS + COLLAR[0] / 2
         HE._box(b, DF + COLLAR[1], rr * math.cos(t), AXIS + rr * math.sin(t), 0.015)
     for r in (-W + 0.1, W - 0.1):
-        for z in (ZF + C + 0.12, ZT - C - 0.1):
+        for z in (0.12, ZT - C - 0.1):
             HE._box(b, DF, r, z, 0.02)
     zb = HE.H + HE.SH - 0.04                            # shoulders over the hull's top (the engine's, plain)
     shoulder = [(-0.5, ZT - 0.05), (HE.SF, ZT - 0.05), (HE.SF, zb), (HE.SF - 0.04, HE.H + HE.SH), (-0.5, HE.H + HE.SH)]
@@ -86,7 +88,28 @@ def housing(o):
         b.prism(shoulder, r0, r1)
         b.prism([(-0.42, HE.H + HE.SH), (HE.SF - 0.18, HE.H + HE.SH), (HE.SF - 0.18, HE.H + HE.SH + 0.03),
                  (-0.42, HE.H + HE.SH + 0.03)], r0 + 0.06, r1 - 0.06, lift=1)
-    return b.m.build()
+    c = math.sqrt(RS * RS - AXIS * AXIS)                # the walkway through the port, at the floor
+    b.face([(0.0, -c, 0.002), (DF + COLLAR[1], -c, 0.002), (DF + COLLAR[1], c, 0.002), (0.0, c, 0.002)], (0, 0, 1),
+           RAMP[4])
+    return clip_ground(b.m.build())
+
+
+def clip_ground(ob):
+    """The mesh cut at the ground (z 0): what lies under it removed (the base sits on rock; drawn, it would hang under
+    the ground's plane on screen)."""
+    import bmesh
+    import bpy
+    from mathutils import Vector
+    bpy.context.view_layer.update()
+    inv = ob.matrix_world.inverted()
+    bm = bmesh.new()
+    bm.from_mesh(ob.data)
+    bmesh.ops.bisect_plane(bm, geom=bm.verts[:] + bm.edges[:] + bm.faces[:], dist=1e-6,
+                           plane_co=inv @ Vector((0.0, 0.0, 0.0)), plane_no=(inv.to_3x3() @ Vector((0, 0, 1))),
+                           clear_inner=True)
+    bm.to_mesh(ob.data)
+    bm.free()
+    return ob
 
 
 def piece(o, at=(0.0, 0.0)):
@@ -130,10 +153,12 @@ def through(o, at=(0.0, 0.0), is_open=False):
         b.face([ring(0.0, t0), ring(-0.5, t0), ring(-0.5, t1), ring(0.0, t1)],
                (0, -(math.cos(t0) + math.cos(t1)), -(math.sin(t0) + math.sin(t1))), RAMP[0])
     b.face([ring(-0.6, t) for t in ts], (1, 0, 0), "hsXK")
+    c = math.sqrt(RS * RS - AXIS * AXIS)
+    b.face([(-0.6, -c, 0.002), (0.0, -c, 0.002), (0.0, c, 0.002), (-0.6, c, 0.002)], (0, 0, 1), RAMP[4])
     m.face([ring(DF + COLLAR[1], t) for t in ts], (1, 0, 0), "hsXK")
     out = []
     for x in (b, m):
-        ob = x.m.build()
+        ob = clip_ground(x.m.build())
         ob.location = ob.location + core.G(at[0] + 0.5 * dx, at[1] + 0.5 * dy, 0.0)
         out.append(ob)
     return [*d, out[0]], out[1]
