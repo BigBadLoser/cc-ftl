@@ -62,7 +62,7 @@ def housing(o):
     _builder's, on it)."""
     b = _builder(o, f"tube_port_{o}")
     prof = [(0.0, ZF), (DF - C, ZF), (DF, ZF + C), (DF, ZT - C), (DF - C, ZT), (0.0, ZT)]
-    b.prism(prof, -W, W, skip=(2, 5))                   # (its front: below, with the port; no back: against the hull)
+    b.prism(prof, -W, W, skip=(2, 5))                   # (its front and back: below, with the port)
     ts = {math.tau * i / N for i in range(N)}
     for zc in (ZF + C, ZT - C):                         # (the front's corners, so its edges stay straight)
         for rc in (-W, W):
@@ -73,7 +73,10 @@ def housing(o):
         (r0, z0), (r1, z1) = _rect(c0, s0), _rect(c1, s1)
         p0, p1 = (RS * c0, AXIS + RS * s0), (RS * c1, AXIS + RS * s1)
         b.face([(DF, *p0), (DF, r0, z0), (DF, r1, z1), (DF, *p1)], (1, 0, 0))
+        b.face([(0.0, *p0), (0.0, r0, z0), (0.0, r1, z1), (0.0, *p1)], (-1, 0, 0))   # (its back: seen on a far wall)
         b.face([(DF, *p0), (DF - RD, *p0), (DF - RD, *p1), (DF, *p1)], (0, -(c0 + c1), -(s0 + s1)), RAMP[0])
+    for z0, z1 in ((ZF, ZF + C), (ZT - C, ZT)):         # the back's strips past the front's chamfers
+        b.face([(0.0, -W, z0), (0.0, W, z0), (0.0, W, z1), (0.0, -W, z1)], (-1, 0, 0))
     _collar(b)
     for i in range(8):                                  # bolts round the collar, and at the front's corners
         t = math.tau * (i + 0.5) / 8
