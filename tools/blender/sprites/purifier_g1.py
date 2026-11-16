@@ -68,14 +68,17 @@ def fill_window(k):
         tc, rc = (t0 + t1) / 2, (r0 + r1) / 2
         kk.box(CU + t[0] * tc + n[0] * rc, CV + t[1] * tc + n[1] * rc, z0, t1 - t0, r1 - r0, z1 - z0, col, top=top,
                rz=-math.pi / 4)
-    w, z0, z1 = 3 * PX, TZ + zpx(3), B2 - zpx(1)
-    back, face, rim = CR - 2 * PX, CR + 1 * PX, CR + 2 * PX
-    wbox(-w, w, back, face, z0, z1, "pfFrame")
-    for a, b, c, d in ((-w, -w + PX, z0, z1), (w - PX, w, z0, z1), (-w, w, z0, z0 + zpx(1)), (-w, w, z1 - zpx(1), z1)):
-        wbox(a, b, face, rim, c, d, "pfFrame", "pfFrame")
-    wbox(-w + PX, w - PX, face, face + 0.3 * PX, z0 + zpx(1), z0 + zpx(6), "pfWater", "pfWaterL")
-    wbox(-w + PX, w - PX, face, face + 0.3 * PX, z0 + zpx(6), z1 - zpx(1), "pfRecess")
-    wbox(-w + PX, w - PX, face + 0.5 * PX, face + 0.7 * PX, z0 + zpx(1), z1 - zpx(1), "pfIce", kk=k.part("glass"))
+    # On the diagonal, t moves the screen x by t * sqrt(2) px per PX and r moves the screen y by r / sqrt(2): sizes
+    # in units of sqrt(2) PX (or PX / sqrt(2)) keep every edge on a whole screen pixel.
+    q = math.sqrt(2) * PX
+    w, bar, z0, z1 = 4 * PX / math.sqrt(2), PX / math.sqrt(2), TZ + zpx(3), B2 - zpx(1)
+    face, rim = 10 * q, 11 * q                                                                          # 1.1, 2.6 px proud
+    wbox(-w, w, CR - 2 * PX, face - 0.5 * PX, z0, z1, "pfFrame")
+    for a, b, c, d in ((-w, -w + bar, z0, z1), (w - bar, w, z0, z1), (-w, w, z0, z0 + zpx(1)), (-w, w, z1 - zpx(1), z1)):
+        wbox(a, b, face - 0.5 * PX, rim, c, d, "pfFrame", "pfFrame")
+    wbox(-w + bar, w - bar, face - 0.5 * PX, face, z0 + zpx(1), z0 + zpx(6), "pfWater", "pfWaterL")
+    wbox(-w + bar, w - bar, face - 0.5 * PX, face, z0 + zpx(6), z1 - zpx(1), "pfRecess")
+    wbox(-w + bar, w - bar, face + 0.2 * PX, face + 0.4 * PX, z0 + zpx(1), z1 - zpx(1), "pfIce", kk=k.part("glass"))
 
 
 def tray(k):
