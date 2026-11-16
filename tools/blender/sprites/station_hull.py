@@ -161,11 +161,11 @@ def _step_prof(s):
 STEP_COLS = [None, FOOT_TOP, FOOT, None]
 
 
-def _block_prof(s):
+def _block_prof(s, up=0):
     """A foot block's section: the step's, a px proud of its top and front; its front's top px a lit edge; the back of its
     top (a px out from the face: its px on screen in line with the face's seam a px over the step) carries on the
     seam where the step meets the face, through the block on screen."""
-    zt, out = s.z_at(FOOT_H, -1), FOOT_OUT + LINE
+    zt, out = s.z_at(FOOT_H, -1 - up), FOOT_OUT + LINE         # (`up` px higher still)
     zf = s.z_at(FOOT_H, STEP_FRONT + 1)                         # (its front a px under the step's, flat under)
     return [(D - 0.01, zf), (D - 0.01, zt), (D + LINE, zt), (D + out, zt), (D + out, s.z_at(zt, 1)), (D + out, zf)]
 
@@ -227,7 +227,12 @@ def build(k, ax, plane, a, b, ends, H):
                                                                 # ends: it runs on; round an outer corner)
         if whole and DESIGN[0]:
             SD.dress(f, s0, DESIGN[0], zk)
-        if whole:
+        if whole and DESIGN[0] in SD.ONE_BLOCK:                  # (one block over both, its middle a px higher)
+            u = s0 + FOOT_BLOCKS[0] * LINE
+            for i, w in enumerate(FOOT_BLOCKS[1:-1]):
+                f.part(u, u + w * LINE, _block_prof(s, i % 2), BLOCK_COLS, GROOVE_D)
+                u += w * LINE
+        elif whole:
             u = s0
             for i, w in enumerate(FOOT_BLOCKS):
                 if i % 2:

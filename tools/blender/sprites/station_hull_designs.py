@@ -29,9 +29,10 @@ DENT_LIP, DENT_RING, DENT_PIT = "stL", "stM", "stD"
 
 MODULE, TOWER = 3, 4
 DESIGNS = {1: DENTS + (GOUGE,), 2: DENTS, MODULE: (), TOWER: ()}
-NO_TABS = {MODULE, TOWER}                 # designs without the groove's tabs (the recess takes the middle slot's foot), the
+NO_TABS = {MODULE, TOWER}           # designs without the groove's tabs (the recess takes the middle slot's foot), the
                                     # plate on the line under the bullnose and that line's lit px (the boxes take the
                                     # middle slot)
+ONE_BLOCK = {TOWER}                 # designs whose step carries one block over both, its middle a px higher
 
 BOX_OUT, BOX_UP, BOX_GAP = 1, 1, 2   # the middle slot's boxes: px off the face, the top one's top px over the top's, the
                                     # gap between them (the line under the bullnose)
@@ -172,15 +173,19 @@ def gap(s):
     return s.z_at(zl, BOX_GAP + LOW_DROP), zl
 
 
-def _top_box(f, a, b, z0, out):
+def _top_box(f, a, b, z0, out, slope=None, steep=1):
     """A box on the middle slot [a, b] from z0 up to a px over the top, its front `out`, its top front edge chamfered,
     its top a plate run back past the top's seam; outlined down its far end (over the chamfer and along its top), faintly
     lit down its near end. Its top and chamfer (z, px)."""
     H, px = f.sec.H, 1 / core.ZPX
     back = SH.E - round((SH.R_D + SH.TOP_SEAM) * 32) / 32
     top, c = H + BOX_UP * px, BOX_CHAMFER
-    f.part(a, b, [(back, z0), (back, top), (out - c * LINE, top), (out, top - c * px), (out, z0)],
-           [None, SH.TOP, SH.BANDS[0][0], SH.FACE, None], BOX_SIDE, end=False)
+    prof, cols = [(back, z0), (back, top), (out - c * LINE, top), (out, top - c * px), (out, z0)], \
+        [None, SH.TOP, SH.BANDS[0][0], SH.FACE, None]
+    if slope:                                               # (its foot sloped back down to the face, `steep` px down a
+        zb = z0 - steep * round((out - D) / LINE) * px      # px it's out)
+        prof, cols = [(back, zb)] + prof[1:] + [(D, zb)], cols[:4] + [slope, None]
+    f.part(a, b, prof, cols, BOX_SIDE, end=False)
     _plate(f, a, b, back, top)
     _rect(f, a, a + LINE, z0, top - c * px, out + 0.001, BOX_LINE)              # (a: the end turned from view)
     _rect(f, b - LINE, b, z0, top - c * px, out + 0.001, LOW_LIT)               # (b: its near end, faintly lit)
