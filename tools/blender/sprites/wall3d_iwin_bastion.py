@@ -14,7 +14,8 @@ from .wall3d_iwin import _clip
 PX = 1 / 32                 # an art px across or along the wall
 POST = round(BAST_P * 32)   # px: a post's front, in from the window's end (bastion's own posts)
 BLOCK = 12                  # px: an end block's flat top, in from the window's end
-END = 16                    # px: the end block's slope reaches the floor
+END = 12                    # px: where the end block's face reaches the floor (= BLOCK: upright, a clean step into
+                            # the deep channel; sloped over 4 px it came out a steep wedge)
 FLOOR_DOWN = 16             # art px: the floor under the ramp's top (the user: the ramp drops further: a channel;
                             # at 12 the strut stood 2-3 px from the pane and hid it)
 LVL = {"floor": 1, "top": 3, "slope": 3, "side": 1, "under": 1}   # the wall family's levels (toned by
@@ -150,6 +151,11 @@ def hook(k, sp, own=True):
     _tops(k, cells)
     BF.front(k, PART, cells)                                            # (the struts along the front, the user)
     yl, zt = _line(), _zt()
+    b0, _, _, b1 = _marks(PART)
+    fy = _front()
+    for u, sd in ((b0, 1), (b1, -1)):                                   # the end blocks' upright inner faces, the
+        if -0.5 < u < 0.5:                                              # ramp's profile down to the channel's floor
+            _quad(k, [(u, -fy, _zf()), (u, -yl, zt), (u, yl, zt), (u, fy, _zf())], (sd, 0, 0), LVL["side"])
     for u, sd, on in ((x0, 1, x0 > -0.5), (x1, -1, x1 < 0.5)):          # the posts' sides
         if on:
             _quad(k, [(u, -yl, zt), (u, yl, zt), (u, yl, z1), (u, -yl, z1)], (sd, 0, 0), LVL["side"])
