@@ -32,6 +32,7 @@ FOOT_N, FOOT_W, FOOT_OUT, FOOT_H = 3, 0.26, 3 / 32, 0.15   # the foot blocks: a 
 LEDGE_H = 2                         # the bright ledge along the foot, px tall
 SEAM_W = LINE_W                     # the seams' core, px (as the hull's long lines, with coverage AA; 1.0 with AA off
                                     # to check where lines fall)
+CURVE_W = 1.0                       # their core where they follow the bullnose, px
 CHAMFER_SEAM = 1                    # the corner's seams down its chamfer, this many px in from its edges
 
 FACE, FACE_LO, END, TOP = "stS", "stL", "stE", "stL"      # the face, its band under the groove, the shell, the top
@@ -117,9 +118,9 @@ class RoundFace(Face):
         """A band [u0, u1] (its core w px, as Face.line's) up the front from z0 to z1: over zk it follows the front
         (Face.line), under it it stands plumb on screen under where it is at zk (screen x goes as u - d: it moves
         along the face as far as the front stands out)."""
+        if z1 > zk:                                     # (over the bullnose a px: it slants on screen, a heavier
+            self.line(u0, u1, zk, z1, col, bevel=False, weight=CURVE_W)     # core reads thick)
         u0 = u1 - (u1 - u0) * (SEAM_W if w is None else w)
-        if z1 > zk:
-            self.line(u0, u1, zk, z1, col, bevel=False, weight=1.0)
         dk = self.sec.lean_d(zk)
         pts = self.sec.front(z0, min(z1, zk))
         col = T.SEAM_PASS or col
