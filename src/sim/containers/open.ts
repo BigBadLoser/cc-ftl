@@ -12,17 +12,17 @@ import { ContainerC } from './components';
 
 /**
  * Opening a lost container is salvage work, not a switch. `container.open` (the player's order) marks the drifting box for cutting: the box is seated on
- * a small wreck frame (a bed of beams, a ring of deck and a ring of open space, named "Container <id>") and a salvage order for its scrap type is placed on that wreck. From there
+ * a seat of deck exactly under its footprint (a one-piece wreck named "Container <id>", nothing visible beyond the box) and a salvage order for its scrap type and the hull is placed on it. From there
  * everything is the general machinery: the salvage planner posts a module-deconstruction job on the box, an EVA crew member goes out (shuttle and away
  * site as for any wreck) and works at it for the def's cut time (`buildWork` x the deconstruction share, at the crew member's construction skill), and
  * only when the job finishes does the module come off and its stock spill onto the deck (`removeModule`), where the staging and shuttle loading fetch it.
  */
 
-/** Search outward (tiles) for a spot the gap rule allows when the box floats too near a ship or rock: the frame settles at the nearest one. */
+/** Search outward (tiles) for a spot the gap rule allows when the box floats too near a ship or rock: the seat settles at the nearest one. */
 const SETTLE_MAX = 48;
 
-/** Where a w x h frame can stand: where the box floated, else the nearest legal spot within SETTLE_MAX tiles (rings of 16 directions, nearest first). */
-function frameSpot(sim: Sim, x: number, y: number, w: number, h: number): { x: number; y: number } | null {
+/** Where a w x h seat can stand: where the box floated, else the nearest legal spot within SETTLE_MAX tiles (rings of 16 directions, nearest first). */
+function seatSpot(sim: Sim, x: number, y: number, w: number, h: number): { x: number; y: number } | null {
   for (let r = 0; r <= SETTLE_MAX; r += 2) {
     for (let k = 0; k < (r === 0 ? 1 : 16); k++) {
       const a = (k * Math.PI) / 8;
@@ -55,7 +55,7 @@ export function containerAt(sim: Sim, x: number, y: number): number | null {
 
 /**
  * Mark container `id` for opening (see above). Returns the wreck's ship id, or null (nothing changes) when it may not be opened or no room is found for
- * the frame. The box keeps its stock, faction, rotation and hit points; it stays a sealed container until the cutting job is done.
+ * the seat. The box keeps its stock, faction, rotation and hit points; it stays a sealed container until the cutting job is done.
  */
 export function markForOpening(sim: Sim, id: number): number | null {
   if (openRefusal(sim, id)) return null;
@@ -64,17 +64,17 @@ export function markForOpening(sim: Sim, id: number): number | null {
   const def = c && sim.content.modules[c.def];
   if (!c || !b || !def?.scrap) return null;
   const [w, h] = rotatedSize(def, c.rot);
-  const at = frameSpot(sim, Math.round(b.x - w / 2) - 2, Math.round(b.y - h / 2) - 2, w + 4, h + 4);
+  const at = seatSpot(sim, Math.round(b.x - w / 2) - 1, Math.round(b.y - h / 2) - 1, w + 2, h + 2);
   if (!at) return null;
-  // From the inside out: a bed of beams the box sits on (not drawn under a container), a ring of deck its goods spill onto and the crew work from, and a
-  // ring of open space, the suited crew's footing at the hull as round any ship (a landing needs open space touching the hull).
-  const ring = (i: number, j: number): number => Math.min(i, j, w + 3 - i, h + 3 - j);
-  const rows = Array.from({ length: h + 4 }, (_, j) => Array.from({ length: w + 4 }, (_, i) => ['.', '_'][ring(i, j)] ?? '=').join(''));
+  growSector(sim, at.x, at.y, w + 2, h + 2); // the sector grows to hold the seat, as it does for any structure
+  // The seat is exactly the box's footprint in deck tiles under it (the art covers them), set in one tile of open space: that ring is the crew's footing, as
+  // round any hull (a landing needs open space inside the ship's own bounds), and the goods spill onto the footprint when the box comes off. Nothing shows
+  // beyond the box.
+  const rows = Array.from({ length: h + 2 }, (_, j) => Array.from({ length: w + 2 }, (_, i) => (i === 0 || j === 0 || i === w + 1 || j === h + 1 ? '.' : '_')).join(''));
   const clamp = c.rot % 2 === 0 ? 'n' : 'w';
-  growSector(sim, at.x, at.y, w + 4, h + 4); // the sector grows to hold the frame, as it does for any structure
   const ship = stampShip(sim, {
     name: `Container ${id}`, faction: 'neutral', rows,
-    modules: [{ def: c.def, x: 2, y: 2, rot: c.rot, clamp, stock: (sim.world.get(id, StorageC)?.stacks ?? []).map((s) => ({ ...s })) }],
+    modules: [{ def: c.def, x: 1, y: 1, rot: c.rot, clamp, stock: (sim.world.get(id, StorageC)?.stacks ?? []).map((s) => ({ ...s })) }],
   }, { x: at.x, y: at.y, state: 'wreck' });
   const box = sim.world.query(ModuleC).find((m) => shipIdOf(sim, sim.world.get(m, ModuleC)) === ship);
   const kept = box === undefined ? undefined : sim.world.get(box, ContainerC);
@@ -87,7 +87,7 @@ export function markForOpening(sim: Sim, id: number): number | null {
   const s = sim.world.get(ship, ShipC);
   if (s && c.faction) s.gen = { faction: c.faction, seed: id, depth: 0 };
   sim.world.destroyEntity(id);
-  placeSalvageOrder(sim, ship, [def.scrap]);
+  placeSalvageOrder(sim, ship, [def.scrap, 'hull']); // the seat comes down with the box, so nothing is left lying in the node
   sim.events.emit({ type: 'container.marked', container: id, ship });
   return ship;
 }

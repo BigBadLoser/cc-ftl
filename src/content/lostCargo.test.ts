@@ -49,7 +49,7 @@ describe('lost cargo', () => {
     expect(lostCargoFaction(sim, node, 5)).toBe(lostCargoFaction(sim, node, 5));
   });
 
-  it('marks a box for opening: it sits on a wreck frame, still sealed, with a salvage order and a cutting job', () => {
+  it('marks a box for opening: it sits on a one-piece seat, still sealed, with a salvage order and a cutting job', () => {
     const { sim, ids } = setup(2, 4);
     const id = ids[0] as number;
     const stock = (sim.world.get(id, StorageC)?.stacks ?? []).map((s) => ({ ...s }));
@@ -57,16 +57,16 @@ describe('lost cargo', () => {
     sim.enqueue({ type: 'container.open', id });
     sim.step();
     expect(sim.world.has(id, ContainerC)).toBe(false);
-    const frame = sim.world.query(ShipC).find((s) => sim.world.get(s, ShipC)?.name === `Container ${id}`)!;
-    expect(sim.world.get(frame, ShipC)?.state).toBe('wreck');
-    expect(sim.world.has(frame, SalvageOrderC)).toBe(true);
-    // Still sealed: the box is a module on the frame with its stock, nothing lies loose, and the art picks (variant, logo) are kept.
-    const box = sim.world.query(ContainerC).find((c) => sim.world.has(c, ModuleC) && shipIdOf(sim, sim.world.get(c, ModuleC)) === frame)!;
+    const seat = sim.world.query(ShipC).find((s) => sim.world.get(s, ShipC)?.name === `Container ${id}`)!;
+    expect(sim.world.get(seat, ShipC)?.state).toBe('wreck');
+    expect(sim.world.has(seat, SalvageOrderC)).toBe(true);
+    // Still sealed: the box is a module on its seat with its stock, nothing lies loose, and the art picks (variant, logo) are kept.
+    const box = sim.world.query(ContainerC).find((c) => sim.world.has(c, ModuleC) && shipIdOf(sim, sim.world.get(c, ModuleC)) === seat)!;
     expect(sim.world.get(box, ContainerC)?.seed).toBe(seed);
     expect(sim.world.get(box, StorageC)?.stacks).toEqual(stock);
     expect(sim.world.query(ItemStackC).length).toBe(0);
     for (let i = 0; i < 3; i++) sim.step();
-    const job = salvageJobs(sim, frame).map((j) => sim.world.get(j, JobC)!).find((j) => j.kind === 'moduleDecon');
+    const job = salvageJobs(sim, seat).map((j) => sim.world.get(j, JobC)!).find((j) => j.kind === 'moduleDecon');
     expect(job?.target).toBe(box);
     expect(job?.work).toBeGreaterThan(0);
   });
@@ -80,8 +80,8 @@ describe('lost cargo', () => {
       const total = goods.reduce((n, s) => n + s.count, 0);
       sim.enqueue({ type: 'container.open', id });
       for (let i = 0; i < 5; i++) sim.step();
-      const frame = sim.world.query(ShipC).find((s) => sim.world.get(s, ShipC)?.name === `Container ${id}`)!;
-      const jobId = salvageJobs(sim, frame).find((j) => sim.world.get(j, JobC)?.kind === 'moduleDecon')!;
+      const seat = sim.world.query(ShipC).find((s) => sim.world.get(s, ShipC)?.name === `Container ${id}`)!;
+      const jobId = salvageJobs(sim, seat).find((j) => sim.world.get(j, JobC)?.kind === 'moduleDecon')!;
       const job = sim.world.get(jobId, JobC)!;
       const crew = playerCrew(sim)[0] as number;
       let ticks = 0;
