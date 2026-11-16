@@ -84,8 +84,8 @@ def block(b):
                P.RAMP[0])
     c = math.sqrt(R * R - ZC * ZC)
     b.face([(LEAF_D, -c, 0.002), (0.5, -c, 0.002), (0.5, c, 0.002), (LEAF_D, c, 0.002)], (0, 0, 1), "tbDeck")
-    th = LEAF_D - DM + FRAME[1]                           # the thresholds either side of the leaf, in hazard blocks
-    for d0, d1 in ((LEAF_D - th, LEAF_D), (LEAF_D, LEAF_D + th)):   # (the tube side's seen through the far port)
+    th = LEAF_D - DM + FRAME[1]                           # the threshold, one band of hazard blocks across the leaf's
+    for d0, d1 in ((LEAF_D - th, LEAF_D + th),):          # slot (its tube side seen through the far port)
         b.face([(d0, -c, 0.003), (d1, -c, 0.003), (d1, c, 0.003), (d0, c, 0.003)], (0, 0, 1), "tbIn")
         k = 7                                             # (blocks square to the grid: their edges draw clean)
         for i in range(0, k, 2):

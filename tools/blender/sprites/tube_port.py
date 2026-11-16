@@ -143,12 +143,15 @@ def piece(o, at=(0.0, 0.0)):
 
 def through(o, at=(0.0, 0.0), is_open=False):
     """What the port shows (the hull's door tile cut through behind it): (inside, mouth). inside: the junction in the
-    hull's wall line (tube_junction: its bore and its hatch, closed or open), the room's dark behind; mouth: a disc over
+    bore (tube_junction: its bore and its hatch, closed or open, moved out so the hatch sits as far behind the collar as
+    the near junction's behind its frame; the far junction itself is hidden by the hull row), the room's dark behind; mouth: a disc over
     the collar's mouth, its px the ones the inside shows in."""
     from . import tube_junction as J
     mask = 5 if o == 2 else 10
     dx, dy = X.STRAIGHT[(mask, o)]
-    inside = J.piece(o, 1.0 if is_open else 0.0, at)
+    ox, oy = {2: (1, 0), 1: (0, 1)}[o]                  # (the junction moved out along the bore: its hatch as far
+    k = (DF + COLLAR[1]) - (J.LEAF_D + J.LEAF_T) - (J.LEAF_D - J.LEAF_T - (J.DM - J.FRAME[1]))   # behind the collar
+    inside = J.piece(o, 1.0 if is_open else 0.0, (at[0] + k * ox, at[1] + k * oy))   # as the near one is behind its frame)
     b = _builder(o, f"tube_port_dark_{o}", centred=True)
     ts = [math.tau * i / N for i in range(N)]
     b.face([(-0.7, RS * 1.2 * math.cos(t), AXIS + RS * 1.2 * math.sin(t)) for t in ts], (1, 0, 0), "hsXK")
