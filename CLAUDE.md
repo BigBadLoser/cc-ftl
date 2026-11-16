@@ -73,6 +73,8 @@ or removes content. Before non-trivial work, read the index at the top of `docs/
 
 ## Workflow
 
+- Branch names describe the work: `feat/…`, `fix/…`, `art/…`, `tools/…`, `docs/…`, with the issue number where there is one
+  (`feat/asteroid-variety-505`). Avoid generated names such as `claude/<random-words>`.
 - Flow for every piece of work:
   1. Iterate on a work branch until the user is happy. Commit often with `check:fast` and push the branch freely (a push to
      a branch is a backup, not a release).
