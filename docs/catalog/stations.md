@@ -1,6 +1,7 @@
 # Catalog: stations, outposts, services and black markets
 
-Six station kinds (`content.stations`) built by the station generator (`src/sim/shipgen/stationGen.ts`, three size tiers each: outpost, station, hub),
+Six station kinds (`content.stations`) built by the station assembly (`src/sim/shipgen/stationBuild.ts` from the recipes in
+`src/content/stationRecipes.ts`, three size tiers each: outpost, station, hub),
 placed in the galaxy as `structure.station_*` (trade, military, research) or as surface and dug outposts. Services are the things a docked player can do.
 Station crews run on the shared crew AI with a director that posts patrol jobs (`sim/systems/stationDirector.ts`).
 
