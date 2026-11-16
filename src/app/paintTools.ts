@@ -9,9 +9,10 @@ import type { InputHandlers, Tile } from './input';
 import { rejectionMessage } from './messages';
 import type { Writable } from './store';
 import { createHullPlanTool } from './hullPlanTool';
+import { windowPlan } from './windowTool';
 
 // dig, level and finish are builds on rock mass: Floor digs it out, Ground levels it, RockWall finishes it into a wall (the sim tells them apart by the tile)
-const BUILD_STRUCT: Record<Exclude<UiBuildKind, 'module' | 'claim' | 'mine' | 'hull'>, number> = { wall: Struct.Wall, floor: Struct.Floor, door: Struct.Door, dig: Struct.Floor, level: Struct.Ground, finish: Struct.RockWall };
+const BUILD_STRUCT: Record<Exclude<UiBuildKind, 'module' | 'claim' | 'mine' | 'hull' | 'window'>, number> = { wall: Struct.Wall, floor: Struct.Floor, door: Struct.Door, dig: Struct.Floor, level: Struct.Ground, finish: Struct.RockWall };
 
 export interface PaintDeps {
   tool: Writable<UiToolState>;
@@ -88,6 +89,16 @@ export function createPaintTools(sim: Sim, bridge: Bridge, deps: PaintDeps): Pic
     const tiles = shape();
     return tiles.length > 0 && !tiles.some((p) => mineAt(p.x, p.y));
   };
+  const windowMode = () => {
+    const t = tool.get();
+    return t.tool === 'build' && t.build === 'window';
+  };
+  /** The window run under the cursor (the Window tool), on the player's ship there. */
+  const windowAtCursor = () => {
+    const at = paintEnd ?? hover;
+    const ship = at ? mineAt(at.x, at.y) : 0;
+    return at && ship ? windowPlan(sim, ship, at, tool.get().windowSize ?? 3) : null;
+  };
   const refreshPreview = () => {
     deps.renderer()?.setWorldGrid(tool.get().tool === 'build'); // the world grid shows while the build tools are open
     if (!hullPlan.active()) deps.renderer()?.setCutLine([]);
@@ -108,6 +119,14 @@ export function createPaintTools(sim: Sim, bridge: Bridge, deps: PaintDeps): Pic
       const rr = deps.renderer();
       const at = plan?.error && rr ? rr.screenOf(plan.ship, plan.at.x, plan.at.y) : null;
       placeHint.set(plan?.error && at ? { x: at.x, y: at.y, text: rejectionMessage(plan.error) } : null);
+      return;
+    }
+    if (windowMode()) {
+      const plan = windowAtCursor();
+      deps.renderer()?.setPreview(plan?.tiles ?? [], plan ? plan.error === null : true);
+      const rr = deps.renderer();
+      const at = plan?.error && rr && hover ? rr.screenOf(plan.ship, hover.x, hover.y) : null;
+      placeHint.set(plan?.error && at ? { x: at.x, y: at.y, text: rejectionMessage(plan.error), ok: false } : null);
       return;
     }
     placeHint.set(null);
@@ -146,6 +165,14 @@ export function createPaintTools(sim: Sim, bridge: Bridge, deps: PaintDeps): Pic
   const commit = () => {
     const { tool: t, build } = tool.get();
     if (t === 'build' && build === 'module') return;
+    if (t === 'build' && build === 'window') {
+      const plan = windowAtCursor();
+      if (!plan) showToast(rejectionMessage('notWall'));
+      else if (plan.error) showToast(rejectionMessage(plan.error));
+      else sim.enqueue({ type: 'job.window', ship: plan.ship, x: plan.start.x, y: plan.start.y, axis: plan.axis, size: plan.size });
+      paintStart = paintEnd = null;
+      return refreshPreview();
+    }
     if (t === 'build' && build === 'mine') {
       const ore = shape().filter((p) => oreAsteroid(p.x, p.y));
       const asteroid = ore[0] ? oreAsteroid(ore[0].x, ore[0].y) : 0;

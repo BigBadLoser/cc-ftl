@@ -35,6 +35,7 @@ const TOOLS: { id: UiBuildKind; name: string; category: CategoryId; icon: IconNa
   { id: 'wall', name: 'Wall', category: 'structure', icon: 'wall', description: 'Drag a line of wall. Walls hold air and block movement.' },
   { id: 'floor', name: 'Floor', category: 'structure', icon: 'floor', description: 'Drag out deck plating. Rooms need floor before they hold air.' },
   { id: 'door', name: 'Door', category: 'structure', icon: 'door', description: 'A door in a wall. Crew pass through, air does not while it is shut.' },
+  { id: 'window', name: 'Window', category: 'structure', icon: 'wall', description: 'A window of 2, 3 or 4 tiles on a straight run of existing wall, hull or partition, never on a corner. It holds air and blocks movement like the wall it replaces. Deconstruct it to get the plain wall back.' },
   { id: 'hull', name: 'Hull plan', category: 'structure', icon: 'hullPlan', description: 'Brush the ship\'s outer hull plan: drag rectangles (at least 3 × 3) or 45° staircases, add or erase, optionally mirrored. No part of the ship may be narrower than 3 tiles. A shipyard builds the plan; interior walls and doors are your own builds.' },
   { id: 'dig', name: 'Dig rock', category: 'mining', icon: 'pick', description: 'Drag over asteroid rock to dig it out to floor.' },
   { id: 'level', name: 'Level rock', category: 'mining', icon: 'floor', description: 'Drag over rock to level it to ground.' },

@@ -112,6 +112,13 @@
           <button class="tab" class:on={!query && cat === c.id} data-testid="tab-{c.id}" onclick={() => { cat = c.id; query = ''; }}>{c.label}<i>{c.count}</i></button>
         {/each}
       </div>
+      {#if st.tool === 'build' && st.build === 'window'}
+        <span class="wsize" role="group" aria-label="Window size">
+          {#each [2, 3, 4] as n (n)}
+            <button class="rotb" class:on={(st.windowSize ?? 3) === n} data-testid="window-size-{n}" aria-pressed={(st.windowSize ?? 3) === n} onclick={() => api.setTool({ windowSize: n })}>{n} tiles</button>
+          {/each}
+        </span>
+      {/if}
       {#if selectedEntry?.kind === 'module'}
         <button class="rotb" use:tip={{ text: 'Rotate (Shift+R turns back)', key: 'build.rotate' }} aria-label="Rotate" data-testid="rotate" onclick={() => api.setTool({ rot: (st.rot + 1) % 4 })}><Icon name="rotate" size={16} /> {st.rot * 90}°</button>
       {/if}
@@ -140,6 +147,8 @@
   .tab:hover { border-color: var(--build-line-hi); }
   .tab.on { background: var(--amber); border-color: var(--amber); color: var(--build-on-amber); }
   .tab.on i { color: #4a3508; }
+  .wsize { display: inline-flex; gap: 4px; }
+  .wsize .on { border-color: var(--amber); }
   .rotb { flex: none; height: 28px; min-width: 0; display: inline-flex; align-items: center; gap: 4px; }
   .search { width: 180px; flex: none; height: 26px; box-sizing: border-box; background: var(--build-fill); border: 1px solid var(--build-line); color: var(--build-ink); padding: 0 8px; font: 13px system-ui; user-select: text; -webkit-user-select: text; }
     .search:focus { outline: none; border-color: var(--amber); }

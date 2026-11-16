@@ -1,4 +1,5 @@
 import { Finish, Struct } from "../sim/structure";
+import { windowPiece, type WindowTile } from "../sim/windows";
 
 export type KindAt = (x: number, y: number) => number;
 /** One sprite to draw: the first existing asset id of the chain. */
@@ -80,6 +81,12 @@ export function wallCorners(kindAt: KindAt, x: number, y: number, mask: number):
   if ((mask & 12) === 12 && wall(0, 1) && wall(-1, 0) && wall(-1, 1)) c |= 4;
   if ((mask & 9) === 9 && wall(-1, 0) && wall(0, -1) && wall(-1, -1)) c |= 8;
   return c;
+}
+
+/** The window piece id of a straight wall tile with the walls up (`<pre>m10.win.l`), as a chain head; empty for anything else. */
+export function windowChain(pre: string, mask: number, win: WindowTile | null, level: WallLevel): string[] {
+  if (!win || level !== "up" || mask !== (win.axis === "x" ? 10 : 5)) return [];
+  return [`${pre}m${mask}.win.${windowPiece(win)}`];
 }
 
 /** `c<bits>`, or "" for none. */
@@ -201,6 +208,8 @@ export function replacesFloor(kindAt: KindAt, x: number, y: number, mode: Cutawa
  * `ghosts` false (blueprints, roofed ships) draws plain blocks instead of ghosts. `gap(x, y)` marks hull tiles that are
  * not drawn at all because a module's own art stands there (an engine's bulkhead with the walls up or roofed): the
  * hull runs beside it get an end face toward the gap, like toward a ghost.
+ * `win` (a window tile, sim/windows.ts): with the walls up, a straight wall piece or far hull piece draws
+ * `tile.wall.full.m10.win.<l|m|r>` (along x) / `m5` (along y) first, the plain piece when that id is missing.
  */
 export function wallPieces(
   kindAt: KindAt,
@@ -210,6 +219,7 @@ export function wallPieces(
   mode: CutawayMode,
   ghosts = true,
   gap: (x: number, y: number) => boolean = () => false,
+  win: WindowTile | null = null,
 ): Piece[] {
   const level = wallLevel(mode);
   const side = hullSide(kindAt, x, y);
@@ -253,7 +263,7 @@ export function wallPieces(
     // cutaway), with the hull over the partitions' height drawn on it (`tile.hull.cap.*`: the black band and the
     // roof plating), and at a run's end the wall's end section with the hull's on it.
     const wall = "tile.wall.full.";
-    const out: Piece[] = [{ chain: chainOf(`${wall}m${mask}`), order: 0 }, { chain: chainOf(`tile.hull.cap.m${mask}`, v), order: 1 }];
+    const out: Piece[] = [{ chain: [...windowChain(wall, mask, win, level), ...chainOf(`${wall}m${mask}`)], order: 0 }, { chain: chainOf(`tile.hull.cap.m${mask}`, v), order: 1 }];
     for (const [on, side, bits] of [[endS, "s", c & 6], [endE, "e", c & 3]] as const) {
       if (!on) continue;
       out.push({ chain: end(wall, side, bits), order: 2 }, { chain: end("tile.hull.cap.", side, bits), order: 3 });
@@ -262,7 +272,7 @@ export function wallPieces(
   }
   const fam = kind === Struct.RockWall ? "rockwall" : "wall";
   const pre = `tile.${fam}.${PRE[level]}`;
-  const out: Piece[] = [{ chain: chainOf(`${pre}m${mask}`), order: 0 }];
+  const out: Piece[] = [{ chain: [...(fam === "wall" ? windowChain(pre, mask, win, level) : []), ...chainOf(`${pre}m${mask}`)], order: 0 }];
   if (endS) out.push({ chain: end(pre, "s", c & 6), order: 1 });
   if (endE) out.push({ chain: end(pre, "e", c & 3), order: 1 });
   return out;

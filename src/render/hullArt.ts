@@ -4,6 +4,7 @@ import { ModuleC } from "../sim/modules/components";
 import { hullRow } from "../sim/modules/footprint";
 import type { ModuleDef } from "../sim/registry";
 import { Struct } from "../sim/structure";
+import { windowPiece, type WindowTile } from "../sim/windows";
 import { hullKey, hullKeyGeneric, hullKeyName, hullOutline, type Front } from "./hullKey";
 import { engineBlock } from "./moduleArt";
 import { motifColours, SCHEMES } from "./roofArt";
@@ -89,13 +90,18 @@ export function pickDesign(x: number, y: number, n: number, salt: number): numbe
 /**
  * The exterior sprites of a hull tile (the ship roofed), back to front: a near run or corner the run set's piece (a
  * straight run in one of its designs), anything else the generic piece and its roof over the rest of the tile. Null
- * for no key (plain roof) or no art.
+ * for no key (plain roof) or no art. `win`: the tile's window (sim/windows.ts), drawn instead of the design on a straight near run.
  */
-export function exteriorIds(h: HullKeys, x: number, y: number, has: (id: string) => boolean, base = false): string[] | null {
+export function exteriorIds(h: HullKeys, x: number, y: number, has: (id: string) => boolean, base = false, win: WindowTile | null = null): string[] | null {
   const k = h.at(x, y);
   if (!k) return null;
   if (!hullKeyGeneric(k)) {
     const id = runSetId(h, x, y);
+    // A window tile of a straight near run: its window piece (w1 the lower-coordinate end, w3 the higher, w2 the middles), else the design pick.
+    if (win && !base && STRAIGHT.has(id)) {
+      const w = `${id}.w${{ l: 1, m: 2, r: 3 }[windowPiece(win)]}`;
+      if (has(w)) return [w];
+    }
     const v = STRAIGHT.has(id) && !base ? ["", ".a1", ".a2", ".a3"][pickDesign(x, y, 4, 1)] : "";
     for (const c of [id + v, id]) if (has(c)) return [c];
   }
