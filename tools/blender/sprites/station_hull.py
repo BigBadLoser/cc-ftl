@@ -32,7 +32,9 @@ GROOVE = 0.40                       # the groove's height over the deck
 RAIL = 5 / 32                       # the line along the top's inner edge: this far in from the back
 FOOT_N, FOOT_W, FOOT_OUT, FOOT_H = 3, 0.26, 3 / 32, 0.15   # the foot blocks: a tile, wide, proud, tall
 
-FACE, END = "stS", "stE"
+FACE, FACE_LO, END = "stS", "stL", "stE"   # the face, its band under the groove, the ends
+LEDGE, LEDGE_H = "stW", 2                   # the bright ledge along the foot: colour, px tall
+HATCH_D, HATCH_L = "stM", "stH"             # the hatch's outline: dark line, lit line inside/under it
 ROUND_COLS = ("stS", "stS", "stL", "stL", "stH", "stH", "stB", "stB")   # the bullnose from the face up to the top
 TOP = "stB"
 SEAM_D, SEAM_L = "stM", "stH"
@@ -53,6 +55,10 @@ CHAINS = {
              "back": [(-0.5, -0.5)]},
 }
 STRAIGHT = {(10, 1): (1, 0), (5, 2): (0, 1)}
+# per piece: (segment, its seams as fractions along it, its hatch's span or None)
+PANELS = {(10, 1): [(0, SEAMS, (SEAMS[0] + 3 * LINE, SEAMS[1] - 2 * LINE))],
+          (5, 2): [(0, SEAMS, (SEAMS[0] + 3 * LINE, SEAMS[1] - 2 * LINE))],
+          (9, 3): [(1, (1.5 * LINE, 1 - 1.5 * LINE), (0.22, 0.78))]}
 
 
 def _top():
@@ -101,7 +107,7 @@ def _bullnose():
 
 def _section():
     """The outer section as (inset, z, colour of the strip up to the next): the face, its bullnose (the top after)."""
-    out = [(0.0, 0.0, FACE)]
+    out = [(0.0, 0.0, FACE_LO), (0.0, GROOVE, FACE)]
     bn = _bullnose()
     for i, (d, z) in enumerate(bn):
         out.append((d, z, ROUND_COLS[i] if i < ROUND else None))
@@ -188,18 +194,33 @@ def _details(k, key):
         _paint(k, key, i, 0.0, 1.0, [(0.0, GROOVE - pz), (0.0, GROOVE)], GROOVE_L)
         _paint(k, key, i, 0.0, 1.0, [(rail - LINE, h), (rail, h)], RAIL_L)      # the line along the top's inner edge
         _paint(k, key, i, 0.0, 1.0, [(rail, h), (rail + LINE, h)], RAIL_D)
-    if key in STRAIGHT:
-        up = [(0.0, GROOVE + 3 * pz), (0.0, h - R_Z)] + bn + [(rail - LINE, h)]
-        for f in SEAMS:                                         # the seams: up the face, over the bullnose, across the top
-            _paint(k, key, 0, f - LINE / 2, f + LINE / 2, up, SEAM_D)
-            _paint(k, key, 0, f + LINE / 2, f + 1.5 * LINE, up, SEAM_L)
-            _box(k, key, 0, f - 1.5 * LINE, f + 1.5 * LINE, GROOVE - 2 * pz, GROOVE + 3 * pz, LINE, TAB, TAB_TOP,
+    zt = h - R_Z - 3 * pz                                       # the hatch's top, under the bullnose
+    zh = GROOVE + 7 * pz                                        # its foot, over the groove
+    up = [(0.0, GROOVE + 3 * pz), (0.0, h - R_Z)] + bn + [(rail - LINE, h)]
+    for i, seams, hatch in PANELS[key]:
+        p = _chain(key, 0.0)[i:i + 2]
+        ln = math.hypot(p[1][0] - p[0][0], p[1][1] - p[0][1])
+        L = LINE / ln                                           # one px along this segment, as a fraction
+        for f in seams:                                         # the seams: up the face, over the bullnose, across the top
+            _paint(k, key, i, f - L / 2, f + L / 2, up, SEAM_D)
+            _paint(k, key, i, f + L / 2, f + 1.5 * L, up, SEAM_L)
+            _box(k, key, i, f - 1.5 * L, f + 1.5 * L, GROOVE - 2 * pz, GROOVE + 3 * pz, LINE, TAB, TAB_TOP,
                  TAB_SIDE)                                      # a tab where the seam crosses the groove
-        zb = h - R_Z - 3 * pz                                   # a bracket under the bullnose across the mid panel:
-        a0, a1 = SEAMS[0] + 3 * LINE, SEAMS[1] - 2 * LINE       # a line, lit under, a tab proud at its middle
-        _paint(k, key, 0, a0, a1, [(0.0, zb), (0.0, zb + pz)], SEAM_D)
-        _paint(k, key, 0, a0, a1, [(0.0, zb - pz), (0.0, zb)], SEAM_L)
-        _box(k, key, 0, 0.5 - 2 * LINE, 0.5 + 2 * LINE, zb - 3 * pz, zb + 2 * pz, LINE, TAB, TAB_TOP, TAB_SIDE)
+        if hatch:                                               # the hatch: an outlined panel, lit inside and under
+            a0, a1 = hatch
+            for z in (zh, zt):                                  # its top and bottom edges
+                _paint(k, key, i, a0, a1, [(0.0, z), (0.0, z + pz)], HATCH_D)
+                _paint(k, key, i, a0 + L, a1 - L, [(0.0, z - pz), (0.0, z)] if z == zt else [(0.0, z + pz),
+                       (0.0, z + 2 * pz)], HATCH_L)
+            for f in (a0, a1 - L):                              # its sides
+                _paint(k, key, i, f, f + L, [(0.0, zh), (0.0, zt + pz)], HATCH_D)
+            _paint(k, key, i, a0 + L, a0 + 2 * L, [(0.0, zh + 2 * pz), (0.0, zt - pz)], HATCH_L)
+            m = (a0 + a1) / 2                                   # a handle tab on its top edge, two on its foot
+            _box(k, key, i, m - 2 * L, m + 2 * L, zt - 2 * pz, zt + 3 * pz, LINE, TAB, TAB_TOP, TAB_SIDE)
+            for c in (a0 + (a1 - a0) * 0.3, a0 + (a1 - a0) * 0.7):
+                _box(k, key, i, c - 1.5 * L, c + 1.5 * L, zh - 2 * pz, zh + 3 * pz, LINE, TAB, TAB_TOP, TAB_SIDE)
+    for i in range(segs):                                       # the bright ledge along the foot
+        _paint(k, key, i, 0.0, 1.0, [(0.0, FOOT_H), (0.0, FOOT_H + LEDGE_H * pz)], LEDGE)
     for i in range(segs):                                       # the foot blocks
         p = _chain(key, 0.0)[i:i + 2]
         ln = math.hypot(p[1][0] - p[0][0], p[1][1] - p[0][1])
