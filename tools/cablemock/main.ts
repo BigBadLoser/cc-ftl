@@ -33,7 +33,9 @@ export const ROWS = [
 function tubeRows(beam: boolean): string[] {
   const mod = ['.#######.', '##_____##', '#_______#', '#_______#', '#_______#', '#_______#', '#_______#', '##_____##', '.#######.'];
   const tube = beam ? ['...', '...', '...', '...', '===', '...', '...', '...', '...'] : ['...', '...', '...', '###', '___', '###', '...', '...', '...'];
-  const rows = mod.map((m, y) => `.${y === 4 ? `${m.slice(0, 8)}D` : m}${tube[y]}${y === 4 ? `D${m.slice(1)}` : m}.`);
+  // ?nowall=1: the near module's wall on the tube's side left out (the door kept), to see the tube's end and its port
+  const near = (m: string, y: number) => (y === 4 ? `D${m.slice(1)}` : q.get('nowall') === '1' ? `.${m.slice(1)}` : m);
+  const rows = mod.map((m, y) => `.${y === 4 ? `${m.slice(0, 8)}D` : m}${tube[y]}${near(m, y)}.`);
   const blank = '.'.repeat(rows[0]!.length);
   return [blank, ...rows, blank];
 }
