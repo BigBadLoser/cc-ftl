@@ -12,7 +12,7 @@ from robots_preview import ROOT, Assets, Canvas, iso  # noqa: E402
 
 N = 7                                               # rock patch, tiles 0..N-1; the mount on (2..3, 2..3), cable east
 VARIANTS = {"K1": "picked: light steel outriggers"}
-VARIANTS = {"P1": "slight chamfer", "P2": "45 chamfer", "P3": "side face"}
+VARIANTS = {"H1": "hatch at 88", "H2": "hatch at 76", "H3": "hatch at 64"}
 ZR = 2.05
 
 

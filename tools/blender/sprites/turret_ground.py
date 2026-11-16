@@ -185,7 +185,7 @@ def port3(f, z=0.0, u0=0.66, u1=1.46, w=0.22, cham=(0.0, 0.0), panel="end"):
 
 # Round 9: outriggers. A round base under the ring, the turret raised on a riser, outrigger beams out past the base so
 # their feet stand on the rock.
-def riser(f, top, ribs=0, detail=True):
+def riser(f, top, ribs=0, detail=True, hatch=112):
     _g("base")
     f.vcyl(0, 0, 0, 1.0, 0.06, "gm", top="steelD", sides=32)
     f.vcyl(0, 0, 0.06, 0.94, 0.08, "steelD", top="steel", sides=32)
@@ -207,7 +207,7 @@ def riser(f, top, ribs=0, detail=True):
         a = (k + 0.5) * math.tau / 32
         f.vcyl(0.805 * math.cos(a), 0.805 * math.sin(a), top - 0.16, 0.014, 0.014, "steelL", sides=4)
     _g("hatch")
-    HA = math.radians(112)                                                      # left of the camera, clear of the arms
+    HA = math.radians(hatch)                                                    # between the front and left arms
     obox(f, HA, 0.8, 0.825, 0.17, 0.2, 0.6, "steel", top="steelL")              # access hatch
     obox(f, HA, 0.825, 0.835, 0.13, 0.24, 0.56, "steelD")
     obox(f, HA, 0.83, 0.86, 0.025, 0.36, 0.44, "steelL")                        # its handle
@@ -261,28 +261,26 @@ def outrigger(f, a, top, heavy=False, strut=0, tone=1, az=0.46):
         f.vcyl(jack[0], jack[1], 0, 0.16, 0.05, "gm", top="steelD", sides=12)
 
 
-def out_corners(f, arms, tone=1, port=None):
+def out_corners(f, arms, tone=1, port=None, hatch=112):
     """arms: (angle, where the arm meets the jack) pairs."""
     top = 0.78
-    riser(f, top)
+    riser(f, top, hatch=hatch)
     for a, az in arms:
         outrigger(f, a, top, heavy=True, tone=tone, az=az)
     port3(f, 0.0, **(port or {}))
 
 
 # Picked (round 14, K1): four outriggers on the corners, light steel arms and struts, a collar and domed cap on each jack.
-# Round 18: the junction box's panel turned toward the camera: a slight chamfer (P1), a 45 degree chamfer (P2), the +v
-# side face (P3).
+# Round 19: the riser's access hatch swung toward the camera (it was at 112 degrees): 88 (H1), 76 (H2), 64 (H3).
 _Q = math.pi / 4
 _ARMS = [(_Q + k * math.pi / 2, 0.46) for k in range(4)]
 
 
-def k1(f, cham=(0.0, 0.0), panel="end"):
-    out_corners(f, _ARMS, tone=1, port=dict(cham=cham, panel=panel))
+def k1(f, hatch=112):
+    out_corners(f, _ARMS, tone=1, hatch=hatch)
 
 
-GV = {"P1": (0.78, lambda f: k1(f, (0.08, 0.2), "cham")), "P2": (0.78, lambda f: k1(f, (0.2, 0.2), "cham")),
-      "P3": (0.78, lambda f: k1(f, (0.0, 0.0), "side"))}
+GV = {"H1": (0.78, lambda f: k1(f, 88)), "H2": (0.78, lambda f: k1(f, 76)), "H3": (0.78, lambda f: k1(f, 64))}
 
 def ground_turret(key, d, variant):
     """The head with its turntable ring (no roof coaming), standing on the variant's base."""
