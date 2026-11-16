@@ -159,66 +159,66 @@ def port3(f, z=0.0, u0=1.18):
     box(u0 + 0.06, u0 + 0.16, 0.05, z + 0.46, z + 0.5, "dark")                 # status lamp (idle: dark)
 
 
-def platform(f):
-    """W1: a raised chamfered plinth over the footprint, a step on the front, lamp posts at the corners."""
-    top = GV["W1"][0]
-    _g("plinth")
-    TB.prism(f, square(1.48, 0.36), 0, 0.08, "gm", top="steelD")
-    TB.prism(f, square(1.36, 0.32), 0.08, top - 0.04, "steelD", top="steel")
-    TB.prism(f, square(1.36, 0.32), top - 0.04, top, "steel", top="steelL")
-    _g("step")
-    TB.prism(f, [(-0.3, 1.36), (0.3, 1.36), (0.3, 1.5), (-0.3, 1.5)], 0, top * 0.5, "steel", top="steelL")
-    _g("posts")
-    for k in range(4):
-        a = math.pi / 4 + k * math.pi / 2
-        u, v = 1.08 * math.cos(a) * math.sqrt(2), 1.08 * math.sin(a) * math.sqrt(2)
-        if k == 3:
-            continue                                                           # the back corner stays clear of the port
-        f.vcyl(u, v, top, 0.06, 0.5, "steelD", top="steel", sides=10)
-        f.vcyl(u, v, top + 0.5, 0.09, 0.08, "steel", top="dark", sides=10)
-    port3(f, top, 1.0)
+# Round 9: outriggers. A round base under the ring, the turret raised on a riser, outrigger beams out past the base so
+# their feet stand on the rock.
+def riser(f, top, ribs=0):
+    _g("base")
+    f.vcyl(0, 0, 0, 1.0, 0.06, "gm", top="steelD", sides=32)
+    f.vcyl(0, 0, 0.06, 0.94, 0.08, "steelD", top="steel", sides=32)
+    _g("riser")
+    f.vcyl(0, 0, 0.14, 0.8, top - 0.14, "steelD", top="steel", sides=28)
+    f.vcyl(0, 0, top - 0.1, 0.84, 0.06, "steel", top="steelL", sides=28)
+    for k in range(ribs):
+        a = (k + 0.5) * math.tau / ribs
+        obox(f, a, 0.78, 0.86, 0.04, 0.14, top - 0.1, "steel", top="steelL")
 
 
-def revetment(f):
-    """W2: a low armoured wall round the head, eight-sided, the cable through a gap on its +u face."""
-    _g("floor")
-    TB.prism(f, octagon(1.46), 0, 0.04, "gm", top="steelD")
-    _g("wall")
-    for k in range(8):
-        a = OCT[k] - math.pi / 8 + math.pi / 8
-        a0, a1 = (k - 0.5) * math.tau / 8 + math.pi / 8 - math.pi / 8, (k + 0.5) * math.tau / 8
-        if k == 0:
-            continue                                                           # the +u face: open for the cable
-        ro, ri = 1.46 / math.cos(math.pi / 8), 1.2 / math.cos(math.pi / 8)
-        pts = [(ri * math.cos(a0), ri * math.sin(a0)), (ro * math.cos(a0), ro * math.sin(a0)),
-               (ro * math.cos(a1), ro * math.sin(a1)), (ri * math.cos(a1), ri * math.sin(a1))]
-        TB.prism(f, pts, 0.04, 0.42, "steelD", top="steel")
-        mid = (a0 + a1) / 2
-        obox(f, mid, 1.2, 1.5, 0.05, 0.04, 0.44, "steel", top="steelL")        # a rib on each panel
-    port3(f, 0.04, 1.08)
-
-
-def outriggers(f):
-    """W3: a baseplate, stabiliser jacks out at the corners, equipment cabinets either side of the ring."""
+def outrigger(f, a, top, heavy=False):
+    """One outrigger at angle a: a beam from the riser out and down to a jack and foot pad on the rock."""
     from . import detail as D
-    _g("plate")
-    TB.prism(f, square(1.15, 0.3), 0, 0.08, "steelD", top="steel")
-    _g("jacks")
+    c, s_ = math.cos(a), math.sin(a)
+    out = 1.42 if heavy else 1.38
+    hip = (0.82 * c, 0.82 * s_, min(top - 0.12, 0.34))
+    jack = (out * c, out * s_)
+    _g("outrigger")
+    if heavy:
+        D.seg(f, hip, (jack[0], jack[1], 0.36), 0.11, "steelD", 4)
+        f.vcyl(jack[0], jack[1], 0.04, 0.11, 0.38, "steel", top="steelL", sides=12)        # screw jack
+        for z in (0.12, 0.2, 0.28):
+            f.vcyl(jack[0], jack[1], z, 0.125, 0.025, "steelD", sides=12)
+        f.vcyl(jack[0], jack[1], 0, 0.22, 0.05, "gm", top="steelD", sides=14)               # foot
+    else:
+        D.seg(f, hip, (jack[0], jack[1], 0.24), 0.07, "steelD", 6)
+        D.seg(f, (0.86 * c, 0.86 * s_, 0.12), (jack[0] * 0.92, jack[1] * 0.92, 0.22), 0.04, "steel", 6)   # strut
+        f.vcyl(jack[0], jack[1], 0.04, 0.07, 0.24, "steel", top="steelL", sides=10)
+        f.vcyl(jack[0], jack[1], 0, 0.16, 0.05, "gm", top="steelD", sides=12)
+
+
+def out_four(f):
+    top = GV["O1"][0]
+    riser(f, top)
     for k in range(4):
-        a = math.pi / 4 + k * math.pi / 2
-        c, s_ = math.cos(a), math.sin(a)
-        fu, fv = 1.3 * c * math.sqrt(2) * 0.8, 1.3 * s_ * math.sqrt(2) * 0.8
-        D.seg(f, (0.95 * c * math.sqrt(2) * 0.8, 0.95 * s_ * math.sqrt(2) * 0.8, 0.18), (fu, fv, 0.18), 0.07, "steelD", 4)
-        f.vcyl(fu, fv, 0, 0.17, 0.06, "gm", top="steelD", sides=12)
-        f.vcyl(fu, fv, 0.06, 0.08, 0.2, "steel", top="steelL", sides=10)
-    _g("cabinets")
-    for v0 in (-1.0, 1.0):
-        TB.prism(f, [(-0.35, v0 - 0.22), (0.35, v0 - 0.22), (0.35, v0 + 0.22), (-0.35, v0 + 0.22)][::1] if False else
-                 [(-0.45 + 0.0, v0 * 1.05 - 0.2), (0.15, v0 * 1.05 - 0.2), (0.15, v0 * 1.05 + 0.2), (-0.45, v0 * 1.05 + 0.2)], 0.08, 0.5, "steelD", top="steel")
-    port3(f, 0.08, 1.0)
+        outrigger(f, math.pi / 4 + k * math.pi / 2, top)
+    port3(f, 0.0, 1.06)
 
 
-GV = {"W1": (0.3, platform), "W2": (0.04, revetment), "W3": (0.08, outriggers)}
+def out_heavy(f):
+    top = GV["O2"][0]
+    riser(f, top)
+    for k in range(4):
+        outrigger(f, math.pi / 4 + k * math.pi / 2, top, heavy=True)
+    port3(f, 0.0, 1.06)
+
+
+def out_three(f):
+    top = GV["O3"][0]
+    riser(f, top, ribs=12)
+    for k in range(3):
+        outrigger(f, math.pi + k * math.tau / 3, top, heavy=True)                           # none on the cable side
+    port3(f, 0.0, 1.06)
+
+
+GV = {"O1": (0.35, out_four), "O2": (0.5, out_heavy), "O3": (0.45, out_three)}
 
 def ground_turret(key, d, variant):
     """The head with its turntable ring (no roof coaming), standing on the variant's base."""
