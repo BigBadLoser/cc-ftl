@@ -26,7 +26,7 @@ L0, L1 = -3 + 0.71875 + 0.07, 1 - 0.71875 - 0.07   # the run along u: between th
 ZC, R = 0.78, 0.95                       # shell centre height and radius: the hull port's axis and port radius; the
                                          # walkway (the chord at z 0) flush with the rooms' floor, 1.08 wide, 1.73 high
 OCT = 0.76                               # the lattice's apothem
-ZB = 0.35                                # top of the metal belly (below it the shell is opaque): a kick panel
+ZB = 0.15                                # top of the metal belly (below it the shell is opaque): a kick strip, low so the walkway shows through the glass
 DECK = 0.0                               # the walkway: the rooms' floor (the shell under the ground is cut off)
 GLASS_ALPHA, GLASS_RIM = 0.18, 0.35      # the glass's opacity, and how much more at grazing angles
 SIDES = 32
