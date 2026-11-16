@@ -18,6 +18,7 @@ W = 1.5                                  # half width along the wall: three tile
 H = P.ZT                                 # its top: the outboard block's (so the two meet flush)
 ZC, R = P.AXIS, P.RS                     # the opening: the tube's section (round, cut flat at the floor)
 FRAME = (0.12, 0.04)                     # the room face's frame round the opening: width, stand off
+LAMP = (1.06, 1.5)                       # the lamps' (r, z) on the sunk face: beside the frame's shoulders
 RIB = 0.25                               # the end ribs' width along the wall
 WM = W - RIB                             # the sunk middle's half width
 DM = 0.0                                 # the sunk middle's face (d; the room is at -d): half a tile deep
@@ -82,14 +83,22 @@ def block(b):
         b.face([(DM, *_arc(R, t0)), (0.5, *_arc(R, t0)), (0.5, *_arc(R, t1)), (DM, *_arc(R, t1))], (0, -c, -s),
                P.RAMP[0])
     c = math.sqrt(R * R - ZC * ZC)
-    b.face([(DM, -c, 0.002), (0.5, -c, 0.002), (0.5, c, 0.002), (DM, c, 0.002)], (0, 0, 1), "tbDeck")
+    b.face([(LEAF_D, -c, 0.002), (0.5, -c, 0.002), (0.5, c, 0.002), (LEAF_D, c, 0.002)], (0, 0, 1), "tbDeck")
+    d0, d1 = DM - FRAME[1], LEAF_D                        # the threshold to the leaf, hazard striped
+    b.face([(d0, -c, 0.003), (d1, -c, 0.003), (d1, c, 0.003), (d0, c, 0.003)], (0, 0, 1), "tbIn")
+    k = 9
+    for i in range(0, k, 2):
+        r0, r1 = -c + 2 * c * i / k, -c + 2 * c * (i + 1) / k
+        sk = 0.12                                          # (the stripes' slant across the threshold)
+        q = [(d0, max(-c, r0 - sk)), (d0, max(-c, r1 - sk)), (d1, min(c, r1 + sk)), (d1, min(c, r0 + sk))]
+        b.face([(d, r, 0.004) for d, r in q], (0, 0, 1), "tbAmb")
     b.face([(-0.5, -WM, 0.002), (DM, -WM, 0.002), (DM, WM, 0.002), (-0.5, WM, 0.002)], (0, 0, 1), "tbDeckD")
     b.face([(DM, -WM, H), (0.5, -WM, H), (0.5, WM, H), (DM, WM, H)], (0, 0, 1))
 
 
 def frame(b):
     """The raised frame round the opening on the room face (light face, dark outer lip), an amber band inside it, two
-    lamps over it, bolts along it."""
+    lamps in hooded housings beside it, bolts along it."""
     w, h = FRAME
     d = DM - h
     t0, t1 = _ends(R)
@@ -107,11 +116,14 @@ def frame(b):
             b.face([(DM, *p0), (d, *p0), (d, *p1), (DM, *p1)], (0, c, s), "steelD")
         p0, p1 = _arc(R, a0), _arc(R, a1)
         b.face([(DM, *p0), (d, *p0), (d, *p1), (DM, *p1)], (0, -c, -s), "tbAmb")
-    for s in (-1, 1):                                    # lamps either side over the frame
-        t = math.pi / 2 - s * 0.55
-        r, z = _arc(R + w + 0.12, t)
-        b.face([(DM - 0.005, r - 0.07, z - 0.03), (DM - 0.005, r + 0.07, z - 0.03), (DM - 0.005, r + 0.07, z + 0.03),
-                (DM - 0.005, r - 0.07, z + 0.03)], (-1, 0, 0), "tbLamp")
+    for s in (-1, 1):                                    # lamps beside the frame's shoulders, in housings
+        r, z = s * LAMP[0], LAMP[1]
+        hw, hh = 0.1, 0.06
+        _raise(b, [(r - hw, z - hh), (r + hw, z - hh), (r + hw, z + hh), (r - hw, z + hh)], DM, 0.05, "tbRib")
+        _raise(b, [(r - hw + 0.025, z - hh + 0.02), (r + hw - 0.025, z - hh + 0.02), (r + hw - 0.025, z + hh - 0.025),
+                   (r - hw + 0.025, z + hh - 0.025)], DM - 0.05, 0.01, "tbLamp")
+        _raise(b, [(r - hw - 0.02, z + hh), (r + hw + 0.02, z + hh), (r + hw + 0.02, z + hh + 0.03),
+                   (r - hw - 0.02, z + hh + 0.03)], DM, 0.09, "tbRib")       # (a hood over it)
     for i in range(9):                                   # bolts along the frame
         t = t0 + (t1 - t0) * (i + 0.5) / 9
         r, z = _arc(R + w / 2 - 0.015, t)
@@ -158,7 +170,7 @@ def _ring(b, d, h, ra, rb, zc, front, n=32, inner=True, outer=True):
 def leaf(b, t):
     """The hatch leaf, `t` (0 closed .. 1 open) of its way down into the floor: a slab the opening's shape with relief on
     its room face: a raised rim round its visible edge, a boss in the middle with the viewport sunk in it, locking bars
-    out from the boss to the rim, a kick plate along its foot with hazard stripes."""
+    out from the boss to the rim, a kick plate along its foot."""
     dz = -t * (ZC + LEAF_R + 0.05)
     t0, t1 = _ends(LEAF_R)
     arc = [t0 + (t1 - t0) * i / N for i in range(N + 1)]
@@ -191,15 +203,8 @@ def leaf(b, t):
             q = [(rr - 0.035, bz - 0.08), (rr + 0.035, bz - 0.08), (rr + 0.035, bz + 0.08), (rr - 0.035, bz + 0.08)]
             _raise(b, q, f - 0.045, 0.02, "tbSoftD")
     w = lambda z: math.sqrt(max(0.0, ri * ri - (ZC - z) ** 2)) - 0.03   # noqa: E731 (the rim's inside at height z)
-    z0, z1 = 0.02, 0.24                                   # the kick plate (its sides along the rim), stripes on it
+    z0, z1 = 0.02, 0.24                                   # the kick plate (its sides along the rim)
     _raise(b, [(-w(z0), dz + z0), (w(z0), dz + z0), (w(z1), dz + z1), (-w(z1), dz + z1)], f, 0.03, "tbIn")
-    k = 14
-    for i in range(0, k, 2):
-        u0, u1 = -1 + 2 * i / k, -1 + 2 * (i + 1) / k     # (across the plate, -1 .. 1 at either height)
-        ya, yb = z0 + 0.02, z1 - 0.02
-        q = [(u0 * w(ya), dz + ya), (u1 * w(ya), dz + ya), (min(1, u1 + 0.12) * w(yb), dz + yb),
-             (min(1, u0 + 0.12) * w(yb), dz + yb)]
-        b.face([(f - 0.031, r, z) for r, z in q], (-1, 0, 0), "tbAmb")
 
 
 def piece(o=8, t=0.0, at=(0.0, 0.0)):
