@@ -58,12 +58,13 @@ class Study:
 
     def layers(self, aid):
         """The ids that draw `aid`: itself, or its `.on` and, when there is one, its `.holo` over it."""
-        ids = self.a.m["assets"]
-        if aid in ids or aid in self.pub.m["assets"]:
+        srcs = (self.a.m["assets"], self.pub.m["assets"])
+        if any(aid in ids for ids in srcs):
             return [aid]
-        if f"{aid}.on" in ids:
-            return [f"{aid}.on"] + ([f"{aid}.holo"] if f"{aid}.holo" in ids else [])
-        raise KeyError(f"no asset {aid} (nor {aid}.on) in {self.a.d}")
+        for ids in srcs:            # the study first, then public/assets (a baseline module beside the options)
+            if f"{aid}.on" in ids:
+                return [f"{aid}.on"] + ([f"{aid}.holo"] if f"{aid}.holo" in ids else [])
+        raise KeyError(f"no asset {aid} (nor {aid}.on) in {self.a.d} or {self.pub.d}")
 
     def footprint(self, aid):
         src, aid = self.find(self.layers(aid)[0])
