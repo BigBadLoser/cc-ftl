@@ -457,7 +457,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     // eslint-disable-next-line prefer-const -- the gate reads the scene it is built into
     let sc: ShipScene;
     const gate = budget.gate(() => rush || sc.ready());
-    sc = createShipScene(grid, { world, atlas, modules: content.modules, items: content.items, layers, roofed: roofFor(grid.id, s), livery, beamLook: beamLookFor(s.gen?.faction), hullPaint, roomTiers: () => roomTiers(grid.id), crews, faces, liveries, gate, idle: budgetOn ? budget.idle() : undefined, ...evaHost() });
+    sc = createShipScene(grid, { world, atlas, modules: content.modules, items: content.items, layers, roofed: roofFor(grid.id, s), livery, beamLook: beamLookFor(s.gen?.faction), bare: s.unseen, hullPaint, roomTiers: () => roomTiers(grid.id), crews, faces, liveries, gate, idle: budgetOn ? budget.idle() : undefined, ...evaHost() });
     sc.setCutaway(cutaway);
     if (grid.id === refId) {
       sc.view.setOverlay(overlay);
@@ -477,7 +477,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     for (const id of world.query(ShipC)) {
       const s = world.get(id, ShipC);
       const grid = s && sector && shipGridOf(sector, world, id);
-      if (!s || !grid || s.state === 'fled') continue;
+      if (!s || !grid || s.state === 'fled' ) continue;
       live.add(id);
       atlas.attribute(id);
       for (const map of [scenes, building]) {

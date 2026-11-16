@@ -56,6 +56,9 @@ export function containerAt(sim: Sim, x: number, y: number): number | null {
 /**
  * Mark container `id` for opening (see above). Returns the wreck's ship id, or null (nothing changes) when it may not be opened or no room is found for
  * the seat. The box keeps its stock, faction, rotation and hit points; it stays a sealed container until the cutting job is done.
+ *
+ * KNOWN LIMITATION (issue #522, "Crew work at off-grid bodies"): jobs and EVA only work on a ship grid, so a loose box gets a
+ * minimal "seat" ship whose tiles are never drawn (`ShipC.unseen`: the scene draws the box only). The real fix is #522; drop the seat then.
  */
 export function markForOpening(sim: Sim, id: number): number | null {
   if (openRefusal(sim, id)) return null;
@@ -85,6 +88,7 @@ export function markForOpening(sim: Sim, id: number): number | null {
     kept.hp = mod.hp;
   }
   const s = sim.world.get(ship, ShipC);
+  if (s) s.unseen = true;
   if (s && c.faction) s.gen = { faction: c.faction, seed: id, depth: 0 };
   sim.world.destroyEntity(id);
   placeSalvageOrder(sim, ship, [def.scrap, 'hull']); // the seat comes down with the box, so nothing is left lying in the node

@@ -59,6 +59,7 @@ describe('lost cargo', () => {
     expect(sim.world.has(id, ContainerC)).toBe(false);
     const seat = sim.world.query(ShipC).find((s) => sim.world.get(s, ShipC)?.name === `Container ${id}`)!;
     expect(sim.world.get(seat, ShipC)?.state).toBe('wreck');
+    expect(sim.world.get(seat, ShipC)?.unseen).toBe(true);
     expect(sim.world.has(seat, SalvageOrderC)).toBe(true);
     // Still sealed: the box is a module on its seat with its stock, nothing lies loose, and the art picks (variant, logo) are kept.
     const box = sim.world.query(ContainerC).find((c) => sim.world.has(c, ModuleC) && shipIdOf(sim, sim.world.get(c, ModuleC)) === seat)!;
