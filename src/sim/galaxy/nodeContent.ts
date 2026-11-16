@@ -68,6 +68,10 @@ export function oreMixFor<O extends { weight: number }>(
   return Object.entries(mix).filter(([id, w]) => w > 0 && ores[id]).map(([id, w]) => ({ ...(ores[id] as O), weight: w }));
 }
 
+/** The item ids a field placed as `structure` yields: what its mix mines (one answer for the starmap's resource list). */
+export const fieldItems = (table: NodeContentTable | undefined, ores: Readonly<Record<string, { weight: number; item: string }>>, structure: string): string[] =>
+  (oreMixFor(table, ores, structure) ?? []).map((o) => o.item);
+
 /** Table problems (empty list when valid): unknown structures, bad curves or ranges. Content tests assert it is empty. */
 export function nodeContentErrors(
   table: NodeContentTable, content: Pick<GalaxyContent, 'structures' | 'factions'>, oreIds?: readonly string[],

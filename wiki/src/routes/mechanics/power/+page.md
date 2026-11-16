@@ -107,7 +107,7 @@ Crystals in storage are an ordinary item, shown in **Ship stock**. Every startin
 
 - **Mining.** Crystals are an ore in asteroid rock. Select an asteroid, then use your mining pods (for example with
   **Paint ore to mine…**) to cut the ore. Asteroid fields come in kinds, and the starmap and the asteroid panel name them: a
-  **Crystal field** is where crystals are richest, a **Rocky field** gives iron ore and ice, an **Ice-rich field** is mostly ice
+  **Crystal field** is where crystals are richest, a **Rocky field** gives iron ore and ice with small patches of crystal, an **Ice-rich field** is mostly ice
   (water and oxygen), and a **Rare-ore field**, found only in more dangerous space, holds rare metals (refined into
   electronics) and iron.
 - **Stations.** Mining and trading stations sell crystals. The trade window lists them like any other item.

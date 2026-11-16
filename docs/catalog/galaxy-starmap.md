@@ -7,7 +7,7 @@ Fleets of every faction persist, follow agendas, fight each other off-screen and
 ## Node structures (`content.galaxy.structures`)
 | Name | id | What it does | Status | Where |
 |---|---|---|---|---|
-| Asteroid field kinds | `structure.asteroids` (rocky), `_ice`, `_crystal`, `_rare` | Rocky (iron and ice), ice-rich, crystal (reactor fuel) and rare-ore (tier 3+) fields, each with its own yield mix on its node-content entry (`oreMixFor`); 30% of nodes together, shown by name in the starmap and the asteroid panel; can host a mining outpost | In game | src/content/galaxy.ts:130; sim/asteroids/*, galaxy/populateSpawn.ts |
+| Asteroid field kinds | `structure.asteroids` (rocky), `_ice`, `_crystal`, `_rare` | Rocky (iron and ice, small crystal patches), ice-rich, crystal (reactor fuel) and rare-ore (tier 3+) fields, each with its own yield mix on its node-content entry (`oreMixFor`); 30% of nodes together, shown by name in the starmap and the asteroid panel, with the starmap's resource list read from each mix (`fieldItems`); can host a mining outpost | In game | src/content/galaxy.ts:130; sim/asteroids/*, galaxy/populateSpawn.ts |
 | Trade station | `structure.station_trade` | Station with fuel, trade, recruit | In game | src/content/galaxy.ts:20 |
 | Military station | `structure.station_military` | Navy depot; blueprints and yard | In game | src/content/galaxy.ts:20 |
 | Research station | `structure.station_research` | Blueprints and trade; rare (node content table, 10% falling with danger, never in pirate or rogue space) | In game | src/content/galaxy.ts:31 |

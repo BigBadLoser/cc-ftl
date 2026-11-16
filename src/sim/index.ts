@@ -155,6 +155,7 @@ export { stanceBetween, spillSources } from './galaxy/relations';
 export type {
   FactionRelationDef, FactionSpecialityDef, Stance, GalaxyFactionDef, StructureDef, NodeContentTable, NodeContentDef, TierCurve, GalaxyContent, StandingTier, DangerRange, FactionFleetDef, FleetContent, FleetGroupDef, MarketContent, MarketRates, PortKind, PortKindDef, ShipClassDef,
 } from './galaxy/defs';
+export { fieldItems, oreMixFor } from './galaxy/nodeContent';
 export { galaxyIndex, nodeOf, currentNode, START_NODE, type GalaxyIndex } from './galaxy/state';
 export { edgeBetween, planStarRoute } from './galaxy/route';
 export { jumpBlocker } from './galaxy/travel';

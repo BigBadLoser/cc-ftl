@@ -168,7 +168,7 @@ export interface StructureDef {
   /** One or two characters for the starmap badge. */
   badge: string;
   /** Items the node is a source of: a hint for the UI and for later mining, salvage and stores. */
-  resources: readonly string[];
+  resources?: readonly string[];
   /** Services a station offers ('fuel', 'trade', 'repair', 'recruit'); the trade layer reads them. */
   services?: readonly string[];
 }

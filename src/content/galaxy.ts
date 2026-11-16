@@ -127,11 +127,11 @@ const factions = {
 
 /** Fixed structures a node can hold. Descriptors only until node grids can place them (sector refactor). */
 const structures = {
-  // The four field kinds share a badge; the name says which (the yield mix is on the node-content entry).
-  'structure.asteroids': { name: 'Rocky field', kind: 'asteroids', badge: 'A', resources: ['item.iron_ore', 'item.ice'] },
-  'structure.asteroids_ice': { name: 'Ice-rich field', kind: 'asteroids', badge: 'A', resources: ['item.ice'] },
-  'structure.asteroids_crystal': { name: 'Crystal field', kind: 'asteroids', badge: 'A', resources: ['item.energy_crystal'] },
-  'structure.asteroids_rare': { name: 'Rare-ore field', kind: 'asteroids', badge: 'A', resources: ['item.rare_ore', 'item.iron_ore'] },
+  // The four field kinds share a badge; the name says which. Their resources are not listed here: the starmap reads them from the yield mix on the node-content entry.
+  'structure.asteroids': { name: 'Rocky field', kind: 'asteroids', badge: 'A' },
+  'structure.asteroids_ice': { name: 'Ice-rich field', kind: 'asteroids', badge: 'A' },
+  'structure.asteroids_crystal': { name: 'Crystal field', kind: 'asteroids', badge: 'A' },
+  'structure.asteroids_rare': { name: 'Rare-ore field', kind: 'asteroids', badge: 'A' },
   'structure.station_trade': { name: 'Trade station', kind: 'station', station: 'trade', badge: 'T', resources: ['item.fuel'], services: ['fuel', 'trade', 'repair', 'recruit'] },
   'structure.station_military': { name: 'Military station', kind: 'station', station: 'military', badge: 'M', resources: [], services: ['fuel', 'repair', 'blueprints'] },
   'structure.station_research': { name: 'Research station', kind: 'station', station: 'research', badge: 'R', resources: ['item.electronics'], services: ['trade', 'blueprints'] },
@@ -141,28 +141,23 @@ const structures = {
 /**
  * What a node holds besides the sector's faction station, the open trade station and the start node's free one: one weighted draw per node
  * over `quiet` and these entries (sim/galaxy/nodeContent.ts). Weights are shares of one whole, so a new kind either takes its share from
- * `quiet` (lower the quiet curve by the same) or accepts that the others thin out. At tier t the old independent odds were asteroids 0.30,
+ * `quiet` (lower the quiet curve by the same) or accepts that the others thin out. Rare ore does this: `quiet` falls 0.008 a tier (0.002 as before plus rare ore's 0.006 from tier 3), so the weights sum to 1 from tier 3. At tier t the old independent odds were asteroids 0.30,
  * derelicts 0.05 + 0.012 t, research 0.10 - 0.01 t, and these curves match them. Ship contacts stay outside: they are ships present, not
  * a place, and they sit on top of whatever the node holds.
  */
 // Order matters: one draw walks the entries in order, so `research` stays first (its placement is the old research roll's, see ARCHITECTURE.md).
 const nodeContents = {
-  quiet: { base: 0.55, perTier: -0.002 },
+  quiet: { base: 0.55, perTier: -0.008 },
   entries: {
     research: {
       structure: 'structure.station_research', danger: { min: 0 }, weight: { base: 0.1, perTier: -0.01 }, owner: 'territoryOrCivilian',
       notIn: ['pirates', 'rogue'],
     },
-    // The field kinds add up to the old 0.30 asteroid share at every tier (which keeps the other kinds' odds, and research placement, as they
-    // were). `ores` is each kind's yield mix by ore id: pocket weights read by the asteroid generator (oreMixFor). Rocky is two entries with
-    // one structure and one mix, because it gives rare ore its share from tier 3 on and a single linear curve cannot bend there.
+    // Rocky is the common default. `ores` is each kind's yield mix by ore id: pocket weights read by the asteroid generator and the starmap (oreMixFor).
+    // The asteroid share is 0.30 and grows with rare ore from tier 3: its weight comes out of `quiet`, so deep space is fuller.
     asteroids: {
-      structure: 'structure.asteroids', danger: { max: 2 }, weight: { base: 0.19 }, owner: 'territory',
-      ores: { 'ore.iron': 5, 'ore.ice': 4 },
-    },
-    asteroids_deep: {
-      structure: 'structure.asteroids', danger: { min: 3 }, weight: { base: 0.19, perTier: -0.006 }, owner: 'territory',
-      ores: { 'ore.iron': 5, 'ore.ice': 4 },
+      structure: 'structure.asteroids', danger: { min: 0 }, weight: { base: 0.19 }, owner: 'territory',
+      ores: { 'ore.iron': 5, 'ore.ice': 4, 'ore.crystal': 1 },
     },
     asteroids_ice: {
       structure: 'structure.asteroids_ice', danger: { min: 0 }, weight: { base: 0.07 }, owner: 'territory',
