@@ -110,7 +110,7 @@ export interface Renderer {
   /** Selected tile(s) on `shipId`'s grid (default the camera ship's; derelicts and other ships take their own). */
   setSelection(tile: Tile | readonly Tile[] | null, shipId?: number): void;
   setHover(tile: Tile | null): void;
-  /** Selected tiles in the shared sector layer, for a body that has no ship grid (a loose container). Null clears. */
+  /** A loose body's footprint (tiles) in the shared sector layer, as one outline round it; for a body that has no ship grid (a loose container). Null clears. */
   setSectorSelection(tiles: readonly Tile[] | null): void;
   setPreview(tiles: readonly Tile[], valid?: boolean): void;
   /** Painted areas (the shipyard plan): groups of tiles drawn filled or outlined in a colour, in the sector layer. Empty clears. */
@@ -844,7 +844,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       selShip = shipId;
       for (const sc of sceneOf(shipId)) sc.view.setSelection(t);
     },
-    setSectorSelection: (tiles) => sectorMarks.setSelection(tiles),
+    setSectorSelection: (tiles) => sectorMarks.setSelection(tiles, true),
     setHover(t) {
       hover = t;
       for (const sc of sceneOf(refId)) sc.view.setHover(t);
