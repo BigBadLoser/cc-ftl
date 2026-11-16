@@ -7,6 +7,7 @@ the ref's; the other face is its mirror, as hull 46's art is.
 
   1  dents and a long gouge (ref T3-7)
   2  the dents alone (ref T3-6)
+  4  a tower in the middle slot (ref T3-5; station_hull_tower)
   3  a module in the middle slot (ref T3-3): two boxes a px off the face, the top one from a px over the top down to the
      line under the bullnose (a vent in its front), the lower one from under that line down to the groove (a seam
      across it, a rounded seam outline under that); a dark recess from the groove down to the step; a box and two short rails in the far slot"""
@@ -26,9 +27,9 @@ DENTS = ((7, 0, 3, 1.7, (1.0, 1.25, 0.8, 0.9, 1.15, 0.7, 0.95, 1.05), 15),
 GOUGE = (28, 25, 5, 1.0, (1.0, 0.75, 1.1, 1.0, 0.85, 1.25, 0.8, 1.0), 6)   # a long shallow dent out to the tile's edge
 DENT_LIP, DENT_RING, DENT_PIT = "stL", "stM", "stD"
 
-MODULE = 3
-DESIGNS = {1: DENTS + (GOUGE,), 2: DENTS, MODULE: ()}
-NO_TABS = {MODULE}                  # designs without the groove's tabs (the recess takes the middle slot's foot), the
+MODULE, TOWER = 3, 4
+DESIGNS = {1: DENTS + (GOUGE,), 2: DENTS, MODULE: (), TOWER: ()}
+NO_TABS = {MODULE, TOWER}                 # designs without the groove's tabs (the recess takes the middle slot's foot), the
                                     # plate on the line under the bullnose and that line's lit px (the boxes take the
                                     # middle slot)
 
@@ -69,6 +70,9 @@ def dress(f, s0, design, zk):
             _dent(f, s0, *dent)
     elif design == MODULE:
         _module(f, s0, zk)
+    elif design == TOWER:
+        from .station_hull_tower import tower
+        tower(f, s0, zk)
 
 
 def _u(s0, p):
@@ -168,19 +172,13 @@ def gap(s):
     return s.z_at(zl, BOX_GAP + LOW_DROP), zl
 
 
-def _module(f, s0, zk):
-    s, H, px = f.sec, f.sec.H, 1 / core.ZPX
-    v0, v1 = (f.at_face(s0 + fr, zk) for fr in SH.SEAMS)
-    a, b = min(v0, v1) - LINE / 2, max(v0, v1) + LINE / 2  # the middle slot out over its seams
-    zt = s.z_at(s.zb, SH.UNDER)                             # the line under the bullnose (its dark px over zt)
-    out = D + BOX_OUT * LINE
-    lift = 0.5 * BOX_OUT * px                               # (a front LINE out stands a half px lower on screen: lifted
-                                                            # back so its edges and paint keep to the face's px rows)
-    # the top box: back from the top's seam, its top a px over the top's, its front a px off the face, down to the line
+def _top_box(f, a, b, z0, out):
+    """A box on the middle slot [a, b] from z0 up to a px over the top, its front `out`, its top front edge chamfered,
+    its top a plate run back past the top's seam; outlined down its far end (over the chamfer and along its top), faintly
+    lit down its near end. Its top and chamfer (z, px)."""
+    H, px = f.sec.H, 1 / core.ZPX
     back = SH.E - round((SH.R_D + SH.TOP_SEAM) * 32) / 32
-    zl = s.z_at(zt, -1)                                     # (the line's top)
-    top, z0 = H + BOX_UP * px, zl + lift
-    c = BOX_CHAMFER
+    top, c = H + BOX_UP * px, BOX_CHAMFER
     f.part(a, b, [(back, z0), (back, top), (out - c * LINE, top), (out, top - c * px), (out, z0)],
            [None, SH.TOP, SH.BANDS[0][0], SH.FACE, None], BOX_SIDE, end=False)
     _plate(f, a, b, back, top)
@@ -195,6 +193,21 @@ def _module(f, s0, zk):
         f.k.poly([T.P(f.ax, f.plane, v, top + T.PAINT, d) for v, d in ((u, d0), (u + LINE, d0),
                   (u + LINE, out - c * LINE), (u, out - c * LINE))], F, 3, core.Vector((0, 0, 1)),
                  fixed=T.SEAM_PASS or col)
+    return top, c
+
+
+def _module(f, s0, zk):
+    s, H, px = f.sec, f.sec.H, 1 / core.ZPX
+    v0, v1 = (f.at_face(s0 + fr, zk) for fr in SH.SEAMS)
+    a, b = min(v0, v1) - LINE / 2, max(v0, v1) + LINE / 2  # the middle slot out over its seams
+    zt = s.z_at(s.zb, SH.UNDER)                             # the line under the bullnose (its dark px over zt)
+    out = D + BOX_OUT * LINE
+    lift = 0.5 * BOX_OUT * px                               # (a front LINE out stands a half px lower on screen: lifted
+                                                            # back so its edges and paint keep to the face's px rows)
+    # the top box: its front a px off the face, down to the line
+    zl = s.z_at(zt, -1)                                     # (the line's top)
+    z0 = zl + lift
+    top, c = _top_box(f, a, b, z0, out)
     m = (a + b) / 2
     vn = VENTS[-1] + 1 + VENTS[0] - c                       # a seam across under its vent, as far under it as the
     for n in VENTS + (vn,):                                 # chamfer is over it; the vent (px rows under its top)
