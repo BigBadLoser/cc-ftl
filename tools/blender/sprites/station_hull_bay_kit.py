@@ -15,7 +15,6 @@ from . import station_hull_designs as SD
 from .wall3d_ext_geom import D, F, LINE
 
 
-
 def machinery(f, design, u0, u1, zf, zl, back):
     """Design `design`'s fill of the bay [u0, u1] x [zf, zl], its back at d = back."""
     {5: _filters, 6: _manifold2, 7: _exchanger}[design](f, u0, u1, zf, zl, back, 1 / core.ZPX)
