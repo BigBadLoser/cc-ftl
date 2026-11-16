@@ -50,7 +50,9 @@ HANDLE = (1, 2)                     # a handle in it, a line in the darker seam 
                                     # top and foot
 LOW_LIT = "stL"                     # a faint lit px under the box's top edge and the seam across, and down inside its near
                                     # side (the ref's left on the face rising to the right)
-TOP_LIT = "stH"                     # (the near edge of the top box's top: a step over its tone)
+TOP_LIT = "stB"                     # (the near edge of the top box's top: two steps over its tone)
+MID_LINE = SH.GROOVE_D              # the seam across each box (the darker seam tone)
+RECESS_LIT = "stL"                  # the recess: a lit px where its upright inside meets its lean
 GAP_SHADE = SH.SEAM                    # the top box's shadow in the gap under it
 RECESS = (11, 21, 1)                # a recess in the face: px across, its top px under the groove (down to the seam where
                                     # the step meets the face)
@@ -145,6 +147,11 @@ def blocks(f, s0, s1):
     for u, sg in ((u0, 1), (u1, -1)):                       # its ends (the armour's either side), in shadow
         q = [T.P(f.ax, f.plane, u + sg * 0.001, z, d) for z, d in ((zf, db), (zf, D), (zt, D), (zt, db))]
         f.k.poly(q, F, 3, (T.P(f.ax, 0, sg, 0, 0) - o).normalized(), fixed=T.SEAM_PASS or RECESS_WALL)
+    px = 1 / core.ZPX
+    _rect(f, u0, u1, s.z_at(zk, 1), zk, di + 0.001, RECESS_LIT)        # (its upright inside's top edge, lit)
+    _rect(f, u0, u1, zf, zf + px, di + 0.001, RECESS_WALL)              # (the step's seam carried along its foot, a
+                                                                        # step darker: its inside is the seam's tone)
+    _rect(f, u1, u1 + LINE, zf, zt, D + 0.001, SH.GROOVE_D)             # (a dark seam down its near edge)
 
 
 def gap(s):
@@ -185,7 +192,7 @@ def _module(f, s0, zk):
     for n in VENTS + (vn,):                                 # chamfer is over it; the vent (px rows under its top)
         zv = zl + lift + round((top - zl) / px) * px - n * px
         if n == vn:
-            _rect(f, a, b, zv - px, zv, out + 0.001, BOX_LINE)
+            _rect(f, a, b, zv - px, zv, out + 0.001, MID_LINE)
             continue
         _rect(f, m - VENT_W / 2 * LINE, m + VENT_W / 2 * LINE, zv - px, zv, out + 0.001, SH.GROOVE_D)
     # the gap under it in its shadow (under the line), then the lower box, down to a px over the groove's line
@@ -197,7 +204,7 @@ def _module(f, s0, zk):
     fd = out + 0.001
     _rect(f, a, a + LINE, z0, z1, fd, BOX_LINE)
     zs = z1 - LOW_LINE * px                                 # a seam across it
-    _rect(f, a, b, zs - px, zs, fd, BOX_LINE)
+    _rect(f, a, b, zs - px, zs, fd, MID_LINE)
     i = LOW_FRAME                                           # an outline under it, its corner px left out
     u0, u1, za, zb = a + i * LINE, b - i * LINE, z0 + i * px, zs - px - LOW_FRAME_TOP * px
     _rect(f, u0 + LINE, u1 - LINE, zb - px, zb, fd, BOX_LINE)
