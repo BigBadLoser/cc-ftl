@@ -148,10 +148,10 @@ def _part(f, u0, u1, z0, z1, out, face, top, side, end=False):
 
 def _block_prof(s):
     """A foot block's section: a px proud of the step's top and front; its front's top px a lit edge; the back of its
-    top (2 px out from the face: half a px a px on screen, under the face's seam a px over the step) carries on the
+    top (a px out from the face: its px on screen in line with the face's seam a px over the step) carries on the
     seam where the step meets the face, through the block on screen."""
     zt, out = s.z_at(FOOT_H, -1), FOOT_OUT + LINE
-    return [(D - 0.01, 0.0), (D - 0.01, zt), (D + 2 * LINE, zt), (D + out, zt), (D + out, s.z_at(zt, 1)),
+    return [(D - 0.01, 0.0), (D - 0.01, zt), (D + LINE, zt), (D + out, zt), (D + out, s.z_at(zt, 1)),
             (D + out, 0.0)]
 
 
