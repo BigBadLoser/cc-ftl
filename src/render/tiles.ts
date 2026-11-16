@@ -208,7 +208,8 @@ export function replacesFloor(kindAt: KindAt, x: number, y: number, mode: Cutawa
  * `ghosts` false (blueprints, roofed ships) draws plain blocks instead of ghosts. `gap(x, y)` marks hull tiles that are
  * not drawn at all because a module's own art stands there (an engine's bulkhead with the walls up or roofed): the
  * hull runs beside it get an end face toward the gap, like toward a ghost.
- * `win` (a window tile, sim/windows.ts): with the walls up, a straight wall piece or far hull piece draws
+ * `win` (a window tile, sim/windows.ts): a straight far hull piece (full height in every level) or, with the walls up, a
+ * straight wall piece draws
  * `tile.wall.full.m10.win.<l|m|r>` (along x) / `m5` (along y) first, the plain piece when that id is missing.
  */
 export function wallPieces(
@@ -263,7 +264,7 @@ export function wallPieces(
     // cutaway), with the hull over the partitions' height drawn on it (`tile.hull.cap.*`: the black band and the
     // roof plating), and at a run's end the wall's end section with the hull's on it.
     const wall = "tile.wall.full.";
-    const out: Piece[] = [{ chain: [...windowChain(wall, mask, win, level), ...chainOf(`${wall}m${mask}`)], order: 0 }, { chain: chainOf(`tile.hull.cap.m${mask}`, v), order: 1 }];
+    const out: Piece[] = [{ chain: [...windowChain(wall, mask, win, "up"), ...chainOf(`${wall}m${mask}`)], order: 0 }, { chain: chainOf(`tile.hull.cap.m${mask}`, v), order: 1 }];
     for (const [on, side, bits] of [[endS, "s", c & 6], [endE, "e", c & 3]] as const) {
       if (!on) continue;
       out.push({ chain: end(wall, side, bits), order: 2 }, { chain: end("tile.hull.cap.", side, bits), order: 3 });

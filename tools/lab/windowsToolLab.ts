@@ -30,10 +30,10 @@ const ROWS = [
   '#________________________#',
   '##########################',
 ];
-const BUILT: { x: number; y: number; axis: WindowAxis; size: number }[] = [{ x: 20, y: 5, axis: 'x', size: 3 }, { x: 18, y: 0, axis: 'x', size: 2 }, { x: 0, y: 6, axis: 'y', size: 3 }];
+const BUILT: { x: number; y: number; axis: WindowAxis; size: number }[] = [{ x: 20, y: 5, axis: 'x', size: 3 }, { x: 18, y: 0, axis: 'x', size: 2 }, { x: 0, y: 6, axis: 'y', size: 3 }, { x: 14, y: 9, axis: 'x', size: 4 }, { x: 25, y: 6, axis: 'y', size: 3 }];
 const PENDING = { x: 4, y: 9, axis: 'x' as WindowAxis, size: 3 };
 
-interface Case { label: string; note: string; at: [number, number]; size: number; roof?: boolean; newRow?: boolean }
+interface Case { label: string; note: string; at: [number, number]; size: number; roof?: boolean; newRow?: boolean; walls?: 'up' | 'auto' }
 const CASES: Case[] = [
   { label: 'valid: interior wall along x, size 2', note: 'hover (14,5)', at: [14, 5], size: 2, newRow: true },
   { label: 'size 3', note: 'hover (14,5)', at: [14, 5], size: 3 },
@@ -49,9 +49,11 @@ const CASES: Case[] = [
   { label: 'invalid: hull corner', note: 'hover (0,0)', at: [0, 0], size: 2 },
   { label: 'invalid: over a window', note: 'hover (21,5)', at: [21, 5], size: 2, newRow: true },
   { label: 'invalid: job pending', note: 'hover (5,9)', at: [5, 9], size: 2 },
-  { label: 'built windows, walls up', note: 'no tool', at: [20, 5], size: 0, newRow: true },
-  { label: 'built windows, roofed', note: 'no tool', at: [20, 5], size: 0, roof: true },
-  { label: 'built, hull top, roofed', note: 'no tool', at: [18, 0], size: 0, roof: true },
+  { label: 'built windows, walls up', note: 'no tool', at: [20, 5], size: 0, newRow: true, walls: 'up' },
+  { label: 'built, hull top, default walls', note: 'no tool', at: [18, 0], size: 0, walls: 'auto' },
+  { label: 'built, hull west, walls up', note: 'no tool', at: [0, 7], size: 0, walls: 'up' },
+  { label: 'built, hull bottom (4), roofed', note: 'no tool', at: [16, 9], size: 0, roof: true },
+  { label: 'built, hull east (3), roofed', note: 'no tool', at: [25, 7], size: 0, roof: true },
 ];
 
 const W = 640, H = 340;
@@ -67,7 +69,7 @@ function layout(): Layout {
  * The Window tool's conditions (`?panel=windows-tool`), drawn with the game's own code: a renderer over a sim holding the section,
  * the real paint tool (`createPaintTools`) put on build > window at each case's size and hovered over its tile, so the preview tint
  * and the hint text are exactly what the game shows; the hint is the build menu's own element. `zoom=` sets the camera zoom
- * (its steps; default the widest, 2), `only=0,12` shows those cells (by index). A pending job stands on the bottom wall; built windows sit on the east wall, the top hull and the west hull.
+ * (its steps; default the widest, 2), `only=0,12` shows those cells (by index). A pending job stands on the bottom wall; built windows sit on the interior wall along x, the top, west, bottom and east hull.
  */
 export async function mountWindowsToolLab(target: HTMLElement, params: URLSearchParams): Promise<void> {
   const world = buildWorld(layout());
@@ -121,6 +123,7 @@ export async function mountWindowsToolLab(target: HTMLElement, params: URLSearch
     if (only && !only.includes(ci)) continue;
     paint.setTool(c.size ? { tool: 'build', build: 'window', windowSize: c.size } : { tool: 'select' });
     r.setRoofPlayer(!!c.roof);
+    r.setCutaway(c.walls ?? 'auto');
     const at = { x: c.at[0] + ORIGIN, y: c.at[1] + ORIGIN };
     r.focusTile(at.x, at.y);
     placeHint.set(null);
