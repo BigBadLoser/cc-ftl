@@ -15,8 +15,10 @@ from . import wall3d_ext as X
 
 AXIS, RS = 0.78, 0.95                  # the port: the tube's axis height and radius (its walkway flush with the
                                        # rooms' floor, z 0: tube_study)
-W = 1.5                                # the block's half width along the run: three tiles (the door tile and one
-                                       # either side: the junction's, tube_junction)
+ROW = 1.5                              # the hull row it stands on (full height, tube_study's tube.hull): three tiles,
+                                       # the door tile and one either side (the junction's, tube_junction)
+W = 1.3                                # the block's half width along the run: inside the row's, so some hull shows
+                                       # either side of it
 DF, ZT, C = HE.DF, HE.ZT, HE.C
 ZF = AXIS - RS - 0.15                  # its foot: under the ground, clipped there (clip_ground) with the port's bottom
 RD = DF                                # the port's depth: right through the block (the door shows through it)

@@ -329,14 +329,14 @@ def _junction_job(o, t):
 def _hull_job(rot):
     """tube.hull.r<1|2>.<level>[.tint] (rotation 1: a hull row facing +x, 2: +y): the far port's hull row, as the
     airlock's camera-facing one (airlock.hull: the base exterior hull full height in every view, closed by end cuts) but
-    three tiles long, the port block's width (tube_port.W): no neighbour's cut hull past its ends, those tiles' own."""
+    three tiles long (tube_port.ROW, the block a little narrower): no neighbour's cut hull past its ends, those tiles' own."""
     def run(rot=rot):
         from . import airlock as AL, post, tube_port, walls as W
         post.select(AL.HULL_PAL)
         row = (-2, -1, 0, 1, 2)
         keep = AL.HALF, AL.ROW, AL._stub_ends, AL._trim.__defaults__, AL._stub.__defaults__
-        AL.HALF, AL.ROW, AL._stub_ends = tube_port.W, row, (lambda r: [])
-        AL._trim.__defaults__, AL._stub.__defaults__ = (-tube_port.W, tube_port.W), (row,)
+        AL.HALF, AL.ROW, AL._stub_ends = tube_port.ROW, row, (lambda r: [])
+        AL._trim.__defaults__, AL._stub.__defaults__ = (-tube_port.ROW, tube_port.ROW), (row,)
         try:
             out = []
             for lv in W.LEVELS:
