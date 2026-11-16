@@ -25,5 +25,7 @@ export interface Container {
   spin: number;
   /** The generator faction (`content.factions` id) whose livery it wears; set on cargo lost by a faction. Looks only. */
   faction?: string;
+  /** The entity id the box's art (shell variant, logo) was picked by: kept when the box changes entity (marked for opening). Looks only. */
+  seed?: number;
 }
 export const ContainerC = defineComponent<Container>('container');

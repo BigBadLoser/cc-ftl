@@ -153,8 +153,9 @@ import { newYard, type YardState } from './yard/types';
  * v122 (prisoner deals, #116): `Deal.handover.prisoner` (a prisoner's slab sold at a station, `job` optional), `StasisJob.phase` 'unstow' with `deliver` and `lifted`.
  * v123: `Prize.hullValue` removed (no hull sale; the value only sizes the loot at capture).
  * v124 (deck finishes and markings, station-generator port): the `floor` grid field (a floor tile's finish: plain deck, heavy plate, clean tile, carpet) and the deck marking masks `markWalkway`, `markApron`, `markKeepClear`, `markHazard` (sim/marks.ts).
+ * v125 (lost cargo, #503): `Container.faction` (the generator faction whose livery a loose box wears) and `Container.seed` (the id its art was picked by); a lost container is marked for opening by moving onto a wreck frame.
  */
-export const SAVE_VERSION = 124;
+export const SAVE_VERSION = 125;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {

@@ -38,6 +38,7 @@ describe('node content table', () => {
       expect(s['asteroids'] ?? 0).toBeCloseTo(0.3, 2);
       expect(s['derelict'] ?? 0).toBeCloseTo(0.05 + 0.012 * t, 2);
       expect(s['research'] ?? 0).toBeCloseTo(0.1 - 0.01 * t, 2);
+      expect(s['lostCargo'] ?? 0).toBeCloseTo(0.04, 2); // common at every tier, its share taken out of the quiet one
     }
   });
 

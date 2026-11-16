@@ -5,6 +5,12 @@ import { ItemStackC, StorageC } from '../sim/items/components';
 import { currentNode, newGame, playerShip, populateCargo, type Sim } from '../sim';
 import { lostCargoFaction } from '../sim/galaxy/populateCargo';
 import { SalvageOrderC } from '../sim/salvage/components';
+import { salvageJobs } from '../sim/salvage/plan';
+import { performJob } from '../sim/crew/jobWork';
+import { JobC } from '../sim/crew/components';
+import { ModuleC } from '../sim/modules/components';
+import { shipIdOf } from '../sim/regions';
+import { playerCrew } from '../sim/story/world';
 import { content } from '.';
 
 /** Lost cargo (#503): loose sealed containers in a node, wearing the livery of the faction that lost them, cut open into a salvageable deck. */
@@ -43,20 +49,53 @@ describe('lost cargo', () => {
     expect(lostCargoFaction(sim, node, 5)).toBe(lostCargoFaction(sim, node, 5));
   });
 
-  it('opens into a small wreck deck holding the goods, which a salvage order accepts', () => {
+  it('marks a box for opening: it sits on a wreck frame, still sealed, with a salvage order and a cutting job', () => {
     const { sim, ids } = setup(2, 4);
     const id = ids[0] as number;
-    const total = (sim.world.get(id, StorageC)?.stacks ?? []).reduce((n, s) => n + s.count, 0);
+    const stock = (sim.world.get(id, StorageC)?.stacks ?? []).map((s) => ({ ...s }));
+    const seed = sim.world.get(id, ContainerC)!.seed;
     sim.enqueue({ type: 'container.open', id });
     sim.step();
     expect(sim.world.has(id, ContainerC)).toBe(false);
-    const deck = sim.world.query(ShipC).find((s) => sim.world.get(s, ShipC)?.name === 'Opened container')!;
-    expect(sim.world.get(deck, ShipC)?.state).toBe('wreck');
-    const lying = sim.world.query(ItemStackC).reduce((n, s) => n + (sim.world.get(s, ItemStackC)?.count ?? 0), 0);
-    expect(lying).toBeGreaterThanOrEqual(total);
-    sim.enqueue({ type: 'salvage.order', ship: deck, types: ['hull'] });
-    sim.step();
-    expect(sim.world.has(deck, SalvageOrderC)).toBe(true);
+    const frame = sim.world.query(ShipC).find((s) => sim.world.get(s, ShipC)?.name === `Container ${id}`)!;
+    expect(sim.world.get(frame, ShipC)?.state).toBe('wreck');
+    expect(sim.world.has(frame, SalvageOrderC)).toBe(true);
+    // Still sealed: the box is a module on the frame with its stock, nothing lies loose, and the art picks (variant, logo) are kept.
+    const box = sim.world.query(ContainerC).find((c) => sim.world.has(c, ModuleC) && shipIdOf(sim, sim.world.get(c, ModuleC)) === frame)!;
+    expect(sim.world.get(box, ContainerC)?.seed).toBe(seed);
+    expect(sim.world.get(box, StorageC)?.stacks).toEqual(stock);
+    expect(sim.world.query(ItemStackC).length).toBe(0);
+    for (let i = 0; i < 3; i++) sim.step();
+    const job = salvageJobs(sim, frame).map((j) => sim.world.get(j, JobC)!).find((j) => j.kind === 'moduleDecon');
+    expect(job?.target).toBe(box);
+    expect(job?.work).toBeGreaterThan(0);
+  });
+
+  it('opens only when the crew finish the cutting job, and then the goods lie loose', () => {
+    const run = () => {
+      const { sim, ids } = setup(2, 4);
+      const id = ids[0] as number;
+      const goods = (sim.world.get(id, StorageC)?.stacks ?? []);
+      const item = goods[0]!.item;
+      const total = goods.reduce((n, s) => n + s.count, 0);
+      sim.enqueue({ type: 'container.open', id });
+      for (let i = 0; i < 5; i++) sim.step();
+      const frame = sim.world.query(ShipC).find((s) => sim.world.get(s, ShipC)?.name === `Container ${id}`)!;
+      const jobId = salvageJobs(sim, frame).find((j) => sim.world.get(j, JobC)?.kind === 'moduleDecon')!;
+      const job = sim.world.get(jobId, JobC)!;
+      const crew = playerCrew(sim)[0] as number;
+      let ticks = 0;
+      while (performJob(sim, crew, job, 1) !== 'done') {
+        ticks++;
+        expect(sim.world.query(ItemStackC).length).toBe(0); // nothing is out until the work is done
+      }
+      const lying = sim.world.query(ItemStackC).reduce((n, s) => n + (sim.world.get(s, ItemStackC)?.item === item ? sim.world.get(s, ItemStackC)!.count : 0), 0);
+      return { ticks, lying, total };
+    };
+    const a = run();
+    expect(a.ticks).toBeGreaterThan(50);
+    expect(a.lying).toBe(a.total);
+    expect(run()).toEqual(a); // deterministic
   });
 
   it('refuses to open anything that is not a drifting container', () => {

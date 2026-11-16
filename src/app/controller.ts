@@ -1,4 +1,5 @@
 import { asteroidAt, shipIdOf, shipGrid } from '../sim/regions';
+import { containerAt } from '../sim';
 import { AsteroidC } from '../sim/asteroids/components';
 import { AboardC, AllegianceC, BodyC, DraftedC, ModuleC, PositionC, ShipC, Struct, VehicleC, footprintTiles, playerFoes, type Sim, type SimEvent } from '../sim';
 import type { Renderer } from '../render/scene';
@@ -378,6 +379,10 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
           } else if (any && foreignShipTarget(sim, any.shipId, homeShipId()) !== null) {
             // A station or another ship: its inspector (the same panel as its node-strip button), without moving the camera.
             selectShip(any.shipId, false);
+          } else if (!tile && !any && containerAt(sim, renderer.pickSector(sx, sy).x, renderer.pickSector(sx, sy).y) !== null) {
+            // Loose cargo: the click orders it opened (the box is seated on a wreck frame and crew cut it, containers/open.ts).
+            const st = renderer.pickSector(sx, sy);
+            sim.enqueue({ type: 'container.open', id: containerAt(sim, st.x, st.y) as number });
           } else if (!tile && !any && asteroidAt(sim, renderer.pickSector(sx, sy).x, renderer.pickSector(sx, sy).y)) {
             // plain asteroid rock (or a hidden base under it): the asteroid's panel
             const st = renderer.pickSector(sx, sy);

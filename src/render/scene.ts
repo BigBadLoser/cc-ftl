@@ -340,7 +340,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   // Detached containers: inert bodies at hull height, sorted with the ships' tiles.
   const boxes = createContainerBodyView(world, atlas, content.modules, {
     layer: W.low, project: sectorArt,
-    livery: (id, faction) => { const l = liveryFor(faction, `container.${id}`, content.factions?.[faction]?.art.livery); return { scheme: l.scheme, seed: l.seed }; },
+    livery: (id, faction) => { const l = liveryFor('neutral', `Container ${id}`, content.factions?.[faction]?.art.livery); return { scheme: l.scheme, seed: l.seed }; },
   });
 
   /** What crew views need to draw EVA: the tank size. */

@@ -73,7 +73,7 @@ export function spawnDriftingContainer(
   const def = sim.content.modules[o.def];
   if (!def?.container) throw new Error(`spawnDriftingContainer: "${o.def}" is not a container`);
   const id = sim.world.createEntity();
-  sim.world.add(id, ContainerC, { def: o.def, rot: o.rot, clamp: o.clamp ?? 'n', state: 'drifting', hp: Math.round(def.maxHp * o.hp), ship: o.ship, vx: o.vx, vy: o.vy, spin: o.spin, ...(o.faction ? { faction: o.faction } : {}) });
+  sim.world.add(id, ContainerC, { def: o.def, rot: o.rot, clamp: o.clamp ?? 'n', state: 'drifting', hp: Math.round(def.maxHp * o.hp), ship: o.ship, vx: o.vx, vy: o.vy, spin: o.spin, seed: id, ...(o.faction ? { faction: o.faction } : {}) });
   sim.world.add(id, BodyC, { x: o.x, y: o.y, heading: 0, alt: ALT.docked });
   sim.world.add(id, StorageC, { capacity: def.storage?.capacity ?? 0, filter: null, stacks: o.stock.map((q) => ({ ...q })) });
   return id;

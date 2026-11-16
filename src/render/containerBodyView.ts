@@ -45,7 +45,7 @@ export function createContainerBodyView(world: World, atlas: Atlas, defs: Readon
         const b = world.get(id, BodyC);
         const def = c && defs[c.def];
         if (!c || !b || !def || c.state !== 'drifting') continue;
-        const { chain, key } = containerChain(def, c.rot, c.hp, c.clamp, containerVariant(id));
+        const { chain, key } = containerChain(def, c.rot, c.hp, c.clamp, containerVariant(c.seed ?? id));
         const [w, h] = rotatedSize(def, c.rot);
         // PLACEHOLDER: the drawn box (no clamp: it is loose) until the container sheets land.
         const art = resolveArt(atlas, chain, key) ?? { s: containerBox(w, h, boxState(c.hp, def.maxHp), c.clamp, false), tint: 0xffffff, perTile: false };
@@ -72,7 +72,7 @@ export function createContainerBodyView(world: World, atlas: Atlas, defs: Readon
             // Livery overlays sit on the shell's one sprite (same anchor): paint, trim, logo; each only if the art has it.
             const at = host.project(w - 1 - w / 2 + 0.5, h - 1 - h / 2 + 0.5);
             const over = (suffix: string): string[] => chain.map((n) => n + suffix);
-            const layers: [string[], 'paint' | 'lv' | null][] = [[over('.paint'), 'paint'], [over('.lv'), 'lv'], [over(`.logo.${containerLogo(id, lv.seed)}`), null]];
+            const layers: [string[], 'paint' | 'lv' | null][] = [[over('.paint'), 'paint'], [over('.lv'), 'lv'], [over(`.logo.${containerLogo(c.seed ?? id, lv.seed)}`), null]];
             layers.forEach(([names, kind], n) => {
               const o = atlas.firstOf(names);
               if (!o) return;

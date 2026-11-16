@@ -293,7 +293,7 @@ export function moduleLayers(world: World, id: number, m: Module, def: ModuleDef
     // on a destroyed one: burnt off) and the clamp gripping it on the frame side.
     const box = world.get(id, ContainerC);
     const clamp = box?.clamp ?? 'n';
-    const shell = containerChain(def, m.rot, m.hp, clamp, containerVariant(id));
+    const shell = containerChain(def, m.rot, m.hp, clamp, containerVariant(box?.seed ?? id));
     const at = clampTile(def, m, clamp);
     const dressed = m.hp > 0 && livery;
     const over = (suffix: string): string[] => shell.chain.map((c) => c + suffix);
@@ -302,7 +302,7 @@ export function moduleLayers(world: World, id: number, m: Module, def: ModuleDef
       ...(dressed ? [
         { chain: over('.paint'), key: `${shell.key}.paint`, tiles: 'all', overlay: 'paint', optional: true, strips: true, dz: 0.001 },
         { chain: over('.lv'), key: `${shell.key}.lv`, tiles: 'all', overlay: 'lv', optional: true, strips: true, dz: 0.002 },
-        { chain: over(`.logo.${containerLogo(id, livery.seed)}`), key: `${shell.key}.logo`, tiles: 'all', optional: true, strips: true, dz: 0.003 },
+        { chain: over(`.logo.${containerLogo(box?.seed ?? id, livery.seed)}`), key: `${shell.key}.logo`, tiles: 'all', optional: true, strips: true, dz: 0.003 },
       ] as ModuleLayer[] : []),
       { chain: [`container.clamp.${clamp}`, 'container.clamp'], key: 'container.clamp', tiles: 'all', at, dz: 0.04 },
     ];

@@ -12,6 +12,7 @@ Fleets of every faction persist, follow agendas, fight each other off-screen and
 | Military station | `structure.station_military` | Navy depot; blueprints and yard | In game | src/content/galaxy.ts:20 |
 | Research station | `structure.station_research` | Blueprints and trade; rare (node content table, 10% falling with danger, never in pirate or rogue space) | In game | src/content/galaxy.ts:31 |
 | Old derelict | `structure.derelict` | Wreck to salvage; may host a nest (node content table, 5% rising with danger) | In game | src/content/galaxy.ts:134 |
+| Lost cargo | `structure.lost_cargo` | One or two sealed containers adrift with no ship (node content table, 4% of nodes at every tier, taken from the quiet share); each wears a livery of the faction that lost it and holds one kind of goods by tier, rarely contraband. Clicking one marks it for opening: it is seated on a wreck frame with a salvage order, crew cut it in an EVA away-site run, and the goods spill for the usual staging and shuttle loading (no stasis-slab load yet; starmap icon borrows the derelict's) | In game | src/content/galaxy.ts; sim/galaxy/populateCargo.ts, cargoLoot.ts, sim/containers/open.ts; `?scenario=lostcargo&cut` (#503) |
 | Mining, farming and pirate stations as map structures | `-` | Appear only as port kinds, outposts or trader profiles, not as structures | Partial: no structure def | station.mining, station.farming, station.pirate are built through populateSpawn.ts and outposts |
 
 ## Map and world features

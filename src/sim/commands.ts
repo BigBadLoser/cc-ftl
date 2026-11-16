@@ -40,7 +40,7 @@ export type Command =
   | { type: 'debug.setUpgrade'; moduleId: number; item: string | null }
   /** Unclamp a container module from its ship: its tiles leave the ship and it drifts off as a free body with its stock. */
   | { type: 'container.detach'; id: number }
-  /** Cut a drifting container open where it floats: it becomes a small derelict deck with its goods on it (salvage takes it from there). */
+  /** Mark a drifting container for opening: it is seated on a small wreck frame with a salvage order, and crew cut it open (containers/open.ts). */
   | { type: 'container.open'; id: number }
   | { type: 'debug.setModuleHp'; id: number; hp: number }
   | { type: 'debug.ignite'; ship: number; x: number; y: number }
