@@ -69,9 +69,9 @@ C_SIDE = 22                         # the header's foot; C, a strip on from B's 
                                     # lean line down (measured off the reference; the base's two lines across its
                                     # lean run on up to B and on from C)
 W2_PLATE = (3, 5)                   # W2's header: a plate over B, covering its sides' lines (a px past their outer
-                                    # edges: REC proud, it shifts on screen and the lines peeked out), from this
-                                    # many px down the header's front on screen from its top edge, this many px
-                                    # tall; REC proud, in the upright part's tone (the user)
+                                    # edges: REC proud, it shifts on screen and the lines peeked out), on the
+                                    # header's upright face, from this many px under its top (the user's option 2),
+                                    # this many px tall; REC proud, in the upright part's tone (the user)
 E_RIBS = (11, 15)                   # W1's sill: E, a recess in its slope under B (its sides B's), from the slope's
 E_RIB = 2                           # top edge to a px short of its front (a lip), REC deep, a step darker; two ribs
 E_IN, E_SHORT = 1, 2                # standing in it at the slope's level, E_RIB px wide from these px from the
@@ -270,25 +270,20 @@ def _w1_header(f, s, s0, s1, dv, zc, zh):
     for u in (c0, c1):
         band(u, u + ln, zh, L.px(zt, -1), YS[3])                        # C: its side, to the header's foot
     if PART == "w2":
-        _w2_head_plate(f, s, b0 - T3.px(1), b1 + ln + T3.px(1), d_of=lambda z: T3.BACK + (H - z) * dk if z > zc else dv, zc=zc)
+        _w2_head_plate(f, s, b0 - T3.px(1), b1 + ln + T3.px(1), d_of=lambda z: T3.BACK + (H - z) * dk if z > zc else dv, zc=zc, zh=zh)
 
 
-def _w2_head_plate(f, s, u0, u1, d_of, zc):
-    """W2_PLATE on W2's header front over [u0, u1]: from n0 px down its front on screen from its top edge, n px
-    tall, REC proud, its front in the upright part's tone (YS[2]), its top a step over, its sides MID_PLATE_SIDE."""
+def _w2_head_plate(f, s, u0, u1, d_of, zc, zh):
+    """W2_PLATE on W2's header front over [u0, u1]: on its upright face, from n0 px under that face's top, n px tall
+    (on past the header's foot: hanging under it), REC proud, its front in the upright part's tone (YS[2]), its top
+    a step over, its sides MID_PLATE_SIDE."""
     n0, n = W2_PLATE
-    H = s.H
-    lean = s.sy(zc) - s.sy(H)                           # (the lean's px on screen; under it the front upright)
-
-    def z(m):
-        return s.z_at(H, m) if m <= lean else zc - (m - lean) / core.ZPX
-    za, zb = z(n0), z(n0 + n)
-    cuts = [za] + [c for c in (zc,) if zb < c < za] + [zb]
-    R = T3.REC
-    for i, (z0, z1) in enumerate(zip(cuts, cuts[1:])):
-        pf = [(d_of(z0), z0), (d_of(z0) + R, z0), (d_of(z1) + R, z1), (d_of(z1), z1)]
-        cols = [YS[3] if i == 0 else False, YS[2], False, False]
-        f.part(u0, u1, pf, cols, MID_PLATE_SIDE, end=False)
+    up = int((zc - zh) * core.ZPX - n0 + 1e-6)          # (on whole px from the header's foot, which is on the
+    za = zh + up / core.ZPX                             # grid; the face is 6.5 px tall, its top on a half px: the
+    zb = za - n / core.ZPX                              # plate 3.5 px under it, hanging 2 px under the header)
+    d, R = d_of(za), T3.REC
+    pf = [(d, za), (d + R, za), (d + R, zb), (d, zb)]
+    f.part(u0, u1, pf, [YS[3], YS[2], False, False], MID_PLATE_SIDE, end=False)
 
 
 def _w1_sill(f, s0, u0, u1, db, fr, zs, dv, zj, front):
