@@ -25,6 +25,9 @@ BLOCK_SLOPE = "stE"                 # its foot, sloped back down to the box's fr
 BLOCK_EDGE = SH.GROOVE_D            # a dark line down its front's edge at its end turned from view
 PLATE_UP, PLATE_CLEAR, PLATE_DEEP = 1, 2, 4   # a plate on the box's top: px proud; px clear of its chamfer and its
                                     # edge lines; px deep
+SIDE_PLATE, SIDE_DOWN = (5, 3), 5   # on the face beside the box: a plate (px wide, tall) this many px under the bullnose
+SIDE_SEAMS, SIDE_SEAM = 7, SH.GROOVE_D   # two seams down from under it, either side of its middle px: px long
+SIDE_FOOT, SIDE_CLEAR = 4, 2        # a plate where they end: px tall; px short of the box (across from the tile's end)
 PLATE_SIDE, PLATE_LINE = SH.GROOVE_D, SH.SEAM   # its sides; the lines round its top's edges
 BLOCK_LIT, BLOCK_JOIN = "stL", SH.GROOVE_D   # a lit px along its front's top edge; a dark one on the box's front over
                                     # its top
@@ -60,6 +63,7 @@ def tower(f, s0, zk):
         SD._rect(f, w0 + w, w1 - w, row(k + 1) + dz, row(k) + dz, vd, SH.GROOVE_D)
         SD._rect(f, w0 + w, w1 - w, row(k + 2) + dz, row(k + 1) + dz, vd, SLAT_LIT)
     _top_plate(f, a, b, top, out - c * LINE)
+    _side(f, b, s0 + 1)
     # the dark block, a seam across its middle; its top's line across the box's front
     q0 = (round((b - a) / LINE) - WIDE) // 2
     u0, u1 = across(q0 + WIDE), across(q0)
@@ -70,6 +74,23 @@ def tower(f, s0, zk):
     SD._rect(f, u0, u1, row(r0 + 1) + lift2, row(r0) + lift2, bd, BLOCK_LIT)
     SD._rect(f, u0, u0 + LINE, row(r1) + lift2, row(r0 + 1) + lift2, bd, BLOCK_EDGE)   # (u0: its end turned from view)
     SD._rect(f, a, b, row(r0) + lift2, row(r0 - 1) + lift2, fd, BLOCK_JOIN)   # (its row on the box's front: r0 - 2)
+
+
+def _side(f, b, e):
+    """On the face between the box's near end b and the tile's end e: a plate SIDE_DOWN px under the bullnose's foot,
+    centred; two dark seams down from under it; a plate where they end, across from the tile's end to SIDE_CLEAR px
+    short of the box."""
+    s, px = f.sec, 1 / core.ZPX
+    w, (pw, ph), n, sd, qh = round((e - b) / LINE), SIDE_PLATE, SIDE_DOWN, SIDE_SEAMS, SIDE_FOOT
+    at = lambda p: b + p * LINE                             # noqa: E731  p px from the box toward the tile's end
+    z = lambda k: s.z_at(s.zb, k)                           # noqa: E731  k px under the bullnose's foot
+    p0 = (w - pw) // 2
+    k = 1                                                   # (a px proud, a plate's front shows a px toward the box)
+    SH._part(f, at(p0 + k), at(p0 + pw + k), z(n + ph), z(n), LINE, SH.TAB, SH.TAB_TOP, SH.TAB_SIDE)
+    c = p0 + pw // 2                                        # (the plate's middle px; a seam either side of it)
+    for p in (c - 1, c + 1):
+        SD._rect(f, at(p), at(p + 1), z(n + ph + sd), z(n + ph), D + 0.001, SIDE_SEAM)
+    SH._part(f, at(SIDE_CLEAR + k), e, z(n + ph + sd + qh), z(n + ph + sd), LINE, SH.TAB, SH.TAB_TOP, SH.TAB_SIDE)
 
 
 def _top_plate(f, a, b, top, front):
