@@ -32,8 +32,12 @@ export const ROWS = [
  * (Beam) tiles instead, for a preview asset base whose east-end beam id draws a tube study sprite. */
 function tubeRows(beam: boolean): string[] {
   const mod = ['.#######.', '##_____##', '#_______#', '#_______#', '#_______#', '#_______#', '#_______#', '##_____##', '.#######.'];
-  const tube = beam ? ['...', '...', '...', '...', '===', '...', '...', '...', '...'] : ['...', '...', '...', '###', '___', '###', '...', '...', '...'];
-  const rows = mod.map((m, y) => `.${y === 4 ? `${m.slice(0, 8)}D` : m}${tube[y]}${y === 4 ? `D${m.slice(1)}` : m}.`);
+  // ?junction=1 (tubeart): the near module's three wall tiles round its door are frame tiles too, for the junction
+  // study sprite (the tube's last tile left empty, so its frame ids are unique: tube m8, junction m4 / m5 / m1)
+  const jn = beam && q.get('junction') === '1';
+  const tube = beam ? ['...', '...', '...', '...', jn ? '==.' : '===', '...', '...', '...', '...'] : ['...', '...', '...', '###', '___', '###', '...', '...', '...'];
+  const near = (m: string, y: number) => (jn && y >= 3 && y <= 5 ? `=${m.slice(1)}` : y === 4 ? `D${m.slice(1)}` : m);
+  const rows = mod.map((m, y) => `.${y === 4 ? `${m.slice(0, 8)}D` : m}${tube[y]}${near(m, y)}.`);
   const blank = '.'.repeat(rows[0]!.length);
   return [blank, ...rows, blank];
 }

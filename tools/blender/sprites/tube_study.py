@@ -22,9 +22,8 @@ from .cable_study import _frame
 
 PAL = "tube"
 L0, L1 = -3 + 0.71875 + 0.07, 1 - 0.71875 - 0.07   # the run along u: between the two hull ports' collars (tube_port)
-ZC, R = 0.78, 0.88                       # shell centre height and radius: the hull port's axis and port radius; the
-                                         # walkway (the chord at z 0) flush with the rooms' floor: the door's opening
-                                         # wide (0.81) and high (1.66)
+ZC, R = 0.78, 0.95                       # shell centre height and radius: the hull port's axis and port radius; the
+                                         # walkway (the chord at z 0) flush with the rooms' floor, 1.08 wide, 1.73 high
 OCT = 0.76                               # the lattice's apothem
 ZB = 0.35                                # top of the metal belly (below it the shell is opaque): a kick panel
 DECK = 0.0                               # the walkway: the rooms' floor (the shell under the ground is cut off)
@@ -226,5 +225,26 @@ def _mouth(own, wide, inside, mouth, c, op):
     return np.where(use[..., None], ci, c), op | use
 
 
+def _junction_job(o, t):
+    """tube.junction.w[.open]: the junction's inboard piece with its hatch (tube_junction), anchored at its front tile
+    (the door tile's +y neighbour: drawn after the wall row it stands in)."""
+    def run(o=o, t=t):
+        import bpy
+        from . import env_build as E, post, tube_junction
+        aid = f"tube.junction.{ {8: 'w'}[o] }" + (".open" if t else "")
+        core.clear_scene_meshes()
+        post.select("tube+hull+walls")
+        objs = tube_junction.piece(o, t, at=(0.0, -1.0))
+        sc = bpy.context.scene
+        sc.cycles.samples = SAMPLES
+        try:
+            it = E.crop_item(aid, (1, 1), *E.render_sprite(aid, "block", objs)[:5])
+        finally:
+            sc.cycles.samples = core.SAMPLES
+        return [it] if it else []
+    return run
+
+
 def jobs():
-    return [_job(look) for look in STUDY] + [_port_job(2, d) for d in (False, True)] + [_port_job(8)]
+    return ([_job(look) for look in STUDY] + [_port_job(2, d) for d in (False, True)] + [_port_job(8)] +
+            [_junction_job(8, t) for t in (0.0, 1.0)])

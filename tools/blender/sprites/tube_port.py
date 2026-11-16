@@ -13,10 +13,10 @@ from . import hull_engine as HE
 from . import wall3d as T
 from . import wall3d_ext as X
 
-AXIS, RS = 0.78, 0.88                  # the port: the tube's axis height and radius (its walkway flush with the
+AXIS, RS = 0.78, 0.95                  # the port: the tube's axis height and radius (its walkway flush with the
                                        # rooms' floor, z 0: tube_study)
-W = 1.0                                # the block's half width along the run (the port and a rim; the full-height
-                                       # hull run behind it is the door tile and half of either neighbour, 1.0)
+W = 1.5                                # the block's half width along the run: three tiles (the door tile and one
+                                       # either side: the junction's, tube_junction)
 DF, ZT, C = HE.DF, HE.ZT, HE.C
 ZF = AXIS - RS - 0.15                  # its foot: under the ground, clipped there (clip_ground) with the port's bottom
 RD = DF                                # the port's depth: right through the block (the door shows through it)
