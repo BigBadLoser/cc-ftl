@@ -51,9 +51,12 @@ BLOCK, BLOCK_LIT = FACE, "stH"      # its blocks: the face's tone, lit along the
 # straight runs' designs (after the ref's straight variants): 0 the base; each its extra detail over it. A dent: (px along
 # the tile from its far end (see _dent), px under the bullnose's foot, half its width and its height in px), painted
 # as a shallow pit: its lit lower lip, a darker ring, its shaded upper inside
-DENTS = ((7, 3, 3, 1.5), (13, 29.5, 3, 1.5), (25, 45.5, 2.5, 1.5))
-GOUGE = (27, 25, 4, 1.0)                                    # a long shallow dent near the tile's end
-DESIGNS = {1: DENTS + (GOUGE,), 2: DENTS}
+DENTS = ((7, 3, 3, 1.7, (1.0, 1.25, 0.8, 0.9, 1.15, 0.7, 0.95, 1.05), 15),
+         (13, 29.5, 2.6, 1.5, (1.0, 0.7, 1.05, 1.3, 0.9, 1.0, 0.75, 1.15), -12),
+         (25, 45.5, 2.4, 1.9, (0.8, 1.15, 1.2, 0.85, 0.7, 1.05, 1.3, 0.9), 35))
+GOUGE = (27, 25, 4, 1.0, (1.0, 0.75, 1.1, 1.0, 0.85, 1.25, 0.8, 1.0), 6)                                  # a long shallow dent near the tile's end
+DESIGNS = {1: DENTS + (GOUGE,), 2: DENTS}   # (its outline: radius scales round it from +u, eased between; its tilt,
+                                            # degrees on the face)
 DENT_LIP, DENT_RING, DENT_PIT = "stL", "stM", "stD"
 DESIGN = [0]                        # the design a straight piece is built in (0 the base)
 
@@ -231,22 +234,34 @@ def build(k, ax, plane, a, b, ends, H):
         _corner(f, zt, g0, g1)
 
 
-def _ellipse(f, uc, zc, ru, rz, d, col, n=20):
-    """A painted ellipse on the upright front, centre (uc, zc), radii ru along it and rz up (tiles), d out."""
-    pts = [T.P(f.ax, f.plane, uc + ru * math.cos(2 * math.pi * i / n), zc + rz * math.sin(2 * math.pi * i / n), d)
-           for i in range(n)]
+def _blob(f, uc, zc, ru, rz, shape, tilt, d, col, n=32):
+    """A painted blob on the upright front: an ellipse (radii ru along, rz up, art px) its radius scaled round it by
+    shape (eased between), tilted `tilt` degrees, centred (uc, zc), d out."""
+    px = 1 / core.ZPX
+    k, ca, sa = len(shape), math.cos(math.radians(tilt)), math.sin(math.radians(tilt))
+    pts = []
+    for i in range(n):
+        a = 2 * math.pi * i / n
+        t = a / (2 * math.pi) * k
+        j, w = int(t) % k, t - int(t)
+        w = (1 - math.cos(math.pi * w)) / 2
+        r = shape[j] * (1 - w) + shape[(j + 1) % k] * w
+        x, y = ru * r * math.cos(a), rz * r * math.sin(a)
+        x, y = x * ca - y * sa, x * sa + y * ca
+        pts.append(T.P(f.ax, f.plane, uc - x * LINE, zc + y * px, d))   # (-x: the art's +x runs to -u, see _dent)
     f.k.poly(pts, F, 3, T.OUT(f.ax), fixed=T.SEAM_PASS or col)
 
 
-def _dent(f, s0, u, n, ru, rz):
-    """A dent on the upright face: its lit lower lip (the pit's ellipse a px down), the darker ring over it, the shaded
-    inside up and back a half px."""
+def _dent(f, s0, u, n, ru, rz, shape, tilt):
+    """A dent on the upright face: its lit lower lip (its outline a px down), the darker ring over it, the shaded
+    inside (the outline turned a few steps round, smaller) up and back a half px."""
     s, px = f.sec, 1 / core.ZPX
     uc, zc = s0 + 1 - u * LINE, s.z_at(s.zb, n)     # (u px from the end at the screen-left of the face rising to the
                                                     # right, as the ref's; the other face its mirror, as hull 46's art)
-    _ellipse(f, uc - 0.5 * LINE, zc - px, ru * LINE, rz * px, D + 0.001, DENT_LIP)
-    _ellipse(f, uc, zc, ru * LINE, rz * px, D + 0.0015, DENT_RING)
-    _ellipse(f, uc + 0.5 * LINE, zc + 0.5 * px, (ru - 1.2) * LINE, (rz - 0.6) * px, D + 0.002, DENT_PIT)
+    pit = shape[3:] + shape[:3]
+    _blob(f, uc - 0.5 * LINE, zc - px, ru, rz, shape, tilt, D + 0.001, DENT_LIP)
+    _blob(f, uc, zc, ru, rz, shape, tilt, D + 0.0015, DENT_RING)
+    _blob(f, uc + 0.5 * LINE, zc + 0.5 * px, ru - 1.2, rz - 0.6, pit, tilt, D + 0.002, DENT_PIT)
 
 
 def _corner(f, zt, g0, g1):
