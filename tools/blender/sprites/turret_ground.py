@@ -173,7 +173,7 @@ def riser(f, top, ribs=0):
         obox(f, a, 0.78, 0.86, 0.04, 0.14, top - 0.1, "steel", top="steelL")
 
 
-def outrigger(f, a, top, heavy=False, strut=0):
+def outrigger(f, a, top, heavy=False, strut=0, joint=1):
     """One outrigger at angle a: a beam from the riser out and down to a jack and foot pad on the rock."""
     from . import detail as D
     c, s_ = math.cos(a), math.sin(a)
@@ -182,17 +182,28 @@ def outrigger(f, a, top, heavy=False, strut=0):
     jack = (out * c, out * s_)
     _g("outrigger")
     if heavy:
-        D.seg(f, hip, (jack[0], jack[1], 0.36), 0.11, "steelD", 4)
-        f.vcyl(jack[0], jack[1], 0.04, 0.11, 0.38, "steel", top="steelL", sides=12)        # screw jack
+        JZ = 0.62                                                                           # the jack's top
+        AZ = 0.46                                                                           # where the arm meets it
+        end = (jack[0] - 0.1 * c, jack[1] - 0.1 * s_, AZ)                                   # arm stops at the jack's side
+        D.seg(f, hip, end, 0.11, "steelD", 4)
+        f.vcyl(jack[0], jack[1], 0.04, 0.12, JZ - 0.04, "steel", top="steelL", sides=14)    # screw jack, taller
         for z in (0.12, 0.2, 0.28):
-            f.vcyl(jack[0], jack[1], z, 0.125, 0.025, "steelD", sides=12)
-        f.vcyl(jack[0], jack[1], 0, 0.22, 0.05, "gm", top="steelD", sides=14)               # foot
-        if strut:                                                                           # cross struts under the arm
+            f.vcyl(jack[0], jack[1], z, 0.135, 0.025, "steelD", sides=14)
+        if joint == 1:                                                                      # J1: a domed cap
+            f.vcyl(jack[0], jack[1], JZ, 0.12, 0.05, "steelL", top="steel", rtop=0.07, sides=14)
+        elif joint == 2:                                                                    # J2: a clevis pinned over the jack
             n = (-s_, c)
-            offs = (0.0,) if strut < 3 else (-0.07, 0.07)
-            r = 0.04 if strut == 1 else 0.06 if strut == 2 else 0.035
-            for o in offs:
-                D.seg(f, (0.86 * c + n[0] * o, 0.86 * s_ + n[1] * o, 0.16), (jack[0] * 0.8 + n[0] * o, jack[1] * 0.8 + n[1] * o, 0.3), r, "steel", 6)
+            for o in (-0.1, 0.1):
+                D.seg(f, (end[0] + n[0] * o, end[1] + n[1] * o, AZ), (jack[0] + n[0] * o, jack[1] + n[1] * o, JZ - 0.04), 0.035, "steelD", 6)
+            D.seg(f, (jack[0] - n[0] * 0.14, jack[1] - n[1] * 0.14, JZ - 0.04), (jack[0] + n[0] * 0.14, jack[1] + n[1] * 0.14, JZ - 0.04), 0.04, "steelL", 8)
+        else:                                                                               # J3: a thick collar where it meets
+            f.vcyl(jack[0], jack[1], AZ - 0.12, 0.17, 0.24, "steelD", top="steel", sides=14)
+            f.vcyl(jack[0], jack[1], JZ, 0.09, 0.03, "steelL", sides=14)
+        f.vcyl(jack[0], jack[1], 0, 0.22, 0.05, "gm", top="steelD", sides=14)               # foot
+        # Cross strut from the riser's foot up into the arm's underside (a point on the arm, not short of it).
+        t = 0.55
+        on = (hip[0] + (end[0] - hip[0]) * t, hip[1] + (end[1] - hip[1]) * t, hip[2] + (end[2] - hip[2]) * t - 0.08)
+        D.seg(f, (0.84 * c, 0.84 * s_, 0.16), on, 0.045, "steel", 6)
     else:
         D.seg(f, hip, (jack[0], jack[1], 0.24), 0.07, "steelD", 6)
         D.seg(f, (0.86 * c, 0.86 * s_, 0.16), (jack[0] * 0.8, jack[1] * 0.8, 0.3), 0.04, "steel", 6)   # strut
@@ -200,16 +211,17 @@ def outrigger(f, a, top, heavy=False, strut=0):
         f.vcyl(jack[0], jack[1], 0, 0.16, 0.05, "gm", top="steelD", sides=12)
 
 
-def out_strut(f, k):
-    top = GV["S1"][0]
+def out_joint(f, k):
+    top = GV["J1"][0]
     riser(f, top)
     for j in range(4):
-        outrigger(f, math.pi / 4 + j * math.pi / 2, top, heavy=True, strut=k)
+        outrigger(f, math.pi / 4 + j * math.pi / 2, top, heavy=True, joint=k)
     port3(f, 0.0, 1.06)
 
 
-# Round 11: O2 (heavy jacks, riser 0.78) with O1's cross struts: as O1 (S1), heavier (S2), a pair per arm (S3).
-GV = {"S1": (0.78, lambda f: out_strut(f, 1)), "S2": (0.78, lambda f: out_strut(f, 2)), "S3": (0.78, lambda f: out_strut(f, 3))}
+# Round 12: S1 polished: struts end on the arm, the jacks taller so the arm meets their side. Joint: cap (J1), clevis
+# (J2), collar (J3).
+GV = {"J1": (0.78, lambda f: out_joint(f, 1)), "J2": (0.78, lambda f: out_joint(f, 2)), "J3": (0.78, lambda f: out_joint(f, 3))}
 
 def ground_turret(key, d, variant):
     """The head with its turntable ring (no roof coaming), standing on the variant's base."""
