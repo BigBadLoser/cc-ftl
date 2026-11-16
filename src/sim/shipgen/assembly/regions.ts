@@ -135,6 +135,8 @@ export class RegionGrid {
   readonly apart = new Set<number>();
   /** The airlock rooms among them: where a walk inside such a module starts. */
   readonly entries = new Set<number>();
+  /** The rooms of each module standing apart, one list a module (their cable to the base: groundTurrets.ts). */
+  readonly apartModules: number[][] = [];
   /** Airlock rooms for the crew's walks outside (not berths for ships). */
   readonly crewLocks = new Set<number>();
 

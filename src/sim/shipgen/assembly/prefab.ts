@@ -269,6 +269,7 @@ export function prefab(c: Ctx, rooms: readonly RoomSpec[], docks: readonly RoomS
         const door = lock(gh, west);
         for (const id of [...gh.ids, door]) if (id !== null) g.apart.add(id);
         if (door !== null) g.entries.add(door);
+        g.apartModules.push([...gh.ids, ...(door !== null ? [door] : [])]);
       }
       return true;
     });

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { content } from '../index';
+import { generateOutpost, type OreDef } from '../../sim';
 import { CrewC, PositionC, ShipC, Struct, deserialize, homeShip, newGame, serialize, shipGrid, type Sim } from '../../sim';
 import { isCabled } from '../../sim/cable';
 import type { ModuleDef } from '../../sim';
@@ -140,5 +141,32 @@ describe('ground turrets', () => {
     expect(cabled(sim)).toBeGreaterThan(0);
     expect(cabled(b)).toBe(cabled(sim));
     expect(serialize(b)).toBe(serialize(sim));
+  });
+});
+
+describe('detached modules', () => {
+  it('every greenhouse standing apart on a farmRows base has a cable chain to a base wall (hull and cable make one piece)', () => {
+    const ctx = { ores: Object.values(content.ores) as OreDef[], modules: content.modules, stations: content.stations };
+    let rows = 0;
+    for (let seed = 1; seed <= 8; seed++) {
+      const t = generateOutpost('surface', seed, ctx, 'farming')?.template;
+      if (!t?.apart) continue;
+      rows++;
+      const w = Math.max(...t.rows.map((r) => r.length)), h = t.rows.length;
+      const solid = (x: number, y: number): boolean => (t.rows[y]?.[x] ?? '.') !== '.' || t.cable?.[y]?.[x] === '+';
+      const seen = new Set<number>(), stack: number[] = [];
+      const start = t.rows.join('').indexOf('_');
+      const at = (i: number): [number, number] => [i % w, Math.floor(i / w)];
+      const first = t.rows.flatMap((r, y) => [...r].map((c, x) => (c === '_' ? y * w + x : -1))).find((i) => i >= 0) as number;
+      expect(start).toBeGreaterThanOrEqual(0);
+      stack.push(first); seen.add(first);
+      while (stack.length > 0) {
+        const [x, y] = at(stack.pop() as number);
+        for (const [dx, dy] of N4) { const j = (y + dy) * w + x + dx; if (x + dx >= 0 && x + dx < w && y + dy >= 0 && y + dy < h && !seen.has(j) && solid(x + dx, y + dy)) { seen.add(j); stack.push(j); } }
+      }
+      const floors = t.rows.flatMap((r, y) => [...r].map((c, x) => (c === '_' ? y * w + x : -1))).filter((i) => i >= 0);
+      expect(floors.filter((i) => !seen.has(i)), `seed ${seed}: floor cut off from the base`).toEqual([]);
+    }
+    expect(rows).toBeGreaterThan(0);
   });
 });
