@@ -15,7 +15,8 @@ Method: an id counts as art-only when its `family.name` string appears nowhere i
 | `fx` | 338 | Shots, explosions, shields, muzzle flashes |
 | `item` | 280 | Floor stacks (s/m/l/unit/held), UI icons |
 | `starmap` | 170 | Map nodes, icons, markers |
-| `turret` | 146 | Roof turrets per weapon, 8 directions |
+| `turret` | 146 | Roof turrets per weapon, 8 directions; ground turret heads `turret.<stem>.ground.d<n>` (+ charged) for the 3x3 asteroid mount |
+| `module.<stem>.ground` | 28 | 3x3 ground turret mount on asteroid rock (riser, corner outriggers, junction box), one per cable side `.r0-.r3` (#514) |
 | `crew` | 145 | Bodies, hair, legs, gear layers, clips (human, alien, robot) |
 | `vehicle` | 120 | Shuttle, mining pod, escape pod |
 | `struct` | 112 | Beams and trusses |
