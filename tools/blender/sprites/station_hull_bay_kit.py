@@ -2,7 +2,8 @@
 every run ending in a wall, the floor or the machine (_run: a pipe swept along a path through rounded elbows; _lathe: a
 round body up the bay): a pump on the floor, an expansion tank lying across over it; the pump's line up off its top
 and back into the wall, another off its side up into the tank, two more up off the tank's top and back into it, the
-tank's return down out of it through a valve into the floor."""
+tank's return down out of it through a valve into the floor. Under the bay, a box out from the face, a pipe off it
+into the bay."""
 import math
 
 from . import core
@@ -14,6 +15,23 @@ from .wall3d_ext_geom import D, F, LINE
 def machinery(f, u0, u1, zf, zl, back):
     """The bay's fill over [u0, u1] x [zf, zl], its back at d = back."""
     _coolant(f, u0, u1, zf, zl, back, 1 / core.ZPX)
+    _under(f, u0, u1, zf, back, 1 / core.ZPX)
+
+
+UNDER_BOX = (7, 4, 13)              # the box under the bay: px wide, px out from the face, px tall (its top the bay's floor)
+UNDER_TONES = ("stM", "stL", "stD")   # its front, top, ends (in the light: not the machinery's shade)
+
+
+def _under(f, u0, u1, zf, back, px):
+    """Under the bay, centred on it: a box out from the face, its top level with the bay's floor; a small pipe up off
+    its top and back into the bay."""
+    w, out, h = UNDER_BOX
+    m = (u0 + u1) / 2
+    f.part(m - w / 2 * LINE, m + w / 2 * LINE, [(D - 0.01, zf - h * px), (D - 0.01, zf), (D + out * LINE, zf),
+                                               (D + out * LINE, zf - h * px)],
+           [None, UNDER_TONES[1], UNDER_TONES[0], None], UNDER_TONES[2], end=False)
+    p, dc = (m - u0) / LINE, D + out / 2 * LINE
+    _run(f, u0, zf, dc, [(p, -1), (p, 3), (p, 3, (back - dc) / LINE + 1)], r=1.0, R=2)
 
 
 RAMP = ("stK", "stE", "stDE", "stD", "stM", "stS", "stL", "stH", "stB", "stW")   # the station's tones, dark to light
