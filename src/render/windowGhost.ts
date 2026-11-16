@@ -50,7 +50,9 @@ export function createWindowGhost(parent: Container, atlas: Atlas, gridOf: (ship
           const grid = gridOf(g.ship);
           const has = (id: string) => !!atlas.stat(id);
           // A straight near run: the hull window's exterior piece (what the roofed ship draws); anything else the interior full piece.
-          const ext = grid && win ? windowExteriorId(hullOf(grid)!, t.x - grid.x0, t.y - grid.y0, has, win) : null;
+          // No hull keys (an asteroid base with rock or ground): the interior piece.
+          const keys = grid && win ? hullOf(grid) : null;
+          const ext = grid && win && keys ? windowExteriorId(keys, t.x - grid.x0, t.y - grid.y0, has, win) : null;
           const a = atlas.firstOf(ext ? [ext] : windowChain('tile.wall.full.', g.axis === 'x' ? 10 : 5, win));
           if (!a) return;
           const s = pool[used] ?? root.addChild(new Sprite());

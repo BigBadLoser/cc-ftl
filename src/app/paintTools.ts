@@ -123,6 +123,8 @@ export function createPaintTools(sim: Sim, bridge: Bridge, deps: PaintDeps): Pic
       return;
     }
     if (windowMode()) {
+      if (ghostOn) deps.renderer()?.setModuleGhost(null);
+      ghostOn = false;
       const plan = windowAtCursor();
       deps.renderer()?.setPreview(plan?.tiles ?? [], plan ? plan.error === null : true);
       deps.renderer()?.setWindowGhost(plan ? { ship: plan.ship, tiles: plan.tiles, axis: plan.axis, size: plan.size, valid: plan.error === null } : null);

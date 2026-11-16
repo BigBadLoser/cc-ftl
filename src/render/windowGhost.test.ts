@@ -41,4 +41,14 @@ describe("window placement ghost", () => {
     expect(((parent.children[0] as Container).children as Sprite[]).slice(0, 2).map((s) => s.texture.label)).toEqual(["tile.hull.ext.o2.m5.w1", "tile.hull.ext.o2.m5.w3"]);
     gridOf = () => undefined;
   });
+  it("on a grid without hull keys (an asteroid base with rock) falls back to the interior piece", () => {
+    const grid = new Grid(1, 10, 8, { struct: "u8" });
+    for (let y = 0; y < 8; y++) for (let x = 0; x < 10; x++) grid.set("struct", x, y, x === 0 || y === 0 || x === 9 || y === 7 ? Struct.Wall : x === 5 && y === 3 ? Struct.Rock : Struct.Floor);
+    gridOf = () => grid;
+    const parent = new Container();
+    const ghost = createWindowGhost(parent, atlas, gridOf);
+    ghost.set({ ship: 1, tiles: [3, 4].map((x) => ({ x, y: 7 })), axis: "x", size: 2, valid: false });
+    expect(((parent.children[0] as Container).children as Sprite[]).map((s) => s.texture.label)).toEqual(["tile.wall.full.m10.win.l", "tile.wall.full.m10.win.r"]);
+    gridOf = () => undefined;
+  });
 });
