@@ -29,7 +29,8 @@ UNDER = 5                           # the line under the bullnose: this many px 
 RAIL = 4 / 32                       # the line along the top's back: this far in from the back
 TOP_SEAM = 5 / 32                   # the seam across the top this far in past the bullnose's top edge (the seams end on it)
 FOOT_OUT, FOOT_H = 3 / 32, 0.15    # the step along the foot: proud, tall
-LEDGE_H = 2                         # the bright ledge along the foot, px tall
+FOOT_BLOCKS = (7, 5, 8, 5, 7)       # the step's two blocks across a tile: gap, block, gap, block, gap (px; 32 px a tile
+                                    # cannot split in three equal whole gaps); a px proud of its top and front
 CHAMFER_SEAM = 1                    # the corner's seams down its chamfer, this many px in from its edges
 
 FACE, FACE_LO, END, TOP = "stS", "stL", "stE", "stL"      # the face, its band under the groove, the shell, the top
@@ -42,7 +43,8 @@ PLATE_Z = lambda s, zt: (s.z_at(zt, 3), s.z_at(zt, -3))   # noqa: E731  the plat
                                     # its foot and top on screen, px under / over zt (6 px, centred on the line and
                                     # its lit px under it)
 TAB_W, TAB_IN = 3, 4                # the tabs on the groove: px wide, px in from their seam toward the tile's middle
-FOOT, FOOT_TOP, LEDGE = "stB", "stW", "stW"
+FOOT, FOOT_TOP = "stB", "stW"       # the step: its front a shade under its top
+BLOCK, BLOCK_LIT = FACE, "stH"      # its blocks: the face's tone, lit along their front's top edge
 
 
 def _band(t):
@@ -144,6 +146,16 @@ def _part(f, u0, u1, z0, z1, out, face, top, side, end=False):
     f.part(u0, u1, pf, [None, top, face, None], side, end=end)
 
 
+def _block_prof(s):
+    """A foot block's section: a px proud of the step's top and front; its front's top px a lit edge."""
+    zt, out = s.z_at(FOOT_H, -1), FOOT_OUT + LINE
+    return [(D - 0.01, 0.0), (D - 0.01, zt), (D + out, zt), (D + out, s.z_at(zt, 1)),
+            (D + out, 0.0)]
+
+
+BLOCK_COLS = [None, BLOCK, BLOCK_LIT, BLOCK, None]
+
+
 def _chamfer_part(f, t0, t1, z0, z1, out, face, top, side):
     pf = f.on(z0, z1, -0.01, out, hang=False)
     f.on_chamfer(t0, t1, pf, [None, top, face, None], side)
@@ -165,7 +177,7 @@ def build(k, ax, plane, a, b, ends, H):
             f.block(s0, s1, z0, z1)
         f.line(s0, s1, GROOVE, s.z_at(GROOVE, -1), GROOVE_D, bevel=False)
         f.line(s0, s1, s.z_at(GROOVE, 1), GROOVE, GROOVE_L, bevel=False)
-        f.line(s0, s1, FOOT_H, s.z_at(FOOT_H, -LEDGE_H), LEDGE, bevel=False)
+        f.line(s0, s1, FOOT_H, s.z_at(FOOT_H, -1), GROOVE_D, bevel=False)    # a seam where the step meets the face
         f.top_line(s0, s1, ts - LINE, ts, SEAM)
         f.top_line(s0, s1, rail - LINE, rail, SEAM)
         if whole:
@@ -182,13 +194,19 @@ def build(k, ax, plane, a, b, ends, H):
             _part(f, m - hw, m + hw, *PLATE_Z(s, zt), LINE, TAB, TAB_TOP, TAB_SIDE)
         pf = f.on(0.0, FOOT_H, -0.01, FOOT_OUT, hang=False)       # the step along the foot, one piece (open
         f.part(s0, s1, pf, [None, FOOT_TOP, FOOT, None], False)    # ends: it runs on; round an outer corner)
+        if whole:
+            u = s0
+            for i, w in enumerate(FOOT_BLOCKS):
+                if i % 2:
+                    f.part(u, u + w * LINE, _block_prof(s), BLOCK_COLS, BLOCK)
+                u += w * LINE
     if f.ch:
         _corner(f, zt, g0, g1)
 
 
 def _corner(f, zt, g0, g1):
     """The outer corner's chamfer: a seam down each edge, CHAMFER_SEAM px in, with a tab on the groove in from it; the
-    line under the bullnose across between them, a plate on it in the middle."""
+    line under the bullnose across between them, a plate on it in the middle; the step's two blocks."""
     t, s = f.chamfer_t, f.sec
     W = f.c * core.TILE_W
     sf = f.on(s.z_at(GROOVE, -1), s.H, -0.01, 0.001)
@@ -199,6 +217,11 @@ def _corner(f, zt, g0, g1):
     for z0, z1, col in ((zt, s.z_at(zt, -1), GROOVE_D), (s.z_at(zt, 1), zt, UNDER_L)):
         pf = f.on(z0, z1, -0.01, 0.001)
         f.on_chamfer(t(CHAMFER_SEAM + 1), t(W - CHAMFER_SEAM - 1), pf, [col] * len(pf), col)
+    u = (W - sum(FOOT_BLOCKS)) / 2                           # the step's blocks across it, as a tile's
+    for i, w in enumerate(FOOT_BLOCKS):
+        if i % 2:
+            f.on_chamfer(t(u), t(u + w), _block_prof(s), BLOCK_COLS, BLOCK)
+        u += w
     hw = TAB_W / 2 + 1
     _chamfer_part(f, t(W / 2 - hw), t(W / 2 + hw), *PLATE_Z(s, zt), LINE, TAB, TAB_TOP, TAB_SIDE)
 
