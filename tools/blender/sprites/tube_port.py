@@ -48,12 +48,14 @@ def _collar(b):
                (0, -(c0 + c1), -(s0 + s1)), RAMP[0])
 
 
-def _builder(o, name):
-    """hull_engine's builder; o 8 (a wall facing -x, away from the camera: the near module's end of the tube) on a frame
-    of its own, d out along -x, the axis on the origin (not half a tile back as hull_engine's)."""
+def _builder(o, name, centred=False):
+    """hull_engine's builder. o 8 (a wall facing -x, away from the camera: the near module's end of the tube), or
+    `centred`: on a frame of its own, d out along the wall's outward normal, r along the wall, the axis on the origin
+    (not half a tile back as hull_engine's)."""
     b = HE._Builder(2 if o == 8 else o, name)
-    if o == 8:
-        b.pt = lambda d, r, z: core.G(-d, r, z)
+    if o == 8 or centred:
+        (ox, oy), (rx, ry) = {2: ((1, 0), (0, 1)), 8: ((-1, 0), (0, 1)), 1: ((0, 1), (1, 0)), 4: ((0, -1), (1, 0))}[o]
+        b.pt = lambda d, r, z: core.G(ox * d + rx * r, oy * d + ry * r, z)
     return b
 
 
@@ -140,28 +142,20 @@ def piece(o, at=(0.0, 0.0)):
 
 
 def through(o, at=(0.0, 0.0), is_open=False):
-    """What the port shows roofed (the hull's door tile cut through behind it): (inside, mouth). inside: the bore's
-    walls on through the hull tile, the corridor door (closed or open) in the hull's wall line, the room's dark behind;
-    mouth: a disc over the collar's mouth, its px the ones the inside shows in."""
-    from . import door_block as DB
+    """What the port shows (the hull's door tile cut through behind it): (inside, mouth). inside: the junction in the
+    hull's wall line (tube_junction: its bore and its hatch, closed or open), the room's dark behind; mouth: a disc over
+    the collar's mouth, its px the ones the inside shows in."""
+    from . import tube_junction as J
     mask = 5 if o == 2 else 10
     dx, dy = X.STRAIGHT[(mask, o)]
-    d = DB.door("y" if o == 2 else "x", is_open, leaf="halves", look="metal")
-    for ob in d:
-        ob.location = ob.location + core.G(at[0], at[1], 0.0)
-    b, m = HE._Builder(o, f"tube_port_bore_{o}"), HE._Builder(o, f"tube_port_mouth_{o}")
+    inside = J.piece(o, 1.0 if is_open else 0.0, at)
+    b = _builder(o, f"tube_port_dark_{o}", centred=True)
     ts = [math.tau * i / N for i in range(N)]
-    ring = lambda d, t: (d, RS * math.cos(t), AXIS + RS * math.sin(t))   # noqa: E731
-    for t0, t1 in zip(ts, ts[1:] + ts[:1]):
-        b.face([ring(0.0, t0), ring(-0.5, t0), ring(-0.5, t1), ring(0.0, t1)],
-               (0, -(math.cos(t0) + math.cos(t1)), -(math.sin(t0) + math.sin(t1))), RAMP[0])
-    b.face([ring(-0.6, t) for t in ts], (1, 0, 0), "hsXK")
-    c = math.sqrt(RS * RS - AXIS * AXIS)
-    b.face([(-0.6, -c, 0.002), (0.0, -c, 0.002), (0.0, c, 0.002), (-0.6, c, 0.002)], (0, 0, 1), RAMP[4])
-    m.face([ring(DF + COLLAR[1], t) for t in ts], (1, 0, 0), "hsXK")
-    out = []
-    for x in (b, m):
-        ob = clip_ground(x.m.build())
-        ob.location = ob.location + core.G(at[0] + 0.5 * dx, at[1] + 0.5 * dy, 0.0)
-        out.append(ob)
-    return [*d, out[0]], out[1]
+    b.face([(-0.7, RS * 1.2 * math.cos(t), AXIS + RS * 1.2 * math.sin(t)) for t in ts], (1, 0, 0), "hsXK")
+    dark = clip_ground(b.m.build())
+    dark.location = dark.location + core.G(at[0], at[1], 0.0)
+    m = HE._Builder(o, f"tube_port_mouth_{o}")
+    m.face([(DF + COLLAR[1], RS * math.cos(t), AXIS + RS * math.sin(t)) for t in ts], (1, 0, 0), "hsXK")
+    mouth = clip_ground(m.m.build())
+    mouth.location = mouth.location + core.G(at[0] + 0.5 * dx, at[1] + 0.5 * dy, 0.0)
+    return [*inside, dark], mouth

@@ -28,16 +28,19 @@ export const ROWS = [
   '......#######....',
 ];
 /** `?layout=tube`: two prefab modules (seven inside, corners cut) joined by a tube as the prefab generator builds one (#508):
- * three long, a floor tile between two wall tiles, a door in each module's wall. `tubeart`: the tube's three tiles are frame
- * (Beam) tiles instead, for a preview asset base whose east-end beam id draws a tube study sprite. */
+ * `?len=` tiles long (default 3), a floor tile between two wall tiles, a door in each module's wall. `tubeart`: the tube's
+ * tiles are frame (Beam) tiles instead, for a preview asset base whose beam ids draw the tube study's sprites; with
+ * `?junction=1` only the tube's last tile and the near module's three wall tiles round its door are frame tiles (unique
+ * frame ids: the tube m2, the junction m4 / m13 / m1), the rest of the tube empty. */
 function tubeRows(beam: boolean): string[] {
   const mod = ['.#######.', '##_____##', '#_______#', '#_______#', '#_______#', '#_______#', '#_______#', '##_____##', '.#######.'];
-  // ?junction=1 (tubeart): the near module's three wall tiles round its door are frame tiles too, for the junction
-  // study sprite (the tube's last tile left empty, so its frame ids are unique: tube m8, junction m4 / m5 / m1)
+  const n = Math.max(1, Math.min(8, Number(q.get('len') ?? 3)));
   const jn = beam && q.get('junction') === '1';
-  const tube = beam ? ['...', '...', '...', '...', jn ? '==.' : '===', '...', '...', '...', '...'] : ['...', '...', '...', '###', '___', '###', '...', '...', '...'];
+  const run = jn ? `${'.'.repeat(n - 1)}=` : beam ? '='.repeat(n) : '_'.repeat(n);
+  const side = beam ? '.'.repeat(n) : '#'.repeat(n);
+  const tube = (y: number) => (y === 4 ? run : y === 3 || y === 5 ? side : '.'.repeat(n));
   const near = (m: string, y: number) => (jn && y >= 3 && y <= 5 ? `=${m.slice(1)}` : y === 4 ? `D${m.slice(1)}` : m);
-  const rows = mod.map((m, y) => `.${y === 4 ? `${m.slice(0, 8)}D` : m}${tube[y]}${near(m, y)}.`);
+  const rows = mod.map((m, y) => `.${y === 4 ? `${m.slice(0, 8)}D` : m}${tube(y)}${near(m, y)}.`);
   const blank = '.'.repeat(rows[0]!.length);
   return [blank, ...rows, blank];
 }

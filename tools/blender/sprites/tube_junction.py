@@ -7,7 +7,7 @@ sunk face, and the hatch: one leaf the opening's shape
 that slides straight down into the floor (tube_hatch's look is retired; an iris needs a round opening).
 
 Frame as tube_port's _builder (d out from the wall tiles' middle line toward the tube, r along the wall, z up); its
-origin the door tile's centre. Only o 8 (a wall facing -x: the junction's room face toward the camera) for now. The
+origin the door tile's centre. o 8: a wall facing -x (the room face toward the camera); o 2: one facing +x. The
 outboard block (tube_port) stands against its outer face."""
 import math
 
@@ -208,7 +208,7 @@ def piece(o=8, t=0.0, at=(0.0, 0.0)):
     """The junction's objects, its door tile's centre at grid offset `at` from the sprite's origin."""
     out = []
     for name, fn in (("block", lambda b: (block(b), frame(b))), ("leaf", lambda b: leaf(b, t))):
-        b = P._builder(o, f"tube_junction_{name}")
+        b = P._builder(o, f"tube_junction_{name}", centred=True)
         fn(b)
         ob = P.clip_ground(b.m.build())
         ob.location = ob.location + core.G(at[0], at[1], 0.0)

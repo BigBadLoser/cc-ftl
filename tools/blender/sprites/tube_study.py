@@ -98,6 +98,61 @@ def glass(f, g):
         _band(f, u, u + 0.1, _circle, 0.0, math.tau, 0.05, "tbAmb", "tbRib")
 
 
+END = 1 - 0.71875 - 0.07                 # an end tile's run stops here: the port's collar (tube_port), from the tile's middle
+PARTS = {"mid": (-0.5, 0.5), "west": (-END, 0.5), "east": (-0.5, END), "one": (-END, END)}   # per tile, along u
+
+
+def segment(part):
+    """One tile of the picked glass tube (tube.x.<part>): the run along u PARTS[part] from the tile's middle, its walkway,
+    the belly and glass, ribs at u +-0.25 (so none falls on a tile's edge), an amber end band where it is seated in a
+    port. A tube of any length is its tiles' segments side by side: west, mid ..., east (one: a single tile)."""
+    u0, u1 = PARTS[part]
+    m, mg = core.Mesh(f"tube_{part}"), core.Mesh(f"tube_{part}_glass")
+    f, g = _frame(m), _frame(mg)
+    w = 2 * math.sqrt(R * R - (ZC - DECK) ** 2)
+    f.box((u0 + u1) / 2, 0, DECK - 0.12, u1 - u0, w, 0.12, "tbDeckD", top="tbDeck")
+    for c in (-1, 1):
+        f.box(0.0, c * 0.33, DECK, 0.08, 0.05, 0.02, "tbDeckD", top="tbLamp")
+    b = _belly_angle(ZB)
+    _skin(f, u0, u1, _arc(_circle, math.pi - b, math.tau + b), "tbHull")
+    _skin(g, u0, u1, _arc(_circle, b, math.pi - b), "tbGlass")
+    for u in (-0.25, 0.25):
+        if u0 + 0.12 < u < u1 - 0.12:
+            _band(f, u - 0.03, u + 0.03, _circle, 0.0, math.tau, 0.03, "tbHull", "tbHullD")
+    if part in ("west", "one"):
+        _band(f, u0, u0 + 0.1, _circle, 0.0, math.tau, 0.05, "tbAmb", "tbRib")
+    if part in ("east", "one"):
+        _band(f, u1 - 0.1, u1, _circle, 0.0, math.tau, 0.05, "tbAmb", "tbRib")
+    from .tube_port import clip_ground
+    glassy = clip_ground(mg.build())
+    glassy["alpha"], glassy["rim"] = GLASS_ALPHA, GLASS_RIM
+    return [clip_ground(m.build()), glassy]
+
+
+def _seg_job(part):
+    def run(part=part):
+        import bpy
+        from . import post
+        aid = f"tube.x.{part}"
+        core.clear_scene_meshes()
+        post.select(PAL)
+        extras = []                                     # (the next tiles' segments either side, where the tube runs on)
+        for k, nb in ((-1, part in ("mid", "east")), (1, part in ("mid", "west"))):
+            if nb:
+                for ob in segment("mid"):
+                    ob.location = ob.location + core.G(k, 0.0, 0.0)
+                    extras.append(ob)
+        objs = segment(part)
+        sc = bpy.context.scene
+        sc.cycles.samples = SAMPLES
+        try:
+            it = _render(aid, objs, extras)
+        finally:
+            sc.cycles.samples = core.SAMPLES
+        return [it] if it else []
+    return run
+
+
 def canopy(f, g):
     _skin(f, L0, L1, _arc(_circle, math.pi, math.tau), "tbHull")                          # the lower half
     _band(f, L0, L1, _circle, -0.38, -0.26, 0.006, "tbAmb")                                 # stripe, near side
@@ -136,21 +191,35 @@ def tube(look):
     return [clip_ground(m.build()), glassy]
 
 
-def _render(aid, objs):
+def _render(aid, objs, extras=()):
     """Render with the glass's partial alpha kept: a px the opaque parts cover is opaque; one only glass covers takes the
-    glass's coverage as its alpha and the glass's colour."""
+    glass's coverage as its alpha and the glass's colour. `extras` (the next tiles' segments): in the scene, so the glass
+    takes the colour of what is behind it there, but their px are not the sprite's (it keeps the px where its own objects
+    show)."""
     from . import env_build as E, post
     xmin, xmax, ymin, ymax = core.extent_px(objs)
     W = 2 * (int(math.ceil(max(-xmin, xmax))) + 5)
     H = 2 * (int(math.ceil(max(-ymin, ymax))) + 5)
+    own = None
+    if extras:
+        for ob in extras:
+            ob.is_holdout = True
+        _, ao = core.render(W, H, "color")
+        own = post.blocks(ao > 0.02, core.SS).mean(-1) > 0.04
+        for ob in extras:
+            ob.is_holdout = False
     rgb, a = core.render(W, H, "color")
     c, op = post.downsample(rgb, a > 0.5, core.SS, 8, True)
     cg, _ = post.downsample(rgb, a > 0.02, core.SS, 8, True)
     cov = post.blocks(a, core.SS).mean(-1)
     see = ~op & (cov > 0.04)
+    if own is not None:
+        op, see = op & own, see & own
     c = np.where(see[..., None], cg, c)
     al = np.where(op, 255, np.where(see, np.clip(cov * 255, 0, 255), 0)).astype(np.uint8)
     c, al = E._pad1(c), np.pad(al, 1)
+    for ob in extras:
+        ob.hide_render = True
     grgb, _ = core.render(W, H, "glow")
     g = E._pad1(post.glow_down(grgb, core.SS, 3))
     return E.crop_item(aid, (1, 1), c, al > 0, g, (W + 2) // 2, (H + 2) // 2, al=al)
@@ -226,12 +295,12 @@ def _mouth(own, wide, inside, mouth, c, op):
 
 
 def _junction_job(o, t):
-    """tube.junction.w[.open]: the junction's inboard piece with its hatch (tube_junction), anchored at its front tile
+    """tube.junction.<e|w>[.open] (on a wall facing +x / -x): the junction's inboard piece with its hatch (tube_junction), anchored at its front tile
     (the door tile's +y neighbour: drawn after the wall row it stands in)."""
     def run(o=o, t=t):
         import bpy
         from . import env_build as E, post, tube_junction
-        aid = f"tube.junction.{ {8: 'w'}[o] }" + (".open" if t else "")
+        aid = f"tube.junction.{ {2: 'e', 8: 'w'}[o] }" + (".open" if t else "")
         core.clear_scene_meshes()
         post.select("tube+hull+walls")
         objs = tube_junction.piece(o, t, at=(0.0, -1.0))
@@ -246,5 +315,5 @@ def _junction_job(o, t):
 
 
 def jobs():
-    return ([_job(look) for look in STUDY] + [_port_job(2, d) for d in (False, True)] + [_port_job(8)] +
-            [_junction_job(8, t) for t in (0.0, 1.0)])
+    return ([_seg_job(p) for p in PARTS] + [_port_job(2, d) for d in (False, True)] + [_port_job(8)] +
+            [_junction_job(o, t) for o in (2, 8) for t in (0.0, 1.0)])
