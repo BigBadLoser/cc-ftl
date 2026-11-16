@@ -17,8 +17,8 @@ from . import tube_port as P
 W = 1.5                                  # half width along the wall: three tiles
 H = P.ZT                                 # its top: the outboard block's (so the two meet flush)
 ZC, R = P.AXIS, P.RS                     # the opening: the tube's section (round, cut flat at the floor)
-FRAME = (0.12, 0.04)                     # the room face's frame round the opening: width, stand off
-LAMP = (0.86, 1.65)                      # the lamps' (r, z) on the sunk face: over the frame's shoulders
+FRAME = (0.13, 0.09)                     # the room face's frame round the opening: width, stand off
+LAMP = (0.86, 1.73)                      # the lamps' (r, z) on the sunk face: over the frame's shoulders
 RIB = 0.25                               # the end ribs' width along the wall
 WM = W - RIB                             # the sunk middle's half width
 DM = 0.0                                 # the sunk middle's face (d; the room is at -d): half a tile deep
@@ -112,7 +112,7 @@ def frame(b):
         c, s = math.cos((a0 + a1) / 2), math.sin((a0 + a1) / 2)
         p0, p1 = _arc(R + w, a0), _arc(R + w, a1)
         if min(p0[1], p1[1]) >= 0:
-            b.face([(DM, *p0), (d, *p0), (d, *p1), (DM, *p1)], (0, c, s), "steelD")
+            b.face([(DM, *p0), (d, *p0), (d, *p1), (DM, *p1)], (0, c, s))           # (toned by facing: it stands off)
         p0, p1 = _arc(R, a0), _arc(R, a1)
         b.face([(DM, *p0), (d, *p0), (d, *p1), (DM, *p1)], (0, -c, -s), "tbAmb")
     for s in (-1, 1):                                    # lamps beside the frame's shoulders, in housings
@@ -187,20 +187,18 @@ def leaf(b, t):
     for a0, a1 in zip(a, a[1:]):
         q = [(ri * math.cos(a0), zc + ri * math.sin(a0)), (ro * math.cos(a0), zc + ro * math.sin(a0)),
              (ro * math.cos(a1), zc + ro * math.sin(a1)), (ri * math.cos(a1), zc + ri * math.sin(a1))]
-        _raise(b, q, f, 0.035, "tbHull", sides=(3,))
-    bz = zc + 0.06                                        # the boss, the viewport sunk in it
-    _ring(b, f, 0.06, 0.2, 0.42, bz, "tbSoft")
-    _ring(b, f - 0.06, 0.012, 0.36, 0.42, bz, "tbSoftD", inner=False, outer=False)
-    _ring(b, f, 0.025, 0.0, 0.2, bz, "tbIn", outer=False, inner=False)     # (the sleeve's floor, under the glass)
-    b.face([(f - 0.03, 0.17 * math.cos(x), bz + 0.17 * math.sin(x)) for x in
-            [math.tau * i / 24 for i in range(24)]], (-1, 0, 0), "tbGlass")
-    for s in (-1, 1):                                     # locking bars from the boss to the rim
-        r0, r1 = s * 0.4, s * (ri + 0.01)
-        q = [(min(r0, r1), bz - 0.05), (max(r0, r1), bz - 0.05), (max(r0, r1), bz + 0.05), (min(r0, r1), bz + 0.05)]
-        _raise(b, q, f, 0.045, "tbRibL" if False else "tbSoft")
-        for rr in (r0 + s * 0.12, r1 - s * 0.1):         # (their clamps)
-            q = [(rr - 0.035, bz - 0.08), (rr + 0.035, bz - 0.08), (rr + 0.035, bz + 0.08), (rr - 0.035, bz + 0.08)]
-            _raise(b, q, f - 0.045, 0.02, "tbSoftD")
+        _raise(b, q, f, 0.03, "tbHullD", sides=(3,))       # (a step darker than the leaf: its edge reads)
+    bz = zc + 0.06                                        # the boss (the lightest), the viewport sunk in it
+    for s in (-1, 1):                                     # locking bars from the boss to the rim (under the boss)
+        r0, r1 = s * 0.3, s * (ri + 0.01)
+        q = [(min(r0, r1), bz - 0.07), (max(r0, r1), bz - 0.07), (max(r0, r1), bz + 0.07), (min(r0, r1), bz + 0.07)]
+        _raise(b, q, f, 0.04, "tbRib")
+    _ring(b, f, 0.075, 0.21, 0.44, bz, "tbSoft")
+    _ring(b, f, 0.03, 0.0, 0.21, bz, "tbIn", outer=False, inner=False)      # (the sleeve's floor, under the glass)
+    g = [math.tau * i / 24 for i in range(24)]
+    b.face([(f - 0.035, 0.19 * math.cos(x), bz + 0.19 * math.sin(x)) for x in g], (-1, 0, 0), "tbGlass")
+    b.face([(f - 0.036, -0.1 + 0.05 * math.cos(x), bz + 0.08 + 0.035 * math.sin(x)) for x in g], (-1, 0, 0),
+           "tbGlassL")                                    # (a glint)
     w = lambda z: math.sqrt(max(0.0, ri * ri - (ZC - z) ** 2)) - 0.03   # noqa: E731 (the rim's inside at height z)
     z0, z1 = 0.02, 0.24                                   # the kick plate (its sides along the rim)
     _raise(b, [(-w(z0), dz + z0), (w(z0), dz + z0), (w(z1), dz + z1), (-w(z1), dz + z1)], f, 0.03, "tbIn")
