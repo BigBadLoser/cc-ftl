@@ -1,4 +1,4 @@
-"""Ground power cable look study, round 1 (family `cable_study`, palette set cable, preview only; issue #514): a power
+"""Ground power cable look study, round 2 (round 1 had a third look, buried, dropped) (family `cable_study`, palette set cable, preview only; issue #514): a power
 cable laid across levelled asteroid ground between modules that no hull joins. One 1x1 sprite per tile by a 4-neighbour
 connection mask (N1 E2 S4 W8, grid N = -y, E = +x), like the structural beams; a module or wall on a tile edge counts as
 a connection, and the plug overlay adds the socket hardware on that edge. Low: it lies on the ground.
@@ -6,7 +6,6 @@ a connection, and the plug overlay adds the socket hardware on that edge. Low: i
 Looks:
   hose    a heavy armoured hose lying on the rock, ribbed sheath, gentle radiused bends, staked clamps, a junction box
   tray    a knee-low cable tray on stands, three cables in it (one orange), radiused bends, a junction box
-  buried  a buried conduit: flush armoured cover plates in a dark cut, glowing seams between plates, a junction hatch
 
 Sprites, per look L (powered; `.off` the same unpowered):
   cable.L.m<mask>[.off]          the tile (straight masks 5 and 10 also .v1, .v2)
@@ -20,7 +19,7 @@ from .cmbkit import Frame
 
 PAL = "cable"
 DIRS = {"n": (1, (0, -1)), "e": (2, (1, 0)), "s": (4, (0, 1)), "w": (8, (-1, 0))}
-LOOKS = ("hose", "tray", "buried")
+LOOKS = ("hose", "tray")
 
 
 def _frame(m):
@@ -120,40 +119,42 @@ def _spans(L, period, phase, width):
 # ---- hose -----------------------------------------------------------------------------------------------------------
 
 HR, HZ = 0.095, 0.095                        # hose radius and centre height (lies on the ground)
-HUB = 0.16
+HS = 14                                      # sides: enough for a smooth silhouette along the 2:1 diagonals
+HUB = 0.2
 
 
 def _hose_run(f, path, lit, var=0, clamp=False):
+    """The hose along a path. Nothing on it breaks its outline but the clamp and the coupling (deliberate shapes): the
+    joint bands at tile edges are colour only."""
     L = _cum(path)[-1]
-    sweep(f, _sub(path, 0, L), _round(HR, HZ, 10), ["cbSheath"])
-    for a, b in _spans(L, 0.25, 0.0, 0.05):           # ribs, in step across tile edges
-        sweep(f, _sub(path, a, b, 0.02), _round(HR + 0.014, HZ, 10), ["cbRib"], caps="cbRib")
-    if clamp:                                                                 # a staked clamp at the middle
-        (u, v), (du, dv) = _at(path, _cum(path), L / 2)
-        pu, pv = -dv, du
-        for s in (-1, 1):
-            f.box(u + pu * s * (HR + 0.03), v + pv * s * (HR + 0.03), 0.0, 0.06 if du == 0 else 0.07,
-                  0.07 if du == 0 else 0.06, 0.1, "cbClampD", top="cbClamp")                      # stake heads
-        sweep(f, _sub(path, L / 2 - 0.035, L / 2 + 0.035, 0.035),
-              [(-HR - 0.05, 0.0), (HR + 0.05, 0.0), (HR + 0.05, HZ + 0.02), (0, 2 * HZ + 0.025), (-HR - 0.05, HZ + 0.02)],
-              ["cbClampD", "cbClamp", "cbClamp", "cbClamp", "cbClampD"], caps="cbClampD")      # the strap over it
-        if var == 1:
-            f.box(u, v, 2 * HZ + 0.02, 0.05, 0.05, 0.03, "cbClampD", top="cbLit" if lit else "cbOff")
-    if var == 2:                                                              # a coupling with hazard bands
+    sweep(f, _sub(path, 0, L), _round(HR, HZ, HS), ["cbSheath"])
+    for a, b in _spans(L, 1.0, 0.0, 0.12):                                    # joint bands straddling tile edges
+        sweep(f, _sub(path, a, b, 0.03), _round(HR + 0.003, HZ, HS), ["cbRib"])
+    if clamp:                                                                 # a clamp band staked down each side
         m = L / 2
-        sweep(f, _sub(path, m - 0.1, m + 0.1, 0.04), _round(HR + 0.025, HZ, 10), ["cbBox"], caps="cbClampD")
+        (u, v), (du, dv) = _at(path, _cum(path), m)
+        pu, pv = -dv, du
+        sweep(f, _sub(path, m - 0.045, m + 0.045, 0.09), _round(HR + 0.02, HZ, HS), ["cbClamp"], caps="cbClampD")
         for k in (-1, 1):
-            sweep(f, _sub(path, m + k * 0.06 - 0.025, m + k * 0.06 + 0.025, 0.05), _round(HR + 0.03, HZ, 10),
-                  ["cbBand"], caps="cbBand")
+            f.box(u + pu * k * (HR + 0.05), v + pv * k * (HR + 0.05), 0.0, 0.09 if du == 0 else 0.09,
+                  0.09 if du == 0 else 0.09, 0.06, "cbClampD", top="cbClamp")                    # stake feet
+        if var == 1:                                                          # a status lamp on the band
+            f.box(u, v, HZ + HR + 0.01, 0.07, 0.07, 0.03, "cbClampD", top="cbLit" if lit else "cbOff")
+    if var == 2:                                                              # a coupling sleeve with hazard bands
+        m = L / 2
+        sweep(f, _sub(path, m - 0.11, m + 0.11, 0.04), _round(HR + 0.025, HZ, HS), ["cbBox"], caps="cbClampD")
+        for k in (-1, 1):
+            sweep(f, _sub(path, m + k * 0.06 - 0.03, m + k * 0.06 + 0.03, 0.06), _round(HR + 0.027, HZ, HS),
+                  ["cbBand"])
 
 
 def _hose_box(f, lit, arms):
-    f.box(0, 0, 0.0, 0.44, 0.44, 0.05, "cbClampD", top="cbClampD")            # base plate
-    f.box(0, 0, 0.05, 0.36, 0.36, 0.2, "cbBox", top="cbBoxL")
-    f.box(0, 0, 0.25, 0.2, 0.2, 0.03, "cbBox", top="cbBox")
-    f.box(0.11, 0.11, 0.25, 0.07, 0.07, 0.04, "cbClampD", top="cbLit" if lit else "cbOff")
+    f.box(0, 0, 0.0, 0.46, 0.46, 0.05, "cbClampD", top="cbClampD")            # base plate
+    f.box(0, 0, 0.05, 0.38, 0.38, 0.2, "cbBox", top="cbBoxL")
+    f.box(0, 0, 0.25, 0.22, 0.22, 0.03, "cbBox", top="cbBox")
+    f.box(0.12, 0.12, 0.25, 0.07, 0.07, 0.04, "cbClampD", top="cbLit" if lit else "cbOff")
     for d in arms:                                                            # cable glands
-        f.box(d[0] * 0.2, d[1] * 0.2, HZ - 0.07, 0.07 if d[0] else 0.17, 0.17 if d[0] else 0.07, 0.16, "cbClampD",
+        f.box(d[0] * 0.21, d[1] * 0.21, 0.0, 0.06 if d[0] else 0.26, 0.26 if d[0] else 0.06, 0.22, "cbClampD",
               top="cbClamp")
 
 
@@ -162,62 +163,65 @@ def hose(mask, lit, var=0):
     f = _frame(m)
     arms = _arms(mask)
     straight = mask in (5, 10)
-    for p in _paths(mask, 0.2 if mask not in (1, 2, 4, 8) else HUB):
+    for p in _paths(mask, HUB if len(arms) > 1 else 0.08):
         _hose_run(f, p, lit, var, clamp=straight)
-    if len(arms) != 2:
-        if len(arms) == 1:                                                    # a sealed end boot
-            d = arms[0]
-            f.box(d[0] * 0.06, d[1] * 0.06, 0.0, 0.2 if d[0] else 0.22, 0.22 if d[0] else 0.2, 0.17, "cbClampD",
-                  top="cbBox")
-            f.box(-d[0] * 0.02, -d[1] * 0.02, 0.17, 0.06, 0.06, 0.025, "cbClampD", top="cbLit" if lit else "cbOff")
-        else:
-            _hose_box(f, lit, arms)
+    if len(arms) == 1:                                                        # a sealed end boot
+        d = arms[0]
+        sweep(f, _sub(_line((d[0] * 0.2, d[1] * 0.2), (-d[0] * 0.08, -d[1] * 0.08)), 0, 0.28, 0.07),
+              _round(HR + 0.03, HZ, HS), ["cbBox"], caps="cbClampD")
+        f.box(-d[0] * 0.02, -d[1] * 0.02, 0.0, 0.18 if d[0] else 0.3, 0.3 if d[0] else 0.18, 0.04, "cbClampD",
+              top="cbClampD")
+        f.box(d[0] * 0.04, d[1] * 0.04, HZ + HR + 0.02, 0.07, 0.07, 0.03, "cbClampD", top="cbLit" if lit else "cbOff")
+    elif len(arms) != 2:
+        _hose_box(f, lit, arms)
     return [m.build()]
 
 
 # ---- tray -----------------------------------------------------------------------------------------------------------
 
-TW, TZ, TH = 0.17, 0.13, 0.075                 # tray half width, floor height, wall height
-LANES = ((-0.085, "cbCabK"), (0.0, "cbCabO"), (0.085, "cbCabK"))
+TW, TZ, TH, TT = 0.18, 0.12, 0.09, 0.05          # tray half width, floor height, wall height, wall thickness
+LANES = ((-0.075, "cbCabK"), (0.0, "cbCabO"), (0.075, "cbCabK"))
+CR = 0.04                                          # cable radius
+
+
+def _tray_prof(grow=0.0):
+    g = grow
+    return [(-TW - g, TZ - g), (TW + g, TZ - g), (TW + g, TZ + TH + g), (TW - TT, TZ + TH + g), (TW - TT, TZ + 0.03),
+            (-TW + TT, TZ + 0.03), (-TW + TT, TZ + TH + g), (-TW - g, TZ + TH + g)]
 
 
 def _tray_run(f, path, lit, var=0, stand=False):
+    """The tray along a path: a U channel whose outline nothing breaks but the stand under it and the lamp or tag of the
+    variants (deliberate shapes)."""
     L = _cum(path)[-1]
     pts = _sub(path, 0, L)
-    w = 0.035
-    prof = [(-TW, TZ), (TW, TZ), (TW, TZ + TH), (TW - w, TZ + TH), (TW - w, TZ + 0.025), (-TW + w, TZ + 0.025),
-            (-TW + w, TZ + TH), (-TW, TZ + TH)]
-    sweep(f, pts, prof, ["cbTrayD", "cbTrayD", "cbTray", "cbTray", "cbTrayD", "cbTray", "cbTray", "cbTrayD"],
-          )
+    sweep(f, pts, _tray_prof(), ["cbTrayD", "cbTrayD", "cbTray", "cbTray", "cbTrayD", "cbTray", "cbTray", "cbTrayD"])
     for s, col in LANES:
-        sweep(f, [((u - dv * s, v + du * s), (du, dv)) for (u, v), (du, dv) in pts], _round(0.04, TZ + 0.062, 8), [col])
-    for a, b in _spans(L, 0.25, 0.0, 0.03):            # tie bars across, in step
-        sweep(f, _sub(path, a, b, 0.03), [(-TW, TZ + TH - 0.005), (TW, TZ + TH - 0.005), (TW, TZ + TH + 0.02),
-                                            (-TW, TZ + TH + 0.02)], ["cbTrayD", "cbTray", "cbTray", "cbTray"],
-              caps="cbTrayD")
+        sweep(f, [((u - dv * s, v + du * s), (du, dv)) for (u, v), (du, dv) in pts], _round(CR, TZ + 0.03 + CR, 10),
+              [col])
     if stand:
         (u, v), (du, dv) = _at(path, _cum(path), L / 2)
         pu, pv = -dv, du
-        f.box(u, v, 0.0, 0.22 if du == 0 else 0.1, 0.1 if du == 0 else 0.22, 0.02, "cbClampD", top="cbClampD")  # foot
-        f.box(u, v, 0.02, 0.06, 0.06, TZ - 0.02, "cbClampD", top="cbClamp")                                     # post
-        f.box(u, v, TZ - 0.03, 2 * TW + 0.04 if du == 0 else 0.06, 0.06 if du == 0 else 2 * TW + 0.04, 0.03,
-              "cbClampD", top="cbClamp")                                                                       # saddle
-        if var == 1:
-            f.box(u + pu * (TW + 0.04), v + pv * (TW + 0.04), 0.02, 0.05, 0.05, TZ + TH, "cbClampD",
-                  top="cbLit" if lit else "cbOff")                                                             # a lamp post
-    if var == 2:
-        (u, v), _ = _at(path, _cum(path), L / 2)
-        f.box(u, v, TZ + TH + 0.02, 0.12, 0.12, 0.05, "cbBand", top="cbBand")                                  # a tag plate
+        f.box(u, v, 0.0, 0.26 if du == 0 else 0.12, 0.12 if du == 0 else 0.26, 0.03, "cbClampD", top="cbClampD")  # foot
+        f.box(u, v, 0.03, 0.07, 0.07, TZ - 0.03, "cbClampD", top="cbClamp")                                     # post
+        if var == 1:                                                                                           # a lamp
+            f.box(u + pu * (TW - TT / 2), v + pv * (TW - TT / 2), TZ + TH, 0.07, 0.07, 0.03, "cbClampD",
+                  top="cbLit" if lit else "cbOff")
+    if var == 2:                                                              # a band clip with a tag
+        m = L / 2
+        sweep(f, _sub(path, m - 0.04, m + 0.04, 0.08), _tray_prof(0.012), ["cbBand"], closed=False)
+        (u, v), (du, dv) = _at(path, _cum(path), m)
+        f.box(u, v, TZ + TH + 0.012, 0.08 if du else 2 * TW + 0.024, 2 * TW + 0.024 if du else 0.08, 0.025, "cbBand",
+              top="cbBand")                                                   # its strap across the top
 
 
 def _tray_box(f, lit, arms):
-    f.box(0, 0, 0.0, 0.3, 0.3, 0.02, "cbClampD", top="cbClampD")
     for s in (-1, 1):
         for t in (-1, 1):
-            f.box(s * 0.1, t * 0.1, 0.02, 0.05, 0.05, 0.12, "cbClampD", top="cbClamp")
-    f.box(0, 0, 0.12, 0.34, 0.34, 0.14, "cbBox", top="cbBoxL")
-    f.box(0, 0, 0.26, 0.2, 0.2, 0.02, "cbBox", top="cbBox")
-    f.box(0.09, 0.09, 0.26, 0.06, 0.06, 0.035, "cbClampD", top="cbLit" if lit else "cbOff")
+            f.box(s * 0.15, t * 0.15, 0.0, 0.07, 0.07, 0.1, "cbClampD", top="cbClamp")
+    f.box(0, 0, 0.09, 0.46, 0.46, 0.18, "cbBox", top="cbBoxL")
+    f.box(0, 0, 0.27, 0.26, 0.26, 0.03, "cbBox", top="cbBox")
+    f.box(0.13, 0.13, 0.27, 0.07, 0.07, 0.04, "cbClampD", top="cbLit" if lit else "cbOff")
 
 
 def tray(mask, lit, var=0):
@@ -225,98 +229,45 @@ def tray(mask, lit, var=0):
     f = _frame(m)
     arms = _arms(mask)
     straight = mask in (5, 10)
-    for p in _paths(mask, 0.17):
+    for p in _paths(mask, 0.2 if len(arms) > 1 else 0.0):
         _tray_run(f, p, lit, var, stand=straight)
-    if len(arms) != 2:
-        if len(arms) == 1:                                                    # an end stand with a blank plate
-            d = arms[0]
-            f.box(d[0] * 0.17, d[1] * 0.17, 0.0, 0.22, 0.22, 0.02, "cbClampD", top="cbClampD")
-            f.box(d[0] * 0.17, d[1] * 0.17, 0.02, 0.06, 0.06, TZ - 0.02, "cbClampD", top="cbClamp")
-            f.box(d[0] * 0.17, d[1] * 0.17, TZ - 0.03, 0.34, 0.34, 0.03, "cbClampD", top="cbClamp")
-            f.box(d[0] * 0.15, d[1] * 0.15, TZ, 0.04 if d[0] else 2 * TW + 0.02, 2 * TW + 0.02 if d[0] else 0.04,
-                  TH + 0.02, "cbTrayD", top="cbBand")
-        else:
-            _tray_box(f, lit, arms)
-    return [m.build()]
-
-
-# ---- buried ---------------------------------------------------------------------------------------------------------
-
-BW = 0.15                                     # cover plate half width
-
-
-def _buried_run(f, path, lit, var=0):
-    L = _cum(path)[-1]
-    pts = _sub(path, 0, L)
-    sweep(f, pts, [(-BW - 0.05, 0.0), (BW + 0.05, 0.0), (BW + 0.05, 0.012), (-BW - 0.05, 0.012)],
-          ["cbTrench"], caps="cbTrench")                                      # the dark cut
-    sweep(f, pts, [(-BW - 0.05, 0.012), (-BW - 0.02, 0.012), (-BW - 0.02, 0.022), (-BW - 0.05, 0.022)],
-          ["cbBandK", "cbBand", "cbBand", "cbBand"], caps="cbBand")          # hazard edges
-    sweep(f, pts, [(BW + 0.02, 0.012), (BW + 0.05, 0.012), (BW + 0.05, 0.022), (BW + 0.02, 0.022)],
-          ["cbBandK", "cbBand", "cbBand", "cbBand"], caps="cbBand")
-    for a, b in _spans(L, 0.25, 0.125, 0.215):            # cover plates; gaps carry the seam light
-        sweep(f, _sub(path, a, b, 0.05), [(-BW, 0.012), (BW, 0.012), (BW, 0.036), (-BW, 0.036)],
-              ["cbPlate", "cbPlate", "cbPlateL", "cbPlate"], caps="cbPlate")
-    for a, b in _spans(L, 0.25, 0.0, 0.025):
-        sweep(f, _sub(path, a, b, 0.05), [(-BW + 0.03, 0.012), (BW - 0.03, 0.012), (BW - 0.03, 0.02), (-BW + 0.03, 0.02)],
-              ["cbSeam" if lit else "cbSeamOff"], caps="cbSeam" if lit else "cbSeamOff")
-    if var == 1:                                                              # a marker post beside it
-        (u, v), (du, dv) = _at(path, _cum(path), L / 2)
-        pu, pv = -dv, du
-        x, y = u + pu * (BW + 0.13), v + pv * (BW + 0.13)
-        f.box(x, y, 0.0, 0.07, 0.07, 0.14, "cbBand", top="cbBandK")
-        f.box(x, y, 0.14, 0.07, 0.07, 0.05, "cbBandK", top="cbLit" if lit else "cbOff")
-
-
-def _buried_hatch(f, lit):
-    f.box(0, 0, 0.0, 0.42, 0.42, 0.014, "cbTrench", top="cbTrench")
-    f.box(0, 0, 0.012, 0.38, 0.38, 0.016, "cbBand", top="cbBand")
-    f.box(0, 0, 0.012, 0.3, 0.3, 0.03, "cbPlate", top="cbPlateL")
-    f.box(0, 0, 0.042, 0.12, 0.04, 0.012, "cbClampD", top="cbClampD")         # recessed handle
-    for s in (-1, 1):
-        f.box(s * 0.11, -s * 0.11, 0.042, 0.04, 0.04, 0.008, "cbSeam" if lit else "cbSeamOff",
-              top="cbSeam" if lit else "cbSeamOff")
-
-
-def buried(mask, lit, var=0):
-    m = core.Mesh(f"cable_buried_{mask}_{lit}_{var}")
-    f = _frame(m)
-    arms = _arms(mask)
-    for p in _paths(mask, 0.19):
-        _buried_run(f, p, lit, var)
-    if len(arms) != 2:
-        _buried_hatch(f, lit)
+    if len(arms) == 1:                                                        # an end stand and an end plate
+        d = arms[0]
+        f.box(d[0] * 0.1, d[1] * 0.1, 0.0, 0.26 if d[0] else 0.12, 0.12 if d[0] else 0.26, 0.03, "cbClampD",
+              top="cbClampD")
+        f.box(d[0] * 0.1, d[1] * 0.1, 0.03, 0.07, 0.07, TZ - 0.03, "cbClampD", top="cbClamp")
+        f.box(-d[0] * 0.02, -d[1] * 0.02, TZ, 0.05 if d[0] else 2 * TW, 2 * TW if d[0] else 0.05, TH + 0.03,
+              "cbTrayD", top="cbBand")
+    elif len(arms) != 2:
+        _tray_box(f, lit, arms)
     return [m.build()]
 
 
 # ---- plugs ----------------------------------------------------------------------------------------------------------
 
 def plug(look, dname, lit):
-    """The socket on tile edge d where the cable meets a module or wall: a bolted plate and a collar."""
+    """The socket on tile edge d where the cable meets a module or wall: a bolted plate and a collar round the cable."""
     m = core.Mesh(f"cable_{look}_plug_{dname}_{lit}")
     f = _frame(m)
     du, dv = DIRS[dname][1]
     lamp = "cbLit" if lit else "cbOff"
     if look == "hose":
         z0, h, w = 0.0, 0.32, 0.38
-    elif look == "tray":
-        z0, h, w = 0.06, 0.3, 0.44
+        sweep(f, _sub(_line((du * 0.47, dv * 0.47), (du * 0.3, dv * 0.3)), 0, 0.17, 0.06), _round(HR + 0.03, HZ, HS),
+              ["cbBox"], caps="cbClampD")
     else:
-        z0, h, w = 0.0, 0.12, 0.46
-    f.box(du * 0.46, dv * 0.46, z0, 0.07 if du else w, w if du else 0.07, h, "cbClampD", top="cbClamp")
-    if look == "hose":
-        D.seg(f, (du * 0.3, dv * 0.3, HZ), (du * 0.44, dv * 0.44, HZ), HR + 0.03, "cbBox", 10)
-    elif look == "tray":
-        f.box(du * 0.38, dv * 0.38, TZ + TH, 0.1 if du else 2 * TW + 0.04, 2 * TW + 0.04 if du else 0.1, 0.04,
-              "cbTrayD", top="cbTray")
+        z0, h, w = 0.0, TZ + TH + 0.08, 2 * TW + 0.1
+        sweep(f, _sub(_line((du * 0.47, dv * 0.47), (du * 0.36, dv * 0.36)), 0, 0.11, 0.06), _tray_prof(0.015),
+              ["cbBox"], closed=False)
+    f.box(du * 0.465, dv * 0.465, z0, 0.07 if du else w, w if du else 0.07, h, "cbClampD", top="cbClamp")
     for s in (-1, 1):
-        f.box(du * 0.43 - dv * s * (w / 2 - 0.05), dv * 0.43 + du * s * (w / 2 - 0.05), z0 + h - 0.06, 0.04, 0.04,
-              0.04, "cbClampD", top="cbBoxL")                                  # bolts
-    f.box(du * 0.42, dv * 0.42, z0 + h, 0.05, 0.05, 0.03, "cbClampD", top=lamp)
+        f.box(du * 0.43 - dv * s * (w / 2 - 0.05), dv * 0.43 + du * s * (w / 2 - 0.05), z0 + h - 0.08, 0.05, 0.05,
+              0.05, "cbClampD", top="cbBoxL")                                  # bolts
+    f.box(du * 0.44, dv * 0.44, z0 + h, 0.07, 0.07, 0.03, "cbClampD", top=lamp)
     return [m.build()]
 
 
-BUILD = {"hose": hose, "tray": tray, "buried": buried}
+BUILD = {"hose": hose, "tray": tray}
 
 
 def jobs():
