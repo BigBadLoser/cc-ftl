@@ -1,12 +1,12 @@
 """The station hull bay's machinery (station_hull_bay; designs 5 to 7 try three fills, design reference only), each
-a machine near the bay's mouth (_run: a pipe swept along a path through rounded elbows; _lathe: a round body up the
-bay):
-  5  twin filters: two canisters on a skid, a U over their tops between them, the line in and out of their feet, a
-     gauge on each
-  6  a valve manifold: a header across, three branches down off it through valve wheels into a box on the floor, a
-     feed up from the header into the top
-  7  a heat exchanger: a finned core, a header pipe up either end of it elbowing in at its top and foot, out through
-     the top and the floor"""
+a machine near the bay's mouth, every run ending in a wall, the floor or the machine (_run: a pipe swept along a path
+through rounded elbows; _lathe: a round body up the bay):
+  5  a power junction: a cabinet (its door, a lit tell-tale) under a finned transformer, three conduits up off it and
+     back into the wall
+  6  a coolant loop: a pump on the floor, an expansion tank lying across over it; the feed up into the tank, the
+     return down out of it through a valve into the floor
+  7  a scrubber rack: three canisters lying across between two posts, a manifold up the near post into each, up and
+     back into the wall"""
 import math
 
 from . import core
@@ -17,7 +17,7 @@ from .wall3d_ext_geom import D, F, LINE
 
 def machinery(f, design, u0, u1, zf, zl, back):
     """Design `design`'s fill of the bay [u0, u1] x [zf, zl], its back at d = back."""
-    {5: _filters, 6: _manifold2, 7: _exchanger}[design](f, u0, u1, zf, zl, back, 1 / core.ZPX)
+    {5: _junction, 6: _coolant, 7: _scrubber}[design](f, u0, u1, zf, zl, back, 1 / core.ZPX)
 
 
 def _box(f, u0, u1, z0, z1, d0, d1, front, top, side):
@@ -117,48 +117,47 @@ def _gauge(f, uc, zc, d):
     SD._rect(f, uc, uc + 0.7 * LINE, zc, zc + px, d + 0.001, "stE")
 
 
-def _filters(f, u0, u1, zf, zl, back, px):
+def _junction(f, u0, u1, zf, zl, back, px):
     W, top = (u1 - u0) / LINE, (zl - zf) / px
-    dc = D - 4 * LINE
-    _box(f, u0 + LINE, u1 - LINE, zf, zf + 3 * px, back, D - LINE, "stM", "stL", "stD")   # (the skid)
-    zt = 28
-    for p in (4, W - 3):
-        uc = u0 + p * LINE
-        _lathe(f, uc, dc, [(zf + 3 * px, 2.6), (zf + (zt - 2) * px, 2.6), (zf + zt * px, 1.4)])
-        _lathe(f, uc, dc, [(zf + (zt - 9) * px, 3.1), (zf + (zt - 8) * px, 3.1)])          # (a band: the cap's)
-        _gauge(f, uc + LINE, zf + 12 * px, dc + 2.8 * LINE)
-    _run(f, u0, zf, dc, [(4, zt - 1), (4, zt + 6), (W - 3, zt + 6), (W - 3, zt - 1)], r=1.3, R=3)   # (the U)
-    _run(f, u0, zf, D - 2 * LINE, [(-1, 6), (W + 1, 6)], r=1.2)   # (the line in and out of their feet)
-    _run(f, u0, zf, dc, [(W / 2 + 0.5, zt + 6), (W / 2 + 0.5, top - 3), (W / 2 + 0.5, top - 3, (back - dc) / LINE - 1)],
-         r=1.0, R=2)                                       # (a vent up off the U, back into the wall)
+    d = D - 2 * LINE
+    _box(f, u0 + LINE, u1 - LINE, zf, zf + 18 * px, back, d, "stS", "stL", "stM")   # (the cabinet)
+    fd = d + 0.001
+    SD._rect(f, u0 + (W / 2) * LINE, u0 + (W / 2 + 1) * LINE, zf + 2 * px, zf + 16 * px, fd, "stM")   # (its door's seam)
+    SD._rect(f, u0 + 3 * LINE, u0 + 4 * LINE, zf + 12 * px, zf + 13 * px, fd, "stB")
+    SD._rect(f, u1 - 4 * LINE, u1 - 3 * LINE, zf + 8 * px, zf + 10 * px, fd, "stD")   # (a handle)
+    SD._rect(f, u0 + LINE, u1 - LINE, zf + 17 * px, zf + 18 * px, fd, "stH")
+    d2 = D - 4 * LINE                                       # (the transformer on it, finned)
+    _box(f, u0 + 3 * LINE, u1 - 3 * LINE, zf + 18 * px, zf + 30 * px, back, d2, "stDE", "stM", "stE")
+    for z in range(20, 29, 3):
+        SD._rect(f, u0 + 3 * LINE, u1 - 3 * LINE, zf + z * px, zf + (z + 1) * px, d2 + 0.001, "stM")
+    for k, p in enumerate((4, W / 2 + 0.5, W - 3)):        # (conduits up off it, back into the wall)
+        zt = top - 3 - 2 * k
+        _run(f, u0, zf, d2 - 2 * LINE, [(p, 30), (p, zt), (p, zt, (back - d2) / LINE + 1)], r=0.8, R=2)
 
 
-def _manifold2(f, u0, u1, zf, zl, back, px):
+def _coolant(f, u0, u1, zf, zl, back, px):
     W, top = (u1 - u0) / LINE, (zl - zf) / px
-    zh = 30
-    _box(f, u0 + LINE, u1 - LINE, zf, zf + 6 * px, back, D - LINE, "stM", "stL", "stD")
-    SD._rect(f, u0 + LINE, u1 - LINE, zf + 5 * px, zf + 6 * px, D - LINE + 0.001, "stH")
-    _run(f, u0, zf, D - 4 * LINE, [(-1, zh), (W + 1, zh)], r=1.8)   # (the header)
-    for k, p in enumerate((3, W / 2 + 0.5, W - 2)):
-        _run(f, u0, zf, D - 4 * LINE, [(p, zh), (p, 6)], r=1.0)
-        _wheel(f, u0 + p * LINE, zf + (15 + 3 * (k % 2)) * px, D - 2 * LINE, 2.2)
-    _run(f, u0, zf, D - 4 * LINE, [(W - 4, zh), (W - 4, zh + 8), (4, zh + 12), (4, top - 3),
-                                   (4, top - 3, (back - D) / LINE + 3)], r=1.4, R=3)   # (its feed, back into the wall)
-    _gauge(f, u0 + (W / 2 + 0.5) * LINE, zf + (zh + 5) * px, D - 2 * LINE)
+    dc = D - 5 * LINE
+    _box(f, u0 + 2 * LINE, u0 + 9 * LINE, zf, zf + 2 * px, back, D - LINE, "stM", "stL", "stD")   # (the pump's skid)
+    uc = u0 + 5.5 * LINE
+    _lathe(f, uc, dc, [(zf + 2 * px, 3), (zf + 8 * px, 3), (zf + 9 * px, 2), (zf + 16 * px, 2), (zf + 17 * px, 0.5)])
+    zt = top - 12                                           # (the tank, lying across, into either wall)
+    _run(f, u0, zf, D - 6 * LINE, [(-1, zt), (W + 1, zt)], r=3.4)
+    for p in (3, W - 2):                                    # (its straps)
+        _run(f, u0, zf, D - 6 * LINE, [(p, zt), (p + 1, zt)], r=3.9)
+    _run(f, u0, zf, dc, [(5.5, 12), (2, 12), (2, zt), (3, zt)], r=1.1, R=2)   # (the feed: off the pump up into it)
+    _run(f, u0, zf, D - 3 * LINE, [(W - 3, zt), (W - 3, -1)], r=1.1)        # (the return down into the floor)
+    _wheel(f, u0 + (W - 3) * LINE, zf + 14 * px, D - 2 * LINE + 0.002, 2.4)
+    _gauge(f, u0 + (W / 2) * LINE, zf + (zt + 1) * px, D - 6 * LINE + 3.5 * LINE)
 
 
-def _exchanger(f, u0, u1, zf, zl, back, px):
+def _scrubber(f, u0, u1, zf, zl, back, px):
     W, top = (u1 - u0) / LINE, (zl - zf) / px
-    z0, z1 = 10, 34
-    _box(f, u0 + 4 * LINE, u1 - 4 * LINE, zf + z0 * px, zf + z1 * px, back, D - 4 * LINE, "stDE", "stM", "stE")
-    fd = D - 4 * LINE + 0.001                               # (an even px in: its rows on the px grid)
-    for z in range(z0 + 2, z1 - 1, 3):                      # (its fins: every third row, else they read as a checker)
-        SD._rect(f, u0 + 4 * LINE, u1 - 4 * LINE, zf + z * px, zf + (z + 1) * px, fd, "stM")
-    SD._rect(f, u0 + 4 * LINE, u1 - 4 * LINE, zf + (z1 - 1) * px, zf + z1 * px, fd + 0.001, "stS")
-    for p, a, b in ((2, z1 - 3, z0 + 3), (W - 1, z0 + 3, z1 - 3)):   # (a header up either end, in at its top and foot)
-        _run(f, u0, zf, D - 6 * LINE, [(p + (2 if p < W / 2 else -2), a), (p, a), (p, b), (p + (2 if p < W / 2 else -2), b)],
-             r=1.3, R=2)
-    _run(f, u0, zf, D - 6 * LINE, [(2, z0 + 3), (2, -1)], r=1.3)          # (out through the floor)
-    _run(f, u0, zf, D - 6 * LINE, [(W - 1, z1 - 3), (W - 1, top - 3), (W - 1, top - 3, (back - D) / LINE + 5)], r=1.3,
-         R=2)                                              # (up and back into the wall)
-    _box(f, u0 + LINE, u1 - LINE, zf, zf + 3 * px, back, D - LINE, "stM", "stL", "stD")
+    for u in (u0 + LINE, u1 - 3 * LINE):                    # (the rack's posts)
+        _box(f, u, u + 2 * LINE, zf, zl, back, D - LINE, "stM", "stL", "stD")
+    dc = D - 5 * LINE
+    for z in (10, 22, 34):                                  # (its canisters, lying across between them)
+        _run(f, u0, zf, dc, [(3, z), (W - 3, z)], r=2.8)
+        _run(f, u0, zf, dc, [(W / 2 + 0.5, z), (W / 2 + 1.5, z)], r=3.2)   # (a band round each)
+        _run(f, u0, zf, D - 2 * LINE, [(W - 5, z - 2, 0), (W - 5, z - 2, -2)], r=0.8)   # (a port off it to the manifold)
+    _run(f, u0, zf, D - 2 * LINE, [(W - 5, 0), (W - 5, top - 4), (W - 5, top - 4, (back - D) / LINE + 3)], r=1.0, R=2)
