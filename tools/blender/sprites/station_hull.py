@@ -30,6 +30,7 @@ LINE = 1 / 32                       # one art px along the run
 SEAMS = (0.25, 0.75)                # seams along a straight run, as fractions of the tile
 GROOVE = 0.40                       # the groove's height over the deck
 RAIL = 5 / 32                       # the line along the top's inner edge: this far in from the back
+TOP_SEAM = 4 / 32                   # a seam across the top this far in past the bullnose's top edge (the seams end on it)
 FOOT_N, FOOT_W, FOOT_OUT, FOOT_H = 3, 0.26, 3 / 32, 0.15   # the foot blocks: a tile, wide, proud, tall
 
 FACE, FACE_LO, END = "stS", "stL", "stE"   # the face, its band under the groove, the ends
@@ -224,7 +225,11 @@ def _details(k, key):
         _paint(k, key, i, 0.0, 1.0, [(rail - LINE, h), (rail, h)], RAIL_L)      # the line along the top's inner edge
         _paint(k, key, i, 0.0, 1.0, [(rail, h), (rail + LINE, h)], RAIL_D)
     zt = h - R_Z - 3 * pz                                       # the line under the bullnose
-    up = [(0.0, GROOVE + 3 * pz), (0.0, h - R_Z)] + bn + [(rail - LINE, h)]
+    ts = round((R_D + TOP_SEAM) * 32) / 32                     # (on the art px grid, as the rail: a clean iso line)
+    for i in range(segs):                                       # the seam across the top, lit on its outer side
+        _paint(k, key, i, 0.0, 1.0, [(ts, h), (ts + LINE, h)], SEAM_D)
+        _paint(k, key, i, 0.0, 1.0, [(ts - LINE, h), (ts, h)], RAIL_L)
+    up = [(0.0, GROOVE + 3 * pz), (0.0, h - R_Z)] + bn + [(ts, h)]
     keep = bn[PLUMB_LEVEL][0]                                   # the seams stand plumb from the stL band's top down
     for i, seams, hatch in PANELS[key]:
         p = _chain(key, 0.0)[i:i + 2]
@@ -268,11 +273,33 @@ PIECES = ((10, 1), (5, 2), (9, 3))
 PALETTE = "only:station"
 
 
+def _join(rgba, col):
+    """Where a steep seam (one px a row) steps a px sideways, or meets the line across the top, with two px touching
+    only corner to corner, fill the px under the upper one so the line runs on side to side. A lower px in a run two
+    px a row (the iso lines across) is left as drawn."""
+    m = (rgba[..., :3] == col).all(-1) & (rgba[..., 3] > 0)
+    out = rgba.copy()
+    h, w = m.shape
+
+    def single(y, x):
+        return m[y, x] and not (x > 0 and m[y, x - 1]) and not (x + 1 < w and m[y, x + 1])
+    for y in range(h - 1):
+        for x in range(w):
+            if not m[y, x] or m[y + 1, x]:
+                continue
+            for dx in (-1, 1):
+                if 0 <= x + dx < w and single(y + 1, x + dx) and not m[y, x + dx] and rgba[y + 1, x, 3] > 0:
+                    out[y + 1, x, :3] = col
+    return out
+
+
 def _item(sid, build):
     from . import env_build, post
     core.clear_scene_meshes()
     post.select(PALETTE)
     it = env_build.crop_item(sid, (1, 1), *env_build.render_sprite(sid, "wide", build()))
+    if it:
+        it["rgba"] = _join(it["rgba"], post._name_rgb(SEAM_D).astype(it["rgba"].dtype))
     return [it] if it else []
 
 
