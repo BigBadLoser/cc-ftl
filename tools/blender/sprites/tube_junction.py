@@ -119,36 +119,87 @@ def frame(b):
             P.HE._box(b, d, r, z, -0.015)
 
 
+def _side(n):
+    """A raised part's side tone by its outward normal (r, z): lit from above, dark under, mid at the sides."""
+    r, z = n
+    return "tbRibL" if z > 0.5 * abs(r) else "tbRib" if z < -0.5 * abs(r) else "tbHullD"
+
+
+def _raise(b, poly, d, h, front, sides=None):
+    """A part standing h proud (toward the room, -d) of a face at d: its front, and the side faces round `poly` ((r, z),
+    ccw seen from the room) but those in `sides` (None: all), each toned by facing."""
+    b.face([(d - h, r, z) for r, z in poly], (-1, 0, 0), front)
+    n = len(poly)
+    cr, cz = sum(r for r, _ in poly) / n, sum(z for _, z in poly) / n
+    for i in range(n):
+        if sides is not None and i not in sides:
+            continue
+        (r0, z0), (r1, z1) = poly[i], poly[(i + 1) % n]
+        nr, nz = z1 - z0, -(r1 - r0)
+        if nr * ((r0 + r1) / 2 - cr) + nz * ((z0 + z1) / 2 - cz) < 0:
+            nr, nz = -nr, -nz
+        b.face([(d, r0, z0), (d - h, r0, z0), (d - h, r1, z1), (d, r1, z1)], (0, nr, nz), _side((nr, nz)))
+
+
+def _ring(b, d, h, ra, rb, zc, front, n=32, inner=True, outer=True):
+    """A raised ring (radii ra..rb round (0, zc)) h proud of a face at d, with its inner and outer side faces."""
+    a = [math.tau * i / n for i in range(n + 1)]
+    for a0, a1 in zip(a, a[1:]):
+        q = [(ra * math.cos(a0), zc + ra * math.sin(a0)), (rb * math.cos(a0), zc + rb * math.sin(a0)),
+             (rb * math.cos(a1), zc + rb * math.sin(a1)), (ra * math.cos(a1), zc + ra * math.sin(a1))]
+        b.face([(d - h, r, z) for r, z in q], (-1, 0, 0), front)
+        c, s = math.cos((a0 + a1) / 2), math.sin((a0 + a1) / 2)
+        for rr, sg, on in ((rb, 1, outer), (ra, -1, inner)):
+            if on:
+                p0, p1 = (rr * math.cos(a0), zc + rr * math.sin(a0)), (rr * math.cos(a1), zc + rr * math.sin(a1))
+                b.face([(d, *p0), (d - h, *p0), (d - h, *p1), (d, *p1)], (0, sg * c, sg * s), _side((sg * c, sg * s)))
+
+
 def leaf(b, t):
-    """The hatch leaf, `t` (0 closed .. 1 open) of its way down into the floor: a slab the opening's shape, its room face
-    with a dark ring, a round viewport, a band across and hazard stripes along its foot."""
+    """The hatch leaf, `t` (0 closed .. 1 open) of its way down into the floor: a slab the opening's shape with relief on
+    its room face: a raised rim round its visible edge, a boss in the middle with the viewport sunk in it, locking bars
+    out from the boss to the rim, a kick plate along its foot with hazard stripes."""
     dz = -t * (ZC + LEAF_R + 0.05)
     t0, t1 = _ends(LEAF_R)
     arc = [t0 + (t1 - t0) * i / N for i in range(N + 1)]
-    pts = [_arc(LEAF_R, a) for a in arc]
-    pts = [(r, z + dz) for r, z in pts]
-    for d, n in ((LEAF_D - LEAF_T, (-1, 0, 0)), (LEAF_D + LEAF_T, (1, 0, 0))):
+    pts = [(r, z + dz) for r, z in (_arc(LEAF_R, a) for a in arc)]
+    f = LEAF_D - LEAF_T
+    for d, n in ((f, (-1, 0, 0)), (LEAF_D + LEAF_T, (1, 0, 0))):
         b.face([(d, r, z) for r, z in pts], n, "tbHull")
     for (ra, za), (rb, zb) in zip(pts, pts[1:] + pts[:1]):
-        b.face([(LEAF_D - LEAF_T, ra, za), (LEAF_D + LEAF_T, ra, za), (LEAF_D + LEAF_T, rb, zb), (LEAF_D - LEAF_T, rb, zb)], (0, ra + rb, za + zb - 2 * (ZC + dz)),
-               "tbHullD")
-    f = LEAF_D - LEAF_T - 0.004
-    for ra, rb, col in ((0.55, 0.62, "tbHullD"), (0.62, 0.66, "tbRibL")):     # the ring
-        for a0, a1 in zip([math.tau * i / N for i in range(N)], [math.tau * (i + 1) / N for i in range(N)]):
-            q = [_arc(ra, a0), _arc(rb, a0), _arc(rb, a1), _arc(ra, a1)]
-            b.face([(f, r, z + dz) for r, z in q], (-1, 0, 0), col)
-    vz = ZC + 0.18                                        # the viewport
-    b.face([(f - 0.002, 0.16 * math.cos(a), vz + dz + 0.16 * math.sin(a)) for a in
-            [math.tau * i / 16 for i in range(16)]], (-1, 0, 0), "tbGlass")
-    for z0, z1 in ((ZC - 0.2, ZC - 0.12),):                                  # a band across
-        b.face([(f, -0.55, z0 + dz), (f, 0.55, z0 + dz), (f, 0.55, z1 + dz), (f, -0.55, z1 + dz)], (-1, 0, 0), "tbAmb")
-    c = math.sqrt(LEAF_R * LEAF_R - ZC * ZC)              # hazard stripes along its foot
-    k, wd = 9, 2 * c / 9
-    for i in range(k):
-        r0 = -c + i * wd
-        col = "tbAmb" if i % 2 == 0 else "tbIn"
-        b.face([(f, r0, dz + 0.02), (f, r0 + wd, dz + 0.02), (f, r0 + wd + 0.08, dz + 0.16), (f, r0 + 0.08, dz + 0.16)],
-               (-1, 0, 0), col)
+        b.face([(f, ra, za), (LEAF_D + LEAF_T, ra, za), (LEAF_D + LEAF_T, rb, zb), (f, rb, zb)],
+               (0, ra + rb, za + zb - 2 * (ZC + dz)), "tbHullD")
+    zc = ZC + dz
+    ri, ro = R - 0.13, R + 0.02                           # the rim (its outer edge in the slot)
+    e0, e1 = _ends(ri)
+    a = [e0 + (e1 - e0) * i / N for i in range(N + 1)]
+    for a0, a1 in zip(a, a[1:]):
+        q = [(ri * math.cos(a0), zc + ri * math.sin(a0)), (ro * math.cos(a0), zc + ro * math.sin(a0)),
+             (ro * math.cos(a1), zc + ro * math.sin(a1)), (ri * math.cos(a1), zc + ri * math.sin(a1))]
+        _raise(b, q, f, 0.035, "tbHull", sides=(3,))
+    bz = zc + 0.06                                        # the boss, the viewport sunk in it
+    _ring(b, f, 0.06, 0.2, 0.42, bz, "tbSoft")
+    _ring(b, f - 0.06, 0.012, 0.36, 0.42, bz, "tbSoftD", inner=False, outer=False)
+    _ring(b, f, 0.025, 0.0, 0.2, bz, "tbIn", outer=False, inner=False)     # (the sleeve's floor, under the glass)
+    b.face([(f - 0.03, 0.17 * math.cos(x), bz + 0.17 * math.sin(x)) for x in
+            [math.tau * i / 24 for i in range(24)]], (-1, 0, 0), "tbGlass")
+    for s in (-1, 1):                                     # locking bars from the boss to the rim
+        r0, r1 = s * 0.4, s * (ri + 0.01)
+        q = [(min(r0, r1), bz - 0.05), (max(r0, r1), bz - 0.05), (max(r0, r1), bz + 0.05), (min(r0, r1), bz + 0.05)]
+        _raise(b, q, f, 0.045, "tbRibL" if False else "tbSoft")
+        for rr in (r0 + s * 0.12, r1 - s * 0.1):         # (their clamps)
+            q = [(rr - 0.035, bz - 0.08), (rr + 0.035, bz - 0.08), (rr + 0.035, bz + 0.08), (rr - 0.035, bz + 0.08)]
+            _raise(b, q, f - 0.045, 0.02, "tbSoftD")
+    w = lambda z: math.sqrt(max(0.0, ri * ri - (ZC - z) ** 2)) - 0.03   # noqa: E731 (the rim's inside at height z)
+    z0, z1 = 0.02, 0.24                                   # the kick plate (its sides along the rim), stripes on it
+    _raise(b, [(-w(z0), dz + z0), (w(z0), dz + z0), (w(z1), dz + z1), (-w(z1), dz + z1)], f, 0.03, "tbIn")
+    k = 14
+    for i in range(0, k, 2):
+        u0, u1 = -1 + 2 * i / k, -1 + 2 * (i + 1) / k     # (across the plate, -1 .. 1 at either height)
+        ya, yb = z0 + 0.02, z1 - 0.02
+        q = [(u0 * w(ya), dz + ya), (u1 * w(ya), dz + ya), (min(1, u1 + 0.12) * w(yb), dz + yb),
+             (min(1, u0 + 0.12) * w(yb), dz + yb)]
+        b.face([(f - 0.031, r, z) for r, z in q], (-1, 0, 0), "tbAmb")
 
 
 def piece(o=8, t=0.0, at=(0.0, 0.0)):
