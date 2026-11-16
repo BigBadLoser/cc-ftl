@@ -1,7 +1,7 @@
 """The station hull's bay design (station_hull_designs 5, after the ref's T3-2; design reference only): the middle slot
 (between its seams) let into the hull from BAY_FOOT px over the groove up through the whole bullnose, back to the top's
 first seam; the top runs on over it to where the bullnose began, its edge a BAY_LIP px face into the bay. Its
-machinery: to come."""
+machinery: station_hull_bay_kit."""
 from . import core
 from . import wall3d as T
 from . import station_hull as SH
@@ -43,3 +43,12 @@ def blocks(f, s0, s1):
         for q in ([(ts, zf)] + low + [(ts, zl)], [(dc, zl)] + high):   # edge, and the bullnose's cut beside it
             f.k.poly([T.P(f.ax, f.plane, u + sg * e, z, d) for d, z in q], F, 3,
                      (T.P(f.ax, 0, sg, 0, 0) - o).normalized(), fixed=T.SEAM_PASS or BAY_WALL)
+
+
+def machinery(f, s0, design):
+    """The bay's fill in design `design` (station_hull_bay_kit)."""
+    from .station_hull_bay_kit import machinery as fill
+    s, px = f.sec, 1 / core.ZPX
+    u0, u1 = span(f, s0)
+    zf, zl = s.z_at(SH.GROOVE, -BAY_FOOT), s.H - BAY_LIP * px
+    fill(f, design, u0, u1, zf, zl, SH.E - round((SH.R_D + SH.TOP_SEAM) * 32) / 32)
