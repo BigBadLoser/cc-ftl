@@ -40,7 +40,8 @@ function tubeRows(beam: boolean): string[] {
   const run = jn ? `${'.'.repeat(n - 1)}=` : beam ? '='.repeat(n) : '_'.repeat(n);
   const side = beam ? '.'.repeat(n) : '#'.repeat(n);
   const tube = (y: number) => (y === 4 ? run : y === 3 || y === 5 ? side : '.'.repeat(n));
-  const near = (m: string, y: number) => (jn && y >= 3 && y <= 5 ? `=${m.slice(1)}` : y === 4 ? `D${m.slice(1)}` : m);
+  const roofed = q.get('roof') === '1';                 // (roofed, the junction's tiles are the hull's own wall and door)
+  const near = (m: string, y: number) => (jn && !roofed && y >= 3 && y <= 5 ? `=${m.slice(1)}` : y === 4 ? `D${m.slice(1)}` : m);
   const rows = mod.map((m, y) => `.${y === 4 ? `${m.slice(0, 8)}D` : m}${tube(y)}${near(m, y)}.`);
   const blank = '.'.repeat(rows[0]!.length);
   const out = [blank, ...rows, blank];
