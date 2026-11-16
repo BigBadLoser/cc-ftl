@@ -29,7 +29,7 @@ UNDER = 5                           # the line under the bullnose: this many px 
 RAIL = 4 / 32                       # the line along the top's back: this far in from the back
 TOP_SEAM = 5 / 32                   # the seam across the top this far in past the bullnose's top edge (the seams end on it)
 FOOT_OUT = 4 / 32                   # the step along the foot: how far proud
-FOOT_H = 3 / core.ZPX + FOOT_OUT    # its top: its front (STEP_FRONT px) over its slope (45 degrees) down to the deck
+FOOT_H = 3 / core.ZPX + FOOT_OUT    # its top over the deck (about 8 px)
 FOOT_BLOCKS = (7, 5, 8, 5, 7)       # the step's two blocks across a tile: gap, block, gap, block, gap (px; 32 px a tile
                                     # cannot split in three equal whole gaps); a px proud of its top and front
 CHAMFER_SEAM = 1                    # the corner's seams down its chamfer, this many px in from its edges
@@ -44,11 +44,9 @@ PLATE_Z = lambda s, zt: (s.z_at(zt, 3), s.z_at(zt, -3))   # noqa: E731  the plat
                                     # its foot and top on screen, px under / over zt (6 px, centred on the line and
                                     # its lit px under it)
 TAB_W, TAB_IN = 3, 4                # the tabs on the groove: px wide, px in from their seam toward the tile's middle
-FOOT, FOOT_TOP, STEP_SLOPE = FACE_LO, "stW", "stS"   # the step: its front the face's lower band's tone, its slope a
-                                                    # shade under
-STEP_FRONT, STEP_LIP = 3, 0        # its front px tall; the slope's lip off the belly's face, px
-BLOCK, BLOCK_LIT, BLOCK_SLOPE = FACE, "stH", "stM"     # its blocks: the face's tone, lit along their front's top
-                                                        # edge, their slope a shade under
+FOOT, FOOT_TOP = FACE_LO, "stW"     # the step: its front the face's lower band's tone
+STEP_FRONT = 4                      # its front px tall, flat under (its blocks' a px more)
+BLOCK, BLOCK_LIT = FACE, "stH"      # its blocks: the face's tone, lit along their front's top edge
 
 
 def _band(t):
@@ -151,15 +149,12 @@ def _part(f, u0, u1, z0, z1, out, face, top, side, end=False):
 
 
 def _step_prof(s):
-    """The step's section: its top and a front STEP_FRONT px tall, then a slope (at 45 degrees) down and back to the
-    belly's face under it (D), or to STEP_LIP px off it with a flat underside back from there."""
+    """The step's section: its top and a front STEP_FRONT px tall, flat under."""
     zf = s.z_at(FOOT_H, STEP_FRONT)
-    lip = STEP_LIP * LINE
-    zs = zf - (FOOT_OUT - lip)
-    return [(D - 0.01, zs), (D - 0.01, FOOT_H), (D + FOOT_OUT, FOOT_H), (D + FOOT_OUT, zf), (D + lip, zs)]
+    return [(D - 0.01, zf), (D - 0.01, FOOT_H), (D + FOOT_OUT, FOOT_H), (D + FOOT_OUT, zf)]
 
 
-STEP_COLS = [None, FOOT_TOP, FOOT, STEP_SLOPE, None]
+STEP_COLS = [None, FOOT_TOP, FOOT, None]
 
 
 def _block_prof(s):
@@ -167,13 +162,11 @@ def _block_prof(s):
     top (a px out from the face: its px on screen in line with the face's seam a px over the step) carries on the
     seam where the step meets the face, through the block on screen."""
     zt, out = s.z_at(FOOT_H, -1), FOOT_OUT + LINE
-    zf, lip = s.z_at(FOOT_H, STEP_FRONT), STEP_LIP * LINE       # (its foot the step's: its front down as far, then
-    zs = zf - (out - lip)                                       # its slope, a px out)
-    return [(D - 0.01, zs), (D - 0.01, zt), (D + LINE, zt), (D + out, zt), (D + out, s.z_at(zt, 1)), (D + out, zf),
-            (D + lip, zs)]
+    zf = s.z_at(FOOT_H, STEP_FRONT + 1)                         # (its front a px under the step's, flat under)
+    return [(D - 0.01, zf), (D - 0.01, zt), (D + LINE, zt), (D + out, zt), (D + out, s.z_at(zt, 1)), (D + out, zf)]
 
 
-BLOCK_COLS = [None, GROOVE_D, BLOCK, BLOCK_LIT, BLOCK, BLOCK_SLOPE, None]
+BLOCK_COLS = [None, GROOVE_D, BLOCK, BLOCK_LIT, BLOCK, None]
 
 
 def _chamfer_part(f, t0, t1, z0, z1, out, face, top, side):
