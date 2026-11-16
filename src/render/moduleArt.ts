@@ -10,6 +10,7 @@ import { depthKey } from './iso';
 import { hullOutward, hullRow, hullSide, rotatedSize } from '../sim/modules/footprint';
 import { ContainerC } from '../sim/containers/components';
 import { PlotC } from '../sim/farm/components';
+import { SCHEMES } from './roofArt';
 import { cropStage } from './cropStage';
 
 /** Storage reads 'full' from this share of its slots upward. */
@@ -218,7 +219,7 @@ export interface ModuleLayer {
   at?: { x: number; y: number };
   /** With `at`: a deck mark, sorted under everything standing on the floor. */
   flat?: boolean;
-  /** A livery overlay of a container shell (`<shell>.paint`, `<shell>.lv`): recoloured by the ship's livery; drawn only if the art has it. */
+  /** A livery overlay (a container shell's `<shell>.paint` and `<shell>.lv`, a livery module's emblem mask): recoloured by the ship's livery; drawn only if the art has it. */
   overlay?: 'paint' | 'lv';
   /** A hydroponics bed's base: a code-drawn trough (render/bedBox.ts) stands in while the manifest lacks its sheet. `lit` while the bed runs. */
   bed?: { lit: boolean };
@@ -278,7 +279,13 @@ export function engineBlock(def: ModuleDef, rot: number): boolean {
   return side === 'e' || side === 's';
 }
 
-export function moduleLayers(world: World, id: number, m: Module, def: ModuleDef, active: boolean, open = false, livery?: { seed: number } | null, look?: ModuleLook): ModuleLayer[] {
+/** The roof emblem a livery scheme flies (`em.<emblem>` among its motifs), or 'plain'. */
+export function schemeEmblem(scheme: string | undefined): string {
+  const em = SCHEMES[scheme ?? '']?.motifs.find((mo) => mo.startsWith('em.'));
+  return em ? em.slice(3) : 'plain';
+}
+
+export function moduleLayers(world: World, id: number, m: Module, def: ModuleDef, active: boolean, open = false, livery?: { seed: number; scheme?: string } | null, look?: ModuleLook): ModuleLayer[] {
   const a = def.asset;
   const r = `.r${m.rot}`;
   if (def.container) {
@@ -332,6 +339,11 @@ export function moduleLayers(world: World, id: number, m: Module, def: ModuleDef
   }
   if (def.weapon || def.pointDefense) return [{ chain: [`${a}.bay${r}`, `${a}.bay`], key: `${a}.bay`, tiles: 'all' }];
   const main: ModuleLayer = { chain: moduleAssets(world, id, m, def, active, look), key: a, tiles: 'all', anim: stateArt(def, m.rot, active, look).anim };
+  if (def.livery && livery && m.hp > 0) {
+    // A livery module (a banner): its mask for the scheme's roof emblem, recoloured like a container's trim.
+    const em = schemeEmblem(livery.scheme);
+    return [main, { chain: [`${a}${r}.lv.${em}`], key: `${a}.lv.${em}`, tiles: 'all', overlay: 'lv', optional: true, dz: 0.002 }];
+  }
   if (def.leisure) return leisureLayers(main, a, r, active, look);
   if (def.bed) return [main, ...bedFronts(a, r, def.berths ?? 1)];
   if (!def.console && !def.seated) return [main];

@@ -28,7 +28,7 @@ One line per section; read the index, then only the sections your task touches.
   - [Where blueprints are sold (user decision, 2026-10-26)](#where-blueprints-are-sold-user-decision-2026-10-26): Each station type has its own reason to visit:
   - [Pirate factions and the black market (user decisions, 2026-10-26 and 2026-10-27; the factions (slice 1, #135) and the black-market services (slice 2, #136) are built; spawning the named markets is not)](#pirate-factions-and-the-black-market-user-decisions-2026-10-26-and-2026-10-27-the-factions-slice-1-135-and-the-black-market-services-slice-2-136-are-built-spawning-the-named-markets-is-not): Today there is one pirate faction (the Scrappers) and the pirate den, a hostile station built to be...
   - [Contraband inspections in the world (user decisions, 2026-11-08; issue #138, built)](#contraband-inspections-in-the-world-user-decisions-2026-11-08-issue-138-built): navy and corporation inspectors board by shuttle (or EVA), search the hold, carry contraband off, and the fine or bribe is settled with the lead inspector through an alert; a patrol hails you mid-jump to stop for them; refusing turns a patrol hostile, and fighting them turns their side on you.
-  - [Prisoners and prizes (user decisions, 2026-10-27; issue #116)](#prisoners-and-prizes-user-decisions-2026-10-27-issue-116): End of a fight with every enemy crew member subdued: you choose "let them go" or "take prisoners". Prisoners are sealed into stasis slabs and held in a stasis wheel (2026-11-13).
+  - [Prisoners and prizes (user decisions, 2026-10-27; issue #116)](#prisoners-and-prizes-user-decisions-2026-10-27-issue-116): End of a fight with every enemy crew member subdued: you choose "let them go" or "take prisoners". Prisoners are sealed into stasis slabs and held in a stasis wheel (2026-11-13); from a prize the slabs ride home by shuttle (2026-11-14).
   - [Faction specialities (phase 2 stock)](#faction-specialities-phase-2-stock): Station kind still decides what a station sells (see "Where blueprints are sold"); the owner faction...
   - [Ship growth](#ship-growth): Early: expanding the hull needs a refit at a station (a shipyard service): pay, dock, and the station...
   - [Money](#money): No crew wages. Credits are mostly for buying things: gear, upgrades, materials, fuel, station repairs,...
@@ -1158,8 +1158,8 @@ are unchanged. After the answer the window stays open with how it ended and the 
 - **Holding prisoners (user decisions, 2026-11-13; replaces the cryo pod for prisoners):** they are sealed into
   **stasis slabs** and stored in a **stasis wheel** (a 3x3 module, ten slots), not a brig. Frozen, they need no food
   and can't escape. **Built (slice 1, #116):** sealing, carting, the wheel, the empty-slab item, the reserve and thawing (sim
-  `src/sim/stasis/`, `module.stasis_wheel`, `item.stasis_slab`, the `stasis` hauling job, the "Stasis failing" alert, `?scenario=stasis`). The
-  prisoner, the slab and the wheel must be on the same ship; the wheel and slab sprites are not wired into the game yet.
+  `src/sim/stasis/`, `module.stasis_wheel`, `item.stasis_slab`, the `stasis` hauling job, the "Stasis failing" alert, `?scenario=stasis`). Sealing
+  happens on the prisoner's ship; a slab reaches a wheel on another ship by shuttle (below).
   - **Sealing:** on the spot. Crew bring an empty slab to the prisoner (on the hover cart), seal them in where they
     are, and cart the full slab to a wheel with a free slot. A full slab is a sealed package: it can later travel by
     shuttle or be handed over at a station without escorting anyone.
@@ -1170,7 +1170,16 @@ are unchanged. After the answer the window stays open with how it ended and the 
   - **The hover cart** is how a carried slab looks, not an object to build or manage.
   - A slab on the hover cart keeps its charge (it does not drain); one lying on the floor or in an unpowered wheel drains. Power back refills a
     reserve in about a quarter of a game hour. A thawed prisoner leaves an empty slab behind (in the wheel slot, or on the floor).
-  - A shuttle or the boarding party escorts prisoners over (not built), so prisoners on a prize stay there unless it has a wheel.
+  - **Prisoners on a prize (user decisions, 2026-11-14; built, #116):** they travel as full slabs, not on foot. The seal button only marks a
+    prisoner; the crew see to the rest, so a mark is never refused for want of a shuttle there (only when the player has no shuttle at all, or no
+    wheel with room on a ship of theirs). A prize with marked prisoners and no wheel of its own is served by the shuttle of its away site (the
+    boarding party's, a salvage run's, or one sent for the prisoners, with hauling seats). At home the shuttle takes empty slabs into its rack
+    (four slabs), the party seals the prisoners on the prize and hands the full slabs into the rack, and back home they are set down by the bay
+    for the crew to cart to a wheel. In the rack a slab keeps its charge; a shuttle destroyed with slabs aboard loses those prisoners. While a
+    marked prisoner waits, the panel says on what (a free shuttle, crew, the shuttle on its way, or no way aboard: a sealed hull with no working
+    airlock, where no shuttle is sent).
+  - **Releasing a frozen prisoner (built, #116):** the slab is opened (the empty slab stays in its slot or on the floor) and the release is the same
+    as before sealing: they leave, and the faction they were taken from gains standing. A slab on a cart or in a shuttle is released once it is set down.
 - **Look study: stasis slab and stasis wheel (user decisions, November 2026; the sim is built, the art not yet wired in).** The
   sprites are a preview-only Blender family (`slab`, `tools/blender/sprites/slab_*.py`), not in the manifest.
   - **The slab:** a prisoner travels as a stasis slab, a two-tile item crew cart around. A steel-framed face (unlit,
@@ -1193,11 +1202,31 @@ are unchanged. After the answer the window stays open with how it ended and the 
   - **Fill levels from layers:** a base with every socket empty, one layer per slot (its slab, the base held out) and
     one face mask per slot, composited back to front. Because the Geneva drive stops in whole steps, ten rest positions
     cover every fill level. Only faces turned toward the camera get a mask.
+- **Cashing in prisoners at stations (built, #116, user decisions 2026-11-15; mock A):** a station's channel gets a **Prisoners** service only
+  while that station has a deal for a prisoner the player holds, ready to hand over or not yet (`stationWants`; "1 offer" / "not ready yet" / "1 under
+  way"). The COMMS pane lists every prisoner held (the crew panel's frozen portrait, `ui/crew/Face.svelte`; faction; where). A row has a button only
+  when this station makes a deal now; otherwise one dim line says where to take them or what has to happen first. One deal per station and prisoner
+  (`prisonerOffer`, capture/offers.ts): **ransom** at a station of their own faction (`Prisoner.from`), else a **bounty** for a pirate at a navy or
+  corporate station, else a **black market** set on the station takes anyone (standing with the set's owner, else the station's). Credits are a
+  base plus a step per level of the prisoner's best skill (`capture/tuning.ts`: ransom 140 + 20/level, +2 standing; bounty 100 + 15/level, +2;
+  market 80 + 12/level, +1; "fine for now"). Only a sealed slab in a wheel or on the floor of the player's ship is handed over.
+  - **Real delivery, never instant ("all such deliveries need to be real"):** accepting opens a handover run like a delivery crate's
+    (galaxy/handover.ts, `Deal.handover.prisoner`): the station's own shuttle comes to the airlock (a trader kind with a shuttle; no station has one
+    in today's content) or the player's shuttle docks at the airlock. Crew take the slab out of its wheel (it turns their slot to the hatch and the loading animation plays backwards, the slab ending on the cart), or off the floor, and cart it into the
+    shuttle's rack (capture/delivery.ts). The credits and standing are paid when the slab **reaches the station** (the player's shuttle beside it,
+    or the station's back home), on the terms agreed at the click. The station keeps the slab (it is in the price, as a crate goes with its goods).
+    With no shuttle or no working airlock the row says so and there is no button. While a run is under way the row shows "Loading your shuttle…" ("Collecting…" for a station's shuttle; with
+    Cancel) or "On the way to the station" in place of the button. Jumping is blocked while it runs, as for any live deal.
+  - **When it falls through:** a fight, no dock in time, a cancel, or the prisoner thawing calls the run off and logs why. The slab is set down by
+    the airlock and carted back to a wheel; one already out in the player's shuttle rides home and is set down by the bay. A shuttle destroyed with
+    the slab aboard loses the prisoner (logged). A run called off is not retried on its own: accept the deal again.
+  - Recruiting is not in this slice: it happens over time aboard.
 - **What to do with prisoners:** recruit one over time (odds by faction and mood), ransom them to their faction (credits
   and a little standing), hand pirate prisoners to navy or corporation stations for a bounty (credits and standing), hand
   them over at a black market (credits, and cartel standing), or release them (standing with their faction).
-- **What to do with a prize:** strip it (your crew deconstruct its modules and take its cargo), sell the hull at a
-  shipyard or black market (`prizeValue`), or scuttle it. Keeping a prize as a second ship waits for a fleet system.
+- **What to do with a prize:** strip it with the salvage panel (your crew deconstruct its modules, take its cargo and
+  can take the hull apart too), or scuttle it. There is no hull sale: salvage already turns a prize into goods. Keeping a
+  prize as a second ship waits for a fleet system.
 
 ### Faction specialities (phase 2 stock)
 

@@ -34,7 +34,7 @@ example when the ship has no stasis wheel with room that the prisoner can be car
 off: a crew member already on the way sets the empty slab down where they stand, and nothing is lost.
 
 Once a prisoner is marked, your crew do the rest on their own, as **Hauling** work (set it in the work priorities like
-any other hauling), as long as the ship has a wheel with room:
+any other hauling). On a ship with a wheel with room:
 
 1. A crew member takes an empty slab, from a wheel slot or from storage.
 2. They walk to the prisoner and seal them into it where they stand.
@@ -49,8 +49,29 @@ If the crew member carting a slab is called away (downed, drafted, sent off by a
 floor and another crew member picks it up later. A slab lying on the floor runs on its reserve (below), so it shows up
 in the stasis alert until it is back in a wheel.
 
-The prisoner, the empty slab and the wheel must be on the same ship. Prisoners left on a captured ship stay there unless
-that ship has a wheel of its own.
+## Prisoners on a captured ship
+
+A captured ship (a prize) usually has no wheel, so its prisoners are fetched by **shuttle**. Mark them as above (the
+button is only refused when you have no shuttle at all, or no wheel with room on a ship of yours); the crew see to the
+rest:
+
+1. If no shuttle is serving the prize yet (your boarding party's, or a salvage run's), a free shuttle is sent. Crew who
+   do hauling take its seats.
+2. Before it leaves your ship, it takes **empty slabs** into its rack, one for each marked prisoner, from your wheel or
+   storage. The rack holds four slabs. The shuttle sent is one whose home ship has wheel room for them.
+3. On the prize, the crew seal each prisoner where they stand and cart the full slab back to the shuttle.
+4. When the work is done the party flies home with the slabs. In the rack a slab **keeps its charge**. By your shuttle
+   bay the slabs are set down, and your crew cart them to the wheel as usual.
+
+While a marked prisoner waits, the line under the button says on what: a free shuttle, crew for the seats, or the
+shuttle on its way. A captured ship with its hull sealed and no working airlock has **no way aboard**: no shuttle is
+sent until there is one (power its airlock, or cut a way in). If the shuttle is destroyed with slabs aboard, those prisoners are lost with it.
+
+## Releasing a prisoner
+
+**Release** (on the prize panel, or in a prisoner's own panel) lets them go: they leave, and their faction thinks better
+of you. A frozen prisoner can be released too: their slab is opened and the empty slab stays where it was (in the
+wheel slot, or on the floor). A slab on its way, on a hover cart or in a shuttle, can be released once it is set down.
 
 ## Empty slabs
 
@@ -68,11 +89,33 @@ the reserves.
 When a reserve runs out, that prisoner **thaws out inside your ship, hostile**, and fights your crew. The slab they were
 in is left empty.
 
+## Handing prisoners over at a station
+
+Stations pay for sealed prisoners. When you talk to a station, its list of services shows **Prisoners** only when that
+station would take one of yours. It lists every prisoner you hold, with what this station offers:
+
+- **Ransom:** a station of the faction the prisoner was taken from buys them back.
+- **Bounty:** a navy or corporate station pays for a pirate.
+- **Black market:** a station with a black market takes anyone.
+
+The price rises with the prisoner's best skill, and the deal also raises your standing with the faction that pays. A row
+without a button says why: where to take them instead, or what has to happen first. A prisoner must be sealed in a slab
+aboard your own ship, not on a captured one, and a shuttle must be able to come for the slab: you need a working airlock
+and a shuttle.
+
+Nothing is handed over by hand. When you accept, your shuttle docks at your airlock (or the station sends its own
+shuttle, if it has one). The wheel turns the prisoner's slot to its hatch and runs the slab out onto a crew member's hover cart. They cart it aboard, and the shuttle takes it to the
+station. You are paid when the slab **reaches the station**. The station keeps the slab: it is part of the price. While
+this is going on the row says **Loading your shuttle…** (with **Cancel**), then **On the way to the station**, and you can't jump
+until it is done.
+
+If the hand-over falls through (a fight breaks out, the shuttle can't dock, you cancel, or the prisoner thaws), the log
+says why and nothing is paid. The slab is set down by the airlock and your crew cart it back to a wheel; if it was
+already out in your shuttle, it comes home with it. A shuttle destroyed with the slab aboard loses the prisoner. To try
+again, accept the deal again.
+
 <ComingLater>
 
-What you can do with prisoners once they are held: shipping full slabs over by shuttle, handing them over at a station
-for ransom or a bounty, selling them at a black market, recruiting one, or releasing one who is already frozen (you can
-release a prisoner before they are sealed, from the Prize panel). Escorting prisoners from a captured ship to your own
-is not built yet either.
+Recruiting a prisoner into your crew.
 
 </ComingLater>

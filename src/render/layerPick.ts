@@ -13,7 +13,7 @@ import type { WallLevel } from './tiles';
 export interface LayerState {
   active: boolean;
   now: number;
-  livery?: { seed: number } | null;
+  livery?: { seed: number; scheme?: string } | null;
   look?: ModuleLook;
   /** Airlocks: the wall view level, whether the ship is roofed, and the collar's dock-sequence step (null = follows the airlock). */
   airlock: AirlockView;

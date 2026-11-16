@@ -19,9 +19,10 @@ export function buildWheel(sim: Sim, id: number): UiWheelSlot[] | null {
 export function stasisOf(sim: Sim, id: number): UiStasis | null {
   const place = slabPlace(sim, id);
   if (!place) return null;
-  const base = { reserve: pct(sim, id), draining: slabDraining(sim, id), wheel: null, carrier: null, to: null };
+  const base = { reserve: pct(sim, id), draining: slabDraining(sim, id), wheel: null, carrier: null, to: null, inTransit: place.kind === 'carried' || place.kind === 'shuttle' };
   if (place.kind === 'wheel') return { ...base, where: `${moduleNameOf(sim, place.wheel)}, slot ${place.slot + 1}`, wheel: place.wheel };
   if (place.kind === 'floor') return { ...base, where: 'On the floor, waiting to be carted' };
+  if (place.kind === 'shuttle') return { ...base, where: 'In the shuttle, on the way to a stasis wheel' };
   const a = sim.world.get(place.crew, AssignmentC);
   const wheel = (a && sim.world.get(a.jobId, JobC)?.stasis?.wheel) || 0;
   return {

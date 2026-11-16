@@ -1,7 +1,7 @@
 # Project status and handoff
 
 Living document: update it whenever a milestone lands, a decision is made, or a session ends.
-Last updated: 2026-11-08.
+Last updated: 2026-11-15.
 
 **History:** completed-work logs, past PR notes and superseded decisions are in [STATUS_ARCHIVE.md](STATUS_ARCHIVE.md). Standing decisions that live there:
 - Sector grid (user, 2026-10-19): each sector becomes one large chunked grid; ships never move or dock with each other; a jump takes the player's ship plus anything docked to it. Plan: "Sector grid (planned)" in ARCHITECTURE.md; user answers in the archive section "Sector grid decision".
@@ -43,7 +43,7 @@ Any module can now draw power by a state rule (`ModuleDef.drawsWhen`, `sim/modul
 **For the shipgen session:** the beds, meals and greens in the shipped starters (`src/content/ships/{wayfarer,prospector,lancer}.ts`) are hand-edited, and the python generators
 under `tools/shipgen/starters` are stale against them (they were already behind the shipped stock lists). Regenerating with `ship.py` would erase them: port the edits first.
 
-## On `main` now (merged PRs through #308)
+## On `main` now (merged PRs through #499)
 
 - **Progression:** blueprints, tiers, research stations (#97); per-faction standing and relations (#128); pirate factions (#137); contraband, scans, fence and
   black-market services (#141); hull planner, shipyard and engine capacity (#134); hull width rule and hull plan brushes (#145).
@@ -69,35 +69,38 @@ under `tools/shipgen/starters` are stale against them (they were already behind 
 
 ## In progress
 
-**Priority (user, 2026-11-08): make the game playable first.** Playtest bugs come before new features: the batch #384-#390 is
-in progress (one bug PR, one perf PR). The core-loop work (#380 research, #382 bands, #171 nodes, #383 arcs) waits until the game is
-playable. The test harness (#371) may run alongside.
+**Priority (user, 2026-11-15): the core loop.** "Make it playable first" (2026-11-08) is met: the playtest batch #384-#390 shipped
+in #392. Next is more to find per node (#171; danger bands #382 folded in: no visible bands, physical finds, plan in the #171 comment of 2026-11-15). #380 research,
+#383 story arcs and #172/#52 goals queue behind them. The test harness (#371) may run alongside.
 
-- **Encounters (#173):** steps 1-4 merged (scenes, battle stations and the trader skiff in #309; the derelict in #314; the pirate
-  ambush in #327). The comms window rework (layout E) merged in #329; the distress freighter in #343 (consent record, work blocks,
-  threat-first targeting, suits for hot rooms, scene clocks start at deploy). The medical pod in #345 (escape pod vehicle, passengers as lodging guests, passage jobs, join offer, the shared `roleOf`). Step 6 is done. The ambush can grow slightly once relationships and interactions exist.
-- **Shared-cause fixes (2026-11-08):** alerts built from state (#349, merged in #352: `src/app/alertsDerived.ts`, dismissals mute per kind until the condition clears); `heldItems` for item enumeration (`src/sim/items/held.ts`, merged in #351; story stock counts and takes, fit-job seizure (`where: 'fitting'`) and `playerShipId` for the adrift jump in #355); a dev/test guard for reads of the packed player ship (#350, merged in #353: `src/sim/packedGuard.ts`, 'throw' in tests, 'warn' in dev for tick code only).
-- **Contraband inspections (#138):** step 1 (station dock inspection) merged in #359: `src/sim/inspect/`, inspectors as visitor crew from the station's shuttle (dock or EVA), haul up to the hold and impound the rest, sticky settle alert (fine / bribe / refuse), `Trader.barredUntil` (10 turns), `?scenario=inspect[&clean][&eva]`. Step 2 (patrol hails mid-jump in the comms window, comply or run, chase, the patrol held and kept peaceful until its inspection ends) merged in #364. Step 3 (refusing and fighting: refusing costs standing, never hostility; attacking the inspectors or jumping with any aboard is a fight, `?scenario=inspect&fight`, `patrol&fight`, `inspect&select`) merged in #370; #138 is done. Pirate interdictions moved to the same window in #368 (#363); evade odds in #367.
-- **UI consistency (#336):** steps 1-3 merged (tokens; chips and meters; the `tip` action with `TipHost`, `PaneHead` and `Tabs` in #358). Step 4, one window frame and the decision bar, needs a mock sheet first.
-- **Drones (#318) done:** repair and medic drones inside (#323, art #324); space flight, defence drones, recall (#325); outside
-  breach seals, supplies, enemy drones, staggered landing (#326).
-- **Mental breaks (#175) done** (#328, TRAITS.md section 5 "As built"); the grief stressor and the tantrum's relationship hit are seams for relationships.
-- **Relationships (#239) done:** merged in #330, the Social tab in #331; see TRAITS.md section 6 "As built (#239)". `?scenario=bonds` shows it.
-- **Designed, not started:** new modules (comfort, medical, gear, food: DESIGN.md "New modules");
-  crew implants (#311) needs its design pass.
-- **Next:** see [ROADMAP.md](ROADMAP.md): relationships (#239) merged in #330, its Social tab in #331. Trade and station rework (#332): the trade window (#333) and the station comms channel (#335) are merged; step 3 (a hologram sprite per station type) is dropped: the user prefers the scaled starmap icon, so #332 is done.
-  Addictions are parked.
-- **Open issues from 2026-11-03:** #300 in-node events; #303 augments as stat modifiers on the base species; #305 a shuttle
-  landing in a bay that breaks on approach.
+- **Open PR:** #501 station assembly (#460), ready.
+- **Open bugs:** #444 (only one of four black markets spawns), #445 (agri station has no hydroponics), #103 (hull glitches).
+- **Open:** recruiting prisoners (#492); #300 in-node events; #303 augments as stat modifiers; #305 shuttle landing in a bay that breaks on approach.
+- **Designed, not started:** new modules (DESIGN.md "New modules"); crew implants (#311) needs its design pass. Addictions are parked.
 - **Waiting on the user:** shield art; a feature-completeness review of #205, #238 and #203.
 - **Temporary:** NPC ships ignore engine capacity until shipgen gives big hulls enough engines (#129).
+
+## Done since #308 (one-liners; detail in the PRs, older notes in STATUS_ARCHIVE.md)
+
+- **Encounters (#173, #60):** scenes, trader skiff, derelict, pirate ambush, comms window, distress freighter, medical pod (#309, #314, #327, #329, #343, #345).
+- **Inspections (#138):** dock inspection, patrol hails, refusing and fighting (#359, #364, #370; interdictions #368, evade odds #367).
+- **Drones (#318), mental breaks (#175), relationships (#239):** #323-#326, #328, #330-#331; trade window and station comms (#333, #335).
+- **Playtest batch (2026-11-08):** #384-#390 in #392; bugs #378, #409, #410, #411, #405.
+- **Perf:** #396, #398, #394, #399, #400, #401.
+- **Crew:** schedules (#414), backgrounds and eleven skills (#420), no suit limit (#419), recovery pod and medic care (#457), room quality and leisure (#447, art #440).
+- **Power:** reactor fuel and batteries (#422, #426, art #423); NPC fuel (#427).
+- **Prisoners (#116, closed):** #461, #478, #480, #486, #487, #489, #495; prize value dropped.
+- **Furniture and stores:** #462, #479, #482, #491, #499.
+- **UI:** alerts (#458, #459); window frame (#470, completes #336); story comms (#471); window buttons (#473); docked inspector (#477); door vents (#469, #393); jobs window (#454); schedule gap fix (#455).
+- **Hulls and stations:** #431, #432, #435, #437, #465, #466, #496, #497.
+- **Tools:** layout lab (#433, #439, #468); state integrity (#467, #160); shipyard save replay (#463); agent play API (#418); wiki (#450, #456).
 
 ## Decisions (user)
 
 - Desktop only; no phone layout work.
 - GitHub issues track work.
 - Shield tiers are 2x2, 2x3 and 3x3. Reactors are 2x2, 2x3 and 2x4.
-- The derelict ending kills everyone aboard. Prisoners wait for the black market phase (#116).
+- The derelict ending kills everyone aboard. Prisoners came with the black market phase (#116, shipped).
 - Enemy roofs can't be lifted without a future scanning upgrade. Every ship but the player's is roofed until player crew are aboard; stations stay open unless at war with the player (#390).
 - The balance-test cap is 12 minutes.
 - Research nodes are inspectable only when researchable.
@@ -113,10 +116,9 @@ The planned feature order lives in [ROADMAP.md](ROADMAP.md); the list below is t
 1. The "In progress" list above.
 2. Engine Mk II/III art (#105).
 3. Renderer follow-ups (#123): render on demand, cached static layers, per-sprite culling.
-4. Station intruder bug (#107); prisoners and prizes (#116).
-5. Shipgen session (separate): generator backlog (#119), room layout audit (#122), hull glitches (#103), NPC engine capacity (#129).
+4. Shipgen session (separate): generator backlog (#119), room layout audit (#122), hull glitches (#103), NPC engine capacity (#129).
 
-Other open issues: #65 sim performance, #60, #54, #53, #52, #51, #50, #49, #48, #47.
+Other open issues: #65 sim performance, #54, #53, #52, #50, #49, #48, #47, #158, #157, #193, #139, #212, #245, #485, #490, #320-#322, #162, #130-#133.
 
 ## Where things are
 

@@ -10,7 +10,7 @@ import { storageTake } from '../items/storage';
 import type { ItemQty } from '../registry';
 import { cargoSpace } from '../vehicles/cargo';
 import { VehicleC } from '../vehicles/components';
-import { refKey, reservations, type Located, type Reservations } from '../items/stock';
+import { refKey, reservations, storageStop, type Located, type Reservations } from '../items/stock';
 import { ModuleC } from '../modules/components';
 import { moduleSite } from '../modules/footprint';
 import { shipIdAt, shipIdOf } from '../regions';
@@ -129,7 +129,7 @@ export function finishSearch(sim: Sim, job: Job): void {
   const store = job.target ?? 0;
   for (const q of stored) {
     const avail = q.count - (res.out.get(refKey('storage', store, q.item)) ?? 0);
-    if (avail > 0) seize(sim, res, vehicle, insp, { ref: { kind: 'storage', id: store }, x: m.x, y: m.y, avail }, q.item, avail, (n) => storageTake(sim, store, q.item, n));
+    if (avail > 0) seize(sim, res, vehicle, insp, { ref: { kind: 'storage', id: store }, ...storageStop(sim, m), avail }, q.item, avail, (n) => storageTake(sim, store, q.item, n));
   }
   claimLoose(sim, res, vehicle, insp, job, SPILL_REACH);
 }

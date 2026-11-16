@@ -40,7 +40,7 @@ export const starterShip = {
     { def: 'module.reactor', x: 26, y: 7, rot: 0 },
     { def: 'module.reactor', x: 24, y: 7, rot: 0 },
     { def: 'module.reactor', x: 25, y: 11, rot: 0 },
-    { def: 'module.battery', x: 27, y: 6, rot: 0 }, // a power bank beside the reactors
+    { def: 'module.battery', x: 26, y: 6, rot: 1 }, // a power bank beside the reactors, laid in the dead end under the engine where it narrows no lane
     { def: 'module.lifeSupport', x: 23, y: 7, rot: 0 },
     { def: 'module.light', x: 22, y: 2, rot: 0 },
     { def: 'module.light', x: 22, y: 5, rot: 0 },

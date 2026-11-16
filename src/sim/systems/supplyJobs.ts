@@ -52,7 +52,7 @@ export function supplyJobsSystem(sim: Sim): void {
     for (const need of missing) {
       let lack = lacks.get(need.item) ?? 0;
       for (let i = 0; i < MAX_HAULS_PER_ITEM && lack > 0; i++) {
-        const src = nearestSource(sim, shipIdOf(sim, job), need.item, job, res);
+        const src = nearestSource(sim, shipIdOf(sim, job), need.item, job, res, true);
         if (!src) {
           if (warnDue(sim, job)) {
             sim.events.emit({ type: 'job.missingMaterials', job: jobId, ship: shipIdOf(sim, job), x: job.x, y: job.y, item: need.item });

@@ -25,11 +25,11 @@ export const EVENT_ROUTE: Partial<Record<SimEvent['type'], Route>> = {
   'outpost.discovered': 'log', 'patrol.complied': 'log', 'patrol.ran': 'log', 'production.done': 'log', 'scene.aid': 'log', 'scene.observed': 'log',
   'ship.arrived': 'log', 'ship.captured': 'log', 'ship.destroyed': 'log', 'ship.fled': 'log', 'ship.provoked': 'log', 'ship.surrendered': 'log',
   'station.alarm': 'log', 'station.calm': 'log', 'storage.full': 'log', 'story.effect': 'log', 'trade.dealMade': 'log', 'trade.delivered': 'log',
-  'trade.failed': 'log', 'trade.hailAnswered': 'log', 'trade.hailRefused': 'log', 'trade.settled': 'log', 'transfer.blocked': 'log',
+  'trade.failed': 'log', 'trade.rerouted': 'log', 'trade.hailAnswered': 'log', 'trade.hailRefused': 'log', 'trade.settled': 'log', 'transfer.blocked': 'log',
   'transfer.delivered': 'log', 'transfer.queued': 'log', 'truce.breached': 'log', 'research.done': 'log', 'goal.done': 'log', 'goal.actDone': 'log',
   'combat.vented': 'log', 'combat.overheated': 'log', 'combat.overcharged': 'log', 'ftl.overcharged': 'log', 'crew.knockedDown': 'log',
   'crew.imprisoned': 'log', 'crew.surrendered': 'log', 'robot.wrecked': 'log', 'galaxy.hunt': 'log', 'galaxy.distressSent': 'log',
-  'ship.letGo': 'log', 'crew.released': 'log', 'stasis.sealed': 'log', 'stasis.stowed': 'log', 'stasis.thawed': 'log', 'galaxy.towArrived': 'log', 'galaxy.stalled': 'log', 'galaxy.notoriety': 'log', 'eggsac.disturbed': 'log',
+  'ship.letGo': 'log', 'crew.released': 'log', 'stasis.sealed': 'log', 'stasis.stowed': 'log', 'stasis.thawed': 'log', 'stasis.shipped': 'log', 'stasis.unloaded': 'log', 'stasis.lost': 'log', 'prisoner.collecting': 'log', 'prisoner.handedOver': 'log', 'galaxy.towArrived': 'log', 'galaxy.stalled': 'log', 'galaxy.notoriety': 'log', 'eggsac.disturbed': 'log',
 };
 
 /** Whether an event gets a line in the ship's log. */

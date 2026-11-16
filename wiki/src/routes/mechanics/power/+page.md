@@ -73,6 +73,13 @@ Beds, storage and containers need no power and always work.
 
 Doors don't need power.
 
+## Lamps
+
+Three lamps light a ship. The **floor light** is a lit grate set into the deck; crew walk over it. The **cage lamp** and the
+**light mast** are solid and reach further: the mast lights a whole hall. You can build all three.
+
+<ModuleTable ids="module.light, module.light_cage, module.light_mast" columns="power:Power:signed, maxHp:Hull points" />
+
 ## Reactors
 
 <ModuleTable ids="module.reactor, module.reactor.mk2, module.reactor.mk3" columns="power:Power:signed, heatPerSec:Heat / s, maxHp:Hull points" />

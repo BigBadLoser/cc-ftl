@@ -14,6 +14,7 @@ import { ofSide } from './crew';
 import { endRun } from './end';
 import { planCarry, unloadStep } from './haul';
 import { stagedStacks } from '../items/staging';
+import { stocking } from '../stasis/shuttle';
 import { releaseOwned } from './owned';
 import { partyOut } from './depart';
 import { boardPassengers, calledBack, dropPassages, endInvites, freeSeats, letOut, passagesOf, postPassages } from './passage';
@@ -84,7 +85,8 @@ function board(sim: Sim, id: number, v: Vehicle, r: SiteRun): void {
   }
   // Someone holds a passage and is still walking to the bay; the hold is still being emptied.
   const enRoute = passagesOf(sim, id).some((j) => (sim.world.get(j, JobC)?.reservedBy ?? 0) !== 0);
-  const unloading = cargoCount(v) > 0 && r.timer < sec(AWAY_TURNAROUND_SEC);
+  // (Stocking: empty slabs still going into the rack for a prize's prisoners, stasis/shuttle.ts.)
+  const unloading = (cargoCount(v) > 0 || stocking(sim, id)) && r.timer < sec(AWAY_TURNAROUND_SEC);
   if (aboard.length > 0) r.boardedAt ??= sim.tick;
   const waited = r.boardedAt === undefined ? 0 : sim.tick - r.boardedAt;
   let leave: boolean;

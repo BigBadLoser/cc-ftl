@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { Struct } from "../sim/structure";
+import { Finish, Struct } from "../sim/structure";
 import { floorChain, ghostVerts, outward, replacesFloor, tileHash, wallMask, wallPieces, type CutawayMode } from "./tiles";
 
 const W = Struct.Wall;
@@ -119,5 +119,25 @@ describe("floors", () => {
     expect(set.size).toBeLessThanOrEqual(3);
     expect([...set].filter((v) => v === "tile.floor.a").length).toBe(1);
     expect(tileHash(1, 2)).toBe(tileHash(1, 2));
+  });
+
+  it("shows a floor finish first, the plain deck behind it", () => {
+    expect(floorChain(3, 4, Finish.Heavy)).toEqual(["tile.floor.heavy", ...floorChain(3, 4)]);
+    expect(floorChain(3, 4, Finish.Carpet)).toEqual(["tile.floor.carpet", ...floorChain(3, 4)]);
+    expect(floorChain(3, 4, Finish.Plain)).toEqual(floorChain(3, 4));
+  });
+
+  it("scatters the clean tile's siblings one tile in 20 each, like the deck's c and h", () => {
+    const first = new Map<string, number>();
+    for (let y = 0; y < 100; y++)
+      for (let x = 0; x < 100; x++) {
+        const chain = floorChain(x, y, Finish.Clean);
+        expect(chain).toContain("tile.floor.clean");
+        expect(chain.at(-1)).toBe("tile.floor.a");
+        first.set(chain[0] as string, (first.get(chain[0] as string) ?? 0) + 1);
+      }
+    expect([...first.keys()].sort()).toEqual(["tile.floor.clean", "tile.floor.clean.1", "tile.floor.clean.2", "tile.floor.clean.3"]);
+    for (const k of ["tile.floor.clean.1", "tile.floor.clean.2", "tile.floor.clean.3"]) expect(first.get(k)).toBeGreaterThan(350);
+    for (const k of ["tile.floor.clean.1", "tile.floor.clean.2", "tile.floor.clean.3"]) expect(first.get(k)).toBeLessThan(650);
   });
 });
