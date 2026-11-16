@@ -22,7 +22,8 @@ UNDER_BOX = (7, 4, 11)              # the body under the bay: px wide, px out fr
 UNDER_TONES = ("stL", "stM", "stD", "stDE")  # its top; its sides by facing: the near end (+u), out, the far end (in
                                     # the light: not the machinery's shade)
 UNDER_SEAM = 3                      # a seam round it this many px under its top (a step under its tones)
-UNDER_SHADOW = (13, "stE")           # a shadow on the face under it: px under its outline, tone (under all of the body's)
+UNDER_SHADOW = (13, "stE", "stDE")  # a shadow on the face under it: px under its outline, tone (under all the
+                                    # body's), tone under the groove (on the lighter band: a shade lighter)
 
 
 def _under(f, u0, u1, zf, back, px):
@@ -36,15 +37,22 @@ def _under(f, u0, u1, zf, back, px):
     n = 16                                                  # (its top)
     f.k.poly([T.P(f.ax, f.plane, m + w / 2 * LINE * math.cos(math.pi * i / n), zf, D + out * LINE * math.sin(math.pi * i / n))
               for i in range(n + 1)], F, 3, core.Vector((0, 0, 1)), fixed=T.SEAM_PASS or UNDER_TONES[0])
-    zb = zf - h * px                                        # (a shadow on the face under it)
-    f.k.poly([T.P(f.ax, f.plane, m + w / 2 * LINE * math.cos(math.pi * i / n),    # (its outline on screen, carried
-                  zb - (UNDER_SHADOW[0] + out / 2 * math.sin(math.pi * i / n)) * px, D + 0.003)   # down onto the face)
-              for i in range(n + 1)] + [T.P(f.ax, f.plane, m - w / 2 * LINE, zb, D + 0.003),
-                                        T.P(f.ax, f.plane, m + w / 2 * LINE, zb, D + 0.003)],
-             F, 3, T.OUT(f.ax), fixed=T.SEAM_PASS or UNDER_SHADOW[1])
+    _shadow(f, m, w, out, zf - h * px, n, px)
     p, dc = (m - u0) / LINE, D + out / 2 * LINE
     _run(f, u0, zf, dc, [(p, -1), (p, 3), (p, 3, (back - dc) / LINE + 1)], r=1.0, R=2)
 
+
+def _shadow(f, m, w, out, zb, n, px):
+    """The body's shadow on the face under it: its outline on screen carried UNDER_SHADOW px down, a shade lighter on
+    the face's lighter band under the groove."""
+    from .station_hull import GROOVE
+    a, b = m - w / 2 * LINE, m + w / 2 * LINE
+    low = [(m + w / 2 * LINE * math.cos(math.pi * i / n), zb - (UNDER_SHADOW[0] + out / 2 * math.sin(math.pi * i / n)) * px)
+           for i in range(n + 1)]
+    for pts, col in (([(u, max(z, GROOVE)) for u, z in low] + [(a, zb), (b, zb)], UNDER_SHADOW[1]),
+                     ([(u, min(z, GROOVE)) for u, z in low] + [(a, GROOVE), (b, GROOVE)], UNDER_SHADOW[2])):
+        f.k.poly([T.P(f.ax, f.plane, u, z, D + 0.003) for u, z in pts], F, 3, T.OUT(f.ax),
+                 fixed=T.SEAM_PASS or col)
 
 def _half(f, m, z0, z1, ru, rd, seam, n=16):
     """A half-round band over [z0, z1] flat against the face at m, ru px across either way, rd px out; its facets toned
