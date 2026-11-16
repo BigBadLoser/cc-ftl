@@ -65,7 +65,11 @@ for _stem, (_key, _r, _n) in PICKS.items():
         SPRITES.append((f"turret.{_stem}.deploy.f{_f}", _fp, "prop", lambda a=_des, b=_kind, r=_r, f=_f: TB.deploy(a, f, b, r)))
     for _rot in ((0,) if QUICK else range(4)):
         SPRITES.append((f"module.{_stem}.bay.r{_rot}", _fp, "prop", lambda k=_key, rot=_rot, n=_n: _shift(TB.BAYS[k](rot), n)))
-    # Ground mount prototypes out on an asteroid's rock (#514): variants A-C, cable side r0 only.
-    for _v in TG.VARIANTS:                                 # every ground turret is 3x3, whatever its roof bay
-        SPRITES.append((f"module.{_stem}.ground.{_v}.r0", (3, 3), "prop", lambda v=_v: _shift(TG.mount(0, v), 3)))
-        SPRITES.append((f"turret.{_stem}.ground.{_v}.d1", (3, 3), "prop", lambda k=_key, v=_v: TG.ground_turret(k, 1, v)))
+    # Ground turrets out on an asteroid's rock (#514): a 3x3 mount whatever the roof bay, one per cable side, and the head
+    # with its turntable on the mount's riser at every aim.
+    for _rot in ((0,) if QUICK else range(4)):
+        SPRITES.append((f"module.{_stem}.ground.r{_rot}", (3, 3), "prop", lambda rot=_rot: _shift(TG.mount(rot), 3)))
+    for _d in ((1, 3, 6) if QUICK else range(8)):
+        SPRITES.append((f"turret.{_stem}.ground.d{_d}", (3, 3), "prop", lambda k=_key, d=_d: TG.ground_turret(k, d)))
+        if _key != "pd" and (not QUICK or _d == 1):
+            SPRITES.append((f"turret.{_stem}.ground.d{_d}.charged", (3, 3), "prop", lambda k=_key, d=_d: TG.ground_turret(k, d, True)))

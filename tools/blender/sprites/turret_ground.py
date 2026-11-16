@@ -207,7 +207,11 @@ def riser(f, top, ribs=0, detail=True, hatch=112):
         a = (k + 0.5) * math.tau / 32
         f.vcyl(0.805 * math.cos(a), 0.805 * math.sin(a), top - 0.16, 0.014, 0.014, "steelL", sides=4)
     _g("hatch")
-    HA = math.radians(hatch)                                                    # between the front and left arms
+    # The hatch faces the camera in every rotation (world 88 degrees, between the front and left arms), so it is placed in
+    # world terms; where the junction box is (world 90 * rot) it takes the mirror place across the camera line (2).
+    rot = (f.rot - 1) % 4
+    world = hatch if abs(((hatch - 90 * rot) + 180) % 360 - 180) > 40 else 90 - hatch
+    HA = math.radians(world - 90 * rot)
     obox(f, HA, 0.8, 0.825, 0.17, 0.2, 0.6, "steel", top="steelL")              # access hatch
     obox(f, HA, 0.825, 0.835, 0.13, 0.24, 0.56, "steelD")
     obox(f, HA, 0.83, 0.86, 0.025, 0.36, 0.44, "steelL")                        # its handle
@@ -271,20 +275,21 @@ def out_corners(f, arms, tone=1, port=None, hatch=112):
 
 
 # Picked (round 14, K1): four outriggers on the corners, light steel arms and struts, a collar and domed cap on each jack.
-# Round 19: the riser's access hatch swung toward the camera (it was at 112 degrees): 88 (H1), 76 (H2), 64 (H3).
+# Picked: K1 outriggers, hatch at 88 degrees (round 19, H1).
 _Q = math.pi / 4
 _ARMS = [(_Q + k * math.pi / 2, 0.46) for k in range(4)]
+TOP = 0.78
 
 
-def k1(f, hatch=112):
-    out_corners(f, _ARMS, tone=1, hatch=hatch)
+def final(f):
+    out_corners(f, _ARMS, tone=1, hatch=88)
 
 
-GV = {"H1": (0.78, lambda f: k1(f, 88)), "H2": (0.78, lambda f: k1(f, 76)), "H3": (0.78, lambda f: k1(f, 64))}
+GV = {"": (TOP, final)}
 
-def ground_turret(key, d, variant):
-    """The head with its turntable ring (no roof coaming), standing on the variant's base."""
-    return TC.place(TC.PICKS[key](False), d, z0=GV[variant][0], parts=("head", "gun"))
+def ground_turret(key, d, hot=False):
+    """The head with its turntable ring (no roof coaming), standing on the mount's riser."""
+    return TC.place(TC.PICKS[key](hot), d, z0=TOP, parts=("head", "gun"))
 
 
 def plinth(f):
@@ -314,7 +319,7 @@ def plinth(f):
 VARIANTS = {v: a[1] for v, a in GV.items()}
 
 
-def mount(rot=0, variant="A"):
+def mount(rot=0, variant=""):
     m = core.Mesh(f"ground_mount_{variant}")
     VARIANTS[variant](Frame(m, (1 + rot) % 4, square=True))
     return [m.build()] if cmbkit.REC is None else []
