@@ -42,7 +42,7 @@
         <div class="legend"><span><i class="k f"></i>Footprint</span>{#if def.access.length}<span><i class="k acc"></i>Access: keep clear</span>{/if}<span class="rot"><Icon name="rotate" size={13} /> R to rotate</span></div>
       {:else if entry.icon}
         <div class="toolart"><Icon name={entry.icon} size={72} /></div>
-        <div class="legend"><span>Drag to paint it</span></div>
+        <div class="legend"><span>{entry.id === 'window' ? 'Click a straight wall to place it' : 'Drag to paint it'}</span></div>
       {/if}
       <VariantRow chips={variants} onpick={(id) => onvariant?.(id)} {thumbOf} />
     </div>
