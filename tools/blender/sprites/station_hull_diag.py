@@ -244,13 +244,13 @@ def _bits(rel, f, fr, cut, sec):
             g = m - sg * L / 4 + sg * SH.TAB_IN * px
             _box(rel, cut, s, c, w, t, g - SH.TAB_W / 2 * px, g + SH.TAB_W / 2 * px, g0, g1, LINE,
                  SH.TAB, SH.TAB_TOP, SH.TAB_SIDE)
-            b = m + sg * 6.5 / 32 * L                       # (the step's blocks)
-            _box(rel, cut, s, c, w, t, b - 3.5 * px, b + 3.5 * px, bf, bt, SH.FOOT_OUT + LINE,
-                 SH.BLOCK, SH.BLOCK, SH.GROOVE_D)
-            face = cut + _range(t, b - 3.5 * px, b + 3.5 * px) + [(s, c + w * (SH.FOOT_OUT + LINE))]
+            b = m + sg * 6.5 / 32 * L                       # (the step's blocks, sized as the tile's: FOOT_BLOCKS of 32)
+            b0, b1 = b - 3.5 / 32 * L, b + 3.5 / 32 * L
+            _box(rel, cut, s, c, w, t, b0, b1, bf, bt, SH.FOOT_OUT + LINE, SH.BLOCK, SH.BLOCK, SH.GROOVE_D)
+            face = cut + _range(t, b0, b1) + [(s, c + w * (SH.FOOT_OUT + LINE))]
             _paint(rel, face, len(cut) + 2, SH.BLOCK_LIT, [(UP, bt), (-UP, -sec.z_at(bt, 1))])
             if _level(s):                                   # (face on, its sides unseen: a dark px down its edges)
-                for e0 in (b - 3.5 * px, b + 2.5 * px):
+                for e0 in (b0, b1 - px):
                     _paint(rel, face, len(cut) + 2, SH.GROOVE_D, _range(t, e0, e0 + px) + [(UP, bt), (-UP, -bf)])
         hw = (SH.TAB_W / 2 + 1) * px
         _box(rel, cut, s, c, w, t, m - hw, m + hw, pz[0], pz[1], LINE, SH.TAB, SH.TAB_TOP, SH.TAB_SIDE)
