@@ -86,6 +86,10 @@ playable. The test harness (#371) may run alongside.
 - **Station assembly (#460), work branch `claude/practical-ptolemy-v7azd8`:** one modular system for station layouts (recipes as data, one assembler, one wall
   writer), fitted out by the shared fit-out. It builds every station and outpost in the game (`buildStation`); the station grammars are
   deleted. See [STATION_ASSEMBLY.md](STATION_ASSEMBLY.md).
+  CHANGELOG line for merge time (user agreed), under Changed, with the PR link: "Stations and outposts: every station and
+  asteroid outpost is now laid out by one modular builder: departments grouped round halls, rings and hubs, rooms that serve
+  another room off it, and lamps centred in each room and corridor. Trading outposts are prefab bases on the rock: landing
+  pads, customs, a market hall and a mess hub with the crew's rooms off it, joined by short tubes."
 - **Designed, not started:** new modules (comfort, medical, gear, food: DESIGN.md "New modules");
   crew implants (#311) needs its design pass.
 - **Next:** see [ROADMAP.md](ROADMAP.md): relationships (#239) merged in #330, its Social tab in #331. Trade and station rework (#332): the trade window (#333) and the station comms channel (#335) are merged; step 3 (a hologram sprite per station type) is dropped: the user prefers the scaled starmap icon, so #332 is done.
