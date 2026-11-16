@@ -200,7 +200,12 @@ def build(k, ax, plane, a, b, ends, H):
         if whole:
             for fr, sg in zip(SEAMS, (1, -1)):
                 u = s0 + fr - LINE / 2
-                f.plumb(u, u + LINE, s.z_at(GROOVE, -1), H, zk, SEAM)     # (from the groove up)
+                if DESIGN[0] == SD.MODULE:                               # (from the groove up; a break in a design)
+                    z0, z1 = SD.gap(s)
+                    f.plumb(u, u + LINE, s.z_at(GROOVE, -1), z0, zk, SEAM)
+                    f.plumb(u, u + LINE, z1, H, zk, SEAM)
+                else:
+                    f.plumb(u, u + LINE, s.z_at(GROOVE, -1), H, zk, SEAM)
                 f.top_line(u, u + LINE, ts, D - R_D, SEAM)
                 g = f.at_face(u + LINE / 2, zk) + sg * TAB_IN * LINE     # (a tab on the groove, in from the seam)
                 if DESIGN[0] not in SD.NO_TABS:
