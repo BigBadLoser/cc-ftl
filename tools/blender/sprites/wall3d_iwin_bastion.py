@@ -8,6 +8,7 @@ from mathutils import Vector
 from . import wall3d as T
 from . import walls as W
 from .faction.bastion import BAST_HB, BAST_P
+from . import wall3d_iwin_bastion_front as BF
 from .wall3d_iwin import _clip
 
 PX = 1 / 32                 # an art px across or along the wall
@@ -145,6 +146,7 @@ def hook(k, sp, own=True):
     k.side = None
     _cut(k, x0, x1, z1, cells)
     _tops(k, cells)
+    BF.front(k, PART, cells)                                            # (the struts along the front, the user)
     yl, zt = _line(), _zt()
     for u, sd, on in ((x0, 1, x0 > -0.5), (x1, -1, x1 < 0.5)):          # the posts' sides
         if on:

@@ -2,7 +2,7 @@
 
 Branch `art/hull-windows`. Read this before touching interior windows. Keep it current: add a line at every step.
 
-## Pick up here (state at 2026-11-15: drone approved at d32; civil approved at c17; bastion revisited, b0)
+## Pick up here (state at 2026-11-15: drone approved at d32; civil approved at c17; bastion revisited, b1)
 - Branch `art/hull-windows` (worktree `/home/user/cc-ftl-windows`), everything committed and pushed; the dated log at
   the end of this file has every step. Nothing here is in the sprite pipeline yet: window pieces render only through
   the preview jobs files.
@@ -77,7 +77,7 @@ Uploads dir: `/root/.claude/uploads/d90bd30e-5bfe-51f0-9d45-019095d96471/`.
 | 122 (set 4) | navy | 2772 / 2771 / 2862 | parked at nw13, **flagged ugly** (the user, 2026-11-09): the navy set (walls and window) wants a rethink before shipping (see "Navy window") |
 | 423 (set 5) | drone | 2765 / 2764 / 2863 | done: approved at d32 (the user, 2026-11-15: "good enough"): `sprites/wall3d_iwin_drone.py` + `wall3d_iwin_drone_vents.py`; the header rail kept (no pipe beam) |
 | 428 (set 6) | civil | 2770 / 2769 / 2864 | approved (c17, 2026-11-15): `sprites/wall3d_iwin_civil.py`, jobs `preview/jobs_cvwin.py` (civil.v1) |
-| 3295 (set 8) | bastion | 3296 / 3297 / 3298 | revisited (b0, 2026-11-16): `sprites/wall3d_iwin_bastion.py`, jobs `preview/jobs_bswin.py` |
+| 3295 (set 8) | bastion | 3296 / 3297 / 3298 | revisited (b1, 2026-11-16): `sprites/wall3d_iwin_bastion.py`, jobs `preview/jobs_bswin.py` |
 | none | scrap | | no ref |
 
 Slate's ref (44) at a glance. T layer: grey posts with a stepped foot; a blue beam with a raised block over the
@@ -798,3 +798,4 @@ Marked ref (both layers, numbered): scratchpad
 - 2026-11-15: c17 (the user: about 5 px): BEAM 8 -> 5. The plain wall pixel-identical. Renders: scratchpad `cv17`.
 - 2026-11-15: the user: civil looks fine at c17 (approved).
 - 2026-11-16: the user: revisit bastion (the earlier no was the bad job, not the look). b0: `sprites/wall3d_iwin_bastion.py` (civil's c2 core: POST from `BAST_P` (4 px), end blocks BLOCK 12 / END 16, floor FLOOR_DOWN 6, the opening up to the cornice's foot (`wall_top - BAST_HB`), the pane, its edge up the posts; no rounded corners), jobs `preview/jobs_bswin.py` (bastion). The wall's own face and ramp panels kept for now. Renders: scratchpad `bs0`.
+- 2026-11-16: b1 (the user's reading of the ref: the two struts stacked in our wall's recess, laid along the front of the window, make its armour-plated channel): `sprites/wall3d_iwin_bastion_front.py`, called from the hook: a pocket cut into the near ramp between the end blocks' feet (`_marks`' c0..c1), back to the ramp's top line, down to BASE 6 art px over the floor; two struts stacked against its back (the lower from BASE to the middle, out to the slope at its top; the upper from there to the window's floor, out to the slope there), their fronts rounded off as the recess pipes' (chamfers 0.4 of the depth, 0.3 of the height); the ledge under them, the pocket's end walls; wall family levels (struts 3, ledge 2, ends 1). The plain wall pixel-identical to b0's. Renders: scratchpad `bs1`.
