@@ -27,16 +27,27 @@ export const ROWS = [
   '......#_____#....',
   '......#######....',
 ];
+/** `?layout=tube`: two prefab modules (seven inside, corners cut) joined by a tube as the prefab generator builds one (#508):
+ * three long, a floor tile between two wall tiles, a door in each module's wall. `tubeart`: the tube's three tiles are frame
+ * (Beam) tiles instead, for a preview asset base whose east-end beam id draws a tube study sprite. */
+function tubeRows(beam: boolean): string[] {
+  const mod = ['.#######.', '##_____##', '#_______#', '#_______#', '#_______#', '#_______#', '#_______#', '##_____##', '.#######.'];
+  const tube = beam ? ['...', '...', '...', '...', '===', '...', '...', '...', '...'] : ['...', '...', '...', '###', '___', '###', '...', '...', '...'];
+  const rows = mod.map((m, y) => `.${y === 4 ? `${m.slice(0, 8)}D` : m}${tube[y]}${y === 4 ? `D${m.slice(1)}` : m}.`);
+  const blank = '.'.repeat(rows[0]!.length);
+  return [blank, ...rows, blank];
+}
 const O = 8;
 const q = new URLSearchParams(location.search);
+const LAYOUT = q.get('layout') === 'tube' || q.get('layout') === 'tubeart' ? tubeRows(q.get('layout') === 'tubeart') : ROWS;
 const sim = new Sim(1, content);
 let ship: number | null = null;
 if (q.get('layer') === 'ground') {
-  const w = ROWS[0]!.length + 6, h = ROWS.length + 6;
+  const w = LAYOUT[0]!.length + 6, h = LAYOUT.length + 6;
   const struct = new Uint8Array(w * h).fill(Struct.Ground);
   stampAsteroid(sim, { kind: 'big', seed: 3, coverage: 'open', mass: 0, w, h, struct, ore: new Uint8Array(w * h), amt: new Uint8Array(w * h), parts: [{ x: 0, y: 0, w, h }] }, O - 3, O - 3);
 } else {
-  ship = spawnShip(sim, { name: 'cable mock', rows: ROWS, crew: [] }, { faction: 'player', x: O, y: O });
+  ship = spawnShip(sim, { name: 'cable mock', rows: LAYOUT, crew: [] }, { faction: 'player', x: O, y: O });
   roomsSystem(sim);
   powerSystem(sim);
   lightingSystem(sim);

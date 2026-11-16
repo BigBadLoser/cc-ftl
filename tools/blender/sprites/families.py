@@ -341,6 +341,9 @@ def jobs(name):
     if name == "cable":  # the ground power cable (#514): sheet cable, ids from src/render/groundCable.ts
         from . import cable_duct
         return cable_duct.jobs(), cable_duct.PAL
+    if name == "tube_study":  # look study, preview only (not in RENDERED): prefab base tube looks (#508)
+        from . import tube_study
+        return tube_study.jobs(), tube_study.PAL
     if name == "cable_study3":  # look study, preview only (not in RENDERED): ground power cable looks, round 4 (#514)
         from . import cable_study3
         return cable_study3.jobs(), cable_study3.PAL

@@ -4030,5 +4030,19 @@
   "cbSafeD": {"hex": "#9a7a1f", "set": "cable"},
   "cbSand": {"hex": "#8a7f6c", "set": "cable"},
   "cbSandD": {"hex": "#625a4b", "set": "cable"},
-  "cbGraphL": {"hex": "#555c64", "set": "cable"}
+  "cbGraphL": {"hex": "#555c64", "set": "cable"},
+  "tbHull": {"hex": "#5b7aa3", "set": "tube"},
+  "tbHullD": {"hex": "#435d80", "set": "tube"},
+  "tbRib": {"hex": "#33435a", "set": "tube"},
+  "tbRibL": {"hex": "#8aa3c4", "set": "tube"},
+  "tbIn": {"hex": "#2c333c", "set": "tube"},
+  "tbDeck": {"hex": "#4a525c", "set": "tube"},
+  "tbDeckD": {"hex": "#353b43", "set": "tube"},
+  "tbAmb": {"hex": "#d6a13c", "set": "tube"},
+  "tbWin": {"hex": "#9fe0ff", "emissive": 1.4, "set": "tube"},
+  "tbSoft": {"hex": "#7a838e", "set": "tube"},
+  "tbSoftD": {"hex": "#555d67", "set": "tube"},
+  "tbGlass": {"hex": "#8fc4e0", "set": "tube"},
+  "tbGlassL": {"hex": "#d6efff", "set": "tube"},
+  "tbLamp": {"hex": "#8fe6ff", "emissive": 1.2, "set": "tube"}
 }
