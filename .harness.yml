@@ -1,0 +1,5 @@
+# Agent harness settings (read from main). Work whose every changed file is art, or under visual_paths, is not
+# forced through the harness's verify_work: it is judged from renders and screenshots instead.
+visual_paths:
+  - tools/blender/**
+  - public/assets/**
