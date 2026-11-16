@@ -1,18 +1,17 @@
 """The bastion window's front (wall3d_iwin_bastion; ref 3295's lower layer): the user's reading of the ref: the floor in
 front of the pane drops well down (the window module's FLOOR_DOWN), a channel, and along its front edge one strut (as
 the struts in our wall's recess, faction.bastion_designs.bastion_hood's pipes) on the slope's edge: DEPTH px deep at its
-top, its front on the ramp's slope, its top front edge rounded off, standing GAP art px over the channel's floor (the
-floor shows under it). It runs between the end blocks' tops and into them. Toned by the wall family's levels (bastion's
+top, a plain box (a flat top and an upright front, the user: b3's wedge on the slope read far taller than the wall's
+pipes), its foot's front on the ramp's slope line, standing GAP art px over the channel's floor (the floor shows under it). It runs between the end blocks' tops and into them. Toned by the wall family's levels (bastion's
 own greys). Coordinates as the window module's: +y is the near side."""
 from mathutils import Vector
 
 from . import walls as W
 from .wall3d_iwin import _clip
 
-DEPTH = 4                   # px: the strut's depth at its top, toward the window (the user: 3 or 4)
-HEIGHT = 6                  # art px: its height
+DEPTH = 3                   # px: the strut's depth toward the window (the user: 3 or 4; the wall's pipes are ~2.4)
+HEIGHT = 4                  # art px: its height (with its top about the wall's pipes' 5 rows on screen)
 GAP = 2                     # art px: its foot over the channel's floor (the user: it sits above the floor)
-ROUND = 1                   # px (and art px): its top front edge rounded off
 LVL = {"top": 4, "face": 3}  # the wall family's levels (toned by facing): its top lit
 
 
@@ -36,9 +35,9 @@ def front(k, part, cells):
         return
     z0 = B._zf() + GAP * Z
     z1 = z0 + HEIGHT * Z
-    yt = B._out(z1)
-    yb = yt - DEPTH * P
-    prof = [(yb, z0), (B._out(z0), z0), (B._out(z1 - ROUND * Z), z1 - ROUND * Z), (yt - ROUND * P, z1), (yb, z1)]
+    yf = B._out(z0)                                     # (its front upright from its foot on the slope's line)
+    yb = yf - DEPTH * P
+    prof = [(yb, z0), (yf, z0), (yf, z1), (yb, z1)]
     for (ya, za), (yc, zc) in zip(prof, prof[1:] + prof[:1]):
         n = Vector((0.0, zc - za, -(yc - ya)))
         if n.dot(Vector((0.0, (ya + yc) / 2 - yb - DEPTH * P / 2, (za + zc) / 2 - (z0 + z1) / 2))) < 0:
