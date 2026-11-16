@@ -93,8 +93,9 @@ def housing(o):
         b.prism(shoulder, r0, r1)
         b.prism([(-0.42, HE.H + HE.SH), (HE.SF - 0.18, HE.H + HE.SH), (HE.SF - 0.18, HE.H + HE.SH + 0.03),
                  (-0.42, HE.H + HE.SH + 0.03)], r0 + 0.06, r1 - 0.06, lift=1)
-    c = math.sqrt(RS * RS - AXIS * AXIS)                # the walkway through the port, at the floor
-    b.face([(0.0, -c, 0.002), (DF + COLLAR[1], -c, 0.002), (DF + COLLAR[1], c, 0.002), (0.0, c, 0.002)], (0, 0, 1),
+    c = math.sqrt(RS * RS - AXIS * AXIS)                # the walkway through the port, at the floor (with the junction
+    w0 = 0.0 if o in (8, 4) else DF + COLLAR[1] - 0.1   # in the bore, through: only the strip at the collar past its end)
+    b.face([(w0, -c, 0.002), (DF + COLLAR[1], -c, 0.002), (DF + COLLAR[1], c, 0.002), (w0, c, 0.002)], (0, 0, 1),
            RAMP[4])
     return clip_ground(b.m.build())
 
