@@ -121,6 +121,44 @@ describe('lost cargo', () => {
     }
   });
 
+  it('loses no goods when a big box spills: every stack lands on the seat', () => {
+    /** Units lying loose once the box is cut: the goods plus the seat's own scrap. `empty` cuts the same box with nothing inside (the scrap alone). */
+    const cut = (seed: number, which: number, empty: boolean) => {
+      const { sim, ids } = setup(2, seed);
+      const out: { total: number; stacks: number; lying: number; area: number }[] = [];
+      for (const id of ids.slice(which, which + 1)) {
+        const store = sim.world.get(id, StorageC)!;
+        const goods = store.stacks.map((g) => ({ ...g }));
+        if (empty) store.stacks = [];
+        const [w, h] = rotatedSize((content.modules as Record<string, ModuleDef>)[sim.world.get(id, ContainerC)!.def]!, 0);
+        sim.enqueue({ type: 'container.open', id });
+        for (let i = 0; i < 5; i++) sim.step();
+        const seat = sim.world.query(ShipC).find((s) => sim.world.get(s, ShipC)?.name === `Container ${id}`)!;
+        const jobId = salvageJobs(sim, seat).find((j) => sim.world.get(j, JobC)?.kind === 'moduleDecon')!;
+        const crew = playerCrew(sim)[0] as number;
+        while (performJob(sim, crew, sim.world.get(jobId, JobC)!, 1) !== 'done');
+        out.push({
+          total: goods.reduce((n, g) => n + g.count, 0),
+          stacks: goods.reduce((n, g) => n + Math.ceil(g.count / ((content.items as Record<string, { stackSize?: number }>)[g.item]?.stackSize ?? 1)), 0),
+          lying: sim.world.query(ItemStackC).reduce((n, st) => n + (sim.world.get(st, ItemStackC)?.count ?? 0), 0),
+          area: w * h,
+        });
+      }
+      return out;
+    };
+    let overflowing = 0;
+    for (let seed = 1; seed <= 40; seed++) {
+      for (const which of [0, 1]) {
+        const f = cut(seed, which, false)[0];
+        if (!f) continue;
+        const bare = cut(seed, which, true)[0];
+        if (f.stacks > f.area) overflowing++;
+        expect(f.lying - (bare?.lying ?? 0), `seed ${seed} box ${which}`).toBe(f.total);
+      }
+    }
+    expect(overflowing).toBeGreaterThan(0); // the sweep does include a box with more stacks than footprint tiles
+  });
+
   it('refuses to open anything that is not a drifting container', () => {
     const sim = newGame(3, content);
     sim.enqueue({ type: 'container.open', id: playerShip(sim) });

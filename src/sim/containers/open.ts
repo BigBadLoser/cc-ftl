@@ -58,7 +58,13 @@ export function markForOpening(sim: Sim, id: number): number | null {
   // The seat is exactly the box's footprint in deck tiles under it (the art covers them), set in one tile of open space: that ring is the crew's footing, as
   // round any hull (a landing needs open space inside the ship's own bounds), and the goods spill onto the footprint when the box comes off. Nothing shows
   // beyond the box.
-  const rows = Array.from({ length: h + 2 }, (_, j) => Array.from({ length: w + 2 }, (_, i) => (i === 0 || j === 0 || i === w + 1 || j === h + 1 ? '.' : '_')).join(''));
+  // A box holds a stack per storage slot, and the slots can outnumber its footprint tiles (a 3x6 has 22 for 18 tiles): the first ring tiles are deck too (nothing
+  // draws them), so every stack the cut spills has a tile of its own and no goods are lost; the rest of the ring stays open space for the crew.
+  let spare = Math.max(0, (def.storage?.capacity ?? 0) - w * h);
+  const rows = Array.from({ length: h + 2 }, (_, j) => Array.from({ length: w + 2 }, (_, i) => {
+    if (i > 0 && j > 0 && i <= w && j <= h) return '_';
+    return spare-- > 0 ? '_' : '.';
+  }).join(''));
   const clamp = c.rot % 2 === 0 ? 'n' : 'w';
   const ship = stampShip(sim, {
     name: `Container ${id}`, faction: 'neutral', rows,
