@@ -64,7 +64,7 @@ function tryOnce(rng: Rng, recipe: Recipe, all: readonly RoomSpec[], attempt: nu
   const takers = new Set<string>([...(recipe.root.kind === 'fort' ? recipe.root.takes : []), ...(recipe.root.kind === 'ring' ? [...recipe.root.takes, ...(recipe.root.hub ? [...recipe.root.hub.market, ...recipe.root.hub.spokes, ...(recipe.root.hub.gated ?? [])] : [])] : []), ...recipe.branches.flatMap((b) => b.takes)]);
   if (recipe.root.kind === 'prefab') {
     const ctx = context(new RegionGrid(HALF), null, rng);
-    const made = prefab(ctx, rooms, docks, pool);
+    const made = prefab(ctx, rooms, docks, pool, recipe.root.plan);
     return { asm: new Asm(ctx, recipe.spacing), why: made.why, ...(made.pads ? { pads: made.pads } : {}) };
   }
   const orphans = rooms.filter((r) => !takers.has(r.dept as string));

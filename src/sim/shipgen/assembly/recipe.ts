@@ -66,6 +66,12 @@ export interface BranchRule {
   quay?: QuayOpts;
 }
 
+/**
+ * Which base a prefab recipe builds (prefab.ts): the trading post (the default), a farm with a hall of greenhouse ribs or a
+ * cluster of greenhouses down a long tube, a mine with a refinery wing or a pithead compound.
+ */
+export type PrefabPlan = 'trade' | 'farmRows' | 'farmCluster' | 'mineWing' | 'minePit';
+
 export interface Recipe {
   name: string;
   root:
@@ -83,7 +89,7 @@ export interface Recipe {
      * A prefab base on open ground (prefab.ts): standard modules joined by short tubes, laid out round a customs node,
      * the ground between them open; no hangar (the shuttle stands on a pad on the ground).
      */
-    | { kind: 'prefab' }
+    | { kind: 'prefab'; plan?: PrefabPlan }
     /**
      * A ring or an arc with its band: it takes these departments itself. `cut` 'octagon': a square outline cut to
      * eight even sides, whatever its size; `{ flat }`: cut so each side keeps that many cells of flat either side of its
