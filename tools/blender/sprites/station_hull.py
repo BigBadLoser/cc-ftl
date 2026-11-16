@@ -24,7 +24,7 @@ R_D, R_Z = 0.32, 0.46               # the bullnose: this far in along the top, t
 ROUND = 16                          # its facets
 CORNER_C = 16 / 32                  # the outer corner's chamfer along each axis (the ship hull's)
 SEAMS = (0.25, 0.75)                # seams across a tile, as fractions of it
-GROOVE = 0.40                       # the groove's height over the deck
+GROOVE = 0.40 + 3 / core.ZPX        # the groove's height over the deck
 UNDER = 3                           # the line under the bullnose: this many px under its foot
 RAIL = 4 / 32                       # the line along the top's back: this far in from the back
 TOP_SEAM = 5 / 32                   # the seam across the top this far in past the bullnose's top edge (the seams end on it)
@@ -38,6 +38,8 @@ BANDS = (("stW", 0.36), ("stB", 0.26), ("stH", 0.18), ("stL", 0.12), ("stS", 0.0
 PLUMB_BAND = 3                      # the seams stand plumb on screen from this band's top down (stL)
 SEAM, GROOVE_D, GROOVE_L, UNDER_L = "stM", "stD", "stH", "stH"
 TAB, TAB_TOP, TAB_SIDE = "stB", "stW", "stH"
+PLATE_Z = lambda s, zt: (s.z_at(zt, 5), s.z_at(zt, -1))   # noqa: E731  the plate on the line under the bullnose:
+                                    # its foot and top on screen, px under / over the line (zt)
 TAB_W, TAB_IN = 3, 4                # the tabs on the groove: px wide, px in from their seam toward the tile's middle
 FOOT, FOOT_TOP, FOOT_SIDE, LEDGE = "stB", "stW", "stH", "stW"
 
@@ -153,7 +155,7 @@ def build(k, ax, plane, a, b, ends, H):
     back = min((r[0][2] if ax == "y" else r[0][0]) for r in T.SHELL.rects if r[1] == "hull") - plane
     zk = s.band_z(PLUMB_BAND)
     zt = s.z_at(s.zb, UNDER)
-    g0, g1 = s.z_at(GROOVE, 2), s.z_at(GROOVE, -3)          # a tab over the groove
+    g0, g1 = s.z_at(GROOVE, 3), s.z_at(GROOVE, -2)          # a tab on the groove
     ts = E - round((R_D + TOP_SEAM) * 32) / 32               # (the top's lines on the art px grid: clean iso lines)
     rail = back + RAIL
     for s0, s1 in T.spans(a, b):
@@ -173,10 +175,10 @@ def build(k, ax, plane, a, b, ends, H):
                 g = f.at_face(u + LINE / 2, zk) + sg * TAB_IN * LINE     # (a tab on the groove, in from the seam)
                 _part(f, g - TAB_W / 2 * LINE, g + TAB_W / 2 * LINE, g0, g1, LINE, TAB, TAB_TOP, TAB_SIDE)
             v0, v1 = (f.at_face(s0 + fr, zk) for fr in SEAMS)
-            f.line(v0 + LINE / 2, v1 - LINE / 2, zt, s.z_at(zt, -1), SEAM, bevel=False)
+            f.line(v0 + LINE / 2, v1 - LINE / 2, zt, s.z_at(zt, -1), GROOVE_D, bevel=False)
             f.line(v0 + LINE / 2, v1 - LINE / 2, s.z_at(zt, 1), zt, UNDER_L, bevel=False)
             m, hw = (v0 + v1) / 2, (TAB_W / 2 + 1) * LINE           # a plate on it, in the middle, a px wider
-            _part(f, m - hw, m + hw, s.z_at(zt, 2), s.z_at(zt, -3), LINE, TAB, TAB_TOP, TAB_SIDE)
+            _part(f, m - hw, m + hw, *PLATE_Z(s, zt), LINE, TAB, TAB_TOP, TAB_SIDE)
         e = f.edge_u(0.0) if f.ch and abs(s1 - b) < 1e-6 else s1     # (the foot blocks: on the flat face)
         n = max(1, round(FOOT_N * (e - s0)))
         for j in range(n):
@@ -196,11 +198,11 @@ def _corner(f, zt, g0, g1):
         f.on_chamfer(t(e), t(e + 1), sf, [SEAM] * len(sf), SEAM)
         c = e + 0.5 + sg * TAB_IN
         _chamfer_part(f, t(c - TAB_W / 2), t(c + TAB_W / 2), g0, g1, LINE, TAB, TAB_TOP, TAB_SIDE)
-    for z0, z1, col in ((zt, s.z_at(zt, -1), SEAM), (s.z_at(zt, 1), zt, UNDER_L)):
+    for z0, z1, col in ((zt, s.z_at(zt, -1), GROOVE_D), (s.z_at(zt, 1), zt, UNDER_L)):
         pf = f.on(z0, z1, -0.01, 0.001)
         f.on_chamfer(t(CHAMFER_SEAM + 1), t(W - CHAMFER_SEAM - 1), pf, [col] * len(pf), col)
     hw = TAB_W / 2 + 1
-    _chamfer_part(f, t(W / 2 - hw), t(W / 2 + hw), s.z_at(zt, 2), s.z_at(zt, -3), LINE, TAB, TAB_TOP, TAB_SIDE)
+    _chamfer_part(f, t(W / 2 - hw), t(W / 2 + hw), *PLATE_Z(s, zt), LINE, TAB, TAB_TOP, TAB_SIDE)
     fw = FOOT_W * core.TILE_W / math.sqrt(2)                 # (px across the chamfer)
     for c in (W / 4, 3 * W / 4):
         _chamfer_part(f, t(c - fw / 2), t(c + fw / 2), 0.0, FOOT_H, FOOT_OUT, FOOT, FOOT_TOP, FOOT_SIDE)
