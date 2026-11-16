@@ -18,7 +18,7 @@ W = 1.5                                  # half width along the wall: three tile
 H = P.ZT                                 # its top: the outboard block's (so the two meet flush)
 ZC, R = P.AXIS, P.RS                     # the opening: the tube's section (round, cut flat at the floor)
 FRAME = (0.12, 0.04)                     # the room face's frame round the opening: width, stand off
-LAMP = (1.06, 1.5)                       # the lamps' (r, z) on the sunk face: beside the frame's shoulders
+LAMP = (0.86, 1.65)                      # the lamps' (r, z) on the sunk face: over the frame's shoulders
 RIB = 0.25                               # the end ribs' width along the wall
 WM = W - RIB                             # the sunk middle's half width
 DM = 0.0                                 # the sunk middle's face (d; the room is at -d): half a tile deep
@@ -84,13 +84,12 @@ def block(b):
                P.RAMP[0])
     c = math.sqrt(R * R - ZC * ZC)
     b.face([(LEAF_D, -c, 0.002), (0.5, -c, 0.002), (0.5, c, 0.002), (LEAF_D, c, 0.002)], (0, 0, 1), "tbDeck")
-    d0, d1 = DM - FRAME[1], LEAF_D                        # the threshold to the leaf, hazard striped
+    d0, d1 = DM - FRAME[1], LEAF_D                        # the threshold to the leaf, in hazard blocks
     b.face([(d0, -c, 0.003), (d1, -c, 0.003), (d1, c, 0.003), (d0, c, 0.003)], (0, 0, 1), "tbIn")
-    k = 9
+    k = 7                                                 # (blocks square to the grid: their edges draw clean)
     for i in range(0, k, 2):
         r0, r1 = -c + 2 * c * i / k, -c + 2 * c * (i + 1) / k
-        sk = 0.12                                          # (the stripes' slant across the threshold)
-        q = [(d0, max(-c, r0 - sk)), (d0, max(-c, r1 - sk)), (d1, min(c, r1 + sk)), (d1, min(c, r0 + sk))]
+        q = [(d0, r0), (d0, r1), (d1, r1), (d1, r0)]
         b.face([(d, r, 0.004) for d, r in q], (0, 0, 1), "tbAmb")
     b.face([(-0.5, -WM, 0.002), (DM, -WM, 0.002), (DM, WM, 0.002), (-0.5, WM, 0.002)], (0, 0, 1), "tbDeckD")
     b.face([(DM, -WM, H), (0.5, -WM, H), (0.5, WM, H), (DM, WM, H)], (0, 0, 1))
