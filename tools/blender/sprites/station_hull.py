@@ -39,7 +39,7 @@ HATCH_D, HATCH_L = "stM", "stH"             # the hatch's outline: dark line, li
 ROUND_BANDS = (("stW", 0.36), ("stB", 0.26), ("stH", 0.18), ("stL", 0.12), ("stS", 0.08))
 PLUMB_LEVEL = 3                     # the bullnose level at the stL band's top: seams stand plumb on screen below it
 TOP = "stL"
-SEAM_D, SEAM_L = "stM", "stH"
+SEAM_D = "stM"
 GROOVE_D, GROOVE_L = "stD", "stH"
 TAB, TAB_TOP, TAB_SIDE = "stB", "stW", "stH"
 FOOT, FOOT_TOP, FOOT_SIDE = "stB", "stW", "stH"
@@ -230,9 +230,8 @@ def _details(k, key):
         p = _chain(key, 0.0)[i:i + 2]
         ln = math.hypot(p[1][0] - p[0][0], p[1][1] - p[0][1])
         L = LINE / ln                                           # one px along this segment, as a fraction
-        for f in seams:                                         # the seams: up the face, over the bullnose, across the top
+        for f in seams:                                         # the seams (one px): up the face, over the bullnose, across the top
             _paint(k, key, i, f - L / 2, f + L / 2, up, SEAM_D, keep=keep)
-            _paint(k, key, i, f + L / 2, f + 1.5 * L, up, SEAM_L, keep=keep)
             g = _plumb(key, i, f, 0.0, keep)                    # (where the seam stands on the face)
             _box(k, key, i, g - 1.5 * L, g + 1.5 * L, GROOVE - 2 * pz, GROOVE + 3 * pz, LINE, TAB, TAB_TOP,
                  TAB_SIDE)                                      # a tab where the seam crosses the groove
