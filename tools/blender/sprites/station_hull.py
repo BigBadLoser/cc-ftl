@@ -44,7 +44,8 @@ PLATE_Z = lambda s, zt: (s.z_at(zt, 3), s.z_at(zt, -3))   # noqa: E731  the plat
                                     # its foot and top on screen, px under / over zt (6 px, centred on the line and
                                     # its lit px under it)
 TAB_W, TAB_IN = 3, 4                # the tabs on the groove: px wide, px in from their seam toward the tile's middle
-FOOT, FOOT_TOP, STEP_SLOPE = "stB", "stW", "stL"   # the step: its front a shade under its top, its slope under
+FOOT, FOOT_TOP, STEP_SLOPE = FACE_LO, "stW", "stS"   # the step: its front the face's lower band's tone, its slope a
+                                                    # shade under
 STEP_FRONT, STEP_LIP = 3, 0        # its front px tall; the slope's lip off the belly's face, px
 BLOCK, BLOCK_LIT, BLOCK_SLOPE = FACE, "stH", "stM"     # its blocks: the face's tone, lit along their front's top
                                                         # edge, their slope a shade under
