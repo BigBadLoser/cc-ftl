@@ -233,12 +233,12 @@ export function prefab(c: Ctx, rooms: readonly RoomSpec[], docks: readonly RoomS
   // What no branch takes (life support, a rec room): a small branch of its own, never in place of the trauma room.
   row(segsOf(extra));
   // Greenhouses (or ore stores) hung side by side as ribs below room `i` of a module, a rib's pitch apart from `at` along it.
-  const ribs = (m: Module, west: boolean, groups: RoomSpec[][], at = 4): boolean => {
+  const ribs = (m: Module, west: boolean, groups: RoomSpec[][], at = 4, pitch = RIB): boolean => {
     const first = m.spans[0] as [number, number], last = m.spans[m.spans.length - 1] as [number, number];
     const lo = Math.min(first[0], last[0]), hi = Math.max(first[1], last[1]), dir = west ? -1 : 1;
-    let x = (west ? hi - 1 : lo) + dir * at - dir * RIB;
+    let x = (west ? hi - 1 : lo) + dir * at - dir * pitch;
     for (const gr of groups) {
-      x += dir * RIB;
+      x += dir * pitch;
       // Not on a partition between two rooms.
       while (x >= lo && x < hi && !m.spans.some(([s0, s1]) => x >= s0 && x < s1)) x += dir;
       if (x < lo || x >= hi || !below(m, x, segsOf(gr))) return false;
@@ -261,11 +261,18 @@ export function prefab(c: Ctx, rooms: readonly RoomSpec[], docks: readonly RoomS
   else if (plan === 'mineWing') {
     wing((y, west) => {
       // Workshop, refinery, the suit room, a lobby and an airlock out of its end; the ore stores hang below.
-      const need = 4 + RIB * (oreRooms.length - 1) + 7, segs = [...padded([...segsOf(shop), ...segsOf(refineries).map((x) => ({ ...x, len: Math.max(x.len, HUB) })), ...segsOf(suits)], 6, need), lobby()];
+      const need = 4 + (RIB + (RIB % 2)) * (oreRooms.length - 1) + 7, segs = [...padded([...segsOf(shop), ...segsOf(refineries).map((x) => ({ ...x, len: Math.max(x.len, HUB) })), ...segsOf(suits)], 6, need), lobby()];
       const m = side(hubOf(), y, west, segs);
       if (!m) return false;
       lock(m, !west);
-      return ribs(m, west, oreRooms.map((r) => [r]));
+      // The ore stores centred under the refinery (the room after the workshop), not from the wing's end.
+      const span = m.spans[segsOf(shop).length] as [number, number] | undefined;
+      if (!span) return ribs(m, west, oreRooms.map((r) => [r]));
+      const first = m.spans[0] as [number, number], last = m.spans[m.spans.length - 1] as [number, number];
+      const lo = Math.min(first[0], last[0]), hi = Math.max(first[1], last[1]);
+      // An even pitch, so a pair stands exactly centred whichever way the wing runs.
+      const pitch = RIB + (RIB % 2), mid = Math.floor((span[0] + span[1] - 1) / 2), half = (pitch * (oreRooms.length - 1)) / 2;
+      return ribs(m, west, oreRooms.map((r) => [r]), west ? hi - 1 - (mid + half) : mid - half - lo, pitch);
     });
   }
   if (trade) row(segsOf(works));
