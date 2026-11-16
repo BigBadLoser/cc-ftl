@@ -3997,6 +3997,7 @@
   "pfTrim": {"hex": "#66798a", "flat": true, "set": "purifier"},
   "stK": {"hex": "#1d222d", "set": "station"},
   "stE": {"hex": "#353c47", "set": "station"},
+  "stDE": {"hex": "#3c4858", "set": "station"},
   "stD": {"hex": "#425569", "set": "station"},
   "stM": {"hex": "#5c7585", "set": "station"},
   "stS": {"hex": "#6e8694", "set": "station"},
