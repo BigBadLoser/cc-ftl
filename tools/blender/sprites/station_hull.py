@@ -37,6 +37,7 @@ LEDGE, LEDGE_H = "stW", 2                   # the bright ledge along the foot: c
 HATCH_D, HATCH_L = "stM", "stH"             # the hatch's outline: dark line, lit line inside/under it
 # the bullnose's bands from its top edge down to the face: colour, share of the arc (the lightest the widest)
 ROUND_BANDS = (("stW", 0.36), ("stB", 0.26), ("stH", 0.18), ("stL", 0.12), ("stS", 0.08))
+PLUMB_LEVEL = 3                     # the bullnose level at the stL band's top: seams stand plumb on screen below it
 TOP = "stL"
 SEAM_D, SEAM_L = "stM", "stH"
 GROOVE_D, GROOVE_L = "stD", "stH"
@@ -131,9 +132,25 @@ def _seg_out(key, i):
     return (-n[0], -n[1])
 
 
-def _paint(k, key, i, f0, f1, levels, col, lift=None):
+def _sx(pp, f):
+    """The screen x (in plan units: x - y) of fraction f along the segment pp, and its rate along f."""
+    a = pp[0][0] - pp[0][1]
+    return a, (pp[1][0] - pp[1][1]) - a
+
+
+def _plumb(key, i, f, d, keep):
+    """Fraction f at inset d, moved along segment i so that below inset `keep` it stands plumb on screen under where f
+    is at `keep` (a line that runs straight down there rather than following the bullnose in)."""
+    if keep is None or d >= keep:
+        return f
+    a0, b0 = _sx(_chain(key, keep)[i:i + 2], f)
+    a, b = _sx(_chain(key, d)[i:i + 2], f)
+    return (a0 + b0 * f - a) / b
+
+
+def _paint(k, key, i, f0, f1, levels, col, lift=None, keep=None):
     """Paint the band f0..f1 (fractions along segment i) over the section levels [(inset, z), ...], a hair out along
-    each strip's normal."""
+    each strip's normal; below inset `keep` the band stands plumb on screen (_plumb)."""
     lift = T.PAINT if lift is None else lift
     o = _seg_out(key, i)
     for (da, za), (db, zb) in zip(levels, levels[1:]):
@@ -147,7 +164,9 @@ def _paint(k, key, i, f0, f1, levels, col, lift=None):
 
         def at(pp, f):
             return (pp[0][0] + (pp[1][0] - pp[0][0]) * f, pp[0][1] + (pp[1][1] - pp[0][1]) * f)
-        q = [Vector((*at(pa, f0), za)), Vector((*at(pa, f1), za)), Vector((*at(pb, f1), zb)), Vector((*at(pb, f0), zb))]
+        a0, a1 = _plumb(key, i, f0, da, keep), _plumb(key, i, f1, da, keep)
+        b0, b1 = _plumb(key, i, f0, db, keep), _plumb(key, i, f1, db, keep)
+        q = [Vector((*at(pa, a0), za)), Vector((*at(pa, a1), za)), Vector((*at(pb, b1), zb)), Vector((*at(pb, b0), zb))]
         k.poly([v + n for v in q], "steel", 2, n, fixed=col)
 
 
@@ -206,17 +225,19 @@ def _details(k, key):
         _paint(k, key, i, 0.0, 1.0, [(rail, h), (rail + LINE, h)], RAIL_D)
     zt = h - R_Z - 3 * pz                                       # the line under the bullnose
     up = [(0.0, GROOVE + 3 * pz), (0.0, h - R_Z)] + bn + [(rail - LINE, h)]
+    keep = bn[PLUMB_LEVEL][0]                                   # the seams stand plumb from the stL band's top down
     for i, seams, hatch in PANELS[key]:
         p = _chain(key, 0.0)[i:i + 2]
         ln = math.hypot(p[1][0] - p[0][0], p[1][1] - p[0][1])
         L = LINE / ln                                           # one px along this segment, as a fraction
         for f in seams:                                         # the seams: up the face, over the bullnose, across the top
-            _paint(k, key, i, f - L / 2, f + L / 2, up, SEAM_D)
-            _paint(k, key, i, f + L / 2, f + 1.5 * L, up, SEAM_L)
-            _box(k, key, i, f - 1.5 * L, f + 1.5 * L, GROOVE - 2 * pz, GROOVE + 3 * pz, LINE, TAB, TAB_TOP,
+            _paint(k, key, i, f - L / 2, f + L / 2, up, SEAM_D, keep=keep)
+            _paint(k, key, i, f + L / 2, f + 1.5 * L, up, SEAM_L, keep=keep)
+            g = _plumb(key, i, f, 0.0, keep)                    # (where the seam stands on the face)
+            _box(k, key, i, g - 1.5 * L, g + 1.5 * L, GROOVE - 2 * pz, GROOVE + 3 * pz, LINE, TAB, TAB_TOP,
                  TAB_SIDE)                                      # a tab where the seam crosses the groove
         if hatch:                                               # a line under the bullnose from seam to seam, lit under
-            a0, a1 = seams[0] + L / 2, seams[-1] - L / 2
+            a0, a1 = _plumb(key, i, seams[0], 0.0, keep) + L / 2, _plumb(key, i, seams[-1], 0.0, keep) - L / 2
             _paint(k, key, i, a0, a1, [(0.0, zt), (0.0, zt + pz)], HATCH_D)
             _paint(k, key, i, a0, a1, [(0.0, zt - pz), (0.0, zt)], HATCH_L)
     for i in range(segs):                                       # the bright ledge along the foot
