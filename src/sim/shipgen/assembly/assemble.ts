@@ -186,12 +186,13 @@ function tryOnce(rng: Rng, recipe: Recipe, all: readonly RoomSpec[], attempt: nu
 
 /**
  * The rooms of a station's programme a recipe stands: all of them, but a prefab base keeps its shuttle on a pad on the
- * ground, so it has no vehicle bay, and its airlocks are its pads' (PREFAB_PADS).
+ * ground, so it has no vehicle bay; its airlocks are its pads' (PREFAB_PADS); it trades in its market hall, so it has no
+ * stalls; and its guns would be turrets on the ground (not built yet), so it has no gun rooms.
  */
 export function recipeRooms(recipe: Recipe, rooms: readonly RoomSpec[]): readonly RoomSpec[] {
   if (recipe.root.kind !== 'prefab') return rooms;
   const docks = rooms.filter((r) => r.role === 'dock').slice(0, PREFAB_PADS);
-  return rooms.filter((r) => !r.mods.includes('module.vehicle_bay') && (r.role !== 'dock' || docks.includes(r)));
+  return rooms.filter((r) => !r.mods.includes('module.vehicle_bay') && (r.role !== 'dock' || docks.includes(r)) && r.role !== 'weapons' && deptOf(r) !== 'market');
 }
 
 /**

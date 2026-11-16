@@ -37,7 +37,7 @@ export function assembleStation(def: StationDef, id: string, size: StationSize, 
   const made = fitShell(
     rng, f, id, seed, role, 'sections', { crew: stationCrew(rng, def, size) },
     { rows, roomOf: snap.roomOf, width: snap.width, height: snap.height, roles: g.regions.map((r) => r.role), specs: g.regions.map((r) => r.spec ?? (r.dept === 'customs' ? CUSTOMS : undefined)) },
-    `assembly ${recipe.name}`, defs, 0, { immobile: true, airlocksAnyWay: true, gunsAnywhere: true, check: (t, d) => stationProblems(t, d, prefab ? Math.min(PREFAB_PADS, docksOf(def, size)) : docksOf(def, size)) },
+    `assembly ${recipe.name}`, defs, 0, { immobile: true, airlocksAnyWay: true, gunsAnywhere: true, unarmed: prefab, check: (t, d) => stationProblems(t, d, prefab ? Math.min(PREFAB_PADS, docksOf(def, size)) : docksOf(def, size)) },
   );
   made.template.name = `${def.name} ${size === 'station' ? '' : `${size} `}${(seed >>> 0).toString(16).toUpperCase().padStart(4, '0').slice(-4)}`;
   const site = { pads: pads.map((p) => ({ x: p[0] - snap.x0, y: p[1] - snap.y0, w: p[2] - p[0], h: p[3] - p[1] })) };

@@ -64,7 +64,7 @@ interface Fitted {
 /** Place every room's planned modules in that room; a reason string when something essential does not fit. */
 function fitOut(
   rng: Rng, f: FactionDef, rows: string[], roomOf: Int16Array, roles: RoomRole[], specs: (RoomSpec | undefined)[], defs: Record<string, ModuleDef>,
-  recipes = RECIPES, o: Pick<FinishOpts, 'airlocksAnyWay' | 'gunsAnywhere' | 'immobile'> = {},
+  recipes = RECIPES, o: Pick<FinishOpts, 'airlocksAnyWay' | 'gunsAnywhere' | 'immobile' | 'unarmed'> = {},
 ): Fitted {
   const lay = new Layout(rows, roomOf, roles, defs);
   lay.gunsOnHull = !o.gunsAnywhere;
@@ -172,7 +172,7 @@ function fitOut(
     if (missing(id)) return { ...out, error: `no ${id.replace('module.', '')} fits` };
   }
   const guns = (m: Record<string, number>): number => Object.entries(m).filter(([id]) => defs[id]?.weapon).reduce((t, [, n]) => t + n, 0);
-  if (guns(placed) === 0 || guns(placed) * 4 < guns(wanted) * 3) return { ...out, error: 'weapons do not fit' };
+  if (!o.unarmed && (guns(placed) === 0 || guns(placed) * 4 < guns(wanted) * 3)) return { ...out, error: 'weapons do not fit' };
   if ((placed['module.reactor'] ?? 0) < (wanted['module.reactor'] ?? 0)) return { ...out, error: 'reactors do not fit' };
   // Rooms with a recipe are lit after they are furnished, so lamps take the walkways the furniture leaves.
   for (let room = 0; room < roles.length; room++) if (!drawOf(room)) lightRoom(lay, rng, room);
@@ -305,6 +305,8 @@ export interface FinishOpts {
   airlocksAnyWay?: boolean;
   /** Guns may stand anywhere in their bay, as the game allows (the arranger's hulls keep theirs beside the hull). */
   gunsAnywhere?: boolean;
+  /** No gun rooms planned, none wanted (a prefab base: its guns would be turrets on the ground, not built yet). */
+  unarmed?: boolean;
 }
 
 /**

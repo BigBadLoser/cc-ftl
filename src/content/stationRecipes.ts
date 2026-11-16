@@ -230,10 +230,10 @@ export const stationRecipes = {
   bazaar: [
     bazaar('market court and spokes, round corners', { outline: 'square', cut: 'octagon', round: true, court: 14 }),
   ],
-  // PROTOTYPE. A prefab base on a rock (the asteroid trading outpost's; #508): landing pads, an entry with customs, and a
-  // module per department off a column of junctions.
+  // PROTOTYPE. A prefab base on a rock (the asteroid trading outpost's; #508): pads, customs and the market hall for
+  // visitors; the mess as the crew hub, the departments off it.
   prefab: [
-    { name: 'pads: an entry over customs, a module per department off junctions', root: { kind: 'prefab' }, quarters: { barracks: [6, 8] }, spacing: 2, branches: [] },
+    { name: 'zoned: pads, customs, market hall; the mess hub, departments off it', root: { kind: 'prefab' }, quarters: { barracks: [6, 8] }, spacing: 2, branches: [] },
   ],
   tradepost: [
     tradepost('court post: the pier head on a market court, a cross street behind', { front: 'court' }),
