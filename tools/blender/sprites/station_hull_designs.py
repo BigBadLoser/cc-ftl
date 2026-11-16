@@ -158,7 +158,8 @@ def blocks(f, s0, s1):
     f.k.poly(q, F, 3, (T.P(f.ax, 0, 0, di - db, zt - zk) - o).normalized(), fixed=T.SEAM_PASS or col)
     _rect(f, u0, u1, zf, zf + px, di + 0.001, RECESS_WALL)              # (the step's seam carried along its foot, a
                                                                         # step darker: its inside is the seam's tone)
-    _rect(f, u1, u1 + LINE, zf, zt, D + 0.001, SH.GROOVE_D)             # (a dark seam down its near edge)
+    _rect(f, u1, u1 + LINE, zf, s.z_at(SH.GROOVE, -1), D + 0.002, SH.GROOVE_D)   # (a dark seam down its near
+                                                                        # edge, up into the groove's line)
 
 
 def gap(s):
