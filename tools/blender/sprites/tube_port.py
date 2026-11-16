@@ -25,6 +25,18 @@ N = HE.N
 RAMP = HE.RAMP
 
 
+def _hatch():
+    """How far out along the bore the far port's hatch is moved (through): so it sits as far behind the collar as the
+    near junction's sits behind its frame."""
+    from . import tube_junction as J
+    return (DF + COLLAR[1]) - (J.LEAF_D + J.LEAF_T) - (J.LEAF_D - J.LEAF_T - (J.DM - J.FRAME[1]))
+
+
+def _sill_end():
+    from . import tube_junction as J
+    return _hatch() + J.LEAF_D + J.TH
+
+
 def _rect(c, s):
     """Where a ray from the port's axis at (c, s) leaves the front's flat rectangle (inside its chamfers), as (r, z)."""
     t = min(W / abs(c) if abs(c) > 1e-9 else math.inf,
@@ -62,6 +74,7 @@ def _builder(o, name, centred=False):
 def housing(o):
     """The block, one mesh, at hull_engine's frame (the port's axis half a tile back along the run from the origin; o 8:
     _builder's, on it)."""
+    from . import tube_junction as J
     b = _builder(o, f"tube_port_{o}")
     prof = [(0.0, ZF), (DF - C, ZF), (DF, ZF + C), (DF, ZT - C), (DF - C, ZT), (0.0, ZT)]
     b.prism(prof, -W, W, skip=(2, 5))                   # (its front and back: below, with the port)
@@ -94,9 +107,9 @@ def housing(o):
         b.prism([(-0.42, HE.H + HE.SH), (HE.SF - 0.18, HE.H + HE.SH), (HE.SF - 0.18, HE.H + HE.SH + 0.03),
                  (-0.42, HE.H + HE.SH + 0.03)], r0 + 0.06, r1 - 0.06, lift=1)
     c = math.sqrt(RS * RS - AXIS * AXIS)                # the walkway through the port, at the floor (with the junction
-    w0 = 0.0 if o in (8, 4) else DF + COLLAR[1] - 0.1   # in the bore, through: only the strip at the collar past its end)
-    b.face([(w0, -c, 0.002), (DF + COLLAR[1], -c, 0.002), (DF + COLLAR[1], c, 0.002), (w0, c, 0.002)], (0, 0, 1),
-           RAMP[4])
+    runs = [(0.0, DF + COLLAR[1])] if o in (8, 4) else [(0.0, _sill_end() - 2 * J.TH), (_sill_end(), DF + COLLAR[1])]
+    for w0, w1 in runs:                                 # (in the bore, through: either side of the hatch's threshold)
+        b.face([(w0, -c, 0.002), (w1, -c, 0.002), (w1, c, 0.002), (w0, c, 0.002)], (0, 0, 1), RAMP[4])
     return clip_ground(b.m.build())
 
 
@@ -144,15 +157,15 @@ def piece(o, at=(0.0, 0.0)):
 
 def through(o, at=(0.0, 0.0), is_open=False):
     """What the port shows (the hull's door tile cut through behind it): (inside, mouth). inside: the junction in the
-    bore (tube_junction: its bore and its hatch, closed or open, moved out so the hatch sits as far behind the collar as
-    the near junction's behind its frame; the far junction itself is hidden by the hull row), the room's dark behind; mouth: a disc over
+    bore (tube_junction's hatch and threshold alone, closed or open, moved out so the hatch sits as far behind the
+    collar as the near junction's behind its frame; the far junction itself is hidden by the hull row; the port's own
+    bore round them), the room's dark behind; mouth: a disc over
     the collar's mouth, its px the ones the inside shows in."""
     from . import tube_junction as J
     mask = 5 if o == 2 else 10
     dx, dy = X.STRAIGHT[(mask, o)]
-    ox, oy = {2: (1, 0), 1: (0, 1)}[o]                  # (the junction moved out along the bore: its hatch as far
-    k = (DF + COLLAR[1]) - (J.LEAF_D + J.LEAF_T) - (J.LEAF_D - J.LEAF_T - (J.DM - J.FRAME[1]))   # behind the collar
-    inside = J.piece(o, 1.0 if is_open else 0.0, (at[0] + k * ox, at[1] + k * oy))   # as the near one is behind its frame)
+    ox, oy = {2: (1, 0), 1: (0, 1)}[o]                  # (the hatch moved out along the bore, _hatch)
+    inside = J.piece(o, 1.0 if is_open else 0.0, (at[0] + _hatch() * ox, at[1] + _hatch() * oy), hatch_only=True)
     b = _builder(o, f"tube_port_dark_{o}", centred=True)
     ts = [math.tau * i / N for i in range(N)]
     b.face([(-0.7, RS * 1.2 * math.cos(t), AXIS + RS * 1.2 * math.sin(t)) for t in ts], (1, 0, 0), "hsXK")

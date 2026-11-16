@@ -84,16 +84,24 @@ def block(b):
                P.RAMP[0])
     c = math.sqrt(R * R - ZC * ZC)
     b.face([(LEAF_D, -c, 0.002), (0.5, -c, 0.002), (0.5, c, 0.002), (LEAF_D, c, 0.002)], (0, 0, 1), "tbDeck")
-    th = LEAF_D - DM + FRAME[1]                           # the threshold, one band of hazard blocks across the leaf's
-    for d0, d1 in ((LEAF_D - th, LEAF_D + th),):          # slot (its tube side seen through the far port)
-        b.face([(d0, -c, 0.003), (d1, -c, 0.003), (d1, c, 0.003), (d0, c, 0.003)], (0, 0, 1), "tbIn")
-        k = 7                                             # (blocks square to the grid: their edges draw clean)
-        for i in range(0, k, 2):
-            r0, r1 = -c + 2 * c * i / k, -c + 2 * c * (i + 1) / k
-            q = [(d0, r0), (d0, r1), (d1, r1), (d1, r0)]
-            b.face([(d, r, 0.004) for d, r in q], (0, 0, 1), "tbAmb")
+    sill(b)
     b.face([(-0.5, -WM, 0.002), (DM, -WM, 0.002), (DM, WM, 0.002), (-0.5, WM, 0.002)], (0, 0, 1), "tbDeckD")
     b.face([(DM, -WM, H), (0.5, -WM, H), (0.5, WM, H), (DM, WM, H)], (0, 0, 1))
+
+
+TH = LEAF_D - DM + FRAME[1]                              # the threshold's depth either side of the leaf's middle
+
+
+def sill(b):
+    """The threshold: one band of hazard blocks across the leaf's slot (its tube side seen through the far port)."""
+    c = math.sqrt(R * R - ZC * ZC)
+    d0, d1 = LEAF_D - TH, LEAF_D + TH
+    b.face([(d0, -c, 0.003), (d1, -c, 0.003), (d1, c, 0.003), (d0, c, 0.003)], (0, 0, 1), "tbIn")
+    k = 7                                                 # (blocks square to the grid: their edges draw clean)
+    for i in range(0, k, 2):
+        r0, r1 = -c + 2 * c * i / k, -c + 2 * c * (i + 1) / k
+        q = [(d0, r0), (d0, r1), (d1, r1), (d1, r0)]
+        b.face([(d, r, 0.004) for d, r in q], (0, 0, 1), "tbAmb")
 
 
 def frame(b):
@@ -220,10 +228,13 @@ def _relief(b, f, dz):
     _raise(b, [(-w(z0), dz + z0), (w(z0), dz + z0), (w(z1), dz + z1), (-w(z1), dz + z1)], f, 0.03, "tbIn")
 
 
-def piece(o=8, t=0.0, at=(0.0, 0.0)):
-    """The junction's objects, its door tile's centre at grid offset `at` from the sprite's origin."""
+def piece(o=8, t=0.0, at=(0.0, 0.0), hatch_only=False):
+    """The junction's objects, its door tile's centre at grid offset `at` from the sprite's origin. `hatch_only`: the
+    leaf and its threshold alone (in the far port's bore, tube_port.through: the port's own bore round them)."""
     out = []
-    for name, fn in (("block", lambda b: (block(b), frame(b))), ("leaf", lambda b: leaf(b, t))):
+    parts = ((("sill", sill),) if hatch_only else (("block", lambda b: (block(b), frame(b))),)) + \
+        (("leaf", lambda b: leaf(b, t)),)
+    for name, fn in parts:
         b = P._builder(o, f"tube_junction_{name}", centred=True)
         fn(b)
         ob = P.clip_ground(b.m.build())
