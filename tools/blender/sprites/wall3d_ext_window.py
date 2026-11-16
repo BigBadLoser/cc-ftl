@@ -67,7 +67,11 @@ B_BACK = 1                          # block's face, TOP_PX deep) and down both s
 C_SIDE = 22                         # its foot; C, a strip on from B's right side to C_SIDE, from the base's upper
                                     # lean line down (measured off the reference; the base's two lines across its
                                     # lean run on up to B and on from C)
-PLATE_FOOT = 2                      # B and C end on a line this many px down the header's upright face
+PLATE_FOOT = 2                      # B and C's foot: a line this many px down the header's upright face (their
+                                    # sides run on down past it to the header's foot, the user)
+W2_PLATE = (3, 5)                   # W2's header: a plate over B, spanning its sides' lines' outer edges, from this
+                                    # many px down the header's front on screen from its top edge, this many px
+                                    # tall; REC proud, in the upright part's tone (the user)
 E_RIBS = (11, 15)                   # W1's sill: E, a recess in its slope under B (its sides B's), from the slope's
 E_RIB = 2                           # top edge to a px short of its front (a lip), REC deep, a step darker; two ribs
 E_IN, E_SHORT = 1, 2                # standing in it at the slope's level, E_RIB px wide from these px from the
@@ -255,7 +259,7 @@ def _w1_header(f, s, s0, s1, dv, zc, zh):
     zl = zc - (PLATE_FOOT + 1) / core.ZPX                # (B and C's foot: on the upright face, a px tall)
     for u in (b0, b1):
         f.top_line(u, u + ln, dl + T3.TOP_PX, T3.BACK, YS[2])           # down its sides, over the top
-        band(u, u + ln, zl, H, YS[3])                                   # and the front
+        band(u, u + ln, zh, H, YS[3])                                   # and the front, to the header's foot
     L = T3.Layout(s)
     zt = L.px(L.zr, -2)                                 # the base's lines across its lean (its own calls): the one
     c1 = s0 + T3.px(C_SIDE)                             # its top panel stands on (C's top), its seam
@@ -263,8 +267,28 @@ def _w1_header(f, s, s0, s1, dv, zc, zh):
         f.line(u0, u1, zt, L.px(zt, -1), YS[4], bevel=False)
     for u0, u1 in ((s0, b0), (c1 + ln, s1)):
         f.line(u0, u1, L.px(L.l1, 1), L.l1, YS[3], wrap=False)
-    band(c1, c1 + ln, zl, L.px(zt, -1), YS[3])                          # C: its side
+    band(c1, c1 + ln, zh, L.px(zt, -1), YS[3])                          # C: its side, to the header's foot
     band(b0, c1 + ln, zl, zl + 1 / core.ZPX, YS[3])                     # their foot, across both
+    if PART == "w2":
+        _w2_head_plate(f, s, b0, b1 + ln, d_of=lambda z: T3.BACK + (H - z) * dk if z > zc else dv, zc=zc)
+
+
+def _w2_head_plate(f, s, u0, u1, d_of, zc):
+    """W2_PLATE on W2's header front over [u0, u1]: from n0 px down its front on screen from its top edge, n px
+    tall, REC proud, its front in the upright part's tone (YS[2]), its top a step over, its sides MID_PLATE_SIDE."""
+    n0, n = W2_PLATE
+    H = s.H
+    lean = s.sy(zc) - s.sy(H)                           # (the lean's px on screen; under it the front upright)
+
+    def z(m):
+        return s.z_at(H, m) if m <= lean else zc - (m - lean) / core.ZPX
+    za, zb = z(n0), z(n0 + n)
+    cuts = [za] + [c for c in (zc,) if zb < c < za] + [zb]
+    R = T3.REC
+    for i, (z0, z1) in enumerate(zip(cuts, cuts[1:])):
+        pf = [(d_of(z0), z0), (d_of(z0) + R, z0), (d_of(z1) + R, z1), (d_of(z1), z1)]
+        cols = [YS[3] if i == 0 else False, YS[2], False, False]
+        f.part(u0, u1, pf, cols, MID_PLATE_SIDE, end=False)
 
 
 def _w1_sill(f, s0, u0, u1, db, fr, zs, dv, zj, front):
