@@ -22,7 +22,8 @@ PAL = "tube"
 L0, L1 = -3 + 0.71875 + 0.07, 0.5        # the run along u: from the west hull port's collar (tube_port) into the east wall
 ZC, R = 1.0, 0.8                         # shell centre height and radius: the hull port's axis and port radius
 OCT = 0.76                               # the lattice's apothem
-ZB = 0.36                                # top of the metal belly (below it the shell is opaque): over the deck
+ZB = 0.62                                # top of the metal belly (below it the shell is opaque): a kick panel
+                                         # a third of crew height over the deck, so the ground does not show low
 DECK = 0.3                               # the deck's top: the hull's floor height (walls.ZG)
 GLASS_ALPHA, GLASS_RIM = 0.18, 0.35      # the glass's opacity, and how much more at grazing angles
 SIDES = 32

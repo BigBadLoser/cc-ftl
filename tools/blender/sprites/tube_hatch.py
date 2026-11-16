@@ -1,7 +1,8 @@
 """The prefab base tube's door (issue #508, study): drawn instead of the corridor door (door_block's metal door) where a
 module opens onto a tube. The same door piece (frame, feet, threshold, its fit in the wall), made a pressure hatch:
 the opening's corners cut much deeper (a rounded opening, near an octagon, echoing the round hull port outside), the
-jambs in hazard bands (door_frame "hazard") and a split leaf (two halves sliding into the jambs).
+jambs in hazard bands (door_frame "hazard"); the corridor door's leaf (a top half up into the header, a bottom half
+down into the floor).
 
   tube.hatch.<x|y>[.open]"""
 from . import door_block as DB
@@ -13,6 +14,6 @@ def hatch(axis="x", is_open=False):
     was = DB.CT, DB.CBU, DB.CBZ
     DB.CT, DB.CBU, DB.CBZ = CT, CB, CB
     try:
-        return DB.door(axis, is_open, leaf="split", look="metal", frame="hazard")
+        return DB.door(axis, is_open, leaf="halves", look="metal", frame="hazard")
     finally:
         DB.CT, DB.CBU, DB.CBZ = was

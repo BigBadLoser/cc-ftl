@@ -1,7 +1,7 @@
 """The prefab base tube's hull port (issue #508, study): where the glass tube (tube_study) meets a module's exterior hull
 wall, built as the engine's thruster block is (hull_engine): an armoured block standing out of the hull's straight run,
-from under the hull's top down to the ground, a round port in its front with a raised collar the tube
-seats in, bolts round it, two shoulders over the hull's top tying it in. Drawn "over": its px only where it is in front
+from under the hull's top down to the ground, a round port right through it (the hull's door shows
+through) with a raised collar the tube seats in, bolts round it, two shoulders over the hull's top tying it in. Drawn "over": its px only where it is in front
 of the hull row it stands on, so the hull's own pieces stay as they are.
 
 Frame as hull_engine's (d out from the hull tiles' middle line, r along the run, z up), but the port's axis on the
@@ -17,7 +17,7 @@ AXIS, RS = HE.AXIS, HE.RS              # the port: the engine's axis height and 
 W = HE.W                               # the block's half width along the run
 DF, ZT, C = HE.DF, HE.ZT, HE.C
 ZF = 0.0                               # its foot: on the ground (a base on rock: the hull's belly is buried)
-RD = 0.12                              # the port's depth into the block (the tube's way in behind it is dark)
+RD = DF                                # the port's depth: right through the block (the door shows through it)
 COLLAR = HE.COLLAR
 N = HE.N
 RAMP = HE.RAMP
@@ -50,7 +50,7 @@ def housing(o):
     """The block, one mesh, at hull_engine's frame (the port's axis half a tile back along the run from the origin)."""
     b = HE._Builder(o, f"tube_port_{o}")
     prof = [(0.0, ZF), (DF - C, ZF), (DF, ZF + C), (DF, ZT - C), (DF - C, ZT), (0.0, ZT)]
-    b.prism(prof, -W, W, skip=(2,))                     # (its front: below, with the port)
+    b.prism(prof, -W, W, skip=(2, 5))                   # (its front: below, with the port; no back: against the hull)
     ts = {math.tau * i / N for i in range(N)}
     for zc in (ZF + C, ZT - C):                         # (the front's corners, so its edges stay straight)
         for rc in (-W, W):
@@ -62,7 +62,6 @@ def housing(o):
         p0, p1 = (RS * c0, AXIS + RS * s0), (RS * c1, AXIS + RS * s1)
         b.face([(DF, *p0), (DF, r0, z0), (DF, r1, z1), (DF, *p1)], (1, 0, 0))
         b.face([(DF, *p0), (DF - RD, *p0), (DF - RD, *p1), (DF, *p1)], (0, -(c0 + c1), -(s0 + s1)), RAMP[0])
-    b.face([(DF - RD, RS * math.cos(t), AXIS + RS * math.sin(t)) for t in ts], (1, 0, 0), "hsXK")
     _collar(b)
     for i in range(8):                                  # bolts round the collar, and at the front's corners
         t = math.tau * (i + 0.5) / 8
