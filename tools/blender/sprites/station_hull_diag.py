@@ -33,13 +33,14 @@ def _recess(sec, z):
 
 def _cuts(s, c, w, sec, eps=0.0):
     """A front's cuts: its upright face and a flat cut per bullnose facet (s . p <= c - w recess(z), linear over
-    each), eps behind them."""
+    each), eps behind them; unit normals (the facets near the top stand near flat: their normals long, single float
+    precision drops their corners off them in _solid)."""
     out = [(s, c - eps * s.length)]
     for z0, z1 in zip(sec.levels, sec.levels[1:]):
         r0, r1 = _recess(sec, z0), _recess(sec, z1)
         m = (r1 - r0) / (z1 - z0)
         n = s + w * m * UP
-        out.append((n, c - w * r0 + w * m * z0 - eps * n.length))
+        out.append((n / n.length, (c - w * r0 + w * m * z0) / n.length - eps))
     return out
 
 
@@ -169,11 +170,11 @@ def _dress(rel, g, fronts, cut, top, ups, sec):
 
 
 def _step(rel, g, cut, sec):
-    """The step along the foot: the run's fronts facing the camera FOOT_OUT out (the rest flush: unseen, or edge-on
-    on the silhouette), its front STEP_FRONT px tall (cut: the tile's column, its cells), its top FOOT_TOP and front
+    """The step along the foot: the run's fronts facing the camera or edge-on FOOT_OUT out (those facing away flush:
+    unseen), its front STEP_FRONT px tall (cut: the tile's column, its cells), its top FOOT_TOP and front
     FOOT."""
     zf = sec.z_at(SH.FOOT_H, SH.STEP_FRONT)
-    planes = [(UP, SH.FOOT_H), (-UP, -zf)] + [(s, c + w * (SH.FOOT_OUT if s.x + s.y > 0 else 0.0))
+    planes = [(UP, SH.FOOT_H), (-UP, -zf)] + [(s, c + w * (SH.FOOT_OUT if s.x + s.y >= 0 else 0.0))
                                               for s, c, w in map(_front, g)]
     for pts, m, i in _solid(cut + planes):
         if i >= len(cut):
@@ -236,7 +237,9 @@ def piece(key, H=None, margin=0.0):
                     keep = [i for i in range(len(g)) if i not in runs and g[i][0][0] + g[i][0][1] > 0]
                     _dress(rel, [g[i] for i in keep], [fronts[i] for i in keep], tile + rest[:-1], len(tile),
                            [len(tile) + 2 + i * nl for i in keep], sec)
-                    wide = _tile(margin + SH.FOOT_OUT + LINE) + side + list(extra)
+                    out = SH.FOOT_OUT + LINE                        # (the step and its blocks stand out past
+                    wide = [(n, c + (out if any(n.dot(fr[0]) > 1e-6 and fr[0].x + fr[0].y >= 0 for fr in fronts)
+                                     else 0.0)) for n, c in tile] + side + list(extra)    # the tile only in front)
                     _step(rel, g, wide, sec)
                     for i in keep:
                         _bits(rel, g[i], fronts[i], wide, sec)
