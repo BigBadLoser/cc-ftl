@@ -60,7 +60,7 @@ function wander(sim: Sim, id: number, pos: Position, crew: Crew, task: Task | un
   const ty = pos.y + sim.rng.int(-WANDER_RADIUS, WANDER_RADIUS);
   if ((tx === pos.x && ty === pos.y) || !grid.inBounds(tx, ty)) return;
   if (!isTileWalkable(sim, grid, tx, ty) || grid.get('room', tx, ty) !== room) return;
-  const steps = findPath(sim, shipIdOf(sim, pos), { x: pos.x, y: pos.y }, { x: tx, y: ty });
+  const steps = findPath(sim, shipIdOf(sim, pos), { x: pos.x, y: pos.y }, { x: tx, y: ty }, walkOpts(sim, id));
   if (steps && steps.length <= 2 * WANDER_RADIUS) {
     path.steps = steps;
     setJoblessTask(sim, id, 'idle', 'generic', 'Navigate', { tile: { x: tx, y: ty } });

@@ -3,7 +3,6 @@ import { content } from '../index';
 import { ShipC, Sim } from '../../sim';
 import { storagesOn } from '../../sim/combat/ammo';
 import { StorageC } from '../../sim/items/components';
-import { storageAdd } from '../../sim/items/storage';
 import { PlotC } from '../../sim/farm/components';
 import { ModuleC } from '../../sim/modules/components';
 import { shipGrid } from '../../sim/regions';
@@ -18,9 +17,8 @@ describe('farmRows base in the running sim', () => {
     const grid = shipGrid(sim, ship)!;
     const plots = [...sim.world.query(PlotC)];
     expect(plots.length).toBeGreaterThan(0);
-    // An outpost's beds are not set to a crop and it keeps no water: give it both, as a player would.
-    for (const p of plots) sim.world.get(p, PlotC)!.crop = 'crop.greens';
-    for (const id of [...storagesOn(sim, ship)].slice(0, 3)) storageAdd(sim, id, 'item.water', 200);
+    // Out of the box: the beds are set to a crop and the base carries water.
+    expect(plots.every((p) => !!sim.world.get(p, PlotC)!.crop)).toBe(true);
     const count: Record<string, number> = {};
     for (let i = 0; i < 9000; i++) {
       sim.step();

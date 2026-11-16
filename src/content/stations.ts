@@ -100,12 +100,15 @@ export const stations = {
     outpostAssembly: [R.farmRows, R.farmCluster],
     weapons: { light: LIGHT, heavy: HEAVY }, shields: SMALL_SHIELD,
     stock: [{ item: 'item.ration', min: 4, max: 12 }, { item: 'item.polymer', min: 0, max: 4 }],
+    // An asteroid farm's beds are set to these, in turn.
+    crops: ['crop.greens', 'crop.beans'],
     tiers: tiers({ guns: per(2, 4, 8), heavyPct: 15, shields: per(0, 1, 2), pd: per(1, 1, 2), crates: per(12, 24, 40), docks: per(2, 2, 3) }),
     // Greenhouses (long, narrow farms: hydroponics in two rows down their length) and extra common rooms.
     rooms: [
       room('farm', n(6, 'module.hydroponics'), 5, 9, per(2, 4, 8)),
       // The produce store: cold stores of what the greenhouses grow, beside the cargo.
-      room('cargo', n(4, 'module.storage_cold'), 7, 3, per(1, 2, 3), [{ item: 'item.ration', min: 6, max: 16 }]),
+      // Water as well, for the beds (planting water is hauled from a store, as on the starter).
+      room('cargo', n(4, 'module.storage_cold'), 7, 3, per(1, 2, 3), [{ item: 'item.ration', min: 6, max: 16 }, { item: 'item.water', min: 6, max: 14 }]),
       room('support', ['module.lifeSupport'], 6, 3, per(1, 2, 4)),
       armoury(per(1, 1, 1)),
     ],

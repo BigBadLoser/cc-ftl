@@ -47,6 +47,8 @@ export interface StationDef {
   /** Combat side of a spawned station (spawning is a later slice). */
   side: Faction;
   motif: string;
+  /** Crops (CropDef ids) the hydroponics beds of an asteroid base are set to, in turn from the first bed: it farms out of the box (#508). */
+  crops?: readonly string[];
   /**
    * The crew sleeps in barracks: rooms of this many beds each (double bunks, so half as many bunks), with this many
    * one-bed cabins beside them. Without it, blocks of one-bed cabins (`assembly/program.ts`).
