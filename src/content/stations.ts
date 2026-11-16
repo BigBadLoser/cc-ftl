@@ -90,7 +90,7 @@ export const stations = {
     name: 'Trade station', kind: 'trading', side: 'neutral', motif: 'motif.civilian', security: 0.3, space: [1.1, 1.6], crew: CIVIL_CREW,
     // The bazaar ring and the crescent, each a family; the seed picks one.
     assembly: [R.bazaar, R.crescent],
-    // Neither suits a rock: an asteroid trading post is a prefab base, modules on the ground round a customs node.
+    // Neither suits a rock: an asteroid trading post is a prefab base, modules on the ground round landing pads.
     outpostAssembly: [R.prefab],
     weapons: { light: LIGHT, heavy: HEAVY }, shields: SMALL_SHIELD, transition: FAIRING,
     stock: [{ item: 'item.metal', min: 2, max: 8 }, { item: 'item.electronics', min: 1, max: 4 }, { item: 'item.polymer', min: 0, max: 4 }, { item: 'item.ration', min: 0, max: 4 }],

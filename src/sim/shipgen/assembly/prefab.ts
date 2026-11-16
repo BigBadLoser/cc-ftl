@@ -10,84 +10,96 @@ import { SOLID, SPACE } from './regions';
  *   module  one standard prefab: six tiles inside (eight with its walls), its corners cut, a straight run of rooms
  *           along it, a partition with a door between each; as long as its rooms' floor needs (each six deep)
  *   tube    one tile wide inside, three long, straight, a door at each end in the modules' walls
- * The layout (P1): the dock module along the rock face (office | arrivals | armoury, the airlocks in its outer wall
- * over arrivals); a tube to the customs node; a module out from the node on each other side (the market west, the
- * habitat east, command south) and more off their ends (the stores under the market, the rest of the beds under the
- * habitat, the power beside command, a small gun module off each outer end). No hangar: a small airlock module off the
- * dock module's end, and beside it a pad kept clear on the ground for the shuttle (#509).
+ * The layout, north up: two landing pads on the ground (one for visitors, one for the base's own shuttle; #509), the
+ * entry module under them (office | arrivals | armoury, an airlock in arrivals' outer wall under each pad) with customs
+ * as the stem of its T, then a column of junctions below customs, each a module of plain hall. Every department is a
+ * module of its own off a junction, on a tube of its own: walking through rooms happens only inside one department
+ * (the workshop to the cargo hold, the core to the reactors). Row by row, nearest customs first: the market and the
+ * mess; the stores and the barracks; command and the medbay; the guns off the last junction's far end.
  * Painted solid first, floor cut out, so every wall is one tile; a cut corner is a stair of wall (the seal rule allows
  * no floor diagonal to space, so the floor's corner tile is wall too).
  */
 
 /** Tiles inside a module, across it. */
 export const PREFAB_WIDE = 6;
-/** Floor tiles in a tube, wall to wall. */
+/** Landing pads, each with its airlock: the airlocks a prefab base has. */
+export const PREFAB_PADS = 2;
+/** A module's outer width. */
+const OUT = PREFAB_WIDE + 2;
+/** Floor tiles in a tube, wall to wall: the ground between two modules it joins. */
 const TUBE = 3;
-/** The shuttle pad's side. */
+/** A landing pad's side. */
 const PAD = 9;
+/** Customs' length down the entry's stem. */
+const CUSTOMS = 8;
 
 type Box = [number, number, number, number];
 interface Seg { spec?: RoomSpec; hall?: number; len: number; annexed?: boolean }
-interface Module { box: Box; dir: 'h' | 'v'; segs: Seg[]; ids: number[] }
+interface Module { box: Box; dir: 'h' | 'v'; segs: Seg[] }
 
 const area = (r: RoomSpec): number => r.w * r.h;
 /** A room's length along a module: its floor over the module's width, three at least (a gun bay five, for its mounts). */
 const lengthOf = (r: RoomSpec): number => Math.max(r.role === 'weapons' ? 5 : 3, Math.ceil(area(r) / PREFAB_WIDE));
 const segsOf = (rooms: readonly RoomSpec[]): Seg[] => rooms.flatMap((r) => [{ spec: r, len: lengthOf(r) }, ...(r.annex ? [{ spec: { ...r.annex }, len: lengthOf(r.annex), annexed: true }] : [])]);
 const run = (segs: readonly Seg[]): number => segs.reduce((n, s) => n + s.len + 1, -1);
+const ROOM_ORDER: RoomRole[] = ['core', 'shields', 'reactor', 'industry'];
+/** Rooms in the order one walks into them: the core before the reactors, the workshop before the hold. */
+const ordered = (rooms: readonly RoomSpec[]): RoomSpec[] => {
+  const rank = (r: RoomSpec): number => { const i = ROOM_ORDER.indexOf(r.role); return i < 0 ? ROOM_ORDER.length : i; };
+  return [...rooms].sort((a, b) => rank(a) - rank(b));
+};
 
-export interface Prefab { why: string; pad?: Box }
+export interface Prefab { why: string; pads?: Box[] }
 
 export function prefab(c: Ctx, rooms: readonly RoomSpec[], docks: readonly RoomSpec[], cabins: readonly RoomSpec[]): Prefab {
   const g = c.g, taken = new Set<RoomSpec>();
   const pick = (p: (r: RoomSpec) => boolean): RoomSpec[] => { const out = rooms.filter((r) => !taken.has(r) && p(r)); for (const r of out) taken.add(r); return out; };
-  const role = (...roles: RoomRole[]) => (r: RoomSpec): boolean => roles.includes(r.role);
   // The departments, module by module.
   const office = pick((r) => r.role === 'bridge' && r.dept === 'harbour'), armoury = pick((r) => r.role === 'armoury');
-  const guns = pick(role('weapons'));
+  const guns = pick((r) => r.role === 'weapons');
   const market = pick((r) => r.dept === 'market');
-  const beds = pick((r) => r.role === 'quarters' && r.dept !== 'harbour'), chief = pick((r) => r.role === 'quarters');
-  const commons = pick((r) => r.dept === 'commons' || r.dept === 'habitation');
-  const power = pick(role('reactor'));
-  const command = pick((r) => r.dept === 'secure' || r.role === 'bridge');
-  const stores = pick(() => true);
-  // A market room among the stalls: the trading floor (not in the programme; it stands for the market itself).
+  const beds = [...pick((r) => r.role === 'quarters' && r.dept !== 'harbour'), ...pick((r) => r.role === 'quarters'), ...cabins];
+  const mess = pick((r) => r.dept === 'commons');
+  const medical = pick((r) => r.dept === 'habitation');
+  const command = ordered(pick((r) => r.dept === 'secure' || r.role === 'bridge'));
+  const stores = ordered(pick(() => true));
+  // A market room ahead of the stalls: the trading floor (not in the programme; it stands for the market itself).
   const floor: RoomSpec = { role: 'plaza', dept: 'market', mods: [], w: PREFAB_WIDE, h: PREFAB_WIDE };
-  const stalls = [...market.slice(0, market.length >> 1), floor, ...market.slice(market.length >> 1)];
-  // Habitat: a barracks, the mess and the medbay by the node; the other beds and the chief's cabin beyond.
-  const habitat1 = [...beds.slice(0, 1), ...commons.filter((r) => r.role !== 'quarters')];
-  const habitat2 = [...beds.slice(1), ...chief, ...cabins];
 
   const placed: Module[] = [];
-  const clear = (b: Box): boolean => {
-    // Two tiles of ground at least to every other module, and nothing on the pad.
-    for (const m of placed) if (b[0] < m.box[2] + 2 && m.box[0] < b[2] + 2 && b[1] < m.box[3] + 2 && m.box[1] < b[3] + 2) return false;
-    for (let y = b[1]; y < b[3]; y++) for (let x = b[0]; x < b[2]; x++) if (!c.free(x, y)) return false;
+  const clear = (b: Box, host?: Module): boolean => {
+    // Two tiles of ground at least to every other module (but the one it is joined to), and nothing reserved.
+    for (const m of placed) if (m !== host && b[0] < m.box[2] + 2 && m.box[0] < b[2] + 2 && b[1] < m.box[3] + 2 && m.box[1] < b[3] + 2) return false;
+    for (let y = b[1]; y < b[3]; y++) for (let x = b[0]; x < b[2]; x++) if (!c.free(x, y) && !(host && y === b[1])) return false;
     return true;
   };
-  /** A module whose outer box starts at (x, y), running east ('h') or south ('v'); null when the ground is taken. */
-  const module = (x: number, y: number, dir: 'h' | 'v', segs: Seg[]): Module | null => {
-    const L = run(segs), box: Box = dir === 'h' ? [x, y, x + L + 2, y + PREFAB_WIDE + 2] : [x, y, x + PREFAB_WIDE + 2, y + L + 2];
-    if (segs.length === 0 || !clear(box)) return null;
+  /**
+   * A module whose outer box starts at (x, y), running east ('h') or south ('v'), its rooms in the order one walks in:
+   * from its west or north end, or with `rev` from its east end. `host`: the module it grows out of (the stem of a T),
+   * sharing that one's wall; its near corners stay square. Null when the ground is taken.
+   */
+  const module = (x: number, y: number, dir: 'h' | 'v', segs: Seg[], rev = false, host?: Module): Module | null => {
+    const L = run(segs), box: Box = dir === 'h' ? [x, y, x + L + 2, y + OUT] : [x, y, x + OUT, y + L + 2];
+    if (segs.length === 0 || !clear(box, host)) return null;
     g.rect(SOLID, ...box);
-    const ids: number[] = [];
-    let a = 1, before = -1;
+    let o = 1, before = -1;
     for (const [i, s] of segs.entries()) {
       const id = s.hall ?? g.room(s.spec?.role ?? 'hall', { spec: { ...(s.spec as RoomSpec), w: s.len, h: PREFAB_WIDE }, doors: 0, access: s.annexed && before >= 0 ? [before] : [] });
-      const r: Box = dir === 'h' ? [x + a, y + 1, x + a + s.len, y + 1 + PREFAB_WIDE] : [x + 1, y + a, x + 1 + PREFAB_WIDE, y + a + s.len];
-      g.rect(id, ...r);
-      ids.push(id);
+      const a = rev ? L + 2 - o - s.len : o;
+      g.rect(id, ...(dir === 'h' ? [x + a, y + 1, x + a + s.len, y + 1 + PREFAB_WIDE] : [x + 1, y + a, x + 1 + PREFAB_WIDE, y + a + s.len]) as Box);
       if (!s.annexed) before = id;
-      // A door in the partition after it, at its middle.
-      if (i < segs.length - 1) g.gate(...(dir === 'h' ? [x + a + s.len, y + 1 + (PREFAB_WIDE >> 1)] : [x + 1 + (PREFAB_WIDE >> 1), y + a + s.len]) as [number, number]);
-      a += s.len + 1;
+      // A door in the partition after it (toward the far end), at its middle.
+      const p = rev ? a - 1 : a + s.len;
+      if (i < segs.length - 1) g.gate(...(dir === 'h' ? [x + p, y + 1 + (PREFAB_WIDE >> 1)] : [x + 1 + (PREFAB_WIDE >> 1), y + p]) as [number, number]);
+      o += s.len + 1;
     }
     // The corners cut: the corner tile open, the floor's corner tile wall.
     for (const [cx, cy, dx, dy] of [[box[0], box[1], 1, 1], [box[2] - 1, box[1], -1, 1], [box[0], box[3] - 1, 1, -1], [box[2] - 1, box[3] - 1, -1, -1]] as const) {
+      if (host && cy === box[1]) continue;
       g.set(cx, cy, SPACE);
       g.set(cx + dx, cy + dy, SOLID);
     }
-    const m = { box, dir, segs, ids };
+    const m = { box, dir, segs };
     placed.push(m);
     return m;
   };
@@ -103,83 +115,58 @@ export function prefab(c: Ctx, rooms: readonly RoomSpec[], docks: readonly RoomS
     g.gate(x, y);
     g.gate(x + dx * (TUBE + 1), y + dy * (TUBE + 1));
   };
-  const mid = (m: Module): [number, number] => [(m.box[0] + m.box[2] - 1) >> 1, (m.box[1] + m.box[3] - 1) >> 1];
-  /** Where segment `i` of a horizontal module runs, x0 and x1 of its floor; of a vertical one, y0 and y1. */
-  const span = (m: Module, i: number): [number, number] => { const a = m.segs.slice(0, i).reduce((n, s) => n + s.len + 1, 1) + (m.dir === 'h' ? m.box[0] : m.box[1]); return [a, a + (m.segs[i] as Seg).len]; };
+  /** Where segment `i` of a module starts along it (x of a horizontal one's floor, y of a vertical one's). */
+  const start = (m: Module, i: number): number => m.segs.slice(0, i).reduce((n, s) => n + s.len + 1, 1) + (m.dir === 'h' ? m.box[0] : m.box[1]);
 
-  // The node: customs, a plaza ten long.
-  const customs = g.hall('plaza', 'customs');
-  const node = module(0, 0, 'h', [{ hall: customs, len: 10 }]);
-  if (!node) return { why: 'no ground for the node' };
-  const [ncx] = mid(node), G = TUBE + 1;
-  // The dock module above it: office | arrivals | armoury, the arrivals' middle over the node's middle.
-  const arrivals = g.hall('hall', 'harbour'), ARR = 3 * docks.length + 2 * (docks.length - 1) + 2;
-  const dockSegs: Seg[] = [...segsOf(office), { hall: arrivals, len: Math.max(ARR, 9) }, ...segsOf(armoury)];
-  const lead = office.length > 0 ? run(segsOf(office)) + 1 : 0, arrLen = (dockSegs[office.length > 0 ? segsOf(office).length : 0] as Seg).len;
-  const dock = module(ncx - 1 - lead - (arrLen >> 1), node.box[1] - G - PREFAB_WIDE - 1, 'h', dockSegs);
-  if (!dock) return { why: 'no ground for the dock module' };
-  tube(ncx, node.box[1], 0, -1);
-  // The airlocks against the outer wall over arrivals, hatches in it, two tiles apart.
-  const [a0] = span(dock, office.length > 0 ? segsOf(office).length : 0), y0 = dock.box[1];
-  const from = a0 + ((arrLen - (3 * docks.length + 2 * (docks.length - 1))) >> 1);
-  for (const [i, d] of docks.entries()) {
-    const x = from + i * 5;
-    g.rect(g.hall('dock', 'airlock', { ...d, w: 3, h: 3 }), x, y0 + 1, x + 3, y0 + 4);
-    g.gate(x + 1, y0);
-    for (let yy = y0 - 8; yy < y0; yy++) for (let xx = x - 1; xx < x + 4; xx++) c.reserved.add(key(xx, yy));
+  // The entry, its outer wall north: office | arrivals | armoury, an airlock under each pad in arrivals' outer wall.
+  const n = Math.min(PREFAB_PADS, docks.length), ARR = Math.max(5 + (PAD + 3) * (n - 1), OUT);
+  const arrivals = g.hall('hall', 'harbour'), offSegs = segsOf(office);
+  const bar = module(0, 0, 'h', [...offSegs, { hall: arrivals, len: ARR }, ...segsOf(armoury)]);
+  if (!bar) return { why: 'no ground for the entry' };
+  const a0 = start(bar, offSegs.length), pads: Box[] = [];
+  for (const [i, d] of docks.slice(0, n).entries()) {
+    const hx = a0 + 2 + i * (PAD + 3);
+    g.rect(g.hall('dock', 'airlock', { ...d, w: 3, h: 3 }), hx - 1, 1, hx + 2, 4);
+    g.gate(hx, 0);
+    // Its pad on the ground outside, the hatch at the middle of the pad's near edge.
+    const pad: Box = [hx - (PAD >> 1), -PAD, hx + (PAD >> 1) + 1, 0];
+    for (let y = pad[1]; y < pad[3]; y++) for (let x = pad[0]; x < pad[2]; x++) { if (!c.free(x, y)) return { why: 'no ground for a pad' }; c.reserved.add(key(x, y)); }
+    pads.push(pad);
   }
-  // The market west of the node, the habitat east, command south; tubes from the node's walls, on its middle row.
-  const row = node.box[1] + 1 + (PREFAB_WIDE >> 1);
-  const westL = run(segsOf(stalls)) + 2;
-  const mk = module(node.box[0] - G + 1 - westL, node.box[1], 'h', segsOf(stalls));
-  if (!mk) return { why: 'no ground for the market' };
-  tube(node.box[0], row, -1, 0);
-  const hab = module(node.box[2] + G - 1, node.box[1], 'h', segsOf(habitat1));
-  if (!hab) return { why: 'no ground for the habitat' };
-  tube(node.box[2] - 1, row, 1, 0);
-  const cmd = module(ncx - 1 - (PREFAB_WIDE >> 1), node.box[3] + G - 1, 'v', segsOf(command));
-  if (cmd) tube(ncx, node.box[3] - 1, 0, 1);
-  else if (command.length > 0) return { why: 'no ground for command' };
-  // Off their ends: the stores under the market's far end, the other beds under the habitat's, the power beside command.
-  const hang = (m: Module, end: 0 | 1, rooms: readonly RoomSpec[]): Module | null => {
-    if (rooms.length === 0) return null;
-    const i = end === 0 ? 0 : m.segs.length - 1, [s0, s1] = span(m, i), cx = (s0 + s1 - 1) >> 1;
-    const made = module(cx - (PREFAB_WIDE >> 1), m.box[3] + G - 1, 'v', segsOf(rooms));
-    if (made) tube(cx, m.box[3] - 1, 0, 1);
-    return made;
-  };
-  if (stores.length > 0 && !hang(mk, 0, stores)) return { why: 'no ground for the stores' };
-  if (habitat2.length > 0 && !hang(hab, 1, habitat2)) return { why: 'no ground for the rest of the beds' };
-  if (power.length > 0) {
-    const host = cmd ?? node, [, s1] = cmd ? span(cmd, 0) : [0, row + 1], y = (cmd ? s1 - 1 : row) - (PREFAB_WIDE >> 1);
-    const beside = module(host.box[2] + G - 1, y - 1, 'h', segsOf(power));
-    if (beside) tube(host.box[2] - 1, y - 1 + 1 + (PREFAB_WIDE >> 1), 1, 0);
-    else if (!cmd || !hang(cmd, 1, power)) return { why: 'no ground for the power' };
+  // Customs: the stem of the T, down from arrivals' middle.
+  const mc = a0 + (ARR >> 1), customs = g.hall('plaza', 'customs');
+  const stem = module(mc - 1 - (PREFAB_WIDE >> 1), bar.box[3] - 1, 'v', [{ hall: customs, len: CUSTOMS }], false, bar);
+  if (!stem) return { why: 'no ground for customs' };
+  g.gate(mc, bar.box[3] - 1);
+  // The junctions down from customs, a department module either side of each: the pair of each row turned whichever way
+  // keeps the base narrowest.
+  const rows = ([[[floor, ...market], mess], [stores, beds], [command, medical]] as RoomSpec[][][]).map((r) => r.map(segsOf)).filter((r) => r.some((s) => s.length > 0));
+  const len = (s: Seg[]): number => (s.length > 0 ? run(s) + 2 : 0);
+  let flip = 0, best = Infinity;
+  for (let f = 0; f < 1 << rows.length; f++) {
+    const side = (k: 0 | 1): number => Math.max(0, ...rows.map((r, i) => len(r[((f >> i) & 1) ^ k] as Seg[])));
+    if (side(0) + side(1) < best) [best, flip] = [side(0) + side(1), f];
   }
-  // A small gun module off each outer end: the market's west, the habitat's east, then under the stores and the beds.
-  for (const [k, gun] of guns.entries()) {
-    const segs = segsOf([gun]), L = run(segs) + 2;
-    const made = k === 0 ? module(mk.box[0] - G - L + 1, mk.box[1], 'h', segs) : k === 1 ? module(hab.box[2] + G - 1, hab.box[1], 'h', segs) : null;
-    if (!made) return { why: `no ground for gun ${k + 1}` };
-    if (k === 0) tube(mk.box[0], row, -1, 0);
-    else tube(hab.box[2] - 1, row, 1, 0);
+  let above: Module = stem;
+  for (const [i, r] of rows.entries()) {
+    const j = module(above.box[0], above.box[3] + TUBE, 'v', [{ hall: g.hall('hall', 'commons'), len: PREFAB_WIDE }]);
+    if (!j) return { why: 'no ground for a junction' };
+    tube(mc, above.box[3] - 1, 0, 1);
+    above = j;
+    const row = j.box[1] + 1 + (PREFAB_WIDE >> 1), [west, east] = (flip >> i) & 1 ? [r[1], r[0]] : [r[0], r[1]];
+    if (west && west.length > 0) {
+      if (!module(j.box[0] - TUBE - len(west), j.box[1], 'h', west, true)) return { why: 'no ground for a module west' };
+      tube(j.box[0], row, -1, 0);
+    }
+    if (east && east.length > 0) {
+      if (!module(j.box[2] + TUBE, j.box[1], 'h', east)) return { why: 'no ground for a module east' };
+      tube(j.box[2] - 1, row, 1, 0);
+    }
   }
-  // The small airlock module off the dock module's west end, and the pad beside it on the ground.
-  const ak = docks[0];
-  if (ak) {
-    const box: Box = [dock.box[0] - G - 6 + 1, dock.box[1], dock.box[0] - G + 1, dock.box[1] + 5];
-    if (!clear(box)) return { why: 'no ground for the pad airlock' };
-    g.rect(SOLID, ...box);
-    const hall = g.hall('hall', 'harbour');
-    g.rect(hall, box[2] - 2, box[1] + 1, box[2] - 1, box[3] - 1);
-    g.rect(g.hall('dock', 'airlock', { ...ak, w: 3, h: 3 }), box[0] + 1, box[1] + 1, box[0] + 4, box[3] - 1);
-    g.gate(box[0], box[1] + 2);
-    placed.push({ box, dir: 'h', segs: [], ids: [] });
-    tube(dock.box[0], box[1] + 2, -1, 0);
-    // (the tube's far door is the small module's east wall)
-    const pad: Box = [box[0] - 2 - PAD, dock.box[1], box[0] - 2, dock.box[1] + PAD];
-    for (let y = pad[1]; y < pad[3]; y++) for (let x = pad[0]; x < pad[2]; x++) { if (!c.free(x, y)) return { why: 'no ground for the pad' }; c.reserved.add(key(x, y)); }
-    return { why: '', pad };
+  // The guns off the last junction's far end, all in one module.
+  if (guns.length > 0) {
+    if (!module(above.box[0], above.box[3] + TUBE, 'v', segsOf(guns))) return { why: 'no ground for the guns' };
+    tube(mc, above.box[3] - 1, 0, 1);
   }
-  return { why: '' };
+  return { why: '', pads };
 }

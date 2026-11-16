@@ -266,17 +266,30 @@ dropped because its stalls came out as small wedges, the curved walls taking muc
 The asteroid trading outpost's family since the user's pick of mock sheet "prefab" (P1, "node"; issue #508): the trade
 posts below read as "one big building". A root of its own (`{ kind: 'prefab' }`, `prefab.ts`), not grown by rules:
 standard modules (six tiles inside, corners cut, a straight run of rooms with a partition and a door between each, as
-long as its rooms' floor at six deep) joined by tubes (one tile wide inside, three long, a door at each end). The dock
-module on the rock face (office | arrivals | armoury, the airlocks in its outer wall over arrivals), a tube to the
-customs node, the market west of it (four stalls and a market court), the habitat east (a barracks, the mess, the
-medbay), command south (core, shields), and off their ends the stores, the other beds with the chief's cabin, and the
-power beside command; a small gun module off the market's end. Crew in barracks. No hangar (`recipeRooms`): a small
-airlock module off the dock module and a 9x9 pad on the ground beside it (`StationResult.site.pad`; the pad itself is
-#509). The outpost fitter levels the whole site, the ground between the modules included.
+long as its rooms' floor at six deep) joined by tubes (one tile wide inside, three long, a door at each end).
+
+An asteroid base is not a station: shuttles land on pads on the ground, not at docking airlocks on a rock face (the
+user: "the landing pads should have an airlock or two, then pass through security or customs, then into the base").
+North up: two 9x9 landing pads (`StationResult.site.pads`; one for visitors, one for the base's own shuttle), the
+entry module under them (office | arrivals | armoury, an airlock in arrivals' outer wall at the middle of each pad's
+near edge), customs as the stem of its T, then a column of junctions (modules of plain hall) down from customs.
+
+Circulation rule (the user's review of the first layout): walking through rooms is fine only inside one department
+(the workshop to the cargo hold, the core or shields to the reactors); nobody walks through another department to
+reach theirs. So every department is a module of its own on a tube of its own off a junction, the room one enters by
+first: market (court, then the stalls), mess (mess, pantry), stores (workshop, cargo), barracks (both barracks, then
+the chief's cabin), command (core, shields, reactors), medbay (medbay, trauma), and the guns, all in one module, off the
+last junction's far end. Row by row from customs: market and mess, stores and barracks, command and medbay, each pair
+turned whichever way keeps the base narrowest. No hangar (`recipeRooms`; it also keeps only the pads' two airlocks).
+
+On the asteroid (`outposts/`): a prefab base's dock is a pad's airlock (`pickDock` finds it, facing north over its pad).
+It stands anywhere on the rock (`placeAt` with `site`: the fewest tiles over space, then the most central), its whole
+site levelled, pads included, with no notch to space; `validateOutpost` wants its dock's collar on ground. Shuttles
+fly in and dock at that airlock as anywhere else (the docked shuttle sits on the pad); landing on the pad and walking
+in suited is #509.
 
 A cut corner is a stair of wall: the seal rule allows no floor diagonal to space, so the floor's corner tile is wall
-too (gas is four-way, the wall art already draws such stairs on the rings' round corners). Open: only the outpost
-tier stands (station and hub sizes have more guns than gun modules); rock outcrops in the gaps.
+too (gas is four-way, the wall art already draws such stairs on the rings' round corners). Open: rock outcrops in the gaps.
 
 ## The trade outposts (`tradepost`): prototype
 

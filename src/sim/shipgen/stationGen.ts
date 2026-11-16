@@ -61,9 +61,9 @@ export interface StationResult extends GenResult {
   station: StationInfo;
   /**
    * A base of separate modules on open ground (a prefab base): an outpost levels the whole site under it, the ground
-   * between its modules included, and keeps the shuttle's pad clear (template tiles).
+   * between its modules included, and keeps its landing pads clear (template tiles; each with an airlock facing it).
    */
-  site?: { pad?: { x: number; y: number; w: number; h: number } };
+  site?: { pads: { x: number; y: number; w: number; h: number }[] };
 }
 
 export const infoOf = (def: StationDef, size: StationSize, t: ShipTemplate, defs: Record<string, ModuleDef>): StationInfo => {

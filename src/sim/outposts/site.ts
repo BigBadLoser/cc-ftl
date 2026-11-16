@@ -105,13 +105,12 @@ export function carveInRock(src: ShipTemplate, defs: Record<string, ModuleDef>):
 
 /**
  * Template tiles (the non-'.' ones) as a lookup, with the template size. With `site` (a base of separate modules on
- * open ground) the whole site: every tile of the template from the dock's face row inward, the ground between the
- * modules included.
+ * open ground) the whole site: every tile of the template, the ground between the modules and the landing pads included.
  */
-export function builtOf(t: ShipTemplate, site?: Pick<Dock, 'face' | 'dir'>): { w: number; h: number; has: (x: number, y: number) => boolean; count: number } {
+export function builtOf(t: ShipTemplate, site = false): { w: number; h: number; has: (x: number, y: number) => boolean; count: number } {
   const w = Math.max(...t.rows.map((r) => r.length)), h = t.rows.length;
   const has = site
-    ? (x: number, y: number): boolean => x >= 0 && x < w && y >= 0 && y < h && (site.dir < 0 ? y >= site.face : y <= site.face)
+    ? (x: number, y: number): boolean => x >= 0 && x < w && y >= 0 && y < h
     : (x: number, y: number): boolean => (t.rows[y]?.[x] ?? '.') !== '.';
   let count = 0;
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (has(x, y)) count++;
@@ -122,11 +121,14 @@ export function builtOf(t: ShipTemplate, site?: Pick<Dock, 'face' | 'dir'>): { w
  * Where the template's top-left goes in the plan so the dock's outer door is the asteroid's rock face (the first body row under
  * its three columns from the north, or the last from the south) with open space for the collar beyond. Among the columns that fit,
  * the one that leaves the fewest base tiles over empty space (they would be filled with ground or rock, bulging the outline),
- * then the most central. Null if none keeps that share at or below `maxBulge`.
+ * then the most central. Null if none keeps that share at or below `maxBulge`. A `site` (a prefab base: its dock is a pad's
+ * airlock, its shuttles land on the ground) has no face to meet: it goes wherever its whole site lies on the rock, the
+ * fewest tiles over space and then the most central.
  */
 export function placeAt(plan: AsteroidPlan, t: ShipTemplate, dock: Dock, maxBulge: number, site = false): { x: number; y: number; face: number } | null {
-  const b = builtOf(t, site ? dock : undefined);
+  const b = builtOf(t, site);
   const space = (x: number, y: number): boolean => plan.struct[y * plan.w + x] === Struct.Space;
+  if (site) return onRock(plan, b, dock, maxBulge, space);
   let best: { x: number; y: number; face: number; bulge: number; off: number } | null = null;
   for (let x0 = 0; x0 + b.w <= plan.w; x0++) {
     const cols = Array.from({ length: dock.cols[1] - dock.cols[0] + 1 }, (_, i) => x0 + dock.cols[0] + i);
@@ -146,6 +148,22 @@ export function placeAt(plan: AsteroidPlan, t: ShipTemplate, dock: Dock, maxBulg
     if (!best || bulge < best.bulge || (bulge === best.bulge && off < best.off)) best = { x: x0, y: y0, face, bulge, off };
   }
   return best && best.bulge <= maxBulge * b.count ? { x: best.x, y: best.y, face: best.face } : null;
+}
+
+/** The most central place for a whole site (a box) with the fewest tiles over space, by a summed-area table of space tiles. */
+function onRock(plan: AsteroidPlan, b: { w: number; h: number; count: number }, dock: Dock, maxBulge: number, space: (x: number, y: number) => boolean): { x: number; y: number; face: number } | null {
+  const W = plan.w + 1, sum = new Int32Array(W * (plan.h + 1));
+  for (let y = 0; y < plan.h; y++) for (let x = 0; x < plan.w; x++) sum[(y + 1) * W + x + 1] = (space(x, y) ? 1 : 0) + (sum[y * W + x + 1] as number) + (sum[(y + 1) * W + x] as number) - (sum[y * W + x] as number);
+  const at = (x: number, y: number): number => sum[y * W + x] as number;
+  let best: { x: number; y: number; bulge: number; off: number } | null = null;
+  for (let y0 = 0; y0 + b.h <= plan.h; y0++) {
+    for (let x0 = 0; x0 + b.w <= plan.w; x0++) {
+      const bulge = at(x0 + b.w, y0 + b.h) - at(x0, y0 + b.h) - at(x0 + b.w, y0) + at(x0, y0);
+      const off = Math.abs(x0 + b.w / 2 - plan.w / 2) + Math.abs(y0 + b.h / 2 - plan.h / 2);
+      if (!best || bulge < best.bulge || (bulge === best.bulge && off < best.off)) best = { x: x0, y: y0, bulge, off };
+    }
+  }
+  return best && best.bulge <= maxBulge * b.count ? { x: best.x, y: best.y, face: best.y + dock.face } : null;
 }
 
 /** The tile just outside an airlock module (its docking collar, else past the outer door), in template tiles. */

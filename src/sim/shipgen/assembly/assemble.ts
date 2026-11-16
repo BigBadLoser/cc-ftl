@@ -14,7 +14,7 @@ import { cabinsOf, house } from './quarters';
 import type { Recipe } from './recipe';
 import { RegionGrid, SOLID, SPACE } from './regions';
 import { noses } from './noses';
-import { prefab } from './prefab';
+import { PREFAB_PADS, prefab } from './prefab';
 import { fillRing, ringPorts, ringSite } from './ring';
 
 /**
@@ -37,15 +37,15 @@ export interface Assembly {
   rooms: number;
   /** Why earlier candidates were rejected. */
   rejected: string[];
-  /** A prefab base's shuttle pad: ground kept clear, x0, y0, x1, y1 on the grid. */
-  pad?: [number, number, number, number];
+  /** A prefab base's landing pads: ground kept clear, each x0, y0, x1, y1 on the grid. */
+  pads?: [number, number, number, number][];
 }
 
 /** Half the side of the grid a trunk station is assembled on. */
 const HALF = 230;
 const ANGLE: Record<Dir, number> = { n: 0, e: Math.PI / 2, s: Math.PI, w: (3 * Math.PI) / 2 };
 
-interface Outcome { asm: Asm; why: string; pad?: [number, number, number, number] }
+interface Outcome { asm: Asm; why: string; pads?: [number, number, number, number][] }
 
 const tagged = (rooms: readonly RoomSpec[]): RoomSpec[] => rooms.map((r) => (r.dept ? r : { ...r, dept: deptOf(r) }));
 
@@ -64,7 +64,7 @@ function tryOnce(rng: Rng, recipe: Recipe, all: readonly RoomSpec[], attempt: nu
   if (recipe.root.kind === 'prefab') {
     const ctx = context(new RegionGrid(HALF), null, rng);
     const made = prefab(ctx, rooms, docks, pool);
-    return { asm: new Asm(ctx, recipe.spacing), why: made.why, ...(made.pad ? { pad: made.pad } : {}) };
+    return { asm: new Asm(ctx, recipe.spacing), why: made.why, ...(made.pads ? { pads: made.pads } : {}) };
   }
   const orphans = rooms.filter((r) => !takers.has(r.dept as string));
   if (orphans.length > 0) return { asm: new Asm(context(new RegionGrid(8), null, rng), 0), why: `no part of the recipe takes ${[...new Set(orphans.map((r) => r.dept))].join(', ')}` };
@@ -186,10 +186,13 @@ function tryOnce(rng: Rng, recipe: Recipe, all: readonly RoomSpec[], attempt: nu
 
 /**
  * The rooms of a station's programme a recipe stands: all of them, but a prefab base keeps its shuttle on a pad on the
- * ground, so it has no vehicle bay.
+ * ground, so it has no vehicle bay, and its airlocks are its pads' (PREFAB_PADS).
  */
-export const recipeRooms = (recipe: Recipe, rooms: readonly RoomSpec[]): readonly RoomSpec[] =>
-  recipe.root.kind === 'prefab' ? rooms.filter((r) => !r.mods.includes('module.vehicle_bay')) : rooms;
+export function recipeRooms(recipe: Recipe, rooms: readonly RoomSpec[]): readonly RoomSpec[] {
+  if (recipe.root.kind !== 'prefab') return rooms;
+  const docks = rooms.filter((r) => r.role === 'dock').slice(0, PREFAB_PADS);
+  return rooms.filter((r) => !r.mods.includes('module.vehicle_bay') && (r.role !== 'dock' || docks.includes(r)));
+}
 
 /**
  * Assemble a station from a recipe and its rooms. A candidate that cannot stand every room is rejected and another is
@@ -210,7 +213,7 @@ export function assemble(rng: Rng, recipe: Recipe, rooms: readonly RoomSpec[], t
     }
     if (r.why) { rejected.push(r.why); continue; }
     const snap = r.asm.ctx.g.snapshot();
-    const a: Assembly = { ctx: r.asm.ctx, recipe, ...(r.R ? { R: r.R } : {}), ...(r.pad ? { pad: r.pad } : {}), sections: r.asm.sections, corridors: r.asm.corridors, rooms: all.length, rejected };
+    const a: Assembly = { ctx: r.asm.ctx, recipe, ...(r.R ? { R: r.R } : {}), ...(r.pads ? { pads: r.pads } : {}), sections: r.asm.sections, corridors: r.asm.corridors, rooms: all.length, rejected };
     if (!best || Math.max(snap.width, snap.height) < best.span) best = { a, span: Math.max(snap.width, snap.height) };
   }
   return { ok: best?.a ?? null, rejected };
