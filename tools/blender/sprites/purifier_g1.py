@@ -135,5 +135,8 @@ def build(name="purifier_g1"):
     return k.build()
 
 
+DESIGNS = {"g1": build}
+
+
 def jobs():
     return [("module.water_purifier.g1", FP, "prop", build)]

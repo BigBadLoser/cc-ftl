@@ -59,7 +59,7 @@ Things people believe exist and do not (or only partly), and the reverse.
 - **Research module:** buildable but placed on no ship, so research needs the player to build one first. Same for the scrapper, radiator and large hydroponics bed ("buildable only").
 - **Zealot "augmented" crews:** a stand-in body; real implants are phase 7 (issue #311).
 - **Recovery pod:** built as a first pass (#319): buildable, heals HP to full; no ship starts with one, no injuries or surgery yet.
-- **Water purifier:** in game, art pending (`module.waterPurifier`, #321): buildable, `recipe.purify_ice` turns ice into water; drawn as a tinted placeholder crate until its sprite lands.
+- **Water purifier:** in game (`module.waterPurifier`, #321): buildable, `recipe.purify_ice` turns ice into water; art from `purifier_g1` (family `purifier_module`, four rotations).
 - **Construction pods and drones, logistics robot, arcade:** planned only, even though `module.pod_bay` text mentions construction pods.
 - **Leisure furniture** (art in `tools/blender/sprites/leisure.py`, four rotations each; #441). Buildable from the Life tab, in game:
   `module.bench` 2x1 (three seat positions in its def, `sim/modules/seats.ts`, and the `sit_bench` crew clip

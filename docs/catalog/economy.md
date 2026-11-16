@@ -53,4 +53,4 @@ A profile is the stock, price modifiers and credits of a seller, matched by fact
 | Base logistics, ferry, transfer orders | `ferrySystem, logisticsSystem` | Shuttles move cargo and crew between the ship and claimed bases | In game | sim/ferry/*, sim/logistics/*; ui/TransferSection.svelte |
 | Shipyard | `yardSystem` | Paid hull builds at stations | In game | see stations.md |
 | Second income loop and real money sinks | `-` | Economy balance work | Planned | issues #174, #160 (cross-system integrity), #171 |
-| Water purifier (ice to water) | `module.waterPurifier` | Dedicated module | In game, art pending | issue #321; src/content/furniture.ts, recipes.ts `purify_ice` |
+| Water purifier (ice to water) | `module.waterPurifier` | Dedicated module | In game | issue #321; src/content/furniture.ts, recipes.ts `purify_ice` |

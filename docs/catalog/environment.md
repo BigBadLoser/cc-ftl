@@ -27,7 +27,7 @@ Each owns its question (see "One answer per question" in `docs/ARCHITECTURE.md`)
 | Rock digging | `-` | Dig and carve asteroid rock for outposts | In game | sim/rock/dig.ts |
 | Overlays | `-` | Nine field views: o2, co2, temp, fire, smoke, light, power, room quality, rooms | In game | render/overlayDefs.ts; ui/OverlayPicker.svelte |
 | Door vents | `ventsSystem` | Every door has a vent the player opens in the tile inspector; open, it passes air and pressure (not fire, heat or smoke) through a shut door; shuts itself on a hazard either side or no power, reopens when clear | In game | sim/systems/vents.ts, ventCommand.ts, diffusion.ts; ui/TileInspector.svelte; `?scenario=vents` |
-| Water purifier module | `module.waterPurifier` | Ice to water module | In game, art pending | issue #321 |
+| Water purifier module | `module.waterPurifier` | Ice to water module | In game | issue #321 |
 | Arcade module | `-` | New recreation module | Art only | issue #319 |
 | Recovery pod module | `module.recovery` | Recovery module | Partial (built, first pass; see catalog/modules.md) | issue #319 |
 | Performance of environment systems | `-` | Per-tick environment cost dominates | Planned | issue #65 |

@@ -5055,6 +5055,10 @@
    "image": "sprites/portraits.png",
    "glow": "sprites/portraits.glow.png"
   },
+  "purifier_module": {
+   "image": "sprites/purifier_module.png",
+   "glow": "sprites/purifier_module.glow.png"
+  },
   "reactor": {
    "image": "sprites/reactor.png",
    "glow": "sprites/reactor.glow.png"
@@ -104606,6 +104610,101 @@
    "footprint": [
     1,
     1
+   ],
+   "glow": true
+  },
+  "module.water_purifier": {
+   "kind": "static",
+   "sheet": "purifier_module",
+   "frame": {
+    "x": 160,
+    "y": 1,
+    "w": 78,
+    "h": 68
+   },
+   "anchor": {
+    "x": 58,
+    "y": 58
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.water_purifier.r0": {
+   "kind": "static",
+   "sheet": "purifier_module",
+   "frame": {
+    "x": 239,
+    "y": 1,
+    "w": 78,
+    "h": 68
+   },
+   "anchor": {
+    "x": 58,
+    "y": 58
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.water_purifier.r1": {
+   "kind": "static",
+   "sheet": "purifier_module",
+   "frame": {
+    "x": 318,
+    "y": 1,
+    "w": 79,
+    "h": 68
+   },
+   "anchor": {
+    "x": 23,
+    "y": 58
+   },
+   "footprint": [
+    1,
+    2
+   ],
+   "glow": true
+  },
+  "module.water_purifier.r2": {
+   "kind": "static",
+   "sheet": "purifier_module",
+   "frame": {
+    "x": 1,
+    "y": 1,
+    "w": 78,
+    "h": 86
+   },
+   "anchor": {
+    "x": 52,
+    "y": 74
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.water_purifier.r3": {
+   "kind": "static",
+   "sheet": "purifier_module",
+   "frame": {
+    "x": 80,
+    "y": 1,
+    "w": 79,
+    "h": 86
+   },
+   "anchor": {
+    "x": 24,
+    "y": 74
+   },
+   "footprint": [
+    1,
+    2
    ],
    "glow": true
   },

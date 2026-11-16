@@ -169,7 +169,7 @@ def jobs(name):
         import os
         from . import bench
         return bench.jobs(range(int(os.environ.get("MODPACK_ROTS", 4)))), bench.PAL
-    if name in ("bunk_module", "bar_module", "exercise_module", "planter_module", "vending_module"):
+    if name in ("bunk_module", "bar_module", "exercise_module", "planter_module", "vending_module", "purifier_module"):
         import os
         from . import leisure
         return leisure.jobs(name, range(int(os.environ.get("MODPACK_ROTS", 4)))), leisure.palette(name)
@@ -649,5 +649,5 @@ RENDERED = ("env", "walls", "consoles", "weapons", "roof", "robot_bay", "drones"
             "pod_bay", "mining_pod", "escape_pod", "fx_mining", "fx_shield", "starmap", "backdrop", "cargo", "items", "salvage", "storage_ore",
             "hull", "scrapper", "upgrades", "research_bench", "arcade_cabinet", "gametable_module",
             "recovery_pod", "bunk_module", "exercise_module", "bench_module", "planter_module", "vending_module", "bar_module",
-            "stasis", "stasisload")
+            "stasis", "stasisload", "purifier_module")
 ALL = RENDERED + ("sol", "damage_sol", "marks")
