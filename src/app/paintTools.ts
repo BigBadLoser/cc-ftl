@@ -100,6 +100,7 @@ export function createPaintTools(sim: Sim, bridge: Bridge, deps: PaintDeps): Pic
     return at && ship ? windowPlan(sim, ship, at, tool.get().windowSize ?? 3) : null;
   };
   const refreshPreview = () => {
+    if (!windowMode()) deps.renderer()?.setWindowGhost(null);
     deps.renderer()?.setWorldGrid(tool.get().tool === 'build'); // the world grid shows while the build tools are open
     if (!hullPlan.active()) deps.renderer()?.setCutLine([]);
     if (hullPlan.active()) {
@@ -124,6 +125,7 @@ export function createPaintTools(sim: Sim, bridge: Bridge, deps: PaintDeps): Pic
     if (windowMode()) {
       const plan = windowAtCursor();
       deps.renderer()?.setPreview(plan?.tiles ?? [], plan ? plan.error === null : true);
+      deps.renderer()?.setWindowGhost(plan ? { tiles: plan.tiles, axis: plan.axis, size: plan.size, valid: plan.error === null } : null);
       const rr = deps.renderer();
       const at = plan?.error && rr && hover ? rr.screenOf(plan.ship, hover.x, hover.y) : null;
       placeHint.set(plan?.error && at ? { x: at.x, y: at.y, text: rejectionMessage(plan.error), ok: false } : null);

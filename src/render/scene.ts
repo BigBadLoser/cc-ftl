@@ -56,6 +56,7 @@ import { createPortraits } from './portrait';
 import type { CrewLook } from './loadout';
 import { createModuleThumbs, type ModuleThumb } from './moduleThumb';
 import { createModuleGhost, type ModuleGhostSpec } from './moduleGhost';
+import { createWindowGhost, type WindowGhostSpec } from './windowGhost';
 import { createBackdrop, type BackdropSpec } from './backdrop';
 import { createShipScene, type ShipScene } from './shipScene';
 import { createBuildBudget } from './buildBudget';
@@ -119,6 +120,8 @@ export interface Renderer {
   setCutLine(segments: readonly (readonly Tile[])[], color?: number): void;
   /** The module being placed, drawn see-through at the cursor (red when invalid) with its access tile; null hides it. */
   setModuleGhost(g: ModuleGhostSpec | null): void;
+  /** The window being placed, drawn as its own tinted pieces over the run at every wall level (red when invalid); null hides it. */
+  setWindowGhost(g: WindowGhostSpec | null): void;
   /** Center the camera on a (fractional) tile position of the camera ship's grid. */
   focusTile(x: number, y: number): void;
   /** Center the camera on a sector position (tiles). */
@@ -364,6 +367,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     frame: () => ({ x0: -placed.originX / placed.scale, y0: -placed.originY / placed.scale, x1: (placed.w - placed.originX) / placed.scale, y1: (placed.h - placed.originY) / placed.scale }),
     shipCenter: (id) => { const sh = shipOf(id); const o = sh && origin(id); return sh && o ? { x: o.x + sh.width / 2 - 0.5, y: o.y + sh.height / 2 - 0.5 } : null; } }, SL.ui);
   const moduleGhost = createModuleGhost(SL.ui, thumbs, content.modules);
+  const windowGhost = createWindowGhost(SL.ui, atlas);
   /** Where a crew member's feet are drawn, in the sector-frame art px the overlays use (the sprite's own smoothed position). */
   const crewSpritePos = (id: number): { x: number; y: number; h: number; bars: number } | null => {
     for (const [gid, sc] of scenes) {
@@ -851,6 +855,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     setCutLine: (segments, color = 0xff3df0) => cutLine.set(segments, color),
     setWorldGrid: (on) => worldGrid.set(on, sector?.width ?? 0, sector?.height ?? 0),
     setModuleGhost: (g) => moduleGhost.set(g),
+    setWindowGhost: (g) => windowGhost.set(g),
     focusTile(x, y) {
       const p = iso(x, y); // a sector tile
       cam.centerOn(p.x, p.y - 8 * ART_SCALE);

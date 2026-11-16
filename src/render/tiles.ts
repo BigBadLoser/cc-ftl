@@ -83,9 +83,9 @@ export function wallCorners(kindAt: KindAt, x: number, y: number, mask: number):
   return c;
 }
 
-/** The window piece id of a straight wall tile with the walls up (`<pre>m10.win.l`), as a chain head; empty for anything else. */
-export function windowChain(pre: string, mask: number, win: WindowTile | null, level: WallLevel): string[] {
-  if (!win || level !== "up" || mask !== (win.axis === "x" ? 10 : 5)) return [];
+/** The window piece id of a straight wall tile (`<pre>m10.win.l`, `pre` carrying the wall level), as a chain head; empty for anything else. Callers put the plain piece after it, for a level whose window art is missing. */
+export function windowChain(pre: string, mask: number, win: WindowTile | null): string[] {
+  if (!win || mask !== (win.axis === "x" ? 10 : 5)) return [];
   return [`${pre}m${mask}.win.${windowPiece(win)}`];
 }
 
@@ -264,7 +264,7 @@ export function wallPieces(
     // cutaway), with the hull over the partitions' height drawn on it (`tile.hull.cap.*`: the black band and the
     // roof plating), and at a run's end the wall's end section with the hull's on it.
     const wall = "tile.wall.full.";
-    const out: Piece[] = [{ chain: [...windowChain(wall, mask, win, "up"), ...chainOf(`${wall}m${mask}`)], order: 0 }, { chain: chainOf(`tile.hull.cap.m${mask}`, v), order: 1 }];
+    const out: Piece[] = [{ chain: [...windowChain(wall, mask, win), ...chainOf(`${wall}m${mask}`)], order: 0 }, { chain: chainOf(`tile.hull.cap.m${mask}`, v), order: 1 }];
     for (const [on, side, bits] of [[endS, "s", c & 6], [endE, "e", c & 3]] as const) {
       if (!on) continue;
       out.push({ chain: end(wall, side, bits), order: 2 }, { chain: end("tile.hull.cap.", side, bits), order: 3 });
@@ -273,7 +273,7 @@ export function wallPieces(
   }
   const fam = kind === Struct.RockWall ? "rockwall" : "wall";
   const pre = `tile.${fam}.${PRE[level]}`;
-  const out: Piece[] = [{ chain: [...(fam === "wall" ? windowChain(pre, mask, win, level) : []), ...chainOf(`${pre}m${mask}`)], order: 0 }];
+  const out: Piece[] = [{ chain: [...(fam === "wall" ? windowChain(pre, mask, win) : []), ...chainOf(`${pre}m${mask}`)], order: 0 }];
   if (endS) out.push({ chain: end(pre, "s", c & 6), order: 1 });
   if (endE) out.push({ chain: end(pre, "e", c & 3), order: 1 });
   return out;

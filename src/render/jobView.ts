@@ -5,6 +5,7 @@ import type { Grid } from "../sim/grid";
 import { Struct } from "../sim/structure";
 import { decodeWindow } from "../sim/windows";
 import type { Atlas } from "./assets/loader";
+import { PREVIEW_OK } from "./markers";
 import { keepsOldPiece, pendingHull, pendingHullKeys } from "./jobHull";
 import type { HullKeys } from "./hullArt";
 import { depthKey, iso } from "./iso";
@@ -28,8 +29,8 @@ export interface JobView {
 
 const BUILD = 0x22d3ee;
 const DECON = 0xff3b3b;
-/** A queued window: the Window tool's valid-preview tint (markers.ts CYAN), added over the wall it stands on (a multiply tint would vanish on the wall's own teal), so it reads as the pending window. */
-const WINDOW_GHOST = BUILD;
+/** A queued window: the Window tool's valid-preview tint (markers.ts PREVIEW_OK), added over the wall it stands on (a multiply tint would vanish on the wall's own teal), so it reads as the pending window. */
+const WINDOW_GHOST = PREVIEW_OK;
 
 /**
  * Blueprints: the target tile's own sprite, tinted cyan (build, alpha rises with progress) or red (deconstruct). A shipyard tile

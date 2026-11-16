@@ -9,7 +9,7 @@ const F = Struct.Floor;
 const S = Struct.Space;
 const grid = (rows: number[][]) => (x: number, y: number) => rows[y]?.[x] ?? S;
 const win = (axis: "x" | "y", size: number, index: number) => decodeWindow(windowCode(axis, size, index));
-const first = (kindAt: (x: number, y: number) => number, x: number, y: number, w: ReturnType<typeof win>, mode: "up" | "auto" = "up") =>
+const first = (kindAt: (x: number, y: number) => number, x: number, y: number, w: ReturnType<typeof win>, mode: "up" | "auto" | "down" = "up") =>
   wallPieces(kindAt, x, y, W, mode, true, () => false, w)[0]!.chain;
 
 describe("window wall pieces (walls up)", () => {
@@ -57,13 +57,19 @@ describe("window wall pieces (walls up)", () => {
     expect(first(col, 3, 2, win("x", 2, 0)).some((id) => id.includes(".win."))).toBe(false);
     expect(first(col, 3, 1, win("y", 2, 0)).some((id) => id.includes(".win."))).toBe(false); // a T junction (mask 14)
   });
-  it("the far hull keeps its cap over the window piece at every level; cutaway partitions stay plain", () => {
+  it("the far hull keeps its cap over the window piece at every level; a partition asks for it per level", () => {
     const pieces = wallPieces(k, 3, 1, W, "up", true, () => false, win("x", 2, 0));
     expect(pieces[0]!.chain[0]).toBe("tile.wall.full.m10.win.l");
     expect(pieces[1]!.chain[0]).toBe("tile.hull.cap.m10");
     // the far hull stays full height in the cutaway, so its window shows there too
     expect(wallPieces(k, 3, 1, W, "auto", true, () => false, win("x", 2, 0))[0]!.chain[0]).toBe("tile.wall.full.m10.win.l");
-    expect(first(part, 3, 2, win("x", 2, 0), "auto").some((id) => id.includes(".win."))).toBe(false);
+  });
+  it("a partition's window piece is asked for at every wall level, plain piece after it", () => {
+    for (const [mode, pre] of [["up", "tile.wall.full."], ["auto", "tile.wall."], ["down", "tile.wall.low."]] as const) {
+      const c = wallPieces(part, 3, 2, W, mode, true, () => false, win("x", 3, 1))[0]!.chain;
+      expect(c[0], mode).toBe(`${pre}m10.win.m`);
+      expect(c[c.length - 1], mode).toBe(`${pre}m10`);
+    }
   });
   it("the near hull stays the ghost (no window)", () => {
     const pieces = wallPieces(k, 3, 5, W, "up", true, () => false, win("x", 2, 0));

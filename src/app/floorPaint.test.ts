@@ -12,7 +12,7 @@ describe('floor paint tool', () => {
     const g = shipGrid(sim, homeShip(sim))!;
     const far = { x: g.x0 + g.width + 30, y: g.y0 + g.height + 30 };
     let valid: boolean | undefined;
-    const renderer = { setAreas: () => undefined, setWorldGrid: () => undefined, setCutLine: () => undefined, setPreview: (_t: unknown, ok?: boolean) => (valid = ok), setHover: () => undefined, setSites: () => undefined, setModuleGhost: () => undefined, screenOf: () => ({ x: 5, y: 6 }) } as unknown as Renderer;
+    const renderer = { setAreas: () => undefined, setWorldGrid: () => undefined, setCutLine: () => undefined, setPreview: (_t: unknown, ok?: boolean) => (valid = ok), setHover: () => undefined, setSites: () => undefined, setModuleGhost: () => undefined, setWindowGhost: () => undefined, screenOf: () => ({ x: 5, y: 6 }) } as unknown as Renderer;
     const bridge = { setSelected: () => undefined, setHovered: () => undefined, sites: createStore([]), yard: createStore({ plan: { ship: 0, tiles: [], connected: [], loose: [], blocked: [], floor: [], hull: { now: 0, afterAll: 0, capacity: 0, max: 0 } }, quote: null, order: null }) } as unknown as Bridge;
     const c = createController(sim, bridge);
     let toast: string | null = null;
