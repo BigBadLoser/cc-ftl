@@ -26,8 +26,10 @@ BLOCK_EDGE = SH.GROOVE_D            # a dark line down its front's edge at its e
 PLATE_UP, PLATE_CLEAR, PLATE_DEEP = 1, 2, 4   # a plate on the box's top: px proud; px clear of its chamfer and its
                                     # edge lines; px deep
 SIDE_PLATE, SIDE_DOWN = (4, 3), 5   # on the face beside the box: a plate (px wide, tall) this many px under the bullnose
-SIDE_SEAMS, SIDE_SEAM = 7, SH.GROOVE_D   # two seams down from under it, either side of its middle px: px long
+SIDE_SEAMS, SIDE_SEAM = 11, SH.GROOVE_D   # two seams down from under it, either side of its middle px: px long
 SIDE_FOOT, SIDE_CLEAR = 4, 0        # a plate where they end: px tall; px short of the box (across from the tile's end)
+SIDE_FEET, SIDE_GAP = 2, 2          # that many such plates, one under another, this many px apart (a px of
+                                    # it under the lower one's top: a px of face shows between)
 PLATE_SIDE, PLATE_LINE = SH.GROOVE_D, SH.SEAM   # its sides; the lines round its top's edges
 BLOCK_LIT, BLOCK_JOIN = "stL", SH.GROOVE_D   # a lit px along its front's top edge; a dark one on the box's front over
                                     # its top
@@ -78,7 +80,7 @@ def tower(f, s0, zk):
 
 def _side(f, b, e):
     """On the face between the box's near end b and the tile's end e: a plate SIDE_DOWN px under the bullnose's foot,
-    centred; two dark seams down from under it; a plate where they end, across from the tile's end to SIDE_CLEAR px
+    centred; two dark seams down from under it; plates where they end, across from the tile's end to SIDE_CLEAR px
     short of the box."""
     s, px = f.sec, 1 / core.ZPX
     w, (pw, ph), n, sd, qh = round((e - b) / LINE), SIDE_PLATE, SIDE_DOWN, SIDE_SEAMS, SIDE_FOOT
@@ -90,7 +92,9 @@ def _side(f, b, e):
     c = p0 + pw // 2                                        # (the plate's middle px; a seam either side of it)
     for p in (c - 1, c + 1):
         SD._rect(f, at(p), at(p + 1), z(n + ph + sd), z(n + ph), D + 0.001, SIDE_SEAM)
-    SH._part(f, at(SIDE_CLEAR + k), e, z(n + ph + sd + qh), z(n + ph + sd), LINE, SH.TAB, SH.TAB_TOP, SH.TAB_SIDE)
+    for i in range(SIDE_FEET):                              # (one under another, SIDE_GAP px apart)
+        q = n + ph + sd + i * (qh + SIDE_GAP)
+        SH._part(f, at(SIDE_CLEAR + k), e, z(q + qh), z(q), LINE, SH.TAB, SH.TAB_TOP, SH.TAB_SIDE)
 
 
 def _top_plate(f, a, b, top, front):
