@@ -45,10 +45,10 @@ def blocks(f, s0, s1):
                      (T.P(f.ax, 0, sg, 0, 0) - o).normalized(), fixed=T.SEAM_PASS or BAY_WALL)
 
 
-def machinery(f, s0, design):
-    """The bay's fill in design `design` (station_hull_bay_kit)."""
+def machinery(f, s0):
+    """The bay's fill (station_hull_bay_kit)."""
     from .station_hull_bay_kit import machinery as fill
     s, px = f.sec, 1 / core.ZPX
     u0, u1 = span(f, s0)
     zf, zl = s.z_at(SH.GROOVE, -BAY_FOOT), s.H - BAY_LIP * px
-    fill(f, design, u0, u1, zf, zl, SH.E - round((SH.R_D + SH.TOP_SEAM) * 32) / 32)
+    fill(f, u0, u1, zf, zl, SH.E - round((SH.R_D + SH.TOP_SEAM) * 32) / 32)

@@ -29,9 +29,8 @@ GOUGE = (28, 25, 5, 1.0, (1.0, 0.75, 1.1, 1.0, 0.85, 1.25, 0.8, 1.0), 6)   # a l
 DENT_LIP, DENT_RING, DENT_PIT = "stL", "stM", "stD"
 
 MODULE, TOWER, BAY = 3, 4, 5
-BAYS = (BAY, 6, 7)                  # the bay, in three fills (station_hull_bay_kit)
-DESIGNS = {1: DENTS + (GOUGE,), 2: DENTS, MODULE: (), TOWER: (), **{b: () for b in BAYS}}
-NO_TABS = {MODULE, TOWER, *BAYS}    # designs without the groove's tabs (the recess takes the middle slot's foot), the
+DESIGNS = {1: DENTS + (GOUGE,), 2: DENTS, MODULE: (), TOWER: (), BAY: ()}
+NO_TABS = {MODULE, TOWER, BAY}      # designs without the groove's tabs (the recess takes the middle slot's foot), the
                                     # plate on the line under the bullnose and that line's lit px (the boxes take the
                                     # middle slot)
 ONE_BLOCK = {TOWER}                 # designs whose step carries one block over both, its middle a px higher
@@ -77,9 +76,9 @@ def dress(f, s0, design, zk):
     elif design == TOWER:
         from .station_hull_tower import tower
         tower(f, s0, zk)
-    elif design in BAYS:
+    elif design == BAY:
         from .station_hull_bay import machinery
-        machinery(f, s0, design)
+        machinery(f, s0)
 
 
 def _u(s0, p):

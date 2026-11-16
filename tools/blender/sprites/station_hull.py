@@ -190,7 +190,7 @@ def build(k, ax, plane, a, b, ends, H):
     rail = back + RAIL
     for s0, s1 in T.spans(a, b):
         whole = s1 - s0 > 1 - 1e-6
-        bay = whole and DESIGN[0] in SD.BAYS
+        bay = whole and DESIGN[0] == SD.BAY
         if whole and DESIGN[0] == SD.MODULE:
             SD.blocks(f, s0, s1)
         elif bay:
