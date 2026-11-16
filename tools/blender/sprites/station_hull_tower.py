@@ -25,7 +25,8 @@ BLOCK_SLOPE = "stE"                 # its foot, sloped back down to the box's fr
 BLOCK_EDGE = SH.GROOVE_D            # a dark line down its front's edge at its end turned from view
 PLATE_UP, PLATE_CLEAR, PLATE_DEEP = 1, 2, 4   # a plate on the box's top: px proud; px clear of its chamfer and its
                                     # edge lines; px deep
-SIDE_PLATE, SIDE_DOWN = (4, 3), 5   # on the face beside the box: a plate (px wide, tall) this many px under the bullnose
+SIDE_PLATE, SIDE_DOWN = (4, 4), 5   # on the face beside the box: a plate (px wide, tall) this many px under the bullnose
+SIDE_TONES = ("stH", "stB", "stL")  # the plates' front, top, ends: a shade under the groove's tabs'
 SIDE_SEAMS, SIDE_SEAM = 11, SH.GROOVE_D   # two seams down from under it, either side of its middle px: px long
 SIDE_FOOT, SIDE_CLEAR = 4, 0        # a plate where they end: px tall; px short of the box (across from the tile's end)
 SIDE_FEET, SIDE_GAP = 2, 2          # that many such plates, one under another, this many px apart (a px of
@@ -88,13 +89,13 @@ def _side(f, b, e):
     z = lambda k: s.z_at(s.zb, k)                           # noqa: E731  k px under the bullnose's foot
     p0 = (w - pw) // 2
     k = 1                                                   # (a px proud, a plate's front shows a px toward the box)
-    SH._part(f, at(p0 + k), at(p0 + pw + k), z(n + ph), z(n), LINE, SH.TAB, SH.TAB_TOP, SH.TAB_SIDE)
+    SH._part(f, at(p0 + k), at(p0 + pw + k), z(n + ph), z(n), LINE, *SIDE_TONES)
     c = p0 + pw // 2                                        # (the plate's middle px; a seam either side of it)
     for p in (c - 1, c + 1):
         SD._rect(f, at(p), at(p + 1), z(n + ph + sd), z(n + ph), D + 0.001, SIDE_SEAM)
     for i in range(SIDE_FEET):                              # (one under another, SIDE_GAP px apart)
         q = n + ph + sd + i * (qh + SIDE_GAP)
-        SH._part(f, at(SIDE_CLEAR + k), e, z(q + qh), z(q), LINE, SH.TAB, SH.TAB_TOP, SH.TAB_SIDE)
+        SH._part(f, at(SIDE_CLEAR + k), e, z(q + qh), z(q), LINE, *SIDE_TONES)
 
 
 def _top_plate(f, a, b, top, front):
