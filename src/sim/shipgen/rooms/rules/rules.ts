@@ -11,7 +11,7 @@ import { db, tr, traumaFits } from './bays';
 import { f1 } from './farm';
 import { AC, B, BT, OB, CD, DR, EX, FB, RF, G, GT, L, LS, MB, P, RK, RP, RS, SB, SP, SW, T, bunks, messSize, count, leftover, middle, range, rowsOf, sidePairs, tables, type Beds, type Run } from './parts';
 import { PB, VB, AI, CR, bank, core, crates, podsFit, pods, shuttle } from './plant';
-import { laid, tablesClear } from './mess';
+import { laid, messTables, tablesClear } from './mess';
 import { co, cu, gy, hl, pz } from './social';
 import { bg, ore, pa, qm, shelfSlots } from './stores';
 import { bk, lb, rf, rf2, rf2Fits, su, ws } from './works';
@@ -119,20 +119,22 @@ function d3(c: Ctx): Piece[] {
 
 /**
  * M4: a long mess: the galleys on a short wall, tables with their chairs down the long axis in a line (two where the
- * room is wide enough across, either side of the middle), the planned tables shared between the lines, each line's
+ * room is wide enough across, either side of the middle), its tables (`messTables`) shared between the lines, each line's
  * evenly spaced and centred (`middle`), clear of the doorways (`tablesClear`).
  */
 function m4(c: Ctx): Piece[] {
-  const tall = c.h > c.w, across = tall ? c.w : c.h, lines = across >= 9 ? 2 : 1, n = Math.max(1, count(c.need, 'module.mess_table'));
-  // Each line's band across the room: the whole of it, or the halves either side of its middle.
-  const bands = lines === 1 ? [[0, across - 1]] : [[0, (across >> 1) - 1], [(across + 1) >> 1, across - 1]];
+  const tall = c.h > c.w, across = tall ? c.w : c.h, lines = across >= 9 ? 2 : 1, n = messTables(c), planned = Math.max(1, count(c.need, T));
+  // Each line's band across the room: the whole of it, or the halves either side of its middle, a tile in from the
+  // walls where the room is wide (an aisle down each wall two wide, clear of the doorways in it).
+  const inset = across >= 11 ? 1 : 0;
+  const bands = lines === 1 ? [[0, across - 1]] : [[inset, (across >> 1) - 1], [(across + 1) >> 1, across - 1 - inset]];
   // In the corners of the short wall, a tile in where a corner is cut.
   const galleys = tall
     ? [P(G, off(c, 0, 0, 0, 1), 0, 0), ...(c.w >= 5 ? [P(G, off(c, c.w - 1, 0, c.w - 2, -1), 0, 0)] : [])]
     : [P(G, 0, off(c, 0, 0, 0, 1), 3), ...(c.h >= 5 ? [P(G, 0, off(c, 0, c.h - 1, c.h - 2, -1), 3)] : [])];
   return [...galleys, ...bands.flatMap(([a, b], k) => {
-    const most = Math.floor(n / lines) + (k < n % lines ? 1 : 0);
-    return tablesClear(c, most, (m) => (tall ? middle(a as number, 2, b as number, c.h - 1, false, true, m) : middle(2, a as number, c.w - 1, b as number, true, true, m)));
+    const most = Math.floor(n / lines) + (k < n % lines ? 1 : 0), least = Math.floor(planned / lines) + (k < planned % lines ? 1 : 0);
+    return tablesClear(c, most, least, (m) => (tall ? middle(a as number, 2, b as number, c.h - 1, false, true, m) : middle(2, a as number, c.w - 1, b as number, true, true, m)));
   })];
 }
 

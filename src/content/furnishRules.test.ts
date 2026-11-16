@@ -4,7 +4,7 @@ import { Layout } from '../sim/shipgen/layout';
 import { roomProblems } from '../sim/shipgen/rooms/rules/check';
 import { furnishByRule } from '../sim/shipgen/rooms/rules/place';
 import { RULES } from '../sim/shipgen/rooms/rules/rules';
-import { doorways } from '../sim/shipgen/rooms/rules/mess';
+import { doorways, messTables } from '../sim/shipgen/rooms/rules/mess';
 import { crates, holdDepth } from '../sim/shipgen/rooms/rules/plant';
 import type { RoomRole } from '../sim/shipgen/types';
 import { Rng } from '../sim/rng';
@@ -165,7 +165,7 @@ describe('furnishing rules', () => {
     }
   });
 
-  it('a hub mess (a hall for its tables) is laid with its planned tables and galleys only, its doorways clear, the game table with room', () => {
+  it('a hub mess (a hall for its tables) furnishes to its size: tables in proportion to its floor, two galleys at most, its doorways clear, the game table against a wall', () => {
     const need = ['module.lifeSupport', 'module.galley', 'module.mess_table', 'module.mess_table', 'module.gametable'];
     const doors = [{ x: 5, y: 0 }, { x: 0, y: 4 }, { x: 10, y: 4 }, { x: 0, y: 16 }, { x: 10, y: 16 }];
     const c = { w: 11, h: 21, d: 5, need, defs, doors };
@@ -173,7 +173,11 @@ describe('furnishing rules', () => {
     expect(usable).toEqual(['M4']);
     const pieces = RULES.support!.find((a) => a.name.startsWith('M4'))!.rule(c);
     const got = tally(pieces.map((p) => p.def));
-    expect(got['module.mess_table']).toBe(2);
+    expect(messTables(c)).toBeGreaterThan(2);
+    expect(got['module.mess_table']).toBe(messTables(c));
+    // A mess the programme's size keeps its planned tables.
+    expect(messTables({ w: 9, h: 6, need })).toBe(2);
+    expect(messTables({ w: 11, h: 7, need })).toBe(2);
     expect(got['module.galley']).toBeLessThanOrEqual(2);
     expect(got['module.gametable']).toBe(1);
     const clear = doorways(c);
