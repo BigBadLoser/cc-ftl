@@ -168,7 +168,7 @@ export interface StructureDef {
   /** One or two characters for the starmap badge. */
   badge: string;
   /** Items the node is a source of: a hint for the UI and for later mining, salvage and stores. */
-  resources: readonly string[];
+  resources?: readonly string[];
   /** Services a station offers ('fuel', 'trade', 'repair', 'recruit'); the trade layer reads them. */
   services?: readonly string[];
 }
@@ -197,6 +197,11 @@ export interface NodeContentDef {
   notIn?: readonly GalaxyFactionDef['kind'][];
   /** Not on the start node (the first node of the start sector). */
   notAtStart?: true;
+  /**
+   * An asteroid field's yield mix: ore id (`content.ores`) to weight of a pocket being that ore. The asteroid generator reads it through
+   * `oreMixFor` (nodeContent.ts), the one owner of a field's mix. Absent on entries that place no field.
+   */
+  ores?: Readonly<Record<string, number>>;
 }
 
 /** What a node holds beyond the sector's own station: a single weighted draw per node over `quiet` and `entries`. */

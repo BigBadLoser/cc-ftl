@@ -1,4 +1,4 @@
-import { AsteroidC, CrewC, MiningPodC, ShipC, VehicleC, cargoCount, homeShip, type OreDef, type Sim } from '../sim';
+import { AsteroidC, nodeOf, CrewC, MiningPodC, ShipC, VehicleC, cargoCount, homeShip, type OreDef, type Sim } from '../sim';
 import type { UiAsteroid, UiMining, UiPod } from '../ui/api';
 
 /** Ore units left per kind over an asteroid's rock (one sweep of its rock bodies' boxes). */
@@ -21,6 +21,13 @@ function oreTotals(sim: Sim, id: number): UiAsteroid['ore'] {
   }));
 }
 
+/** A loose field's name: the kind the node's field structure says (Ice-rich field, Crystal field...), else the plain name. */
+function fieldName(sim: Sim): string {
+  const defs = sim.content.galaxy?.structures ?? {};
+  const s = nodeOf(sim, sim.sector.node)?.structures.find((r) => defs[r.def]?.kind === 'asteroids');
+  return (s && defs[s.def]?.name) || 'Asteroid field';
+}
+
 /** Plain-data mining state: the node's asteroids (with ore totals) and the player's mining pods. Reads the sim only. */
 export function buildMining(sim: Sim): UiMining {
   const me = homeShip(sim);
@@ -41,7 +48,7 @@ export function buildMining(sim: Sim): UiMining {
     const a = sim.world.get(id, AsteroidC);
     if (!a) continue;
     asteroids.push({
-      id, kind: a.kind, coverage: a.coverage, name: a.kind === 'big' ? 'Asteroid' : 'Asteroid field', x: a.x, y: a.y, w: a.width, h: a.height,
+      id, kind: a.kind, coverage: a.coverage, name: a.kind === 'big' ? 'Asteroid' : fieldName(sim), x: a.x, y: a.y, w: a.width, h: a.height,
       ore: oreTotals(sim, id), pods: pods.filter((p) => p.asteroid === id).length,
     });
   }

@@ -1,12 +1,17 @@
 import { describe, expect, it } from 'vitest';
+import { generateAsteroid } from '../sim/asteroids/gen';
 import { galaxy } from './galaxy';
+import { ores } from './ores';
 import type { NodeContentTable } from '../sim/galaxy/defs';
-import { curveAt, nodeContentErrors, quietShare, rollNodeContent } from '../sim/galaxy/nodeContent';
+import { curveAt, entryWeight, nodeContentErrors, fieldItems, oreMixFor, quietShare, rollNodeContent } from '../sim/galaxy/nodeContent';
 import { buildSector } from '../sim/galaxy/sector';
 import { dangerAt, TerritoryField } from '../sim/galaxy/territory';
 import { DANGER_MAX } from '../sim/galaxy/tuning';
 
-const table = galaxy.nodeContents;
+const table: NodeContentTable = galaxy.nodeContents;
+const FIELD_KINDS = ['asteroids', 'asteroids_ice', 'asteroids_crystal', 'asteroids_rare'];
+/** Sum of the table's weights at a tier (quiet plus every entry). */
+const tableTotal = (tier: number) => curveAt(table.quiet, tier) + Object.values(table.entries).reduce((n, e) => n + entryWeight(e, tier), 0);
 const calm = { factionKind: null, start: false };
 
 /** Share of N evenly spread draws that land on each outcome at a tier. */
@@ -35,7 +40,7 @@ describe('node content table', () => {
   it("keeps today's per-kind odds at every tier", () => {
     for (let t = 0; t <= DANGER_MAX; t++) {
       const s = shares(table, t);
-      expect(s['asteroids'] ?? 0).toBeCloseTo(0.3, 2);
+      expect(FIELD_KINDS.reduce((n, k) => n + (s[k] ?? 0), 0)).toBeCloseTo(0.3 + (t >= 3 ? 0.006 * t : 0), 2);
       expect(s['derelict'] ?? 0).toBeCloseTo(0.05 + 0.012 * t, 2);
       expect(s['research'] ?? 0).toBeCloseTo(0.1 - 0.01 * t, 2);
     }
@@ -44,7 +49,7 @@ describe('node content table', () => {
   it('leaves a quiet share by tier, matching the sampled draws', () => {
     for (let t = 0; t <= DANGER_MAX; t++) {
       const q = quietShare(table, { tier: t, ...calm });
-      expect(q).toBeGreaterThan(0.5);
+      expect(q).toBeGreaterThan(0.45);
       expect(q).toBeLessThan(0.6);
       expect(shares(table, t)['quiet'] ?? 0).toBeCloseTo(q, 2);
     }
@@ -66,7 +71,7 @@ describe('node content table', () => {
     for (const kind of ['pirates', 'rogue']) {
       const s = shares(table, 3, kind);
       expect(s['research']).toBeUndefined();
-      expect(s['asteroids']).toBeCloseTo(0.3, 2);
+      expect(FIELD_KINDS.reduce((n, k) => n + (s[k] ?? 0), 0)).toBeCloseTo(0.318, 2);
       expect(s['derelict']).toBeCloseTo(0.05 + 0.036, 2);
       expect(quietShare(table, { tier: 3, factionKind: kind, start: false })).toBeGreaterThan(quietShare(table, { tier: 3, ...calm }));
     }
@@ -78,7 +83,9 @@ describe('node content table', () => {
       for (let i = 0; i < 2000; i++) {
         const u = (i + 0.5) / 2000;
         const got = rollNodeContent(table, { tier: t, ...calm }, u) === 'research';
-        if (Math.abs(u - (0.1 - 0.01 * t)) > 1e-9) expect(got).toBe(u < 0.1 - 0.01 * t);
+        // The weights sum to 1 from tier 3 (rare ore's share comes out of `quiet`) and a hair under 1 at tiers 1 and 2, which scales the boundary.
+        const edge = (0.1 - 0.01 * t) / tableTotal(t);
+        if (Math.abs(u - edge) > 1e-9) expect(got).toBe(u < edge);
       }
     }
   });
@@ -141,6 +148,70 @@ describe('node content in generated sectors', () => {
       if (all < 300) continue;
       // Barred research in hostile space only adds quiet, so the table's own share is the floor and the measured one stays near it.
       expect(Math.abs(quiet / all - quietShare(table, { tier, ...calm }))).toBeLessThan(0.08);
+    }
+  });
+});
+
+describe('asteroid field kinds', () => {
+  it('has rocky, ice-rich, crystal and rare-ore kinds with a valid table and real ores', () => {
+    for (const id of FIELD_KINDS) expect((galaxy.structures as Record<string, { kind: string }>)[table.entries[id]!.structure]?.kind).toBe('asteroids');
+    expect(nodeContentErrors(table, galaxy, Object.keys(ores))).toEqual([]);
+  });
+
+  it('keeps the asteroid share at 0.30 and lets rare ore add to it from tier 3 (its weight comes out of quiet)', () => {
+    for (let t = 0; t <= DANGER_MAX; t++) {
+      const s = shares(table, t);
+      const sum = FIELD_KINDS.reduce((n, k) => n + (s[k] ?? 0), 0);
+      expect(sum).toBeCloseTo(0.3 + (t >= 3 ? 0.006 * t : 0), 2);
+      expect(tableTotal(t)).toBeGreaterThan(0.98);
+      expect(tableTotal(t)).toBeLessThanOrEqual(1 + 1e-9);
+    }
+  });
+
+  it('gates rare-ore veins to deeper tiers and leaves rocky the common default', () => {
+    for (let t = 0; t <= DANGER_MAX; t++) {
+      const s = shares(table, t);
+      if (t < 3) expect(s['asteroids_rare']).toBeUndefined();
+      else expect(s['asteroids_rare']).toBeGreaterThan(0);
+      expect(s['asteroids']!).toBeGreaterThan(s['asteroids_ice']!);
+      expect(s['asteroids_ice']!).toBeGreaterThan(s['asteroids_crystal']!);
+    }
+  });
+
+  it("each kind's mix leads with its own ore, and the ice, crystal and rare ores are existing items", () => {
+    const lead = (id: string) => Object.entries(table.entries[id]!.ores!).sort((a, b) => b[1] - a[1])[0]![0];
+    expect(lead('asteroids')).toBe('ore.iron');
+    expect(table.entries['asteroids']!.ores!['ore.crystal']).toBe(1); // small crystal patches in rocky fields
+    expect(table.entries['asteroids_crystal']!.ores!['ore.crystal']!).toBeGreaterThan(table.entries['asteroids']!.ores!['ore.crystal']! * 5);
+    expect(lead('asteroids_ice')).toBe('ore.ice');
+    expect(lead('asteroids_crystal')).toBe('ore.crystal');
+    expect(lead('asteroids_rare')).toBe('ore.rare');
+    expect(ores['ore.rare'].item).toBe('item.rare_ore');
+  });
+});
+
+describe('field yield mix', () => {
+  it('oreMixFor returns the entry mix, and nothing for a structure without one', () => {
+    const mix = oreMixFor(table, ores, 'structure.asteroids_crystal')!;
+    expect(mix.map((o) => o.item).sort()).toEqual(['item.energy_crystal', 'item.ice', 'item.iron_ore']);
+    expect(mix.find((o) => o.item === 'item.energy_crystal')!.weight).toBe(7);
+    expect(oreMixFor(table, ores, 'structure.derelict')).toBeUndefined();
+    expect(fieldItems(table, ores, 'structure.asteroids_ice')).toEqual(['item.ice', 'item.iron_ore']);
+    expect(fieldItems(table, ores, 'structure.derelict')).toEqual([]);
+    expect(oreMixFor(table, ores, undefined)).toBeUndefined();
+  });
+
+  it('generated fields only carry the ores of their kind, and lead with the kind ore', () => {
+    for (const [structure, lead] of [['structure.asteroids_ice', 'ore.ice'], ['structure.asteroids_crystal', 'ore.crystal'], ['structure.asteroids_rare', 'ore.rare']] as const) {
+      const mix = oreMixFor(table, ores, structure)!;
+      const allowed = new Set(mix.map((o) => o.code));
+      const count = new Map<number, number>();
+      for (let seed = 1; seed <= 60; seed++) {
+        for (const c of generateAsteroid('field', seed, mix).ore) if (c) count.set(c, (count.get(c) ?? 0) + 1);
+      }
+      expect([...count.keys()].every((c) => allowed.has(c))).toBe(true);
+      const top = [...count.entries()].sort((a, b) => b[1] - a[1])[0]![0];
+      expect(top).toBe(ores[lead].code);
     }
   });
 });
