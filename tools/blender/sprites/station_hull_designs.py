@@ -8,8 +8,8 @@ the ref's; the other face is its mirror, as hull 46's art is.
   1  dents and a long gouge (ref T3-7)
   2  the dents alone (ref T3-6)
   3  a module in the middle slot (ref T3-3): two boxes a px off the face, the top one from a px over the top down to the
-     line under the bullnose (a vent in its front), the lower one from under that line down to the groove (a framed
-     plate on it); a dark recess from the groove down to the step; a box and two short rails in the far slot"""
+     line under the bullnose (a vent in its front), the lower one from under that line down to the groove (a seam
+     across it, a rounded seam outline under that); a dark recess from the groove down to the step; a box and two short rails in the far slot"""
 import math
 
 from . import core
@@ -28,18 +28,18 @@ DENT_LIP, DENT_RING, DENT_PIT = "stL", "stM", "stD"
 
 MODULE = 3
 DESIGNS = {1: DENTS + (GOUGE,), 2: DENTS, MODULE: ()}
-NO_TABS = {MODULE}                  # designs without the groove's tabs (the recess takes the middle slot's foot) and the
-                                    # plate on the line under the bullnose (the boxes take the middle slot)
+NO_TABS = {MODULE}                  # designs without the groove's tabs (the recess takes the middle slot's foot), the
+                                    # plate on the line under the bullnose and that line's lit px (the boxes take the
+                                    # middle slot)
 
 BOX_OUT, BOX_UP, BOX_GAP = 1, 1, 2   # the middle slot's boxes: px off the face, the top one's top px over the top's, the
                                     # gap between them (the line under the bullnose)
 BOX_SIDE = SH.SEAM                  # their ends (the seams')
-BOX_CHAMFER = 3                     # the top box's top front edge chamfered this many px, in the bullnose's top band's tone
-VENTS = (4, 7, 10)                  # its vent's slots, px under the top
+BOX_CHAMFER = 2                     # the top box's top front edge chamfered this many px, in the bullnose's top band's tone
+VENTS = (7, 10)                     # its vent's slots, px under the top
 VENT_W = 5
-PLATE = (11, 21, 18, 30)            # the framed plate: px across, px under the bullnose's foot
-PLATE_IN = 2                        # its inner frame line, px in
-HANDLE = (14, 2, 7)                 # a slot in it: px across, px from its top and foot
+LOW_LINE = 4                        # the lower box: a seam across it this many px under its top
+LOW_FRAME = 2                       # under that, a seam outline (its corners rounded off) this many px in from each edge
 RECESS = (11, 21, 0)                # the recess: px across, its top px over the groove (down to the step)
 RECESS_BACK, RECESS_RIM, RECESS_SIDE, RECESS_SILL = "stD", "stK", "stE", "stB"   # its back wall; the shadow under its
                                     # lip and down its far side; its near side; the sill in its foot
@@ -72,13 +72,6 @@ def _rect(f, u0, u1, z0, z1, d, col):
     f.k.poly(pts, F, 3, T.OUT(f.ax), fixed=T.SEAM_PASS or col)
 
 
-def _frame(f, u0, u1, z0, z1, d, col, px):
-    """A painted 1 px outline."""
-    zx = px / core.ZPX
-    for a in ((u0, u1, z0, z0 + zx), (u0, u1, z1 - zx, z1), (u0, u0 + LINE, z0, z1), (u1 - LINE, u1, z0, z1)):
-        _rect(f, *a, d, col)
-
-
 def gap(s):
     """The gap between the module's boxes (z0, z1): the seams up the face break across it."""
     zl = s.z_at(s.z_at(s.zb, SH.UNDER), -1)
@@ -107,19 +100,18 @@ def _module(f, s0, zk):
         _rect(f, m - VENT_W / 2 * LINE, m + VENT_W / 2 * LINE, zv - px, zv, out + 0.001, SH.GROOVE_D)
     # the lower box: from BOX_GAP px under the line's top (the line its gap) and a px more, down to a px over the
     # groove's line
-    z1, z0 = gap(s)[0] + lift, s.z_at(SH.GROOVE, -2) + lift
-    f.part(a, b, [(D - 0.01, z0), (D - 0.01, z1), (out, z1), (out, z0)], [None, SH.FACE, SH.FACE, None], BOX_SIDE,
+    z1, z0 = gap(s)[0] + lift, s.z_at(SH.GROOVE, -3) + lift
+    f.part(a, b, [(D - 0.01, z0), (D - 0.01, z1), (out, z1), (out, z0)], [None, SH.SEAM, SH.FACE, None], BOX_SIDE,
            end=False)
-    # the framed plate on it
-    p0, p1, n0, n1 = PLATE
-    u0, u1 = _span(s0, p0, p1)
-    SH._part(f, u0, u1, under(n1), under(n0), (BOX_OUT + 1) * LINE, SH.FACE, "stH", SH.SEAM)
-    fd = out + LINE + 0.001
-    i = PLATE_IN * LINE
-    _frame(f, u0 + i, u1 - i, under(n1 - PLATE_IN), under(n0 + PLATE_IN), fd, SH.SEAM, 1)
-    hp, ht, hf = HANDLE
-    hu = _u(s0, hp)
-    _rect(f, hu - LINE, hu, under(n1 - hf), under(n0 + ht), fd, SH.GROOVE_D)
+    fd = out + 0.001
+    zs = z1 - LOW_LINE * px                                 # a seam across it
+    _rect(f, a, b, zs - px, zs, fd, SH.SEAM)
+    i = LOW_FRAME                                           # an outline under it, its corner px left out
+    u0, u1, za, zb = a + i * LINE, b - i * LINE, z0 + i * px, zs - px - i * px
+    _rect(f, u0 + LINE, u1 - LINE, zb - px, zb, fd, SH.SEAM)
+    _rect(f, u0 + LINE, u1 - LINE, za, za + px, fd, SH.SEAM)
+    _rect(f, u0, u0 + LINE, za + px, zb - px, fd, SH.SEAM)
+    _rect(f, u1 - LINE, u1, za + px, zb - px, fd, SH.SEAM)
     # the recess, from the groove down to the step
     p0, p1, up = RECESS
     u0, u1 = _span(s0, p0, p1)

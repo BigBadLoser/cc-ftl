@@ -212,7 +212,8 @@ def build(k, ax, plane, a, b, ends, H):
                     _part(f, g - TAB_W / 2 * LINE, g + TAB_W / 2 * LINE, g0, g1, LINE, TAB, TAB_TOP, TAB_SIDE)
             v0, v1 = (f.at_face(s0 + fr, zk) for fr in SEAMS)
             f.line(v0 + LINE / 2, v1 - LINE / 2, zt, s.z_at(zt, -1), GROOVE_D, bevel=False)
-            f.line(v0 + LINE / 2, v1 - LINE / 2, s.z_at(zt, 1), zt, UNDER_L, bevel=False)
+            if DESIGN[0] not in SD.NO_TABS:
+                f.line(v0 + LINE / 2, v1 - LINE / 2, s.z_at(zt, 1), zt, UNDER_L, bevel=False)
             m, hw = (v0 + v1) / 2, (TAB_W / 2 + 1) * LINE           # a plate on it, in the middle, a px wider
             if DESIGN[0] not in SD.NO_TABS:
                 _part(f, m - hw, m + hw, *PLATE_Z(s, zt), LINE, TAB, TAB_TOP, TAB_SIDE)
