@@ -13,7 +13,7 @@ from . import hull_engine as HE
 from . import wall3d as T
 from . import wall3d_ext as X
 
-AXIS, RS = 0.78, 0.95                  # the port: the tube's axis height and radius (its walkway flush with the
+AXIS, RS = 0.78, 0.88                  # the port: the tube's axis height and radius (its walkway flush with the
                                        # rooms' floor, z 0: tube_study)
 W = 1.0                                # the block's half width along the run (the port and a rim; the full-height
                                        # hull run behind it is the door tile and half of either neighbour, 1.0)

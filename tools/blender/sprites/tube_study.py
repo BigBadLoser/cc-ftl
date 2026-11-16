@@ -9,7 +9,8 @@ through), so one sprite serves the roofed and the cut view.
     canopy    a solid lower hull with an amber stripe, a glass dome over it, arched ribs
     lattice   an octagonal glass tube, metal bars along its corners, ribs, a metal belly
 
-The deck inside is in the sprite for the study only (in the game the floor tiles and the crew go under the glass). One
+The tube draws its own floor (the walkway, narrower than a tile: the tube's tiles take no floor tile); the crew go over
+it, under the glass. One
 sprite draws the whole tube (no seams between tile sprites), anchored at the centre of its east tile: it runs along grid
 +x between the collars of the two hull ports, centred on v = 0. Palette set tube."""
 import math
@@ -21,8 +22,9 @@ from .cable_study import _frame
 
 PAL = "tube"
 L0, L1 = -3 + 0.71875 + 0.07, 1 - 0.71875 - 0.07   # the run along u: between the two hull ports' collars (tube_port)
-ZC, R = 0.78, 0.95                       # shell centre height and radius: the hull port's axis and port radius; the
-                                         # walkway (the chord at z 0) flush with the rooms' floor, 1.08 wide, 1.73 high
+ZC, R = 0.78, 0.88                       # shell centre height and radius: the hull port's axis and port radius; the
+                                         # walkway (the chord at z 0) flush with the rooms' floor: the door's opening
+                                         # wide (0.81) and high (1.66)
 OCT = 0.76                               # the lattice's apothem
 ZB = 0.35                                # top of the metal belly (below it the shell is opaque): a kick panel
 DECK = 0.0                               # the walkway: the rooms' floor (the shell under the ground is cut off)
@@ -71,8 +73,10 @@ def _belly_angle(zb):
 
 
 def _deck(f):
-    """The walkway inside (study only): a deck plate, lamps along its edges."""
-    f.box((L0 + L1) / 2, 0, DECK - 0.12, L1 - L0, 1.04, 0.12, "tbDeckD", top="tbDeck")
+    """The walkway: a deck plate across the shell's chord at the floor (the part under the ground cut off), lamps along
+    its edges."""
+    w = 2 * math.sqrt(R * R - (ZC - DECK) ** 2)
+    f.box((L0 + L1) / 2, 0, DECK - 0.12, L1 - L0, w, 0.12, "tbDeckD", top="tbDeck")
     for c in (-1, 1):
         for k in range(5):
             f.box(L0 + 0.3 + 0.55 * k, c * 0.33, DECK, 0.08, 0.05, 0.02, "tbDeckD", top="tbLamp")
