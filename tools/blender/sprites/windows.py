@@ -167,6 +167,6 @@ def hull_piece(m, o, part):
 
 def jobs():
     """Callable jobs (env_build.render_jobs)."""
-    from . import windows_iwin as IW
+    from . import windows_iwin as IW, windows_iwin_cut as IC
     out = [lambda m=m, o=o, p=p: hull_piece(m, o, p) for m, o in ((10, 1), (5, 2)) for p in ("w1", "w2", "w3")]
-    return out + IW.jobs()
+    return out + IW.jobs() + IC.jobs()      # (the hull's, the interior window full, then cut down: windows_iwin_cut)
