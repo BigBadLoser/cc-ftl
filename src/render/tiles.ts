@@ -127,7 +127,7 @@ export const HullSide = { None: 0, Far: 1, Near: 2 } as const;
  * and thick hull keep their outline.
  */
 export function hullSide(kindAt: KindAt, x: number, y: number): number {
-  if (isNear(kindAt, x, y)) return HullSide.Near;
+  if (isNear(kindAt, x, y)) return farLedge(kindAt, x, y) ? HullSide.Far : HullSide.Near;
   if (kindAt(x, y) === Struct.RockWall || !touchesSpace(kindAt, x, y)) return HullSide.None;
   const m = wallMask(kindAt, x, y);
   const alongX = (m & 10) !== 0 || (m & 5) === 0;
@@ -148,6 +148,38 @@ export function hullSide(kindAt: KindAt, x: number, y: number): number {
   if (!behind && !sp(-1, -1) && !outward(kindAt, x, y) && ((stepY && nearWall(x + 1, y)) || (stepX && nearWall(x, y + 1)))) return HullSide.Near;
   if (behind || (sp(-1, -1) && (backY || backX)) || stepY || stepX) return HullSide.Far;
   return HullSide.None;
+}
+
+/** The longest step ledge in a far side (tiles) that stands with it instead of collapsing (`farLedge`). */
+const LEDGE_MAX = 3;
+
+/**
+ * Whether the near hull tile at (x, y) is on a short ledge where a far side steps out toward the camera: a run facing
+ * +y (a run facing +x, transposed) of at most LEDGE_MAX tiles whose +x end (+y end) turns into the far hull running on
+ * toward the camera for two tiles or more, and whose other end is the far side's outer corner (space beyond it). The far wall beyond hides the ledge, so it stands full height with the far side (one L) instead of
+ * collapsing into a stub of belly behind that wall.
+ */
+function farLedge(kindAt: KindAt, x: number, y: number): boolean {
+  const sp = (i: number, j: number) => kindAt(i, j) === Struct.Space;
+  const solid = (i: number, j: number) => kindAt(i, j) !== Struct.Space && kindAt(i, j) !== Struct.Floor;
+  // dx, dy: along the ledge toward the far wall; fx, fy: the ledge's front (toward space).
+  for (const [dx, dy, fx, fy] of [[1, 0, 0, 1], [0, 1, 1, 0]] as const) {
+    if (!sp(x + fx, y + fy) || sp(x + dx, y + dy)) continue;
+    let back = 0;
+    while (back <= LEDGE_MAX && solid(x - dx * (back + 1), y - dy * (back + 1)) && sp(x - dx * (back + 1) + fx, y - dy * (back + 1) + fy)) back++;
+    let k = 1;
+    while (k <= LEDGE_MAX && solid(x + dx * k, y + dy * k) && sp(x + dx * k + fx, y + dy * k + fy)) k++;
+    if (back + k > LEDGE_MAX) continue;
+    // Its other end is the far side's outer corner: space behind the ledge's first tile along it (-x of a run facing +y).
+    if (!sp(x - dx * (back + 1), y - dy * (back + 1))) continue;
+    // The corner at (x, y) + k: the far hull runs on toward the camera from it for two tiles at least (a wall that hides
+    // the ledge; a 45 degree staircase's next step is one tile, and its steps collapse).
+    const cx = x + dx * k, cy = y + dy * k;
+    let run = 0;
+    while (run < 2 && solid(cx + fx * (run + 1), cy + fy * (run + 1)) && sp(cx + fx * (run + 1) - dx, cy + fy * (run + 1) - dy)) run++;
+    if (solid(cx, cy) && run >= 2) return true;
+  }
+  return false;
 }
 
 /**
