@@ -7,14 +7,15 @@ from . import wall3d as T
 from . import station_hull as SH
 from .wall3d_ext_geom import F, LINE
 
-BAY_FOOT, BAY_LIP = 7, 2            # its floor: px over the groove; the top's edge over it: px tall
+BAY_FOOT, BAY_LIP = 15, 2           # its floor: px over the groove; the top's edge over it: px tall
 BAY_BACK, BAY_FLOOR, BAY_WALL = "stE", "stE", SH.GROOVE_D   # its back, its floor, its ends (in shadow)
 BAY_LIP_FACE = SH.FACE              # the top's edge over it
 
 
-def span(s0):
-    """The bay across a whole span (u0, u1): the middle slot inside its seams."""
-    a, b = (s0 + fr for fr in SH.SEAMS)
+def span(f, s0):
+    """The bay across a whole span (u0, u1): the middle slot inside its seams where they stand on the upright face."""
+    zk = f.sec.band_z(SH.PLUMB_BAND)
+    a, b = (f.at_face(s0 + fr, zk) for fr in SH.SEAMS)
     return a + LINE / 2, b - LINE / 2
 
 
@@ -23,7 +24,7 @@ def blocks(f, s0, s1):
     bay and under it, the top over it, and the bay's inside."""
     s, px = f.sec, 1 / core.ZPX
     H, G = s.H, SH.GROOVE
-    u0, u1 = span(s0)
+    u0, u1 = span(f, s0)
     zf, zl = s.z_at(G, -BAY_FOOT), H - BAY_LIP * px
     f.block(s0, s1, 0.0, G)
     f.block(s0, u0, G, H)
