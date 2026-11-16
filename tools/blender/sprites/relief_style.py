@@ -42,6 +42,10 @@ class Style:
                                           # the ramp; None: its darkest (the joint the plates leave); or {family:
                                           # palette name}
     foot: float = 0.0                     # the ramp ends in an upright face this high (0: it runs down to the floor)
+    shelf: float = 0.0                    # the ramp's top a flat step against the wall this deep (at the slope's
+                                          # height there: the slope as before from its front edge; solid ramps)
+    shelf_lvl: int = 3                    # ... its top in this ramp level
+    shelf_back: tuple = ()                # ... its back px in these ramp levels, out from the wall (the rest: its own)
     ramp_solid: bool = False              # the ramp built as one solid along each face
                                           # (faction.shell.LookShell.ramp) instead of the shell's height grid
     chamfer: Optional[float] = None       # an outer corner's chamfer along each axis (the shell must match); None:

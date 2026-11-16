@@ -39,6 +39,10 @@ def ext_shell(o):
         def skip_skirt(self, i, j):
             return True
 
+        def cover(self, i, j):                          # (a window piece builds the whole tile's section itself: a
+            from . import wall3d_ext_window as WIN      # window cut through the wall, the header over it)
+            return None if WIN.PART else super().cover(i, j)
+
         def skirtz(self, x, y):                         # (its faces run down to the floor)
             return 0.0
 
@@ -55,8 +59,11 @@ def ext_shell(o):
 def ext_face(k, ax, plane, a, b, ends, zs, top, full, variant=0):
     """The default look's outer face (after Space Haven's hull 46, D3): T3, the base (wall3d_ext_t3), or one of the
     other top designs (wall3d_ext_var)."""
+    from . import wall3d_ext_window as WIN
     t = T.VARIANT[0]
-    if t:
+    if WIN.PART:
+        WIN.build(k, ax, plane, a, b, ends, top)
+    elif t:
         VAR.build(k, ax, plane, a, b, ends, top, t)
     else:
         T3.build(k, ax, plane, a, b, ends, top)

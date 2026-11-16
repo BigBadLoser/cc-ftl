@@ -78,6 +78,8 @@
   upgrades  the weapon upgrade parts: ten item.upg_* with .s/.m/.l floor stacks and .held (items_upgrades.py)
   hull      the hull from outside by hull key (run set, generic pieces, their roofs) and its belly in six bay looks,
             each piece with its tint mask (hulltiles.py)
+  windows   windows (#516): the hull's straight runs with a window (tile.hull.ext.o1.m10.w1..w3, o2.m5, with tint masks)
+            and the default walls' interior window (tile.wall.full.m10.win.l/m/r, m5); the pane see-through (windows.py)
   marks     the overhead crew icons: social cues, break symbols in their bubbles, fight marks; 2D, no render (crew_marks.py)
 Crew layers are built separately (`crew`)."""
 
@@ -97,8 +99,10 @@ def jobs(name):
         return props_ + logistics.SPRITES + itemart.SPRITES, False
     if name == "walls":
         from . import envtiles
-        return envtiles.SPRITES, lambda sid: False if sid.startswith("tile.floor") else "walls+hull"   # (palette sets
-        #   "walls" and "hull": the relief walls', hull's, doors' and faction looks' colours, no other family's)
+        return envtiles.SPRITES, lambda sid: (False if sid.startswith("tile.floor") else   # (palette sets
+                                              "walls+hull+walls_aa" if envtiles._WALL.match(sid) else "walls+hull")
+        #   "walls" and "hull": the relief walls', hull's, doors' and faction looks' colours, no other family's;
+        #   "walls_aa": the second look's teal AA group, on the pieces built in it, envtiles._plain)
     if name == "consoles":
         from . import consoles
         return consoles.jobs(), True
@@ -600,6 +604,9 @@ def jobs(name):
     if name == "hull":
         from . import hulltiles
         return hulltiles.jobs(), "hull"                 # (its own palette set: palette_extra "set": "hull")
+    if name == "windows":
+        from . import windows
+        return windows.jobs(), "walls+hull+window"      # (callables: each selects its own, "hull" or this; the key's)
     if name == "deck_finishes":
         from . import deck_finishes
         return deck_finishes.SPRITES, True
@@ -623,7 +630,7 @@ RENDERED = ("env", "walls", "consoles", "weapons", "roof", "robot_bay", "drones"
             "fx", "galley", "derelict", "eggsac", "storage_set", "medbay", "battery", "hydroponics", "workbench",
             "ops_consoles", "cryo", "wallprops", "hazards", "clutter", "decay", "corpse", "damage", "rock", "rockwall",
             "pod_bay", "mining_pod", "escape_pod", "fx_mining", "fx_shield", "starmap", "backdrop", "cargo", "items", "salvage", "storage_ore",
-            "hull", "scrapper", "upgrades", "research_bench", "arcade_cabinet", "gametable_module",
+            "hull", "windows", "scrapper", "upgrades", "research_bench", "arcade_cabinet", "gametable_module",
             "recovery_pod", "bunk_module", "exercise_module", "bench_module", "planter_module", "vending_module", "bar_module",
             "stasis", "stasisload", "decor", "lights", "deck_finishes", "deck_marks", "landmarks", "purifier_module")
 ALL = RENDERED + ("sol", "damage_sol", "marks")

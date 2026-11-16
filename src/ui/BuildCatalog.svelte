@@ -4,7 +4,7 @@
   import type { UiApi, UiMining, UiModuleDef, UiStock, UiToolState } from './api';
   import BuildCard from './BuildCard.svelte';
   import BuildPopover from './BuildPopover.svelte';
-  import { buildEntries, filterEntries, groupMembers, isSelected, visibleCategories, type CategoryId, type Entry } from './buildCatalog';
+  import { buildEntries, costForRun, DEFAULT_WINDOW_SIZE, filterEntries, groupMembers, isSelected, moduleChips, windowChips, windowSizeOf, visibleCategories, type CategoryId, type Entry } from './buildCatalog';
   import { createThumbs } from './buildThumbs';
   import HullPlanBar from './HullPlanBar.svelte';
   import Icon from './Icon.svelte';
@@ -63,12 +63,18 @@
     if (e.kind === 'module') api.setTool({ tool: 'build', build: 'module', moduleDef: e.id });
     else api.setTool({ tool: 'build', build: e.id as UiToolState['build'] });
   };
-  /** The members of a module's group (tiers lowest first). */
-  const variantsOf = (e: Entry): Entry[] => (e.def?.group ? groupMembers(entries, e.def.group) : []);
-  const showVariant = (v: Entry) => {
+  const isWindow = (e: Entry) => e.kind === 'tool' && e.id === 'window';
+  /** The popover's variant chips: a module's group (tiers lowest first), or the Window tool's sizes. */
+  const variantsOf = (e: Entry) => (isWindow(e) ? windowChips(st.windowSize) : e.def?.group ? moduleChips(groupMembers(entries, e.def.group), e.id) : []);
+  const showVariant = (id: string) => {
+    const size = windowSizeOf(id);
+    if (size) { api.setTool({ tool: 'build', build: 'window', windowSize: size }); return; }
+    const v = entries.find((e) => e.id === id && e.kind === 'module');
+    if (!v) return;
     pick(v);
     if (pop) pop = { entry: v, rect: pop.rect };
   };
+  const windowCost = $derived(costForRun(entries.find((e) => e.id === 'window' && e.kind === 'tool')?.cost ?? [], st.windowSize ?? DEFAULT_WINDOW_SIZE));
   const selectedEntry = $derived(entries.find((e) => isSelected(e, st)));
 
   // Popover: opens ~250ms after the pointer settles on a card, a pin keeps it, a long press opens it on touch.
@@ -122,6 +128,7 @@
 {#if st.build === 'hull'}<HullPlanBar {api} />{/if}
 {#if pop}
   <BuildPopover {api} entry={pop.entry} rect={pop.rect} rot={st.rot} thumb={pop.entry.def ? thumbOf(pop.entry.id, st.rot) : undefined} {have} {pinned} variants={variantsOf(pop.entry)} {thumbOf} onvariant={showVariant}
+    cost={isWindow(pop.entry) ? windowCost : undefined} costLabel={isWindow(pop.entry) ? `Build cost · ${st.windowSize ?? DEFAULT_WINDOW_SIZE} tiles` : undefined}
     onpin={() => (pinned = !pinned)} onenter={() => clearTimeout(closeT)} onleave={leave} />
 {/if}
 {#if hint}<div class="hint" class:ok={hint.ok} role="status" data-testid="place-hint" style:left="{hint.x}px" style:top="{hint.y}px">{hint.text}</div>{/if}

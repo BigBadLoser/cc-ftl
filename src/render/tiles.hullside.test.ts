@@ -44,10 +44,12 @@ describe("hull side (far hull stays full in cutaway, near hull is a ghost)", () 
     expect(hullSide(k, 2, 1)).toBe(HullSide.None);
     expect(first(k, 2, 1, "down")).toBe("tile.wall.low.m4");
   });
-  it("a concave step in the far hull keeps its corner far (space only diagonally behind)", () => {
-    // The west hull steps east at row 3: (3, 3) joins the step wall (W) and the lower west hull (S).
+  it("a concave step in the far hull is cut where it stands in front of the room on screen (#521)", () => {
+    // The west hull steps east at row 3: (4, 3) joins the step wall (W) and the lower west hull (S); the room lies
+    // straight behind it on screen. The top edge stays full.
     const k = ship(["      ", " #####", " #___#", " ####_#", "    #_#", "    ###"].map((r) => r.padEnd(7)));
-    expect(hullSide(k, 4, 3)).toBe(HullSide.Far);
+    expect(hullSide(k, 4, 3)).toBe(HullSide.Near);
+    expect(hullSide(k, 2, 1)).toBe(HullSide.Far);
   });
   it("a run with floor in front is not near hull, even with space at its +x+y diagonal", () => {
     // (2, 2): a partition along x, rooms at -y and +y, space only at the SE diagonal (a diagonal breach or notch).
@@ -70,17 +72,32 @@ describe("hull side (far hull stays full in cutaway, near hull is a ghost)", () 
     expect(hullSide(t, 3, 4)).toBe(HullSide.Near);
     expect(hullSide(t, 3, 5)).toBe(HullSide.Near);
   });
-  it("a corner with floor in front stays far even beside a near step (it faces space itself only diagonally)", () => {
-    // (3, 3): floor right in front (+y) and two tiles east, space at its NE and SE diagonals; its east neighbour is near.
+  it("a wall with the ship behind it on screen is cut, floor in front or not (#521)", () => {
+    // (3, 3): floor right in front (+y) and two tiles east, space at its NE and SE diagonals; floor straight behind it.
     const k = ship(["       ", " ######", " #_# _#", " #_##_#", " #__ _#", " ######", "       "]);
-    expect(hullSide(k, 3, 3)).toBe(HullSide.Far);
-    expect(replacesFloor(k, 3, 3)).toBe(false);
+    expect(hullSide(k, 3, 3)).toBe(HullSide.Near);
   });
-  it("a step three tiles deep keeps its back wall and corner far", () => {
+  it("a step in the top edge is cut where it stands in front of the ship's higher part; the top edge stays (#521)", () => {
     const k = ship(["         ", " ####    ", " #__#    ", " #__#### ", " #_____# ", " #_____# ", " #_____# ", " ####### "]);
-    expect(hullSide(k, 4, 3)).toBe(HullSide.Far);
-    expect(hullSide(k, 5, 3)).toBe(HullSide.Far);
+    for (const x of [4, 5, 6, 7]) expect(hullSide(k, x, 3)).toBe(HullSide.Near);
     expect(hullSide(k, 7, 4)).toBe(HullSide.Near);
+    expect(hullSide(k, 2, 1)).toBe(HullSide.Far);
+    expect(hullSide(k, 1, 5)).toBe(HullSide.Far);
+  });
+  it("what is left of the top edge in bits under three tiles is cut: no lone pillars (#521)", () => {
+    // The lower part's north wall: (4, 5) and (5, 5) have the tower behind them on screen; (6, 5) and (7, 5) have
+    // nothing behind them, but two tiles alone would stand as a pillar.
+    const k = ship(["          ", "          ", "          ", " ###      ", " #_#      ", " #_###### ", " #______# ", " ######## "]);
+    for (const x of [4, 5, 6, 7]) expect(hullSide(k, x, 5)).toBe(HullSide.Near);
+    expect(hullSide(k, 2, 3)).toBe(HullSide.Far);
+    expect(hullSide(k, 1, 6)).toBe(HullSide.Far);
+  });
+  it("a notch's inner corner between cut hull is cut with it, not left as a partition stub (#521)", () => {
+    // The notch x 4..5 below the upper part: (6, 4) joins the upper part's front wall (W, near) and the right arm's
+    // west wall (S, cut: the upper part is behind it on screen), with a room at its N and E.
+    const k = ship(["          ", " ######## ", " #______# ", " #______# ", " #_####_# ", " #_#  #_# ", " #_#  #_# ", " ###  ### "]);
+    expect(hullSide(k, 6, 5)).toBe(HullSide.Near);
+    expect(hullSide(k, 6, 4)).toBe(HullSide.Near);
   });
   it("thick hull keeps its outer ring as hull and its inside as wall", () => {
     const k = ship(["      ", " #### ", " #### ", " #__# ", " #### ", "      "]);
