@@ -187,5 +187,16 @@ def _port_job(o):
     return run
 
 
+def _hatch_job(axis, is_open):
+    def run(axis=axis, is_open=is_open):
+        from . import env_build as E, post, tube_hatch
+        aid = f"tube.hatch.{axis}{'.open' if is_open else ''}"
+        core.clear_scene_meshes()
+        post.select("walls+hull+tube")
+        it = E.crop_item(aid, (1, 1), *E.render_sprite(aid, "block", tube_hatch.hatch(axis, is_open))[:5])
+        return [it] if it else []
+    return run
+
+
 def jobs():
-    return [_job(look) for look in STUDY] + [_port_job(2)]
+    return [_job(look) for look in STUDY] + [_port_job(2)] + [_hatch_job(a, o) for a in ("x", "y") for o in (False, True)]
