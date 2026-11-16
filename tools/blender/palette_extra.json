@@ -41,6 +41,10 @@
   "hex": "#80bcae", "aa": "teal", "set": "window",
   "aa_join": ["wH", "wL", "wS", "wM", "wD", "wXL", "wXS", "wXM", "wXD"]
  },
+ "wallsTealAA": {
+  "set": "walls_aa", "aa": "teal",
+  "aa_join": ["wH", "wL", "wS", "wM", "wD", "wXL", "wXS", "wXM", "wXD"]
+ },
  "winBlue": {
   "hex": "#4994f8", "set": "window_src"
  },

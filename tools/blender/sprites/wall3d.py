@@ -105,6 +105,30 @@ class Relief:
                     out.append((list(range(base, base + len(kept))),) + tuple(f[1:]))
             m.f = out
 
+    def clip_above(self, z, start=(0, 0)):
+        """Cut the polygons from start (an index into each mesh's) off at height z: what lies under it stays."""
+        for m, s0 in zip((self.m, self.ns), start):
+            if m is None:
+                continue
+            out = m.f[:s0]
+            for f in m.f[s0:]:
+                pts = [m.v[i] for i in f[0]]
+                if max(p[2] for p in pts) <= z + 1e-6:
+                    out.append(f)
+                    continue
+                kept = []
+                for p, q in zip(pts, pts[1:] + pts[:1]):                    # (Sutherland-Hodgman, one plane)
+                    if p[2] <= z:
+                        kept.append(p)
+                    if (p[2] <= z) != (q[2] <= z):
+                        t = (z - p[2]) / (q[2] - p[2])
+                        kept.append(tuple(a + (b - a) * t for a, b in zip(p, q)))
+                if len(kept) >= 3 and min(p[2] for p in kept) < z - 1e-6:
+                    base = len(m.v)
+                    m.v += [tuple(p) for p in kept]
+                    out.append((list(range(base, base + len(kept))),) + tuple(f[1:]))
+            m.f = out
+
     def build(self):
         """Its objects: the mesh, and the one casting no shadow if any (flagged "noshadow")."""
         obs = [self.m.build()]
@@ -352,7 +376,7 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
     """The face's posts and fields carried down the slope: a narrow plate under each post, a wide one under each field
     with a panel (a raised frame, a lighter plate sunk in it and a dark slot under it), on the shell's dark joints,
     mitred round corners."""
-    if V2 and fam == "wall":                            # (the second look: wall3d_v2)
+    if V2 and fam == "wall" and style().plain:          # (the second look: wall3d_v2)
         from . import wall3d_v2
         return wall3d_v2.skirt(k, sp, ax, plane, a, b, fam, ends)
     run_, zs = sp.run, sp.zs
@@ -666,6 +690,15 @@ def block(mask, fam, deco=None, name=None, level="cut", corners=0, shell=None, d
         if not getattr(sp, "no_skirt", False):
             skirt(k, sp, ax, plane, a, b, "blue" if hull else "wall", ends)
         if top <= sp.zs + 0.05:
+            if style().shelf and not hull:              # a stub over a shelf: the face's art from the shelf up to
+                from .faction.shell import _ends        # the cut (its lip and seams), cut off there, over a backing
+                from .wall3d_v2 import lip_heights      # (a wall's end face: the backing only)
+                k.top = top
+                paint(k, ax, plane, a, b, lip_heights(sp.zs)[0] - 0.01, top, -PAINT, "wall", 2)
+                if not _ends(ax, plane, b, ends)[0]:
+                    n0 = (len(k.m.f), len(k.ns.f) if k.ns is not None else 0)
+                    (style().wall or wall_face)(k, ax, plane, a, b, ends, sp.zs, top, False)
+                    k.clip_above(top, n0)
             continue
         full = top > W.skirt_top() + W.CUT + 0.05            # the hull stays full in the cutaway
         k.top = None if full else top

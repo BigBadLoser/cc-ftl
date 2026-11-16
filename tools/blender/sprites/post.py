@@ -22,7 +22,7 @@ def build_palette():
     """Palette colours expanded into shade ramps (cooler shadows, warmer highlights). Neon: lit + dim."""
     cols = []
     for name, v in PAL.items():
-        if name == "empty":
+        if name == "empty" or "hex" not in v:     # (a group carrier: _aa_groups)
             continue
         c = _rgb(name)
         if "emissive" in v:
@@ -50,7 +50,7 @@ def _flat():
     picks one, so adding one moves no other pixel (a name for a tone anti-aliasing gives elsewhere, painted crisp)."""
     i, out = 0, []
     for name, v in PAL.items():
-        if name == "empty":
+        if name == "empty" or "hex" not in v:     # (a group carrier: _aa_groups)
             continue
         if v.get("flat"):
             out.append(i)
@@ -104,7 +104,7 @@ def _band_map():
     m = np.arange(len(PALETTE))
     i = 0
     for name, v in PAL.items():
-        if name == "empty":
+        if name == "empty" or "hex" not in v:     # (a group carrier: _aa_groups)
             continue
         if "emissive" in v:
             i += 4
@@ -174,7 +174,8 @@ def _block_modes(idx, n):
 # An extra may join an opt-in group ("aa": a name in palette_extra.json, _aa_groups): a pixel whose samples are all the
 # group's tones or cool greys, one at least the group's, takes the nearest of those (a look's accent blended on its
 # edges too); a palette with no such entry anti-aliases as before. A set's entry may bring other entries into its
-# group while that set is selected ("aa_join": their names), so the group stays out of every other family's palette
+# group while that set is selected ("aa_join": their names), so the group stays out of every other family's palette;
+# an entry with no "hex" is only that (a group carrier: no colour of its own)
 
 
 def _aa_set():
@@ -192,7 +193,7 @@ def _aa_groups():
     name (a flat "aa": true stays out)."""
     i, out, at = 0, {}, {}
     for name, v in PAL.items():
-        if name == "empty":
+        if name == "empty" or "hex" not in v:     # (a group carrier: _aa_groups)
             continue
         n = 4 if "emissive" in v else 1 if v.get("flat") else len(SHADES)
         at[name] = (i, n)

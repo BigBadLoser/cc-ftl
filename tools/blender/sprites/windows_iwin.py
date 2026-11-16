@@ -44,7 +44,12 @@ def _side_shade(n, top_side):
 
 def _swap(k):
     """Recolour Relief k's faces for the move onto m5 (_grid_map): each face whose ramp side changes (wall3d.tone)
-    takes the matching level of the other side's ramp."""
+    takes the matching level of the other side's ramp. A face in the window floor's tone (wall3d_iwin_def.SILL_TOP)
+    goes as the floor does, whichever way it faces: the ramp's end strip under the floor's edge at a join
+    (wall3d_iwin_ramp._end_strip) faces along the run but stands in for the floor (in the lit ramp's tone it drew a
+    light line across the floor at every join, the next piece's edge px blending with it)."""
+    from . import wall3d_iwin_def as D
+    floor = _key(core.lin(D.SILL_TOP))
     lin = {}
     for fam, (ys, xs) in T.RAMPS.items():
         sh = 0 if fam == "wall" else T.SHADE            # (the default walls' shade ramp level for level; the other
@@ -67,6 +72,8 @@ def _swap(k):
             n = tuple(c / ln for c in n)
             before = _side_shade(n, "y")
             after = _side_shade(_grid_map(n), "x")
+            if abs(n[2]) < 0.3 and any(_key(c) == floor for c in f[1:]):
+                before, after = False, True             # (as the floor: lit on m10, shade on m5)
             if before == after:
                 out.append(f)
                 continue

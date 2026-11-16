@@ -2,9 +2,9 @@
 set back) under the cap and its lip at the face's foot in place of the header and low band, plain posts, a solid ramp
 with a flat shelf against the wall, one plate a tile on it with the panel drawn as a seam line round its plate and
 slot. It is what the interior windows were designed on (#516: wall3d_iwin_def, wall3d_iwin_ramp), so their pieces
-build in it: wall3d.V2 set while one builds (windows_iwin) sends wall_face and skirt here and STYLE is plain_relief()
-below. The shipped plain walls keep the first look until the user ships this one (then V2 on for the walls family;
-the cut levels' stub over a shelf and the ramp designs on it are not ported here yet).
+build in it: wall3d.V2 set while one builds sends wall_face here (and skirt, with STYLE this look's plain_relief() below): the
+walls family's default pieces (envtiles._plain) and the window pieces (windows_iwin). The faction looks keep their
+own faces and ramps.
 
 The rail's and lip's measures are slate's (faction.slate on art/hull-windows)."""
 from mathutils import Vector
@@ -156,6 +156,10 @@ def wall_face(k, ax, plane, a, b, ends, zs, top, full):
         q0, q1 = q0 - 2 * PZ, q1 - 2 * PZ                # (... the panel's top and foot 2 px down, the slot with it)
         T.paint(k, ax, plane, p0, p1, q0, q1, PAINT, F, 1)                                        # panel outline
         T.paint(k, ax, plane, _u(n0 + 1, 2 * PAINT), _u(n1 - 1, 2 * PAINT), q0 + 0.026, q1 - 0.026, 2 * PAINT, F, 2)
+        if T.VARIANT[0]:                                 # (a straight run's top design in the panel)
+            from . import wall3d_variants as V
+            V.wall_top(k, ax, plane, p0 + LINE, p1 - LINE, q0 + 0.026, q1 - 0.026, F, T.VARIANT[0])
+            continue
         bw, nc = 0.42 * w, n0 + n1                       # (centred on the panel: twice its centre, in px)
         ns = _odd(bw / LINE + 2, nc % 2)                 # the slot's width in px (a px round the bars)
         nl = _odd(0.5 * w / LINE, nc % 2)                # the fine lines'
@@ -260,6 +264,11 @@ def panel(k, pt, nrm, clip, u0, u1, a, b, off, g, d0, run_, ft, fam, rise):
         T.plate(k, rect(q), pt, nrm, 0.0, rise + PAINT, fam, 1, base=rise)
     iu0, iu1 = u0 + im + LINE, u1 - im - LINE       # the light plate (a px in at its top and sides, a px down)
     id0, id1 = 0.3 * run_ + dn + 2 * pd, 0.52 * run_ + dn + pd
+    if T.VARIANT[1]:                                # (a straight run's ramp design: its own drawing in the frame)
+        from . import wall3d_variants as V
+        V.ramp_plain(lambda q, lvl, n: T.plate(k, q, pt, nrm, 0.0, rise + n * PAINT, fam, lvl, base=rise),
+                     fu0 + LINE, fu1 - LINE, fd0 + 0.03, iu0, iu1, id1, sb, pd, T.VARIANT[1])
+        return
     T.plate(k, rect((iu0, iu1, id0, id1)), pt, nrm, 0.0, rise + 2 * PAINT, fam, 4, base=rise)
     su0, su1 = u0 + im + 0.02, u1 - im - 0.02      # the dark slot (a px down, clear of the bottom seam)
     sd0, sd1 = 0.66 * run_ + dn + pd, min(0.74 * run_ + dn + pd, sb - 1e-3)
