@@ -239,8 +239,8 @@ export function prefab(c: Ctx, rooms: readonly RoomSpec[], docks: readonly RoomS
     let x = (west ? hi - 1 : lo) + dir * at - dir * pitch;
     for (const gr of groups) {
       x += dir * pitch;
-      // Not on a partition between two rooms.
-      while (x >= lo && x < hi && !m.spans.some(([s0, s1]) => x >= s0 && x < s1)) x += dir;
+      // A tube's door needs a tile of plain wall on each side: never on or beside a partition or the module's end.
+      while (x >= lo && x < hi && !m.spans.some(([s0, s1]) => x > s0 && x < s1 - 1)) x += dir;
       if (x < lo || x >= hi || !below(m, x, segsOf(gr))) return false;
     }
     return true;
@@ -261,7 +261,9 @@ export function prefab(c: Ctx, rooms: readonly RoomSpec[], docks: readonly RoomS
   else if (plan === 'mineWing') {
     wing((y, west) => {
       // Workshop, refinery, the suit room, a lobby and an airlock out of its end; the ore stores hang below.
-      const need = 4 + (RIB + (RIB % 2)) * (oreRooms.length - 1) + 7, segs = [...padded([...segsOf(shop), ...segsOf(refineries).map((x) => ({ ...x, len: Math.max(x.len, HUB) })), ...segsOf(suits)], 6, need), lobby()];
+      // The refinery long enough that its ore tubes stand three tiles in from each end (the tube's wall margin and more).
+      const long = (RIB + (RIB % 2)) * Math.max(0, oreRooms.length - 1) + 7;
+      const need = 4 + (RIB + (RIB % 2)) * (oreRooms.length - 1) + 7, segs = [...padded([...segsOf(shop), ...segsOf(refineries).map((x) => ({ ...x, len: Math.max(x.len, HUB, long) })), ...segsOf(suits)], 6, need), lobby()];
       const m = side(hubOf(), y, west, segs);
       if (!m) return false;
       lock(m, !west);
