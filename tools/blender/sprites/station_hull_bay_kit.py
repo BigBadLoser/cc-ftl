@@ -51,8 +51,11 @@ def _shadow(f, m, w, out, zb, n, px):
            for i in range(n + 1)]
     for pts, col in (([(u, max(z, GROOVE)) for u, z in low] + [(a, zb), (b, zb)], UNDER_SHADOW[1]),
                      ([(u, min(z, GROOVE)) for u, z in low] + [(a, GROOVE), (b, GROOVE)], UNDER_SHADOW[2])):
+        k = len(pts)                                        # (no runs of points along a level: they make slivers)
+        pts = [q for i, q in enumerate(pts) if not abs(pts[i - 1][1] - q[1]) < 1e-9 > abs(pts[(i + 1) % k][1] - q[1])]
         f.k.poly([T.P(f.ax, f.plane, u, z, D + 0.003) for u, z in pts], F, 3, T.OUT(f.ax),
                  fixed=T.SEAM_PASS or col)
+
 
 def _half(f, m, z0, z1, ru, rd, seam, n=16):
     """A half-round band over [z0, z1] flat against the face at m, ru px across either way, rd px out; its facets toned
