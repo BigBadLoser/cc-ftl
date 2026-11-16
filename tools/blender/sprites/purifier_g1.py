@@ -12,7 +12,7 @@ Local frame modkit.K, footprint (2, 1): u -1..1 across, v -0.5..0.5 deep, front 
 
 import math
 
-from .desk2_r2 import prism
+from .purifier_kit import prism
 from .purifier_r10 import porthole, rod
 from .purifier_r5 import heap
 from .research_kit import Bench, zpx

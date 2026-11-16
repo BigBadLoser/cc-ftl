@@ -15,8 +15,8 @@ outlet tap low at the right. One colour line wraps each body.
 Local frame modkit.K, footprint (2, 1): u -1..1 across, v -0.5..0.5 deep, front +v, z up; all sizes in tiles."""
 import math
 
-from .desk2_r2 import prism
-from .desk2_r4 import extrude, quarter
+from .purifier_kit import prism
+from .purifier_kit import extrude, quarter
 from .purifier_study import cartridge, ice, span, valve
 from .research_kit import PXG, Bench, zpx
 

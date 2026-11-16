@@ -371,54 +371,6 @@ def jobs(name):
     if name == "purifier":  # look study, preview only (not in RENDERED): water purifier round 1 (#321)
         from . import purifier_study
         return purifier_study.jobs(), purifier_study.PAL
-    if name == "desk2m":  # look study, preview only (not in RENDERED): reception desk round 13, holograms (#485)
-        from . import desk2_r13
-        return desk2_r13.jobs(), desk2_r13.PAL
-    if name == "desk2l":  # look study, preview only (not in RENDERED): reception desk round 12, holograms (#485)
-        from . import desk2_r12
-        return desk2_r12.jobs(), desk2_r12.PAL
-    if name == "desk2k":  # look study, preview only (not in RENDERED): reception desks round 11, clean bands (#485)
-        from . import desk2_r11
-        return desk2_r11.jobs(), desk2_r11.PAL
-    if name == "desk2j":  # look study, preview only (not in RENDERED): reception desks round 10, takes on L1 (#485)
-        from . import desk2_r10
-        return desk2_r10.jobs(), desk2_r10.PAL
-    if name == "desk2i":  # look study, preview only (not in RENDERED): 2x1 reception desks round 9 (#485)
-        from . import desk2_r9
-        return desk2_r9.jobs(), desk2_r9.PAL
-    if name == "desk2h":  # look study, preview only (not in RENDERED): 2x1 desks round 8, J1 with holograms (#485)
-        from . import desk2_r8
-        return desk2_r8.jobs(), desk2_r8.PAL
-    if name == "desk2g":  # look study, preview only (not in RENDERED): 2x1 desks round 7, as a post (#485)
-        from . import desk2_r7
-        return desk2_r7.jobs(), desk2_r7.PAL
-    if name == "desk2f":  # look study, preview only (not in RENDERED): 2x1 desks round 6, the shortlist refined (#485)
-        from . import desk2_r6
-        return desk2_r6.jobs(), desk2_r6.PAL
-    if name == "desk2e":  # look study, preview only (not in RENDERED): 2x1 desks round 5 (#485)
-        from . import desk2_r5
-        return desk2_r5.jobs(), desk2_r5.PAL
-    if name == "desk2d":  # look study, preview only (not in RENDERED): 2x1 desks round 4 (#485)
-        from . import desk2_r4
-        return desk2_r4.jobs(), desk2_r4.PAL
-    if name == "desk2c":  # look study, preview only (not in RENDERED): 2x1 desks round 3 (#485)
-        from . import desk2_r3
-        return desk2_r3.jobs(), desk2_r3.PAL
-    if name == "desk2b":  # look study, preview only (not in RENDERED): 2x1 desks round 2 (#485)
-        from . import desk2_r2
-        return desk2_r2.jobs(), desk2_r2.PAL
-    if name == "desk2":  # look study, preview only (not in RENDERED): 2x1 desks round 1, with holograms (#485)
-        from . import desk2_r1
-        return desk2_r1.jobs(), "desk"
-    if name == "booth32":  # look study, preview only (not in RENDERED): booth round 32, curved cushion tops
-        from . import booth_r32
-        return booth_r32.jobs(), "only:bar22+bar17+bar9"
-    if name == "booth31":  # look study, preview only (not in RENDERED): booth round 31, k1/k2 with soft flat cushions
-        from . import booth_r31
-        return booth_r31.jobs(), "only:bar22+bar17+bar9"
-    if name == "booth30":  # look study, preview only (not in RENDERED): booth round 30, e1 with separate vertical cushions
-        from . import booth_r30
-        return booth_r30.jobs(), "only:bar22+bar17+bar9"
     if name == "booth29":  # look study, preview only (not in RENDERED): booth round 29, refinements of e1
         from . import booth_r29
         return booth_r29.jobs(), "only:bar22+bar17+bar9"

@@ -11,8 +11,8 @@ concepts where the form carries it.
 Local frame modkit.K, footprint (2, 1): u -1..1 across, v -0.5..0.5 deep, front +v, z up; all sizes in tiles."""
 import math
 
-from .desk2_r2 import prism
-from .desk2_r4 import extrude
+from .purifier_kit import prism
+from .purifier_kit import extrude
 from .purifier_r3 import BAND, lamp
 from .purifier_r5 import body, heap, pipe, spout
 from .purifier_study import span

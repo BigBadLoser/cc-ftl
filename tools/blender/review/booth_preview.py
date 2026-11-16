@@ -8,10 +8,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from robots_preview import ROOT, Assets, Canvas, floor, human, iso  # noqa: E402
 
-NAMES = {"n1": "N1  rounded corners", "n2": "N2  arched tops", "n3": "N3  capsules",
-         "m1": "M1  ten soft, dark gaps", "m2": "M2  eight soft, bone gaps", "m3": "M3  eight tapered",
-         "k1": "K1  ten cushions, dark gaps", "k2": "K2  eight, bone gaps", "k3": "K3  six, seat split",
-         "f1": "F1  plain back", "f2": "F2  rolled back", "f3": "F3  end posts",
+NAMES = {"f1": "F1  plain back", "f2": "F2  rolled back", "f3": "F3  end posts",
          "e1": "E1  curved", "e2": "E2  facing benches", "e3": "E3  corner L"}
 CW, CH = 240, 200
 

@@ -13,7 +13,7 @@ tile (left), the water behind glass, the filter cartridges, the outlet at the ri
      tray on top, a cyan water gauge beside the seam
 
 Local frame modkit.K, footprint (2, 1): u -1..1 across, v -0.5..0.5 deep, front +v, z up; all sizes in tiles."""
-from .desk2_r2 import prism
+from .purifier_kit import prism
 from .purifier_study import cartridge, ice, span
 from .research_kit import PXG, Bench, ring, zpx
 

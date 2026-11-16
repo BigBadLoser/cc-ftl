@@ -13,7 +13,7 @@ lower band, amber marks, cyan lamp, round end port) carry over; what changes is 
 Local frame modkit.K, footprint (2, 1): u -1..1 across, v -0.5..0.5 deep, front +v, z up; all sizes in tiles."""
 import math
 
-from .desk2_r4 import extrude
+from .purifier_kit import extrude
 from .purifier_r3 import BAND, UE, V0, V1, door, housing, lamp, louvres, port
 from .purifier_study import ice, span
 from .research_kit import PXG, Bench, zpx
