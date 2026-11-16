@@ -71,7 +71,7 @@ def fill_window(k):
     # On the diagonal, t moves the screen x by t * sqrt(2) px per PX and r moves the screen y by r / sqrt(2): sizes
     # in units of sqrt(2) PX (or PX / sqrt(2)) keep every edge on a whole screen pixel.
     q = math.sqrt(2) * PX
-    w, bar, z0, z1 = 4 * PX / math.sqrt(2), PX / math.sqrt(2), TZ + zpx(3), B2 - zpx(2)
+    w, bar, z0, z1 = 4 * PX / math.sqrt(2), PX / math.sqrt(2), TZ + zpx(4), B2 - zpx(1)
     face, rim = 10 * q, 11 * q                                                                          # 1.1, 2.6 px proud
     wbox(-w, w, CR - 2 * PX, face - 0.5 * PX, z0, z1, "pfFrame")
     for a, b, c, d in ((-w, -w + bar, z0, z1), (w - bar, w, z0, z1), (-w, w, z0, z0 + zpx(1)), (-w, w, z1 - zpx(1), z1)):
