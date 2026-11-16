@@ -68,6 +68,13 @@ const CONSOLES: readonly string[] = ['module.weaponsConsole', 'module.shieldCons
 /** The market hall: trade counters and benches. */
 const TRADE: string[] = ['module.console', 'module.console', 'module.bench', 'module.bench'];
 
+/** One reactor room for these: two rows down the long walls (2 wide each, a gap of 3 for the batteries between), a tile spare. */
+const reactorRoom = (rooms: readonly RoomSpec[]): RoomSpec => {
+  const mods = rooms.flatMap((r) => r.mods), n = mods.filter((m) => m === 'module.reactor').length, bats = mods.filter((m) => m === 'module.battery').length;
+  const per = Math.max(1, Math.ceil(n / 2)), len = Math.max(8, per * 2 + (per - 1) * 3 + 1, Math.ceil(((4 * n + bats) * 2) / PREFAB_WIDE));
+  return { ...(rooms[0] as RoomSpec), mods, w: len, h: PREFAB_WIDE };
+};
+
 export interface Prefab { why: string; pads?: Box[] }
 
 export function prefab(c: Ctx, rooms: readonly RoomSpec[], docks: readonly RoomSpec[], cabins: readonly RoomSpec[]): Prefab {
@@ -82,9 +89,9 @@ export function prefab(c: Ctx, rooms: readonly RoomSpec[], docks: readonly RoomS
   const [mess, ...commons] = pick((r) => r.dept === 'commons');
   const medical = pick((r) => r.dept === 'habitation');
   const secure = ordered(pick((r) => r.dept === 'secure' || r.role === 'bridge')), wings = secure.filter((r) => r.role !== 'reactor');
-  // The reactors in one room, its floor theirs together.
+  // The reactors in one room, as long as they need (down both long walls, batteries in the gaps), not the programme's floor.
   const reactors = secure.filter((r) => r.role === 'reactor');
-  const plant: RoomSpec[] = reactors.length > 0 ? [{ ...(reactors[0] as RoomSpec), mods: reactors.flatMap((r) => r.mods), w: Math.ceil(reactors.reduce((t, r) => t + area(r), 0) / PREFAB_WIDE), h: PREFAB_WIDE }] : [];
+  const plant: RoomSpec[] = reactors.length > 0 ? [reactorRoom(reactors)] : [];
   // The warehouse as deep as its crates need (the programme's floor for it is the old crate rooms', roomy for a module).
   const warehouse: Seg[] = pick((r) => r.dept === 'freight').map((r) => ({ spec: r, len: r.mods.includes(CRATE) ? holdDepth(r.mods.filter((m) => m === CRATE).length, PREFAB_WIDE) : lengthOf(r) }));
   // The ore store: not in the programme (the workshop's raw stock, in ore bins).

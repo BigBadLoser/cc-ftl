@@ -9,10 +9,10 @@ import type { RoomRole } from '../../types';
 import type { Piece } from './check';
 import { db, tr, traumaFits } from './bays';
 import { f1 } from './farm';
-import { AC, B, BT, OB, CD, DR, EX, FB, RF, G, GT, L, LS, MB, P, RK, RP, RS, SB, SP, SW, T, bunks, messSize, count, leftover, middle, range, rowsOf, sidePairs, tables, type Beds, type Run } from './parts';
+import { AC, B, seats, BT, OB, CD, DR, EX, FB, RF, G, GT, L, LS, MB, P, RK, RP, RS, SB, SP, SW, T, bunks, messSize, count, leftover, middle, range, rowsOf, sidePairs, tables, type Beds, type Run } from './parts';
 import { PB, VB, AI, CR, bank, core, crates, podsFit, pods, shuttle } from './plant';
 import { laid, messTables, tablesClear } from './mess';
-import { co, cu, gy, hl, pz } from './social';
+import { co, cu, gy, hl, mk, pz } from './social';
 import { bg, ore, pa, qm, shelfSlots } from './stores';
 import { bk, lb, rf, rf2, rf2Fits, su, ws } from './works';
 
@@ -219,15 +219,19 @@ const mess = (need: readonly string[], r: { w: number; h: number }): boolean => 
 const OPS: readonly string[] = ['module.weaponsConsole', 'module.shieldConsole'];
 /**
  * OP: an ops room (a bridge with no helm: a base's command room): its consoles on the back wall spread from corner to
- * corner (a tile in from a cut one), so a door in the middle of it stays clear; a table in the middle.
+ * corner (a tile in from a cut one), so a door in the middle of it stays clear; a table with its chairs on the back wall
+ * between the two consoles (none when a door is near the back wall, or the gap is under two wide: nothing else fits
+ * off the ways between the doors).
  */
 function op(c: Ctx): Piece[] {
   const list = c.need.filter((m) => OPS.includes(m)), sizes = list.map((m) => size(c, m)), x0 = off(c, 0, 0, 0, 1), x1 = off(c, c.w - 1, 0, c.w - 1, -1);
   const gap = list.length > 1 ? Math.floor((x1 - x0 + 1 - sizes.reduce((a, b) => a + b, 0)) / (list.length - 1)) : 0;
   let x = list.length > 1 ? x0 : Math.floor((c.w - (sizes[0] ?? 0)) / 2);
   const consoles = list.map((m, i) => { const p = P(m, i === list.length - 1 && i > 0 ? x1 + 1 - (sizes[i] as number) : x, 0, 0); x += (sizes[i] as number) + gap; return p; });
-  const tx = Math.floor((c.w - 2) / 2);
-  return [...consoles, ...tables(tx, tx + 1, Math.floor(c.h / 2), 1)];
+  const lo = list.length > 1 ? (consoles[0] as Piece).x + (sizes[0] as number) : 0, hi = list.length > 1 ? (consoles[consoles.length - 1] as Piece).x : 0;
+  const tx = lo + Math.floor((hi - lo - 2) / 2);
+  const seat = list.length > 1 && hi - lo >= 2 && c.h >= 5 && !(c.doors ?? []).some((t) => t.y <= 2);
+  return [...consoles, ...(seat ? [P(T, tx, 1, 0), ...seats(tx, 1)] : [])];
 }
 
 /** Arrangements by room role. A room takes one that suits it (seeded), else the plain fallback (place.ts). */
@@ -300,6 +304,7 @@ export const RULES: Partial<Record<RoomRole, readonly RuleArrangement[]>> = {
   hall: [{ name: 'HL hall street, planters and benches on the wall', weight: 1, when: (n, r) => n.length === 0 && r.w >= 8 && r.h >= 3 && r.h <= 4, rule: hl }],
   plaza: [
     { name: 'CU customs (a harbour customs hall), a desk and chairs', weight: 1, when: (n, r) => n.includes('module.mess_table') && r.w >= 7 && r.h >= 3, rule: cu },
+    { name: 'MK market hall, consoles and benches on the walls', weight: 1, when: (n, r) => n.includes('module.console') && !n.includes('module.mess_table') && r.w >= 7 && r.h >= 7, rule: mk },
     { name: 'PZ parade hall, benches round the planters', weight: 1, when: (n, r) => n.length === 0 && r.w >= 9 && r.h >= 7, rule: pz },
   ],
   reactor: [
