@@ -54,6 +54,7 @@ Player-facing changes, newest first. Each dated entry is a deploy of the live ga
 
 ### Changed
 
+- Cutaway: only the ship's top and back edges stand full height; far walls in front of the ship on screen now collapse too, so stepped hulls and notches no longer hide the rooms behind them. ([#525](https://github.com/BigBadLoser/cc-ftl/pull/525))
 - Cutaway: 45° staircase hull edges and one-tile hull steps no longer leave full-height wall pillars standing in front of rooms; their corners collapse with the hull around them. ([#497](https://github.com/BigBadLoser/cc-ftl/pull/497))
 - The prize panel no longer shows a prize value: there is no hull sale, as the salvage panel strips a prize, hull included. Saves from before this change don't load. ([#495](https://github.com/BigBadLoser/cc-ftl/pull/495))
 - Crew markers: the coloured diamond under every crew member is gone. A red diamond now marks only active enemies (boarders, creatures, and station guards once you're wanted there) and drops when they surrender, go down or die; neutral crew and your own have none, and selected crew keep their selection ring. ([#484](https://github.com/BigBadLoser/cc-ftl/pull/484))
