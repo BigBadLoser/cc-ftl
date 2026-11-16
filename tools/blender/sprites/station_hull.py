@@ -48,6 +48,15 @@ FOOT, FOOT_TOP = FACE_LO, "stW"     # the step: its front the face's lower band'
 STEP_FRONT = 4                      # its front px tall, flat under (its blocks' a px more)
 BLOCK, BLOCK_LIT = FACE, "stH"      # its blocks: the face's tone, lit along their front's top edge
 
+# straight runs' designs (after the ref's straight variants): 0 the base; each its extra detail over it. A dent: (px along
+# the tile from its far end (see _dent), px under the bullnose's foot, half its width and its height in px), painted
+# as a shallow pit: its lit lower lip, a darker ring, its shaded upper inside
+DENTS = ((7, 3, 3, 1.5), (13, 29.5, 3, 1.5), (25, 45.5, 2.5, 1.5))
+GOUGE = (27, 25, 4, 1.0)                                    # a long shallow dent near the tile's end
+DESIGNS = {1: DENTS + (GOUGE,), 2: DENTS}
+DENT_LIP, DENT_RING, DENT_PIT = "stL", "stM", "stD"
+DESIGN = [0]                        # the design a straight piece is built in (0 the base)
+
 
 def _band(t):
     """The bullnose's colour at t along its arc from its top edge (0) to the face (1)."""
@@ -209,6 +218,9 @@ def build(k, ax, plane, a, b, ends, H):
             _part(f, m - hw, m + hw, *PLATE_Z(s, zt), LINE, TAB, TAB_TOP, TAB_SIDE)
         f.part(s0, s1, _step_prof(s), STEP_COLS, False)          # the step along the foot, one piece (open
                                                                 # ends: it runs on; round an outer corner)
+        if whole and DESIGN[0]:
+            for dent in DESIGNS[DESIGN[0]]:
+                _dent(f, s0, *dent)
         if whole:
             u = s0
             for i, w in enumerate(FOOT_BLOCKS):
@@ -217,6 +229,24 @@ def build(k, ax, plane, a, b, ends, H):
                 u += w * LINE
     if f.ch:
         _corner(f, zt, g0, g1)
+
+
+def _ellipse(f, uc, zc, ru, rz, d, col, n=20):
+    """A painted ellipse on the upright front, centre (uc, zc), radii ru along it and rz up (tiles), d out."""
+    pts = [T.P(f.ax, f.plane, uc + ru * math.cos(2 * math.pi * i / n), zc + rz * math.sin(2 * math.pi * i / n), d)
+           for i in range(n)]
+    f.k.poly(pts, F, 3, T.OUT(f.ax), fixed=T.SEAM_PASS or col)
+
+
+def _dent(f, s0, u, n, ru, rz):
+    """A dent on the upright face: its lit lower lip (the pit's ellipse a px down), the darker ring over it, the shaded
+    inside up and back a half px."""
+    s, px = f.sec, 1 / core.ZPX
+    uc, zc = s0 + 1 - u * LINE, s.z_at(s.zb, n)     # (u px from the end at the screen-left of the face rising to the
+                                                    # right, as the ref's; the other face its mirror, as hull 46's art)
+    _ellipse(f, uc - 0.5 * LINE, zc - px, ru * LINE, rz * px, D + 0.001, DENT_LIP)
+    _ellipse(f, uc, zc, ru * LINE, rz * px, D + 0.0015, DENT_RING)
+    _ellipse(f, uc + 0.5 * LINE, zc + 0.5 * px, (ru - 1.2) * LINE, (rz - 0.6) * px, D + 0.002, DENT_PIT)
 
 
 def _corner(f, zt, g0, g1):
@@ -276,9 +306,14 @@ def _block(mask, o):
     return T.block(mask, "hull", 0, level="up", shell=_shell(o), dress=_dress)
 
 
-def _wide(mask, o):
-    """(own, wide): a straight run with a copy a tile either way along it (its edge px resolve as mid-run)."""
-    own = _block(mask, o)
+def _wide(mask, o, design=0):
+    """(own, wide): a straight run with a copy a tile either way along it (its edge px resolve as mid-run; the copies in
+    the base design: the designs share the tile's edges)."""
+    DESIGN[0] = design
+    try:
+        own = _block(mask, o)
+    finally:
+        DESIGN[0] = 0
     more = []
     if (mask, o) in STRAIGHT:
         dx, dy = STRAIGHT[(mask, o)]
@@ -303,4 +338,7 @@ def _item(sid, build_fn):
 
 
 def jobs():
-    return [lambda m=m, o=o: _item(f"tile.hull.station.ext.o{o}.m{m}", lambda: _wide(m, o)) for m, o in PIECES]
+    """The run set, and each straight run in each design (tile.hull.station.ext.o<o>.m<mask>.a<design>)."""
+    out = [lambda m=m, o=o: _item(f"tile.hull.station.ext.o{o}.m{m}", lambda: _wide(m, o)) for m, o in PIECES]
+    return out + [lambda m=m, o=o, v=v: _item(f"tile.hull.station.ext.o{o}.m{m}.a{v}", lambda: _wide(m, o, v))
+                  for (m, o) in STRAIGHT for v in DESIGNS]
