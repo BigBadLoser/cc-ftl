@@ -245,6 +245,7 @@ def _bits(rel, f, fr, cut, sec):
             _box(rel, cut, s, c, w, t, g - SH.TAB_W / 2 * px, g + SH.TAB_W / 2 * px, g0, g1, LINE,
                  SH.TAB, SH.TAB_TOP, SH.TAB_SIDE)
             b = m + sg * 6.5 / 32 * L                       # (the step's blocks, sized as the tile's: FOOT_BLOCKS of 32)
+            b += sg * px / 2 if _level(s) else 0.0          # (level: its edges on whole px columns, out from the middle)
             b0, b1 = b - 3.5 / 32 * L, b + 3.5 / 32 * L
             _box(rel, cut, s, c, w, t, b0, b1, bf, bt, SH.FOOT_OUT + LINE, SH.BLOCK, SH.BLOCK, SH.GROOVE_D)
             face = cut + _range(t, b0, b1) + [(s, c + w * (SH.FOOT_OUT + LINE))]
