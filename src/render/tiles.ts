@@ -146,8 +146,19 @@ export function hullSide(kindAt: KindAt, x: number, y: number): number {
   const stepY = sp(1, -1) && backY;
   const stepX = sp(-1, 1) && backX;
   if (!behind && !sp(-1, -1) && !outward(kindAt, x, y) && ((stepY && nearWall(x + 1, y)) || (stepX && nearWall(x, y + 1)))) return HullSide.Near;
-  if (behind || (sp(-1, -1) && (backY || backX)) || stepY || stepX) return HullSide.Far;
+  if (behind || (sp(-1, -1) && (backY || backX)) || stepY || stepX) return hidesShip(kindAt, x, y) ? HullSide.Near : HullSide.Far;
   return HullSide.None;
+}
+
+/**
+ * Whether a far hull wall at (x, y) stands in front of the ship on screen: some ship tile lies straight behind it (up the
+ * screen, toward -x -y). Only the ship's top and back edges, with nothing of it behind them, stand full height in
+ * cutaway; a far wall that would hide part of the ship (a step in a side, the back wall across a notch) is cut with
+ * the near hull instead.
+ */
+function hidesShip(kindAt: KindAt, x: number, y: number): boolean {
+  for (let k = 1; k <= HULL_RAY; k++) if (kindAt(x - k, y - k) !== Struct.Space) return true;
+  return false;
 }
 
 /**
