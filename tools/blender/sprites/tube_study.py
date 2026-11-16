@@ -28,7 +28,7 @@ ZC, R = 0.78, 0.95                       # shell centre height and radius: the h
 OCT = 0.76                               # the lattice's apothem
 ZB = 0.15                                # top of the metal belly (below it the shell is opaque): a kick strip, low so the walkway shows through the glass
 DECK = 0.0                               # the walkway: the rooms' floor (the shell under the ground is cut off)
-GLASS_ALPHA, GLASS_RIM = 0.18, 0.35      # the glass's opacity, and how much more at grazing angles
+GLASS_ALPHA, GLASS_RIM = 0.18, 0.35     # the glass's opacity, and how much more at grazing angles
 SIDES = 32
 SAMPLES = 64
 LOOKS = ("glass", "canopy", "lattice")
@@ -106,7 +106,7 @@ PARTS = {"mid": (-0.5, 0.5), "west": (-END, 0.5), "east": (-0.5, END), "one": (-
 NAMES = {"x": {"west": "west", "east": "east"}, "y": {"west": "north", "east": "south"}}   # (the y tube's runs -y to +y)
 
 
-def segment(part, axis="x"):
+def segment(part, axis="x", bands=True):
     """One tile of the picked glass tube (tube.x.<part>): the run along u PARTS[part] from the tile's middle, its walkway,
     the belly and glass, ribs at u +-0.25 (so none falls on a tile's edge), an amber end band where it is seated in a
     port. A tube of any length is its tiles' segments side by side: west, mid ..., east (one: a single tile). axis y:
@@ -124,9 +124,9 @@ def segment(part, axis="x"):
     for u in (-0.25, 0.25):
         if u0 + 0.12 < u < u1 - 0.12:
             _band(f, u - 0.03, u + 0.03, _circle, 0.0, math.tau, 0.03, "tbHull", "tbHullD")
-    if part in ("west", "one"):
+    if bands and part in ("west", "one"):
         _band(f, u0, u0 + 0.1, _circle, 0.0, math.tau, 0.05, "tbAmb", "tbRib")
-    if part in ("east", "one"):
+    if bands and part in ("east", "one"):
         _band(f, u1 - 0.1, u1, _circle, 0.0, math.tau, 0.05, "tbAmb", "tbRib")
     from .tube_port import clip_ground
     glassy = clip_ground(mg.build())
@@ -141,10 +141,10 @@ def _seg_job(part, axis="x"):
         aid = f"tube.{axis}.{NAMES[axis].get(part, part)}"
         core.clear_scene_meshes()
         post.select(PAL)
-        extras = []                                     # (the next tiles' segments either side, where the tube runs on)
-        for k, nb in ((-1, part in ("mid", "east")), (1, part in ("mid", "west"))):
-            if nb:
-                for ob in segment("mid", axis):
+        extras = []                                     # (the next tiles' segments either side, where the tube runs on:
+        for k, nb in ((-1, part in ("mid", "east")), (1, part in ("mid", "west"))):   # as far as either may run, its
+            if nb:                                      # port end's (past it a mid one's floor would be baked into the
+                for ob in segment("west" if k < 0 else "east", axis, bands=False):    # glass over the port's bore)
                     ob.location = ob.location + (core.G(k, 0.0, 0.0) if axis == "x" else core.G(0.0, k, 0.0))
                     extras.append(ob)
         objs = segment(part, axis)
@@ -197,8 +197,8 @@ def tube(look):
 
 
 def _render(aid, objs, extras=()):
-    """Render with the glass's partial alpha kept: a px the opaque parts cover is opaque; one only glass covers takes the
-    glass's coverage as its alpha and the glass's colour. `extras` (the next tiles' segments): in the scene, so the glass
+    """Render with the glass's partial alpha kept: a px the opaque parts cover is opaque (the glass's colour over them);
+    one only glass covers takes the glass's coverage as its alpha and the glass's colour, however edge-on it is seen. `extras` (the next tiles' segments): in the scene, so the glass
     takes the colour of what is behind it there, but their px are not the sprite's (it keeps the px where its own objects
     show)."""
     from . import env_build as E, post
@@ -213,8 +213,14 @@ def _render(aid, objs, extras=()):
         own = post.blocks(ao > 0.02, core.SS).mean(-1) > 0.04
         for ob in extras:
             ob.is_holdout = False
+    glass = [ob for ob in objs if ob.get("alpha") is not None]
+    for ob in glass:                                    # (what is opaque: the solid parts alone, so a px where the
+        ob.hide_render = True                           #  glass is seen edge-on, its coverage high, still lets the
+    _, asol = core.render(W, H, "color")                #  sprites behind it show through)
+    for ob in glass:
+        ob.hide_render = False
     rgb, a = core.render(W, H, "color")
-    c, op = post.downsample(rgb, a > 0.5, core.SS, 8, True)
+    c, op = post.downsample(rgb, asol > 0.5, core.SS, 8, True)
     cg, _ = post.downsample(rgb, a > 0.02, core.SS, 8, True)
     cov = post.blocks(a, core.SS).mean(-1)
     see = ~op & (cov > 0.04)
