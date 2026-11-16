@@ -6,15 +6,16 @@ leaves by, to another duct tile or into a module or wall, and the subset of thos
 wall side ends in the bolted socket plate on that edge, built into the same sprite: as a separate overlay its far side
 would paint over the duct in front of it.
 
-  cable.duct.m<mask>[.w<walls>][.v1|.v2][.off]
+  cable.duct.m<mask>[.w<walls>][.v1-4][.off]
     mask    sides with a connection; walls (a subset of mask) the sides that are a module or wall, omitted when none
+    (a plain straight, mask 5 or 10, has a lid raised 1 px in its middle)
     .v1-.v4 straight runs (mask 5 or 10, no wall): a hatch, a recessed vent grille, a breaker box, anchor brackets
     .off    unpowered: lamps dark
 Anchored at the tile centre, footprint [1, 1].
 
 The duct: a body from each connected edge in to the middle; a joint frame straddling each duct-to-duct edge (drawn
-whole by the tile on its south or east side, which the game draws later); a junction box where more than two sides meet, at a corner (a mitred elbow) and at a dead end (a blind
-end plate)."""
+whole by the tile on its south or east side, which the game draws later); a junction box where more than two sides
+meet, at a corner (a mitred elbow) and at a dead end (a blind end plate)."""
 from . import core
 from .cable_study import DIRS, PAL, _arms, _frame
 
@@ -132,26 +133,9 @@ def _middle(f, ax, lit, var):
 
 
 LID = 1.1 / core.ZPX                     # a plain straight's lid: how far it stands proud (1 px)
-TOPS = (1, 2, 3)     # study (remove once one is picked): the plain straight's top, cable.duct.m<5|10>.t<k>
 
 
-def _plain_top(f, ax, style):
-    """A plain straight's top detail, by style: 1 a lid panel raised 1 px, 2 painted
-    power bands (two orange bars across, a dark tag between), 3 rivet rows along both top edges."""
-    if style == 1:                                                              # the lid, 1 px proud
-        _span(f, ax, 0, 0, length=0.3, w=2 * DW - 0.04, z0=DH, h=LID)
-    if style == 2:
-        for p in (-0.1, 0.1):
-            _span(f, ax, p, 0, length=0.05, w=2 * DW - 0.03, z0=DH, h=0.004, side=STRIPE, top=STRIPE)
-        _span(f, ax, 0, 0, length=0.1, w=0.12, z0=DH, h=0.004, side=FRAME, top="cbBandK")
-    if style == 3:
-        for p in (-0.3, -0.15, 0.0, 0.15, 0.3):
-            for c in (-1, 1):
-                u, v = _at(ax, p, c * (DW - 0.04))
-                f.box(u, v, DH, 0.04, 0.04, 0.015, FRAME, top="cbPipe")
-
-
-def tile(mask, walls, lit, var=0, top=0):
+def tile(mask, walls, lit, var=0):
     m = core.Mesh(f"cable_duct_{mask}_{walls}_{lit}_{var}")
     f = _frame(m)
     arms = _arms(mask)
@@ -165,8 +149,8 @@ def tile(mask, walls, lit, var=0, top=0):
         _hub(f, lit, [])
     elif var:
         _middle(f, abs(arms[0][0]), lit, var)
-    elif top:
-        _plain_top(f, abs(arms[0][0]), top)
+    else:                                                                       # a plain straight: the lid
+        _span(f, abs(arms[0][0]), 0, 0, length=0.3, w=2 * DW - 0.04, z0=DH, h=LID)
     for _, (bit, d) in DIRS.items():                                         # socket lamps last (on top)
         if walls & bit:
             _socket_lamp(f, d, lit)
@@ -186,16 +170,16 @@ def sid(mask, walls=0, var=0, lit=True):
     return f"cable.duct.m{mask}{f'.w{walls}' if walls else ''}{f'.v{var}' if var else ''}{'' if lit else '.off'}"
 
 
-def _job(mask, walls, lit, var, top=0):
+def _job(mask, walls, lit, var):
     """One sprite as a job that renders itself, at SAMPLES (a tuple job's builder only builds: the pipeline renders after
     it returns). The render cache keys a callable by its code, its defaults and its module's source."""
-    def run(mask=mask, walls=walls, lit=lit, var=var, top=top):
+    def run(mask=mask, walls=walls, lit=lit, var=var):
         import bpy
         from . import env_build, post
-        aid = sid(mask, walls, var, lit) + (f".t{top}" if top else "")
+        aid = sid(mask, walls, var, lit)
         core.clear_scene_meshes()
         post.select(PAL)
-        objs = tile(mask, walls, lit, var, top)
+        objs = tile(mask, walls, lit, var)
         sc = bpy.context.scene
         sc.cycles.samples = SAMPLES
         try:
@@ -215,6 +199,4 @@ def jobs():
             if mask in (5, 10):
                 for v in VARIANTS:
                     out.append(_job(mask, 0, lit, v))
-                for t in TOPS:
-                    out.append(_job(mask, 0, lit, 0, t))
     return out
