@@ -84,13 +84,14 @@ def block(b):
                P.RAMP[0])
     c = math.sqrt(R * R - ZC * ZC)
     b.face([(LEAF_D, -c, 0.002), (0.5, -c, 0.002), (0.5, c, 0.002), (LEAF_D, c, 0.002)], (0, 0, 1), "tbDeck")
-    d0, d1 = DM - FRAME[1], LEAF_D                        # the threshold to the leaf, in hazard blocks
-    b.face([(d0, -c, 0.003), (d1, -c, 0.003), (d1, c, 0.003), (d0, c, 0.003)], (0, 0, 1), "tbIn")
-    k = 7                                                 # (blocks square to the grid: their edges draw clean)
-    for i in range(0, k, 2):
-        r0, r1 = -c + 2 * c * i / k, -c + 2 * c * (i + 1) / k
-        q = [(d0, r0), (d0, r1), (d1, r1), (d1, r0)]
-        b.face([(d, r, 0.004) for d, r in q], (0, 0, 1), "tbAmb")
+    th = LEAF_D - DM + FRAME[1]                           # the thresholds either side of the leaf, in hazard blocks
+    for d0, d1 in ((LEAF_D - th, LEAF_D), (LEAF_D, LEAF_D + th)):   # (the tube side's seen through the far port)
+        b.face([(d0, -c, 0.003), (d1, -c, 0.003), (d1, c, 0.003), (d0, c, 0.003)], (0, 0, 1), "tbIn")
+        k = 7                                             # (blocks square to the grid: their edges draw clean)
+        for i in range(0, k, 2):
+            r0, r1 = -c + 2 * c * i / k, -c + 2 * c * (i + 1) / k
+            q = [(d0, r0), (d0, r1), (d1, r1), (d1, r0)]
+            b.face([(d, r, 0.004) for d, r in q], (0, 0, 1), "tbAmb")
     b.face([(-0.5, -WM, 0.002), (DM, -WM, 0.002), (DM, WM, 0.002), (-0.5, WM, 0.002)], (0, 0, 1), "tbDeckD")
     b.face([(DM, -WM, H), (0.5, -WM, H), (0.5, WM, H), (DM, WM, H)], (0, 0, 1))
 
@@ -168,7 +169,7 @@ def _ring(b, d, h, ra, rb, zc, front, n=32, inner=True, outer=True):
 
 def leaf(b, t):
     """The hatch leaf, `t` (0 closed .. 1 open) of its way down into the floor: a slab the opening's shape with relief on
-    its room face: a raised rim round its visible edge, a boss in the middle with the viewport sunk in it, locking bars
+    both faces: a raised rim round its visible edge, a boss in the middle with the viewport sunk in it, locking bars
     out from the boss to the rim, a kick plate along its foot."""
     dz = -t * (ZC + LEAF_R + 0.05)
     t0, t1 = _ends(LEAF_R)
@@ -180,6 +181,21 @@ def leaf(b, t):
     for (ra, za), (rb, zb) in zip(pts, pts[1:] + pts[:1]):
         b.face([(f, ra, za), (LEAF_D + LEAF_T, ra, za), (LEAF_D + LEAF_T, rb, zb), (f, rb, zb)],
                (0, ra + rb, za + zb - 2 * (ZC + dz)), "tbHullD")
+    for side in (b, _Mirror(b, LEAF_D)):                  # (the same face on its tube side: seen through the far port)
+        _relief(side, f, dz)
+
+
+class _Mirror:
+    """A builder's faces mirrored through the plane d = c (the leaf's tube side built as its room side is)."""
+    def __init__(self, b, c):
+        self.b, self.c = b, c
+
+    def face(self, pts, n, col=None, lift=0):
+        self.b.face([(2 * self.c - d, r, z) for d, r, z in pts], (-n[0], n[1], n[2]), col, lift)
+
+
+def _relief(b, f, dz):
+    """The leaf's relief on its face at d f (raised toward -d)."""
     zc = ZC + dz
     ri, ro = R - 0.13, R + 0.02                           # the rim (its outer edge in the slot)
     e0, e1 = _ends(ri)
