@@ -42,14 +42,15 @@ PLATE_BACK, PLATE_R = 4, 2          # the top box's top runs this many px back p
 BOX_CHAMFER = 2                     # the top box's top front edge chamfered this many px, in the bullnose's top band's tone
 VENTS = (7, 10)                     # its vent's slots, px under the top
 VENT_W = 5
-LOW_LINE = 4                        # the lower box: a seam across it this many px under its top
+LOW_DROP = 2                        # the lower box's top this many px under the line under the bullnose's foot
+LOW_LINE = 5                        # a seam across it this many px under its top
 LOW_FRAME = 2                       # under that, a seam outline (its corners rounded off) this many px in from each edge
+LOW_LIT = "stL"                     # a faint lit px under the seam across and the outline's top, beside the outline's
+                                    # near side (the ref's left on the face rising to the right)
+GAP_SHADE = SH.SEAM                 # the top box's shadow in the gap under it
 RECESS = (11, 21, 0)                # the recess: px across, its top px over the groove (down to the step)
 RECESS_BACK, RECESS_RIM, RECESS_SIDE, RECESS_SILL = "stD", "stK", "stE", "stB"   # its back wall; the shadow under its
                                     # lip and down its far side; its near side; the sill in its foot
-GREEBLE = (25, 29, 24, 29)          # a box in the far slot
-STUBS = ((25, 26), (27, 28))        # two short rails over it
-STUB_Z = (3, 12)
 
 
 def dress(f, s0, design, zk):
@@ -113,12 +114,11 @@ def _plate(f, a, b, back, top, n=4):
 def gap(s):
     """The gap between the module's boxes (z0, z1): the seams up the face break across it."""
     zl = s.z_at(s.z_at(s.zb, SH.UNDER), -1)
-    return s.z_at(zl, BOX_GAP + 1), zl
+    return s.z_at(zl, BOX_GAP + LOW_DROP), zl
 
 
 def _module(f, s0, zk):
     s, H, px = f.sec, f.sec.H, 1 / core.ZPX
-    under = lambda n: s.z_at(s.zb, n)                       # noqa: E731  n px under the bullnose's foot
     v0, v1 = (f.at_face(s0 + fr, zk) for fr in SH.SEAMS)
     a, b = min(v0, v1) - LINE / 2, max(v0, v1) + LINE / 2  # the middle slot out over its seams
     zt = s.z_at(s.zb, SH.UNDER)                             # the line under the bullnose (its dark px over zt)
@@ -146,9 +146,10 @@ def _module(f, s0, zk):
     for n in VENTS:                                         # its vent (px rows under its top on screen)
         zv = zl + lift + round((top - zl) / px) * px - n * px
         _rect(f, m - VENT_W / 2 * LINE, m + VENT_W / 2 * LINE, zv - px, zv, out + 0.001, SH.GROOVE_D)
-    # the lower box: from BOX_GAP px under the line's top (the line its gap) and a px more, down to a px over the
-    # groove's line
-    z1, z0 = gap(s)[0] + lift, s.z_at(SH.GROOVE, -3) + lift
+    # the gap under it in its shadow (under the line), then the lower box, down to a px over the groove's line
+    zg = gap(s)[0]
+    _rect(f, a, b, zg, s.z_at(zl, 1), D + 0.002, GAP_SHADE)
+    z1, z0 = zg + lift, s.z_at(SH.GROOVE, -3) + lift
     f.part(a, b, [(D - 0.01, z0), (D - 0.01, z1), (out, z1), (out, z0)], [None, SH.SEAM, SH.FACE, None], BOX_SIDE,
            end=False)
     fd = out + 0.001
@@ -161,7 +162,9 @@ def _module(f, s0, zk):
     _rect(f, u0 + LINE, u1 - LINE, za, za + px, fd, BOX_LINE)
     _rect(f, u0, u0 + LINE, za + px, zb - px, fd, BOX_LINE)
     _rect(f, u1 - LINE, u1, za + px, zb - px, fd, BOX_LINE)
-    # the recess, from the groove down to the step
+    _rect(f, a + LINE, b, zs - 2 * px, zs - px, fd, LOW_LIT)                 # (faint lit px)
+    _rect(f, u0 + LINE, u1 - LINE, zb - 2 * px, zb - px, fd, LOW_LIT)
+    _rect(f, u1 - 2 * LINE, u1 - LINE, za + px, zb - 2 * px, fd, LOW_LIT)    # the recess, from the groove down to the step
     p0, p1, up = RECESS
     u0, u1 = _span(s0, p0, p1)
     zt, zf = s.z_at(SH.GROOVE, -up), s.z_at(SH.FOOT_H, -1)
@@ -170,13 +173,6 @@ def _module(f, s0, zk):
     _rect(f, u0, u0 + LINE, zf, zt, D + 0.004, RECESS_RIM)
     _rect(f, u0, u1, s.z_at(zt, 2), zt, D + 0.005, RECESS_RIM)
     _rect(f, u0, u1, zf, s.z_at(zf, -2), D + 0.005, RECESS_SILL)
-    # the far slot: a box, two short rails over it
-    p0, p1, n0, n1 = GREEBLE
-    u0, u1 = _span(s0, p0, p1)
-    SH._part(f, u0, u1, under(n1), under(n0), LINE, SH.FACE, "stH", SH.SEAM)
-    for p0, p1 in STUBS:
-        u0, u1 = _span(s0, p0, p1)
-        SH._part(f, u0, u1, under(STUB_Z[1]), under(STUB_Z[0]), LINE, SH.FACE, "stH", SH.SEAM)
 
 
 def _blob(f, s0, uc, zc, ru, rz, shape, tilt, d, col, n=32):
