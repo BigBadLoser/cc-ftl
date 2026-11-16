@@ -39,7 +39,7 @@ describe('feedback cases', () => {
     expect(() => decodeLayout({ ...j, width: 5 })).toThrow();
   });
   it('names a case after its source and the name given', () => {
-    expect(sourceSlug(DEFAULT_SOURCE)).toBe('trading-station-stationwheel-s1');
+    expect(sourceSlug(DEFAULT_SOURCE)).toBe('trading-station-s1');
     expect(caseSlug({ ...DEFAULT_SOURCE, kind: 'faction', id: 'faction.navy', family: '', depth: 4, seed: 2 }, 'Wider Hall!')).toBe('navy-s2-d4--wider-hall');
     expect(caseSlug({ ...DEFAULT_SOURCE, kind: 'blank', id: '' }, '')).toBe('blank--untitled');
     expect(caseSlug({ ...DEFAULT_SOURCE, kind: 'starter', id: 'ship.wayfarer' }, 'x')).toBe('starter-wayfarer--x');

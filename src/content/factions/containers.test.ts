@@ -105,7 +105,9 @@ describe('cargo containers', () => {
     let clamped = 0;
     for (let seed = 1; seed <= 6; seed++) {
       const g = freighter(seed);
-      const r = ruin(g.template, seed, { defs, intensity: 0.8, cause: 'combat' });
+      // At 0.5 a battle tears some boxes off and leaves others on the frame (seeds 3-6). From about 0.7 a shear cuts the
+      // whole cargo section off the hull on nearly every freighter, so every box drifts.
+      const r = ruin(g.template, seed, { defs, intensity: 0.5, cause: 'combat' });
       const ks = r.meta.containers;
       expect(ks.length).toBeGreaterThan(0);
       for (const k of ks.filter((q) => q.fate !== 'torn')) expect(defs[r.template.modules?.[k.index as number]?.def ?? '']?.container).toBe(true);
