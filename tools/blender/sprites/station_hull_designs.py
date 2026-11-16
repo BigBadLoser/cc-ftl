@@ -52,6 +52,7 @@ HANDLE = (1, 2)                     # a handle in it, a line in the darker seam 
                                     # top and foot
 LOW_LIT = "stL"                     # a faint lit px under the box's top edge and the seam across, and down inside its near
                                     # side (the ref's left on the face rising to the right)
+HOLE_FOOT = "stL"                   # (the foot of a window let into a box's front, seen from over it)
 TOP_LIT = "stB"                     # (the near edge of the top box's top: two steps over its tone)
 MID_LINE = SH.GROOVE_D              # the seam across each box (the darker seam tone)
 RECESS_LIT = "stL"                  # the recess: a lit px where its upright inside meets its lean
@@ -173,19 +174,27 @@ def gap(s):
     return s.z_at(zl, BOX_GAP + LOW_DROP), zl
 
 
-def _top_box(f, a, b, z0, out, slope=None, steep=1):
+def _box_back():
+    """Where the boxes' tops meet the hull's top."""
+    return SH.E - round((SH.R_D + SH.TOP_SEAM) * 32) / 32
+
+
+def _top_box(f, a, b, z0, out, slope=None, steep=1, hole=None):
     """A box on the middle slot [a, b] from z0 up to a px over the top, its front `out`, its top front edge chamfered,
     its top a plate run back past the top's seam; outlined down its far end (over the chamfer and along its top), faintly
     lit down its near end. Its top and chamfer (z, px)."""
     H, px = f.sec.H, 1 / core.ZPX
-    back = SH.E - round((SH.R_D + SH.TOP_SEAM) * 32) / 32
+    back = _box_back()
     top, c = H + BOX_UP * px, BOX_CHAMFER
     prof, cols = [(back, z0), (back, top), (out - c * LINE, top), (out, top - c * px), (out, z0)], \
         [None, SH.TOP, SH.BANDS[0][0], SH.FACE, None]
     if slope:                                               # (its foot sloped back down to the face, `steep` px down a
         zb = z0 - steep * round((out - D) / LINE) * px      # px it's out)
         prof, cols = [(back, zb)] + prof[1:] + [(D, zb)], cols[:4] + [slope, None]
-    f.part(a, b, prof, cols, BOX_SIDE, end=False)
+    if hole:                                                # (a window (u0, u1, z0, z1) in its front set back a px)
+        _holed(f, a, b, prof, cols, back, out, hole)
+    else:
+        f.part(a, b, prof, cols, BOX_SIDE, end=False)
     _plate(f, a, b, back, top)
     _rect(f, a, a + LINE, z0, top - c * px, out + 0.001, BOX_LINE)              # (a: the end turned from view)
     _rect(f, b - LINE, b, z0, top - c * px, out + 0.001, LOW_LIT)               # (b: its near end, faintly lit)
@@ -199,6 +208,20 @@ def _top_box(f, a, b, z0, out, slope=None, steep=1):
                   (u + LINE, out - c * LINE), (u, out - c * LINE))], F, 3, core.Vector((0, 0, 1)),
                  fixed=T.SEAM_PASS or col)
     return top, c
+
+
+def _holed(f, a, b, prof, cols, back, out, hole):
+    """The box's body as pieces round a window in its front a px deep: whole either side of it; over and under it, the
+    body cut at the window's top and bottom (its foot lit where it's seen); in it, the body a px short of the front."""
+    h0, h1, z0, z1 = hole
+    for u0, u1 in ((a, h0), (h1, b)):
+        f.part(u0, u1, prof, cols, BOX_SIDE, end=False)
+    over = [(back, z1)] + prof[1:4] + [(out, z1)]           # (prof: back foot, back top, chamfer, front's top, front's
+    f.part(h0, h1, over, [None] + cols[1:4] + [None], BOX_SIDE, end=False)   # foot, (slope's foot))
+    f.part(h0, h1, [prof[0], (back, z0), (out, z0)] + prof[4:], [None, HOLE_FOOT, SH.FACE] + cols[4:], BOX_SIDE,
+           end=False)
+    f.part(h0, h1, [(back, z0), (back, z1), (out - LINE, z1), (out - LINE, z0)], [None, None, SH.FACE, None], BOX_SIDE,
+           end=False)
 
 
 def _module(f, s0, zk):

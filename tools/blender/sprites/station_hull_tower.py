@@ -5,7 +5,8 @@ middle."""
 from . import core
 from . import station_hull as SH
 from . import station_hull_designs as SD
-from .wall3d_ext_geom import LINE, D
+from . import wall3d as T
+from .wall3d_ext_geom import F, LINE, D
 
 TOWER_OUT = 4                       # px off the face
 TOWER_SLOPE = SH.GROOVE_D           # its foot, sloped back down to the face (and the block's to the box's front)
@@ -21,6 +22,9 @@ BLOCK = (54, 2)                     # the block: its bottom row, px proud of the
 JOIN_UP = 3                         # (rows up: the box's front stands out, so its sloped line shows lower; measured)
 BLOCK_FACE, BLOCK_SIDE, BLOCK_SEAM = SH.SEAM, SH.GROOVE_D, SH.GROOVE_D   # its front and top; its ends; the seam
 BLOCK_SLOPE = "stE"                 # its foot, sloped back down to the box's front
+PLATE_UP, PLATE_CLEAR = 1, 2        # a plate on the box's top: px proud; px clear of its chamfer, its edge lines, its
+                                    # top plate's back
+PLATE_SIDE, PLATE_LINE = SH.GROOVE_D, SH.SEAM   # its sides; the lines round its top's edges
 BLOCK_LIT, BLOCK_JOIN = "stL", SH.GROOVE_D   # a lit px along its front's top edge; a dark one on the box's front over
                                     # its top
 
@@ -32,15 +36,30 @@ def tower(f, s0, zk):
     out = D + TOWER_OUT * LINE
     lift = 0.5 * TOWER_OUT * px                             # (see station_hull_designs._module)
     z0 = s.z_at(SH.GROOVE, -1) + lift
-    top, c = SD._top_box(f, a, b, z0, out, TOWER_SLOPE, STEEP)
+    top, c = s.H + SD.BOX_UP * px, SD.BOX_CHAMFER           # (as station_hull_designs._top_box makes it)
     rows = round((top - z0) / px)
     row = lambda n: z0 + (rows - n) * px                    # noqa: E731  the top of row n under the box's top
     across = lambda p: b - p * LINE                         # noqa: E731  p px across from its near end
     fd = out + 0.001
-    # the dark block, a seam across its middle; its top's line across the box's front
     r1, n = BLOCK
     lift2 = 0.5 * n * px                                    # (its front stands lower still on screen)
     r0 = rows - round((s.z_at(s.zb, SH.UNDER) + lift - px - lift2 - z0) / px) - JOIN_UP
+    # the vent: a frame VENT_CLEAR px in from the box's ends, under its chamfer and over the block's top line; inside
+    # it the box's front a px back, slats on it
+    e = (1 + VENT_CLEAR) * LINE                             # (inside the box's edge lines)
+    v0, v1 = c + VENT_CLEAR, r0 - 2 - VENT_CLEAR
+    w0, w1 = a + e + LINE, b - e - LINE
+    SD._top_box(f, a, b, z0, out, TOWER_SLOPE, STEEP, (w0, w1, row(v1 - 1), row(v0 + 1)))
+    _outline(f, a + e, b - e, row(v1), row(v0), fd, SD.BOX_LINE)
+    inner = v1 - v0 - 2                                     # (rows inside the frame)
+    gap = (inner - 2 * SLATS) / (SLATS + 1)
+    w, vd, dz = SLAT_IN * LINE, out - LINE + 0.001, -0.5 * px   # (the set-back front shows half a px higher)
+    for i in range(SLATS):                                  # (each a dark row over a lit one, spaced evenly)
+        k = v0 + 1 + round(gap * (i + 1) + 2 * i)
+        SD._rect(f, w0 + w, w1 - w, row(k + 1) + dz, row(k) + dz, vd, SH.GROOVE_D)
+        SD._rect(f, w0 + w, w1 - w, row(k + 2) + dz, row(k + 1) + dz, vd, SLAT_LIT)
+    _top_plate(f, a, b, top, out - c * LINE)
+    # the dark block, a seam across its middle; its top's line across the box's front
     q0 = (round((b - a) / LINE) - WIDE) // 2
     u0, u1 = across(q0 + WIDE), across(q0)
     _raise(f, u0, u1, row(r1) + lift2, row(r0) + lift2, out, n, BLOCK_FACE, BLOCK_FACE, BLOCK_SIDE, BLOCK_SLOPE)
@@ -49,17 +68,23 @@ def tower(f, s0, zk):
     SD._rect(f, u0, u1, row(m + 1) + lift2, row(m) + lift2, bd, BLOCK_SEAM)
     SD._rect(f, u0, u1, row(r0 + 1) + lift2, row(r0) + lift2, bd, BLOCK_LIT)
     SD._rect(f, a, b, row(r0) + lift2, row(r0 - 1) + lift2, fd, BLOCK_JOIN)   # (its row on the box's front: r0 - 2)
-    # the vent: a frame VENT_CLEAR px in from the box's ends, under its chamfer and over that line; slats in it
-    e = (1 + VENT_CLEAR) * LINE                             # (inside the box's edge lines)
-    v0, v1 = c + VENT_CLEAR, r0 - 2 - VENT_CLEAR
-    _outline(f, a + e, b - e, row(v1), row(v0), fd, SD.BOX_LINE)
-    inner = v1 - v0 - 2                                     # (rows inside the frame)
-    gap = (inner - 2 * SLATS) / (SLATS + 1)
-    w = (1 + SLAT_IN) * LINE
-    for i in range(SLATS):                                  # (each a dark row over a lit one, spaced evenly)
-        k = v0 + 1 + round(gap * (i + 1) + 2 * i)
-        SD._rect(f, a + e + w, b - e - w, row(k + 1), row(k), fd, SH.GROOVE_D)
-        SD._rect(f, a + e + w, b - e - w, row(k + 2), row(k + 1), fd, SLAT_LIT)
+
+
+def _top_plate(f, a, b, top, front):
+    """A plate PLATE_UP px proud of the box's top, PLATE_CLEAR px clear of its chamfer, its edge lines and its top
+    plate's back; its sides and its edges' lines dark."""
+    px, k = 1 / core.ZPX, (1 + PLATE_CLEAR) * LINE
+    u0, u1 = a + k, b - k
+    d1 = front - PLATE_CLEAR * LINE
+    d0 = SD._box_back() - SD.PLATE_BACK * LINE + PLATE_CLEAR * LINE
+    z1 = top + PLATE_UP * px
+    f.part(u0, u1, [(d0, top - 0.01), (d0, z1), (d1, z1), (d1, top - 0.01)], [None, SH.TOP, PLATE_SIDE, None],
+           PLATE_SIDE, end=False)
+    zl = z1 + T.PAINT
+    for p, q in (((u0, d0), (u1, d0 + LINE)), ((u0, d1 - LINE), (u1, d1)), ((u0, d0), (u0 + LINE, d1)),
+                 ((u1 - LINE, d0), (u1, d1))):
+        f.k.poly([T.P(f.ax, f.plane, u, zl, d) for u, d in ((p[0], p[1]), (q[0], p[1]), (q[0], q[1]), (p[0], q[1]))],
+                 F, 3, core.Vector((0, 0, 1)), fixed=T.SEAM_PASS or PLATE_LINE)
 
 
 def _raise(f, u0, u1, z0, z1, base, n, face, top, side, slope):

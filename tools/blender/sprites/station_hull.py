@@ -46,7 +46,7 @@ PLATE_Z = lambda s, zt: (s.z_at(zt, 3), s.z_at(zt, -3))   # noqa: E731  the plat
 TAB_W, TAB_IN = 3, 4                # the tabs on the groove: px wide, px in from their seam toward the tile's middle
 FOOT, FOOT_TOP = FACE_LO, "stW"     # the step: its front the face's lower band's tone
 STEP_FRONT = 4                      # its front px tall, flat under (its blocks' a px more)
-BLOCK, BLOCK_LIT = FACE, "stH"      # its blocks: the face's tone, lit along their front's top edge
+BLOCK, BLOCK_LIT = FACE, "stB"      # its blocks: the face's tone, lit along their front's top edge
 
 DESIGN = [0]                        # the design a straight piece is built in (0 the base; station_hull_designs)
 
