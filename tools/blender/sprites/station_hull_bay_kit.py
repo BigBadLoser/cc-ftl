@@ -20,6 +20,7 @@ def machinery(f, u0, u1, zf, zl, back):
 
 UNDER_BOX = (7, 4, 13)              # the box under the bay: px wide, px out from the face, px tall (its top the bay's floor)
 UNDER_TONES = ("stM", "stL", "stD")   # its front, top, ends (in the light: not the machinery's shade)
+UNDER_SEAM, UNDER_SEAM_TONES = 3, ("stD", "stE")   # a seam round it this many px under its top: on its front, its ends
 
 
 def _under(f, u0, u1, zf, back, px):
@@ -30,6 +31,13 @@ def _under(f, u0, u1, zf, back, px):
     f.part(m - w / 2 * LINE, m + w / 2 * LINE, [(D - 0.01, zf - h * px), (D - 0.01, zf), (D + out * LINE, zf),
                                                (D + out * LINE, zf - h * px)],
            [None, UNDER_TONES[1], UNDER_TONES[0], None], UNDER_TONES[2], end=False)
+    a, b, z1, z0 = m - w / 2 * LINE, m + w / 2 * LINE, zf - UNDER_SEAM * px, zf - (UNDER_SEAM + 1) * px
+    SD._rect(f, a, b, z0, z1, D + out * LINE + 0.001, UNDER_SEAM_TONES[0])   # (a seam round it: its front, its ends)
+    o = T.P(f.ax, 0, 0, 0, 0)
+    for u, sg in ((a, -1), (b, 1)):
+        f.k.poly([T.P(f.ax, f.plane, u + sg * 0.001, z, d) for z, d in ((z0, D), (z0, D + out * LINE),
+                                                                         (z1, D + out * LINE), (z1, D))],
+                 F, 3, (T.P(f.ax, 0, sg, 0, 0) - o).normalized(), fixed=T.SEAM_PASS or UNDER_SEAM_TONES[1])
     p, dc = (m - u0) / LINE, D + out / 2 * LINE
     _run(f, u0, zf, dc, [(p, -1), (p, 3), (p, 3, (back - dc) / LINE + 1)], r=1.0, R=2)
 
