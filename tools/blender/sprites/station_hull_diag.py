@@ -161,11 +161,10 @@ def _dress(rel, g, fronts, cut, top, ups, sec):
     """The fronts' dress (cut: the part's planes, the groove's split left out; top: the top's index in it; ups: each
     front's upright face's, its facets after it): the groove (a dark line, a lit one under it), the seam where the
     step meets the face, the seams up the face and over the bullnose to the top's seam, the line under the bullnose
-    (on the centre panels), and the top's two lines."""
+    (on the centre panels). The top's lines: _top_lines."""
     H = sec.H
     zt = sec.z_at(sec.zb, SH.UNDER)
     ts = round((SH.R_D + SH.TOP_SEAM) * 32) / 32           # (the top's seam: this far in from the front)
-    rail = HO.LIP - SH.RAIL - LINE                          # (its line along the back)
     nf = len(sec.levels) - 1
     for f, (s, c, w), up in zip(g, fronts, ups):
         t, L, px = _along(s)
@@ -197,12 +196,21 @@ def _dress(rel, g, fronts, cut, top, ups, sec):
                 _paint(rel, cut, up + j, SH.SEAM, band)
             _paint(rel, cut, top, SH.SEAM, band + [_lift(HO.at_least(f, SH.R_D - 0.01)),
                                                     _lift(tuple(-v for v in HO.at_least(f, ts)))])
-        for d0 in (ts, rail):                               # (the top's seam and its line along the back: level,
-            d0, d1 = _top_row(sec, c, d0) if level else (d0, d0 + LINE)     # a whole px row)
+        del w
+
+
+def _top_lines(rel, g, fronts, mine, cut, top, sec):
+    """The top's two lines in from each of the fronts at `mine` (all the way round: far and edge on too), mitred at
+    the corners by the group's other fronts."""
+    ts = round((SH.R_D + SH.TOP_SEAM) * 32) / 32           # (the top's seam: this far in from the front)
+    rail = HO.LIP - SH.RAIL - LINE                          # (its line along the back)
+    for i in mine:
+        f, (s, c, w) = g[i], fronts[i]
+        for d0 in (ts, rail):                               # (level: a whole px row)
+            d0, d1 = _top_row(sec, c, d0) if _level(s) else (d0, d0 + LINE)
             band = [_lift(HO.at_least(f, d0)), _lift(tuple(-v for v in HO.at_least(f, d1)))]
             band += [_lift(HO.at_least(h, d0)) for h in g if h is not f]
             _paint(rel, cut, top, SH.SEAM, band)
-        del w
 
 
 def _step(rel, g, cut, sec):
@@ -278,6 +286,8 @@ def piece(key, H=None, margin=0.0):
                     keep = [i for i in range(len(g)) if i not in runs and g[i][0][0] + g[i][0][1] > 0]
                     _dress(rel, [g[i] for i in keep], [fronts[i] for i in keep], tile + rest[:-1], len(tile),
                            [len(tile) + 2 + i * nl for i in keep], sec)
+                    _top_lines(rel, g, fronts, [i for i in range(len(g)) if i not in runs], tile + rest[:-1],
+                               len(tile), sec)
                     out = SH.FOOT_OUT + LINE                        # (the step and its blocks stand out past
                     wide = [(n, c + (out if any(n.dot(fr[0]) > 1e-6 and fr[0].x + fr[0].y >= 0 for fr in fronts)
                                      else 0.0)) for n, c in tile] + side + list(extra)    # the tile only in front)
