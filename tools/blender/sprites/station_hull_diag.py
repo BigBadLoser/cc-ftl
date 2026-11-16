@@ -24,6 +24,7 @@ EDGE = 1e-6
 # on whole px rows as the run set's slant ones come out: px rows from the one over its line down, by line.
 LEVEL_LINE = ("stM", "stLnCore", "stLnLit")         # the groove, the line under the bullnose (a dark line, lit under)
 LEVEL_FOOT = ("stLnSoft", "stLnMid")                # the seam where the step meets the face (over the step's lit top)
+TOP_PHASE = 0.25                    # px: the top's rows off the groove's (measured)
 
 
 def _sec(H):
@@ -132,6 +133,15 @@ def _snap(sec, z):
     return sec.z_at(SH.GROOVE, round(sec.sy(z) - sec.sy(SH.GROOVE)))
 
 
+def _top_row(sec, c, d):
+    """A near diagonal's (s . p <= c) depths on its top spanning the whole px row nearest depth d (the rows' phase the
+    groove's: its line lies on whole rows; a depth is 16 px a unit down the screen, a height ZPX up)."""
+    k = 16 * c - sec.H * core.ZPX                           # (screen y of the top's front, down)
+    phase = (16 * c - SH.GROOVE * core.ZPX + TOP_PHASE) % 1
+    n = round(k - 16 * d - phase)
+    return (k - n - 1 - phase) / 16, (k - n - phase) / 16
+
+
 def _phase(f, L):
     """Where the front's tiles' centre panels sit along it (tile-local): a diagonal's tiles step half its span along
     it a tile out (its key's c says how many tiles out the front runs)."""
@@ -186,11 +196,12 @@ def _dress(rel, g, fronts, cut, top, ups, sec):
                 _paint(rel, cut, up + j, SH.SEAM, band)
             _paint(rel, cut, top, SH.SEAM, band + [_lift(HO.at_least(f, SH.R_D - 0.01)),
                                                     _lift(tuple(-v for v in HO.at_least(f, ts)))])
-        for d0 in (ts, rail):                               # (the top's seam and its line along the back)
-            band = [_lift(HO.at_least(f, d0)), _lift(tuple(-v for v in HO.at_least(f, d0 + LINE)))]
+        for d0 in (ts, rail):                               # (the top's seam and its line along the back: level,
+            d0, d1 = _top_row(sec, c, d0) if level else (d0, d0 + LINE)     # a whole px row)
+            band = [_lift(HO.at_least(f, d0)), _lift(tuple(-v for v in HO.at_least(f, d1)))]
             band += [_lift(HO.at_least(h, d0)) for h in g if h is not f]
             _paint(rel, cut, top, SH.SEAM, band)
-        del c, w
+        del w
 
 
 def _step(rel, g, cut, sec):
@@ -224,7 +235,8 @@ def _bits(rel, f, fr, cut, sec):
     zt = sec.z_at(sec.zb, SH.UNDER)
     g0, g1 = sec.z_at(SH.GROOVE, 3), sec.z_at(SH.GROOVE, -2)
     pz = SH.PLATE_Z(sec, zt)
-    bt, bf = sec.z_at(SH.FOOT_H, -1), sec.z_at(SH.FOOT_H, SH.STEP_FRONT + 1)
+    zf = _snap(sec, SH.FOOT_H) if _level(s) else SH.FOOT_H     # (level: on whole px rows)
+    bt, bf = sec.z_at(zf, -1), sec.z_at(zf, SH.STEP_FRONT + 1)
     for k in range(-2, 3):
         m = ph + k * L
         for sg in (1, -1):                                  # (the tabs: in from the seams toward the middle)
@@ -234,8 +246,11 @@ def _bits(rel, f, fr, cut, sec):
             b = m + sg * 6.5 / 32 * L                       # (the step's blocks)
             _box(rel, cut, s, c, w, t, b - 3.5 * px, b + 3.5 * px, bf, bt, SH.FOOT_OUT + LINE,
                  SH.BLOCK, SH.BLOCK, SH.GROOVE_D)
-            _paint(rel, cut + _range(t, b - 3.5 * px, b + 3.5 * px) + [(s, c + w * (SH.FOOT_OUT + LINE))],
-                   len(cut) + 2, SH.BLOCK_LIT, [(UP, bt), (-UP, -sec.z_at(bt, 1))])
+            face = cut + _range(t, b - 3.5 * px, b + 3.5 * px) + [(s, c + w * (SH.FOOT_OUT + LINE))]
+            _paint(rel, face, len(cut) + 2, SH.BLOCK_LIT, [(UP, bt), (-UP, -sec.z_at(bt, 1))])
+            if _level(s):                                   # (face on, its sides unseen: a dark px down its edges)
+                for e0 in (b - 3.5 * px, b + 2.5 * px):
+                    _paint(rel, face, len(cut) + 2, SH.GROOVE_D, _range(t, e0, e0 + px) + [(UP, bt), (-UP, -bf)])
         hw = (SH.TAB_W / 2 + 1) * px
         _box(rel, cut, s, c, w, t, m - hw, m + hw, pz[0], pz[1], LINE, SH.TAB, SH.TAB_TOP, SH.TAB_SIDE)
 
