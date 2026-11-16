@@ -22,7 +22,7 @@ UNDER_BOX = (7, 4, 11)              # the body under the bay: px wide, px out fr
 UNDER_TONES = ("stL", "stM", "stD", "stDE")  # its top; its sides by facing: the near end (+u), out, the far end (in
                                     # the light: not the machinery's shade)
 UNDER_SEAM = 3                      # a seam round it this many px under its top (a step under its tones)
-UNDER_SHADOW = (13, "stE", "stD")  # a shadow on the face under it: px under its outline, tone (under all the
+UNDER_SHADOW = (13, "stDE", "stD")  # a shadow on the face under it: px under its outline, tone (under all the
                                     # body's), tone under the groove (on the lighter band: a shade lighter)
 
 
