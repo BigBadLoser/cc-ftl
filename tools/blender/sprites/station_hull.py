@@ -18,7 +18,7 @@ from mathutils import Vector
 from . import core
 from . import wall3d as T
 from .wall3d_ext import STRAIGHT, ext_shell
-from .wall3d_ext_geom import D, E, F, LINE, Face, Section
+from .wall3d_ext_geom import D, E, F, LINE, LINE_W, Face, Section
 
 R_D, R_Z = 0.32, 0.46               # the bullnose: this far in along the top, this far down the face (tiles)
 ROUND = 16                          # its facets
@@ -30,7 +30,8 @@ RAIL = 3 / 32                       # the line along the top's back: this far in
 TOP_SEAM = 7 / 32                   # the seam across the top this far in past the bullnose's top edge (the seams end on it)
 FOOT_N, FOOT_W, FOOT_OUT, FOOT_H = 3, 0.26, 3 / 32, 0.15   # the foot blocks: a tile, wide, proud, tall
 LEDGE_H = 2                         # the bright ledge along the foot, px tall
-SEAM_W = 1.0                        # the seams' core, px (the hull's long lines: LINE_W, with coverage AA)
+SEAM_W = LINE_W                     # the seams' core, px (as the hull's long lines, with coverage AA; 1.0 with AA off
+                                    # to check where lines fall)
 CHAMFER_SEAM = 1                    # the corner's seams down its chamfer, this many px in from its edges
 
 FACE, FACE_LO, END, TOP = "stS", "stL", "stE", "stL"      # the face, its band under the groove, the shell, the top
@@ -98,12 +99,14 @@ class RoundSection(Section):
                 pd, pz = -pd, -pz
             h = math.hypot(pd, pz) or 1.0
             pd, pz, zm = pd / h, pz / h, (z0 + z1) / 2
-            if pz > 0.85 and min(z0, z1) >= self.H - T.LIP - 1e-6:
+            if pz > 0.85 and min(z0, z1) >= self.H - 1e-6:      # (the top itself: the bullnose's flat
+                                                                # facets under it keep their band)
                 out.append(TOP)
             elif pd < 0.3 and pz < 0.3:
                 out.append(None)
             elif zm > self.zb + 1e-6:
-                out.append(_band(1 - self._angle(zm) / (math.pi / 2)))
+                a = (self._angle(z0) + self._angle(z1)) / 2      # (by angle, not height: the top facets are flat)
+                out.append(_band(1 - a / (math.pi / 2)))
             else:
                 out.append(FACE if zm > GROOVE else FACE_LO)
         return out
