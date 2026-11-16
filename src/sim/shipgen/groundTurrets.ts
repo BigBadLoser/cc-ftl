@@ -8,9 +8,9 @@ import type { Layout } from './layout';
  * modules (the layout's '.' tiles: the whole site is ground once the base stands), each wired to a hull wall by a cable
  * run over the ground. The asteroid base generator's choice, not a rule of the game:
  *   - a turret tucks into the open ground inside the base's bounding box (the pockets between its modules), its cable
- *     MIN_CABLE to MAX_CABLE tiles straight out from the middle of a side to a hull wall;
- *   - the turrets spread round the base: the first nearest the command room (they are worked from its weapons
- *     console), each next one as far from those already out as it can stand;
+ *     MIN_CABLE to MAX_CABLE tiles from the middle of a side to the nearest hull wall, bending round what is in the way;
+ *   - the turrets spread evenly round the base: the first nearest the command room (they are worked from its weapons
+ *     console), each next one at the bearing from the base's middle furthest from those already out;
  *   - a turret keeps a ring of open ground round it (crew walk round it to repair it); it and its cable stand clear of
  *     the landing pads (and a tile round them) and of the ground before each airlock;
  *   - the ground stays one open walk: every pad, every airlock's outside and every turret's ring stays reachable.
@@ -33,7 +33,7 @@ export interface GroundFit {
 /** Ground kept clear before an airlock's outer door, in tiles (its collar and the walk out from it). */
 const APPROACH = 3;
 /** A turret's cable, in tiles from its side to the hull wall: a short run out from the base, not against it. */
-const MIN_CABLE = 2, MAX_CABLE = 8;
+const MIN_CABLE = 4, MAX_CABLE = 14;
 
 /** Place the plan's turrets on the layout's open ground and lay their cables. Turrets that find no spot are left out. */
 export function placeGroundTurrets(lay: Layout, plan: GroundPlan): GroundFit {
@@ -74,23 +74,30 @@ export function placeGroundTurrets(lay: Layout, plan: GroundPlan): GroundFit {
     const x = i % w, y = Math.floor(i / w);
     bx0 = Math.min(bx0, x); by0 = Math.min(by0, y); bx1 = Math.max(bx1, x); by1 = Math.max(by1, y);
   }
+  // Spread round the base: by the bearing from the box's middle, as evenly as the open ground allows.
+  const ox = (bx0 + bx1) / 2, oy = (by0 + by1) / 2;
+  const bearing = (x: number, y: number): number => Math.atan2(y - oy, x - ox);
+  const gap = (a: number, b: number): number => { const d = Math.abs(a - b) % (2 * Math.PI); return Math.min(d, 2 * Math.PI - d); };
   for (const id of plan.mods) {
     const def = lay.defs[id] as ModuleDef | undefined;
     if (!def) continue;
     const [fw, fh] = rotatedSize(def, 0);
-    const spots: { x: number; y: number; score: number; run: number[] }[] = [];
+    const reach = hullReach();
+    const spots: { x: number; y: number; score: number; from: number }[] = [];
+    const others = out.placed.map((k) => { const m = lay.modules[k]!, [pw, ph] = rotatedSize(lay.defs[m.def] as ModuleDef, m.rot); return { x: m.x + pw / 2, y: m.y + ph / 2 }; });
     for (let y = Math.max(1, by0 + 1); y + fh <= by1; y++) for (let x = Math.max(1, bx0 + 1); x + fw <= bx1; x++) {
-      const run = spot(x, y, fw, fh);
-      if (!run) continue;
-      const mx = x + fw / 2, my = y + fh / 2, len = run.length;
-      // The first nearest the command room, each next one as far from the others as it goes.
-      const apart = out.placed.length === 0 ? -0.5 * Math.hypot(mx - cx, my - cy)
-        : Math.min(...out.placed.map((k) => { const m = lay.modules[k]!, [pw, ph] = rotatedSize(lay.defs[m.def] as ModuleDef, m.rot); return Math.hypot(mx - m.x - pw / 2, my - m.y - ph / 2); }));
-      spots.push({ x, y, run, score: apart - Math.abs(len - 3) });
+      const from = spot(x, y, fw, fh, reach);
+      if (from < 0) continue;
+      const mx = x + fw / 2, my = y + fh / 2, len = reach[from] as number;
+      // The first nearest the command room; each next one at the bearing furthest from those already out (and well apart).
+      const score = others.length === 0 ? -0.5 * Math.hypot(mx - cx, my - cy)
+        : 20 * Math.min(...others.map((o) => gap(bearing(mx, my), bearing(o.x, o.y)))) + 0.2 * Math.min(...others.map((o) => Math.hypot(mx - o.x, my - o.y)));
+      spots.push({ x, y, from, score: score - 0.5 * Math.abs(len - 7) });
     }
     spots.sort((a, b) => b.score - a.score || a.y - b.y || a.x - b.x);
     for (const s of spots) {
-      const run = s.run;
+      const run = cableFrom(s.from, reach);
+      if (run.some((c) => { const x = c % w, y = Math.floor(c / w); return x >= s.x && x < s.x + fw && y >= s.y && y < s.y + fh; })) continue;
       lay.push({ def: id, x: s.x, y: s.y, rot: 0 });
       for (const c of run) out.cable.add(c);
       if (opens()) { out.placed.push(lay.modules.length - 1); break; }
@@ -106,20 +113,45 @@ export function placeGroundTurrets(lay: Layout, plan: GroundPlan): GroundFit {
     return free(x, y) && !plan.keep.some(([x0, y0, x1, y1]) => x >= x0 && x < x1 && y >= y0 && y < y1);
   }
 
-  /**
-   * The straight cable for a turret at (x, y): from the middle of one side straight out to a hull wall, MIN_CABLE to
-   * MAX_CABLE tiles over open ground (the shortest such), or null when it may not stand there.
-   */
-  function spot(x: number, y: number, fw: number, fh: number): number[] | null {
+  /** Each tile's cable length to a hull wall (1 beside one, four ways), over tiles a cable may run on; 0 where none reaches. */
+  function hullReach(): Int32Array {
+    const d = new Int32Array(w * h);
+    const queue: number[] = [];
+    for (let i = 0; i < w * h; i++) {
+      const x = i % w, y = Math.floor(i / w);
+      if (runs(i) && (wallAt(x + 1, y) || wallAt(x - 1, y) || wallAt(x, y + 1) || wallAt(x, y - 1))) { d[i] = 1; queue.push(i); }
+    }
+    for (let q = 0; q < queue.length; q++) {
+      const i = queue[q] as number, x = i % w;
+      for (const j of [x > 0 ? i - 1 : -1, x < w - 1 ? i + 1 : -1, i - w, i + w]) if (j >= 0 && j < w * h && !d[j] && runs(j)) { d[j] = (d[i] as number) + 1; queue.push(j); }
+    }
+    return d;
+  }
+
+  /** The cable from a tile beside the turret down to the hull: each step one nearer, straight on where it can. */
+  function cableFrom(from: number, reach: Int32Array): number[] {
+    const run = [from];
+    let i = from, dir = -1;
+    while ((reach[i] as number) > 1) {
+      const x = i % w, steps = [x < w - 1 ? i + 1 : -1, x > 0 ? i - 1 : -1, i + w, i - w];
+      const next = steps.map((j, k) => ({ j, k })).filter(({ j }) => j >= 0 && reach[j] === (reach[i] as number) - 1);
+      const pick = next.find((q) => q.k === dir) ?? next[0];
+      if (!pick) break;
+      i = pick.j; dir = pick.k;
+      run.push(i);
+    }
+    return run;
+  }
+
+  /** The tile its cable leaves the turret at (the middle of the side with the shortest run to the hull), or -1 when it may not stand there. */
+  function spot(x: number, y: number, fw: number, fh: number, reach: Int32Array): number {
     // Its footprint and a ring of ground round it: open, unclaimed, nothing built (the ring keeps it off the hull and other turrets).
-    for (let ty = y - 1; ty <= y + fh; ty++) for (let tx = x - 1; tx <= x + fw; tx++) if (!free(tx, ty) || clear[ty * w + tx]) return null;
+    for (let ty = y - 1; ty <= y + fh; ty++) for (let tx = x - 1; tx <= x + fw; tx++) if (!free(tx, ty) || clear[ty * w + tx]) return -1;
     const mx = x + Math.floor((fw - 1) / 2), my = y + Math.floor((fh - 1) / 2);
-    let best: number[] | null = null;
-    for (const [sx, sy, dx, dy] of [[mx, y - 1, 0, -1], [mx, y + fh, 0, 1], [x - 1, my, -1, 0], [x + fw, my, 1, 0]] as const) {
-      const run: number[] = [];
-      let tx: number = sx, ty: number = sy;
-      while (run.length <= MAX_CABLE && lay.inBounds(tx, ty) && runs(ty * w + tx)) { run.push(ty * w + tx); tx += dx; ty += dy; }
-      if (run.length >= MIN_CABLE && run.length <= MAX_CABLE && wallAt(tx, ty) && (!best || run.length < best.length)) best = run;
+    let best = -1;
+    for (const i of [(y - 1) * w + mx, (y + fh) * w + mx, my * w + x - 1, my * w + x + fw]) {
+      const r = reach[i] as number;
+      if (r >= MIN_CABLE && r <= MAX_CABLE && (best < 0 || r < (reach[best] as number))) best = i;
     }
     return best;
   }

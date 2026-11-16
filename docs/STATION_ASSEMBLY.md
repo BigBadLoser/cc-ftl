@@ -294,10 +294,11 @@ the other lower branch turned down off its tube (an L, its front room square on 
 
 No hangar, no stalls, no gun rooms (`recipeRooms`): the guns and the point defence are turrets out on the ground
 (#514, `groundTurrets` in `assemble.ts`, placed by `shipgen/groundTurrets.ts` through the fit-out's `ground` option).
-The turrets tuck into the open ground inside the base's bounding box (the pockets between its modules), spread round
-it: the first nearest the command room, each next one as far from those already out as it can stand. Each keeps a ring
-of open ground round it, clear of the pads and of the ground before each airlock, and a straight cable of 2 to 8 tiles
-runs from the middle of one side to a hull wall (the template's `cable` rows, the sim's `cable` grid layer, `sim/cable.ts`). On the asteroid the stamp lays the cable over the
+The turrets tuck into the open ground inside the base's bounding box (the pockets between its modules), spread evenly
+round it: the first nearest the command room, each next one at the bearing from the box's middle furthest from those
+already out. Each keeps a ring of open ground round it, clear of the pads and of the ground before each airlock, and a
+cable of 4 to 14 tiles (about 7 preferred) runs from the middle of one side to the nearest hull wall, bending round what
+is in the way (the template's `cable` rows, the sim's `cable` grid layer, `sim/cable.ts`). On the asteroid the stamp lays the cable over the
 ground and makes the cabled tiles and the turrets' tiles the base's, so the turrets draw its power, are fired from the
 command room's weapons console, are targeted as its modules and are repaired by suited crew walking out. Nothing in the sim needs a stall: the trader's stock is rolled, station life
 needs only room roles (courts, posts).
