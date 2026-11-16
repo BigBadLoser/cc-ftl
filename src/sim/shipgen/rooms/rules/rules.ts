@@ -9,8 +9,9 @@ import type { RoomRole } from '../../types';
 import type { Piece } from './check';
 import { db, tr, traumaFits } from './bays';
 import { f1 } from './farm';
-import { AC, B, BT, OB, CD, DR, EX, FB, RF, G, GT, L, LS, MB, P, RK, RP, RS, SB, SP, SW, bunks, count, leftover, middle, range, rowsOf, sidePairs, tables, type Beds, type Run } from './parts';
+import { AC, B, BT, OB, CD, DR, EX, FB, RF, G, GT, L, LS, MB, P, RK, RP, RS, SB, SP, SW, T, bunks, messSize, count, leftover, middle, range, rowsOf, sidePairs, tables, type Beds, type Run } from './parts';
 import { PB, VB, AI, CR, bank, core, crates, podsFit, pods, shuttle } from './plant';
+import { laid, tablesClear } from './mess';
 import { co, cu, gy, hl, pz } from './social';
 import { bg, ore, pa, qm, shelfSlots } from './stores';
 import { bk, lb, rf, rf2, rf2Fits, su, ws } from './works';
@@ -46,10 +47,16 @@ const isCut = (c: Ctx, x: number, y: number): boolean => (c.cut ?? []).some((t) 
 /** A tile in from a cut corner: `v` when the corner at (x, y) stands, else `v` moved a tile toward the room by `step`. */
 const off = (c: Ctx, x: number, y: number, v: number, step: number): number => (isCut(c, x, y) ? v + step : v);
 
-/** B1: bed pairs on the long walls (the door wall leaves a gap at the door), a game table in any stretch too short for a pair. */
+/** Whether the room is walked through: a door in its back wall too, none in its sides. */
+const through = (c: Ctx): boolean => (c.doors ?? []).some((t) => t.y === 0) && !(c.doors ?? []).some((t) => t.x === 0 || t.x === c.w - 1);
+
+/**
+ * B1: bed pairs on the long walls (the door wall leaves a gap at the door), a game table in any stretch too short for a
+ * pair. A room walked through (a door in its back wall too) lines the walls either side of the way through instead.
+ */
 function b1(c: Ctx): Piece[] {
   const { w, h, d } = c, bank = beds(c);
-  if (w >= h) {
+  if (w >= h && !through(c)) {
     const top = bunks(bank, 0, w - 1, 0, 0), left = bunks(bank, 0, d - 2, h - 2, 2), right = bunks(bank, w - 1, d + 2, h - 2, 2);
     const runs: Run[] = [
       { from: 0, to: w - 1, n: top.pairs, at: (v, end) => (end ? P(GT, v, 0, 1) : P(GT, v, 1, 0)) },
@@ -69,19 +76,23 @@ function b1(c: Ctx): Piece[] {
 /** Pairs the back wall of a w-wide room holds (a bed, a locker, a bed, a tile between). */
 const pairsAcross = (w: number): number => (w >= 3 ? Math.floor((w - 3) / 4) + 1 : 0);
 
-/** B4: bunk pairs along the back wall, a rec corner at the door wall: an arcade in the corner by the door's far side, a game table on the other. */
+/** B4: bunk pairs along the back wall, a rec corner at the door wall: an arcade in the corner by the door's far side, a game table on the other (not in a room walked through). */
 function b4(c: Ctx): Piece[] {
   const { w, h, d } = c, left = d >= w >> 1;
+  if (through(c)) return [];
   return [...bunks(beds(c), 0, w - 1, 0, 0).pieces, P(AC, left ? 0 : w - 1, h - 1, 2), P(GT, left ? w - 2 : 0, Math.max(3, h - 3), 0)];
 }
 
-/** B3: a pair in each corner of the long walls, tables (or a game table) evenly spaced between. */
+/** B3: a pair in each corner of the long walls (the side walls of a room walked through), tables (or a game table) evenly spaced between. */
 function b3(c: Ctx): Piece[] {
-  const { w, h } = c, bank = beds(c);
-  const parts = w >= h
-    ? [bunks(bank, 0, 2, 0, 0), bunks(bank, w - 1, w - 3, 0, 0), bunks(bank, 0, 2, h - 2, 2), bunks(bank, w - 1, w - 3, h - 2, 2)]
-    : [sidePairs(bank, true, w, 0, 2), sidePairs(bank, false, w, 0, 2), sidePairs(bank, true, w, h - 3, h - 1), sidePairs(bank, false, w, h - 3, h - 1)];
-  return [...parts.flatMap((p) => p.pieces), ...(w >= h ? middle(3, 0, w - 4, h - 1, true) : middle(0, 3, w - 1, h - 4, false))];
+  const { w, h } = c, bank = beds(c), wide = w >= h && !through(c);
+  // Each corner's pair a tile in from it where the corner is cut.
+  const x0 = off(c, 0, 0, 0, 1), x1 = off(c, w - 1, 0, w - 1, -1), x2 = off(c, 0, h - 1, 0, 1), x3 = off(c, w - 1, h - 1, w - 1, -1);
+  const y0 = off(c, 0, 0, 0, 1), y1 = off(c, w - 1, 0, 0, 1), y2 = off(c, 0, h - 1, h - 1, -1), y3 = off(c, w - 1, h - 1, h - 1, -1);
+  const parts = wide
+    ? [bunks(bank, x0, x0 + 2, 0, 0), bunks(bank, x1, x1 - 2, 0, 0), bunks(bank, x2, x2 + 2, h - 2, 2), bunks(bank, x3, x3 - 2, h - 2, 2)]
+    : [sidePairs(bank, true, w, y0, y0 + 2), sidePairs(bank, false, w, y1, y1 + 2), sidePairs(bank, true, w, y2 - 2, y2), sidePairs(bank, false, w, y3 - 2, y3)];
+  return [...parts.flatMap((p) => p.pieces), ...(wide ? middle(3, 0, w - 4, h - 1, true) : middle(0, 3, w - 1, h - 4, false))];
 }
 
 /** Med beds along the back wall, stopping short of the recovery pod in the door-side corner when the room has one. */
@@ -108,17 +119,21 @@ function d3(c: Ctx): Piece[] {
 
 /**
  * M4: a long mess: the galleys on a short wall, tables with their chairs down the long axis in a line (two where the
- * room is wide enough across), evenly spaced and centred (`middle`).
+ * room is wide enough across, either side of the middle), the planned tables shared between the lines, each line's
+ * evenly spaced and centred (`middle`), clear of the doorways (`tablesClear`).
  */
 function m4(c: Ctx): Piece[] {
-  const tall = c.h > c.w, across = tall ? c.w : c.h, lines = across >= 9 ? 2 : 1, span = Math.floor(across / lines);
+  const tall = c.h > c.w, across = tall ? c.w : c.h, lines = across >= 9 ? 2 : 1, n = Math.max(1, count(c.need, 'module.mess_table'));
+  // Each line's band across the room: the whole of it, or the halves either side of its middle.
+  const bands = lines === 1 ? [[0, across - 1]] : [[0, (across >> 1) - 1], [(across + 1) >> 1, across - 1]];
   // In the corners of the short wall, a tile in where a corner is cut.
   const galleys = tall
     ? [P(G, off(c, 0, 0, 0, 1), 0, 0), ...(c.w >= 5 ? [P(G, off(c, c.w - 1, 0, c.w - 2, -1), 0, 0)] : [])]
     : [P(G, 0, off(c, 0, 0, 0, 1), 3), ...(c.h >= 5 ? [P(G, 0, off(c, 0, c.h - 1, c.h - 2, -1), 3)] : [])];
-  return [...galleys, ...range(0, lines - 1, 1).flatMap((k) => (tall
-    ? middle(k * span, 2, k * span + span - 1, c.h - 1, false, true)
-    : middle(2, k * span, c.w - 1, k * span + span - 1, true, true)).filter((p) => p.def !== GT))];
+  return [...galleys, ...bands.flatMap(([a, b], k) => {
+    const most = Math.floor(n / lines) + (k < n % lines ? 1 : 0);
+    return tablesClear(c, most, (m) => (tall ? middle(a as number, 2, b as number, c.h - 1, false, true, m) : middle(2, a as number, c.w - 1, b as number, true, true, m)));
+  })];
 }
 
 /** Units (gens, reactors) spread across the back wall, batteries in each gap: two stacked, or three in a row (`along`). */
@@ -132,6 +147,31 @@ function spread(c: Ctx, units: string[], along: boolean): Piece[] {
     if (i === k - 1) return [P(u, at, 0)];
     const bats = along ? range(0, 2, 1).map((j) => P(BT, at + w + Math.floor((gap - 3) / 2) + j, 0)) : [P(BT, at + w + Math.floor((gap - 1) / 2), 0), P(BT, at + w + Math.floor((gap - 1) / 2), 1)];
     return [P(u, at, 0), ...bats];
+  });
+}
+
+/** Whether units (gens, reactors) stand in a row across a w-wide back wall, a tile apart. */
+const across = (c: { w: number; defs: Record<string, ModuleDef> }, units: readonly string[]): boolean => units.reduce((n, u) => n + (c.defs[u]?.footprint[0] ?? 2) + 1, -1) <= c.w;
+const powerUnits = (need: readonly string[], defs: Record<string, ModuleDef>): string[] => need.filter((m) => (defs[m]?.power ?? 0) > 0);
+
+/**
+ * R2: a long reactor room (more reactors than stand across its back wall): the reactors down both long walls, spread
+ * from end to end, two batteries against the wall in each gap; the aisle down the middle to the door.
+ */
+function r2(c: Ctx): Piece[] {
+  const units = powerUnits(c.need, c.defs);
+  return [0, 1].flatMap((side) => {
+    const list = units.filter((_, i) => i % 2 === side), wx = side === 0 ? 0 : c.w - 1;
+    const y0 = off(c, wx, 0, 0, 1), y1 = off(c, wx, c.h - 1, c.h - 1, -1), s = list.map((u) => size(c, u));
+    const gap = list.length > 1 ? Math.floor((y1 - y0 + 1 - s.reduce((a, b) => a + b, 0)) / (list.length - 1)) : 0;
+    let y = y0;
+    return list.flatMap((u, i): Piece[] => {
+      const at = y, w = s[i] as number, x = side === 0 ? 0 : c.w - w;
+      y += w + gap;
+      if (i === list.length - 1 || gap < 1) return [P(u, x, at)];
+      const by = at + w + Math.floor((gap - 1) / 2);
+      return [P(u, x, at), P(BT, wx, by), P(BT, side === 0 ? 1 : c.w - 2, by)];
+    });
   });
 }
 
@@ -167,13 +207,25 @@ function g3(c: Ctx): Piece[] {
 }
 
 const has = (id: string) => (need: readonly string[]): boolean => need.includes(id);
+/**
+ * A mess with a galley that is no hall: its floor within three times what its planned tables ask (a hub mess, long for
+ * the branches off it, takes M4's line only: the corner and grid arrangements would cluster its few tables in a corner).
+ */
+const mess = (need: readonly string[], r: { w: number; h: number }): boolean => { const [a, b] = messSize(count(need, T)); return need.includes(G) && r.w * r.h <= 3 * a * b; };
 
 /** Consoles a station's bridge holds besides the helm. */
 const OPS: readonly string[] = ['module.weaponsConsole', 'module.shieldConsole'];
-/** OP: an ops room (a bridge with no helm: a base's command room): its consoles on the back wall, a tile apart and centred, a table in the middle. */
+/**
+ * OP: an ops room (a bridge with no helm: a base's command room): its consoles on the back wall spread from corner to
+ * corner (a tile in from a cut one), so a door in the middle of it stays clear; a table in the middle.
+ */
 function op(c: Ctx): Piece[] {
-  const list = c.need.filter((m) => OPS.includes(m)), x0 = Math.floor((c.w - (2 * list.length - 1)) / 2);
-  return [...list.map((m, i) => P(m, x0 + 2 * i, 0, 0)), ...tables(1, c.w - 2, Math.floor(c.h / 2), 1)];
+  const list = c.need.filter((m) => OPS.includes(m)), sizes = list.map((m) => size(c, m)), x0 = off(c, 0, 0, 0, 1), x1 = off(c, c.w - 1, 0, c.w - 1, -1);
+  const gap = list.length > 1 ? Math.floor((x1 - x0 + 1 - sizes.reduce((a, b) => a + b, 0)) / (list.length - 1)) : 0;
+  let x = list.length > 1 ? x0 : Math.floor((c.w - (sizes[0] ?? 0)) / 2);
+  const consoles = list.map((m, i) => { const p = P(m, i === list.length - 1 && i > 0 ? x1 + 1 - (sizes[i] as number) : x, 0, 0); x += (sizes[i] as number) + gap; return p; });
+  const tx = Math.floor((c.w - 2) / 2);
+  return [...consoles, ...tables(tx, tx + 1, Math.floor(c.h / 2), 1)];
 }
 
 /** Arrangements by room role. A room takes one that suits it (seeded), else the plain fallback (place.ts). */
@@ -186,16 +238,16 @@ export const RULES: Partial<Record<RoomRole, readonly RuleArrangement[]>> = {
   ],
   support: [
     {
-      name: 'M1 table grid', weight: 1, when: has(G),
-      rule: (c) => { const x = off(c, 0, 0, 0, 1); return [P(G, x, 0, 0), P(G, x + 2, 0, 0), P(LS, off(c, 0, c.h - 1, 0, 1), c.h - 2, 0), ...rowsOf(c.h).flatMap((y) => tables(5, c.w - 1, y + (c.h <= 5 ? 1 : 0), 1))]; },
+      name: 'M1 table grid', weight: 1, when: mess,
+      rule: (c) => { const x = off(c, 0, 0, 0, 1); return laid(c, [P(G, x, 0, 0), P(G, x + 2, 0, 0), P(LS, off(c, 0, c.h - 1, 0, 1), c.h - 2, 0), ...rowsOf(c.h).flatMap((y) => tables(5, c.w - 1, y + (c.h <= 5 ? 1 : 0), 1))]); },
     },
-    { name: 'M2 tables in pairs', weight: 1, when: has(G), rule: (c) => [...range(off(c, 0, 0, 0, 1), c.h - 2, 3).filter((y) => !isCut(c, 0, y + 1)).map((y) => P(G, 0, y, 3)), ...rowsOf(c.h).flatMap((y) => tables(3, c.w - 1, y + (c.h <= 5 ? 1 : 0), 2))] },
+    { name: 'M2 tables in pairs', weight: 1, when: mess, rule: (c) => laid(c, [...range(off(c, 0, 0, 0, 1), c.h - 2, 3).filter((y) => !isCut(c, 0, y + 1)).map((y) => P(G, 0, y, 3)), ...rowsOf(c.h).flatMap((y) => tables(3, c.w - 1, y + (c.h <= 5 ? 1 : 0), 2))]) },
     {
       // One line of tables: a small mess only (a deep one would stand half empty).
-      name: 'M3 galley corner, tables in line', weight: 1, when: (n, r) => n.includes(G) && Math.min(r.w, r.h) <= 7,
-      rule: (c) => [P(G, 0, 0, 3), P(G, 0, 2, 3), P(LS, 0, c.h - 1, 1), P(GT, 4, 1, 0), ...tables(7, c.w - 1, 1, 1), P('module.arcade', c.w - 1, c.h - 1, 2)],
+      name: 'M3 galley corner, tables in line', weight: 1, when: (n, r) => mess(n, r) && Math.min(r.w, r.h) <= 7,
+      rule: (c) => laid(c, [P(G, 0, 0, 3), P(G, 0, 2, 3), P(LS, 0, c.h - 1, 1), P(GT, 4, 1, 0), ...tables(7, c.w - 1, 1, 1), P('module.arcade', c.w - 1, c.h - 1, 2)]),
     },
-    { name: 'M4 tables down the long axis', weight: 2, when: has(G), rule: m4 },
+    { name: 'M4 tables down the long axis', weight: 2, when: has(G), rule: (c) => laid(c, m4(c)) },
     { name: 'SU suit-up, lockers on the back wall', weight: 1, when: (n, r) => !n.includes(G) && n.includes(L) && count(n, L) <= r.w, rule: su },
     { name: 'GY gym, sparring droids in a row', weight: 1, when: (n, r) => n.includes(EX) && r.h >= 4 && r.w >= 3 * count(n, EX), rule: gy },
   ],
@@ -248,5 +300,8 @@ export const RULES: Partial<Record<RoomRole, readonly RuleArrangement[]>> = {
     { name: 'CU customs (a harbour customs hall), a desk and chairs', weight: 1, when: (n, r) => n.includes('module.mess_table') && r.w >= 7 && r.h >= 3, rule: cu },
     { name: 'PZ parade hall, benches round the planters', weight: 1, when: (n, r) => n.length === 0 && r.w >= 9 && r.h >= 7, rule: pz },
   ],
-  reactor: [{ name: 'R1 reactors, batteries between', weight: 1, rule: (c) => spread(c, c.need.filter((m) => (c.defs[m]?.power ?? 0) > 0), true) }],
+  reactor: [
+    { name: 'R1 reactors, batteries between', weight: 1, rule: (c) => spread(c, powerUnits(c.need, c.defs), true) },
+    { name: 'R2 reactors down both long walls', weight: 1, when: (n, r) => r.h > r.w && !across(r, powerUnits(n, r.defs)), rule: r2 },
+  ],
 };

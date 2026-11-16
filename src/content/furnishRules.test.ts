@@ -4,6 +4,8 @@ import { Layout } from '../sim/shipgen/layout';
 import { roomProblems } from '../sim/shipgen/rooms/rules/check';
 import { furnishByRule } from '../sim/shipgen/rooms/rules/place';
 import { RULES } from '../sim/shipgen/rooms/rules/rules';
+import { doorways } from '../sim/shipgen/rooms/rules/mess';
+import { crates, holdDepth } from '../sim/shipgen/rooms/rules/plant';
 import type { RoomRole } from '../sim/shipgen/types';
 import { Rng } from '../sim/rng';
 import { footprintTiles } from '../sim/modules/footprint';
@@ -34,6 +36,8 @@ const CASES: { role: RoomRole; name: string; need: string[]; sizes: [number, num
   { role: 'weapons', name: 'G3', need: [MD, MD, BL, PD], sizes: [[13, 8], [15, 10]] },
   { role: 'shields', name: 'S1', need: ['module.shieldGen', 'module.shieldGen', 'module.shieldGen'], sizes: [[12, 5], [13, 5], [17, 5]] },
   { role: 'reactor', name: 'R1', need: ['module.reactor.mk3', 'module.reactor.mk3', 'module.reactor.mk3'], sizes: [[12, 6], [13, 6], [17, 6]] },
+  { role: 'reactor', name: 'R2', need: k(4, 'module.reactor'), sizes: [[7, 10], [7, 14], [7, 18]] },
+  { role: 'bridge', name: 'OP', need: ['module.weaponsConsole', 'module.shieldConsole'], sizes: [[9, 7], [11, 7], [9, 5]] },
   // The station rooms of furnishing mock round 2 (tools/shipgen/mocks/furnishingRooms.ts), at the mock's size and others.
   { role: 'quarters', name: 'B1', need: k(10, 'module.bunk'), sizes: [[11, 6], [12, 6], [13, 6], [7, 12]] },
   { role: 'quarters', name: 'B4', need: k(4, 'module.bunk'), sizes: [[7, 6], [8, 6], [9, 5], [11, 6]] },
@@ -147,6 +151,46 @@ describe('furnishing rules', () => {
       expect(got.sort()).toEqual(m.pieces.split(';').sort());
     });
   }
+
+  it('a barracks walked through (a door in its back wall) lines its side walls, clear of the way through', () => {
+    for (const rule of ['B1', 'B3']) {
+      const r = RULES.quarters?.find((a) => a.name.startsWith(rule));
+      for (const [w, h] of [[7, 7], [7, 6], [7, 8]] as const) {
+        const doors = [{ x: 3, y: 0 }], pieces = r!.rule({ w, h, d: 3, need: beds(4), defs, doors });
+        const bedsAt = pieces.filter((p) => p.def === 'module.bed');
+        expect(bedsAt, `${rule} ${w}x${h}`).toHaveLength(4);
+        for (const b of bedsAt) expect(b.x === 0 || b.x === w - 2, `${rule} ${w}x${h} bed ${b.x},${b.y}`).toBe(true);
+        expect(roomProblems((x, y) => x >= 0 && y >= 0 && x < w && y < h, [{ x: 3, y: h - 1 }, ...doors], pieces, defs), `${rule} ${w}x${h}`).toEqual([]);
+      }
+    }
+  });
+
+  it('a hub mess (a hall for its tables) is laid with its planned tables and galleys only, its doorways clear, the game table with room', () => {
+    const need = ['module.lifeSupport', 'module.galley', 'module.mess_table', 'module.mess_table', 'module.gametable'];
+    const doors = [{ x: 5, y: 0 }, { x: 0, y: 4 }, { x: 10, y: 4 }, { x: 0, y: 16 }, { x: 10, y: 16 }];
+    const c = { w: 11, h: 21, d: 5, need, defs, doors };
+    const usable = RULES.support!.filter((a) => a.when?.(need, c) ?? true).map((a) => a.name.slice(0, 2));
+    expect(usable).toEqual(['M4']);
+    const pieces = RULES.support!.find((a) => a.name.startsWith('M4'))!.rule(c);
+    const got = tally(pieces.map((p) => p.def));
+    expect(got['module.mess_table']).toBe(2);
+    expect(got['module.galley']).toBeLessThanOrEqual(2);
+    expect(got['module.gametable']).toBe(1);
+    const clear = doorways(c);
+    for (const p of pieces) for (const t of footprintTiles(defs[p.def]!, p.x, p.y, p.rot)) expect(clear.has(`${t.x},${t.y}`), `${p.def} at ${t.x},${t.y}`).toBe(false);
+    expect(roomProblems((x, y) => x >= 0 && y >= 0 && x < 11 && y < 21, [{ x: 5, y: 20 }, ...doors], pieces, defs)).toEqual([]);
+  });
+
+  it('a hold as deep as holdDepth says takes its crates, its corners cut', () => {
+    for (const n of [4, 10, 16]) {
+      const h = holdDepth(n, 7), cut = [{ x: 0, y: 0 }, { x: 6, y: 0 }, { x: 0, y: h - 1 }, { x: 6, y: h - 1 }];
+      const pieces = crates({ w: 7, h, d: 3, need: k(n, 'module.storage'), defs, cut });
+      expect(pieces.length, `${n} crates, ${h} deep`).toBeGreaterThanOrEqual(n);
+      const floor = (x: number, y: number): boolean => x >= 0 && y >= 0 && x < 7 && y < h && !cut.some((t) => t.x === x && t.y === y);
+      expect(roomProblems(floor, [{ x: 3, y: h - 1 }], pieces, defs), `${n} crates`).toEqual([]);
+      if (h > 3) expect(crates({ w: 7, h: h - 1, d: 3, need: [], defs, cut: cut.map((t) => (t.y > 0 ? { ...t, y: h - 2 } : t)) }).length, `${n} crates, a row less`).toBeLessThan(n);
+    }
+  });
 
   it('barracks beds come in pairs, a locker between the two, and only beds have lockers', () => {
     const b1 = RULES.quarters?.find((a) => a.name.startsWith('B1'));

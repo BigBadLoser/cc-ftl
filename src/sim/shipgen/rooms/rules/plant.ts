@@ -42,12 +42,10 @@ export function bank(c: Ctx): Piece[] {
 }
 
 /**
- * CG: a warehouse or crate room: rows of crates in stacks of four at most with a cross lane between, back to back round an
- * aisle (the back wall's row faces south, the next one north), the door wall's row only in a room three or four deep. The
- * planned crates take the first places; a roomier hold fills up to a quarter of its floor.
+ * The crate places of a w x h hold, `clear` tiles ("x,y") left open, and `cut` ones (wall) neither stood on nor faced:
+ * rows back to back round aisles, a lane across.
  */
-export function crates(c: Ctx): Piece[] {
-  const { w, h, d } = c, planned = count(c.need, CR);
+function crateSlots(w: number, h: number, clear: ReadonlySet<string>, cut: ReadonlySet<string>): Piece[] {
   const rows: { y: number; rot: number }[] = [];
   if (h >= 5) {
     // A row on the back wall, then rows back to back, an aisle between each pair (each crate faces an aisle).
@@ -69,9 +67,31 @@ export function crates(c: Ctx): Piece[] {
     for (let i = 0; i < len; i++) xs.push(x + i);
     x += len + 1;
   }
-  const clear = new Set<string>([`${d},${h - 1}`, ...[...(c.doors ?? []), ...(c.cut ?? [])].map((e) => `${e.x},${e.y}`)]);
-  const slots = rows.flatMap((r) => xs.map((x) => P(CR, x, r.y, r.rot))).filter((p) => !clear.has(`${p.x},${p.y}`));
+  return rows.flatMap((r) => xs.map((x) => P(CR, x, r.y, r.rot)))
+    .filter((p) => !clear.has(`${p.x},${p.y}`) && !cut.has(`${p.x},${p.y}`) && !cut.has(`${p.x},${p.y + (p.rot === 0 ? 1 : -1)}`));
+}
+
+/**
+ * CG: a warehouse or crate room: rows of crates in stacks of four at most with a cross lane between, back to back round an
+ * aisle (the back wall's row faces south, the next one north), the door wall's row only in a room three or four deep. The
+ * planned crates take the first places; a roomier hold fills up to a quarter of its floor.
+ */
+export function crates(c: Ctx): Piece[] {
+  const { w, h, d } = c, planned = count(c.need, CR);
+  const clear = new Set<string>([`${d},${h - 1}`, ...(c.doors ?? []).map((e) => `${e.x},${e.y}`)]);
+  const slots = crateSlots(w, h, clear, new Set((c.cut ?? []).map((e) => `${e.x},${e.y}`)));
   return slots.slice(0, Math.max(planned, Math.min(slots.length, Math.round(w * h * 0.25))));
+}
+
+/**
+ * The depth a w-wide hold needs for n crates (CG's rows, entered at the middle of an end, its corners cut), three at least:
+ * a hold sized to what it holds.
+ */
+export function holdDepth(n: number, w: number): number {
+  for (let h = 3; ; h++) {
+    const cut = new Set([`0,0`, `${w - 1},0`, `0,${h - 1}`, `${w - 1},${h - 1}`]);
+    if (crateSlots(w, h, new Set([`${w >> 1},${h - 1}`]), cut).length >= n || h >= 64) return h;
+  }
 }
 
 /** SH: the shuttle hangar: the bay on the back wall at the side away from the door, its boarding strip along the long side. */

@@ -5,6 +5,7 @@ import { cargoSpec, dockSpec, pickWeighted, weaponSpec, type RoomSpec, type Stat
 import { docksOf } from '../stationCrew';
 import { stationCrew } from '../stationPlan';
 import type { StationDef, StationSize } from '../stationTypes';
+import { messSize } from '../rooms/rules/parts';
 import { barracksOf, cabinOf, sleepersIn } from './quarters';
 
 /**
@@ -216,7 +217,7 @@ export function withCommons(rooms: readonly RoomSpec[], size: StationSize): Room
     // Floor for what it holds: a counter and a row of tables with chairs either side and an aisle (the furnishing
     // rules' tables in pairs: seven tiles a pair, three for the galleys), or a wall of cabinets and a table.
     // Sized to what it holds, not grown with the station's spaciousness: a big mess with one table reads as empty.
-    const long = mess ? 7 * Math.ceil(tables / 2) + 2 : 6, short = mess ? 6 : 5;
+    const [long, short] = mess ? messSize(tables) : [6, 5];
     [r.w, r.h] = r.w >= r.h ? [long, short] : [short, long];
     if (mess) r.annex = { role: 'cargo', dept: 'commons', mods: Array<string>(Math.max(2, tables)).fill('module.storage_rack'), w: 5, h: 3 };
   }

@@ -273,18 +273,19 @@ An asteroid base is not a station: shuttles land on pads on the ground (the user
 airlock or two, then pass through security or customs, then into the base"). The public rooms are the junctions; no
 empty halls. Visitors' side: two 9x9 pads (`StationResult.site.pads`) either side of arrivals, an airlock in each of
 its side walls; arrivals stands on customs (office and armoury off its ends, dead ends); a tube to the market hall
-(9x11, trade counters; no stalls), the warehouse off one side. Crew side, through the crew door (a plain tube): the
-mess as the crew hub, the pantry built onto its far end, the departments off its long sides in pairs, symmetric
-about its middle (the longest pair on one side, each side's longer branch in its lower slot; the mess as long as the
-branches need: the dial for size).
+(9x11, trade counters; no stalls), the warehouse off one side (as deep as its crates need in aisles: the programme's
+floor for it is the old crate rooms', two to four times what its sixteen crates take). Crew side, through the crew
+door (a plain tube): the mess as the crew hub, the departments off its long sides, two a side, symmetric about its
+middle (the longest with the pantry on one side, the pantry built onto the mess's wall in a branch's place; each
+side's longer branch in its lower slot; the mess as long as two slots need), command off its far end.
 
 Circulation rule: walking through rooms happens only inside one department, and a room that serves another hangs
-off it as a dead end (the pantry built onto the mess's far end, its full width). Each branch starts at its front room:
-medbay, trauma; barracks, barracks, the chief's cabin; workshop, ore store (not in the programme: four ore bins).
-Command is a junction of its own, always in a lower slot: the command room (the station's weapons and shield consoles;
-no helm anywhere on a base, and the harbour office keeps only a desk), the core and shields built onto its outer wall
-side by side, each with its own door into it, the reactors off its far end on a tube. Per seed (tidy patterns only):
-no turns, or the other lower branch turned down off its tube (an L, its front room square on the tube).
+off it as a dead end (the pantry built onto the mess's side wall). Each branch starts at its front room: medbay,
+trauma; barracks, barracks, the chief's cabin; workshop, ore store (not in the programme: four ore bins). Command is a
+hub of its own on a tube off the mess's far end: the command room (the station's weapons and shield consoles; no helm
+anywhere on a base, and the harbour office keeps only a desk), the reactors in one room (all of them, their floor
+together; furnished down both long walls, rule R2) off one end, the core and the shields each a module on a tube off
+its other end and its far side.
 
 No hangar, no stalls, no gun rooms (`recipeRooms`; the fit-out's `unarmed`): the guns are meant as turrets out on the
 ground worked from fire control, but a module on ground outside the hull belongs to no ship in the sim (the stamp

@@ -14,6 +14,12 @@ export const RF = 'module.refinery', OB = 'module.storage_ore';
 export const FB = 'module.fabricator', SP = 'module.scrapper', RS = 'module.research', EX = 'module.exercise', DR = 'module.droneBay', SW = 'module.stasis_wheel';
 
 export const count = (need: readonly string[], id: string): number => need.filter((m) => m === id).length;
+/**
+ * A mess's floor for its tables, long side then short (the one answer: the programme sizes a mess by it, the mess rules
+ * tell a hall from a mess by it): a counter and a row of tables in pairs with chairs either side and an aisle, seven
+ * tiles a pair, three for the galleys.
+ */
+export const messSize = (tables: number): [number, number] => [7 * Math.ceil(tables / 2) + 2, 6];
 export const P = (def: string, x: number, y: number, rot = 0): Piece => ({ def, x, y, rot });
 export const range = (from: number, to: number, step: number): number[] => {
   const out: number[] = [];
@@ -86,15 +92,16 @@ const GAMES: Block[] = [{ w: 1, h: 2, at: (x, y) => [P(GT, x, y, 1)] }, { w: 2, 
  * Blocks spread evenly through the free area x0..x1, y0..y1 along its long axis (`wide`: along x), centred across it,
  * a clear tile at least on every side: as many mess tables as fit with equal gaps, else one game table; when no count
  * gives equal gaps, the nearest (gaps a tile apart at most). `most`: as many tables as fit, gaps as near equal as they go.
+ * `max`: no more blocks than that.
  */
-export function middle(x0: number, y0: number, x1: number, y1: number, wide: boolean, most = false): Piece[] {
+export function middle(x0: number, y0: number, x1: number, y1: number, wide: boolean, most = false, max = Infinity): Piece[] {
   const m = wide ? x1 - x0 + 1 : y1 - y0 + 1, c = wide ? y1 - y0 + 1 : x1 - x0 + 1;
   for (const exact of most ? [false] : [true, false]) for (const set of [BLOCKS, GAMES]) {
     let best: Piece[] | null = null, most = 0;
     for (const b of set) {
       const ba = wide ? b.w : b.h, bc = wide ? b.h : b.w;
       if (c - bc < 2 || (exact && (c - bc) % 2 !== 0)) continue;
-      for (let n = Math.floor((m - 1) / (ba + 1)); n > most; n--) {
+      for (let n = Math.min(max, Math.floor((m - 1) / (ba + 1))); n > most; n--) {
         const free = m - n * ba, g = Math.floor(free / (n + 1));
         if (g < 1 || (exact && free % (n + 1) !== 0)) continue;
         const extra = free - g * (n + 1), cross = Math.floor((c - bc) / 2);
