@@ -90,7 +90,9 @@ class RoundSection(Section):
         return self.zb + R_Z * math.sin(math.pi / 2 * (1 - t))
 
     def chamfer(self, c):
-        return lambda z: c
+        """The outer corner's chamfer by height (as the hull's Section.chamfer): c on the upright part, to nothing over
+        the bullnose by how far it has turned in (its face a triangle there: a clean tip at the top's square corner)."""
+        return lambda z: c if z <= self.zb + 1e-6 else c * (self.lean_d(z) - D + R_D) / R_D
 
     def cols(self, prof, role):
         """Edge tones by facing and height: the top TOP, the bullnose its bands, the face FACE (FACE_LO under the
