@@ -25,7 +25,7 @@ ROUND = 16                          # its facets
 CORNER_C = 16 / 32                  # the outer corner's chamfer along each axis (the ship hull's)
 SEAMS = (0.25, 0.75)                # seams across a tile, as fractions of it
 GROOVE = 0.40 + 3 / core.ZPX        # the groove's height over the deck
-UNDER = 3                           # the line under the bullnose: this many px under its foot
+UNDER = 5                           # the line under the bullnose: this many px under its foot
 RAIL = 4 / 32                       # the line along the top's back: this far in from the back
 TOP_SEAM = 5 / 32                   # the seam across the top this far in past the bullnose's top edge (the seams end on it)
 FOOT_N, FOOT_W, FOOT_OUT, FOOT_H = 3, 0.26, 3 / 32, 0.15   # the foot blocks: a tile, wide, proud, tall
@@ -38,8 +38,9 @@ BANDS = (("stW", 0.36), ("stB", 0.26), ("stH", 0.18), ("stL", 0.12), ("stS", 0.0
 PLUMB_BAND = 3                      # the seams stand plumb on screen from this band's top down (stL)
 SEAM, GROOVE_D, GROOVE_L, UNDER_L = "stM", "stD", "stH", "stH"
 TAB, TAB_TOP, TAB_SIDE = "stB", "stW", "stH"
-PLATE_Z = lambda s, zt: (s.z_at(zt, 5), s.z_at(zt, -1))   # noqa: E731  the plate on the line under the bullnose:
-                                    # its foot and top on screen, px under / over the line (zt)
+PLATE_Z = lambda s, zt: (s.z_at(zt, 3), s.z_at(zt, -3))   # noqa: E731  the plate on the line under the bullnose:
+                                    # its foot and top on screen, px under / over zt (6 px, centred on the line and
+                                    # its lit px under it)
 TAB_W, TAB_IN = 3, 4                # the tabs on the groove: px wide, px in from their seam toward the tile's middle
 FOOT, FOOT_TOP, FOOT_SIDE, LEDGE = "stB", "stW", "stH", "stW"
 
