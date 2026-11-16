@@ -175,7 +175,7 @@ def jobs(name):
         import os
         from . import bench
         return bench.jobs(range(int(os.environ.get("MODPACK_ROTS", 4)))), bench.PAL
-    if name in ("bunk_module", "bar_module", "exercise_module", "planter_module", "vending_module"):
+    if name in ("bunk_module", "bar_module", "exercise_module", "planter_module", "vending_module", "purifier_module"):
         import os
         from . import leisure
         return leisure.jobs(name, range(int(os.environ.get("MODPACK_ROTS", 4)))), leisure.palette(name)
@@ -338,6 +338,39 @@ def jobs(name):
     if name == "barcounter30":  # look study, preview only (not in RENDERED): bar round 30, cubby shelves on the back
         from . import barcounter_r30
         return barcounter_r30.jobs(), "only:bar22+bar17+bar9"
+    if name == "purifier_g1":  # look study, preview only (not in RENDERED): the picked water purifier, polished (#321)
+        from . import purifier_g1
+        return purifier_g1.jobs(), purifier_g1.PAL
+    if name == "purifier10":  # look study, preview only (not in RENDERED): water purifier round 10, e1 taken further (#321)
+        from . import purifier_r10
+        return purifier_r10.jobs(), purifier_r10.PAL
+    if name == "purifier9":  # look study, preview only (not in RENDERED): water purifier round 9, one mass each (#321)
+        from . import purifier_r9
+        return purifier_r9.jobs(), purifier_r9.PAL
+    if name == "purifier8":  # look study, preview only (not in RENDERED): water purifier round 8 (#321)
+        from . import purifier_r8
+        return purifier_r8.jobs(), purifier_r8.PAL
+    if name == "purifier7":  # look study, preview only (not in RENDERED): water purifier round 7 (#321)
+        from . import purifier_r7
+        return purifier_r7.jobs(), purifier_r7.PAL
+    if name == "purifier6":  # look study, preview only (not in RENDERED): water purifier round 6 (#321)
+        from . import purifier_r6
+        return purifier_r6.jobs(), purifier_r6.PAL
+    if name == "purifier5":  # look study, preview only (not in RENDERED): water purifier round 5, form over paint (#321)
+        from . import purifier_r5
+        return purifier_r5.jobs(), purifier_r5.PAL
+    if name == "purifier4":  # look study, preview only (not in RENDERED): water purifier round 4, new concepts (#321)
+        from . import purifier_r4
+        return purifier_r4.jobs(), purifier_r4.PAL
+    if name == "purifier3":  # look study, preview only (not in RENDERED): water purifier round 3, life support's style (#321)
+        from . import purifier_r3
+        return purifier_r3.jobs(), purifier_r3.PAL
+    if name == "purifier2":  # look study, preview only (not in RENDERED): water purifier round 2, one body each (#321)
+        from . import purifier_r2
+        return purifier_r2.jobs(), purifier_r2.PAL
+    if name == "purifier":  # look study, preview only (not in RENDERED): water purifier round 1 (#321)
+        from . import purifier_study
+        return purifier_study.jobs(), purifier_study.PAL
     if name == "booth29":  # look study, preview only (not in RENDERED): booth round 29, refinements of e1
         from . import booth_r29
         return booth_r29.jobs(), "only:bar22+bar17+bar9"
@@ -592,5 +625,5 @@ RENDERED = ("env", "walls", "consoles", "weapons", "roof", "robot_bay", "drones"
             "pod_bay", "mining_pod", "escape_pod", "fx_mining", "fx_shield", "starmap", "backdrop", "cargo", "items", "salvage", "storage_ore",
             "hull", "scrapper", "upgrades", "research_bench", "arcade_cabinet", "gametable_module",
             "recovery_pod", "bunk_module", "exercise_module", "bench_module", "planter_module", "vending_module", "bar_module",
-            "stasis", "stasisload", "decor", "lights", "deck_finishes", "deck_marks", "landmarks")
+            "stasis", "stasisload", "decor", "lights", "deck_finishes", "deck_marks", "landmarks", "purifier_module")
 ALL = RENDERED + ("sol", "damage_sol", "marks")
