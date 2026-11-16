@@ -5,6 +5,7 @@ import { arrive } from '../sim/galaxy/travel';
 import { FLEET_AREA_HOPS } from '../sim/galaxy/tuning';
 import { nodesWithin } from '../sim/galaxy/fleets';
 import { onTurn } from '../sim/galaxy/turn';
+import { wouldFight } from '../sim/galaxy/clash';
 import { content } from '.';
 
 const CLASH_KINDS = new Set(['destroyed', 'driven', 'clash', 'raid']);
@@ -25,10 +26,17 @@ function run(sim: Sim, turns: number): { clashes: number; kinds: Record<string, 
   return { clashes, kinds, fleets, rebuilt: kinds['rebuilt'] ?? 0 };
 }
 
-/** How many fleets are about a den's node, at the den with the most (0 when the map has no den). */
+/** Fleets about a node that have someone to fight in the area: contested space, not just a crowd (a lone pirate faction clashes with nobody). */
+function contestedAbout(sim: Sim, id: string): number {
+  const area = nodesWithin(sim, id, FLEET_AREA_HOPS);
+  const here = sim.galaxy.fleets.filter((f) => area.has(f.node));
+  return here.filter((f) => here.some((o) => wouldFight(sim, f, o))).length;
+}
+
+/** How many contested fleets are about a den's node, at the den with the most (0 when the map has no den). */
 function crowdOf(sim: Sim): number {
   const dens = [...galaxyIndex(sim.galaxy).nodes.values()].filter((n) => portsAt(sim, n.id).some((p) => p.kind === 'den'));
-  const crowd = (id: string): number => { const area = nodesWithin(sim, id, FLEET_AREA_HOPS); return sim.galaxy.fleets.filter((f) => area.has(f.node)).length; };
+  const crowd = (id: string): number => contestedAbout(sim, id);
   return Math.max(0, ...dens.map((n) => crowd(n.id)));
 }
 
@@ -49,7 +57,7 @@ function world(seed: number, den: boolean): Sim {
   const dens = [...galaxyIndex(sim.galaxy).nodes.values()].filter((n) => portsAt(sim, n.id).some((p) => p.kind === 'den'));
   if (!dens.length) throw new Error('no den');
   // The den with the most fleets about it (a crowded lane network), so the test measures contested space and not a lone corner of the map.
-  const crowd = (id: string): number => { const area = nodesWithin(sim, id, FLEET_AREA_HOPS); return sim.galaxy.fleets.filter((f) => area.has(f.node)).length; };
+  const crowd = (id: string): number => contestedAbout(sim, id);
   const node = dens.map((n) => ({ n, c: crowd(n.id) })).sort((a, b) => b.c - a.c || (a.n.id < b.n.id ? -1 : 1))[0]!.n;
   sim.galaxy.current = node.id;
   arrive(sim);
@@ -59,7 +67,7 @@ function world(seed: number, den: boolean): Sim {
 describe('off-screen clash rate', () => {
   const TURNS = 400;
   // Pirate country with crowded lane networks (a lone corner of the map has nobody to fight). The seeds are not hand-picked for their clash
-  // rate: they are the first CROWDED_SEEDS of seeds 1.. whose busiest den has at least CROWDED fleets about it, whatever the rate turns out to be.
+  // rate: they are the first CROWDED_SEEDS of seeds 1.. whose busiest den has at least CROWDED contested fleets about it (fleets with an enemy in the area), whatever the rate turns out to be.
   const CROWDED = 15;
   const CROWDED_SEEDS = 6;
   const SEEDS: number[] = [];

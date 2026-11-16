@@ -4,6 +4,7 @@ import { inDanger, type GalaxyContent, type Weighted } from './defs';
 import { dist, gabrielEdges, paddedHull, spanningTree, type Vec } from './geometry';
 import { hash32, unit } from './hash';
 import { bodyWeight, pickBody, pickLayout, type Body, type Layout } from './layout';
+import { rollNodeContent } from './nodeContent';
 import type { Site } from './sites';
 import { dangerAt } from './territory';
 import {
@@ -104,20 +105,15 @@ function structuresFor(rng: Rng, ctx: SectorContext, nodes: readonly Vec[], fact
   } else if (rng.chance(OPEN_STATION_CHANCE) && g.structures['structure.station_trade']) {
     out[at]?.push({ def: 'structure.station_trade', owner: civilian });
   }
+  const kind = faction ? g.factions[faction]?.kind ?? null : null;
   nodes.forEach((p, k) => {
-    const danger = dangerAt(p.x, p.y);
-    for (const [id, def] of Object.entries(g.structures)) {
-      if (def.chance === undefined) continue;
-      if (def.kind === 'station') {
-        // Extra stations (research): a hashed roll of their own, so the rest of the sector keeps its random stream. Never in hostile space.
-        const f = faction ? g.factions[faction] : undefined;
-        if (f?.kind === 'pirates' || f?.kind === 'rogue') continue;
-        if (unit(ctx.seed, Math.round(p.x), Math.round(p.y), 77) < def.chance + (def.perDanger ?? 0) * danger) out[k]?.push({ def: id, owner: faction ?? civilian });
-        continue;
-      }
-      if (start && k === 0 && def.kind === 'derelict') continue;
-      if (rng.chance(def.chance + (def.perDanger ?? 0) * danger)) out[k]?.push({ def: id, owner: def.kind === 'derelict' ? null : faction });
-    }
+    // One hashed draw per node (not the sector stream), so a node's content depends only on (seed, position).
+    const site = { tier: dangerAt(p.x, p.y), factionKind: kind, start: start && k === 0 };
+    const id = rollNodeContent(g.nodeContents, site, unit(ctx.seed, Math.round(p.x), Math.round(p.y), 77));
+    const e = id ? g.nodeContents.entries[id] : undefined;
+    if (!e) return;
+    const owner = e.owner === 'none' ? null : e.owner === 'territory' ? faction : faction ?? civilian;
+    out[k]?.push({ def: e.structure, owner });
   });
   return out;
 }

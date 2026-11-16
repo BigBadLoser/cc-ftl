@@ -1878,7 +1878,13 @@ neighbourhood, so any chunk can be generated first, in any order, and agrees wit
    are Poisson-disk darts inside the disc accepted against the style weight times the body's pull (keep-out around the body, a mild orbit
    band), 6 to 12 of them; the start sector's node 0 is pinned at the origin (`START_NODE` = `s.0.0.n0`). Routes are the Gabriel graph's
    spanning tree plus `ROUTE_EXTRA`. Contents: territory faction, a station of the owner's kinds (or a free traders' station in open
-   space), asteroid fields and old derelicts by per-node chance, contacts at `CONTACT_PER_DANGER x danger`; the start node has a trade station.
+   space), one **node content** draw per node, contacts at `CONTACT_PER_DANGER x danger`; the start node has a trade station.
+   **Node content** (`nodeContent.ts`, table `galaxy.nodeContents` in `content/galaxy.ts`): `quiet` (an empty node, a weight curve of the tier)
+   plus one entry per kind: `structure`, `danger {min,max}`, `weight {base, perTier}`, `owner`, optional `notIn` (faction kinds) and `notAtStart`.
+   One hashed draw per node (`unit(seed, x, y, 77)`, not the sector stream) picks `quiet` or one entry by weight at the node's danger
+   tier; a barred entry (`notIn`, `notAtStart`) leaves the node quiet and does not raise the others. At most one table kind per node, and the
+   tier stays behind the scenes (no band field). Entries are tried in table order; research comes first so its placement is exactly that of the old per-node research roll (which used the same hash), and the stations and fleets built on it did not move. Adding a kind is one entry. Contacts stay a separate roll: they are ships present, not a
+   place, and sit on top of whatever the node holds. Faction stations, the open trade station and the start station keep their own rules.
 6. **Hyperlanes** (`generator.ts`): candidates are Gabriel pairs that keep out of the void (no stretch over `LANE_MAX_VOID` below
    `LANE_MIN_DENSITY`) plus **rift lanes**: relative-neighbour pairs up to `RIFT_MAX` that do cross it, so no island of sectors is stranded.
    Inside a cluster: a spanning tree of the cluster's relative-neighbour backbone plus `LOOP_CHANCE` of the other links (some choice, some

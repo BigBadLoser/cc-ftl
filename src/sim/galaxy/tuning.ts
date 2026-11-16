@@ -9,7 +9,7 @@ import type { FleetRole } from './defs';
  * Version of the galaxy generator and its content tables (names, factions, structures). The save lists chunks by key and
  * regenerates them from the seed, so it must change whenever any of that changes the output; a save of another version is refused.
  */
-export const GENERATOR_VERSION = 1;
+export const GENERATOR_VERSION = 2;
 
 /** Sector sites: one candidate per global cell of this size, jittered anywhere inside it. */
 export const SITE_CELL = 320;
