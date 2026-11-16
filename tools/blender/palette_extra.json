@@ -4029,5 +4029,6 @@
   "cbSafe": {"hex": "#d2a72c", "set": "cable"},
   "cbSafeD": {"hex": "#9a7a1f", "set": "cable"},
   "cbSand": {"hex": "#8a7f6c", "set": "cable"},
-  "cbSandD": {"hex": "#625a4b", "set": "cable"}
+  "cbSandD": {"hex": "#625a4b", "set": "cable"},
+  "cbGraphL": {"hex": "#555c64", "set": "cable"}
 }

@@ -8,7 +8,7 @@ would paint over the duct in front of it.
 
   cable.duct.m<mask>[.w<walls>][.v1|.v2][.off]
     mask    sides with a connection; walls (a subset of mask) the sides that are a module or wall, omitted when none
-    .v1 .v2 straight runs (mask 5 or 10, no wall): an access panel with a lamp, or vents (long runs don't repeat)
+    .v1-.v4 straight runs (mask 5 or 10, no wall): a hatch, a recessed vent grille, a breaker box, anchor brackets
     .off    unpowered: lamps dark
 Anchored at the tile centre, footprint [1, 1].
 
@@ -24,6 +24,8 @@ JW, JL = 0.02, 0.045                     # joint frame: how far it stands proud,
 BODY, TOP = "cbGraphD", "cbGraph"
 FRAME, FRAME_TOP = "cbPipeD", "cbPipe"
 STRIPE = "cbCabO"
+CAP, CAP_TOP = 0.02, "cbGraphL"            # the top cap: height, colour
+VARIANTS = (1, 2, 3, 4)
 SZ0, SZH = 0.065, 0.045                  # stripe foot and height
 
 
@@ -36,12 +38,30 @@ def _box(f, u, v, ax, length, w, z0, h, side, top):
     f.box(u, v, z0, length if ax else w, w if ax else length, h, side, top=top)
 
 
-def _arm(f, d, wall):
-    """The body from edge d in to the middle, its stripe, and the joint frame or the socket plate on that edge."""
+def _at(ax, p, c):
+    """Local (u, v) of position p along the duct's axis and c across it."""
+    return (p, c) if ax else (c, p)
+
+
+def _span(f, ax, p0, p1, length=None, across=0.0, w=2 * DW, z0=0.0, h=DH, side=BODY, top=TOP):
+    """A box from p0 to p1 along the axis (or `length` centred on p0), `w` across centred on `across`."""
+    lo, hi = (p0 - length / 2, p0 + length / 2) if length else (min(p0, p1), max(p0, p1))
+    u, v = _at(ax, (lo + hi) / 2, across)
+    _box(f, u, v, ax, hi - lo, w, z0, h, side, top)
+
+
+def _section(f, ax, p0, p1):
+    """Plain duct from p0 to p1 along the axis: the body, its top cap (a ledge along each side) and the stripe."""
+    _span(f, ax, p0, p1, h=DH - CAP)
+    _span(f, ax, p0, p1, w=2 * DW - 0.05, z0=DH - CAP, h=CAP, top=CAP_TOP)
+    _span(f, ax, p0, p1, w=2 * DW + 0.008, z0=SZ0, h=SZH, side=STRIPE)
+
+
+def _arm(f, d, wall, inner=0.0):
+    """The duct from edge d in to `inner` from the middle, and the joint frame or the socket plate on that edge."""
     ax = 1 if d[0] else 0
-    cu, cv = d[0] * 0.25, d[1] * 0.25
-    _box(f, cu, cv, ax, 0.5, 2 * DW, 0.0, DH, BODY, TOP)
-    _box(f, cu, cv, ax, 0.5, 2 * DW + 0.008, SZ0, SZH, STRIPE, TOP)
+    k = d[0] + d[1]
+    _section(f, ax, k * inner, k * 0.5)
     if wall:                                                                    # the socket plate against the wall
         _box(f, d[0] * 0.415, d[1] * 0.415, ax, 0.05, 2 * DW + 0.06, 0.0, DH + 0.04, FRAME, FRAME_TOP)      # collar
         _box(f, d[0] * 0.47, d[1] * 0.47, ax, 0.06, 2 * DW + 0.14, 0.0, DH + 0.12, FRAME, FRAME_TOP)        # plate
@@ -71,24 +91,52 @@ def _hub(f, lit, arms):
              DH + 0.01, FRAME, FRAME_TOP)
 
 
+MID = 0.17                                   # a straight run's middle section: -MID..MID along the axis
+
+
 def _middle(f, ax, lit, var):
-    """A straight run's middle: an access panel with a lamp (v1) or vents (v2)."""
+    """A straight run's middle section, by variant: 1 a hatch with a handle and a lamp, 2 a recessed vent grille,
+    3 a breaker box on the side with a hazard label, 4 ground anchor brackets bolted down each side."""
+    if var != 2:
+        _section(f, ax, -MID, MID)
     if var == 1:
-        _box(f, 0, 0, ax, 0.3, 2 * DW - 0.08, DH, 0.012, BODY, FRAME)
-        f.box(0, 0, DH + 0.012, 0.06, 0.06, 0.025, "cbClampD", top=_lamp(lit))
-    if var == 2:
-        for k in (-1, 0, 1):
-            pu, pv = (k * 0.1, 0) if ax else (0, k * 0.1)
-            _box(f, pu, pv, ax, 0.05, 2 * DW - 0.1, DH, 0.01, "cbTrench", "cbTrench")
+        _span(f, ax, 0, 0, length=0.28, w=2 * DW - 0.06, z0=DH, h=0.014, side=FRAME, top=FRAME_TOP)     # hatch
+        _span(f, ax, -0.05, 0, length=0.04, w=0.12, z0=DH + 0.01, h=0.02, side=FRAME, top=FRAME_TOP)       # handle
+        u, v = _at(ax, 0.08, 0)
+        f.box(u, v, DH + 0.01, 0.06, 0.06, 0.025, "cbClampD", top=_lamp(lit))
+    if var == 2:                                                                # floor, rims, slats
+        _span(f, ax, -MID, MID, h=DH - 0.05, top="cbTrench")
+        _span(f, ax, -MID, MID, w=2 * DW + 0.008, z0=SZ0, h=SZH, side=STRIPE)
+        for c in (-1, 1):
+            _span(f, ax, -MID, MID, across=c * (DW - 0.02), w=0.04, top=CAP_TOP)
+        for p in (-MID + 0.02, MID - 0.02):
+            _span(f, ax, p, 0, length=0.04, top=CAP_TOP)
+        for p in (-0.09, -0.03, 0.03, 0.09):
+            _span(f, ax, p, 0, length=0.03, w=2 * DW - 0.08, z0=DH - 0.05, h=0.035)
+    if var == 3:                                                                # breaker box, label, lamp
+        _span(f, ax, 0, 0, length=0.24, across=DW + 0.06, w=0.12, h=DH + 0.07, top=CAP_TOP)
+        _span(f, ax, 0, 0, length=0.16, across=DW + 0.123, w=0.008, z0=0.06, h=0.12, side="cbBand", top="cbBand")
+        _span(f, ax, 0, 0, length=0.06, across=DW + 0.128, w=0.008, z0=0.09, h=0.06, side="cbBandK", top="cbBandK")
+        u, v = _at(ax, 0.06, DW + 0.06)
+        f.box(u, v, DH + 0.07, 0.06, 0.06, 0.025, "cbClampD", top=_lamp(lit))
+    if var == 4:                                                                # anchor brackets
+        for p in (-0.1, 0.1):
+            for c in (-1, 1):
+                _span(f, ax, p, 0, length=0.1, across=c * (DW + 0.065), w=0.13, h=0.025, side=FRAME, top=FRAME_TOP)
+                _span(f, ax, p, 0, length=0.1, across=c * (DW + 0.016), w=0.032, h=DH - 0.03, side=FRAME,
+                      top=FRAME_TOP)
+                _span(f, ax, p, 0, length=0.045, across=c * (DW + 0.09), w=0.045, z0=0.025, h=0.025, side=FRAME,
+                      top="cbBoxL")                                              # the bolt into the rock
 
 
 def tile(mask, walls, lit, var=0):
     m = core.Mesh(f"cable_duct_{mask}_{walls}_{lit}_{var}")
     f = _frame(m)
     arms = _arms(mask)
+    inner = MID if var and mask in (5, 10) else 0.0
     for _, (bit, d) in DIRS.items():
         if mask & bit:
-            _arm(f, d, bool(walls & bit))
+            _arm(f, d, bool(walls & bit), inner)
     if mask not in (5, 10) and mask:
         _hub(f, lit, arms)
     elif not mask:
@@ -121,6 +169,6 @@ def jobs():
             for walls in sorted(_subsets(mask)):
                 out.append((sid(mask, walls, 0, lit), (1, 1), "block", lambda mk=mask, w=walls, li=lit: tile(mk, w, li)))
             if mask in (5, 10):
-                for v in (1, 2):
+                for v in VARIANTS:
                     out.append((sid(mask, 0, v, lit), (1, 1), "block", lambda mk=mask, vv=v, li=lit: tile(mk, 0, li, vv)))
     return out
