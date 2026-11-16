@@ -86,7 +86,10 @@ export class RegionGrid {
    * outranks everything and halls outrank rooms. Between two rooms side by side (rectangles, or but for a few tiles the
    * hull's steps clip), the one whose shared side runs on past the other's end into open space gives way: it walls that
    * stretch anyway, so its wall runs straight, where the other giving way would leave it a lip of floor beside the
-   * other room. When neither (or both) does, between rectangles the one whose shared side is longer gives way: it walls
+   * other room. When both do (rooms meeting corner to corner, each running on past the other's end), both give way:
+   * the one that kept its floor along the overlap would have a one-tile alcove in a side it otherwise walls against
+   * space. The wall is then two thick where they overlap, and the assembler takes back an element that builds that, so
+   * the join is not made. When neither does, between rectangles the one whose shared side is longer gives way: it walls
    * that side against open space past the other's end anyway, so the wall runs straight and neither room is left with a
    * notch. Otherwise (and on a tie) the lower rank gives way.
    */
@@ -99,7 +102,7 @@ export class RegionGrid {
       const [sbs, st] = near(Ar, Br);
       if (sbs || st) {
         const ea = this.bare(Ar, Br, st), eb = this.bare(Br, Ar, st);
-        if (ea !== eb) return ea;
+        if (ea !== eb || ea) return ea;
       }
     }
     const A = this.boxOf(a), B = this.boxOf(b);

@@ -6,7 +6,7 @@ import type { StationDef, StationSize } from './stationTypes';
 
 /**
  * Seeds tried with the kind's recipes before a station gives up: far more than any kind needs (a sweep of every kind
- * and size over seeds 1 to 24 stood on the first try but for two pirate stations, which stood on the second).
+ * and size over seeds 1 to 24 stands on the first try: `node tools/shipgen/bench.js --seeds 24`).
  */
 export const STATION_TRIES = 8;
 
