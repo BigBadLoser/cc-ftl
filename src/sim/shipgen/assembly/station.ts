@@ -13,7 +13,7 @@ import { stationProgram } from './program';
 import { recipeAt, type Recipe } from './recipe';
 
 /** Ground round a prefab base's modules and pads, for its turrets (a ring of ground, a turret, a tile to its cable and the hull's). */
-const GROUND_MARGIN = 6;
+const GROUND_MARGIN = 4;
 
 /** What a harbour's customs hall holds: the officers' desk and their two chairs (rules: CU). */
 const CUSTOMS: RoomSpec = { role: 'plaza', mods: ['module.mess_table', 'module.chair', 'module.chair'], w: 7, h: 3 };
