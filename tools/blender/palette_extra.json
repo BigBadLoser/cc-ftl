@@ -4013,5 +4013,7 @@
   "cbPlateL": {"hex": "#6e777f", "set": "cable"},
   "cbTrench": {"hex": "#1b1e21", "set": "cable"},
   "cbSeam": {"hex": "#5fe0ff", "emissive": 1.4, "set": "cable"},
-  "cbSeamOff": {"hex": "#2b3b42", "set": "cable"}
+  "cbSeamOff": {"hex": "#2b3b42", "set": "cable"},
+  "cbPipe": {"hex": "#7d8a94", "set": "cable"},
+  "cbPipeD": {"hex": "#4f5961", "set": "cable"}
 }
