@@ -45,6 +45,9 @@ VENT_W = 5
 LOW_DROP = 2                        # the lower box's top this many px under the line under the bullnose's foot
 LOW_LINE = 5                        # a seam across it this many px under its top
 LOW_FRAME = 2                       # under that, a seam outline (its corners rounded off) this many px in from each edge
+LOW_FRAME_TOP = 4                   # (its top this many px under the seam across)
+HANDLE = (1, 2)                     # a handle in it, a line in the darker seam tone: px in from its near side, from its
+                                    # top and foot
 LOW_LIT = "stL"                     # a faint lit px under the box's top edge and the seam across, and down inside its near
                                     # side (the ref's left on the face rising to the right)
 GAP_SHADE = SH.GROOVE_D                # the top box's shadow in the gap under it
@@ -134,6 +137,7 @@ def _module(f, s0, zk):
            [None, SH.TOP, SH.BANDS[0][0], SH.FACE, None], BOX_SIDE, end=False)
     _plate(f, a, b, back, top)
     _rect(f, a, a + LINE, z0, top - c * px, out + 0.001, BOX_LINE)              # (a: the end turned from view)
+    _rect(f, b - LINE, b, z0, top - c * px, out + 0.001, LOW_LIT)               # (b: its near end, faintly lit)
     e = 0.001
     f.k.poly([T.P(f.ax, f.plane, u, z, d) for u, z, d in ((a, top + e, out - c * LINE + e), (a + LINE, top + e,
               out - c * LINE + e), (a + LINE, top - c * px + e, out + e), (a, top - c * px + e, out + e))],
@@ -157,14 +161,17 @@ def _module(f, s0, zk):
     zs = z1 - LOW_LINE * px                                 # a seam across it
     _rect(f, a, b, zs - px, zs, fd, BOX_LINE)
     i = LOW_FRAME                                           # an outline under it, its corner px left out
-    u0, u1, za, zb = a + i * LINE, b - i * LINE, z0 + i * px, zs - px - i * px
+    u0, u1, za, zb = a + i * LINE, b - i * LINE, z0 + i * px, zs - px - LOW_FRAME_TOP * px
     _rect(f, u0 + LINE, u1 - LINE, zb - px, zb, fd, BOX_LINE)
     _rect(f, u0 + LINE, u1 - LINE, za, za + px, fd, BOX_LINE)
     _rect(f, u0, u0 + LINE, za + px, zb - px, fd, BOX_LINE)
     _rect(f, u1 - LINE, u1, za + px, zb - px, fd, BOX_LINE)
     _rect(f, a + LINE, b, z1 - px, z1, fd, LOW_LIT)                          # (faint lit px)
     _rect(f, a + LINE, b, zs - 2 * px, zs - px, fd, LOW_LIT)
-    _rect(f, b - LINE, b, z0, z1 - px, fd, LOW_LIT)    # the recess, from the groove down to the step
+    _rect(f, b - LINE, b, z0, z1 - px, fd, LOW_LIT)
+    hs, he = HANDLE                                         # the handle (u1: the near side)
+    hu = u1 - (2 + hs) * LINE
+    _rect(f, hu, hu + LINE, za + (1 + he) * px, zb - (1 + he) * px, fd, SH.GROOVE_D)    # the recess, from the groove down to the step
     p0, p1, up = RECESS
     u0, u1 = _span(s0, p0, p1)
     zt, zf = s.z_at(SH.GROOVE, -up), s.z_at(SH.FOOT_H, -1)
