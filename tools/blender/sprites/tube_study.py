@@ -10,7 +10,7 @@ through), so one sprite serves the roofed and the cut view.
 
 The deck inside is in the sprite for the study only (in the game the floor tiles and the crew go under the glass). One
 sprite draws the whole tube (no seams between tile sprites), anchored at the centre of its east tile: it runs along grid
-+x from u = -2.5 to 0.5, centred on v = 0. Palette set tube."""
++x from the west port's collar to the east door's frame, centred on v = 0. Palette set tube."""
 import math
 
 import numpy as np
@@ -19,7 +19,9 @@ from . import core
 from .cable_study import _frame
 
 PAL = "tube"
-L0, L1 = -3 + 0.71875 + 0.07, 0.5        # the run along u: from the west hull port's collar (tube_port) into the east wall
+L0, L1 = -3 + 0.71875 + 0.07, 0.84375    # the run along u: from the west hull port's collar (tube_port) to the east
+                                         # wall's outer face (the door's frame back, doors.planes: 1 - 0.15625), so
+                                         # the open door shows the tube's inside, no ground between
 ZC, R = 1.0, 0.8                         # shell centre height and radius: the hull port's axis and port radius
 OCT = 0.76                               # the lattice's apothem
 ZB = 0.62                                # top of the metal belly (below it the shell is opaque): a kick panel
