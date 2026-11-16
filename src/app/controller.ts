@@ -1,5 +1,5 @@
 import { asteroidAt, shipIdOf, shipGrid } from '../sim/regions';
-import { containerAt, ContainerC } from '../sim';
+import { containerAt, ContainerC, rotatedSize } from '../sim';
 import { AsteroidC } from '../sim/asteroids/components';
 import { AboardC, AllegianceC, BodyC, DraftedC, ModuleC, PositionC, ShipC, Struct, VehicleC, footprintTiles, playerFoes, type Sim, type SimEvent } from '../sim';
 import type { Renderer } from '../render/scene';
@@ -241,9 +241,33 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     else if (s.kind === 'crew') selectCrew(s.id, true);
     else if (s.kind === 'ship') selectShip(s.id);
   };
+  /** Outline the picked container's whole footprint: a loose box by its body, a box being cut by its module (same selection markers as any selected object). */
+  let boxMarked = false;
+  const markBox = () => {
+    const seed = contSel.get();
+    if (seed === null && !boxMarked) return; // nothing picked, nothing drawn
+    let tiles: Tile[] | null = null;
+    for (const id of seed === null ? [] : sim.world.query(ContainerC)) {
+      const c = sim.world.get(id, ContainerC);
+      const def = c && sim.content.modules[c.def];
+      if (!c || !def || (c.seed ?? id) !== seed) continue;
+      const b = sim.world.get(id, BodyC);
+      const m = sim.world.get(id, ModuleC);
+      if (b) {
+        const [w, h] = rotatedSize(def, c.rot);
+        // The body's art is centred on sector point (b.x, b.y); a marker tile sits at its centre minus the half tile of sectorArt.
+        const x0 = b.x - w / 2 + 0.5, y0 = b.y - h / 2 + 0.5;
+        tiles = Array.from({ length: w * h }, (_, i) => ({ x: x0 + (i % w), y: y0 + Math.floor(i / w) }));
+      } else if (m) tiles = footprintTiles(def, m.x, m.y, m.rot);
+      break;
+    }
+    boxMarked = tiles !== null;
+    r?.setSectorSelection(tiles);
+  };
   const selectContainer = (seed: number | null) => {
     selectTile(null);
     if (seed !== null) contSel.set(seed);
+    markBox();
   };
   const selectAsteroid = (id: number | null) => {
     selectTile(null);
@@ -305,6 +329,7 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
       wasFighting = fighting;
       alerts.sync();
       log.sync();
+      markBox();
       r?.setFoes(playerFoes(sim)); // the red foot marks (upkeep already runs a few times a second)
     },
     toast,

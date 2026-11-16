@@ -57,7 +57,7 @@ export function populateCargo(sim: Sim, node: NodeData, seed: number, at: Place)
     const y = first.y + h / 2 + Math.sin(ga) * gap;
     growSector(sim, Math.floor(x), Math.floor(y), w + 6, h + 6);
     spawnDriftingContainer(sim, {
-      def: box.def, rot, x, y, vx: Math.cos(a) * speed, vy: Math.sin(a) * speed, spin: (unit(s, 7) - 0.5) * 2 * SPIN,
+      def: box.def, rot, clamp: rot % 2 === 0 ? 'n' : 'w', x, y, vx: Math.cos(a) * speed, vy: Math.sin(a) * speed, spin: (unit(s, 7) - 0.5) * 2 * SPIN,
       hp: HP[0] + unit(s, 8) * (HP[1] - HP[0]), ship: 0, ...(faction ? { faction } : {}), stock: rollCargo(sim, s, node.danger, def.storage?.capacity ?? 0),
     });
     made++;
