@@ -1,9 +1,11 @@
-"""The station hull bay's machinery (station_hull_bay; designs 5 to 7 try three fills, design reference only): pipe
-runs up and across the bay near its mouth, turned through rounded elbows (_run: a pipe swept along a path, its corners
-filleted), with boxes where they end or meet:
-  5  two pipes up from the floor, across the bay and up again into the top, side by side
-  6  a header across under the top, three drops elbowing down off it to a manifold box on the floor
-  7  a square duct up the far end; a pipe out of it, down and back in (a loop), a second loop under; a valve"""
+"""The station hull bay's machinery (station_hull_bay; designs 5 to 7 try three fills, design reference only), each
+a machine near the bay's mouth (_run: a pipe swept along a path through rounded elbows; _lathe: a round body up the
+bay):
+  5  a pressure tank: domed, two hoops round it, a gauge on it; its outlet up into the top, a valve wheel at its foot
+  6  an inline pump: its housing on the floor, the line through it across the bay, its finned motor stood on it; a
+     control box over it, its lead down to the motor, a conduit up into the top
+  7  an air handler: a box with a fan grille in its front, a square duct up from it into the top, a pipe down from it
+     to an intake grille on the floor"""
 import math
 
 from . import core
@@ -16,7 +18,7 @@ PIPE_COLS = ((0.7, "stH"), (0.2, "stL"), (-0.3, "stS"), (-0.8, "stM"), (-2, "stD
 
 def machinery(f, design, u0, u1, zf, zl, back):
     """Design `design`'s fill of the bay [u0, u1] x [zf, zl], its back at d = back."""
-    {5: _twin, 6: _header, 7: _loops}[design](f, u0, u1, zf, zl, back, 1 / core.ZPX)
+    {5: _tank, 6: _pump, 7: _handler}[design](f, u0, u1, zf, zl, back, 1 / core.ZPX)
 
 
 def _box(f, u0, u1, z0, z1, d0, d1, front, top, side):
@@ -83,29 +85,98 @@ def _run(f, u0, zf, dc, pts, r=1.5, R=3, n=10):
                      (T.P(f.ax, 0, gu, gz, gd) - o).normalized(), fixed=T.SEAM_PASS or col)
 
 
-def _twin(f, u0, u1, zf, zl, back, px):
+MACHINE = ("stS", "stM", "stDE", "stD", "stE")   # a machine's tones by facing: up, lit (+u), front, dark (-u), down
+                                    # (a step under the hull's: it stands in the bay's shade)
+
+
+def _lathe(f, uc, dc, prof, n=14, tones=MACHINE):
+    """A round body up the bay about (uc, dc): prof ((z, r px) from its foot up); its facets toned by facing."""
+    px, o = 1 / core.ZPX, T.P(f.ax, 0, 0, 0, 0)
+    for (za, ra), (zb, rb) in zip(prof, prof[1:]):
+        dz, dr = (zb - za) / px, rb - ra
+        ln = math.hypot(dz, dr) or 1.0
+        c, sz = dz / ln, -dr / ln                           # (its facets' lean: out, up)
+        for j in range(n):
+            a0, a1, am = (2 * math.pi * k / n for k in (j, j + 1, j + 0.5))
+            gu, gd = c * math.cos(am), c * math.sin(am)
+            if gd < -0.3 and sz < 0.6:
+                continue
+            up, lit, fr, dk, dn = tones
+            col = up if sz > 0.6 else dn if sz < -0.6 else lit if gu > 0.4 else dk if gu < -0.4 else fr
+            q = [T.P(f.ax, f.plane, uc + r * LINE * math.cos(a), z, dc + r * LINE * math.sin(a))
+                 for a, z, r in ((a0, za, ra), (a1, za, ra), (a1, zb, rb), (a0, zb, rb))]
+            f.k.poly(q, F, 3, (T.P(f.ax, 0, gu, sz, gd) - o).normalized(), fixed=T.SEAM_PASS or col)
+
+
+def _wheel(f, uc, zc, d, r=3):
+    """A valve wheel facing out: its rim, its hub, a spoke across."""
+    px = 1 / core.ZPX
+    _disc(f, uc, zc, r, d, "stL")
+    _disc(f, uc, zc, r - 1, d + 0.001, "stE")
+    SD._rect(f, uc - (r - 1) * LINE, uc + (r - 1) * LINE, zc - px / 2, zc + px / 2, d + 0.002, "stS")
+    _disc(f, uc, zc, 0.8, d + 0.003, "stH")
+
+
+def _tank(f, u0, u1, zf, zl, back, px):
     W, top = (u1 - u0) / LINE, (zl - zf) / px
-    for k, dc in ((0, 3), (3, 6)):                          # (two runs side by side, the second behind)
-        _run(f, u0, zf, D - dc * LINE, [(3 + k, 0), (3 + k, 18 - k), (W - 4 + k, 18 - k), (W - 4 + k, top + 2)])
-    _box(f, u0 + LINE, u1 - LINE, zf, zf + 2 * px, back, D - LINE, "stM", "stL", "stD")
+    uc, r, dc = u0 + (W / 2 + 0.5) * LINE, 5, D - 6 * LINE
+    zt = top - 14                                           # (its shoulder; the dome over it)
+    _box(f, uc - 5 * LINE, uc + 5 * LINE, zf, zf + 3 * px, back, D - LINE, "stM", "stL", "stD")   # (its plinth)
+    prof = [(3, r), (zt, r)] + [(zt + 4 * math.sin(math.pi / 2 * k / 4), r * math.cos(math.pi / 2 * k / 4) + 0.01)
+                               for k in range(1, 5)]
+    _lathe(f, uc, dc, [(zf + z * px, rr) for z, rr in prof])
+    for zc in (10, zt - 7):                                 # (hoops round it)
+        _lathe(f, uc, dc, [(zf + zc * px, r + 0.6), (zf + (zc + 2) * px, r + 0.6)])
+    gd = dc + r * LINE + 0.002                              # (a gauge on its front)
+    SD._rect(f, uc + 2.5 * LINE, uc + 3.3 * LINE, zf + 5 * px, zf + (zt - 1) * px, dc + 4.2 * LINE, "stS")   # (its sheen)
+    _disc(f, uc + 2 * LINE, zf + (zt - 3) * px, 1.6, gd, "stB")
+    SD._rect(f, uc + 2 * LINE, uc + 2.6 * LINE, zf + (zt - 3) * px, zf + (zt - 2) * px, gd + 0.001, "stE")
+    _run(f, u0, zf, dc, [((W / 2 + 0.5), zt + 3.5), ((W / 2 + 0.5), top - 4), (W / 2 + 4.5, top - 4),
+                         (W / 2 + 4.5, top + 2)], r=1.2, R=2)
+    _run(f, u0, zf, D - 2 * LINE, [(W / 2 + 0.5, 5), (1, 5)], r=1.2)   # (an outlet at its foot, a wheel on it)
+    _wheel(f, u0 + 4 * LINE, zf + 9 * px, D - LINE)
 
 
-def _header(f, u0, u1, zf, zl, back, px):
+def _pump(f, u0, u1, zf, zl, back, px):
     W, top = (u1 - u0) / LINE, (zl - zf) / px
-    zh = top - 6
-    _run(f, u0, zf, D - 4 * LINE, [(-1, zh), (W + 1, zh)], r=2)
-    for p, z1 in ((3, 6), (W / 2, 6), (W - 3, 6)):
-        _run(f, u0, zf, D - 2 * LINE, [(p, z1), (p, zh - 6), (p + (2 if p < W / 2 else -2), zh - 3),
-                                       (p + (2 if p < W / 2 else -2), zh)], r=1.2, R=2)
-    _box(f, u0 + LINE, u1 - LINE, zf, zf + 6 * px, back, D, "stS", "stL", "stM")
-    SD._rect(f, u0 + LINE, u1 - LINE, zf + 5 * px, zf + 6 * px, D + 0.001, "stH")
+    uc, dc = u0 + (W / 2 + 0.5) * LINE, D - 6 * LINE
+    _box(f, uc - 5 * LINE, uc + 5 * LINE, zf, zf + 3 * px, back, D - LINE, "stM", "stL", "stD")   # (its skid)
+    _lathe(f, uc, dc, [(zf + 3 * px, 4), (zf + 10 * px, 4), (zf + 11 * px, 3), (zf + 12 * px, 3)])   # (the housing)
+    for p in (1, W):                                        # (the line in and out of it, across the bay)
+        _run(f, u0, zf, dc, [(W / 2 + 0.5, 6.5), (p, 6.5)], r=1.6)
+    _lathe(f, uc, dc, [(zf + 12 * px, 2.6), (zf + 26 * px, 2.6), (zf + 27 * px, 1.6), (zf + 28 * px, 0.4)])   # (its motor)
+    for z in range(14, 26, 3):                              # (fins round it)
+        _lathe(f, uc, dc, [(zf + z * px, 3.4), (zf + (z + 1) * px, 3.4)])
+    _box(f, u0 + LINE, u1 - LINE, zf + 34 * px, zf + 42 * px, back, D - 3 * LINE, "stS", "stL", "stM")   # (a control
+    fd = D - 3 * LINE + 0.001                                                                            # box)
+    SD._rect(f, u1 - 3 * LINE, u1 - 2 * LINE, zf + 39 * px, zf + 40 * px, fd, "stB")
+    SD._rect(f, u1 - 5 * LINE, u1 - 4 * LINE, zf + 39 * px, zf + 40 * px, fd, "stD")
+    _run(f, u0, zf, D - 3 * LINE, [(4, 34), (4, 30), (W / 2 - 1, 28)], r=0.8, R=2)   # (its lead down to the motor)
+    _run(f, u0, zf, D - 4 * LINE, [(W / 2 + 0.5, 42), (W / 2 + 0.5, top + 2)], r=1.6)   # (a conduit up)
 
 
-def _loops(f, u0, u1, zf, zl, back, px):
+def _handler(f, u0, u1, zf, zl, back, px):
     W, top = (u1 - u0) / LINE, (zl - zf) / px
-    _box(f, u0 + LINE, u0 + 5 * LINE, zf, zl, back, D - 2 * LINE, "stS", "stL", "stM")
-    for z0, z1, p in ((34, 46, W - 3), (10, 24, W - 5)):
-        _run(f, u0, zf, D - 4 * LINE, [(4, z1), (p, z1), (p, z0), (4, z0)], r=1.5, R=3)
-    _box(f, u0 + (W - 7) * LINE, u0 + (W - 1) * LINE, zf + 27 * px, zf + 31 * px, D - 7 * LINE, D - LINE, "stM", "stH",
-         "stD")
-    _box(f, u0 + 5 * LINE, u1 - LINE, zf, zf + 3 * px, back, D - LINE, "stM", "stL", "stD")
+    z0, z1 = 18, 34
+    _box(f, u0 + LINE, u1 - LINE, zf + z0 * px, zf + z1 * px, back, D - LINE, "stS", "stL", "stM")
+    fd = D - LINE + 0.001
+    uc, zc = (u0 + u1) / 2, zf + (z0 + z1) / 2 * px
+    _disc(f, uc, zc, 6, fd, "stD")                          # (the fan's grille: its rim, its blades, its hub)
+    _disc(f, uc, zc, 5, fd + 0.001, "stE")
+    for k in range(3):
+        a = math.pi * k / 3
+        f.k.poly([T.P(f.ax, f.plane, uc + x * LINE, zc + y * px, fd + 0.002) for x, y in
+                  ((4.6 * math.cos(a) - 0.6 * math.sin(a), 4.6 * math.sin(a) + 0.6 * math.cos(a)),
+                   (4.6 * math.cos(a) + 0.6 * math.sin(a), 4.6 * math.sin(a) - 0.6 * math.cos(a)),
+                   (-4.6 * math.cos(a) + 0.6 * math.sin(a), -4.6 * math.sin(a) - 0.6 * math.cos(a)),
+                   (-4.6 * math.cos(a) - 0.6 * math.sin(a), -4.6 * math.sin(a) + 0.6 * math.cos(a)))],
+                 F, 3, T.OUT(f.ax), fixed=T.SEAM_PASS or "stM")
+    _disc(f, uc, zc, 1.4, fd + 0.003, "stL")
+    _box(f, u0 + 3 * LINE, u1 - 3 * LINE, zf + z1 * px, zl, back, D - 3 * LINE, "stM", "stL", "stD")   # (its duct)
+    SD._rect(f, u0 + 3 * LINE, u1 - 3 * LINE, zf + (z1 + 6) * px, zf + (z1 + 7) * px, D - 3 * LINE + 0.001, "stD")
+    _run(f, u0, zf, D - 4 * LINE, [(W - 4, z0), (W - 4, 8)], r=2)   # (down to the intake)
+    _box(f, u0 + LINE, u1 - LINE, zf, zf + 6 * px, back, D - LINE, "stM", "stL", "stD")
+    for k in range(1, 6):                                   # (its grille's slots)
+        SD._rect(f, u0 + 2 * LINE, u1 - 2 * LINE, zf + k * px, zf + (k + 0.5) * px, D - LINE + 0.001, "stE")
+
+
