@@ -15,8 +15,10 @@ PX = 1 / 32                 # an art px across or along the wall
 POST = round(BAST_P * 32)   # px: a post's front, in from the window's end (bastion's own posts)
 BLOCK = 12                  # px: an end block's flat top, in from the window's end
 END = 16                    # px: the end block's slope reaches the floor
-FLOOR_DOWN = 6              # art px: the floor under the ramp's top
-LVL = {"floor": 3, "top": 3, "slope": 3, "side": 1, "under": 1}   # the wall family's levels (toned by facing)
+FLOOR_DOWN = 16             # art px: the floor under the ramp's top (the user: the ramp drops further: a channel;
+                            # at 12 the strut stood 2-3 px from the pane and hid it)
+LVL = {"floor": 1, "top": 3, "slope": 3, "side": 1, "under": 1}   # the wall family's levels (toned by
+                                                                   # facing; the channel's floor dark)
 PANE_EDGE = "fTX6"
 PANE_T = 1 / 32
 PANE_OUT = 0.003
