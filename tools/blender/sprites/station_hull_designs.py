@@ -35,6 +35,7 @@ NO_TABS = {MODULE}                  # designs without the groove's tabs (the rec
 BOX_OUT, BOX_UP, BOX_GAP = 1, 1, 2   # the middle slot's boxes: px off the face, the top one's top px over the top's, the
                                     # gap between them (the line under the bullnose)
 BOX_SIDE = SH.SEAM                  # their ends (the seams')
+BOX_LINE = SH.GROOVE_D              # the lines on them (the darker seam tone), down their unseen end's edge too
 BOX_CHAMFER = 2                     # the top box's top front edge chamfered this many px, in the bullnose's top band's tone
 VENTS = (7, 10)                     # its vent's slots, px under the top
 VENT_W = 5
@@ -94,6 +95,7 @@ def _module(f, s0, zk):
     c = BOX_CHAMFER
     f.part(a, b, [(back, z0), (back, top), (out - c * LINE, top), (out, top - c * px), (out, z0)],
            [None, SH.TOP, SH.BANDS[0][0], SH.FACE, None], BOX_SIDE, end=False)
+    _rect(f, a, a + LINE, z0, top - BOX_CHAMFER * px, out + 0.001, BOX_LINE)    # (a: the end turned from view)
     m = (a + b) / 2
     for n in VENTS:                                         # its vent (px rows under its top on screen)
         zv = zl + lift + round((top - zl) / px) * px - n * px
@@ -104,14 +106,15 @@ def _module(f, s0, zk):
     f.part(a, b, [(D - 0.01, z0), (D - 0.01, z1), (out, z1), (out, z0)], [None, SH.SEAM, SH.FACE, None], BOX_SIDE,
            end=False)
     fd = out + 0.001
+    _rect(f, a, a + LINE, z0, z1, fd, BOX_LINE)
     zs = z1 - LOW_LINE * px                                 # a seam across it
-    _rect(f, a, b, zs - px, zs, fd, SH.SEAM)
+    _rect(f, a, b, zs - px, zs, fd, BOX_LINE)
     i = LOW_FRAME                                           # an outline under it, its corner px left out
     u0, u1, za, zb = a + i * LINE, b - i * LINE, z0 + i * px, zs - px - i * px
-    _rect(f, u0 + LINE, u1 - LINE, zb - px, zb, fd, SH.SEAM)
-    _rect(f, u0 + LINE, u1 - LINE, za, za + px, fd, SH.SEAM)
-    _rect(f, u0, u0 + LINE, za + px, zb - px, fd, SH.SEAM)
-    _rect(f, u1 - LINE, u1, za + px, zb - px, fd, SH.SEAM)
+    _rect(f, u0 + LINE, u1 - LINE, zb - px, zb, fd, BOX_LINE)
+    _rect(f, u0 + LINE, u1 - LINE, za, za + px, fd, BOX_LINE)
+    _rect(f, u0, u0 + LINE, za + px, zb - px, fd, BOX_LINE)
+    _rect(f, u1 - LINE, u1, za + px, zb - px, fd, BOX_LINE)
     # the recess, from the groove down to the step
     p0, p1, up = RECESS
     u0, u1 = _span(s0, p0, p1)
