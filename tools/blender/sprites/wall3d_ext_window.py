@@ -69,7 +69,8 @@ C_SIDE = 22                         # its foot; C, a strip on from B's right sid
                                     # lean run on up to B and on from C)
 PLATE_FOOT = 2                      # B and C's foot: a line this many px down the header's upright face (their
                                     # sides run on down past it to the header's foot, the user)
-W2_PLATE = (3, 5)                   # W2's header: a plate over B, spanning its sides' lines' outer edges, from this
+W2_PLATE = (3, 5)                   # W2's header: a plate over B, covering its sides' lines (a px past their outer
+                                    # edges: REC proud, it shifts on screen and the lines peeked out), from this
                                     # many px down the header's front on screen from its top edge, this many px
                                     # tall; REC proud, in the upright part's tone (the user)
 E_RIBS = (11, 15)                   # W1's sill: E, a recess in its slope under B (its sides B's), from the slope's
@@ -270,7 +271,7 @@ def _w1_header(f, s, s0, s1, dv, zc, zh):
     band(c1, c1 + ln, zh, L.px(zt, -1), YS[3])                          # C: its side, to the header's foot
     band(b0, c1 + ln, zl, zl + 1 / core.ZPX, YS[3])                     # their foot, across both
     if PART == "w2":
-        _w2_head_plate(f, s, b0, b1 + ln, d_of=lambda z: T3.BACK + (H - z) * dk if z > zc else dv, zc=zc)
+        _w2_head_plate(f, s, b0 - T3.px(1), b1 + ln + T3.px(1), d_of=lambda z: T3.BACK + (H - z) * dk if z > zc else dv, zc=zc)
 
 
 def _w2_head_plate(f, s, u0, u1, d_of, zc):
