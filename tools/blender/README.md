@@ -149,6 +149,10 @@ The preview assembles the engineer in memory from the same builders the export u
   `lib/rig.py` (armature, sockets, keyframing), `lib/skinning.py` (weights), `lib/export.py` (glTF).
 - `crew/`: `body.py` (human base), item modules (`arms`, `clothing`, `gear`, `hair_eyes`), `clips.py`, `human.py`
   (build driver), `bodytype.py`.
+- `review/`: look study previews. `review/study_sheet.py` is the shared part: options as small scenes (sprite, floor
+  patch, crew for scale, `.on` with its `.holo`), cropped to content, side by side, scaled with nearest neighbour and
+  labelled after scaling. Run it on a study's assets (`<assets> <out.png> label=id,... [--crew] [--floor N]`), or build
+  scenes with `Study`/`Scene`/`sheet` in a new family's preview script. Older previews keep their own code.
 
 ## Conventions
 - Units: 1 = 1 tile, Y up, front = +Z, origin at the feet. Character L = +X. ~6 heads, ~1.55 tiles tall.
