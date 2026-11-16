@@ -51,7 +51,7 @@ BLOCK, BLOCK_LIT = FACE, "stH"      # its blocks: the face's tone, lit along the
 # straight runs' designs (after the ref's straight variants): 0 the base; each its extra detail over it. A dent: (px along
 # the tile from its far end (see _dent), px under the bullnose's foot, half its width and its height in px), painted
 # as a shallow pit: its lit lower lip, a darker ring, its shaded upper inside
-DENTS = ((7, 3, 3, 1.7, (1.0, 1.25, 0.8, 0.9, 1.15, 0.7, 0.95, 1.05), 15),
+DENTS = ((7, 0, 3, 1.7, (1.0, 1.25, 0.8, 0.9, 1.15, 0.7, 0.95, 1.05), 15),
          (13, 29.5, 2.6, 1.5, (1.0, 0.7, 1.05, 1.3, 0.9, 1.0, 0.75, 1.15), -12),
          (25, 49, 2.4, 1.9, (0.8, 1.15, 1.2, 0.85, 0.7, 1.05, 1.3, 0.9), 35))
 GOUGE = (28, 25, 5, 1.0, (1.0, 0.75, 1.1, 1.0, 0.85, 1.25, 0.8, 1.0), 6)   # (run out to the tile's edge)                                  # a long shallow dent near the tile's end
