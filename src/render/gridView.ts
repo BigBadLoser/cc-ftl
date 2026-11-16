@@ -6,6 +6,7 @@ import { ModuleC } from "../sim/modules/components";
 import { airlockDoorTiles, airlockRowTiles } from "./airlockArt";
 import { Finish, Struct, STRUCT_MAX_HP } from "../sim/structure";
 import { MARK_FIELDS } from "../sim/marks";
+import { decodeWindow, type WindowTile } from "../sim/windows";
 import { depthKey } from "./iso";
 import type { Layers } from "./layers";
 import { lightTint, mulColor, pulsePhase } from "./lightTint";
@@ -16,7 +17,7 @@ import { addStatic } from "./sprites";
 import { haloTex } from "./haloTex";
 import { beamIds, DEFAULT_BEAM_LOOK, type BeamLook } from "./beamArt";
 import { createChunkViews, regionTiles, type ChunkRef } from "./regionTiles";
-import { artKind, floorChain, ghostVertsIn, HULL_RAY, HullSide, hullSide, replacesFloor, wallPieces, type CutawayMode } from "./tiles";
+import { artKind, floorChain, ghostVertsIn, HULL_REACH, HullSide, hullSide, replacesFloor, wallPieces, type CutawayMode } from "./tiles";
 import { CarpetSprite } from "./carpetPaint";
 import { DRAWN_MARKINGS, markPieces, WALKWAY_PAINT } from "./deckMarks";
 import { HullSprite } from "./hullPaint";
@@ -227,6 +228,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
     const gapAt = (x: number, y: number): boolean => mode === "up" && tiles.inside(x, y) && replaced.has(y * width + x);
     const struct = tiles.data("struct", c);
     const finish = tiles.data("floor", c);
+    const windows = tiles.data("window", c);
     const anyMarks = marksNear(c); // (a neighbour chunk's masks can turn a line into this one)
     const x0 = Math.max(0, r.x0), x1 = Math.min(width, r.x1);
     const y0 = Math.max(0, r.y0), y1 = Math.min(height, r.y1);
@@ -264,7 +266,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
           // over them; the designs' relief would clash with the bell or the collar); their own sprites stand there
           // only where the new hull has no art. In cutaway the airlock keeps its own sprites (no door, no belly).
           const own = gapAt(x, y) || airlocks.has(idx);
-          const drew = hull && (!airlocks.has(idx) || !ghosts) ? drawHull(hull, x, y, k, ci, v, false, own) : false;
+          const drew = hull && (!airlocks.has(idx) || !ghosts) ? drawHull(hull, x, y, k, ci, v, false, own, decodeWindow(windows?.[ci] ?? 0)) : false;
           const special = own && !drew;
           // Under an airlock's door tile the near hull's belly still runs below the deck (its own sprite is the wall above).
           if (hull && ghosts && airlocks.has(idx)) drawHull(hull, x, y, k, ci, v, true);
@@ -287,7 +289,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
           if (k === Struct.Floor) continue;
           // The engine's hull row (walls up or roofed) is the engine's own bulkhead sprite: no hull wall on it.
           if (special) continue;
-          for (const piece of wallPieces(wallAt, x, y, stone ? Struct.RockWall : k, mode, ghosts, gapAt)) {
+          for (const piece of wallPieces(wallAt, x, y, stone ? Struct.RockWall : k, mode, ghosts, gapAt, decodeWindow(windows?.[ci] ?? 0))) {
             if (drew && !keepsOldPiece(k, ghosts, piece.under)) continue; // (a door stays, without its old belly)
             const s = atlas.firstOf(piece.chain);
             if (!s) continue;
@@ -367,7 +369,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
    * (an engine's hull row); `base`: a straight run's base design only (an engine's row, an airlock's door). False if it
    * drew nothing.
    */
-  function drawHull(h: HullKeys, x: number, y: number, k: number, ci: number, v: TileChunk, bellyOnly = false, base = false): boolean {
+  function drawHull(h: HullKeys, x: number, y: number, k: number, ci: number, v: TileChunk, bellyOnly = false, base = false, win: WindowTile | null = null): boolean {
     const paint = host.hullPaint?.() ?? PLAIN_PAINT;
     const put = (id: string, z: number, parent: Container, solid: boolean) => {
       const s = atlas.stat(id);
@@ -388,7 +390,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
       return !!b?.under;
     }
     if (!ghosts) {
-      const ext = exteriorIds(h, x, y, has, base);
+      const ext = exteriorIds(h, x, y, has, base, win);
       if (!ext) return false;
       // The roof stand-in at the roof plating's depth: over the tile's piece, under the hull of the tiles in front.
       ext.forEach((id) => put(id, z + (id.startsWith("tile.roof.") ? 0.9 : 0), L.sorted, solid));
@@ -486,11 +488,11 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
       const base = `${mode}|${ghosts}|${look}|${paint.armour}/${paint.deco}/${paint.carpet}/${paint.walkway}`;
       // Per-chunk keys only when something in the region moved (tiles outside it read as Space, so its revision covers
       // every input). One chunk ring past the region: ghost verts sit a tile outside its -x / -y edges.
-      const built = `${base}|${grid.revision("struct")}|${mr}|${grid.revision("floor")}|${DRAWN_MARKINGS.map((kind) => grid.revision(MARK_FIELDS[kind])).join(",")}`;
+      const built = `${base}|${grid.revision("struct")}|${mr}|${grid.revision("floor")}|${grid.revision("window")}|${DRAWN_MARKINGS.map((kind) => grid.revision(MARK_FIELDS[kind])).join(",")}`;
       if (built !== builtKey) {
         builtKey = built;
         hull = gridHullKeys(grid, wallAt, width, height);
-        const n = chunks.sync(tiles.chunks(1), (c) => `${base}|${tiles.key("struct", c, HULL_RAY)}|${tiles.rev("floor", c)}|${DRAWN_MARKINGS.map((kind) => tiles.rev(MARK_FIELDS[kind], c, 1)).join(",")}|${specialsNear(c)}|${hullKeysIn(c)}`, buildChunk, host.gate);
+        const n = chunks.sync(tiles.chunks(1), (c) => `${base}|${tiles.key("struct", c, HULL_REACH)}|${tiles.rev("floor", c)}|${tiles.rev("window", c)}|${DRAWN_MARKINGS.map((kind) => tiles.rev(MARK_FIELDS[kind], c, 1)).join(",")}|${specialsNear(c)}|${hullKeysIn(c)}`, buildChunk, host.gate);
         if (chunks.pending > 0) builtKey = ""; // the rest on a later update
         if (n > 0) frameKey = "";
       }

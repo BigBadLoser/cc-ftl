@@ -53,6 +53,7 @@ One line per section; read the index, then only the sections your task touches.
 - [Hull width rule and the hull plan brushes (#143)](#hull-width-rule-and-the-hull-plan-brushes-143): The rule. No part of a ship may be narrower than 3 tiles. The footprint (every struct tile except Space...
 - [Station jobs by station type (issue #178)](#station-jobs-by-station-type-issue-178): Offers (galaxy/jobOffers.ts) are still a pure function of (seed, port, window, slot). The port's station...
 - [Prisoner holding (stasis), `src/sim/stasis/` (#116)](#prisoner-holding-stasis-srcsimstasis-116): Full slab = frozen prisoner entity (StasisC), wheel slots, the stasis job, reserve and thaw, slabs by shuttle from a prize (rack), release of a frozen prisoner, prisoner deals at stations (slab delivered by shuttle); the owning reads render uses.
+- [Windows, `src/sim/windows.ts` (#516)](#windows-srcsimwindowsts-516): A per-tile `window` code on Wall tiles; player-built, no gameplay effect.
 
 
 The previous attempt (`bigbadloser/space-web-game`, **reference only, nothing is copied**) bloated
@@ -465,9 +466,9 @@ palette.json    the single palette, read by Blender scripts and the game
   into the manifest (their old sheets and ids are replaced, everything else is kept), so one family can
   be rebuilt alone: `npm run sprites -- public/assets walls,consoles`. Families: `crew`, `portraits` (crew portrait renders, see "Crew"), `robots` (robot
   crew, see below), `aliens`, `robot_bay`, `env` (props,
-  economy modules, items, the particle sprites), `walls` (floors, walls, hull, doors), `consoles`, `weapons` (turrets and
+  economy modules, items, the particle sprites), `walls` (floors, walls, hull, doors; the default partition pieces in `sprites/wall3d_v2.py`'s look), `consoles`, `weapons` (turrets and
   bays), `roof` (plating, edges, livery masks), `struct` (structural beams), `fx` (combat fx v2, see
-  below), `fx_shield` (the shield dome's sprite pieces, see "Shield dome"), `structure` (faction tile looks, see below), `galley`
+  below), `fx_shield` (the shield dome's sprite pieces, see "Shield dome"), `windows` (#516: the hull's window runs `tile.hull.ext.o<o>.m<mask>.w1..w3` with `.tint`, the default walls' interior window `tile.wall.full.m<10|5>.win.l|m|r` and cut down `tile.wall[.low].m<10|5>.win.l|m|r`; `sprites/windows.py`, the pane see-through), `structure` (faction tile looks, see below), `galley`
   (the food pack, see below), `derelict` and `eggsac` (derelict dressing, see below), `starmap` (the map's pictures, see below), `cargo` (a delivery job's sealed hard case, `item.cargo_crate.l` and `.held`, `sprites/cargo.py`), `items` (the item pack, sheet `items`: `item.<id>.s/.m/.l/.held` for the items `env` does not draw, `sprites/items_now.py`, and for planned items not yet in content, `items_tech.py`, `items_materials.py`, `items_parts.py`, `items_goods.py`; shared shapes in `items_kit.py`) and `sol` (the engine, AI core and shield packs, rendered by their own scripts in
   `tools/blender/experiments/` and packed by `sprites/sol_pack.py`).
 - **Ore refinery (`sheet refinery`, not a `families.py` family):** a 3x4 prop with 4 rotations x idle, `.unpowered`, and a 4-frame
@@ -2820,3 +2821,14 @@ Design: DESIGN.md "Prisoners and prizes". Slice 1 is sim, content and app only; 
   system parks their cart once (`CartRestC`): two free floor tiles (walkable, not a door, not under a floor slab or another cart) straight out
   from them, the near one beside them, on the side most toward the job's target and never on it, else any side; none when boxed in. Kept
   while they stand, cleared when they walk or stop carting. Render reads `cartRest` (null while walking) and draws a walking cart itself.
+
+## Windows, `src/sim/windows.ts` (#516)
+
+A window is a per-tile code in the u8 grid field `window` of a `Struct.Wall` tile (0 = none), not a struct kind: the tile is a wall in every system (air, heat, hp and breach, line of sight, light, rooms, pathing). No system reads the field except the build and deconstruct jobs and the renderer.
+
+- **Encoding:** bit 7 = axis (0 along x, 1 along y), bits 4-6 = the window's size (2..4), bits 0-3 = the tile's index along the run from the lower coordinate. Never 0. Piece (`windowPiece`): size 2 = l, r; 3 = l, m, r; 4 = l, m, m, r. Helpers: `windowCode`, `decodeWindow`, `windowAt`, `windowRun`.
+- **Placement** (`windowRunError`, the one validity answer; the Window tool previews with it): 2, 3 or 4 tiles in a straight run, every tile a plain `Struct.Wall` (hull or partition) with no window and no pending job, and a straight piece: wall (or door) at both ends along the axis, none across it (no corner, T junction or thick block).
+- **Command:** `job.window { ship, x, y, axis, size }` (x, y = the run's lower-coordinate end) posts one build job per tile (`Job.window` = the tile's code; `struct` stays Wall; cost key `window`, 2 metal + 1 polymer a tile, hauled like other build materials). Finishing writes the field. `job.deconstruct` on a window tile posts a deconstruct job with `Job.window = 0`: it clears the field (the wall stays) and refunds half the `window` cost, rounded down (1 metal a tile).
+- **Struct changes:** `writeStruct` and `damageStruct` (breach) clear the tile's code; the rest of the window keeps its codes (its end pieces stay l / r).
+- **Render:** with the walls up, `wallPieces` puts `tile.wall.full.m10.win.<l|m|r>` (`m5` along y) first in the chain of a straight partition or far hull tile (the far hull keeps its `tile.hull.cap` over it); the near hull stays the ghost; cutaway stays plain. Roofed, `exteriorIds` draws `<tile.hull.ext.o1.m10 | o2.m5>.w1|w2|w3` (w1 the lower-coordinate end, w3 the higher) on a window tile of a straight near run, else the usual design. A missing id falls back to the plain piece. `gridView` keys its chunks on the `window` revision.
+- **UI:** the Window card in the Structure tab (size 2 / 3 / 4), `app/windowTool.ts` (run under the cursor, centred or slid along the wall; red with the reason when invalid).

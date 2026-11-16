@@ -3,14 +3,15 @@
  * Built once per layout and kept; building a big station takes about 60 ms.
  */
 import { content } from '../../src/content';
-import { ModuleC, Sim, shipGrid, spawnShip, validateTemplate, type ModuleDef, type ShipTemplate } from '../../src/sim';
+import { windowPlan } from '../../src/app/windowTool';
+import { windowCode, windowRun, ModuleC, Sim, Struct, shipGrid, spawnShip, validateTemplate, type ModuleDef, type ShipTemplate, type WindowAxis } from '../../src/sim';
 import { removeWreck } from '../../src/sim/salvage/remove';
 import { placementError } from '../../src/sim/modules/spawn';
 import { roomsSystem } from '../../src/sim/systems/rooms';
 import { lightingSystem } from '../../src/sim/systems/lighting';
 import { powerSystem } from '../../src/sim/systems/power';
 import { ORIGIN } from './camera';
-import { addModule, clampAt, newModule, removeModule, toTemplate, type Layout } from './layout';
+import { addModule, clampAt, newModule, removeModule, toTemplate, type Layout, type Tile } from './layout';
 
 export interface World { sim: Sim; ship: number }
 const cache = new WeakMap<Layout, World | null>();
@@ -21,10 +22,29 @@ export const fits = (sim: Sim, l: Layout): boolean => ORIGIN + l.width + 8 <= si
 /** Stamp a layout into a sim at ORIGIN and allocate power and light once, as a new game does (nothing is stepped; unlit, the hull tints dark and cold against the roof). Returns the ship, or null if it will not stand. */
 export function stampLayout(sim: Sim, l: Layout): number | null {
   const ship = spawnShip(sim, { ...toTemplate(l), crew: [] }, { faction: (l.origin?.side ?? 'player') as NonNullable<ShipTemplate['faction']>, x: ORIGIN, y: ORIGIN, ...(l.origin ? { gen: l.origin.gen } : {}) });
+  const grid = shipGrid(sim, ship);
+  if (grid) stampWindows(grid, l);
   roomsSystem(sim);
   powerSystem(sim);
   lightingSystem(sim);
-  return shipGrid(sim, ship) ? ship : null;
+  return grid ? ship : null;
+}
+
+/** Write each window's per-tile codes (the game's `windowCode`) into the ship's `window` field; a tile that is not a wall in the stamped ship keeps none. */
+function stampWindows(grid: NonNullable<ReturnType<typeof shipGrid>>, l: Layout): void {
+  if (!grid.has('window')) return;
+  for (const w of l.windows ?? []) {
+    for (const t of windowRun(w.x + ORIGIN, w.y + ORIGIN, w.axis, w.size)) {
+      if (grid.inBounds(t.x, t.y) && grid.get('struct', t.x, t.y) === Struct.Wall) grid.set('window', t.x, t.y, windowCode(w.axis, w.size, t.index));
+    }
+  }
+}
+
+/** The run the Window tool would build with the cursor on design tile (x, y): the game's own `windowPlan` against the layout's stamped world. Null off the ship. */
+export function windowPlanAt(l: Layout, x: number, y: number, size: number): { x: number; y: number; axis: WindowAxis; size: number; tiles: Tile[]; error: string | null } | null {
+  const w = worldOf(l);
+  const plan = w ? windowPlan(w.sim, w.ship, { x: x + ORIGIN, y: y + ORIGIN }, size) : null;
+  return plan ? { x: plan.start.x - ORIGIN, y: plan.start.y - ORIGIN, axis: plan.axis, size, tiles: plan.tiles.map((t): Tile => [t.x - ORIGIN, t.y - ORIGIN]), error: plan.error } : null;
 }
 
 /** Replace the ship a sim holds with another layout, in place (the game's own wreck removal, then a new stamp): the preview's renderer keeps its world. */
