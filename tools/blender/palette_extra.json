@@ -4015,5 +4015,13 @@
   "cbSeam": {"hex": "#5fe0ff", "emissive": 1.4, "set": "cable"},
   "cbSeamOff": {"hex": "#2b3b42", "set": "cable"},
   "cbPipe": {"hex": "#7d8a94", "set": "cable"},
-  "cbPipeD": {"hex": "#4f5961", "set": "cable"}
+  "cbPipeD": {"hex": "#4f5961", "set": "cable"},
+  "cbArmour": {"hex": "#5f6266", "set": "cable"},
+  "cbArmourL": {"hex": "#7b8086", "set": "cable"},
+  "cbArmourD": {"hex": "#3f4246", "set": "cable"},
+  "cbDuct": {"hex": "#5b7896", "set": "cable"},
+  "cbDuctL": {"hex": "#7d98b4", "set": "cable"},
+  "cbDuctD": {"hex": "#3c536b", "set": "cable"},
+  "cbCryo": {"hex": "#d3dde3", "set": "cable"},
+  "cbCryoD": {"hex": "#98a8b3", "set": "cable"}
 }

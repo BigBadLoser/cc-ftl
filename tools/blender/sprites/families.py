@@ -338,6 +338,9 @@ def jobs(name):
     if name == "barcounter30":  # look study, preview only (not in RENDERED): bar round 30, cubby shelves on the back
         from . import barcounter_r30
         return barcounter_r30.jobs(), "only:bar22+bar17+bar9"
+    if name == "cable_study3":  # look study, preview only (not in RENDERED): ground power cable looks, round 4 (#514)
+        from . import cable_study3
+        return cable_study3.jobs(), cable_study3.PAL
     if name == "cable_study2":  # look study, preview only (not in RENDERED): ground power cable looks, round 3 (#514)
         from . import cable_study2
         return cable_study2.jobs(), cable_study2.PAL
