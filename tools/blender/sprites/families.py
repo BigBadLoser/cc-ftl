@@ -338,7 +338,7 @@ def jobs(name):
     if name == "barcounter30":  # look study, preview only (not in RENDERED): bar round 30, cubby shelves on the back
         from . import barcounter_r30
         return barcounter_r30.jobs(), "only:bar22+bar17+bar9"
-    if name == "cable":  # the ground power cable (#514): not in RENDERED until it is wired
+    if name == "cable":  # the ground power cable (#514): sheet cable, ids from src/render/groundCable.ts
         from . import cable_duct
         return cable_duct.jobs(), cable_duct.PAL
     if name == "cable_study3":  # look study, preview only (not in RENDERED): ground power cable looks, round 4 (#514)
@@ -637,5 +637,6 @@ RENDERED = ("env", "walls", "consoles", "weapons", "roof", "robot_bay", "drones"
             "pod_bay", "mining_pod", "escape_pod", "fx_mining", "fx_shield", "starmap", "backdrop", "cargo", "items", "salvage", "storage_ore",
             "hull", "scrapper", "upgrades", "research_bench", "arcade_cabinet", "gametable_module",
             "recovery_pod", "bunk_module", "exercise_module", "bench_module", "planter_module", "vending_module", "bar_module",
-            "stasis", "stasisload", "decor", "lights", "deck_finishes", "deck_marks", "landmarks", "purifier_module")
+            "stasis", "stasisload", "decor", "lights", "deck_finishes", "deck_marks", "landmarks", "purifier_module",
+            "cable")
 ALL = RENDERED + ("sol", "damage_sol", "marks")

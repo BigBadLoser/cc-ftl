@@ -29,6 +29,10 @@
   "bunk_module": {
    "image": "sprites/bunk_module.png"
   },
+  "cable": {
+   "image": "sprites/cable.png",
+   "glow": "sprites/cable.glow.png"
+  },
   "cargo": {
    "image": "sprites/cargo.png",
    "glow": "sprites/cargo.glow.png"
@@ -6149,6 +6153,3293 @@
     1
    ],
    "glow": true
+  },
+  "cable.duct.m0": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3790,
+    "y": 37,
+    "w": 26,
+    "h": 21
+   },
+   "anchor": {
+    "x": 13,
+    "y": 15
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m0.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3817,
+    "y": 37,
+    "w": 26,
+    "h": 21
+   },
+   "anchor": {
+    "x": 13,
+    "y": 15
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m1": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3322,
+    "y": 37,
+    "w": 36,
+    "h": 25
+   },
+   "anchor": {
+    "x": 13,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m1.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3359,
+    "y": 37,
+    "w": 36,
+    "h": 25
+   },
+   "anchor": {
+    "x": 13,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m1.w1": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 960,
+    "y": 37,
+    "w": 36,
+    "h": 29
+   },
+   "anchor": {
+    "x": 13,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m1.w1.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 997,
+    "y": 37,
+    "w": 36,
+    "h": 29
+   },
+   "anchor": {
+    "x": 13,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m10": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1034,
+    "y": 37,
+    "w": 44,
+    "h": 29
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m10.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1079,
+    "y": 37,
+    "w": 44,
+    "h": 29
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m10.v1": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1124,
+    "y": 37,
+    "w": 44,
+    "h": 29
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m10.v1.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1169,
+    "y": 37,
+    "w": 44,
+    "h": 29
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m10.v2": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1214,
+    "y": 37,
+    "w": 44,
+    "h": 29
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m10.v2.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1259,
+    "y": 37,
+    "w": 44,
+    "h": 29
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m10.v3": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1304,
+    "y": 37,
+    "w": 44,
+    "h": 29
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m10.v3.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1349,
+    "y": 37,
+    "w": 44,
+    "h": 29
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m10.v4": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1394,
+    "y": 37,
+    "w": 44,
+    "h": 29
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m10.v4.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1439,
+    "y": 37,
+    "w": 44,
+    "h": 29
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m10.w10": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m10.w10.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 48,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m10.w2": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3657,
+    "y": 1,
+    "w": 46,
+    "h": 31
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m10.w2.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3704,
+    "y": 1,
+    "w": 46,
+    "h": 31
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m10.w8": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2303,
+    "y": 1,
+    "w": 44,
+    "h": 33
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m10.w8.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2348,
+    "y": 1,
+    "w": 44,
+    "h": 33
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m11": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1484,
+    "y": 37,
+    "w": 46,
+    "h": 29
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m11.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1531,
+    "y": 37,
+    "w": 46,
+    "h": 29
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m11.w1": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2393,
+    "y": 1,
+    "w": 46,
+    "h": 33
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m11.w1.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2440,
+    "y": 1,
+    "w": 46,
+    "h": 33
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m11.w10": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 95,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m11.w10.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 142,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m11.w11": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 189,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m11.w11.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 236,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m11.w2": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3751,
+    "y": 1,
+    "w": 46,
+    "h": 31
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m11.w2.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3798,
+    "y": 1,
+    "w": 46,
+    "h": 31
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m11.w3": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 283,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m11.w3.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 330,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m11.w8": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2487,
+    "y": 1,
+    "w": 46,
+    "h": 33
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m11.w8.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2534,
+    "y": 1,
+    "w": 46,
+    "h": 33
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m11.w9": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2581,
+    "y": 1,
+    "w": 46,
+    "h": 33
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m11.w9.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2628,
+    "y": 1,
+    "w": 46,
+    "h": 33
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m12": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1578,
+    "y": 37,
+    "w": 36,
+    "h": 29
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m12.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1615,
+    "y": 37,
+    "w": 36,
+    "h": 29
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m12.w12": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 377,
+    "y": 1,
+    "w": 36,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m12.w12.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 414,
+    "y": 1,
+    "w": 36,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m12.w4": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3845,
+    "y": 1,
+    "w": 36,
+    "h": 31
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m12.w4.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3882,
+    "y": 1,
+    "w": 36,
+    "h": 31
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m12.w8": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2675,
+    "y": 1,
+    "w": 36,
+    "h": 33
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m12.w8.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2712,
+    "y": 1,
+    "w": 36,
+    "h": 33
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m13": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1652,
+    "y": 37,
+    "w": 46,
+    "h": 29
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m13.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1699,
+    "y": 37,
+    "w": 46,
+    "h": 29
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m13.w1": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2749,
+    "y": 1,
+    "w": 46,
+    "h": 33
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m13.w1.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2796,
+    "y": 1,
+    "w": 46,
+    "h": 33
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m13.w12": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 451,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m13.w12.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 498,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m13.w13": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 545,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m13.w13.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 592,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m13.w4": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3919,
+    "y": 1,
+    "w": 46,
+    "h": 31
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m13.w4.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3966,
+    "y": 1,
+    "w": 46,
+    "h": 31
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m13.w5": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 639,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m13.w5.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 686,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m13.w8": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2843,
+    "y": 1,
+    "w": 46,
+    "h": 33
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m13.w8.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2890,
+    "y": 1,
+    "w": 46,
+    "h": 33
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m13.w9": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2937,
+    "y": 1,
+    "w": 46,
+    "h": 33
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m13.w9.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2984,
+    "y": 1,
+    "w": 46,
+    "h": 33
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m14": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1746,
+    "y": 37,
+    "w": 44,
+    "h": 29
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m14.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1791,
+    "y": 37,
+    "w": 44,
+    "h": 29
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m14.w10": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 733,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m14.w10.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 780,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m14.w12": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 827,
+    "y": 1,
+    "w": 44,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m14.w12.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 872,
+    "y": 1,
+    "w": 44,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m14.w14": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 917,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m14.w14.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 964,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m14.w2": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 4013,
+    "y": 1,
+    "w": 46,
+    "h": 31
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m14.w2.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1,
+    "y": 37,
+    "w": 46,
+    "h": 31
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m14.w4": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 48,
+    "y": 37,
+    "w": 44,
+    "h": 31
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m14.w4.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 93,
+    "y": 37,
+    "w": 44,
+    "h": 31
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m14.w6": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 138,
+    "y": 37,
+    "w": 46,
+    "h": 31
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m14.w6.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 185,
+    "y": 37,
+    "w": 46,
+    "h": 31
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m14.w8": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3031,
+    "y": 1,
+    "w": 44,
+    "h": 33
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m14.w8.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3076,
+    "y": 1,
+    "w": 44,
+    "h": 33
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m15": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1836,
+    "y": 37,
+    "w": 46,
+    "h": 29
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m15.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1883,
+    "y": 37,
+    "w": 46,
+    "h": 29
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m15.w1": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3121,
+    "y": 1,
+    "w": 46,
+    "h": 33
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m15.w1.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3168,
+    "y": 1,
+    "w": 46,
+    "h": 33
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m15.w10": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1011,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m15.w10.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1058,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m15.w11": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1105,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m15.w11.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1152,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m15.w12": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1199,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m15.w12.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1246,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m15.w13": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1293,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m15.w13.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1340,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m15.w14": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1387,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m15.w14.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1434,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m15.w15": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1481,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m15.w15.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1528,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m15.w2": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 232,
+    "y": 37,
+    "w": 46,
+    "h": 31
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m15.w2.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 279,
+    "y": 37,
+    "w": 46,
+    "h": 31
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m15.w3": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1575,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m15.w3.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1622,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m15.w4": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 326,
+    "y": 37,
+    "w": 46,
+    "h": 31
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m15.w4.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 373,
+    "y": 37,
+    "w": 46,
+    "h": 31
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m15.w5": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1669,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m15.w5.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1716,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m15.w6": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 420,
+    "y": 37,
+    "w": 46,
+    "h": 31
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m15.w6.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 467,
+    "y": 37,
+    "w": 46,
+    "h": 31
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m15.w7": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1763,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m15.w7.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1810,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m15.w8": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3215,
+    "y": 1,
+    "w": 46,
+    "h": 33
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m15.w8.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3262,
+    "y": 1,
+    "w": 46,
+    "h": 33
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m15.w9": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3309,
+    "y": 1,
+    "w": 46,
+    "h": 33
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m15.w9.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3356,
+    "y": 1,
+    "w": 46,
+    "h": 33
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m2": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3396,
+    "y": 37,
+    "w": 34,
+    "h": 25
+   },
+   "anchor": {
+    "x": 13,
+    "y": 15
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m2.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3431,
+    "y": 37,
+    "w": 34,
+    "h": 25
+   },
+   "anchor": {
+    "x": 13,
+    "y": 15
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m2.w2": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2900,
+    "y": 37,
+    "w": 36,
+    "h": 27
+   },
+   "anchor": {
+    "x": 13,
+    "y": 15
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m2.w2.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2937,
+    "y": 37,
+    "w": 36,
+    "h": 27
+   },
+   "anchor": {
+    "x": 13,
+    "y": 15
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m3": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1930,
+    "y": 37,
+    "w": 36,
+    "h": 29
+   },
+   "anchor": {
+    "x": 13,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m3.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1967,
+    "y": 37,
+    "w": 36,
+    "h": 29
+   },
+   "anchor": {
+    "x": 13,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m3.w1": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3403,
+    "y": 1,
+    "w": 36,
+    "h": 33
+   },
+   "anchor": {
+    "x": 13,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m3.w1.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3440,
+    "y": 1,
+    "w": 36,
+    "h": 33
+   },
+   "anchor": {
+    "x": 13,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m3.w2": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 514,
+    "y": 37,
+    "w": 36,
+    "h": 31
+   },
+   "anchor": {
+    "x": 13,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m3.w2.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 551,
+    "y": 37,
+    "w": 36,
+    "h": 31
+   },
+   "anchor": {
+    "x": 13,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m3.w3": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1857,
+    "y": 1,
+    "w": 36,
+    "h": 35
+   },
+   "anchor": {
+    "x": 13,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m3.w3.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1894,
+    "y": 1,
+    "w": 36,
+    "h": 35
+   },
+   "anchor": {
+    "x": 13,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m4": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3466,
+    "y": 37,
+    "w": 34,
+    "h": 25
+   },
+   "anchor": {
+    "x": 21,
+    "y": 15
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m4.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3501,
+    "y": 37,
+    "w": 34,
+    "h": 25
+   },
+   "anchor": {
+    "x": 21,
+    "y": 15
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m4.w4": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2974,
+    "y": 37,
+    "w": 36,
+    "h": 27
+   },
+   "anchor": {
+    "x": 23,
+    "y": 15
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m4.w4.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3011,
+    "y": 37,
+    "w": 36,
+    "h": 27
+   },
+   "anchor": {
+    "x": 23,
+    "y": 15
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m5": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2004,
+    "y": 37,
+    "w": 44,
+    "h": 29
+   },
+   "anchor": {
+    "x": 21,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m5.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2049,
+    "y": 37,
+    "w": 44,
+    "h": 29
+   },
+   "anchor": {
+    "x": 21,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m5.v1": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2094,
+    "y": 37,
+    "w": 44,
+    "h": 29
+   },
+   "anchor": {
+    "x": 21,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m5.v1.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2139,
+    "y": 37,
+    "w": 44,
+    "h": 29
+   },
+   "anchor": {
+    "x": 21,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m5.v2": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2184,
+    "y": 37,
+    "w": 44,
+    "h": 29
+   },
+   "anchor": {
+    "x": 21,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m5.v2.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2229,
+    "y": 37,
+    "w": 44,
+    "h": 29
+   },
+   "anchor": {
+    "x": 21,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m5.v3": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2274,
+    "y": 37,
+    "w": 44,
+    "h": 29
+   },
+   "anchor": {
+    "x": 21,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m5.v3.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2319,
+    "y": 37,
+    "w": 44,
+    "h": 29
+   },
+   "anchor": {
+    "x": 21,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m5.v4": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2364,
+    "y": 37,
+    "w": 44,
+    "h": 29
+   },
+   "anchor": {
+    "x": 21,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m5.v4.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2409,
+    "y": 37,
+    "w": 44,
+    "h": 29
+   },
+   "anchor": {
+    "x": 21,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m5.w1": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3477,
+    "y": 1,
+    "w": 44,
+    "h": 33
+   },
+   "anchor": {
+    "x": 21,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m5.w1.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3522,
+    "y": 1,
+    "w": 44,
+    "h": 33
+   },
+   "anchor": {
+    "x": 21,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m5.w4": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 588,
+    "y": 37,
+    "w": 46,
+    "h": 31
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m5.w4.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 635,
+    "y": 37,
+    "w": 46,
+    "h": 31
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m5.w5": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1931,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m5.w5.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1978,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m6": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3536,
+    "y": 37,
+    "w": 42,
+    "h": 25
+   },
+   "anchor": {
+    "x": 21,
+    "y": 15
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m6.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3579,
+    "y": 37,
+    "w": 42,
+    "h": 25
+   },
+   "anchor": {
+    "x": 21,
+    "y": 15
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m6.w2": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3048,
+    "y": 37,
+    "w": 44,
+    "h": 27
+   },
+   "anchor": {
+    "x": 21,
+    "y": 15
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m6.w2.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3093,
+    "y": 37,
+    "w": 44,
+    "h": 27
+   },
+   "anchor": {
+    "x": 21,
+    "y": 15
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m6.w4": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3138,
+    "y": 37,
+    "w": 44,
+    "h": 27
+   },
+   "anchor": {
+    "x": 23,
+    "y": 15
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m6.w4.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3183,
+    "y": 37,
+    "w": 44,
+    "h": 27
+   },
+   "anchor": {
+    "x": 23,
+    "y": 15
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m6.w6": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3228,
+    "y": 37,
+    "w": 46,
+    "h": 27
+   },
+   "anchor": {
+    "x": 23,
+    "y": 15
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m6.w6.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3275,
+    "y": 37,
+    "w": 46,
+    "h": 27
+   },
+   "anchor": {
+    "x": 23,
+    "y": 15
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m7": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2454,
+    "y": 37,
+    "w": 44,
+    "h": 29
+   },
+   "anchor": {
+    "x": 21,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m7.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2499,
+    "y": 37,
+    "w": 44,
+    "h": 29
+   },
+   "anchor": {
+    "x": 21,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m7.w1": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3567,
+    "y": 1,
+    "w": 44,
+    "h": 33
+   },
+   "anchor": {
+    "x": 21,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m7.w1.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3612,
+    "y": 1,
+    "w": 44,
+    "h": 33
+   },
+   "anchor": {
+    "x": 21,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m7.w2": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 682,
+    "y": 37,
+    "w": 44,
+    "h": 31
+   },
+   "anchor": {
+    "x": 21,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m7.w2.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 727,
+    "y": 37,
+    "w": 44,
+    "h": 31
+   },
+   "anchor": {
+    "x": 21,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m7.w3": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2025,
+    "y": 1,
+    "w": 44,
+    "h": 35
+   },
+   "anchor": {
+    "x": 21,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m7.w3.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2070,
+    "y": 1,
+    "w": 44,
+    "h": 35
+   },
+   "anchor": {
+    "x": 21,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m7.w4": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 772,
+    "y": 37,
+    "w": 46,
+    "h": 31
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m7.w4.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 819,
+    "y": 37,
+    "w": 46,
+    "h": 31
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m7.w5": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2115,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m7.w5.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2162,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m7.w6": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 866,
+    "y": 37,
+    "w": 46,
+    "h": 31
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m7.w6.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 913,
+    "y": 37,
+    "w": 46,
+    "h": 31
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m7.w7": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2209,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m7.w7.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2256,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m8": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3622,
+    "y": 37,
+    "w": 36,
+    "h": 25
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m8.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3659,
+    "y": 37,
+    "w": 36,
+    "h": 25
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m8.w8": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2544,
+    "y": 37,
+    "w": 36,
+    "h": 29
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m8.w8.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2581,
+    "y": 37,
+    "w": 36,
+    "h": 29
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m9": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3696,
+    "y": 37,
+    "w": 46,
+    "h": 25
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m9.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3743,
+    "y": 37,
+    "w": 46,
+    "h": 25
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m9.w1": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2618,
+    "y": 37,
+    "w": 46,
+    "h": 29
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m9.w1.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2665,
+    "y": 37,
+    "w": 46,
+    "h": 29
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m9.w8": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2712,
+    "y": 37,
+    "w": 46,
+    "h": 29
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m9.w8.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2759,
+    "y": 37,
+    "w": 46,
+    "h": 29
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m9.w9": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2806,
+    "y": 37,
+    "w": 46,
+    "h": 29
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m9.w9.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2853,
+    "y": 37,
+    "w": 46,
+    "h": 29
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
   },
   "container.2x4": {
    "kind": "static",
