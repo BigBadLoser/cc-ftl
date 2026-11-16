@@ -4,7 +4,7 @@ After the user's station hull reference (design reference only: our own geometry
 (RoundSection): upright from the floor, then rounded over into the top in a big bullnose, lit in bands from its top
 edge down. Two seams a tile run up the face, plumb on screen up to the bullnose's lower bands and following it over
 into the top, to a seam across the top; a groove near the foot with tabs where the seams cross it, a line under the
-bullnose from seam to seam, a bright ledge with a row of chunky light blocks along the foot, a line along the top's
+bullnose from seam to seam, a bright ledge over a step running along the foot, a line along the top's
 back. Its own palette set (`station`).
 
 Ids follow the faction looks' scheme (structure.py: tile.<fam>.<look>.<rest of the default id>), look `station`:
@@ -28,7 +28,7 @@ GROOVE = 0.40 + 3 / core.ZPX        # the groove's height over the deck
 UNDER = 5                           # the line under the bullnose: this many px under its foot
 RAIL = 4 / 32                       # the line along the top's back: this far in from the back
 TOP_SEAM = 5 / 32                   # the seam across the top this far in past the bullnose's top edge (the seams end on it)
-FOOT_N, FOOT_W, FOOT_OUT, FOOT_H = 3, 0.26, 3 / 32, 0.15   # the foot blocks: a tile, wide, proud, tall
+FOOT_OUT, FOOT_H = 3 / 32, 0.15    # the step along the foot: proud, tall
 LEDGE_H = 2                         # the bright ledge along the foot, px tall
 CHAMFER_SEAM = 1                    # the corner's seams down its chamfer, this many px in from its edges
 
@@ -42,7 +42,7 @@ PLATE_Z = lambda s, zt: (s.z_at(zt, 3), s.z_at(zt, -3))   # noqa: E731  the plat
                                     # its foot and top on screen, px under / over zt (6 px, centred on the line and
                                     # its lit px under it)
 TAB_W, TAB_IN = 3, 4                # the tabs on the groove: px wide, px in from their seam toward the tile's middle
-FOOT, FOOT_TOP, FOOT_SIDE, LEDGE = "stB", "stW", "stH", "stW"
+FOOT, FOOT_TOP, LEDGE = "stB", "stW", "stW"
 
 
 def _band(t):
@@ -180,18 +180,15 @@ def build(k, ax, plane, a, b, ends, H):
             f.line(v0 + LINE / 2, v1 - LINE / 2, s.z_at(zt, 1), zt, UNDER_L, bevel=False)
             m, hw = (v0 + v1) / 2, (TAB_W / 2 + 1) * LINE           # a plate on it, in the middle, a px wider
             _part(f, m - hw, m + hw, *PLATE_Z(s, zt), LINE, TAB, TAB_TOP, TAB_SIDE)
-        e = f.edge_u(0.0) if f.ch and abs(s1 - b) < 1e-6 else s1     # (the foot blocks: on the flat face)
-        n = max(1, round(FOOT_N * (e - s0)))
-        for j in range(n):
-            c = s0 + (e - s0) * (j + 0.5) / n
-            _part(f, c - FOOT_W / 2, c + FOOT_W / 2, 0.0, FOOT_H, FOOT_OUT, FOOT, FOOT_TOP, FOOT_SIDE)
+        pf = f.on(0.0, FOOT_H, -0.01, FOOT_OUT, hang=False)       # the step along the foot, one piece (open
+        f.part(s0, s1, pf, [None, FOOT_TOP, FOOT, None], False)    # ends: it runs on; round an outer corner)
     if f.ch:
         _corner(f, zt, g0, g1)
 
 
 def _corner(f, zt, g0, g1):
     """The outer corner's chamfer: a seam down each edge, CHAMFER_SEAM px in, with a tab on the groove in from it; the
-    line under the bullnose across between them, a plate on it in the middle; two foot blocks."""
+    line under the bullnose across between them, a plate on it in the middle."""
     t, s = f.chamfer_t, f.sec
     W = f.c * core.TILE_W
     sf = f.on(s.z_at(GROOVE, -1), s.H, -0.01, 0.001)
@@ -204,9 +201,6 @@ def _corner(f, zt, g0, g1):
         f.on_chamfer(t(CHAMFER_SEAM + 1), t(W - CHAMFER_SEAM - 1), pf, [col] * len(pf), col)
     hw = TAB_W / 2 + 1
     _chamfer_part(f, t(W / 2 - hw), t(W / 2 + hw), *PLATE_Z(s, zt), LINE, TAB, TAB_TOP, TAB_SIDE)
-    fw = FOOT_W * core.TILE_W / math.sqrt(2)                 # (px across the chamfer)
-    for c in (W / 4, 3 * W / 4):
-        _chamfer_part(f, t(c - fw / 2), t(c + fw / 2), 0.0, FOOT_H, FOOT_OUT, FOOT, FOOT_TOP, FOOT_SIDE)
 
 
 def _shell(o):
