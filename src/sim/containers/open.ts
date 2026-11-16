@@ -69,6 +69,7 @@ export function markForOpening(sim: Sim, id: number): number | null {
   const mod = box === undefined ? undefined : sim.world.get(box, ModuleC);
   if (kept && mod) {
     kept.seed = c.seed ?? id;
+    if (c.faction) kept.faction = c.faction; // the livery owner is the container's own `faction`; it survives the marking
     mod.hp = Math.min(mod.hp, Math.max(1, c.hp));
     kept.hp = mod.hp;
   }

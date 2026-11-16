@@ -23,6 +23,7 @@ describe('lost container panel data', () => {
     sim.step();
     const cutting = buildMining(sim).containers.find((c) => c.id === seed)!;
     expect(cutting.state).toBe('cutting');
+    expect(cutting.faction).toBe(loose.faction); // the livery name stays for the whole life of the box
     expect(cutting.refusal).not.toBeNull();
   });
 });
