@@ -177,8 +177,8 @@ def outrigger(f, a, top, heavy=False):
     """One outrigger at angle a: a beam from the riser out and down to a jack and foot pad on the rock."""
     from . import detail as D
     c, s_ = math.cos(a), math.sin(a)
-    out = 1.42 if heavy else 1.38
-    hip = (0.82 * c, 0.82 * s_, min(top - 0.12, 0.34))
+    out = min(1.78, 1.32 / max(abs(c), abs(s_)))                                        # toward the corner, inside the 3x3
+    hip = (0.8 * c, 0.8 * s_, top - 0.16)                                                # high on the riser: the arm slants up
     jack = (out * c, out * s_)
     _g("outrigger")
     if heavy:
@@ -189,7 +189,7 @@ def outrigger(f, a, top, heavy=False):
         f.vcyl(jack[0], jack[1], 0, 0.22, 0.05, "gm", top="steelD", sides=14)               # foot
     else:
         D.seg(f, hip, (jack[0], jack[1], 0.24), 0.07, "steelD", 6)
-        D.seg(f, (0.86 * c, 0.86 * s_, 0.12), (jack[0] * 0.92, jack[1] * 0.92, 0.22), 0.04, "steel", 6)   # strut
+        D.seg(f, (0.86 * c, 0.86 * s_, 0.16), (jack[0] * 0.8, jack[1] * 0.8, 0.3), 0.04, "steel", 6)   # strut
         f.vcyl(jack[0], jack[1], 0.04, 0.07, 0.24, "steel", top="steelL", sides=10)
         f.vcyl(jack[0], jack[1], 0, 0.16, 0.05, "gm", top="steelD", sides=12)
 
@@ -218,7 +218,7 @@ def out_three(f):
     port3(f, 0.0, 1.06)
 
 
-GV = {"O1": (0.35, out_four), "O2": (0.5, out_heavy), "O3": (0.45, out_three)}
+GV = {"O1": (0.62, out_four), "O2": (0.78, out_heavy), "O3": (0.7, out_three)}
 
 def ground_turret(key, d, variant):
     """The head with its turntable ring (no roof coaming), standing on the variant's base."""
