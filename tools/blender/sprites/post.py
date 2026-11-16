@@ -170,7 +170,11 @@ def _block_modes(idx, n):
 
 
 # coverage anti-aliasing (downsample's aa, per sprite: env_build.AA) among the cool greys (the steel family: _aa_set):
-# a pixel whose covered samples are all of them takes the one nearest their mean; any other keeps the crisp majority
+# a pixel whose covered samples are all of them takes the one nearest their mean; any other keeps the crisp majority.
+# An extra may join an opt-in group ("aa": a name in palette_extra.json, _aa_groups): a pixel whose samples are all the
+# group's tones or cool greys, one at least the group's, takes the nearest of those (a look's accent blended on its
+# edges too); a palette with no such entry anti-aliases as before. A set's entry may bring other entries into its
+# group while that set is selected ("aa_join": their names), so the group stays out of every other family's palette
 
 
 def _aa_set():
@@ -182,19 +186,45 @@ def _aa_set():
     return np.nonzero(grey)[0]
 
 
+def _aa_groups():
+    """The palette's opt-in anti-aliasing groups (the places in BASE of their entries' shades): the extras that
+    name one ("aa"), not emissive, and those an entry joins to its group ("aa_join"); a flat one joins by a group's
+    name (a flat "aa": true stays out)."""
+    i, out, at = 0, {}, {}
+    for name, v in PAL.items():
+        if name == "empty":
+            continue
+        n = 4 if "emissive" in v else 1 if v.get("flat") else len(SHADES)
+        at[name] = (i, n)
+        if isinstance(v.get("aa"), str) and (n == len(SHADES) or n == 1 and v.get("flat")):   # (a named group: an
+            #   "aa": true is the steel family's own flag, not a group)
+            out.setdefault(v["aa"], []).extend(range(i, i + n))
+        i += n
+    for v in PAL.values():
+        for name in v.get("aa_join", ()) if isinstance(v.get("aa"), str) else ():
+            if name in at and at[name][1] == len(SHADES):
+                out.setdefault(v["aa"], []).extend(range(at[name][0], at[name][0] + len(SHADES)))
+    return [np.array(sorted(set(ix)), int) for _, ix in sorted(out.items())]
+
+
 def _aa(mode, blk, n, S):
     """mode (h*w,) majority indices, blk (h*w, S*S) sample indices: a pixel whose covered samples are all cool greys
-    takes the one nearest their mean (its coverage); any other keeps the majority."""
-    aa = _aa_set()
+    takes the one nearest their mean (its coverage); one whose samples are all a group's tones or cool greys, one at
+    least the group's, the nearest of those (_aa_groups); any other keeps the majority."""
+    grey = _aa_set()
     cov = blk != n
-    sel = (np.isin(blk, aa) | ~cov).all(1) & cov.any(1)
-    if not sel.any():
-        return mode
-    b, c = blk[sel], cov[sel]
-    mean = (PALETTE[np.where(c, b, 0)] * c[..., None]).sum(1) / c.sum(1)[:, None]
-    d = ((mean[:, None, :] - PALETTE[aa][None]) ** 2).sum(-1)
-    out = mode.copy()
-    out[sel] = aa[d.argmin(1)]
+    out = mode
+    for tones, need in [(grey, None)] + [(np.union1d(grey, g), g) for g in _aa_groups()]:
+        sel = (np.isin(blk, tones) | ~cov).all(1) & cov.any(1)
+        if need is not None:
+            sel &= (np.isin(blk, need) & cov).any(1)
+        if not sel.any():
+            continue
+        b, c = blk[sel], cov[sel]
+        mean = (PALETTE[np.where(c, b, 0)] * c[..., None]).sum(1) / c.sum(1)[:, None]
+        d = ((mean[:, None, :] - PALETTE[tones][None]) ** 2).sum(-1)
+        out = out.copy() if out is mode else out
+        out[sel] = tones[d.argmin(1)]
     return out
 
 

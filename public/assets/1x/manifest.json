@@ -5186,6 +5186,9 @@
    "image": "sprites/weapons.png",
    "glow": "sprites/weapons.glow.png"
   },
+  "windows": {
+   "image": "sprites/windows.png"
+  },
   "workbench": {
    "image": "sprites/workbench.png",
    "glow": "sprites/workbench.glow.png"
@@ -196057,6 +196060,114 @@
     1
    ]
   },
+  "tile.hull.ext.o1.m10.w1": {
+   "kind": "static",
+   "sheet": "windows",
+   "frame": {
+    "x": 1,
+    "y": 1,
+    "w": 63,
+    "h": 111
+   },
+   "anchor": {
+    "x": 31,
+    "y": 96
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.ext.o1.m10.w1.tint": {
+   "kind": "static",
+   "sheet": "windows",
+   "frame": {
+    "x": 65,
+    "y": 1,
+    "w": 63,
+    "h": 111
+   },
+   "anchor": {
+    "x": 31,
+    "y": 96
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.ext.o1.m10.w2": {
+   "kind": "static",
+   "sheet": "windows",
+   "frame": {
+    "x": 129,
+    "y": 1,
+    "w": 63,
+    "h": 111
+   },
+   "anchor": {
+    "x": 31,
+    "y": 96
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.ext.o1.m10.w2.tint": {
+   "kind": "static",
+   "sheet": "windows",
+   "frame": {
+    "x": 193,
+    "y": 1,
+    "w": 63,
+    "h": 111
+   },
+   "anchor": {
+    "x": 31,
+    "y": 96
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.ext.o1.m10.w3": {
+   "kind": "static",
+   "sheet": "windows",
+   "frame": {
+    "x": 257,
+    "y": 1,
+    "w": 63,
+    "h": 111
+   },
+   "anchor": {
+    "x": 31,
+    "y": 96
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.ext.o1.m10.w3.tint": {
+   "kind": "static",
+   "sheet": "windows",
+   "frame": {
+    "x": 321,
+    "y": 1,
+    "w": 63,
+    "h": 111
+   },
+   "anchor": {
+    "x": 31,
+    "y": 96
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
   "tile.hull.ext.o1.m11": {
    "kind": "static",
    "sheet": "hull",
@@ -196549,6 +196660,114 @@
    "frame": {
     "x": 2181,
     "y": 227,
+    "w": 63,
+    "h": 111
+   },
+   "anchor": {
+    "x": 32,
+    "y": 96
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.ext.o2.m5.w1": {
+   "kind": "static",
+   "sheet": "windows",
+   "frame": {
+    "x": 385,
+    "y": 1,
+    "w": 63,
+    "h": 111
+   },
+   "anchor": {
+    "x": 32,
+    "y": 96
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.ext.o2.m5.w1.tint": {
+   "kind": "static",
+   "sheet": "windows",
+   "frame": {
+    "x": 449,
+    "y": 1,
+    "w": 63,
+    "h": 111
+   },
+   "anchor": {
+    "x": 32,
+    "y": 96
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.ext.o2.m5.w2": {
+   "kind": "static",
+   "sheet": "windows",
+   "frame": {
+    "x": 513,
+    "y": 1,
+    "w": 63,
+    "h": 111
+   },
+   "anchor": {
+    "x": 32,
+    "y": 96
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.ext.o2.m5.w2.tint": {
+   "kind": "static",
+   "sheet": "windows",
+   "frame": {
+    "x": 577,
+    "y": 1,
+    "w": 63,
+    "h": 111
+   },
+   "anchor": {
+    "x": 32,
+    "y": 96
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.ext.o2.m5.w3": {
+   "kind": "static",
+   "sheet": "windows",
+   "frame": {
+    "x": 641,
+    "y": 1,
+    "w": 63,
+    "h": 111
+   },
+   "anchor": {
+    "x": 32,
+    "y": 96
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.ext.o2.m5.w3.tint": {
+   "kind": "static",
+   "sheet": "windows",
+   "frame": {
+    "x": 705,
+    "y": 1,
     "w": 63,
     "h": 111
    },
@@ -204661,6 +204880,60 @@
     1
    ]
   },
+  "tile.wall.full.m10.win.l": {
+   "kind": "static",
+   "sheet": "windows",
+   "frame": {
+    "x": 769,
+    "y": 1,
+    "w": 64,
+    "h": 99
+   },
+   "anchor": {
+    "x": 32,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.full.m10.win.m": {
+   "kind": "static",
+   "sheet": "windows",
+   "frame": {
+    "x": 834,
+    "y": 1,
+    "w": 64,
+    "h": 99
+   },
+   "anchor": {
+    "x": 32,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.full.m10.win.r": {
+   "kind": "static",
+   "sheet": "windows",
+   "frame": {
+    "x": 899,
+    "y": 1,
+    "w": 64,
+    "h": 99
+   },
+   "anchor": {
+    "x": 32,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
   "tile.wall.full.m11": {
    "kind": "static",
    "sheet": "walls",
@@ -205573,6 +205846,60 @@
    "anchor": {
     "x": 31,
     "y": 56
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.full.m5.win.l": {
+   "kind": "static",
+   "sheet": "windows",
+   "frame": {
+    "x": 964,
+    "y": 1,
+    "w": 64,
+    "h": 99
+   },
+   "anchor": {
+    "x": 32,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.full.m5.win.m": {
+   "kind": "static",
+   "sheet": "windows",
+   "frame": {
+    "x": 1029,
+    "y": 1,
+    "w": 64,
+    "h": 99
+   },
+   "anchor": {
+    "x": 32,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.full.m5.win.r": {
+   "kind": "static",
+   "sheet": "windows",
+   "frame": {
+    "x": 1094,
+    "y": 1,
+    "w": 64,
+    "h": 99
+   },
+   "anchor": {
+    "x": 32,
+    "y": 83
    },
    "footprint": [
     1,

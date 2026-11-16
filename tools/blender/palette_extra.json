@@ -37,6 +37,16 @@
  "wXD": {
   "hex": "#172e31"
  },
+ "wHW": {
+  "hex": "#80bcae", "aa": "teal", "set": "window",
+  "aa_join": ["wH", "wL", "wS", "wM", "wD", "wXL", "wXS", "wXM", "wXD"]
+ },
+ "winBlue": {
+  "hex": "#4994f8", "set": "window_src"
+ },
+ "winPane": {
+  "hex": "#1c2434", "set": "window_src"
+ },
  "bH": {
   "hex": "#86aab8"
  },
