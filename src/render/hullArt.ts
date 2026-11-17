@@ -19,7 +19,8 @@ import { tileHash, type KindAt } from "./tiles";
 /** The ship's tiles: the outline runs round them. */
 const shipTile = (k: number) => k === Struct.Floor || k === Struct.Wall || k === Struct.Door;
 /** Tiles that make a region a base in rock, not a ship: no exterior hull there. */
-const rocky = (k: number) => k === Struct.Rock || k === Struct.Ground || k === Struct.RockWall;
+// MOCK (#524): levelled ground (a prefab base's site) no longer blocks the hull: the base stands on it in the station hull.
+const rocky = (k: number) => k === Struct.Rock || k === Struct.RockWall;
 
 /** The belly's bay looks (wall3d_belly_run), plain first; a tile takes one by `tileLook`. */
 export const BELLY_LOOKS = [20, 21, 22, 26, 27, 28] as const;
@@ -28,15 +29,19 @@ export interface HullKeys {
   /** The tile's hull key, "" for none (region-local). */
   at(x: number, y: number): string;
   ship(x: number, y: number): boolean;
+  /** MOCK (#524): the region stands on levelled ground (a prefab base): the station hull, no belly. */
+  ground?: boolean;
 }
 
 /** The hull keys of a W x H region, or null if it is not a ship (rock round it, or no ship tiles). */
 export function hullKeys(kindAt: KindAt, W: number, H: number): HullKeys | null {
   const tiles: [number, number][] = [];
+  let ground = false;
   for (let y = 0; y < H; y++)
     for (let x = 0; x < W; x++) {
       const k = kindAt(x, y);
       if (rocky(k)) return null;
+      if (k === Struct.Ground) ground = true;
       if (shipTile(k)) tiles.push([x, y]);
     }
   if (!tiles.length) return null;
@@ -47,7 +52,7 @@ export function hullKeys(kindAt: KindAt, W: number, H: number): HullKeys | null 
     if (k) keys.set(y * W + x, k);
   }
   const ship = (x: number, y: number) => x >= 0 && y >= 0 && x < W && y < H && shipTile(kindAt(x, y));
-  return { at: (x, y) => (x >= 0 && y >= 0 && x < W && y < H ? (keys.get(y * W + x) ?? "") : ""), ship };
+  return { at: (x, y) => (x >= 0 && y >= 0 && x < W && y < H ? (keys.get(y * W + x) ?? "") : ""), ship, ground };
 }
 
 const memo = new WeakMap<Grid, { rev: number; keys: HullKeys | null }>();
@@ -106,6 +111,16 @@ export function windowExteriorId(h: HullKeys, x: number, y: number, has: (id: st
  * for no key (plain roof) or no art. `win`: the tile's window (sim/windows.ts), drawn instead of the design on a straight near run.
  */
 export function exteriorIds(h: HullKeys, x: number, y: number, has: (id: string) => boolean, base = false, win: WindowTile | null = null): string[] | null {
+  if (h.ground) {
+    // MOCK (#524): the station look's piece where it has one (tile.hull.station.ext.*, tile.roof.station.g.*), else the ship's.
+    const st = (id: string) => id.replace("tile.hull.ext.", "tile.hull.station.ext.").replace("tile.roof.g.", "tile.roof.station.g.");
+    const ids = shipExteriorIds(h, x, y, (id) => has(st(id)), base, win);
+    if (ids) return ids.map(st);
+  }
+  return shipExteriorIds(h, x, y, has, base, win);
+}
+
+function shipExteriorIds(h: HullKeys, x: number, y: number, has: (id: string) => boolean, base = false, win: WindowTile | null = null): string[] | null {
   const k = h.at(x, y);
   if (!k) return null;
   if (!hullKeyGeneric(k)) {
@@ -129,6 +144,7 @@ export const tileLook = (x: number, y: number) => BELLY_LOOKS[pickDesign(x, y, B
  * (`fallbackBelly`); a floor never does (its edge on a breach has no belly). Null if the tile shows no belly.
  */
 export function bellyIds(h: HullKeys, x: number, y: number, has: (id: string) => boolean, hull = false): { under?: string; low?: string } | null {
+  if (h.ground) return null; // MOCK (#524): on the ground, no belly
   if (!h.ship(x, y)) return null;
   const k = h.at(x, y);
   return (k ? keyBelly(hullKeyName(k), x, y, has) : null) ?? (hull ? keyBelly(fallbackBelly(h, x, y), x, y, has) : null);

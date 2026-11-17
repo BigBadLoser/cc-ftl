@@ -343,9 +343,36 @@ def _item(sid, build_fn):
     return [it] if it else []
 
 
+# MOCK (asteroid base, #524): only the pieces the prefab base's outline uses (the run set's three and these generic keys).
+MOCK_RUN = ((10, 1), (5, 2), (6, 2))
+MOCK_KEYS = ("m1_0_15", "0_m1_15", "m1_m1_m1", "1_m1_m1", "m1_1_m1", "1_1_m1", "m1_m1_31", "1_m1_31",
+             "0_m1_15~m1_0_15", "1_0_15~0_m1_15", "m1_1_31", "1_1_31", "m1_0_15~0_1_15")
+
+
+def _unname(n):
+    return n.replace("~", ";").replace("+", "|").replace("_", ",").replace("m", "-")
+
+
+def _generic(n):
+    from . import env_build, post
+    from . import station_hull_diag as SG
+    from . import wall3d_ext_diag as DG
+    k = _unname(n)
+    out = []
+    for sid, kind, fn in ((f"tile.hull.station.ext.g.{n}", "block" if DG.uses_art(k) else "wide",
+                           (lambda: SG.piece(k)) if DG.uses_art(k) else (lambda: (SG.piece(k), SG.piece(k, margin=DG.WIDE)))),
+                          (f"tile.roof.station.g.{n}", "block", lambda: SG.roof(k))):
+        core.clear_scene_meshes()
+        post.select(PALETTE)
+        it = env_build.crop_item(sid, (1, 1), *env_build.render_sprite(sid, kind, fn()))
+        out += [it] if it else []
+    return out
+
+
 def jobs():
     """The run set, and each straight run in each design (tile.hull.station.ext.o<o>.m<mask>.a<design>)."""
-    out = [lambda m=m, o=o: _item(f"tile.hull.station.ext.o{o}.m{m}", lambda: _wide(m, o)) for m, o in PIECES]
+    out = [lambda m=m, o=o: _item(f"tile.hull.station.ext.o{o}.m{m}", lambda: _wide(m, o)) for m, o in MOCK_RUN]
+    out += [lambda n=n: _generic(n) for n in MOCK_KEYS]
     return out + [lambda m=m, o=o, v=v: _item(f"tile.hull.station.ext.o{o}.m{m}.a{v}", lambda: _wide(m, o, v))
                   for (m, o) in STRAIGHT for v in SD.DESIGNS]
 
