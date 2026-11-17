@@ -1,18 +1,18 @@
 /** Shared setup for the air tests (travel, sources, stores, refill, admission): a 14x14 player ship with an airlock on its east hull, a shuttle def and crew. */
-import { ALT, BodyC } from '../body';
-import { CombatC } from '../combat/components';
-import { newHeat } from '../combat/heat';
-import { stampShip } from '../combat/ships';
-import { CrewC, DraftedC, HealthC, NeedsC, PathC, PositionC, PrioritiesC, type Priorities } from '../crew/components';
-import type { SimEvent } from '../events';
-import { AirlockC } from '../modules/airlock';
-import { ModuleC } from '../modules/components';
-import { placementError, spawnModule } from '../modules/spawn';
-import type { ContentRegistry, ModuleDef } from '../registry';
-import { shipIdOf } from '../regions';
-import { Sim } from '../sim';
-import { CREW_MAX_HP } from '../tuning';
-import { VehicleC } from '../vehicles/components';
+import { ALT, BodyC } from '../../../src/sim/body';
+import { CombatC } from '../../../src/sim/combat/components';
+import { newHeat } from '../../../src/sim/combat/heat';
+import { stampShip } from '../../../src/sim/combat/ships';
+import { CrewC, DraftedC, HealthC, NeedsC, PathC, PositionC, PrioritiesC, type Priorities } from '../../../src/sim/crew/components';
+import type { SimEvent } from '../../../src/sim/events';
+import { AirlockC } from '../../../src/sim/modules/airlock';
+import { ModuleC } from '../../../src/sim/modules/components';
+import { placementError, spawnModule } from '../../../src/sim/modules/spawn';
+import type { ContentRegistry, ModuleDef } from '../../../src/sim/registry';
+import { shipIdOf } from '../../../src/sim/regions';
+import { Sim } from '../../../src/sim/sim';
+import { CREW_MAX_HP } from '../../../src/sim/tuning';
+import { VehicleC } from '../../../src/sim/vehicles/components';
 
 const airlockDef: ModuleDef = {
   name: 'Airlock', asset: 'a', footprint: [3, 4], solid: true, power: 0, flammability: 0.1, maxHp: 120, buildWork: 20, hullEdge: 'n',

@@ -4,7 +4,7 @@ import { newGame } from '../sim/newGame';
 import { fuelForDays, STATION_FUEL_DAYS } from '../sim/modules/energy';
 import { drawFromStores, shipStoreCount } from '../sim/items/stock';
 import { FOOD_EVERY } from '../sim/stations/food';
-import { run, station } from './stationLifeFixture';
+import { run, station } from '../../test/support/fixtures/stationLife';
 import { spawnShip } from '../sim/combat/ships';
 import { content } from './index';
 

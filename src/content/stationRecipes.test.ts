@@ -6,7 +6,7 @@ import { assembleStation } from '../sim/shipgen/assembly/station';
 import { crewSize } from '../sim/shipgen/stationCrew';
 import type { StationSize } from '../sim/shipgen/stationTypes';
 import { modules } from './modules';
-import { assembled, programOf } from './stationRecipeFixture';
+import { assembled, programOf } from '../../test/support/fixtures/stationRecipe';
 import { stationRecipes } from './stationRecipes';
 import { stations } from './stations';
 

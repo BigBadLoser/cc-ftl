@@ -13,9 +13,9 @@ import { shipIdOf } from '../../sim/regions';
 import { AWAY_LAST_CALL_SEC, AWAY_TRIP_WAIT_SEC } from '../../sim/tuning';
 import { boardCrew, occupants, vehicleDefOf } from '../../sim/vehicles/lifecycle';
 import { content } from '../index';
-import { crewOn, landed, play, siteWork } from './awayFixture';
-import { shuttleOf } from './ferryFixture';
-import { of, setup } from './salvageEvaFixture';
+import { crewOn, landed, play, siteWork } from '../../../test/support/fixtures/away';
+import { shuttleOf } from '../../../test/support/fixtures/ferry';
+import { of, setup } from '../../../test/support/fixtures/salvageEva';
 
 /** Hold every crew member at home (drafted): nobody there would take a seat, so no rotation trip falls due on their account. */
 function holdHome(sim: Sim, home: number): void {

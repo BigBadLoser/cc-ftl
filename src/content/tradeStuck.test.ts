@@ -15,7 +15,7 @@ import { isLive } from '../sim/trade/deals';
 import { playerCrew } from '../sim/story/world';
 import { shipIdOf, shipIds } from '../sim/regions';
 import { content } from './index';
-import { buying, metal, metalLike, order, run, runOut, until, withFreighter } from './tradeStuckFixture';
+import { buying, metal, metalLike, order, run, runOut, until, withFreighter } from '../../test/support/fixtures/tradeStuck';
 
 /** Ticks of the give-up deadlines (BACK_SEC and UNLOAD_SEC in sim/trade/dealFlow.ts): the shuttle's way home, and the crew emptying its hold. */
 const BACK_TICKS = 240 * 20;

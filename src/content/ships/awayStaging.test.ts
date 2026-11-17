@@ -17,8 +17,8 @@ import { crateUnits, spillItems, takeFromStack } from '../../sim/items/stacks';
 import { shipGrid } from '../../sim/regions';
 import { LOAD_CRATE_SEC } from '../../sim/tuning';
 import { cargoCount } from '../../sim/vehicles/cargo';
-import { crewOn, landed, play } from './awayFixture';
-import { of, scrapHome, smallHold } from './salvageEvaFixture';
+import { crewOn, landed, play } from '../../../test/support/fixtures/away';
+import { of, scrapHome, smallHold } from '../../../test/support/fixtures/salvageEva';
 
 /** The staging zone of an away site (#286 slice 3, docs/ARCHITECTURE.md "Staging"): the party gathers loot there, the shuttle loads it. */
 

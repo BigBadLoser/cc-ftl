@@ -24,10 +24,10 @@ import { ferryFree } from '../../sim/ferry/pick';
 import { shipIdOf } from '../../sim/regions';
 import { AWAY_HOME_HUNGER, AWAY_HOME_REST, AWAY_LIFT_SEC } from '../../sim/tuning';
 import { policies } from '../policies';
-import { emptyNeighbour } from './nodeFixture';
-import { shuttleOf } from './ferryFixture';
-import { of, setup } from './salvageEvaFixture';
-import { crewOn, landed, play, siteWork } from './awayFixture';
+import { emptyNeighbour } from '../../../test/support/fixtures/node';
+import { shuttleOf } from '../../../test/support/fixtures/ferry';
+import { of, setup } from '../../../test/support/fixtures/salvageEva';
+import { crewOn, landed, play, siteWork } from '../../../test/support/fixtures/away';
 
 describe('away sites', () => {
   it('sends crew out on passages and hands them to the crew AI on the site, where they do its work', () => {

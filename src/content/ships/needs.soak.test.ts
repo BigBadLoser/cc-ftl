@@ -7,7 +7,7 @@ import { removeModule } from '../../sim/modules/spawn';
 import { liftShip, stampPacket } from '../../sim/sector/packet';
 import { TICK_HZ } from '../../sim/time';
 import { claimedBed } from '../../sim/ai/task';
-import { humans, hungry, needs } from './needsFixture';
+import { humans, hungry, needs } from '../../../test/support/fixtures/needs';
 
 // Soak tier: the whole sleep after the bed is dismantled and the ship cut off, run from the low rest the sleeper started with.
 describe('needs, soak', () => {

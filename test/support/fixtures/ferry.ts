@@ -1,7 +1,14 @@
 /** Shared setup for the ferry and logistics tests: a stand-in base region and small run/inspect helpers. */
 import { expect } from 'vitest';
-import { ModuleC, ShipC, Sim, StorageC, VehicleC, placementError, shipGrid, spawnModule, stampShip } from '../../sim';
-import { shipIdOf } from '../../sim/regions';
+import { ShipC } from '../../../src/sim/combat/components';
+import { stampShip } from '../../../src/sim/combat/ships';
+import { StorageC } from '../../../src/sim/items/components';
+import { ModuleC } from '../../../src/sim/modules/components';
+import { placementError, spawnModule } from '../../../src/sim/modules/spawn';
+import { shipGrid } from '../../../src/sim/regions';
+import { Sim } from '../../../src/sim/sim';
+import { VehicleC } from '../../../src/sim/vehicles/components';
+import { shipIdOf } from '../../../src/sim/regions';
 
 export type Log = string[];
 export function run(sim: Sim, n: number, until?: (l: Log) => boolean): Log {

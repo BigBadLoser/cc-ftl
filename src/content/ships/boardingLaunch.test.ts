@@ -13,7 +13,7 @@ import { launchOf, orderLaunch } from '../../sim/boarding/launch';
 import { pickPilot } from '../../sim/mining/pilot';
 import { playerCourier } from '../../sim/trade/courier';
 import { shipIdOf } from '../../sim/regions';
-import { airlockOf, crewOn, nth, of, raiderCrew, run, setup, shuttleOf } from './boardingFixture';
+import { airlockOf, crewOn, nth, of, raiderCrew, run, setup, shuttleOf } from '../../../test/support/fixtures/boarding';
 
 const heldPassage = (sim: ReturnType<typeof setup>, c: number): boolean => sim.world.get(sim.world.get(c, AssignmentC)?.jobId ?? 0, JobC)?.kind === 'passage';
 

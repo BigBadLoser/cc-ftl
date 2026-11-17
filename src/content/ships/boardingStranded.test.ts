@@ -8,7 +8,7 @@ import { AboardC, VehicleC } from '../../sim/vehicles/components';
 import { loseStrandedCrew } from '../../sim/boarding/stranded';
 import { FTL_CHARGE_SEC } from '../../sim/tuning';
 import { shipIdOf } from '../../sim/regions';
-import { crewOn, dockParty, nth, of, run, setup, ship } from './boardingFixture';
+import { crewOn, dockParty, nth, of, run, setup, ship } from '../../../test/support/fixtures/boarding';
 
 describe('stranded parties are lost', () => {
   it('die with the ship when it is destroyed', () => {

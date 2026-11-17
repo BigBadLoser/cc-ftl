@@ -35,7 +35,7 @@ import { RELEASE_REPUTATION } from '../../sim/galaxy/tuning';
 import { repKey } from '../../sim/galaxy/standing';
 import { Struct } from '../../sim/structure';
 import { content } from '../index';
-import { shuttleOf } from './ferryFixture';
+import { shuttleOf } from '../../../test/support/fixtures/ferry';
 
 /** Slabs by shuttle (#116): prisoners marked on a prize with no wheel are sealed there and their slabs ride home in a shuttle's rack. */
 

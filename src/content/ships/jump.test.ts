@@ -20,7 +20,7 @@ import { AboardC, VehicleC } from '../../sim/vehicles/components';
 import { giveItems } from '../../sim/story/effects';
 import { ContainerC } from '../../sim/containers/components';
 import { translated } from '../../sim/sector/translate';
-import { emptyNeighbour } from './nodeFixture';
+import { emptyNeighbour } from '../../../test/support/fixtures/node';
 import { content } from '../index';
 import { factions } from '../factions/index';
 import { runLog } from '../../../test/support/sim';

@@ -16,7 +16,7 @@ import { shipIdOf } from '../../sim/regions';
 import { openSite } from '../../sim/away/handlers';
 import { spillItems } from '../../sim/items/stacks';
 import { content } from '../index';
-import { outpostRegion, shuttleOf, stockOn, storages } from './ferryFixture';
+import { outpostRegion, shuttleOf, stockOn, storages } from '../../../test/support/fixtures/ferry';
 
 type Ev = SimEvent['type'];
 /** Step until `until` says stop; returns every event seen (rejections included). */

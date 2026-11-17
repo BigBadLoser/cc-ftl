@@ -1,7 +1,15 @@
-import { Rng, assemble, hullProblems, missingRooms, recipeAt, recipeRooms, stationProgram, type Assembly, type ModuleDef, type Recipe, type RoomSpec, type StationDef, type StationSize } from '../sim';
-import { seedOf } from '../sim/shipgen/generate';
-import { content } from './index';
-import { stations } from './stations';
+import type { ModuleDef } from '../../../src/sim/registry';
+import { Rng } from '../../../src/sim/rng';
+import { assemble, type Assembly, recipeRooms } from '../../../src/sim/shipgen/assembly/assemble';
+import { missing as missingRooms } from '../../../src/sim/shipgen/assembly/finish';
+import { hullProblems } from '../../../src/sim/shipgen/assembly/hull';
+import { stationProgram } from '../../../src/sim/shipgen/assembly/program';
+import { type Recipe, recipeAt } from '../../../src/sim/shipgen/assembly/recipe';
+import type { RoomSpec } from '../../../src/sim/shipgen/plan';
+import type { StationDef, StationSize } from '../../../src/sim/shipgen/stationTypes';
+import { seedOf } from '../../../src/sim/shipgen/generate';
+import { content } from '../../../src/content/index';
+import { stations } from '../../../src/content/stations';
 
 /** Shared by the station recipe tests: a station kind's rooms for a seed, assembled by a recipe, and what must hold of the result. */
 

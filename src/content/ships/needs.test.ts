@@ -29,7 +29,7 @@ function emptyLarder(sim: Sim): void {
     if (s) s.stacks = s.stacks.filter((st) => st.item !== 'item.ration');
   }
 }
-import { humans, hungry, needs, run } from './needsFixture';
+import { humans, hungry, needs, run } from '../../../test/support/fixtures/needs';
 import { nth } from '../../../test/support/sim';
 
 describe('hunger', () => {

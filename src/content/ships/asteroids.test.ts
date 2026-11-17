@@ -9,7 +9,7 @@ import { asteroidAt, ownerAt, shipAt, shipIdAt } from '../../sim/regions';
 import { deserialize, serialize } from '../../sim/save';
 import type { Sim } from '../../sim/sim';
 import { isAsteroidRock } from '../../sim/structure';
-import { emptyNeighbour } from './nodeFixture';
+import { emptyNeighbour } from '../../../test/support/fixtures/node';
 import { content } from '../index';
 import { runLog } from '../../../test/support/sim';
 

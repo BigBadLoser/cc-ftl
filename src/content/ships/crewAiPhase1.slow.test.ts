@@ -23,7 +23,7 @@ import { findJobAt, isIncapacitated } from '../../sim/crew/helpers';
 import { destroyJob } from '../../sim/items/stacks';
 import { shipIdOf } from '../../sim/regions';
 import { content } from '../index';
-import { landed, siteWork } from './awayFixture';
+import { landed, siteWork } from '../../../test/support/fixtures/away';
 import { run } from '../../../test/support/sim';
 
 /**

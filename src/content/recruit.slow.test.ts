@@ -6,7 +6,7 @@ import { AboardC, VehicleC } from '../sim/vehicles/components';
 import { AllegianceC } from '../sim/fight/components';
 import { shipGrid, shipIdOf } from '../sim/regions';
 import { isTileWalkable } from '../sim/modules/walk';
-import { atBack, playerCrew, run } from './recruitFixture';
+import { atBack, playerCrew, run } from '../../test/support/fixtures/recruit';
 import { content } from '.';
 
 // Slow tier: the natural-length version of the stuck-run test in recruit.test.ts (which starts a few seconds short of the give-up deadline).

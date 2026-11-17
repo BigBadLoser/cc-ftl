@@ -15,7 +15,7 @@ import { awayLeaks } from '../../sim/away/owned';
 import { nearestExterior } from '../../sim/eva/shuttle';
 import { content } from '../index';
 import { shipIdOf } from '../../sim/regions';
-import { airlockOf, crewOn, dockParty, launchParty, modulesOf, nth, of, raiderCrew, run, setup, shuttleOf } from './boardingFixture';
+import { airlockOf, crewOn, dockParty, launchParty, modulesOf, nth, of, raiderCrew, run, setup, shuttleOf } from '../../../test/support/fixtures/boarding';
 
 const home = (sim: Sim, c: number): boolean => shipIdOf(sim, sim.world.get(c, PositionC)) === nth(sim, 1);
 

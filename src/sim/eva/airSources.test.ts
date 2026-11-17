@@ -4,7 +4,7 @@ import { DraftedC, PositionC } from '../crew/components';
 import { VehicleC } from '../vehicles/components';
 import { EvaFloatC, SuitC } from './components';
 import { airlockAir, airlockAirCap, vehicleAir, vehicleAirCap } from './air';
-import { airlockOf, crew, run, shuttle, world } from './airFixture';
+import { airlockOf, crew, run, shuttle, world } from '../../../test/support/fixtures/air';
 import { startRefillFloat } from './refillFloat';
 import { airSources } from './sources';
 import { airStoresSystem } from '../systems/airStores';

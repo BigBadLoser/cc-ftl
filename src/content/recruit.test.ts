@@ -15,7 +15,7 @@ import { portRecruits, recruitsHere } from '../sim/galaxy/recruit';
 import { RECRUIT_TURNS } from '../sim/galaxy/tuningRecruit';
 import { content } from '.';
 
-import { atBack, atStation, hire, people, playerCrew, run, step } from './recruitFixture';
+import { atBack, atStation, hire, people, playerCrew, run, step } from '../../test/support/fixtures/recruit';
 const keyOf = (sim: Sim, id: number): string => sim.world.get(id, ForHireC)?.key ?? '';
 const rejected = (ev: ReturnType<Sim['events']['drain']>): string[] => ev.flatMap((e) => (e.type === 'command.rejected' && e.command === 'crew.hire' ? [e.reason] : []));
 describe('crew for hire', () => {

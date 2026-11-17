@@ -6,7 +6,7 @@ import { newGame } from '../sim/newGame';
 import { crewSize } from '../sim/shipgen/stationCrew';
 import { StationAlarmC, StationCrewC } from '../sim/stations/components';
 import { content } from './index';
-import { intruderRuns } from './stationLifeFixture';
+import { intruderRuns } from '../../test/support/fixtures/stationLife';
 
 describe('station life over a long stretch', () => {
   it('a hub runs its schedules for two and a half minutes of game time (guard; stationLife.soak.test.ts runs seven and a half): work, sleep, no alarms, no errors', () => {

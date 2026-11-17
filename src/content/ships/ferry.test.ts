@@ -8,7 +8,7 @@ import { ModuleC } from '../../sim/modules/components';
 import { newGame } from '../../sim/newGame';
 import { deserialize, serialize } from '../../sim/save';
 import { AboardC, VehicleC } from '../../sim/vehicles/components';
-import { done, outpostRegion, run, shuttleOf, stockOn, storages } from './ferryFixture';
+import { done, outpostRegion, run, shuttleOf, stockOn, storages } from '../../../test/support/fixtures/ferry';
 import { shipIdOf } from '../../sim/regions';
 import { ferryFree } from '../../sim/ferry/pick';
 import { content } from '../index';

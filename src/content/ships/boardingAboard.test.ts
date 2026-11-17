@@ -5,7 +5,7 @@ import type { Sim } from '../../sim/sim';
 import { applyEffects } from '../../sim/combat/effects';
 import { shipGrid } from '../../sim/regions';
 import { content } from '../index';
-import { dockParty, nth, setup } from './boardingFixture';
+import { dockParty, nth, setup } from '../../../test/support/fixtures/boarding';
 
 const alive = (sim: Sim, c: number): boolean => sim.world.has(c, CrewC) && !sim.world.has(c, DeadC);
 

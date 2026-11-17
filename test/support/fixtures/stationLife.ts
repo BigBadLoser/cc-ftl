@@ -1,8 +1,11 @@
-import { ShipC, newGame, type Sim, type SimEvent } from '../sim';
-import { CrewC } from '../sim/crew/components';
-import { AllegianceC, EquipC, FighterC } from '../sim/fight/components';
-import { StationAlarmC, StationC, StationCrewC, WantedC } from '../sim/stations/components';
-import { content } from './index';
+import { ShipC } from '../../../src/sim/combat/components';
+import type { SimEvent } from '../../../src/sim/events';
+import { newGame } from '../../../src/sim/newGame';
+import type { Sim } from '../../../src/sim/sim';
+import { CrewC } from '../../../src/sim/crew/components';
+import { AllegianceC, EquipC, FighterC } from '../../../src/sim/fight/components';
+import { StationAlarmC, StationC, StationCrewC, WantedC } from '../../../src/sim/stations/components';
+import { content } from '../../../src/content/index';
 
 export const run = (sim: Sim, n: number): SimEvent[] => {
   const out: SimEvent[] = [];

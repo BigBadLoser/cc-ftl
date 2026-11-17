@@ -8,7 +8,7 @@ import { VehicleC } from '../sim/vehicles/components';
 import { isLive } from '../sim/trade/deals';
 import { playerCrew } from '../sim/story/world';
 import { content } from './index';
-import { buying, metal, metalLike, order, run, runOut, until } from './tradeStuckFixture';
+import { buying, metal, metalLike, order, run, runOut, until } from '../../test/support/fixtures/tradeStuck';
 
 // Slow tier: the natural-length waits of the stuck-delivery tests (tradeStuck.test.ts starts the same cases a few seconds short of each deadline).
 describe('a delivery that cannot finish, full waits', () => {

@@ -18,11 +18,11 @@ import { spillItems } from '../../sim/items/stacks';
 import { TransferC } from '../../sim/logistics/components';
 import { writeStruct } from '../../sim/structure';
 import { AWAY_GO_STAY_SEC, AWAY_HOME_HUNGER, AWAY_HOME_REST } from '../../sim/tuning';
-import { shuttleOf } from './ferryFixture';
-import { setup } from './salvageEvaFixture';
-import { crewOn, landed, play } from './awayFixture';
+import { shuttleOf } from '../../../test/support/fixtures/ferry';
+import { setup } from '../../../test/support/fixtures/salvageEva';
+import { crewOn, landed, play } from '../../../test/support/fixtures/away';
 import { content } from '../index';
-import { boarding } from './salvage404Fixture';
+import { boarding } from '../../../test/support/fixtures/salvage404';
 
 describe('salvage playtest (#404)', () => {
   it('a passage takes crew who can stay a while, not only those at 60 rest and hunger', () => {

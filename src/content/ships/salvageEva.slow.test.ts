@@ -16,9 +16,9 @@ import { NeedsC } from '../../sim/crew/components';
 import { hatchSpot } from '../../sim/eva/shuttle';
 import { StunC } from '../../sim/robots/components';
 import { content } from '../index';
-import { shuttleOf, storages } from './ferryFixture';
-import { looseScrap, of, scrapHome, setup, smallHold } from './salvageEvaFixture';
-import { play } from './awayFixture';
+import { shuttleOf, storages } from '../../../test/support/fixtures/ferry';
+import { looseScrap, of, scrapHome, setup, smallHold } from '../../../test/support/fixtures/salvageEva';
+import { play } from '../../../test/support/fixtures/away';
 
 /**
  * Salvage on an away site (#286 slice 3), the long runs: the checks of the old salvage team's tests, ported to the site's run (the special-case
