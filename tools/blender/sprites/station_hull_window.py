@@ -41,6 +41,12 @@ SILL_TOP = "stL"                    # the sill's flat top under the glass
 FRAME = 9 / 32                      # an end piece's outer frame (the whole section), along the face
 JAMB = 5 / 32                       # the jamb inside it
 BACK_WALL = "stE"                   # the window's back wall
+VENT_BOX = (15, 1, 1, 17)           # a middle tile's vent box under the window (the ref's, measured): px wide, its front
+                                    # px off the face, its top px over the sill's (run back to the glass), px tall
+VENT_SLATS = (3, 8, 3, 6, 3)        # its slats: count, px wide, px in from its a end, the first's px under its top, px
+                                    # apart (each a dark row over a lit row)
+VENT_FRONT, VENT_TOP, VENT_EDGE, VENT_LIT = SH.FACE, "stH", SD.TOP_LIT, "stL"   # its front, top, top's front edge,
+                                    # the slats' lit rows
 TONES = {"hsXK": "stK", "hsK": "stK", "hsXD": "stE", "hsD": "stDE", "hsXM": "stD", "hsXS": "stD", "hsM": "stM",
          "hsXL": "stM", "hsS": "stS", "hsL": "stL", "hsH": "stH", "hsW": "stB"}
 
@@ -100,6 +106,8 @@ def _span(f, s, s0, s1, zt):
     f.block(u0, u1, 0.0, SH.GROOVE)                                     # the sill: the face, its top flat back
     pf = [(db, SH.GROOVE), (fr, SH.GROOVE), (fr, zs), (db, zs)]         # to the window's back
     f.part(u0, u1, pf, [None, SH.FACE, SILL_TOP, None], None, end=False)
+    if not end:
+        _vent_box(f, s0, s1, zs, gl)
     zr = zh - WIN.SLOPE_H / Z * (JAMB + WIN.SLOPE) / WIN.SLOPE          # (the top corner's foot at the rib)
     _head(f, u0, u1, zh, (part == "w1", part == "w3"), zr, (s0, s1))             # the header: a square box
     f.part(*seg(w0, s1)[:2], [(0.0, zj), (db, zj), (db, zh), (0.0, zh)], [None, BACK_WALL, None, None], None,
@@ -173,6 +181,24 @@ def _head(f, a, b, z0, ends, foot, tile):
             f.k.poly([T.P(f.ax, f.plane, v, top + T.PAINT, d) for v, d in ((u, d0), (u + ln, d0),
                       (u + ln, out - c * ln), (u, out - c * ln))], SD.F, 3, core.Vector((0, 0, 1)),
                      fixed=T.SEAM_PASS or col)
+
+
+def _vent_box(f, s0, s1, zs, gl):
+    """A middle tile's vent box under the window, centred on the tile (VENT_BOX): its front a px off the face, its top a
+    px over the sill's and run back to the glass (gl), its top's front edge lit, slats across its front (VENT_SLATS)."""
+    px, ln = 1 / core.ZPX, SD.LINE
+    w, out, up, h = VENT_BOX
+    a = round((s0 + s1) / 2 / ln - w // 2) * ln
+    b, top = a + w * ln, zs + up * px
+    z0, fr = top - h * px, D + out * ln
+    cap = (SD.BOX_SIDE, SD.BOX_SIDE)
+    f.part(a, b, [(D, z0), (fr, z0), (fr, top), (D, top)], [None, VENT_FRONT, VENT_EDGE, None], cap, end=False)
+    f.part(a, b, [(gl, zs), (D, zs), (D, top), (gl, top)], [None, None, VENT_TOP, None], cap, end=False)
+    n, sw, si, s1st, sp = VENT_SLATS
+    for i in range(n):
+        z = top - (s1st + i * sp) * px
+        SD._rect(f, a + si * ln, a + (si + sw) * ln, z - px, z, fr + 0.0005, VENT_LINE)
+        SD._rect(f, a + si * ln, a + (si + sw) * ln, z - 2 * px, z - px, fr + 0.0005, VENT_LIT)
 
 
 def _head_dress(f, a, b, z0, d, ends=(False, False)):
