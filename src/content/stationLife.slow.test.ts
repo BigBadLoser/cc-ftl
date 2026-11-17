@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CrewC, NeedsC, ShipC, newGame, type SimEvent } from '../sim';
+import { CrewC, NeedsC, ShipC, crewSize, newGame, type SimEvent } from '../sim';
 import { StationAlarmC, StationCrewC } from '../sim/stations/components';
 import { content } from './index';
 import { intruderRuns } from './stationLifeFixture';
@@ -21,7 +21,8 @@ describe('station life over a long stretch', () => {
       if (i % 200 === 0) for (const c of sim.world.query(StationCrewC, CrewC)) activities.add(sim.world.get(c, CrewC)!.activity);
     }
     const crew = sim.world.query(StationCrewC);
-    expect(crew.length).toBeGreaterThanOrEqual(40);
+    // The hub's whole crew (its posts, #460) is still there at the end.
+    expect(crew.length).toBe(crewSize(content.stations['station.trading']!, 'hub'));
     expect(ev.filter((e) => e.type === 'crew.died')).toHaveLength(0);
     expect(ev.filter((e) => e.type === 'station.alarm')).toHaveLength(0);
     expect(sim.world.get(st, StationAlarmC)?.state).toBe('calm');
