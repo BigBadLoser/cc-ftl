@@ -5152,6 +5152,9 @@
    "glow": "sprites/stasisload.glow.png",
    "uv": "sprites/stasisload.uv.png"
   },
+  "station_hull": {
+   "image": "sprites/station_hull.png"
+  },
   "storage_ore": {
    "image": "sprites/storage_ore.png",
    "glow": "sprites/storage_ore.glow.png"
@@ -202617,6 +202620,114 @@
    "anchor": {
     "x": 31,
     "y": 28
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.station.belly.under.0_1_15": {
+   "kind": "static",
+   "sheet": "station_hull",
+   "frame": {
+    "x": 196,
+    "y": 1,
+    "w": 65,
+    "h": 49
+   },
+   "anchor": {
+    "x": 34,
+    "y": 16
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.station.belly.under.0_1_15~1_0_15": {
+   "kind": "static",
+   "sheet": "station_hull",
+   "frame": {
+    "x": 328,
+    "y": 1,
+    "w": 68,
+    "h": 42
+   },
+   "anchor": {
+    "x": 34,
+    "y": 16
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.station.belly.under.1_0_15": {
+   "kind": "static",
+   "sheet": "station_hull",
+   "frame": {
+    "x": 262,
+    "y": 1,
+    "w": 65,
+    "h": 49
+   },
+   "anchor": {
+    "x": 31,
+    "y": 16
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.station.ext.o1.m10": {
+   "kind": "static",
+   "sheet": "station_hull",
+   "frame": {
+    "x": 1,
+    "y": 1,
+    "w": 64,
+    "h": 112
+   },
+   "anchor": {
+    "x": 32,
+    "y": 96
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.station.ext.o2.m5": {
+   "kind": "static",
+   "sheet": "station_hull",
+   "frame": {
+    "x": 66,
+    "y": 1,
+    "w": 64,
+    "h": 112
+   },
+   "anchor": {
+    "x": 32,
+    "y": 96
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.station.ext.o3.m9": {
+   "kind": "static",
+   "sheet": "station_hull",
+   "frame": {
+    "x": 131,
+    "y": 1,
+    "w": 64,
+    "h": 106
+   },
+   "anchor": {
+    "x": 32,
+    "y": 96
    },
    "footprint": [
     1,

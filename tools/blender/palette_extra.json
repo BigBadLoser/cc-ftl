@@ -4058,5 +4058,19 @@
   "tbSoftD": {"hex": "#555d67", "set": "tube"},
   "tbGlass": {"hex": "#8fc4e0", "set": "tube"},
   "tbGlassL": {"hex": "#d6efff", "set": "tube"},
-  "tbLamp": {"hex": "#8fe6ff", "emissive": 1.2, "set": "tube"}
+  "tbLamp": {"hex": "#8fe6ff", "emissive": 1.2, "set": "tube"},
+  "stK": {"hex": "#1d222d", "set": "station"},
+  "stE": {"hex": "#353c47", "set": "station"},
+  "stDE": {"hex": "#3c4858", "set": "station"},
+  "stLnCore": {"hex": "#485e72", "set": "station"},
+  "stLnMid": {"hex": "#697485", "set": "station"},
+  "stLnLit": {"hex": "#909ba8", "set": "station"},
+  "stLnSoft": {"hex": "#748e95", "set": "station"},
+  "stD": {"hex": "#425569", "set": "station"},
+  "stM": {"hex": "#5c7585", "set": "station"},
+  "stS": {"hex": "#6e8694", "set": "station"},
+  "stL": {"hex": "#8699a4", "set": "station"},
+  "stH": {"hex": "#9fadb4", "set": "station"},
+  "stB": {"hex": "#b7c0c4", "set": "station"},
+  "stW": {"hex": "#d0d4d4", "set": "station"}
 }
