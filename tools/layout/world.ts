@@ -66,7 +66,7 @@ export function sameShell(a: Layout, b: Layout): boolean {
  * Apply a modules-only edit to a stamped sim: the modules `from` has and `to` lacks go (the game's removal), the ones `to` adds are
  * spawned (the game's spawn), then power and light are allocated again. The ship, its grid and the renderer's scene of them stay, so
  * an edit costs the modules it touches instead of a whole restamp. False (the sim untouched) when the edit needs a restamp: a container,
- * an airlock, a bay, a stasis wheel or a module the sim cannot find.
+ * an airlock, a bay, a stasis wheel, a stocked module or a module the sim cannot find.
  */
 export function swapModules(w: World, from: Layout, to: Layout): boolean {
   const key = (m: Layout['modules'][number]): string => `${m.def}|${m.x}|${m.y}|${m.rot ?? 0}|${JSON.stringify(m.clamp ?? null)}`;
@@ -76,7 +76,8 @@ export function swapModules(w: World, from: Layout, to: Layout): boolean {
   const gone: Layout['modules'][number][] = [];
   for (const m of from.modules) { const k = key(m), n = left.get(k) ?? 0; if (n > 0) left.set(k, n - 1); else gone.push(m); }
   const added = to.modules.filter((m) => { const k = key(m), n = left.get(k) ?? 0; if (n > 0) { left.set(k, n - 1); return true; } return false; });
-  const special = (m: Layout['modules'][number]): boolean => !!(defs[m.def]?.container || defs[m.def]?.airlock || defs[m.def]?.vehicleBay || defs[m.def]?.stasisWheel);
+  // A stocked module too: the game's removal spills its stock on the floor and a spawn starts it empty, so only a restamp keeps it.
+  const special = (m: Layout['modules'][number]): boolean => !!(defs[m.def]?.container || defs[m.def]?.airlock || defs[m.def]?.vehicleBay || defs[m.def]?.stasisWheel || m.stock?.length);
   if ([...gone, ...added].some(special)) return false;
   // The entities of the removed modules, matched by def and anchor.
   const ids: number[] = [];
