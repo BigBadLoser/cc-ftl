@@ -340,6 +340,8 @@ export function moduleLayers(world: World, id: number, m: Module, def: ModuleDef
     return [base, { chain: [`${a}.crop.${crop}.${stage}${r}`], key: `${a}.crop`, tiles: 'all', dz: 0.01, crop: { crop, stage } }];
   }
   // A ground turret's mount (#514): `module.<stem>.ground.r{n}`, the cable port turned with the rotation; its head is turretView's.
+  // A chain of its own, not moduleAssets: this layer is only the base under the head, and the base has no .active or
+  // .unpowered art.
   if (isGroundMount(def)) return [{ chain: [...stateArt(def, m.rot, active, look).head, `${a}${r}`, a], key: a, tiles: 'all' }];
   if (def.weapon || def.pointDefense) return [{ chain: [`${a}.bay${r}`, `${a}.bay`], key: `${a}.bay`, tiles: 'all' }];
   const main: ModuleLayer = { chain: moduleAssets(world, id, m, def, active, look), key: a, tiles: 'all', anim: stateArt(def, m.rot, active, look).anim };

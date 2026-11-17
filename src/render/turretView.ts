@@ -67,6 +67,7 @@ export function createTurretView(world: World, atlas: Atlas, L: Layers, grid: Gr
         const def = m && defs[m.def];
         if (!m || !w || !def || !grid.inBounds(m.x, m.y)) continue;
         const ground = isGroundMount(def);
+        // A ground mount is always out: content/groundMounts.ts drops deploySec from the .ground defs (they have no deploy art).
         const stage = def.deploySec === undefined ? DEPLOY_FRAMES : deployStage(world, id);
         // Stowed: a hatch on a roofed (enemy) ship, nothing at all on the player's cutaway ship.
         if (stage < 0 && !roofed) continue;
