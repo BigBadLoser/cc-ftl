@@ -307,8 +307,25 @@ needs only room roles (courts, posts).
 On the asteroid (`outposts/`): a prefab base's dock is a pad's airlock (`pickDock` finds it once the layout is turned
 so a pad airlock faces north or south). It stands anywhere on the rock (`placeAt` with `site`: the fewest tiles over
 space, then the most central), its whole site levelled, pads included, with no notch to space; `validateOutpost`
-wants its dock's collar on ground. Shuttles fly in and dock at that airlock as anywhere else; landing on the pad and
-walking in suited is #509.
+wants its dock's collar on ground. Landing pads (#509, merged in #529): a pad is a 9x9 `groundMount` module
+(`content/landingPads.ts`, owner `sim/modules/landingPad.ts`) with a cabled power port like a turret's, placed on the
+site's pad spots and wired in by `groundTurrets.wirePads`. The base's home shuttle parks on pad 0; a visiting shuttle
+lands on a free pad (`dockSpot` answers whether an airlock is a dock; a pad another shuttle calls home is busy), and crew
+suit up and walk to the boarding tile at the ramp's foot (`padBoardTile`).
+
+Farm and mine bases (#508, merged in #528) are prefab kinds next to the trading one, picked in `prefab.ts` by station
+kind and seed:
+- Farming A (`farmRows`): greenhouses that stand apart from the base, each with its own airlock, reached by EVA from a
+  wing of workshop, suit room and airlock. Cables run as a staple from the base to the first greenhouse, then ganged at
+  their back ends. A detached module counts as reachable from its own airlock (`Regions.apart` / `entries`,
+  `Layout.entries`, `ShipTemplate.apart`). Validation walks each structure from its own first door, and every structure
+  after the first must hold an airlock.
+- Farming B (`farmCluster`): the greenhouses joined to the base.
+- Mining (`mineWing`): workshop, refinery, suit room and airlock in one wing, with two 7x11 ore pods of large ore bins
+  under the refinery.
+
+Crew airlocks are flagged `crew`, and `pickDock` skips them. The fit-out stocks a store only with items it accepts, and a
+farm's mess pantry starts with produce (`StationDef.pantry`). Open: #530 (a farm station's water-only warehouse half).
 
 A cut corner is a stair of wall: the seal rule allows no floor diagonal to space, so the floor's corner tile is wall
 too (gas is four-way, the wall art already draws such stairs on the rings' round corners). Open: rock outcrops in the gaps.

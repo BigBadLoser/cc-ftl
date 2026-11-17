@@ -197,3 +197,8 @@ export function dropBuriedAirlocks(
   });
   return { ...t, rows: rows.map((r) => r.join('')), modules };
 }
+
+/** A dug base keeps no vehicles (#509): a shuttle has nowhere to land under the rock, so its hangar's bays are left out (the room stays, empty floor). */
+export function withoutVehicles(t: ShipTemplate, defs: Record<string, ModuleDef>): ShipTemplate {
+  return t.modules ? { ...t, modules: t.modules.filter((m) => !defs[m.def]?.vehicleBay) } : t;
+}

@@ -1,5 +1,6 @@
 import { airlockTiles } from '../../modules/airlock';
 import { footprintTiles } from '../../modules/footprint';
+import { LANDING_PAD } from '../../modules/landingPad';
 import type { ModuleDef, ShipTemplate } from '../../registry';
 import { Rng } from '../../rng';
 import { fitShell, seedOf } from '../generate';
@@ -96,7 +97,7 @@ export function assembleStation(def: StationDef, id: string, size: StationSize, 
   const made = fitShell(
     rng, stationFaction(def), id, seed, role, 'sections', { crew: stationCrew(rng, def, size) },
     { rows, roomOf: snap.roomOf, width: snap.width, height: snap.height, roles: g.regions.map((r) => r.role), specs: g.regions.map((r) => r.spec ?? (r.dept === 'customs' ? CUSTOMS : undefined)) },
-    `assembly ${recipe.name}`, defs, 0, { immobile: true, airlocksAnyWay: true, gunsAnywhere: true, ...(g.entries.size > 0 ? { entries: g.entries } : {}), ...(prefab ? { ground: { mods: groundTurrets(ok.recipe, program, defs), keep: pads.map((p) => [p[0] - snap.x0, p[1] - snap.y0, p[2] - snap.x0, p[3] - snap.y0] as const), seed, ...(g.apartModules.length > 0 ? { apart: g.apartModules } : {}) } } : {}), check: (t, d) => stationProblems(t, d, prefab ? Math.min(PREFAB_PADS, docksOf(def, size)) : docksOf(def, size)) },
+    `assembly ${recipe.name}`, defs, 0, { immobile: true, airlocksAnyWay: true, gunsAnywhere: true, ...(g.entries.size > 0 ? { entries: g.entries } : {}), ...(prefab ? { ground: { mods: groundTurrets(ok.recipe, program, defs), keep: pads.map((p) => [p[0] - snap.x0, p[1] - snap.y0, p[2] - snap.x0, p[3] - snap.y0] as const), pads: pads.map((p, i) => ({ def: LANDING_PAD, box: [p[0] - snap.x0, p[1] - snap.y0, p[2] - snap.x0, p[3] - snap.y0] as const, ...(i === 0 ? { vehicle: 'vehicle.shuttle' } : {}) })), seed, ...(g.apartModules.length > 0 ? { apart: g.apartModules } : {}) } } : {}), check: (t, d) => stationProblems(t, d, prefab ? Math.min(PREFAB_PADS, docksOf(def, size)) : docksOf(def, size)) },
   );
   // The crew's airlocks (a prefab base's wing and greenhouses) are no docks for ships.
   if (g.crewLocks.size > 0) made.template.modules = (made.template.modules ?? []).map((m) => (defs[m.def]?.airlock && footprintTiles(defs[m.def] as ModuleDef, m.x, m.y, m.rot).some((t) => g.crewLocks.has(snap.roomOf[t.y * snap.width + t.x] ?? -1)) ? { ...m, crew: true as const } : m));

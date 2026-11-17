@@ -3,7 +3,7 @@ import { AirlockC, airlockTiles } from '../modules/airlock';
 import { ModuleC } from '../modules/components';
 import { hullSum } from '../combat/hull';
 import { ShipC, type Faction } from '../combat/components';
-import { spawnCrew } from '../combat/ships';
+import { claimTemplateVehicles, spawnCrew } from '../combat/ships';
 import { outfitStation } from '../stations/spawn';
 import { ShipGrid } from '../shipGrid';
 import { Struct } from '../structure';
@@ -55,6 +55,8 @@ export function stampOutpost(sim: Sim, o: OutpostPlan, x: number, y: number): { 
     if (def) for (const f of footprintTiles(def, bx + m.x, by + m.y, m.rot)) built.push([f.x, f.y]);
   }
   for (const [tx, ty] of built) g.set('ship', tx, ty, ship);
+  claimTemplateVehicles(sim, ship); // a pad's shuttle belongs to the base
+
   // The dock airlock: the one whose outer door sits on the plan's dock tile (the only airlock a shuttle may dock at).
   for (const id of sim.world.query(AirlockC, ModuleC)) {
     const m = sim.world.get(id, ModuleC);

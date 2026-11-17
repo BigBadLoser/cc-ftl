@@ -2,6 +2,7 @@ import { shipById } from '../combat/ships';
 import { ModuleC } from '../modules/components';
 import { accessTile, hullOutward, hullSide, rotatedSize } from '../modules/footprint';
 import { airlockTiles } from '../modules/airlock';
+import { airlockPad, isLandingPad, padBoardTile } from '../modules/landingPad';
 import type { Sim } from '../sim';
 import { VehicleBayC, VehicleC } from './components';
 import { shipIdOf } from '../regions';
@@ -16,8 +17,10 @@ export interface DockPoint {
    */
   x: number;
   y: number;
-  /** The ship tile past the inner door where passengers come in. */
+  /** The ship tile past the inner door where passengers come in (on a landing pad: the pad's boarding tile, out on the ground). */
   inside: { x: number; y: number };
+  /** The landing pad the shuttle sits on (#509), 0 for a collar: it lands on the pad beside the airlock, and its crew walk (suited) between the two. */
+  pad: number;
 }
 
 /** Where a shuttle latches on to an airlock, or null if the airlock or its ship is gone. */
@@ -26,10 +29,15 @@ export function dockPoint(sim: Sim, airlock: number): DockPoint | null {
   const def = m && sim.content.modules[m.def];
   const ship = m && shipById(sim, shipIdOf(sim, m));
   if (!m || !def?.airlock || !ship) return null;
+  const pad = airlockPad(sim, airlock);
+  const pm = pad ? sim.world.get(pad, ModuleC) : undefined;
+  const acc = pm && padBoardTile(sim, pad);
+  const c0 = pad ? bayCenter(sim, pad) : null;
+  if (pad && acc && c0) return { shipId: shipIdOf(sim, m), x: c0.x, y: c0.y, inside: acc, pad };
   const t = airlockTiles(def, m);
   const out = hullOutward(hullSide(def, m.rot) ?? 'n');
   const c = t.collar ?? { x: t.outer.x + out.x, y: t.outer.y + out.y };
-  return { shipId: shipIdOf(sim, m), x: c.x + 0.5, y: c.y + 0.5, inside: t.inside };
+  return { shipId: shipIdOf(sim, m), x: c.x + 0.5, y: c.y + 0.5, inside: t.inside, pad: 0 };
 }
 
 /**
@@ -66,7 +74,7 @@ export function boardingTile(sim: Sim, vehicle: number): { shipId: number; x: nu
 export function bayAccessTile(sim: Sim, v: { home: number }): { shipId: number; x: number; y: number } | null {
   const m = sim.world.get(v.home, ModuleC);
   const def = m && sim.content.modules[m.def];
-  const t = m && def && accessTile(def, m.x, m.y, m.rot);
+  const t = m && def && (isLandingPad(def) ? padBoardTile(sim, v.home) : accessTile(def, m.x, m.y, m.rot));
   return m && t ? { shipId: shipIdOf(sim, m), x: t.x, y: t.y } : null;
 }
 

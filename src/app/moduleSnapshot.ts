@@ -17,6 +17,7 @@ import { upgradeEffects } from './upgradeText';
 import type { UiUpgradeItem, UiUpgradeSlot, UiModule, UiModuleDef, UiStats } from '../ui/api';
 import { shipIdOf, shipGrid } from '../sim/regions';
 import { isGroundMount } from '../sim/modules/groundMount';
+import { isLandingPad } from '../sim/modules/landingPad';
 import { homeShip } from '../sim/index';
 
 
@@ -65,7 +66,7 @@ const familyOf = (id: string): string => id.replace(/\.mk\d$/, '');
 
 export function buildModuleDefs(sim: Sim): UiModuleDef[] {
   const mods = sim.content.modules;
-  return Object.entries(mods).filter(([, d]) => !isGroundMount(d)).map(([id, d]) => {
+  return Object.entries(mods).filter(([, d]) => !isGroundMount(d) && !isLandingPad(d)).map(([id, d]) => {
     const family = familyOf(id);
     const tiered = !!d.blueprint || Object.keys(mods).some((o) => o !== id && familyOf(o) === id);
     return {

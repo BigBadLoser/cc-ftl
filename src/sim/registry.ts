@@ -619,7 +619,7 @@ export interface ModuleDef {
    * floor). Holds one vehicle whose `VehicleDef.class` equals `class` ('shuttle' bays are 4x5; later 'pod' bays, 3x3, for
    * mining and construction pods). Crew board and leave it at `access`, a floor tile beside the footprint.
    */
-  vehicleBay?: { class: string; /** A vehicle def that comes with the bay when crew build it (the pod bay's pod). */ builtWith?: string };
+  vehicleBay?: { class: string; /** A vehicle def that comes with the bay when crew build it (the pod bay's pod). */ builtWith?: string; /** An open landing pad on the ground (#509), not a pit: the vehicle sits on it in plain sight and its crew walk (suited) to the airlock beside it. The one owner is sim/modules/landingPad.ts. */ pad?: true };
   /**
    * Marks the ship's bridge for capture (a helm console counts as one with the defaults). Holding it means a live
    * crew member of the attacking side stands within `radius` tiles (default CAPTURE_BRIDGE_RADIUS) of the module's access

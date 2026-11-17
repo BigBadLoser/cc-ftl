@@ -312,13 +312,12 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   // PLACEHOLDER drones and drone-bay plates (drawn in code until their art exists), sorted with the ships' tiles.
   const drones = createDroneView(world, { layer: W.low, air: SL.sorted, drones: content.drones ?? {}, modules: content.modules, atlas });
   // The drone bays' ceiling hatches (droneHatch.ts), at roof height over each bay.
+  /** The ship whose tiles hold a sector tile (0: none), for views that only have the world. */
+  const shipAtTile = (t: { x: number; y: number } | undefined): number => (t && world.query(ShipC).find((id) => { const sh = world.get(id, ShipC); return !!sh && onShip(sh, t); })) ?? 0;
   const hatches = createHatchView(world, {
     layer: W.low, modules: content.modules, atlas, zoom: () => SL.scale,
     roofed: (id) => scenes.get(id)?.isRoofed() ?? false,
-    shipOf: (mid) => {
-      const m = world.get(mid, ModuleC);
-      return (m && world.query(ShipC).find((id) => { const sh = world.get(id, ShipC); return !!sh && onShip(sh, m); })) ?? 0;
-    },
+    shipOf: (mid) => shipAtTile(world.get(mid, ModuleC)),
   });
   const pods = createPodView(world, atlas, {
     air: SL.sorted,
@@ -340,6 +339,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     include: (v) => v.state !== 'stowed' || v.homeGrid === refId,
     skip: isPod,
     low: { layer: W.low, project: sectorArt },
+    shipOf: shipAtTile,
   });
 
   // Detached containers: inert bodies at hull height, sorted with the ships' tiles.

@@ -52,6 +52,12 @@ airlock of your own, and that shuttle not being busy with another run. The slip 
 the station's crew don't get the goods across within five minutes, the shuttle undocks and trades from alongside the hull
 instead; the ship's log says so.
 
+**Asteroid bases.** A trading post (or farm or mine) on an asteroid's surface has no hangar. It keeps its own shuttle on an
+open **landing pad** on the levelled ground, with a second pad free for visitors. A shuttle that comes to trade there lands
+on a free pad instead of latching on to the airlock. Crew who go to or from a shuttle on a pad suit up at the airlock beside
+it and walk across the open ground, so the airlock has to be working. Bases dug into the rock (pirate, criminal and covert
+ones) keep no shuttles at all.
+
 ## The channel
 
 The Channel window has video of the contact on the left, a transcript in the middle, and the station's sensors and a list

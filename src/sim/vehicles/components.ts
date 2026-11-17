@@ -62,6 +62,8 @@ export const AboardC = defineComponent<Aboard>('aboard');
 /** On crew walking to a vehicle's boarding tile to climb in; the vehicle system boards them on arrival. */
 export interface EmbarkOrder {
   vehicle: number;
+  /** The suit errand before a walk out over open ground (a landing pad, #509) is done: the walk itself may start. */
+  suited?: true;
 }
 export const EmbarkOrderC = defineComponent<EmbarkOrder>('embarkOrder');
 
