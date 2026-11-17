@@ -1,5 +1,10 @@
-import { Sprite, type Container } from 'pixi.js';
+import { Container, Sprite } from 'pixi.js';
 import type { Atlas } from '../../src/render/assets/loader';
+import type { ClipDef } from '../../src/render/assets/manifest';
+import { artZoom, createCrewFilter, crewFilters, crewPalette, setFilterTint, setFilterZoom } from '../../src/render/assets/palette';
+import { drawLayers } from '../../src/render/crewSprites';
+import { lightTint } from '../../src/render/lightTint';
+import { crewLoadout, preloadLayers } from '../../src/render/loadout';
 import { tubePieces, type TubeLook } from '../../src/render/tubeArt';
 import type { WallLevel } from '../../src/render/tiles';
 import type { TubeRun } from '../../src/sim/tube';
@@ -30,13 +35,43 @@ const run = (axis: 'x' | 'y', len: number): TubeRun => {
   return { axis, x: 2, y: 2, len, far: { x: 2 - dx, y: 2 - dy }, near: { x: 2 + dx * len, y: 2 + dy * len } };
 };
 
-/** Ground under the patch, then the run's pieces (tubeArt.tubePieces) in the game's depth order: tile depth plus the piece's `dz`. */
-function scene(root: Container, atlas: Atlas, r: TubeRun, look: TubeLook, ox: number, oy: number, w: number, h: number): void {
+const CLIP = 'idle';
+/** Crew stood along a run (tiles from its first floor tile): inside it, across the seams, at its near end and in the near door. */
+const STAND = [0, 0.45, 0.55, 1.3, 2.4, 3.2];
+
+type Look = ReturnType<typeof crewLoadout>;
+
+/** A crew member at (x, y) (continuous tiles), drawn as the game does: the loadout's layers through the crew filter. */
+function figure(root: Container, atlas: Atlas, look: Look, seed: number, at: { x: number; y: number }, zoom: number) {
+  const body = new Container();
+  const filter = createCrewFilter(atlas.manifest.keyColors, crewPalette(seed));
+  const z = artZoom(zoom * devicePixelRatio);
+  body.filters = crewFilters(filter, z);
+  setFilterTint(filter, lightTint(255, false, -1));
+  setFilterZoom(filter, z);
+  const parts = look.map((layer) => { const s = new Sprite(); body.addChild(s); return { layer, sprite: s }; });
+  body.position.set(Math.round(at.x), Math.round(at.y));
+  root.addChild(body);
+  return parts;
+}
+
+/**
+ * Ground under the patch, then the run's pieces (tubeArt.tubePieces) and any crew in the game's depth order: tile depth plus the
+ * piece's `dz`, a crew member's at their position. Returns the crew's layers.
+ */
+function scene(root: Container, atlas: Atlas, r: TubeRun, look: TubeLook, ox: number, oy: number, w: number, h: number, crew?: { look: Look; zoom: number }) {
   const sx = (x: number, y: number) => ox + ((x - y) * TW) / 2;
   const sy = (x: number, y: number) => oy + ((x + y) * TH) / 2;
   for (let d = 0; d <= w + h - 2; d++) for (let x = 0; x < w; x++) if (d - x >= 0 && d - x < h) put(root, atlas, `rock.ground.m15.v${(x * 5 + (d - x) * 3) % 8}`, sx(x, d - x), sy(x, d - x));
-  const pieces = tubePieces(r, look).map((p, i) => ({ ...p, i })).sort((a, b) => a.x + a.y + a.dz - (b.x + b.y + b.dz) || a.i - b.i);
-  for (const p of pieces) put(root, atlas, p.id, sx(p.x, p.y), sy(p.x, p.y));
+  const dx = r.axis === 'x' ? 1 : 0, dy = 1 - dx;
+  const items = [
+    ...tubePieces(r, look).map((p) => ({ d: p.x + p.y + p.dz, draw: () => { put(root, atlas, p.id, sx(p.x, p.y), sy(p.x, p.y)); return undefined; } })),
+    ...(crew ? STAND.filter((k) => k < r.len + 0.5) : []).map((k, n) => {
+      const x = r.x + dx * k, y = r.y + dy * k;
+      return { d: x + y, draw: () => figure(root, atlas, crew!.look, 11 * (n + 1), { x: sx(x, y), y: sy(x, y) }, crew!.zoom) };
+    }),
+  ].map((q, i) => ({ ...q, i })).sort((a, b) => a.d - b.d || a.i - b.i);
+  return items.map((q) => q.draw()).filter((q) => !!q);
 }
 
 /**
@@ -48,11 +83,33 @@ export const tubePanel: LabPanel = {
   id: 'tube',
   title: 'Prefab base tube',
   zoom: 1,
-  help: 'no options',
-  async cells({ atlas }) {
+  help: 'crew=1: only x and y runs three long, cut and roofed, with crew stood along them and in the near door',
+  async cells({ atlas, params }) {
     for (const p of ['tube.', 'rock.ground.m15']) atlas.ids(p).forEach((id) => atlas.stat(id)); // queue the sheets
+    const crewOn = params.get('crew') === '1';
+    const crewLook = crewLoadout(atlas, { species: 'species.human', role: 'role.engineer', appearanceSeed: 11 } as never);
+    if (crewOn) {
+      preloadLayers(crewLook);
+      for (const l of crewLook) if (l.def.clips[CLIP]) l.request(l.def.clips[CLIP] as ClipDef, true);
+    }
     await atlas.whenIdle();
     const cells: LabCell[] = [];
+    if (crewOn) {
+      const zoom = Number(params.get('zoom') ?? 1);
+      for (const axis of ['x', 'y'] as const)
+        for (const [name, look] of [['cut', { level: 'cut', roofed: false, farOpen: true, nearOpen: true }], ['roofed', { level: 'up', roofed: true, farOpen: true, nearOpen: true }]] as [string, TubeLook][]) {
+          const r = run(axis, 3);
+          const w = axis === 'x' ? 7 : 5, h = axis === 'y' ? 7 : 5;
+          cells.push({
+            label: `${axis} 3: ${name}, crew`, note: `crew at ${STAND.join(', ')} tiles along`, w: ((w + h) * TW) / 2 + PAD * 2, h: ((w + h) * TH) / 2 + TALL + PAD * 2, newRow: name === 'cut',
+            mount(root) {
+              const figs = scene(root, atlas, r, look, PAD + (h * TW) / 2, PAD + TALL + TH / 2, w, h, { look: crewLook, zoom });
+              return (t) => { for (const parts of figs) drawLayers({ parts, glows: [] }, CLIP, 2, t); };
+            },
+          });
+        }
+      return cells;
+    }
     const looks: [string, TubeLook][] = [
       ['shut, cut', { level: 'cut', roofed: false, farOpen: false, nearOpen: false }],
       ['open, cut', { level: 'cut', roofed: false, farOpen: true, nearOpen: true }],

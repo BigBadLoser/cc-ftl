@@ -106,48 +106,84 @@ PARTS = {"mid": (-0.5, 0.5), "west": (-END, 0.5), "east": (-0.5, END), "one": (-
 NAMES = {"x": {"west": "west", "east": "east"}, "y": {"west": "north", "east": "south"}}   # (the y tube's runs -y to +y)
 
 
-def segment(part, axis="x", bands=True):
+def _near(axis):
+    """The sign of v on the camera's side of the tube's axis: grid +y for an x tube (Frame rot 1: v = +y), grid +x for a y
+    tube (Frame rot 2: v = -x)."""
+    return 1 if axis == "x" else -1
+
+
+def _halves(axis, t0, t1):
+    """The angle spans of [t0, t1] on the camera's side of the axis (front) and on the far side (back), as {half: [spans]}.
+    The vertical plane through the axis cuts the shell at +-pi/2."""
+    n = _near(axis)
+    lo, hi = (-math.pi / 2, math.pi / 2) if n > 0 else (math.pi / 2, 3 * math.pi / 2)
+    out = {"front": [], "back": []}
+    for k in range(-1, 3):                                   # the front span and its turns, clipped to [t0, t1]
+        a, b = max(t0, lo + k * math.tau), min(t1, hi + k * math.tau)
+        if a < b - 1e-9:
+            out["front"].append((a, b))
+    edges = sorted({t0, t1, *(e for s in out["front"] for e in s)})
+    for a, b in zip(edges, edges[1:]):
+        if not any(s[0] <= a + 1e-9 and b <= s[1] + 1e-9 for s in out["front"]) and b > a + 1e-9:
+            out["back"].append((a, b))
+    return out
+
+
+def segment(part, axis="x", bands=True, half=None):
     """One tile of the picked glass tube (tube.x.<part>): the run along u PARTS[part] from the tile's middle, its walkway,
     the belly and glass, ribs at u +-0.25 (so none falls on a tile's edge), an amber end band where it is seated in a
     port. A tube of any length is its tiles' segments side by side: west, mid ..., east (one: a single tile). axis y:
-    the same along grid +y (tube.y.<north|mid|south|one>; the tube is the same either side of its axis)."""
+    the same along grid +y (tube.y.<north|mid|south|one>; the tube is the same either side of its axis).
+    `half`: 'back' (the walkway, the belly and the shell on the far side of the axis: drawn under the crew in the tube) or
+    'front' (the glass, ribs and bands on the camera's side: drawn over them); None, the whole tile."""
     u0, u1 = PARTS[part]
-    m, mg = core.Mesh(f"tube_{part}"), core.Mesh(f"tube_{part}_glass")
+    m, mg = core.Mesh(f"tube_{part}_{half}"), core.Mesh(f"tube_{part}_{half}_glass")
     f, g = (_frame(m), _frame(mg)) if axis == "x" else (Frame(m, 2, square=True), Frame(mg, 2, square=True))
-    w = 2 * math.sqrt(R * R - (ZC - DECK) ** 2)
-    f.box((u0 + u1) / 2, 0, DECK - 0.12, u1 - u0, w, 0.12, "tbDeckD", top="tbDeck")
-    for c in (-1, 1):
-        f.box(0.0, c * 0.33, DECK, 0.08, 0.05, 0.02, "tbDeckD", top="tbLamp")
+
+    def spans(t0, t1):
+        return [(t0, t1)] if half is None else _halves(axis, t0, t1)[half]
+
+    if half != "front":
+        w = 2 * math.sqrt(R * R - (ZC - DECK) ** 2)
+        f.box((u0 + u1) / 2, 0, DECK - 0.12, u1 - u0, w, 0.12, "tbDeckD", top="tbDeck")
+        for c in (-1, 1):
+            f.box(0.0, c * 0.33, DECK, 0.08, 0.05, 0.02, "tbDeckD", top="tbLamp")
     b = _belly_angle(ZB)
-    _skin(f, u0, u1, _arc(_circle, math.pi - b, math.tau + b), "tbHull")
-    _skin(g, u0, u1, _arc(_circle, b, math.pi - b), "tbGlass")
-    for u in (-0.25, 0.25):
-        if u0 + 0.12 < u < u1 - 0.12:
-            _band(f, u - 0.03, u + 0.03, _circle, 0.0, math.tau, 0.03, "tbHull", "tbHullD")
-    if bands and part in ("west", "one"):
-        _band(f, u0, u0 + 0.1, _circle, 0.0, math.tau, 0.05, "tbAmb", "tbRib")
-    if bands and part in ("east", "one"):
-        _band(f, u1 - 0.1, u1, _circle, 0.0, math.tau, 0.05, "tbAmb", "tbRib")
+    if half != "front":                                      # (the belly, a low kick strip, stays under the crew's feet)
+        _skin(f, u0, u1, _arc(_circle, math.pi - b, math.tau + b), "tbHull")
+    for t0, t1 in spans(b, math.pi - b):
+        _skin(g, u0, u1, _arc(_circle, t0, t1), "tbGlass")
+    for t0, t1 in spans(0.0, math.tau):
+        for u in (-0.25, 0.25):
+            if u0 + 0.12 < u < u1 - 0.12:
+                _band(f, u - 0.03, u + 0.03, _circle, t0, t1, 0.03, "tbHull", "tbHullD")
+        if bands and part in ("west", "one"):
+            _band(f, u0, u0 + 0.1, _circle, t0, t1, 0.05, "tbAmb", "tbRib")
+        if bands and part in ("east", "one"):
+            _band(f, u1 - 0.1, u1, _circle, t0, t1, 0.05, "tbAmb", "tbRib")
     from .tube_port import clip_ground
     glassy = clip_ground(mg.build())
     glassy["alpha"], glassy["rim"] = GLASS_ALPHA, GLASS_RIM
     return [clip_ground(m.build()), glassy]
 
 
-def _seg_job(part, axis="x"):
-    def run(part=part, axis=axis):
+def _seg_job(part, axis="x", half="back"):
+    """A tile's back layer (tube.<axis>.<part>: under the crew) or front layer (`.front`: the camera's half of the glass, over
+    them). The back layer renders with the next tiles' back halves beside it (`extras`); the front layer alone, so its glass
+    takes only its own colour and the game lays it over the back layer and the crew."""
+    def run(part=part, axis=axis, half=half):
         import bpy
         from . import post
-        aid = f"tube.{axis}.{NAMES[axis].get(part, part)}"
+        aid = f"tube.{axis}.{NAMES[axis].get(part, part)}{'.front' if half == 'front' else ''}"
         core.clear_scene_meshes()
         post.select(PAL)
         extras = []                                     # (the next tiles' segments either side, where the tube runs on:
         for k, nb in ((-1, part in ("mid", "east")), (1, part in ("mid", "west"))):   # as far as either may run, its
-            if nb:                                      # port end's (past it a mid one's floor would be baked into the
-                for ob in segment("west" if k < 0 else "east", axis, bands=False):    # glass over the port's bore)
+            if nb and half == "back":                   # port end's (past it a mid one's floor would be baked into the
+                for ob in segment("west" if k < 0 else "east", axis, bands=False, half="back"):   # glass over the bore)
                     ob.location = ob.location + (core.G(k, 0.0, 0.0) if axis == "x" else core.G(0.0, k, 0.0))
                     extras.append(ob)
-        objs = segment(part, axis)
+        objs = segment(part, axis, half=half)
         sc = bpy.context.scene
         sc.cycles.samples = SAMPLES
         try:
@@ -349,6 +385,6 @@ def _hull_job(rot):
 
 
 def jobs():
-    return ([_seg_job(p, a) for a in ("x", "y") for p in PARTS] +
+    return ([_seg_job(p, a, h) for a in ("x", "y") for p in PARTS for h in ("back", "front")] +
             [_port_job(o, d) for o in (2, 1) for d in (False, True)] + [_port_job(8), _port_job(4)] +
             [_junction_job(o, t) for o in (8, 4) for t in (0.0, 1.0)] + [_hull_job(1), _hull_job(2)])

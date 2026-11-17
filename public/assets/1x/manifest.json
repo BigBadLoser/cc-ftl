@@ -212711,13 +212711,13 @@
    "kind": "static",
    "sheet": "tube",
    "frame": {
-    "x": 2883,
+    "x": 3021,
     "y": 1,
-    "w": 86,
-    "h": 93
+    "w": 78,
+    "h": 91
    },
    "anchor": {
-    "x": 47,
+    "x": 39,
     "y": 79
    },
    "footprint": [
@@ -212725,6 +212725,24 @@
     1
    ],
    "glow": true
+  },
+  "tube.x.east.front": {
+   "kind": "static",
+   "sheet": "tube",
+   "frame": {
+    "x": 3179,
+    "y": 1,
+    "w": 54,
+    "h": 90
+   },
+   "anchor": {
+    "x": 47,
+    "y": 76
+   },
+   "footprint": [
+    1,
+    1
+   ]
   },
   "tube.x.mid": {
    "kind": "static",
@@ -212732,11 +212750,11 @@
    "frame": {
     "x": 2693,
     "y": 1,
-    "w": 94,
-    "h": 95
+    "w": 86,
+    "h": 96
    },
    "anchor": {
-    "x": 47,
+    "x": 39,
     "y": 79
    },
    "footprint": [
@@ -212744,18 +212762,36 @@
     1
    ],
    "glow": true
+  },
+  "tube.x.mid.front": {
+   "kind": "static",
+   "sheet": "tube",
+   "frame": {
+    "x": 3234,
+    "y": 1,
+    "w": 63,
+    "h": 90
+   },
+   "anchor": {
+    "x": 47,
+    "y": 76
+   },
+   "footprint": [
+    1,
+    1
+   ]
   },
   "tube.x.one": {
    "kind": "static",
    "sheet": "tube",
    "frame": {
-    "x": 3231,
+    "x": 3417,
     "y": 1,
-    "w": 78,
-    "h": 91
+    "w": 68,
+    "h": 89
    },
    "anchor": {
-    "x": 39,
+    "x": 29,
     "y": 77
    },
    "footprint": [
@@ -212763,18 +212799,36 @@
     1
    ],
    "glow": true
+  },
+  "tube.x.one.front": {
+   "kind": "static",
+   "sheet": "tube",
+   "frame": {
+    "x": 3555,
+    "y": 1,
+    "w": 46,
+    "h": 87
+   },
+   "anchor": {
+    "x": 39,
+    "y": 73
+   },
+   "footprint": [
+    1,
+    1
+   ]
   },
   "tube.x.west": {
    "kind": "static",
    "sheet": "tube",
    "frame": {
-    "x": 2970,
+    "x": 2867,
     "y": 1,
-    "w": 86,
-    "h": 93
+    "w": 76,
+    "h": 94
    },
    "anchor": {
-    "x": 39,
+    "x": 29,
     "y": 77
    },
    "footprint": [
@@ -212783,14 +212837,32 @@
    ],
    "glow": true
   },
+  "tube.x.west.front": {
+   "kind": "static",
+   "sheet": "tube",
+   "frame": {
+    "x": 3602,
+    "y": 1,
+    "w": 55,
+    "h": 87
+   },
+   "anchor": {
+    "x": 39,
+    "y": 73
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
   "tube.y.mid": {
    "kind": "static",
    "sheet": "tube",
    "frame": {
-    "x": 2788,
+    "x": 2780,
     "y": 1,
-    "w": 94,
-    "h": 95
+    "w": 86,
+    "h": 96
    },
    "anchor": {
     "x": 47,
@@ -212802,14 +212874,32 @@
    ],
    "glow": true
   },
+  "tube.y.mid.front": {
+   "kind": "static",
+   "sheet": "tube",
+   "frame": {
+    "x": 3298,
+    "y": 1,
+    "w": 63,
+    "h": 90
+   },
+   "anchor": {
+    "x": 16,
+    "y": 76
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
   "tube.y.north": {
    "kind": "static",
    "sheet": "tube",
    "frame": {
-    "x": 3057,
+    "x": 2944,
     "y": 1,
-    "w": 86,
-    "h": 93
+    "w": 76,
+    "h": 94
    },
    "anchor": {
     "x": 47,
@@ -212821,36 +212911,72 @@
    ],
    "glow": true
   },
+  "tube.y.north.front": {
+   "kind": "static",
+   "sheet": "tube",
+   "frame": {
+    "x": 3658,
+    "y": 1,
+    "w": 55,
+    "h": 87
+   },
+   "anchor": {
+    "x": 16,
+    "y": 73
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
   "tube.y.one": {
    "kind": "static",
    "sheet": "tube",
    "frame": {
-    "x": 3310,
+    "x": 3486,
+    "y": 1,
+    "w": 68,
+    "h": 89
+   },
+   "anchor": {
+    "x": 39,
+    "y": 77
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "tube.y.one.front": {
+   "kind": "static",
+   "sheet": "tube",
+   "frame": {
+    "x": 3714,
+    "y": 1,
+    "w": 46,
+    "h": 87
+   },
+   "anchor": {
+    "x": 7,
+    "y": 73
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tube.y.south": {
+   "kind": "static",
+   "sheet": "tube",
+   "frame": {
+    "x": 3100,
     "y": 1,
     "w": 78,
     "h": 91
    },
    "anchor": {
     "x": 39,
-    "y": 77
-   },
-   "footprint": [
-    1,
-    1
-   ],
-   "glow": true
-  },
-  "tube.y.south": {
-   "kind": "static",
-   "sheet": "tube",
-   "frame": {
-    "x": 3144,
-    "y": 1,
-    "w": 86,
-    "h": 93
-   },
-   "anchor": {
-    "x": 39,
     "y": 79
    },
    "footprint": [
@@ -212858,6 +212984,24 @@
     1
    ],
    "glow": true
+  },
+  "tube.y.south.front": {
+   "kind": "static",
+   "sheet": "tube",
+   "frame": {
+    "x": 3362,
+    "y": 1,
+    "w": 54,
+    "h": 90
+   },
+   "anchor": {
+    "x": 7,
+    "y": 76
+   },
+   "footprint": [
+    1,
+    1
+   ]
   },
   "turret.burst_laser.d0": {
    "kind": "static",
