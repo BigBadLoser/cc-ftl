@@ -35,25 +35,10 @@ export const furniture = {
     asset: 'module.chair', footprint: [1, 1], solid: false, power: 0, flammability: 0.4,
     maxHp: 30, buildWork: 30, cost: [{ item: 'item.metal', count: 2 }, { item: 'item.polymer', count: 1 }],
   },
-  // Station decor (art: tools/blender/sprites/decor.py and landmarks.py): walkable deck marks and a livery banner post.
-  // Dressing only, no mechanic.
-  'module.deck_inlay': {
-    scrap: 'hull',
-    name: 'Deck inlay',
-    category: 'structure',
-    description: "A brass medallion set in the deck. Walkable.",
-    asset: 'module.deck_inlay', footprint: [1, 1], solid: false, power: 0, flammability: 0,
-    maxHp: 40, buildWork: 20, cost: [{ item: 'item.metal', count: 2 }],
-  },
-  'module.deck_hazard': {
-    scrap: 'hull',
-    name: 'Hazard plate',
-    category: 'structure',
-    description: "Yellow and black deck striping. Walkable.",
-    asset: 'module.deck_hazard', footprint: [1, 1], solid: false, power: 0, flammability: 0,
-    maxHp: 40, buildWork: 20, cost: [{ item: 'item.metal', count: 1 }],
-  },
+  // Station decor (art: tools/blender/sprites/landmarks.py): a livery banner post. Dressing only, no mechanic; not player-buildable.
+  // The deck inlay and hazard plate defs were dropped (art stays in the decor sheet).
   'module.banner': {
+    buildable: false,
     scrap: 'comfort',
     name: 'Banner post',
     category: 'life',

@@ -100,3 +100,26 @@ export function vehicleBayLayers(m: Module, def: ModuleDef, s: BayStep): ModuleL
   if (s.shuttle !== null) out.push({ chain: [parkedId(m.rot, s.shuttle, craft), parkedId(m.rot, '', craft)], key: `${craft}.parked`, tiles: 'all', strips: true, dz: PARKED_DZ });
   return out;
 }
+
+/** Smoothstep 0..1. */
+export const ease = (k: number): number => {
+  const c = Math.max(0, Math.min(1, k));
+  return c * c * (3 - 2 * c);
+};
+
+/**
+ * The one answer to "who draws a vehicle that is leaving or entering its bay": the bay's parked layer (`drawn` false) or the sector
+ * layer (`drawn` true). A launch hands over at LAUNCH_LIFT.start, as the doors stand open; a landing is the sector layer's until the
+ * claws close on the parked craft (RETURN_LAND.end). `lift` is the craft's height while it rises out of the pit or settles into it
+ * (0 pit floor .. 1 cruise), null once it is in plain flight or parked. `sinceLaunch` / `sinceLand` are ms since the state change
+ * (Infinity if none).
+ */
+export function bayHandoff(stowed: boolean, sinceLaunch: number, sinceLand: number): { drawn: boolean; lift: number | null } {
+  if (stowed) {
+    if (sinceLand >= RETURN_LAND.end * BAY_FRAME_MS) return { drawn: false, lift: null };
+    return { drawn: true, lift: 1 - ease((sinceLand - RETURN_LAND.start * BAY_FRAME_MS) / ((RETURN_LAND.end - RETURN_LAND.start - 2) * BAY_FRAME_MS)) };
+  }
+  if (sinceLaunch < LAUNCH_LIFT.start * BAY_FRAME_MS) return { drawn: false, lift: null };
+  if (sinceLaunch >= LAUNCH_LIFT.end * BAY_FRAME_MS) return { drawn: true, lift: null };
+  return { drawn: true, lift: ease((sinceLaunch - LAUNCH_LIFT.start * BAY_FRAME_MS) / ((LAUNCH_LIFT.end - LAUNCH_LIFT.start) * BAY_FRAME_MS)) };
+}

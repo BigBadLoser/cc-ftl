@@ -14,7 +14,7 @@ import type { Atlas, StaticSprite } from './assets/loader';
 import { Z_PX } from './heights';
 import type { Pt } from './iso';
 import { UNDOCK_DONE_MS, UNDOCK_SLIDE_AT_MS, dockProgress, undockProgress, type DockProgress } from './dockSequence';
-import { BAY_FRAME_MS, LAUNCH_LIFT, RETURN_LAND } from './vehicleBayArt';
+import { BAY_FRAME_MS, LAUNCH_LIFT, RETURN_LAND, bayHandoff, ease } from './vehicleBayArt';
 
 /** Altitude (tiles over the deck) of a shuttle in flight and at a dock, and of its belly on the pit floor. */
 const CRUISE_Z = 0.4;
@@ -143,12 +143,6 @@ export function frontDepth(sx: number, sy: number, heading: number): number {
   const s = Math.sin(heading);
   return sx + sy - 1 + HALF_LEN * Math.abs(c + s) + HALF_W * Math.abs(c - s);
 }
-
-/** Smoothstep 0..1. */
-const ease = (k: number): number => {
-  const c = Math.max(0, Math.min(1, k));
-  return c * c * (3 - 2 * c);
-};
 
 /**
  * Draws shuttles (VehicleC entities, placed by their BodyC) with the pipeline sprites in the sector layer: `vehicle.shuttle.fly.d<0..7>` in flight
@@ -279,7 +273,7 @@ export function createShuttleView(world: World, atlas: Atlas, modules: Readonly<
             gear = { frame: Math.round(4 * ease(Math.min(1, (1 - d) * 1.6))), z: CRUISE_Z * ease(d), rot: to.rot };
           }
         }
-        const visible = (pad || !!gear || host.include(ref)) && (pad ? true : v.state !== 'stowed' ? !(!t.padded && sinceLaunch < LAUNCH_LIFT.start * BAY_FRAME_MS) : landing);
+        const visible = (pad || !!gear || host.include(ref)) && (pad || (t.padded && v.state !== 'stowed') || bayHandoff(v.state === 'stowed', sinceLaunch, sinceLand).drawn);
         if (!visible) {
           t.root.visible = false;
           seen.add(id);

@@ -4,6 +4,7 @@ import type { ModuleDef } from '../sim/registry';
 import { airlockLayers, type AirlockView } from './airlockArt';
 import { moduleLayers, type ModuleLayer, type ModuleLook } from './moduleArt';
 import { recoveryLayers } from './recoveryArt';
+import { droneBayLayers } from './droneBayArt';
 import { robotBayLayers } from './robotBayArt';
 import { stasisLayers } from './stasisArt';
 import { vehicleBayLayers, type BayStep } from './vehicleBayArt';
@@ -27,6 +28,7 @@ export interface LayerState {
  */
 export function layersOf(world: World, id: number, m: Module, def: ModuleDef, s: LayerState): ModuleLayer[] {
   if (def.robotBay) return robotBayLayers(world, id, m, def, s.now);
+  if (def.droneBay) return droneBayLayers(world, id, m, def, s.active, s.look);
   if (def.vehicleBay) return vehicleBayLayers(m, def, s.bay);
   if (def.airlock?.layout) return airlockLayers(world, id, m, def, s.airlock);
   if (def.stasisWheel) return stasisLayers(world, id, m, def, s.active, s.look);
