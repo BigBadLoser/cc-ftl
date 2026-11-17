@@ -49,6 +49,7 @@ WRAP = (5, 5, 5, 1)                 # the plates bent over the sill's edge, cent
 WRAP_FRONT, WRAP_TOP, WRAP_SIDE = "stL", "stH", SD.BOX_SIDE
 GROOVE_PLATE = (7, 9, 1)            # an end piece's plate on the groove: px in from the tile's end (to the corner's
                                     # foot's end), px tall, px out (the bent plates' tones)
+GROOVE_PLATE_SIDE = "stS"           # its ends: a step over the bent plates'
 VENT_BOX = (15, 4, 1, 17)           # a middle tile's vent box under the window (the ref's, measured): px wide, its front
                                     # px off the face, its top px over the sill's (run back to the glass), px tall
 VENT_RECESS = (2, 1)                # its front's recess (the slats in it): px in from every edge, px deep
@@ -167,7 +168,7 @@ def _span(f, s, s0, s1, zt):
         g0 = SH.GROOVE + (0.5 - gh / 2) / Z             # from gi px in from the tile's end to the corner's foot's end
         fm.part(s0 + gi * ln, w0 + WIN.SLOPE + WIN.FOOT_W,
                 [(D, g0), (D + go * ln, g0), (D + go * ln, g0 + gh / Z), (D, g0 + gh / Z)],
-                [None, WRAP_FRONT, WRAP_TOP, None], WRAP_SIDE, end=False)
+                [None, WRAP_FRONT, WRAP_TOP, None], GROOVE_PLATE_SIDE, end=False)
         p0, p1, _ = seg(s0 + gi * ln, w0 + WIN.SLOPE + WIN.FOOT_W)    # (dark lines down its end turned from
         for u0, u1, za, zb in ((p0, p0 + ln, g0, g0 + gh / Z), (p0, p1, g0, g0 + 1 / Z)):   # view and along its
             SD._rect(f, u0, u1, za, zb, D + go * ln + 0.0005, SD.BOX_LINE)                # foot)
