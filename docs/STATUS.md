@@ -1,7 +1,7 @@
 # Project status and handoff
 
 Living document: update it whenever a milestone lands, a decision is made, or a session ends.
-Last updated: 2026-11-15.
+Last updated: 2026-11-17.
 
 **History:** completed-work logs, past PR notes and superseded decisions are in [STATUS_ARCHIVE.md](STATUS_ARCHIVE.md). Standing decisions that live there:
 - Sector grid (user, 2026-10-19): each sector becomes one large chunked grid; ships never move or dock with each other; a jump takes the player's ship plus anything docked to it. Plan: "Sector grid (planned)" in ARCHITECTURE.md; user answers in the archive section "Sector grid decision".
@@ -73,11 +73,33 @@ under `tools/shipgen/starters` are stale against them (they were already behind 
 in #392. Next is more to find per node (#171; danger bands #382 folded in: no visible bands, physical finds, plan in the #171 comment of 2026-11-15). #380 research,
 #383 story arcs and #172/#52 goals queue behind them. The test harness (#371) may run alongside.
 
-- **Open PR:** #501 station assembly (#460), ready: it builds every station and outpost (`buildStation`); the station grammars
-  are deleted. See [STATION_ASSEMBLY.md](STATION_ASSEMBLY.md). CHANGELOG line at merge, under Changed: "Stations and outposts:
-  every station and asteroid outpost is now laid out by one modular builder: departments grouped round halls, rings and hubs,
-  rooms that serve another room off it, and lamps centred in each room and corridor. Trading outposts are prefab bases on the
-  rock: landing pads, customs, a market hall and a mess hub with the crew's rooms off it, joined by short tubes."
+- **Station generation (next session: a fresh-eyes review).** Merged 2026-11-17, all from one orchestrator session:
+  - #501 station assembly (#460): one builder (`buildStation`, `src/sim/shipgen/assembly/`) lays out every station and
+    outpost; the old station grammars are gone. Design and file map: [STATION_ASSEMBLY.md](STATION_ASSEMBLY.md). Military
+    depots' drone bays are a weapons-role room standing with the guns (`StationRoomDef.drones`, carried through
+    `battery.ts`/`fort.ts` merges and `rooms/rules/bastion.ts`); stations have an AI core tier 1, so 2 drones.
+  - #527 ground turrets (#514): asteroid bases stand guns on the rock, each cabled to the hull (`cable` grid field,
+    `src/sim/cable.ts`, `src/sim/shipgen/groundTurrets.ts`, owners in `src/sim/modules/groundMount.ts`). SAVE_VERSION 127.
+  - #528 prefab kinds (#508): farm (`farmRows`, `farmCluster`) and mine (`mineWing`) bases in `assembly/prefab.ts`
+    (402 lines, over the soft limit), detached greenhouses entered by EVA (`ShipTemplate.apart`, validated per structure);
+    `walkOpts` (`src/sim/eva/route.ts`) keeps unsuited crew out of thin air; `findSuitStow` (`src/sim/eva/errands.ts`) only
+    stows at an airlock on the grid's biggest air space; stores are stocked only with items they accept (`accepts()` in
+    the stocking step of `generate.ts`); farm pantries stock via `StationDef.pantry`.
+  - #529 landing pads (#509): 9x9 cabled pad module (`src/content/landingPads.ts`, owner `src/sim/modules/landingPad.ts`),
+    home shuttle parked on pad 0, visiting shuttles land on a free pad (`dockSpot` is the one answer to "is this airlock a
+    dock"), suited walk to the ramp foot; gear and ramp animation in `src/render/shuttleView.ts` (`PAD_GEAR`).
+  - **Known gaps to start the review from:** #530 (a farm station's water-only warehouse half leaves its cold stores empty;
+    `warehoused()` split in `assembly/program.ts`); #520 (floor lip where a room meets a corridor margin); #444 (one of four
+    black markets spawns) and #445 (agri station without hydroponics), both filed before #501 and maybe fixed by it: check
+    first; #526 (a neutral outpost needs two hostile acts to fight back); #103 (hull glitches). Ground turrets have no
+    stow/deploy art, and their charged heads and damaged or destroyed mounts are untested in game. Unchecked: whether
+    `crew/beds.ts` and `crew/site.ts` reachability can count a vacuum path for unsuited crew. A zoomed-out outpost frame
+    showed holes where modules are (seen on the turret branch, cause not found). Asked of review bots and left as is: the
+    reviewer's "keep `suited` on avoid-thin walks" (user: fine as is).
+  - User's steer for fixes: no special cases; extend the one owning function (CLAUDE.md "One answer per question").
+  - Debug: `?hook&seed=2`, then `__cc.dispatch({ type: 'debug.spawnOutpost', style: 'surface', kind: 'trading'|'farming'|…, seed, x: 150, y: 150 })`;
+    `__cc.stepTicks(n)` steps the sim. Render animations run on the real clock (`animNow`), so timed screenshots must
+    not wait between steps. Layout lab: `npm run lab`.
 - **Open bugs:** #444 (only one of four black markets spawns), #445 (agri station has no hydroponics), #103 (hull glitches).
 - **Open:** recruiting prisoners (#492); #300 in-node events; #303 augments as stat modifiers; #305 shuttle landing in a bay that breaks on approach.
 - **Designed, not started:** new modules (DESIGN.md "New modules"); crew implants (#311) needs its design pass. Addictions are parked.
