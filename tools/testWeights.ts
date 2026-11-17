@@ -498,5 +498,6 @@ export default {
  "tools/layout/ship.test.ts": 0.1,
  "tools/layout/windows.test.ts": 0.1,
  "tools/profile/decisions.test.ts": 0.1,
- "tools/shipgen/starters/variants.test.ts": 0.1
+ "tools/shipgen/starters/variants.test.ts": 0.1,
+ "src/content/ships/combat.slow.test.ts": 50
 } as Record<string, number>;
