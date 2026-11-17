@@ -23,7 +23,7 @@ PART = [None]                       # the piece being built: "w1" | "w2" | "w3" 
 HEAD = 9                            # the header's upright front: px tall under its chamfer (the window's top, the
                                     # posts' top)
 SILL = 10                           # the sill's front's top: this many px over the groove
-JAMB_IN = 1 / 32                    # the posts (the jambs) this far behind the face
+JAMB_IN = 0.0                       # the posts (the jambs) this far behind the face (flush)
 CORNER_OUT = 1 / 32                 # the opening's corner pieces stand this far out past the posts' front
 PANE_IN = 5 / 32                    # the pane's front this far behind the posts' (the ship's)
 SILL_TOP = "stL"                    # the sill's flat top under the glass
