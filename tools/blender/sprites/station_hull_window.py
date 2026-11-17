@@ -24,6 +24,9 @@ HEAD = 9                            # the header's upright front: px tall under 
                                     # posts' top)
 SILL = 10                           # the sill's front's top: this many px over the groove
 JAMB_IN = 0.0                       # the posts (the jambs) this far behind the face (flush)
+HEAD_RECESS = (12, 2, 7)            # the header's recessed panel: px wide (centred on its span), from px over its foot
+HEAD_VENTS = (4, (2, 4, 6))         # to px; its vent lines either side: px wide, their rows (px over its foot)
+RECESS_FILL, RECESS_SHADE, RECESS_LIT, VENT_LINE = "stM", "stD", "stL", "stD"
 RIB_PLATE = (7, 2)                  # an end piece's plate across its rib and post, its top where the top corner's
 RIB_PLATE_TOP = SD.TOP_LIT          # slope meets the post's inner edge: px tall, px off the wall; its top lit, its
 RIB_PLATE_FRONT = "stM"             # front a step under the face's, its side in the window a step over its other
@@ -150,12 +153,34 @@ def _head(f, a, b, z0, ends, foot):
                  SD.F, 3, T.OUT(f.ax), fixed=T.SEAM_PASS or SD.BOX_LINE)
     if ends[1]:                                         # (b: its near end, faintly lit)
         SD._rect(f, b - ln, b, foot, top - c * px, out + e, SD.LOW_LIT)
+    _head_dress(f, a, b, z0, out + e)
     d0 = back - SD.PLATE_BACK * ln + SD.PLATE_R * ln
     for u, col, on in ((a, SD.BOX_LINE, ends[0]), (b - ln, SD.TOP_LIT, ends[1])):   # (its edges along its top)
         if on:
             f.k.poly([T.P(f.ax, f.plane, v, top + T.PAINT, d) for v, d in ((u, d0), (u + ln, d0),
                       (u + ln, out - c * ln), (u, out - c * ln))], SD.F, 3, core.Vector((0, 0, 1)),
                      fixed=T.SEAM_PASS or col)
+
+
+def _head_dress(f, a, b, z0, d):
+    """The header's front over [a, b] (its span on this tile), d out: a recessed panel in its middle (HEAD_RECESS:
+    its fill a step darker, a shadow row under its top lip, a lit row on its floor), a block of vent lines either
+    side of it, centred in what's left (HEAD_VENTS)."""
+    px, ln = 1 / core.ZPX, SD.LINE
+    w, r0, r1 = HEAD_RECESS
+    m = round((a + b) / 2 / ln) * ln
+    p0, p1 = m - w / 2 * ln, m + w / 2 * ln
+    za, zb = z0 + r0 * px, z0 + r1 * px
+    SD._rect(f, p0, p1, za, zb, d, RECESS_FILL)
+    SD._rect(f, p0, p1, zb - px, zb, d + 0.0005, RECESS_SHADE)
+    SD._rect(f, p0, p1, za, za + px, d + 0.0005, RECESS_LIT)
+    vw, rows = HEAD_VENTS
+    for e0, e1 in ((a, p0), (p1, b)):
+        if (e1 - e0) / ln < vw + 2:
+            continue
+        c = round((e0 + e1) / 2 / ln - vw / 2) * ln
+        for n in rows:
+            SD._rect(f, c, c + vw * ln, z0 + n * px, z0 + (n + 1) * px, d, VENT_LINE)
 
 
 def _build(m, o, part):
