@@ -45,7 +45,7 @@ VENT_BOX = (15, 4, 1, 17)           # a middle tile's vent box under the window 
                                     # px off the face, its top px over the sill's (run back to the glass), px tall
 VENT_RECESS = (2, 1)                # its front's recess (the slats in it): px in from every edge, px deep
 VENT_PANEL, VENT_PANEL_SIDE = "stM", "stD"   # the recess's floor a step under the front, its sides a step under that
-VENT_SLATS = (3, 8, 3, 6, 3)        # its slats: count, px wide, px in from its a end, the first's px under its top, px
+VENT_SLATS = (3, 8, 3, 5, 3)        # its slats: count, px wide, px in from its a end, the first's px under its top, px
                                     # apart (each a dark row over a lit row)
 VENT_FRONT, VENT_TOP, VENT_EDGE, VENT_LIT = SH.FACE, "stH", SD.TOP_LIT, "stL"   # its front, top, top's front edge,
                                     # the slats' lit rows
