@@ -1,4 +1,4 @@
-import { groundMountId } from '../../modules/groundMount';
+import { groundMountId, isGroundMount } from '../../modules/groundMount';
 import type { RoomSpec } from '../plan';
 import type { ModuleDef } from '../../registry';
 import type { Rng } from '../../rng';
@@ -212,8 +212,8 @@ export function recipeRooms(recipe: Recipe, rooms: readonly RoomSpec[]): readonl
 export function groundTurrets(recipe: Recipe, rooms: readonly RoomSpec[], defs: Record<string, ModuleDef>): string[] {
   if (recipe.root.kind !== 'prefab') return [];
   const guns = rooms.filter((r) => r.role === 'weapons').flatMap((r) => r.mods.filter((m) => defs[m]?.weapon));
-  // Always the 3x3 ground variant of the gun (its mount, content/groundMounts.ts); a def without one stands as it is.
-  return [...guns, ...rooms.flatMap((r) => r.mods.filter((m) => m === 'module.pointDefense'))].map((m) => (defs[groundMountId(m)] ? groundMountId(m) : m));
+  // Always the 3x3 ground variant of the gun (its mount, content/groundMounts.ts); a def without one is left out (only a ground mount stands on the rock).
+  return [...guns, ...rooms.flatMap((r) => r.mods.filter((m) => m === 'module.pointDefense'))].map(groundMountId).filter((m) => isGroundMount(defs[m]));
 }
 
 /**
