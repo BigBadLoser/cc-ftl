@@ -15,7 +15,12 @@ or removes content. Before non-trivial work, read the index at the top of `docs/
 - `npm run lint`: ESLint, including the import-boundary rules
 - `npm run typecheck`: `tsc` and `svelte-check`
 - `npm run check:fast`: lint, typecheck, and only the tests affected by uncommitted changes (Vitest's import graph),
-  skipping `*.slow.test.ts` (`VITEST_FAST=1`). Run it before every commit and before pushing a work branch.
+  skipping `*.slow.test.ts` (`VITEST_FAST=1`). Run it before every commit. With nothing uncommitted it tests the branch
+  against `origin/main` instead.
+- `npm run check:push`: the same, but always the whole branch since its merge base with `origin/main` plus uncommitted
+  changes. Run it before pushing a work branch. Vitest never sees untracked files: `git add` new ones first.
+- `npm run test:why -- <file>`: how many fast test files an edit to `<file>` selects and through which import;
+  `--top` lists the files most tests reach. Use it to keep focused tests off `newGame` and the pipeline.
 - Three test tiers by file name: `*.test.ts` (fast), `*.slow.test.ts` (slow: sweeps and long runs, plus a cheap guard of each soak
   test) and `*.soak.test.ts` (soak: design-number runs over game hours or many seeds). `npm test`, `check:fast` and PR CI never run
   soak. `npm run test:soak` runs it (`VITEST_SOAK=1`; about 4.5 minutes on the 4-core dev box). CI runs it in the nightly run on `main`,

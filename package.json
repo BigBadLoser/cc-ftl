@@ -13,6 +13,7 @@
     "test:soak": "VITEST_SOAK=1 vitest run .soak.test",
     "test:fast": "node tools/testFast.mjs",
     "test:branch": "node tools/testFast.mjs --base origin/main",
+    "test:why": "node tools/testWhy.mjs",
     "test:weights:ci": "node tools/testWeights.mjs --ci",
     "test:weights": "vitest run --reporter=json --outputFile=.vitest-report.json && node tools/testWeights.mjs .vitest-report.json",
     "lint": "eslint .",
