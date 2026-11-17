@@ -44,7 +44,7 @@ BACK_WALL = "stE"                   # the window's back wall
 VENT_BOX = (15, 4, 1, 17)           # a middle tile's vent box under the window (the ref's, measured): px wide, its front
                                     # px off the face, its top px over the sill's (run back to the glass), px tall
 VENT_RECESS = (2, 1)                # its front's recess (the slats in it): px in from every edge, px deep
-VENT_FAR = "stM"                    # its front's edge on its end turned from view: a step under the front
+VENT_FAR, VENT_TOP_FAR = "stM", "stS"   # its front's and top's edges on its end turned from view: a step under each
 VENT_PANEL, VENT_PANEL_SIDE = "stM", "stD"   # the recess's floor a step under the front, its sides a step under that
 VENT_SLATS = (3, 8, 3, 5, 3)        # its slats: count, px wide, px in from its a end, the first's px under its top, px
                                     # apart (each a dark row over a lit row)
@@ -208,6 +208,8 @@ def _vent_box(f, s0, s1, zs, gl):
     rim(a, a + ri * ln, zi0, zi1, None, (SD.BOX_SIDE, VENT_PANEL_SIDE))
     rim(b - ri * ln, b, zi0, zi1, None, (VENT_PANEL_SIDE, SD.BOX_SIDE))
     SD._rect(f, a, a + ln, z0, top, fr + 0.0005, VENT_FAR)
+    f.k.poly([T.P(f.ax, f.plane, u, top + T.PAINT, d) for u, d in ((a, gl), (a + ln, gl), (a + ln, fr), (a, fr))],
+             SD.F, 3, core.Vector((0, 0, 1)), fixed=T.SEAM_PASS or VENT_TOP_FAR)
     n, sw, si, s1st, sp = VENT_SLATS
     for i in range(n):
         z = top - (s1st + i * sp) * px
