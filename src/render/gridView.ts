@@ -287,7 +287,10 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
           // over them; the designs' relief would clash with the bell or the collar); their own sprites stand there
           // only where the new hull has no art. In cutaway the airlock keeps its own sprites (no door, no belly).
           const own = gapAt(x, y) || lockDoor(idx);
-          const drew = hull && (!lockDoor(idx) || !ghosts) ? drawHull(hull, x, y, k, ci, v, false, own, decodeWindow(windows?.[ci] ?? 0)) : false;
+          // Behind a tube (its far door's row, its near door and their neighbours) the hull takes its base piece too: a design's
+          // relief would show round the tube's port and junction.
+          const base = own || tube.row.has(idx) || tube.junction.has(idx);
+          const drew = hull && (!lockDoor(idx) || !ghosts) ? drawHull(hull, x, y, k, ci, v, false, base, decodeWindow(windows?.[ci] ?? 0)) : false;
           const special = own && !drew;
           // Under an airlock's door tile the near hull's belly still runs below the deck (its own sprite is the wall above).
           if (hull && ghosts && lockDoor(idx)) drawHull(hull, x, y, k, ci, v, true);
