@@ -105,6 +105,10 @@ Player-facing changes, newest first. Each dated entry is a deploy of the live ga
 
 ### Fixed
 
+- Pods: mining pods no longer vanish when they land or show twice when they launch; they rise out of their bay and settle back into it like a shuttle. ([#549](https://github.com/BigBadLoser/cc-ftl/pull/549))
+- Build menu: robot fabricators and bays, freight containers and the banner post are no longer offered to build, and the deck inlay and hazard plate are gone. ([#549](https://github.com/BigBadLoser/cc-ftl/pull/549))
+- Deconstructing a module now marks its footprint in red while the order is pending. ([#549](https://github.com/BigBadLoser/cc-ftl/pull/549))
+- Drone bays draw their front posts over docked drones and light their charge contacts while charging. ([#549](https://github.com/BigBadLoser/cc-ftl/pull/549))
 - Hull: odd hull outlines (a one-tile step or nub, as damage and wrecks leave) no longer show the old dark hull underside in cutaway; they take the new hull's underside like the rest of the ship. ([#496](https://github.com/BigBadLoser/cc-ftl/pull/496))
 - Goods and credits stay consistent across systems: a lost trade shuttle no longer duplicates or destroys goods (each station deal now tracks its own units), duplicate transfer lines no longer cause a second trip, a jump charges the fuel price it checked, tug and shipyard refunds with no room wait for space instead of vanishing or going to the station, and seized or burned items no longer leave ghost entries. Answering a distress call raises standing only if a deal with the damaged ship goes through. ([#467](https://github.com/BigBadLoser/cc-ftl/pull/467))
 - Shipyard: the see-through build ghosts of new hull tiles show the new hull art instead of the old wall blocks, and hull doors keep their door in the preview. ([#466](https://github.com/BigBadLoser/cc-ftl/pull/466))
