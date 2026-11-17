@@ -55,7 +55,11 @@ export function createTubeView(grid: Grid, atlas: Atlas, L: Layers, host: TubeVi
 
   return {
     update() {
-      if (!grid.has('tube')) return;
+      if (!grid.has('tube')) {
+        if (placed.length) clear();
+        sig = runsRev = '';
+        return;
+      }
       const roofed = host.roofed(), level = host.level(), paint = host.hullPaint();
       // (the runs read the tube layer and the structure: their floor and end doors)
       const rev = `${grid.revision('struct')}|${grid.revision('tube')}`;
