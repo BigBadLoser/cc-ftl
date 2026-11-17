@@ -329,6 +329,35 @@ export class RegionGrid {
     return false;
   }
 
+  /**
+   * Whether the box x0 <= x < x1, y0 <= y < y1 holds more solid 2x2 wall blocks now than it did as `was` (a `mark`'s
+   * tiles). The same answer as two `blocks` counts over the box, but only the tiles that changed are counted, with a
+   * margin of the wall rule's reach (a tile's wall owner reads two tiles round it, its wall flag one more, a block one
+   * more): nothing beyond that can differ.
+   */
+  moreBlocks(was: Int16Array, x0: number, y0: number, x1: number, y1: number): boolean {
+    const { size, half, own } = this;
+    let i0 = size, j0 = size, i1 = -1, j1 = -1;
+    for (let k = 0; k < own.length; k++) {
+      if (own[k] === was[k]) continue;
+      const i = k % size, j = (k - i) / size;
+      if (i < i0) i0 = i;
+      if (i > i1) i1 = i;
+      if (j < j0) j0 = j;
+      if (j > j1) j1 = j;
+    }
+    if (i1 < 0) return false;
+    const M = 4, bx0 = Math.max(x0, i0 - half - M), by0 = Math.max(y0, j0 - half - M), bx1 = Math.min(x1, i1 - half + M + 1), by1 = Math.min(y1, j1 - half + M + 1);
+    if (bx0 >= bx1 || by0 >= by1) return false;
+    const after = this.blocks(bx0, by0, bx1, by1);
+    // The count as it was: the changed rows put back for a moment.
+    const lo = j0 * size, hi = (j1 + 1) * size, now = own.slice(lo, hi);
+    own.set(was.subarray(lo, hi), lo);
+    const before = this.blocks(bx0, by0, bx1, by1);
+    own.set(now, lo);
+    return after > before;
+  }
+
   /** Solid 2x2 wall blocks in the box x0 <= x < x1, y0 <= y < y1 as the grid stands, doors not counted. */
   blocks(x0: number, y0: number, x1: number, y1: number): number {
     // The wall rule over the box once (owners cached with a tile's margin), then the 2x2 count over the flags.
