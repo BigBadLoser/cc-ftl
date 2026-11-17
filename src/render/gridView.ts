@@ -1,4 +1,4 @@
-import { Container, type Sprite, type Texture } from "pixi.js";
+import { Container, Sprite, type Texture } from "pixi.js";
 import { animNow } from './animClock';
 import type { Atlas, StaticSprite } from "./assets/loader";
 import { CHUNK_SIZE, type Grid } from "../sim/grid";
@@ -401,9 +401,10 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
       for (const [pid, col] of [[id, paint.armour], [`${id}.tint`, paint.deco]] as const) {
         const ps = pid === id ? s : atlas.stat(pid);
         if (!ps) continue;
-        const spr = addPaintSprite(ps, x, y, z + (pid === id ? 0 : 0.0005), parent, HullSprite);
+        const spr = addPaintSprite(ps, x, y, z + (pid === id ? 0 : 0.0005), parent, id.includes(".station.") ? Sprite : HullSprite);
         v.owned.push(spr);
-        v.tinted.push({ spr, x, y, ci, wall: true, solid, paint: col });
+        // MOCK (#524): the station hull keeps its own tones (no armour paint), lit only.
+        v.tinted.push({ spr, x, y, ci, wall: true, solid, paint: id.includes(".station.") ? undefined : col });
       }
     };
     const solid = k !== Struct.Floor;

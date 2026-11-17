@@ -202626,54 +202626,234 @@
     1
    ]
   },
-  "tile.hull.station.belly.under.0_1_15": {
+  "tile.hull.station.ext.g.0_m1_15": {
    "kind": "static",
    "sheet": "station_hull",
    "frame": {
-    "x": 196,
+    "x": 1275,
     "y": 1,
-    "w": 65,
-    "h": 49
+    "w": 63,
+    "h": 108
    },
    "anchor": {
-    "x": 34,
-    "y": 16
+    "x": 32,
+    "y": 92
    },
    "footprint": [
     1,
     1
    ]
   },
-  "tile.hull.station.belly.under.0_1_15~1_0_15": {
+  "tile.hull.station.ext.g.0_m1_15~m1_0_15": {
    "kind": "static",
    "sheet": "station_hull",
    "frame": {
-    "x": 328,
+    "x": 1339,
+    "y": 1,
+    "w": 64,
+    "h": 108
+   },
+   "anchor": {
+    "x": 32,
+    "y": 92
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.station.ext.g.1_0_15~0_m1_15": {
+   "kind": "static",
+   "sheet": "station_hull",
+   "frame": {
+    "x": 1077,
+    "y": 1,
+    "w": 63,
+    "h": 112
+   },
+   "anchor": {
+    "x": 32,
+    "y": 96
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.station.ext.g.1_1_31": {
+   "kind": "static",
+   "sheet": "station_hull",
+   "frame": {
+    "x": 135,
+    "y": 1,
+    "w": 70,
+    "h": 113
+   },
+   "anchor": {
+    "x": 35,
+    "y": 96
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.station.ext.g.1_1_m1": {
+   "kind": "static",
+   "sheet": "station_hull",
+   "frame": {
+    "x": 1533,
     "y": 1,
     "w": 68,
-    "h": 42
+    "h": 98
    },
    "anchor": {
     "x": 34,
-    "y": 16
+    "y": 96
    },
    "footprint": [
     1,
     1
    ]
   },
-  "tile.hull.station.belly.under.1_0_15": {
+  "tile.hull.station.ext.g.1_m1_31": {
    "kind": "static",
    "sheet": "station_hull",
    "frame": {
-    "x": 262,
+    "x": 1,
     "y": 1,
-    "w": 65,
-    "h": 49
+    "w": 66,
+    "h": 114
+   },
+   "anchor": {
+    "x": 32,
+    "y": 96
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.station.ext.g.1_m1_m1": {
+   "kind": "static",
+   "sheet": "station_hull",
+   "frame": {
+    "x": 1205,
+    "y": 1,
+    "w": 34,
+    "h": 109
+   },
+   "anchor": {
+    "x": 32,
+    "y": 92
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.station.ext.g.m1_0_15": {
+   "kind": "static",
+   "sheet": "station_hull",
+   "frame": {
+    "x": 1404,
+    "y": 1,
+    "w": 63,
+    "h": 108
    },
    "anchor": {
     "x": 31,
-    "y": 16
+    "y": 92
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.station.ext.g.m1_0_15~0_1_15": {
+   "kind": "static",
+   "sheet": "station_hull",
+   "frame": {
+    "x": 1141,
+    "y": 1,
+    "w": 63,
+    "h": 112
+   },
+   "anchor": {
+    "x": 31,
+    "y": 96
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.station.ext.g.m1_1_31": {
+   "kind": "static",
+   "sheet": "station_hull",
+   "frame": {
+    "x": 68,
+    "y": 1,
+    "w": 66,
+    "h": 114
+   },
+   "anchor": {
+    "x": 34,
+    "y": 96
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.station.ext.g.m1_1_m1": {
+   "kind": "static",
+   "sheet": "station_hull",
+   "frame": {
+    "x": 1240,
+    "y": 1,
+    "w": 34,
+    "h": 109
+   },
+   "anchor": {
+    "x": 2,
+    "y": 92
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.station.ext.g.m1_m1_31": {
+   "kind": "static",
+   "sheet": "station_hull",
+   "frame": {
+    "x": 1468,
+    "y": 1,
+    "w": 64,
+    "h": 108
+   },
+   "anchor": {
+    "x": 32,
+    "y": 92
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.station.ext.g.m1_m1_m1": {
+   "kind": "static",
+   "sheet": "station_hull",
+   "frame": {
+    "x": 1602,
+    "y": 1,
+    "w": 62,
+    "h": 92
+   },
+   "anchor": {
+    "x": 31,
+    "y": 76
    },
    "footprint": [
     1,
@@ -202684,13 +202864,103 @@
    "kind": "static",
    "sheet": "station_hull",
    "frame": {
-    "x": 1,
+    "x": 206,
     "y": 1,
-    "w": 64,
-    "h": 112
+    "w": 66,
+    "h": 113
    },
    "anchor": {
-    "x": 32,
+    "x": 34,
+    "y": 96
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.station.ext.o1.m10.a1": {
+   "kind": "static",
+   "sheet": "station_hull",
+   "frame": {
+    "x": 273,
+    "y": 1,
+    "w": 66,
+    "h": 113
+   },
+   "anchor": {
+    "x": 34,
+    "y": 96
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.station.ext.o1.m10.a2": {
+   "kind": "static",
+   "sheet": "station_hull",
+   "frame": {
+    "x": 340,
+    "y": 1,
+    "w": 66,
+    "h": 113
+   },
+   "anchor": {
+    "x": 34,
+    "y": 96
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.station.ext.o1.m10.a3": {
+   "kind": "static",
+   "sheet": "station_hull",
+   "frame": {
+    "x": 407,
+    "y": 1,
+    "w": 66,
+    "h": 113
+   },
+   "anchor": {
+    "x": 34,
+    "y": 96
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.station.ext.o1.m10.a4": {
+   "kind": "static",
+   "sheet": "station_hull",
+   "frame": {
+    "x": 474,
+    "y": 1,
+    "w": 66,
+    "h": 113
+   },
+   "anchor": {
+    "x": 34,
+    "y": 96
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.station.ext.o1.m10.a5": {
+   "kind": "static",
+   "sheet": "station_hull",
+   "frame": {
+    "x": 541,
+    "y": 1,
+    "w": 66,
+    "h": 113
+   },
+   "anchor": {
+    "x": 34,
     "y": 96
    },
    "footprint": [
@@ -202702,10 +202972,10 @@
    "kind": "static",
    "sheet": "station_hull",
    "frame": {
-    "x": 66,
+    "x": 608,
     "y": 1,
-    "w": 64,
-    "h": 112
+    "w": 66,
+    "h": 113
    },
    "anchor": {
     "x": 32,
@@ -202716,14 +202986,104 @@
     1
    ]
   },
-  "tile.hull.station.ext.o3.m9": {
+  "tile.hull.station.ext.o2.m5.a1": {
    "kind": "static",
    "sheet": "station_hull",
    "frame": {
-    "x": 131,
+    "x": 675,
     "y": 1,
-    "w": 64,
-    "h": 106
+    "w": 66,
+    "h": 113
+   },
+   "anchor": {
+    "x": 32,
+    "y": 96
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.station.ext.o2.m5.a2": {
+   "kind": "static",
+   "sheet": "station_hull",
+   "frame": {
+    "x": 742,
+    "y": 1,
+    "w": 66,
+    "h": 113
+   },
+   "anchor": {
+    "x": 32,
+    "y": 96
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.station.ext.o2.m5.a3": {
+   "kind": "static",
+   "sheet": "station_hull",
+   "frame": {
+    "x": 809,
+    "y": 1,
+    "w": 66,
+    "h": 113
+   },
+   "anchor": {
+    "x": 32,
+    "y": 96
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.station.ext.o2.m5.a4": {
+   "kind": "static",
+   "sheet": "station_hull",
+   "frame": {
+    "x": 876,
+    "y": 1,
+    "w": 66,
+    "h": 113
+   },
+   "anchor": {
+    "x": 32,
+    "y": 96
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.station.ext.o2.m5.a5": {
+   "kind": "static",
+   "sheet": "station_hull",
+   "frame": {
+    "x": 943,
+    "y": 1,
+    "w": 66,
+    "h": 113
+   },
+   "anchor": {
+    "x": 32,
+    "y": 96
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.station.ext.o2.m6": {
+   "kind": "static",
+   "sheet": "station_hull",
+   "frame": {
+    "x": 1010,
+    "y": 1,
+    "w": 66,
+    "h": 113
    },
    "anchor": {
     "x": 32,
@@ -208254,6 +208614,78 @@
    "anchor": {
     "x": 32,
     "y": 96
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.roof.station.g.1_1_31": {
+   "kind": "static",
+   "sheet": "station_hull",
+   "frame": {
+    "x": 1731,
+    "y": 1,
+    "w": 62,
+    "h": 16
+   },
+   "anchor": {
+    "x": 31,
+    "y": 96
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.roof.station.g.1_m1_31": {
+   "kind": "static",
+   "sheet": "station_hull",
+   "frame": {
+    "x": 1665,
+    "y": 1,
+    "w": 32,
+    "h": 31
+   },
+   "anchor": {
+    "x": 32,
+    "y": 96
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.roof.station.g.m1_1_31": {
+   "kind": "static",
+   "sheet": "station_hull",
+   "frame": {
+    "x": 1698,
+    "y": 1,
+    "w": 32,
+    "h": 31
+   },
+   "anchor": {
+    "x": 0,
+    "y": 96
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.roof.station.g.m1_m1_31": {
+   "kind": "static",
+   "sheet": "station_hull",
+   "frame": {
+    "x": 1794,
+    "y": 1,
+    "w": 60,
+    "h": 15
+   },
+   "anchor": {
+    "x": 30,
+    "y": 80
    },
    "footprint": [
     1,

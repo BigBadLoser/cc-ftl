@@ -63,6 +63,12 @@ export function gridHullKeys(grid: Grid, kindAt: KindAt, W: number, H: number): 
   const m = memo.get(grid);
   if (m && m.rev === rev) return m.keys;
   const keys = hullKeys(kindAt, W, H);
+  // MOCK (#524): the region's tile art sees asteroid ground as space (regionTiles.kindAt), so look at the grid itself.
+  if (keys && !keys.ground) {
+    scan: for (let y = 0; y < H; y++)
+      for (let x = 0; x < W; x++)
+        if (grid.inBounds(grid.x0 + x, grid.y0 + y) && grid.get("struct", grid.x0 + x, grid.y0 + y) === Struct.Ground) { keys.ground = true; break scan; }
+  }
   memo.set(grid, { rev, keys });
   return keys;
 }
