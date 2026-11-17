@@ -10,12 +10,11 @@ import type { Sim } from '../../sim/sim';
 import { content } from '../index';
 import { shipIdOf, shipGrid } from '../../sim/regions';
 import { shipIds } from '../../sim/regions';
-import { nth, run } from '../../../test/support/sim';
+import { crewOn, nth, run } from '../../../test/support/sim';
 
 
 const airlockOf = (sim: Sim, shipId: number): number =>
   sim.world.query(AirlockC).find((i) => shipIdOf(sim, sim.world.get(i, ModuleC)) === nth(sim, shipId))!;
-const crewOn = (sim: Sim, shipId: number): number[] => sim.world.query(CrewC).filter((i) => shipIdOf(sim, sim.world.get(i, PositionC)) === nth(sim, shipId));
 const roleOf = (sim: Sim, id: number): string => sim.world.get(id, CrewC)!.role;
 
 describe('EVA content', () => {
