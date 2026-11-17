@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { AboardC, ModuleC, SurrenderedC, VehicleC, accessTile, captureReady, playerReach, type ModuleDef, type Sim } from '../../sim';
+import { playerReach } from '../../sim/boarding/reach';
+import { captureReady } from '../../sim/capture/control';
+import { SurrenderedC } from '../../sim/fight/components';
+import { ModuleC } from '../../sim/modules/components';
+import { accessTile } from '../../sim/modules/footprint';
+import type { ModuleDef } from '../../sim/registry';
+import type { Sim } from '../../sim/sim';
+import { AboardC, VehicleC } from '../../sim/vehicles/components';
 import { content } from '../index';
 import { dockParty, modulesOf, nth, raiderCrew, run, setup, ship } from './boardingFixture';
 

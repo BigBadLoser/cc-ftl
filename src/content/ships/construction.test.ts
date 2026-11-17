@@ -1,5 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { CrewC, ItemStackC, JobC, ModuleC, PositionC, StorageC, TICK_HZ, homeShip, newGame, placementError, shipGrid, siteIds, siteStatus, storageAdd, totalStock, type Sim } from '../../sim';
+import { homeShip } from '../../sim/combat/ships';
+import { CrewC, JobC, PositionC } from '../../sim/crew/components';
+import { siteIds, siteStatus } from '../../sim/crew/site';
+import { ItemStackC, StorageC } from '../../sim/items/components';
+import { totalStock } from '../../sim/items/stock';
+import { storageAdd } from '../../sim/items/storage';
+import { ModuleC } from '../../sim/modules/components';
+import { placementError } from '../../sim/modules/spawn';
+import { newGame } from '../../sim/newGame';
+import { shipGrid } from '../../sim/regions';
+import type { Sim } from '../../sim/sim';
+import { TICK_HZ } from '../../sim/time';
 import { content } from '../index';
 import { run } from '../../../test/support/sim';
 

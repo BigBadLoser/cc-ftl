@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { ShipC, newGame, type Sim } from '../sim';
+import { ShipC } from '../sim/combat/components';
+import { newGame } from '../sim/newGame';
+import type { Sim } from '../sim/sim';
 import { factionsHostile } from '../sim/combat/factions';
 import { stockFuel } from '../sim/modules/energy';
 import { GRACE_SEC } from '../sim/galaxy/tuning';

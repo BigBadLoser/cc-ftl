@@ -1,8 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import {
-  CrewC, DownedC, HealthC, JobC, ModuleC, MoodC, NeedsC, PlotC, PositionC, PrioritiesC, ShipC, TICK_HZ, homeShip, newGame, placementError, playerShip, spawnModule, stat, totalStock,
-  type Sim, type SimEvent,
-} from '../../sim';
+import { ShipC } from '../../sim/combat/components';
+import { homeShip } from '../../sim/combat/ships';
+import { CrewC, DownedC, HealthC, JobC, MoodC, NeedsC, PositionC, PrioritiesC } from '../../sim/crew/components';
+import type { SimEvent } from '../../sim/events';
+import { PlotC } from '../../sim/farm/components';
+import { totalStock } from '../../sim/items/stock';
+import { ModuleC } from '../../sim/modules/components';
+import { placementError, spawnModule } from '../../sim/modules/spawn';
+import { newGame } from '../../sim/newGame';
+import type { Sim } from '../../sim/sim';
+import { stat } from '../../sim/stats';
+import { TICK_HZ } from '../../sim/time';
+import { playerShip } from '../../sim/trade/player';
 import { isIdle } from '../../sim/modules/draw';
 import { findFreeBed } from '../../sim/crew/beds';
 import { storageAdd } from '../../sim/items/storage';

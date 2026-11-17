@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { serialize } from '../../src/sim';
+import { serialize } from '../../src/sim/save';
 import { cachedNewGame } from './content';
 import { cachedWorld, expectReplayable } from './world';
 import { run } from './run';

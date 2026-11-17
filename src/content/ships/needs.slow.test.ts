@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { CrewC, HealthC, ModuleC, TICK_HZ, newGame, removeModule, totalStock } from '../../sim';
+import { CrewC, HealthC } from '../../sim/crew/components';
+import { totalStock } from '../../sim/items/stock';
+import { ModuleC } from '../../sim/modules/components';
+import { removeModule } from '../../sim/modules/spawn';
+import { newGame } from '../../sim/newGame';
+import { TICK_HZ } from '../../sim/time';
 import { content } from '../index';
 import { humans, hungry, needs } from './needsFixture';
 

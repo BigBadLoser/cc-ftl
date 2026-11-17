@@ -1,7 +1,17 @@
 import { describe, expect, it, vi } from 'vitest';
 import * as itemStacks from '../sim/items/stacks';
 import { cargoOf } from '../sim/vehicles/cargo';
-import { AirlockC, CombatC, FTL_CHARGE_SEC, ModuleC, ShipC, VehicleC, deserialize, galaxyIndex, newGame, playerShip, serialize, type Sim, type SimEvent } from '../sim';
+import { CombatC, ShipC } from '../sim/combat/components';
+import type { SimEvent } from '../sim/events';
+import { galaxyIndex } from '../sim/galaxy/state';
+import { AirlockC } from '../sim/modules/airlock';
+import { ModuleC } from '../sim/modules/components';
+import { newGame } from '../sim/newGame';
+import { deserialize, serialize } from '../sim/save';
+import type { Sim } from '../sim/sim';
+import { playerShip } from '../sim/trade/player';
+import { FTL_CHARGE_SEC } from '../sim/tuning';
+import { VehicleC } from '../sim/vehicles/components';
 import { spawnContact } from '../sim/galaxy/arrivals';
 import { featureOf, offersHere, portOffers } from '../sim/galaxy/jobOffers';
 import { CRATE, crateAboard, expireJobs } from '../sim/galaxy/jobs';

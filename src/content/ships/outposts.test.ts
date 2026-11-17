@@ -1,9 +1,22 @@
 import { describe, expect, it } from 'vitest';
 import { content } from '../index';
-import {
-  AsteroidC, CombatC, CrewC, JobC, isDormant, isHiddenOutpost, LEVEL_TICKS, ShipC, Sim, Struct, deserialize, generateOutpost, placementError, serialize, shipGrid, spawnCrew, stampShip,
-  totalStock, validateOutpost, writeStruct, type ModuleDef, type OreDef,
-} from '../../sim';
+import { AsteroidC } from '../../sim/asteroids/components';
+import type { OreDef } from '../../sim/asteroids/types';
+import { CombatC, ShipC } from '../../sim/combat/components';
+import { isDormant } from '../../sim/combat/dormant';
+import { spawnCrew, stampShip } from '../../sim/combat/ships';
+import { CrewC, JobC } from '../../sim/crew/components';
+import { totalStock } from '../../sim/items/stock';
+import { placementError } from '../../sim/modules/spawn';
+import { generateOutpost } from '../../sim/outposts/gen';
+import { isHiddenOutpost } from '../../sim/outposts/state';
+import { validateOutpost } from '../../sim/outposts/validate';
+import { shipGrid } from '../../sim/regions';
+import type { ModuleDef } from '../../sim/registry';
+import { LEVEL_TICKS } from '../../sim/rock/dig';
+import { deserialize, serialize } from '../../sim/save';
+import { Sim } from '../../sim/sim';
+import { Struct, writeStruct } from '../../sim/structure';
 import { airlockOutside } from '../../sim/outposts/site';
 import { StationAlarmC, StationC, StationCrewC } from '../../sim/stations/components';
 import { TraderC } from '../../sim/trade/types';

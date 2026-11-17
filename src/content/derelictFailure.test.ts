@@ -1,5 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
-import { ShipC, galaxyIndex, newGame, type Sim } from '../sim';
+import { ShipC } from '../sim/combat/components';
+import { galaxyIndex } from '../sim/galaxy/state';
+import { newGame } from '../sim/newGame';
+import type { Sim } from '../sim/sim';
 import { spawnDerelict } from '../sim/combat/derelict';
 import { placementGapError } from '../sim/regions';
 import { ensureAround, nodeState } from '../sim/galaxy/state';

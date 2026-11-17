@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { componentNames } from '../index';
+import { componentNames } from '../ecs';
 import { TRANSLATE, translated } from './translate';
 
 describe('packet translation table', () => {

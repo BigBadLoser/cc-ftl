@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { AboardC, CarriedC, CrewC, DownedC, DraftedC, HealthC, NeedsC, PositionC, VehicleC, createCrew, destroyVehicle, type Sim } from '../../sim';
+import { CarriedC, CrewC, DownedC, DraftedC, HealthC, NeedsC, PositionC } from '../../sim/crew/components';
+import { createCrew } from '../../sim/crew/spawn';
+import type { Sim } from '../../sim/sim';
+import { AboardC, VehicleC } from '../../sim/vehicles/components';
+import { destroyVehicle } from '../../sim/vehicles/lifecycle';
 import { EvaFloatC } from '../../sim/eva/components';
 import { AwayC, SiteRunC } from '../../sim/away/components';
 import { unsafeMembers } from '../../sim/away/depart';

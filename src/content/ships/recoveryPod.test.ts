@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { AssignmentC, CarryingC, CrewC, DownedC, HealthC, ModuleC, NeedsC, PositionC, RecoveringC, ShipC, TICK_HZ, homeShip, newGame, placementError, playerShip, spawnModule, type Sim } from '../../sim';
+import { ShipC } from '../../sim/combat/components';
+import { homeShip } from '../../sim/combat/ships';
+import { AssignmentC, CrewC, DownedC, HealthC, NeedsC, PositionC, RecoveringC } from '../../sim/crew/components';
+import { CarryingC } from '../../sim/items/components';
+import { ModuleC } from '../../sim/modules/components';
+import { placementError, spawnModule } from '../../sim/modules/spawn';
+import { newGame } from '../../sim/newGame';
+import type { Sim } from '../../sim/sim';
+import { TICK_HZ } from '../../sim/time';
+import { playerShip } from '../../sim/trade/player';
 import { bedUseOf, findFreeBed } from '../../sim/crew/beds';
 import { isIncapacitated } from '../../sim/crew/helpers';
 import { recoverTurn } from '../../sim/ai/machines/sleep';

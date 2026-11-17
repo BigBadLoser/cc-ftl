@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { BodyC, CombatC, CrewC, ShipC, ModuleC, PositionC, VehicleC, newGame, type ModuleDef, type Sim, type SimEvent, type Vehicle } from '../../sim';
+import { BodyC } from '../../sim/body';
+import { CombatC, ShipC } from '../../sim/combat/components';
+import { CrewC, PositionC } from '../../sim/crew/components';
+import type { SimEvent } from '../../sim/events';
+import { ModuleC } from '../../sim/modules/components';
+import { newGame } from '../../sim/newGame';
+import type { ModuleDef } from '../../sim/registry';
+import type { Sim } from '../../sim/sim';
+import { type Vehicle, VehicleC } from '../../sim/vehicles/components';
 import { content } from '../index';
 import { shipIdOf } from '../../sim/regions';
 import { missileRaiderId, shuttleContent } from './shuttleFixture';

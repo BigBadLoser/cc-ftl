@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { BodyC, ModuleC, VehicleC, newGame, type Sim } from '../../sim';
+import { BodyC } from '../../sim/body';
+import { ModuleC } from '../../sim/modules/components';
+import { newGame } from '../../sim/newGame';
+import type { Sim } from '../../sim/sim';
+import { VehicleC } from '../../sim/vehicles/components';
 import { content } from '../index';
 
 /** The starter ship's shuttle out in space beside the ship, flying home to its bay. */

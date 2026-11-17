@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { DraftedC, ItemStackC, JobC, NeedsC, Struct, TraitsC, VehicleC, type ContentRegistry, type Sim } from '../../sim';
+import { DraftedC, JobC, NeedsC } from '../../sim/crew/components';
+import { TraitsC } from '../../sim/crew/traits';
+import { ItemStackC } from '../../sim/items/components';
+import type { ContentRegistry } from '../../sim/registry';
+import type { Sim } from '../../sim/sim';
+import { Struct } from '../../sim/structure';
+import { VehicleC } from '../../sim/vehicles/components';
 import { content } from '../index';
 import { AwayC, SiteRunC } from '../../sim/away/components';
 import { SuitC } from '../../sim/eva/components';

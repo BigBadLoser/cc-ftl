@@ -1,8 +1,18 @@
 import { describe, expect, it } from 'vitest';
-import {
-  AsteroidC, BodyC, CrewC, DraftedC, MiningPodC, PositionC, Struct, VehicleC, deserialize, homeShip, newGame, placementError, serialize, shipGrid, spawnModule, spawnVehicle,
-  totalStock, type Sim,
-} from '../../sim';
+import { AsteroidC } from '../../sim/asteroids/components';
+import { BodyC } from '../../sim/body';
+import { homeShip } from '../../sim/combat/ships';
+import { CrewC, DraftedC, PositionC } from '../../sim/crew/components';
+import { totalStock } from '../../sim/items/stock';
+import { MiningPodC } from '../../sim/mining/components';
+import { placementError, spawnModule } from '../../sim/modules/spawn';
+import { newGame } from '../../sim/newGame';
+import { shipGrid } from '../../sim/regions';
+import { deserialize, serialize } from '../../sim/save';
+import type { Sim } from '../../sim/sim';
+import { Struct } from '../../sim/structure';
+import { VehicleC } from '../../sim/vehicles/components';
+import { spawnVehicle } from '../../sim/vehicles/lifecycle';
 import { content } from '../index';
 import { STANDOFF } from '../../sim/mining/geometry';
 

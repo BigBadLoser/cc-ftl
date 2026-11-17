@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { AboardC, AssignmentC, CrewC, DraftedC, EquipC, FighterC, HealthC, StunC, FerryC, JobC, ModuleC, PositionC, VehicleC, ferryFree } from '../../sim';
+import { AssignmentC, CrewC, DraftedC, HealthC, JobC, PositionC } from '../../sim/crew/components';
+import { FerryC } from '../../sim/ferry/components';
+import { ferryFree } from '../../sim/ferry/pick';
+import { EquipC, FighterC } from '../../sim/fight/components';
+import { ModuleC } from '../../sim/modules/components';
+import { StunC } from '../../sim/robots/components';
+import { AboardC, VehicleC } from '../../sim/vehicles/components';
 import { AwayC, AwaySiteC, SiteRunC } from '../../sim/away/components';
 import { passagesOf } from '../../sim/away/passage';
 import { destroyVehicle } from '../../sim/vehicles/lifecycle';

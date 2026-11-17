@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { AboardC, CrewC, DeadC, ForHireC, PositionC, VehicleC, deserialize, galaxyIndex, serialize, type Sim } from '../sim';
+import { CrewC, DeadC, PositionC } from '../sim/crew/components';
+import { galaxyIndex } from '../sim/galaxy/state';
+import { deserialize, serialize } from '../sim/save';
+import type { Sim } from '../sim/sim';
+import { ForHireC } from '../sim/stations/components';
+import { AboardC, VehicleC } from '../sim/vehicles/components';
 import { shipGrid, shipIdOf } from '../sim/regions';
 import { isTileWalkable } from '../sim/modules/walk';
 import { bayAccessTile } from '../sim/vehicles/geometry';

@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { CombatC, CrewC, FTL_CHARGE_SEC, MoodC, PositionC, PrioritiesC, galaxyIndex, newGame, type Sim } from '../sim';
+import { CombatC } from '../sim/combat/components';
+import { CrewC, MoodC, PositionC, PrioritiesC } from '../sim/crew/components';
+import { galaxyIndex } from '../sim/galaxy/state';
+import { newGame } from '../sim/newGame';
+import type { Sim } from '../sim/sim';
+import { FTL_CHARGE_SEC } from '../sim/tuning';
 import { ConsentC } from '../sim/consent/components';
 import { RolledSkillsC } from '../sim/crew/traits';
 import { AllegianceC } from '../sim/fight/components';

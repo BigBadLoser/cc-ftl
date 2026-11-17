@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { CombatC, ModuleC, ShipC, WeaponC, newGame, weaponsIdleReason, type ContentRegistry, type Sim, type SimEvent } from '../../sim';
+import { CombatC, ShipC, WeaponC } from '../../sim/combat/components';
+import { weaponsIdleReason } from '../../sim/combat/idle';
+import type { SimEvent } from '../../sim/events';
+import { ModuleC } from '../../sim/modules/components';
+import { newGame } from '../../sim/newGame';
+import type { ContentRegistry } from '../../sim/registry';
+import type { Sim } from '../../sim/sim';
 import { content } from '../index';
 import { shipGrid, shipIdOf } from '../../sim/regions';
 import { operatorOf } from '../../sim/combat/operators';

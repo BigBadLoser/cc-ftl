@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { AboardC, CrewC, PositionC, ShipC, StorageC, Struct, VehicleC, deserialize, placementError, removeModule, serialize, shipGrid, spawnModule, suitDef, suitTile, writeStruct, type SimEvent } from '../../sim';
+import { ShipC } from '../../sim/combat/components';
+import { CrewC, PositionC } from '../../sim/crew/components';
+import { suitDef, suitTile } from '../../sim/eva/suit';
+import type { SimEvent } from '../../sim/events';
+import { StorageC } from '../../sim/items/components';
+import { placementError, removeModule, spawnModule } from '../../sim/modules/spawn';
+import { shipGrid } from '../../sim/regions';
+import { deserialize, serialize } from '../../sim/save';
+import { Struct, writeStruct } from '../../sim/structure';
+import { AboardC, VehicleC } from '../../sim/vehicles/components';
 import { shipIdOf } from '../../sim/regions';
 import { AwayC, AwaySiteC, SiteRunC } from '../../sim/away/components';
 import { EvaFloatC, SuitC } from '../../sim/eva/components';

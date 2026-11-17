@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { CombatC, CrewC, DownedC, ModuleC, RecoveringC, PositionC, ShipC, SurrenderedC, WeaponC, deserialize, newGame, serialize, type Sim } from '../../sim';
+import { CombatC, ShipC, WeaponC } from '../../sim/combat/components';
+import { CrewC, DownedC, PositionC, RecoveringC } from '../../sim/crew/components';
+import { SurrenderedC } from '../../sim/fight/components';
+import { ModuleC } from '../../sim/modules/components';
+import { newGame } from '../../sim/newGame';
+import { deserialize, serialize } from '../../sim/save';
+import type { Sim } from '../../sim/sim';
 import { wreckShip } from '../../sim/combat/wreck';
 import { repKey } from '../../sim/galaxy/standing';
 import { PrisonerC } from '../../sim/fight/components';

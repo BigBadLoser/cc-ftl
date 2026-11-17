@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { Sim, stampShip, type ContentRegistry } from '../sim';
+import { stampShip } from '../sim/combat/ships';
+import type { ContentRegistry } from '../sim/registry';
+import { Sim } from '../sim/sim';
 import { windowPlan } from './windowTool';
 
 const content: ContentRegistry = { ships: {}, roles: {}, species: {}, modules: {}, crewNames: [], items: {}, recipes: {}, structCosts: {} };

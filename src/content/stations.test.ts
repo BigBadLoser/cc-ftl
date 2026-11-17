@@ -1,8 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import {
-  Rng, SECURITY_ROLE, buildStation, crewPosts, crewSize, docksOf, STATION_SIZES, stationCrew, stationProgram, structureParts,
-  rotatedSize, type ItemDef, type ModuleDef, type StationDef, type StationResult, type StationSize,
-} from '../sim';
+import { rotatedSize } from '../sim/modules/footprint';
+import type { ItemDef, ModuleDef } from '../sim/registry';
+import { Rng } from '../sim/rng';
+import { stationProgram } from '../sim/shipgen/assembly/program';
+import type { StationResult } from '../sim/shipgen/assembly/station';
+import { buildStation } from '../sim/shipgen/stationBuild';
+import { crewPosts, crewSize, docksOf, SECURITY_ROLE, stationCrew } from '../sim/shipgen/stationCrew';
+import { STATION_SIZES, type StationDef, type StationSize } from '../sim/shipgen/stationTypes';
+import { structureParts } from '../sim/shipgen/validate';
 import { content } from './index';
 import { stations } from './stations';
 

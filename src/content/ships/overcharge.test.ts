@@ -1,5 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { CombatC, FTL_CHARGE_SEC, ModuleC, START_NODE, engineFuelFactor, fuelStock, jumpFuel, applyOvercharge, galaxyIndex, homeShip, hullLoad, newGame, riskOf, shipGrid, type ModuleDef, type Sim } from '../../sim';
+import { CombatC } from '../../sim/combat/components';
+import { homeShip } from '../../sim/combat/ships';
+import { hullLoad } from '../../sim/ftl/capacity';
+import { applyOvercharge, riskOf } from '../../sim/ftl/overcharge';
+import { engineFuelFactor, fuelStock, jumpFuel } from '../../sim/galaxy/fuel';
+import { galaxyIndex, START_NODE } from '../../sim/galaxy/state';
+import { ModuleC } from '../../sim/modules/components';
+import { newGame } from '../../sim/newGame';
+import { shipGrid } from '../../sim/regions';
+import type { ModuleDef } from '../../sim/registry';
+import type { Sim } from '../../sim/sim';
+import { FTL_CHARGE_SEC } from '../../sim/tuning';
 import { giveItems } from '../../sim/story/effects';
 import { content } from '../index';
 import { runLog } from '../../../test/support/sim';

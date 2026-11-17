@@ -1,9 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import {
-  AssignmentC, CarriedC, CarryingC, CrewC, DownedC, DraftedC, HealthC, IntentC, InterruptC, ItemStackC, JobC, ModuleC, NeedsC,
-  PositionC, ShipC, StorageC, Struct, TaskC, deserialize, findPath, homeShip, newGame, placementError, removeModule, serialize, shipGrid,
-  spawnModule, storageCount, type Sim, type SimEvent,
-} from '../../sim';
+import { IntentC, InterruptC, TaskC } from '../../sim/ai/components';
+import { ShipC } from '../../sim/combat/components';
+import { homeShip } from '../../sim/combat/ships';
+import { AssignmentC, CarriedC, CrewC, DownedC, DraftedC, HealthC, JobC, NeedsC, PositionC } from '../../sim/crew/components';
+import { findPath } from '../../sim/crew/pathfind';
+import type { SimEvent } from '../../sim/events';
+import { CarryingC, ItemStackC, StorageC } from '../../sim/items/components';
+import { storageCount } from '../../sim/items/storage';
+import { ModuleC } from '../../sim/modules/components';
+import { placementError, removeModule, spawnModule } from '../../sim/modules/spawn';
+import { newGame } from '../../sim/newGame';
+import { shipGrid } from '../../sim/regions';
+import { deserialize, serialize } from '../../sim/save';
+import type { Sim } from '../../sim/sim';
+import { Struct } from '../../sim/structure';
 import { auditReservations } from '../../sim/ai/audit';
 import { deriveTask, mealOf } from '../../sim/ai/task';
 import { killCrew } from '../../sim/crew/death';

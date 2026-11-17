@@ -1,5 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import { AllegianceC, CoreLinkC, CrewC, DeadC, DownedC, DraftedC, EquipC, HackedC, HealthC, InertC, ModuleC, PathC, PositionC, PrisonerC, ShipC, StunC, WreckC, deserialize, isSubdued, newGame, serialize, storageCount, StorageC, WeaponC, type ContentRegistry, type ModuleDef, type Sim, type SimEvent } from '../../sim';
+import { ShipC, WeaponC } from '../../sim/combat/components';
+import { CrewC, DeadC, DownedC, DraftedC, HealthC, PathC, PositionC } from '../../sim/crew/components';
+import type { SimEvent } from '../../sim/events';
+import { AllegianceC, EquipC, PrisonerC } from '../../sim/fight/components';
+import { isSubdued } from '../../sim/fight/relations';
+import { StorageC } from '../../sim/items/components';
+import { storageCount } from '../../sim/items/storage';
+import { ModuleC } from '../../sim/modules/components';
+import { newGame } from '../../sim/newGame';
+import type { ContentRegistry, ModuleDef } from '../../sim/registry';
+import { CoreLinkC, HackedC, InertC, StunC, WreckC } from '../../sim/robots/components';
+import { deserialize, serialize } from '../../sim/save';
+import type { Sim } from '../../sim/sim';
 import { applyEffects } from '../../sim/combat/effects';
 import { wantsToSurrender } from '../../sim/fight/surrender';
 import { content } from '../index';

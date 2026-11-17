@@ -1,5 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import { AboardC, AllegianceC, CrewC, DeadC, DownedC, DraftedC, EmbarkOrderC, EquipC, FighterC, HealthC, ModuleC, PathC, PositionC, PrioritiesC, ShipC, Struct, SurrenderedC, VehicleC, type ModuleDef, WeaponC, newGame, shipGrid, spawnCrew, type Sim, type SimEvent, WontDoC } from '../../sim';
+import { ShipC, WeaponC } from '../../sim/combat/components';
+import { spawnCrew } from '../../sim/combat/ships';
+import { WontDoC } from '../../sim/crew/background';
+import { CrewC, DeadC, DownedC, DraftedC, HealthC, PathC, PositionC, PrioritiesC } from '../../sim/crew/components';
+import type { SimEvent } from '../../sim/events';
+import { AllegianceC, EquipC, FighterC, SurrenderedC } from '../../sim/fight/components';
+import { ModuleC } from '../../sim/modules/components';
+import { newGame } from '../../sim/newGame';
+import { shipGrid } from '../../sim/regions';
+import type { ModuleDef } from '../../sim/registry';
+import type { Sim } from '../../sim/sim';
+import { Struct } from '../../sim/structure';
+import { AboardC, EmbarkOrderC, VehicleC } from '../../sim/vehicles/components';
 import { content } from '../index';
 import { shipIdOf } from '../../sim/regions';
 import { operatorOf } from '../../sim/combat/operators';

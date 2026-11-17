@@ -1,10 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { content } from '../content';
-import { homeShip, newGame, Struct, type Sim, type SimEvent } from '../sim';
+import { homeShip } from '../sim/combat/ships';
+import { CrewC, PositionC } from '../sim/crew/components';
+import type { SimEvent } from '../sim/events';
+import { newGame } from '../sim/newGame';
+import type { Sim } from '../sim/sim';
+import { Struct } from '../sim/structure';
 import { ammoCount, takeStock } from '../sim/combat/ammo';
 import { breachesOf } from '../sim/crew/breach';
 import { DroneC } from '../sim/drones/components';
-import { CrewC, PositionC } from '../sim';
 import { shipGrid } from '../sim/regions';
 import { droneScenarioCommands } from './droneScenario';
 

@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { JobC, ModuleC, ShipC, StorageC, TraderC, deserialize, unitPrice, newGame, serialize, storageAdd, type Sim } from '../sim';
+import { ShipC } from '../sim/combat/components';
+import { JobC } from '../sim/crew/components';
+import { StorageC } from '../sim/items/components';
+import { storageAdd } from '../sim/items/storage';
+import { ModuleC } from '../sim/modules/components';
+import { newGame } from '../sim/newGame';
+import { deserialize, serialize } from '../sim/save';
+import type { Sim } from '../sim/sim';
+import { unitPrice } from '../sim/trade/pricing';
+import { TraderC } from '../sim/trade/types';
 import { cargoCount, cargoTake } from '../sim/vehicles/cargo';
 import { VehicleC } from '../sim/vehicles/components';
 import { isLive } from '../sim/trade/deals';

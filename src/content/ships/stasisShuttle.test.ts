@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { CrewC, ModuleC, NeedsC, ShipC, VehicleC, homeShip,  newGame, placementError, spawnModule, stampShip, type Sim, type SimEvent } from '../../sim';
+import { ShipC } from '../../sim/combat/components';
+import { homeShip, stampShip } from '../../sim/combat/ships';
+import { CrewC, NeedsC } from '../../sim/crew/components';
+import type { SimEvent } from '../../sim/events';
+import { ModuleC } from '../../sim/modules/components';
+import { placementError, spawnModule } from '../../sim/modules/spawn';
+import { newGame } from '../../sim/newGame';
+import type { Sim } from '../../sim/sim';
+import { VehicleC } from '../../sim/vehicles/components';
 import { AwaySiteC, SiteRunC } from '../../sim/away/components';
 import { PrisonerC } from '../../sim/fight/components';
 import { accessTile, footprintTiles } from '../../sim/modules/footprint';

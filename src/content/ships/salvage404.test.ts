@@ -1,6 +1,10 @@
 /** Regressions of the salvage playtest (#404): passages, the site's shuttle, seals on the wreck, suits, the helmet lamp (Call off and strain: app/salvageRun.test.ts). */
 import { describe, expect, it } from 'vitest';
-import { AboardC, JobC, NeedsC, PositionC, ShipC, Struct, shipGrid, type Job } from '../../sim';
+import { ShipC } from '../../sim/combat/components';
+import { type Job, JobC, NeedsC, PositionC } from '../../sim/crew/components';
+import { shipGrid } from '../../sim/regions';
+import { Struct } from '../../sim/structure';
+import { AboardC } from '../../sim/vehicles/components';
 import { SiteRunC } from '../../sim/away/components';
 import { passageFits, staySec } from '../../sim/away/crew';
 import { siteShuttleOk } from '../../sim/away/handlers';

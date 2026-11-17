@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { generateOutpost, validateOutpost, type OreDef } from '../../sim';
+import type { OreDef } from '../../sim/asteroids/types';
+import { generateOutpost } from '../../sim/outposts/gen';
+import { validateOutpost } from '../../sim/outposts/validate';
 import { content } from '../index';
 
 const CTX = { ores: Object.values(content.ores) as OreDef[], modules: content.modules, stations: content.stations };

@@ -1,8 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { AboardC, CrewC, DraftedC, NeedsC, PathC, PositionC, ShipC, Struct, VehicleC, createCrew, writeStruct, type Sim } from '../../sim';
+import { ShipC } from '../../sim/combat/components';
+import { CrewC, DraftedC, NeedsC, PathC, PositionC } from '../../sim/crew/components';
+import { createCrew } from '../../sim/crew/spawn';
+import { placementError, spawnModule } from '../../sim/modules/spawn';
+import { shipGrid } from '../../sim/regions';
+import type { Sim } from '../../sim/sim';
+import { Struct, writeStruct } from '../../sim/structure';
+import { AboardC, VehicleC } from '../../sim/vehicles/components';
 import { AirlockC } from '../../sim/modules/airlock';
 import { content } from '../index';
-import { placementError, shipGrid, spawnModule } from '../../sim';
 import { nearestExterior } from '../../sim/eva/shuttle';
 import { boardCrew, occupants, vehicleDefOf } from '../../sim/vehicles/lifecycle';
 import { AwayC, AwaySiteC, SiteRunC } from '../../sim/away/components';

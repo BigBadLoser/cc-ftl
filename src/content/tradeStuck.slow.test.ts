@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { ShipC, TraderC, deserialize, newGame, serialize } from '../sim';
+import { ShipC } from '../sim/combat/components';
+import { newGame } from '../sim/newGame';
+import { deserialize, serialize } from '../sim/save';
+import { TraderC } from '../sim/trade/types';
 import { cargoCount } from '../sim/vehicles/cargo';
 import { VehicleC } from '../sim/vehicles/components';
 import { isLive } from '../sim/trade/deals';

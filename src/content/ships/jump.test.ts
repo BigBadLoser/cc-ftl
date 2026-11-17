@@ -1,8 +1,22 @@
 import { describe, expect, it } from 'vitest';
-import {
-  AboardC, BodyC, CombatC, CrewC, FTL_CHARGE_SEC, ModuleC, PositionC, ShipC, Struct, VehicleC, deserialize, generateShip, homeShip,
-  START_NODE, galaxyIndex, jumpWarnings, liftSet, liftShip, newGame, serialize, shipGrid, stampShip, type FactionDef, type ModuleDef, type Sim,
-} from '../../sim';
+import { BodyC } from '../../sim/body';
+import { CombatC, ShipC } from '../../sim/combat/components';
+import { homeShip, stampShip } from '../../sim/combat/ships';
+import { CrewC, PositionC } from '../../sim/crew/components';
+import { galaxyIndex, START_NODE } from '../../sim/galaxy/state';
+import { ModuleC } from '../../sim/modules/components';
+import { newGame } from '../../sim/newGame';
+import { shipGrid } from '../../sim/regions';
+import type { ModuleDef } from '../../sim/registry';
+import { deserialize, serialize } from '../../sim/save';
+import { jumpWarnings, liftSet } from '../../sim/sector/members';
+import { liftShip } from '../../sim/sector/packet';
+import { generateShip } from '../../sim/shipgen/generate';
+import type { FactionDef } from '../../sim/shipgen/types';
+import type { Sim } from '../../sim/sim';
+import { Struct } from '../../sim/structure';
+import { FTL_CHARGE_SEC } from '../../sim/tuning';
+import { AboardC, VehicleC } from '../../sim/vehicles/components';
 import { giveItems } from '../../sim/story/effects';
 import { ContainerC } from '../../sim/containers/components';
 import { translated } from '../../sim/sector/translate';

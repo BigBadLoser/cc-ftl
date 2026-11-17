@@ -1,6 +1,7 @@
 /** Away sites and crew schedules (#412, docs/DESIGN.md "Schedules", user decisions 2026-11-10): who goes, and who comes home when. */
 import { describe, expect, it } from 'vitest';
-import { AssignmentC, JobC, NeedsC, type Job, type Sim } from '../../sim';
+import { AssignmentC, type Job, JobC, NeedsC } from '../../sim/crew/components';
+import type { Sim } from '../../sim/sim';
 import { AwayC, SiteRunC } from '../../sim/away/components';
 import { passageFits } from '../../sim/away/crew';
 import { passagesOf } from '../../sim/away/passage';

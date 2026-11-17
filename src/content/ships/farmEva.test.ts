@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { content } from '../index';
-import { ShipC, Sim } from '../../sim';
+import { ShipC } from '../../sim/combat/components';
+import { Sim } from '../../sim/sim';
 import { storagesOn } from '../../sim/combat/ammo';
 import { StorageC } from '../../sim/items/components';
 import { PlotC } from '../../sim/farm/components';

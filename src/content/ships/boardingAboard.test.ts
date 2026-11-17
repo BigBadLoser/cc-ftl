@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { CrewC, DeadC, HealthC, playerCrewAboard, type Sim } from '../../sim';
+import { playerCrewAboard } from '../../sim/boarding/aboard';
+import { CrewC, DeadC, HealthC } from '../../sim/crew/components';
+import type { Sim } from '../../sim/sim';
 import { applyEffects } from '../../sim/combat/effects';
 import { shipGrid } from '../../sim/regions';
 import { content } from '../index';

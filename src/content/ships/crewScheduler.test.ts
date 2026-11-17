@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { AssignmentC, CrewC, JobC, ModuleC, PathC, PositionC, PrioritiesC, WORK_CATEGORIES, findPath, homeShip, newGame, shipGrid, type Job, type Priorities, type Sim } from '../../sim';
+import { homeShip } from '../../sim/combat/ships';
+import { AssignmentC, CrewC, type Job, JobC, PathC, PositionC, type Priorities, PrioritiesC, WORK_CATEGORIES } from '../../sim/crew/components';
+import { findPath } from '../../sim/crew/pathfind';
+import { ModuleC } from '../../sim/modules/components';
+import { newGame } from '../../sim/newGame';
+import { shipGrid } from '../../sim/regions';
+import type { Sim } from '../../sim/sim';
 import { admitLevel, pairCost, repairUrgency } from '../../sim/ai/jobRank';
 import { astar, dijkstraFrom } from '../../sim/ai/navSearch';
 import { goalTiles, indexOf, isFallbackStop, reaches, startLabels, viewOf } from '../../sim/ai/navView';

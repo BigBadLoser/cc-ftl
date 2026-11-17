@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { AirlockC, CrewC, ShipC, TraderC, contrabandAboard, deserialize, newGame, serialize, storageAdd, type Sim } from '../sim';
+import { contrabandAboard } from '../sim/blackmarket/scan';
+import { ShipC } from '../sim/combat/components';
+import { CrewC } from '../sim/crew/components';
+import { storageAdd } from '../sim/items/storage';
+import { AirlockC } from '../sim/modules/airlock';
+import { newGame } from '../sim/newGame';
+import { deserialize, serialize } from '../sim/save';
+import type { Sim } from '../sim/sim';
+import { TraderC } from '../sim/trade/types';
 import { ModuleC } from '../sim/modules/components';
 import { SuitC } from '../sim/eva/components';
 import { INSPECT_BAN_TURNS, INSPECT_BRIBE_CHANCE, INSPECT_FIGHT_BAN_TURNS, INSPECT_FIGHT_HIT } from '../sim/blackmarket/tuning';

@@ -1,10 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { content } from '../index';
 import { gasConductance, isWalkable } from '../../sim/structure';
-import {
-  AsteroidC, FINISH_TICKS, JobC, ShipC, Sim, Struct, TICK_HZ, homeShip, newGame, shipGrid, spawnCrew, stampShip,
-  writeStruct,
-} from '../../sim';
+import { AsteroidC } from '../../sim/asteroids/components';
+import { ShipC } from '../../sim/combat/components';
+import { homeShip, spawnCrew, stampShip } from '../../sim/combat/ships';
+import { JobC } from '../../sim/crew/components';
+import { newGame } from '../../sim/newGame';
+import { shipGrid } from '../../sim/regions';
+import { FINISH_TICKS } from '../../sim/rock/dig';
+import { Sim } from '../../sim/sim';
+import { Struct, writeStruct } from '../../sim/structure';
+import { TICK_HZ } from '../../sim/time';
 import { runLog } from '../../../test/support/sim';
 
 /** A player room (x 0..13, y 0..9) with empty space east of it (x 14..16) that tests turn into rock ground. */

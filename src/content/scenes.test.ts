@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { CombatC, FTL_CHARGE_SEC, START_NODE, ShipC, deserialize, galaxyIndex, newGame, playerShip, serialize, remotesDone, type Sim } from '../sim';
+import { CombatC, ShipC } from '../sim/combat/components';
+import { galaxyIndex, START_NODE } from '../sim/galaxy/state';
+import { newGame } from '../sim/newGame';
+import { deserialize, serialize } from '../sim/save';
+import type { Sim } from '../sim/sim';
+import { remotesDone } from '../sim/story/requirements';
+import { playerShip } from '../sim/trade/player';
+import { FTL_CHARGE_SEC } from '../sim/tuning';
 import { CrewC, PositionC } from '../sim/crew/components';
 import { AllegianceC } from '../sim/fight/components';
 import { leaveBlocker } from '../sim/galaxy/eventGrid';

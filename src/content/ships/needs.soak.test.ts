@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { CrewC, ShipC, TaskC, TICK_HZ, homeShip, liftShip, removeModule, stampPacket } from '../../sim';
+import { TaskC } from '../../sim/ai/components';
+import { ShipC } from '../../sim/combat/components';
+import { homeShip } from '../../sim/combat/ships';
+import { CrewC } from '../../sim/crew/components';
+import { removeModule } from '../../sim/modules/spawn';
+import { liftShip, stampPacket } from '../../sim/sector/packet';
+import { TICK_HZ } from '../../sim/time';
 import { claimedBed } from '../../sim/ai/task';
 import { humans, hungry, needs } from './needsFixture';
 

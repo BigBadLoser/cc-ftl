@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { assembleStation, crewSize, deptOf, warehoused, type Recipe, type StationSize } from '../sim';
+import { deptOf } from '../sim/shipgen/assembly/dept';
+import { warehoused } from '../sim/shipgen/assembly/program';
+import type { Recipe } from '../sim/shipgen/assembly/recipe';
+import { assembleStation } from '../sim/shipgen/assembly/station';
+import { crewSize } from '../sim/shipgen/stationCrew';
+import type { StationSize } from '../sim/shipgen/stationTypes';
 import { modules } from './modules';
 import { assembled, programOf } from './stationRecipeFixture';
 import { stationRecipes } from './stationRecipes';

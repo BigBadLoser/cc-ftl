@@ -1,7 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
-import {
-  deserialize, homeShip, ModuleC, newGame, removeModule, serialize, shipGrid, shipIdAt, Struct, type Module, type ShipTemplate, type Sim,
-} from '../../sim';
+import { homeShip } from '../../sim/combat/ships';
+import { type Module, ModuleC } from '../../sim/modules/components';
+import { removeModule } from '../../sim/modules/spawn';
+import { newGame } from '../../sim/newGame';
+import { shipGrid, shipIdAt } from '../../sim/regions';
+import type { ShipTemplate } from '../../sim/registry';
+import { deserialize, serialize } from '../../sim/save';
+import type { Sim } from '../../sim/sim';
+import { Struct } from '../../sim/structure';
 import { stampShip } from '../../sim/combat/ships';
 import { SectorGrid } from '../../sim/sectorGrid';
 import { spawnStation } from '../../sim/stations/spawn';

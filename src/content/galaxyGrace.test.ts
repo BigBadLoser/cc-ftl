@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { newGame, nodeOf } from '../sim';
+import { nodeOf } from '../sim/galaxy/state';
+import { newGame } from '../sim/newGame';
 import { graceActive, graceHolds } from '../sim/galaxy/grace';
 import { GRACE_ACT, GRACE_SEC } from '../sim/galaxy/tuning';
 import { TICK_HZ } from '../sim/time';

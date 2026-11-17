@@ -1,8 +1,23 @@
 import { describe, expect, it } from 'vitest';
-import {
-  AirlockC, ShipC, AssignmentC, BreakdownC, JobC, ModuleC, PickupC, SuitC, VehicleC, destroyVehicle, suitDef, BreakMemoryC, CrewC, DraftedC, InterruptC, MoodC, NeedsC, PathC, PositionC, PrioritiesC, TaskC, TICK_HZ, TraitsC, deserialize,
-  homeShip, newGame, serialize, shipGrid, type BreakKind, type ContentRegistry, type Sim, type SimEvent,
-} from '../../sim';
+import { InterruptC, PickupC, TaskC } from '../../sim/ai/components';
+import { ShipC } from '../../sim/combat/components';
+import { homeShip } from '../../sim/combat/ships';
+import { BreakdownC, type BreakKind, BreakMemoryC } from '../../sim/crew/breakTypes';
+import { AssignmentC, CrewC, DraftedC, JobC, MoodC, NeedsC, PathC, PositionC, PrioritiesC } from '../../sim/crew/components';
+import { TraitsC } from '../../sim/crew/traits';
+import { SuitC } from '../../sim/eva/components';
+import { suitDef } from '../../sim/eva/suit';
+import type { SimEvent } from '../../sim/events';
+import { AirlockC } from '../../sim/modules/airlock';
+import { ModuleC } from '../../sim/modules/components';
+import { newGame } from '../../sim/newGame';
+import { shipGrid } from '../../sim/regions';
+import type { ContentRegistry } from '../../sim/registry';
+import { deserialize, serialize } from '../../sim/save';
+import type { Sim } from '../../sim/sim';
+import { TICK_HZ } from '../../sim/time';
+import { VehicleC } from '../../sim/vehicles/components';
+import { destroyVehicle } from '../../sim/vehicles/lifecycle';
 import { IntentC } from '../../sim/ai/components';
 import { reserveJob } from '../../sim/ai/task';
 import { auditReservations } from '../../sim/ai/audit';

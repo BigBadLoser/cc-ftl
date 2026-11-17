@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { CombatC, ModuleC, WeaponC, deserialize, newGame, serialize, type ContentRegistry, type ShipTemplate, type Sim, type SimEvent } from '../../sim';
+import { CombatC, WeaponC } from '../../sim/combat/components';
+import type { SimEvent } from '../../sim/events';
+import { ModuleC } from '../../sim/modules/components';
+import { newGame } from '../../sim/newGame';
+import type { ContentRegistry, ShipTemplate } from '../../sim/registry';
+import { deserialize, serialize } from '../../sim/save';
+import type { Sim } from '../../sim/sim';
 import { content } from '../index';
 import { shipIdOf } from '../../sim/regions';
 import { nth, run } from '../../../test/support/sim';

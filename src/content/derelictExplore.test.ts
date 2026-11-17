@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { CombatC, FTL_CHARGE_SEC, START_NODE, ShipC, galaxyIndex, newGame, playerShip, type Sim, type SimEvent } from '../sim';
+import { CombatC, ShipC } from '../sim/combat/components';
+import type { SimEvent } from '../sim/events';
+import { galaxyIndex, START_NODE } from '../sim/galaxy/state';
+import { newGame } from '../sim/newGame';
+import type { Sim } from '../sim/sim';
+import { playerShip } from '../sim/trade/player';
+import { FTL_CHARGE_SEC } from '../sim/tuning';
 import { DraftedC, PositionC } from '../sim/crew/components';
 import { origin } from '../sim/crew/helpers';
 import { AboardC, VehicleC } from '../sim/vehicles/components';

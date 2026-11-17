@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { AllegianceC, CrewC, DraftedC, ModuleC, PrioritiesC, PositionC, ShipC, VehicleBayC, VehicleC, destroyVehicle, placementError, shipGrid, spawnModule } from '../../sim';
+import { ShipC } from '../../sim/combat/components';
+import { CrewC, DraftedC, PositionC, PrioritiesC } from '../../sim/crew/components';
+import { AllegianceC } from '../../sim/fight/components';
+import { ModuleC } from '../../sim/modules/components';
+import { placementError, spawnModule } from '../../sim/modules/spawn';
+import { shipGrid } from '../../sim/regions';
+import { VehicleBayC, VehicleC } from '../../sim/vehicles/components';
+import { destroyVehicle } from '../../sim/vehicles/lifecycle';
 import { SuitC } from '../../sim/eva/components';
 import { spillItems } from '../../sim/items/stacks';
 import { playerCourier } from '../../sim/trade/courier';

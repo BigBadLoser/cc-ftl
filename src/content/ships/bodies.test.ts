@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { ALT, BodyC, CrewC, ModuleC, PositionC, ShipC, VehicleC, WeaponC, bayCenter, deserialize, dockPoint, isAirborne, newGame, serialize, type Sim, type SimEvent } from '../../sim';
+import { ALT, BodyC, isAirborne } from '../../sim/body';
+import { ShipC, WeaponC } from '../../sim/combat/components';
+import { CrewC, PositionC } from '../../sim/crew/components';
+import type { SimEvent } from '../../sim/events';
+import { ModuleC } from '../../sim/modules/components';
+import { newGame } from '../../sim/newGame';
+import { deserialize, serialize } from '../../sim/save';
+import type { Sim } from '../../sim/sim';
+import { VehicleC } from '../../sim/vehicles/components';
+import { bayCenter, dockPoint } from '../../sim/vehicles/geometry';
 import { content } from '../index';
 import { shipIdOf } from '../../sim/regions';
 import { shipIds } from '../../sim/regions';

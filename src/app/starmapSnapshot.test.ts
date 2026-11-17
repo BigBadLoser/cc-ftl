@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { CombatC, burnFuel, fuelStock, FTL_CHARGE_SEC, START_NODE, newGame, playerShip, visibleFleets } from '../sim';
+import { CombatC } from '../sim/combat/components';
+import { visibleFleets } from '../sim/galaxy/fleets';
+import { burnFuel, fuelStock } from '../sim/galaxy/fuel';
+import { START_NODE } from '../sim/galaxy/state';
+import { newGame } from '../sim/newGame';
+import { playerShip } from '../sim/trade/player';
+import { FTL_CHARGE_SEC } from '../sim/tuning';
 import { content } from '../content';
 import { buildStarmap, emptyStarmap, planStarmapRoute } from './starmapSnapshot';
 import { toneOf } from './starmapTone';

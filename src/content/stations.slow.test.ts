@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { STATION_SIZES, buildStation, type ModuleDef, type StationDef } from '../sim';
+import type { ModuleDef } from '../sim/registry';
+import { buildStation } from '../sim/shipgen/stationBuild';
+import { STATION_SIZES, type StationDef } from '../sim/shipgen/stationTypes';
 import { content } from './index';
 import { stations } from './stations';
 

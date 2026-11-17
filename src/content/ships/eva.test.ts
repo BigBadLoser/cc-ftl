@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { AirlockC, CrewC, HealthC, ModuleC, PositionC, airlockTiles, isTileWalkable, newGame, suitAir, suitDef, type ModuleDef, type Sim } from '../../sim';
+import { CrewC, HealthC, PositionC } from '../../sim/crew/components';
+import { suitAir, suitDef } from '../../sim/eva/suit';
+import { AirlockC, airlockTiles } from '../../sim/modules/airlock';
+import { ModuleC } from '../../sim/modules/components';
+import { isTileWalkable } from '../../sim/modules/walk';
+import { newGame } from '../../sim/newGame';
+import type { ModuleDef } from '../../sim/registry';
+import type { Sim } from '../../sim/sim';
 import { content } from '../index';
 import { shipIdOf, shipGrid } from '../../sim/regions';
 import { shipIds } from '../../sim/regions';

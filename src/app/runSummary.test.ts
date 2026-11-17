@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { content } from '../content';
 import { addCredits } from '../sim/trade/credits';
-import { deserialize, newGame, runSummary, serialize } from '../sim';
+import { newGame } from '../sim/newGame';
+import { runSummary } from '../sim/runSummary';
+import { deserialize, serialize } from '../sim/save';
 
 describe('run summary', () => {
   it('tracks the best credits ever held, past a later drop, and keeps it through a save', () => {

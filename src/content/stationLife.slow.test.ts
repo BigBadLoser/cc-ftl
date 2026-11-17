@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { CrewC, NeedsC, ShipC, crewSize, newGame, type SimEvent } from '../sim';
+import { ShipC } from '../sim/combat/components';
+import { CrewC, NeedsC } from '../sim/crew/components';
+import type { SimEvent } from '../sim/events';
+import { newGame } from '../sim/newGame';
+import { crewSize } from '../sim/shipgen/stationCrew';
 import { StationAlarmC, StationCrewC } from '../sim/stations/components';
 import { content } from './index';
 import { intruderRuns } from './stationLifeFixture';

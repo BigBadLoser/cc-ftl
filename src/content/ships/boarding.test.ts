@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { AssignmentC, CrewC, DeadC, DownedC, DraftedC, EquipC, FighterC, HealthC, JobC, ModuleC, PositionC, SabotageOrderC, StunC, deserialize, serialize, type Sim } from '../../sim';
+import { SabotageOrderC } from '../../sim/boarding/components';
+import { AssignmentC, CrewC, DeadC, DownedC, DraftedC, HealthC, JobC, PositionC } from '../../sim/crew/components';
+import { EquipC, FighterC } from '../../sim/fight/components';
+import { ModuleC } from '../../sim/modules/components';
+import { StunC } from '../../sim/robots/components';
+import { deserialize, serialize } from '../../sim/save';
+import type { Sim } from '../../sim/sim';
 import { content } from '../index';
 import { shipIdOf } from '../../sim/regions';
 import { SABOTAGE_PER_SEC } from '../../sim/tuning';

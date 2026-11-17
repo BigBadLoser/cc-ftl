@@ -1,8 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import {
-  CombatC, CrewC, DeadC, deserialize, IonC, ModuleC, newGame, PositionC, ProjectileC, serialize, ShipC, shipIds, Struct, TICK_HZ, pipeline,
-  type Command, type Module, type Sim,
-} from '../../sim';
+import { CombatC, IonC, ProjectileC, ShipC } from '../../sim/combat/components';
+import type { Command } from '../../sim/commands';
+import { CrewC, DeadC, PositionC } from '../../sim/crew/components';
+import { type Module, ModuleC } from '../../sim/modules/components';
+import { newGame } from '../../sim/newGame';
+import { pipeline } from '../../sim/pipeline';
+import { shipIds } from '../../sim/regions';
+import { deserialize, serialize } from '../../sim/save';
+import type { Sim } from '../../sim/sim';
+import { Struct } from '../../sim/structure';
+import { TICK_HZ } from '../../sim/time';
 import { mannedConsole, operatorOf, skillOf, type ConsoleKind } from '../../sim/combat/operators';
 import { shieldCapacity, shieldRechargeSec } from '../../sim/combat/ships';
 import { isIncapacitated } from '../../sim/crew/helpers';

@@ -1,9 +1,20 @@
 import { beforeAll, describe, expect, it } from 'vitest';
-import {
-  AssignmentC, CarriedC, CarryingC, CrewC, DraftedC, HealthC, JobC, ModuleC, NeedsC, PositionC, PrioritiesC, ShipC, Struct, SuitC, TaskC,
-  deserialize, findPath, homeShip, isSuited, isThin, liftShip, newGame, placementError, removeModule, serialize, shipGrid, spawnModule,
-  stampPacket, type Sim,
-} from '../../sim';
+import { TaskC } from '../../sim/ai/components';
+import { ShipC } from '../../sim/combat/components';
+import { homeShip } from '../../sim/combat/ships';
+import { AssignmentC, CarriedC, CrewC, DraftedC, HealthC, JobC, NeedsC, PositionC, PrioritiesC } from '../../sim/crew/components';
+import { findPath } from '../../sim/crew/pathfind';
+import { SuitC } from '../../sim/eva/components';
+import { isSuited, isThin } from '../../sim/eva/suit';
+import { CarryingC } from '../../sim/items/components';
+import { ModuleC } from '../../sim/modules/components';
+import { placementError, removeModule, spawnModule } from '../../sim/modules/spawn';
+import { newGame } from '../../sim/newGame';
+import { shipGrid } from '../../sim/regions';
+import { deserialize, serialize } from '../../sim/save';
+import { liftShip, stampPacket } from '../../sim/sector/packet';
+import type { Sim } from '../../sim/sim';
+import { Struct } from '../../sim/structure';
 import { claimedBed } from '../../sim/ai/task';
 import { auditReservations } from '../../sim/ai/audit';
 import { machineStates } from '../../sim/ai/classes';

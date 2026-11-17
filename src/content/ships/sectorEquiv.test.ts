@@ -1,8 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import {
-  deserialize, homeShip as homeShipOf, newGame, serialize, shipGrid, shipIdAt, shipIds, Struct, type Body, type Drafted, type Module, type Sim, type Vehicle,
-  type RoleDef, type Task,
-} from '../../sim';
+import type { Task } from '../../sim/ai/types';
+import type { Body } from '../../sim/body';
+import { homeShip as homeShipOf } from '../../sim/combat/ships';
+import type { Drafted } from '../../sim/crew/components';
+import type { Module } from '../../sim/modules/components';
+import { newGame } from '../../sim/newGame';
+import { shipGrid, shipIdAt, shipIds } from '../../sim/regions';
+import type { RoleDef } from '../../sim/registry';
+import { deserialize, serialize } from '../../sim/save';
+import type { Sim } from '../../sim/sim';
+import { Struct } from '../../sim/structure';
+import type { Vehicle } from '../../sim/vehicles/components';
 import { content } from '../index';
 
 /**

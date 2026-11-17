@@ -1,7 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { AboardC, CombatC, CrewC, DraftedC, FTL_CHARGE_SEC, JobC, NeedsC, PathC, PositionC, PrioritiesC, ShipC, VehicleC, deserialize, homeShip, serialize, type Sim } from '../../sim';
+import { CombatC, ShipC } from '../../sim/combat/components';
+import { homeShip } from '../../sim/combat/ships';
+import { CrewC, DraftedC, JobC, NeedsC, PathC, PositionC, PrioritiesC } from '../../sim/crew/components';
+import { ModuleC } from '../../sim/modules/components';
+import { placementError, spawnModule } from '../../sim/modules/spawn';
+import { shipGrid } from '../../sim/regions';
+import { deserialize, serialize } from '../../sim/save';
+import type { Sim } from '../../sim/sim';
+import { Struct, writeStruct } from '../../sim/structure';
+import { FTL_CHARGE_SEC } from '../../sim/tuning';
+import { AboardC, VehicleC } from '../../sim/vehicles/components';
 import { giveItems } from '../../sim/story/effects';
-import { ModuleC, Struct, placementError, shipGrid, spawnModule, writeStruct } from '../../sim';
 import { AirlockC } from '../../sim/modules/airlock';
 import { SourceReach, airSources } from '../../sim/eva/sources';
 import { content } from '../index';

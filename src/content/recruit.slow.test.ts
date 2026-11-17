@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { AboardC, PositionC, VehicleC, deserialize, serialize } from '../sim';
+import { PositionC } from '../sim/crew/components';
+import { deserialize, serialize } from '../sim/save';
+import { ForHireC } from '../sim/stations/components';
+import { AboardC, VehicleC } from '../sim/vehicles/components';
 import { AllegianceC } from '../sim/fight/components';
 import { shipGrid, shipIdOf } from '../sim/regions';
 import { isTileWalkable } from '../sim/modules/walk';
-import { ForHireC } from '../sim';
 import { atBack, playerCrew, run } from './recruitFixture';
 import { content } from '.';
 
