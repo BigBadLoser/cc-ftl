@@ -1,4 +1,7 @@
+import { Graphics, type Container } from 'pixi.js';
 import type { World } from '../sim/ecs';
+import { ShipC } from '../sim/combat/components';
+import type { Vehicle } from '../sim/vehicles/components';
 import { isLandingPad } from '../sim/modules/landingPad';
 import type { Module } from '../sim/modules/components';
 import type { ModuleDef } from '../sim/registry';
@@ -141,51 +144,66 @@ export const CATCH_MS = 1500;
 
 /** One craft's place in the bay handoff this frame (see `createBayTrack`). */
 export interface BayPose {
-  /** The sector layer draws it (false: the bay's parked layer does). */
+  /** The sector layer draws it (false: the bay's parked layer does, or it is under the hull). */
   drawn: boolean;
-  /** Height while it rises out of the pit or settles into it (0 pit floor .. 1 cruise), null in plain flight or parked. */
+  /** Height while it goes through the floor doors or under the hull's edge (-1 beneath the floor, 0 the pit floor, 1 cruise), null in plain flight or parked. */
   lift: number | null;
   /** What hides the craft's lower part while `lift` is set. */
   clip: BayClip;
-  /** Launched less than the lift plus CATCH_MS ago: its drawn position follows `delayed`. */
+  /** Sinking through the pit's doors: it is drawn here (where it launched from), not at its sim position, which has flown on. */
+  hold: { x: number; y: number } | null;
+  /** A landing-pad take-off in its first CATCH_MS (its drawn position follows `delayed`). */
   launching: boolean;
-  /** Stowed and still settling in (the bay takes over when the claws close). */
+  /** Stowed and still rising into the claws (the bay takes over when they close). */
   landing: boolean;
   sinceLaunch: number;
   sinceLand: number;
 }
 
+/** What the view knows about the craft this frame: it sits on a landing pad (no doors), how many tiles inside its home ship's hull it is (<= 0 outside; null unknown), and whether it is flying home to its bay. */
+export interface PoseInput { padded?: boolean; depth?: number | null; homing?: boolean }
+
 interface Sample { t: number; x: number; y: number }
 export interface BayTrack {
-  /** Call every frame with the craft's sim state: a change out of or into 'stowed' stamps the launch or landing time. */
-  update(state: string, now: number): void;
+  /** Call every frame with the craft's state and sim position: a change out of or into 'stowed' stamps the launch (and where it began) or landing time. */
+  update(state: string, now: number, x: number, y: number): void;
   /** A launch that did not come from a bay (a landing pad's take-off): restart the launch clock and the position trail at `now`. */
   restart(now: number): void;
   /** Forget the recorded positions (an undock starts a fresh trail). */
   clearTrail(): void;
-  /** Where the craft is drawn: its sim position replayed `lag` ms late, the delay easing out to nothing over CATCH_MS from `since` ms in (held over the pit, then catching up). */
+  /** Where a pad take-off or undock is drawn: its sim position replayed `lag` ms late, the delay easing out to nothing over CATCH_MS from `since` ms in. */
   delayed(now: number, x: number, y: number, lag: number, since: number): { x: number; y: number };
-  /** Who draws it and how high; `padded`: it sits on a landing pad, so no doors to wait for. */
-  pose(state: string, now: number, padded?: boolean): BayPose;
+  /** Who draws it, how high, and where. */
+  pose(state: string, now: number, o?: PoseInput): BayPose;
 }
+
+/** How long a craft takes to come up from under the hull's edge, and how far under (tiles inside the hull) it is out of sight on its way home. */
+const EMERGE_MS = 4 * BAY_FRAME_MS;
+export const DIVE_TILES = 1.5;
 
 /** One craft's launch / landing clock and position trail: the one owner of the bay handoff, shared by the shuttle and pod views. */
 export function createBayTrack(state: string): BayTrack {
   let last = state;
   let launched = -Infinity;
   let landed = -Infinity;
+  let origin: { x: number; y: number } | null = null;
+  /** When it came out from under the hull's edge after a launch (null: still under it, or not launched). */
+  let emergeAt: number | null = null;
   let trail: Sample[] = [];
   return {
-    update(s, now) {
+    update(s, now, x, y) {
       if (s === last) return;
       if (last === 'stowed') {
         launched = now;
+        origin = { x, y };
+        emergeAt = null;
         trail = [];
       } else if (s === 'stowed') landed = now;
       last = s;
     },
     restart(now) {
       launched = now;
+      origin = null;
       trail = [];
     },
     clearTrail() {
@@ -200,16 +218,66 @@ export function createBayTrack(state: string): BayTrack {
       const f = n.t > a.t ? Math.max(0, Math.min(1, (at - a.t) / (n.t - a.t))) : 0;
       return { x: a.x + (n.x - a.x) * f, y: a.y + (n.y - a.y) * f };
     },
-    pose(s, now, padded = false) {
+    pose(s, now, o = {}) {
+      const F = BAY_FRAME_MS;
       const sinceLaunch = now - launched;
       const sinceLand = now - landed;
       const stowed = s === 'stowed';
-      const h = padded && !stowed ? { drawn: true, lift: null, clip: null } : bayHandoff(stowed, sinceLaunch, sinceLand);
+      const padded = !!o.padded && !stowed;
+      let h: { drawn: boolean; lift: number | null; clip: BayClip } = padded ? { drawn: true, lift: null, clip: null } : bayHandoff(stowed, sinceLaunch, sinceLand);
+      let hold: { x: number; y: number } | null = null;
+      if (!stowed && !padded && launched > -Infinity) {
+        if (sinceLaunch < FLOOR_EXIT.under * F) hold = origin; // sinking through the doors (the handoff's own sink / hidden frames)
+        else {
+          // Under the floor and the hull: out of sight until it is past the hull's edge, then it comes up from under it.
+          if (emergeAt === null && (o.depth == null || o.depth <= 0)) emergeAt = now;
+          if (emergeAt === null) h = { drawn: false, lift: null, clip: null };
+          else if (now - emergeAt < EMERGE_MS) h = { drawn: true, lift: -1 + 2 * ease((now - emergeAt) / EMERGE_MS), clip: 'hull' };
+          else h = { drawn: true, lift: null, clip: null };
+        }
+      }
+      // Flying home it dips under the hull's edge again, out of sight DIVE_TILES in.
+      if (!stowed && !padded && h.lift === null && h.drawn && o.homing && o.depth != null && o.depth > 0) h = { drawn: o.depth < DIVE_TILES, lift: 1 - 2 * ease(o.depth / DIVE_TILES), clip: 'hull' };
       return {
-        ...h, sinceLaunch, sinceLand,
-        launching: !stowed && sinceLaunch < FLOOR_EXIT.up * BAY_FRAME_MS + CATCH_MS,
-        landing: stowed && sinceLand < RETURN_LAND.end * BAY_FRAME_MS,
+        ...h, hold, sinceLaunch, sinceLand,
+        launching: padded && sinceLaunch < FLOOR_EXIT.up * F + CATCH_MS,
+        landing: stowed && sinceLand < RETURN_LAND.end * F,
       };
+    },
+  };
+}
+
+/** Half the width (px) of the floor opening a craft goes through: the clip's V. */
+const DOOR_HALF_W = 130;
+
+/** How many tiles inside its home ship's footprint a craft is (<= 0 outside), or null when the ship is gone: the hull's edge, as far as the renderer needs it. */
+export function hullDepth(world: World, v: Vehicle, b: { x: number; y: number }): number | null {
+  const sh = world.get(v.homeShip, ShipC);
+  if (!sh) return null;
+  return Math.min(b.x - sh.x, sh.x + sh.width - b.x, b.y - sh.y, sh.y + sh.height - b.y);
+}
+
+/**
+ * Hides a craft below its ground line (the pit's deck, the hull's edge) with a mask on its root: what is under the floor is not
+ * drawn, as in the game. `groundY` is the ground's y in the root's own space (the craft's height in px); null removes the clip.
+ */
+export function createBayClip(root: Container): { set(groundY: number | null): void; destroy(): void } {
+  const g = new Graphics();
+  root.addChild(g);
+  return {
+    set(groundY) {
+      if (groundY === null) {
+        root.mask = null;
+        g.clear();
+        return;
+      }
+      // a V under the ground point (the floor's iso diamond: its front edges fall 1 px per 2 px out from the middle) instead of a flat cut
+      g.clear().poly([-1200, -2400, 1200, -2400, 1200, groundY, DOOR_HALF_W, groundY, 0, groundY + DOOR_HALF_W / 2, -DOOR_HALF_W, groundY, -1200, groundY]).fill(0xffffff);
+      root.mask = g;
+    },
+    destroy() {
+      root.mask = null;
+      g.destroy();
     },
   };
 }

@@ -14,7 +14,7 @@ import type { Atlas, StaticSprite } from './assets/loader';
 import { Z_PX } from './heights';
 import type { Pt } from './iso';
 import { UNDOCK_DONE_MS, UNDOCK_SLIDE_AT_MS, dockProgress, undockProgress, type DockProgress } from './dockSequence';
-import { BAY_FRAME_MS, CATCH_MS, FLOOR_EXIT, createBayTrack, ease, type BayTrack } from './vehicleBayArt';
+import { BAY_FRAME_MS, CATCH_MS, FLOOR_EXIT, createBayClip, createBayTrack, ease, hullDepth, type BayTrack } from './vehicleBayArt';
 
 /** Altitude (tiles over the deck) of a shuttle in flight and at a dock, and of its belly on the pit floor. */
 const CRUISE_Z = 0.4;
@@ -113,6 +113,8 @@ interface Track {
   tubeBehind: boolean;
   /** The launch / landing clock and position trail of the bay handoff (vehicleBayArt). */
   bay: BayTrack;
+  /** Hides it below the pit's deck or the hull's edge while it goes through the floor doors. */
+  clip: ReturnType<typeof createBayClip>;
   /** Last seen sitting on a landing pad: its take-off has no bay doors to wait for. */
   padded: boolean;
   /** The rotation of the pad it last stood on (its take-off turns from it). */
@@ -228,14 +230,14 @@ export function createShuttleView(world: World, atlas: Atlas, modules: Readonly<
           tube.visible = false;
           root.addChild(body, glow, tube);
           host.layer.addChild(root);
-          t = { root, body, glow, key: '', x: b.x, y: b.y, heading: b.heading, state: v.state, z: CRUISE_Z, pose: null, low: false, dockedAt: -Infinity, undockedAt: -Infinity, tube, tubeBody, tubeGlow, tubeBehind: false, bay: createBayTrack(v.state), padded: false, padRot: 0, ramp: 0, rampBusy: -Infinity };
+          t = { root, body, glow, key: '', x: b.x, y: b.y, heading: b.heading, state: v.state, z: CRUISE_Z, pose: null, low: false, dockedAt: -Infinity, undockedAt: -Infinity, tube, tubeBody, tubeGlow, tubeBehind: false, bay: createBayTrack(v.state), clip: createBayClip(root), padded: false, padRot: 0, ramp: 0, rampBusy: -Infinity };
           tracks.set(id, t);
         }
         if (t.state !== v.state) {
           if (t.state === 'stowed') {
             t.heading = (parkedIndex(bayRot(v)) * EIGHTH);
           }
-          t.bay.update(v.state, now);
+          t.bay.update(v.state, now, b.x, b.y);
           if (v.state === 'docked') [t.dockedAt, t.undockedAt] = [now, -Infinity];
           else if (t.state === 'docked' && t.padded) {
             // Off a landing pad (#509): the pad take-off (gear up, lift), never the collar's undock.
@@ -252,7 +254,7 @@ export function createShuttleView(world: World, atlas: Atlas, modules: Readonly<
         const padOn = padUnder(v, b), pad = !!padOn;
         if (v.state !== 'flying') t.padded = pad;
         if (padOn) t.padRot = padOn.rot;
-        const hand = t.bay.pose(v.state, now, t.padded);
+        const hand = t.bay.pose(v.state, now, { padded: t.padded, depth: hullDepth(world, v, b), homing: v.dest?.type === 'bay' });
         const { launching, landing, sinceLaunch } = hand;
         // Gear phase of a pad take-off or landing: the sprite frame (0 up to 4 down) and the height.
         let gear: { frame: number; z: number; rot: number } | null = null;
@@ -277,10 +279,14 @@ export function createShuttleView(world: World, atlas: Atlas, modules: Readonly<
         const k = 1 - Math.exp(-dt * 14);
         let px = b.x;
         let py = b.y;
-        if (launching || undocking) {
+        if (hand.hold) {
+          // Sinking through the pit's doors: over the pit it left from, while the sim has flown it on.
+          [px, py] = [hand.hold.x, hand.hold.y];
+          [t.x, t.y] = [px, py];
+        } else if (launching || undocking) {
           // Held on the spot (over the open pit / alongside the hull) while the bay doors open or the tube retracts, then it
           // catches up with the sim, which has already sent it on its way.
-          const lag = launching ? (t.padded ? 0 : FLOOR_EXIT.emerge * BAY_FRAME_MS) : UNDOCK_SLIDE_AT_MS;
+          const lag = launching ? 0 : UNDOCK_SLIDE_AT_MS;
           ({ x: px, y: py } = t.bay.delayed(now, b.x, b.y, lag, launching ? sinceLaunch : sinceUndock));
           [t.x, t.y] = [px, py];
         } else if (Math.hypot(b.x - t.x, b.y - t.y) > 3) [t.x, t.y] = [b.x, b.y];
@@ -370,12 +376,13 @@ export function createShuttleView(world: World, atlas: Atlas, modules: Readonly<
         // has it airborne already). The pixel lift still comes from CRUISE_Z / DOCK_Z / PIT_Z: `b.alt` switches with the state
         // and does not ramp, so it cannot drive the art.
         const lifting = launching && sinceLaunch < FLOOR_EXIT.up * BAY_FRAME_MS;
-        t.low = !isAirborne(b) || undocking || lifting || !!gear;
+        t.low = !isAirborne(b) || undocking || lifting || !!gear || !!hand.clip;
         const layer = t.low ? host.low.layer : host.layer;
         if (t.root.parent !== layer) layer.addChild(t.root);
         const [sx, sy] = [t.x + off.dx, t.y + off.dy];
         const p = (t.low ? host.low.project : host.project)(sx, sy);
         t.root.position.set(Math.round(p.x), Math.round(p.y - z * Z_PX));
+        t.clip.set(hand.clip && !gear && !pad ? z * Z_PX : null);
         t.root.zIndex = pad || gear ? sx + sy + 8.6 : !t.low ? sx + sy : t.pose ? sx + sy - 1 : frontDepth(sx, sy, t.heading) + 0.5;
       }
       for (const id of [...tracks.keys()]) if (!seen.has(id)) drop(id);

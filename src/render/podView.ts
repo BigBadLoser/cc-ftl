@@ -11,7 +11,7 @@ import { Z_PX } from './heights';
 import { sectorArt } from './sectorPos';
 import { animNow } from './animClock';
 import { headingIndex } from './shuttleView';
-import { BAY_FRAME_MS, FLOOR_EXIT, createBayTrack, type BayTrack } from './vehicleBayArt';
+import { createBayClip, createBayTrack, hullDepth, type BayTrack } from './vehicleBayArt';
 
 /**
  * Pods (VehicleC with a pod def, placed by their BodyC) drawn with the pipeline sprites (`VehicleDef.asset`): `<art>.fly.d<0..7>`
@@ -69,6 +69,8 @@ interface Track {
   body: Sprite;
   glow: Sprite;
   low: boolean;
+  /** Hides it below the pit's deck or the hull's edge while it goes through the floor doors. */
+  clip: ReturnType<typeof createBayClip>;
 }
 
 export function createPodView(world: World, atlas: Atlas, host: PodHost): PodView {
@@ -108,9 +110,9 @@ export function createPodView(world: World, atlas: Atlas, host: PodHost): PodVie
         const now = animNow();
         let track = phases.get(id);
         if (!track) phases.set(id, (track = createBayTrack(v.state)));
-        track.update(v.state, now);
+        track.update(v.state, now, b.x, b.y);
         const baySprite = !out && atlas.ids(`${art}.parked`).length > 0;
-        const hand = baySprite ? track.pose(v.state, now) : null;
+        const hand = baySprite ? track.pose(v.state, now, { depth: hullDepth(world, v, b), homing: v.dest?.type === 'bay' }) : null;
         if (hand && !hand.drawn) continue;
         const rising = hand?.lift != null;
         const low = (stowed && !hand) || !!out || rising;
@@ -142,13 +144,13 @@ export function createPodView(world: World, atlas: Atlas, host: PodHost): PodVie
           batchAdditive(glow);
           root.addChild(shadow, beam.back, body, glow, beam.front);
           (low ? host.low : host.air).addChild(root);
-          t = { root, shadow, beam, body, glow, low };
+          t = { root, shadow, beam, body, glow, low, clip: createBayClip(root) };
           tracks.set(id, t);
         }
         show(t, sprite);
         const reach = COLLAR_FACE + POD_HATCH;
         // After liftoff the sim has already flown it on: hold it over the pit while the doors open and the lift runs, then catch up.
-        const at = baySprite && !stowed && hand?.launching ? track.delayed(now, b.x, b.y, FLOOR_EXIT.emerge * BAY_FRAME_MS, hand.sinceLaunch) : b;
+        const at = hand?.hold ?? b;
         const [sx, sy] = out ? [b.x + out.x * reach, b.y + out.y * reach] : [at.x, at.y];
         const p = sectorArt(sx, sy);
         const lift = (out ? COLLAR_Z - POD_AXIS : rising ? PIT_Z + (POD_Z - PIT_Z) * (hand?.lift ?? 0) : stowed ? PIT_Z : POD_Z) * Z_PX;
@@ -158,6 +160,7 @@ export function createPodView(world: World, atlas: Atlas, host: PodHost): PodVie
         if (mining) t.beam.show(d, frame, clock, 0.6 + 0.4 * Math.sin(clock * 18));
         else t.beam.hide();
         t.root.position.set(Math.round(p.x), Math.round(p.y - lift));
+        t.clip.set(hand?.clip ? lift : null);
         // (docked: sorted as a docked shuttle is, a tile nearer than its centre, so the hull behind it never covers it)
         t.root.zIndex = sx + sy + (out ? -1 : stowed || rising ? PIT_DEPTH : 0);
       }
