@@ -12,7 +12,7 @@ Nine sprite families have no def: cryo pod (not the prisoner holding: that is th
 | Floor light | `module.light` | A lit grate set into the deck, walkable. Art `module.light_grate` (family `lights`) | In game | src/content/modules.ts; shipgen fit.ts, starters; sim/systems/lighting.ts |
 | Cage lamp | `module.light_cage` | A solid work lamp, radius 10, half a power | Buildable only | src/content/modules.ts; art lights.py |
 | Light mast | `module.light_mast` | A solid tall lamp, radius 15, one power | Buildable only | src/content/modules.ts; art lights.py |
-| Deck inlay, Hazard plate | `-` | Defs dropped (never placed by any generator; the art stays in the `decor` sheet) | Art only | art decor.py |
+| Deck inlay, Hazard plate | `module.deck_inlay`, `module.deck_hazard` | Walkable deck marks; dressing only (art to be redesigned) | Not buildable (`buildable: false`; kept so saves that built one still load) | src/content/furniture.ts; art decor.py |
 | Banner post | `module.banner` | Banner in the ship's livery (`livery: true`, emblem mask per roof scheme); dressing only | Not buildable (`buildable: false`); placed by nothing yet | src/content/furniture.ts; render/moduleArt.ts schemeEmblem; art landmarks.py |
 | Bed | `module.bed` | Somewhere for a crew member to sleep and recover rest. | In game | src/content/modules.ts:66; shipgen, starters; sim/systems/bedOwners.ts, needs.ts; render/bedPose.ts |
 | Console | `module.console` | A general console. | In game | src/content/modules.ts:81; shipgen bridge/engineering; render/assets/fallback.ts |
