@@ -24,7 +24,7 @@ HEAD = 9                            # the header's upright front: px tall under 
                                     # posts' top)
 SILL = 10                           # the sill's front's top: this many px over the groove
 JAMB_IN = 0.0                       # the posts (the jambs) this far behind the face (flush)
-HEAD_VENTS = (12, (3, 5))           # the header's vent lines across its middle: px wide, their rows (px over its foot)
+HEAD_VENTS = (8, (3, 6))            # the header's vent lines across its middle: px wide, their rows (px over its foot)
 HEAD_RECESS = (4, 2, 7)             # its recessed panels either side: px wide, from px over its foot to px
 RECESS_FILL, RECESS_SHADE, RECESS_LIT, VENT_LINE = "stM", "stD", "stL", "stD"
 RIB_PLATE = (7, 2)                  # an end piece's plate across its rib and post, its top where the top corner's
