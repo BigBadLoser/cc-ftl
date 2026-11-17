@@ -118,6 +118,11 @@ A card with a lock is a module you don't have the blueprint for yet. Stations se
 better tiers. Use **Deconstruct** to take something down and get some of its materials back, and **Cancel jobs** to call off
 construction you haven't finished.
 
+**Windows** go into walls you already have, on the Structure tab. Pick a size of 2, 3 or 4 tiles from the row under the
+preview, then click a straight run of wall, hull or partition (never a corner or junction). The preview shows the window
+in cyan where it fits and red with the reason where it doesn't. Each tile costs 2 metal and 1 polymer on top of the wall.
+A window holds air and blocks movement just like the wall it sits in. Deconstruct it to get the plain wall back.
+
 ## Trading
 
 The goods travel by shuttle. The Wayfarer has one; the Prospector and Lancer have no bay, so build a shuttle bay and

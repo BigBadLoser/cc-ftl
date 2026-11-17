@@ -107,6 +107,17 @@ describe('region tiles', () => {
     expect(moved(() => g.set('struct', 47, 15, Struct.Wall))).toEqual(['2,0', '3,0', '2,1', '3,1']); // the SE corner
   });
 
+  it('a chunk view key with a margin past the next chunk moves for a write two chunks away (hull reach)', () => {
+    const g = ship(0, 0, 80, 20);
+    const t = regionTiles(g);
+    const c = { cx: 0, cy: 0 };
+    const k20 = t.key('struct', c, 20);
+    const k16 = t.key('struct', c, 16);
+    g.set('struct', 35, 8, Struct.Wall); // chunk (2, 0): 19 tiles past chunk (0, 0)
+    expect(t.key('struct', c, 20)).not.toBe(k20);
+    expect(t.key('struct', c, 16)).toBe(k16);
+  });
+
   it('splits the ghost verts exactly between chunks', () => {
     const g = ship(3, 5, 37, 23);
     const t = regionTiles(g);

@@ -16,6 +16,8 @@ export type Command =
   /** Away sites (#286): open one on a ship with a free shuttle (debug only until a feature opens sites), and call its party home. */
   | { type: 'away.open'; ship: number; vehicle?: number }
   | { type: 'away.recall'; ship: number }
+  /** Build a window of `size` (2..4) tiles along `axis` on existing wall: (x, y) is the run's lower-coordinate end. One build job per tile (sim/windows.ts). */
+  | { type: 'job.window'; ship: number; x: number; y: number; axis: 'x' | 'y'; size: number }
   | { type: 'job.deconstruct'; ship: number; x: number; y: number }
   /** Have crew force a jammed door (`jam` field) at (x, y) free: a timed construction job worked from beside it. */
   | { type: 'job.forceDoor'; ship: number; x: number; y: number }

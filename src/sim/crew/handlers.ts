@@ -11,6 +11,7 @@ import { destroyJob, structCostKey } from '../items/stacks';
 import { FighterC } from '../fight/components';
 import { SuitC } from '../eva/components';
 import { Struct } from '../structure';
+import { windowAt, windowCode, windowRun, windowRunError } from '../windows';
 import type { Sim } from '../sim';
 import type { GridLike } from '../grid';
 import { isWreck } from '../salvage/guard';
@@ -45,7 +46,7 @@ function reject(sim: Sim, command: string, reason: string): void {
 /** Post a construction job on a tile. `free`: no materials to deliver (digging, or paid for up front, as the shipyard's are); `extra` is merged into the job. Returns the job entity. */
 export function createJob(sim: Sim, kind: 'build' | 'deconstruct' | 'forceDoor', shipId: number, x: number, y: number, struct: number, work: number, free = false, extra: Partial<Job> = {}): number {
   const id = sim.world.createEntity();
-  const key = kind === 'build' && !free ? structCostKey(struct) : undefined;
+  const key = kind === 'build' && !free ? (extra.window ? 'window' : structCostKey(struct)) : undefined;
   const needs = needsFrom(key ? sim.content.structCosts[key] : undefined);
   sim.world.add(id, JobC, {
     category: 'construction', kind, x, y, struct, work, progress: 0, reservedBy: 0,
@@ -95,12 +96,25 @@ export const crewHandlers: { [T in CrewCommandType]: Handler<T> } = {
     if (cmd.struct === Struct.Ground || cmd.struct === Struct.RockWall) return reject(sim, cmd.type, 'notRock');
     createJob(sim, 'build', cmd.ship, cmd.x, cmd.y, cmd.struct, BUILD_TICKS[cmd.struct] as number);
   },
+  'job.window': (sim, cmd) => {
+    if (isWreck(sim, cmd.ship)) return reject(sim, cmd.type, 'wreck');
+    const grid = shipGrid(sim, cmd.ship);
+    if (!grid) return reject(sim, cmd.type, 'badGrid');
+    const err = windowRunError(grid, cmd.x, cmd.y, cmd.axis, cmd.size, (x, y) => findJobAt(sim, cmd.ship, x, y) !== 0);
+    if (err) return reject(sim, cmd.type, err);
+    provokeIfOutpost(sim, cmd.ship);
+    for (const t of windowRun(cmd.x, cmd.y, cmd.axis, cmd.size)) createJob(sim, 'build', cmd.ship, t.x, t.y, Struct.Wall, BUILD_TICKS[Struct.Door] as number, false, { window: windowCode(cmd.axis, cmd.size, t.index) });
+  },
   'job.deconstruct': (sim, cmd) => {
     if (isWreck(sim, cmd.ship)) return reject(sim, cmd.type, 'wreck');
     const current = checkTile(sim, cmd.type, cmd.ship, cmd.x, cmd.y);
     if (current < 0) return;
     provokeIfOutpost(sim, cmd.ship);
     if (current !== Struct.Wall && current !== Struct.Door && current !== Struct.Beam) return reject(sim, cmd.type, 'nothingToDeconstruct');
+    if (current === Struct.Wall && windowAt(shipGrid(sim, cmd.ship) as GridLike, cmd.x, cmd.y)) { // a window comes off back to the wall it was built on
+      createJob(sim, 'deconstruct', cmd.ship, cmd.x, cmd.y, Struct.Wall, DECONSTRUCT_TICKS, false, { window: 0 });
+      return;
+    }
     createJob(sim, 'deconstruct', cmd.ship, cmd.x, cmd.y, current === Struct.Beam ? Struct.Space : Struct.Floor, DECONSTRUCT_TICKS);
   },
   'job.forceDoor': (sim, cmd) => {
