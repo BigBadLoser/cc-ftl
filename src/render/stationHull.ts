@@ -25,6 +25,16 @@ export function bermId(h: HullKeys, x: number, y: number, has: (id: string) => b
   return has(id) ? id : null;
 }
 
+/**
+ * The near hull's foot on this tile with the walls up (`tile.hull.station.low.<key>`, station_hull_walls: the station's piece
+ * cut down under its groove, in place of the ship's cut top and belly), or null where the art has none.
+ */
+export function lowId(h: HullKeys, x: number, y: number, has: (id: string) => boolean): string | null {
+  const k = h.at(x, y);
+  const id = k ? `tile.hull.station.low.${hullKeyName(k)}` : null;
+  return id && has(id) ? id : null;
+}
+
 const nameAt = (h: HullKeys, x: number, y: number): string => {
   const k = h.at(x, y);
   return k ? hullKeyName(k) : "";

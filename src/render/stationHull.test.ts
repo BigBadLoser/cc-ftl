@@ -3,7 +3,8 @@ import { Struct } from "../sim/structure";
 import { standsOnGround } from "../sim/outposts/state";
 import type { Ship } from "../sim/combat/components";
 import { bellyIds, exteriorIds, hullKeys, isStationPiece } from "./hullArt";
-import { BERM_OTHER, BERM_RUN, bermId } from "./stationHull";
+import { BERM_OTHER, BERM_RUN, bermId, lowId } from "./stationHull";
+import { wallPieces } from "./tiles";
 
 /** A box base: hull walls round floors, in a region with a tile of space round it. */
 function box(w: number, h: number) {
@@ -71,5 +72,18 @@ describe("station hull", () => {
     expect(bermId(h, 4, 3, all)).toBeNull(); // (no key: a room)
     expect(bermId(h, 4, 6, () => false)).toBeNull();
     expect(BERM_OTHER).toBeLessThan(BERM_RUN);
+  });
+
+  it("with the walls up takes the station's cap on the far hull, else the ship's, and its foot on the near hull", () => {
+    const kindAt = (x: number, y: number) =>
+      x < 1 || y < 1 || x > 8 || y > 6 ? Struct.Space : x === 1 || y === 1 || x === 8 || y === 6 ? Struct.Wall : Struct.Floor;
+    const cap = (look: "ship" | "station") => wallPieces(kindAt, 4, 1, Struct.Wall, "up", true, undefined, null, look)[1]!.chain;
+    expect(cap("station")[0]).toBe("tile.hull.station.cap.m10");
+    expect(cap("station")).toContain("tile.hull.cap.m10");
+    expect(cap("ship").some((id) => id.includes(".station."))).toBe(false);
+    const h = box(8, 6);
+    expect(lowId(h, 4, 6, all)).toBe("tile.hull.station.low.0_1_15");
+    expect(lowId(h, 4, 6, () => false)).toBeNull();
+    expect(lowId(h, 4, 3, all)).toBeNull();
   });
 });

@@ -27,7 +27,7 @@ import { keepsOldPiece } from "./jobHull";
 import type { BuildGate } from "./buildBudget";
 import { iso } from "./iso";
 import { bellyIds, engineHullTiles, exteriorIds, gridHullKeys, isStationPiece, PLAIN_PAINT, type HullKeys, type HullLook, type HullPaint } from "./hullArt";
-import { bermId } from "./stationHull";
+import { bermId, lowId } from "./stationHull";
 
 export type { CutawayMode };
 
@@ -318,7 +318,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
           if (k === Struct.Floor) continue;
           // The engine's hull row (walls up or roofed) is the engine's own bulkhead sprite: no hull wall on it.
           if (special) continue;
-          for (const piece of wallPieces(pieceAt, x, y, stone ? Struct.RockWall : k, mode, ghosts, gapAt, decodeWindow(windows?.[ci] ?? 0))) {
+          for (const piece of wallPieces(pieceAt, x, y, stone ? Struct.RockWall : k, mode, ghosts, gapAt, decodeWindow(windows?.[ci] ?? 0), host.hullLook?.() ?? "ship")) {
             if (drew && !keepsOldPiece(k, ghosts, piece.under)) continue; // (a door stays, without its old belly)
             const s = atlas.firstOf(piece.chain);
             if (!s) continue;
@@ -335,6 +335,14 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
             // A door is lit like a wall (the brightest light round it): its own tile is dark while it is closed (light stops at a
             // closed door) and takes its neighbours' light once open, which made the sprite change colour as it swung.
             tinted.push({ spr: made[0] as Sprite, x, y, ci, wall: true, solid: true });
+            // A station piece's livery (`<id>.tint`) in the deco paint.
+            const pid = piece.chain.find((id) => isStationPiece(id) && atlas.stat(id) === s);
+            const tint = pid ? atlas.stat(`${pid}.tint`) : undefined;
+            if (tint) {
+              const spr = addPaintSprite(tint, x, y, depthKey(x, y) + piece.order * 0.001 + 0.0005, L.sorted, HullSprite);
+              owned.push(spr);
+              tinted.push({ spr, x, y, ci, wall: true, solid: true, paint: host.hullPaint?.().deco ?? PLAIN_PAINT.deco });
+            }
           }
         }
     if (ghosts && !hull) {
@@ -439,6 +447,12 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
       return true;
     }
     if (k !== Struct.Floor && hullSide(wallAt, x, y) !== HullSide.Near) return false;
+    if (look === "station") {
+      // A ground base's near hull: the station's foot (no belly), the berm against it.
+      const foot = lowId(h, x, y, has);
+      if (foot) put(foot, z + 0.001, L.sorted, solid);
+      return berm() || !!foot;
+    }
     const heaped = berm();
     const b = bellyIds(h, x, y, has, k !== Struct.Floor, look);
     if (!b) return heaped;

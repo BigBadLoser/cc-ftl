@@ -142,8 +142,12 @@ def jobs(name):
                                variants=tuple(int(v) for v in sel("CONT_VARIANTS", ("0", "1", "2"))))
         return jobs, True
     if name == "station_hull":      # the station hull look (#524): a ground base's hull, its rock berm and livery mask
-        from . import station_hull
-        return station_hull.jobs(), station_hull.PALETTE  # (callables: each selects it itself)
+        import os
+        from . import station_hull, station_hull_walls
+        walls = station_hull_walls.jobs()               # (their own module: a change to them keeps the rest cached)
+        if os.environ.get("STATION_JOBS") == "walls":      # (just the walls-up pieces: a quick look)
+            return walls, station_hull.PALETTE
+        return station_hull.jobs() + walls, station_hull.PALETTE  # (callables: each selects it itself)
     if name == "structure":
         from . import structure
         return structure.jobs(), "walls+hull"
