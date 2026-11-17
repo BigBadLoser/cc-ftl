@@ -1,12 +1,13 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import type { UiApi, UiCrew, UiInspect, UiModule, UiShuttles, UiSite } from './api';
+  import type { UiApi, UiContainer, UiCrew, UiInspect, UiModule, UiShuttles, UiSite } from './api';
   import FloatingWindow from './FloatingWindow.svelte';
   import { isPinned } from './floatingWindow';
   import { PaneHead } from './kit';
   import { inspectorWidth } from './inspector/width';
   import GridPanel from './GridPanel.svelte';
   import AsteroidPanel from './AsteroidPanel.svelte';
+  import ContainerPanel from './ContainerPanel.svelte';
   import CrewInspector from './CrewInspector.svelte';
   import ModuleInspector from './ModuleInspector.svelte';
   import SiteInspector from './SiteInspector.svelte';
@@ -25,6 +26,8 @@
   let selMod = $state<number | null>(null);
   let selShip = $state<number | null>(null);
   let selAst = $state<number | null>(null);
+  let selCont = $state<number | null>(null);
+  let conts = $state<UiContainer[]>([]);
   let selShuttle = $state<number | null>(null);
   let sites = $state<UiSite[]>([]);
   let selSite = $state<number | null>(null);
@@ -43,6 +46,8 @@
       api.selectedModule.subscribe((v) => (selMod = v)),
       api.selectedShip.subscribe((v) => (selShip = v)),
       api.selectedAsteroid.subscribe((v) => (selAst = v)),
+      api.selectedContainer.subscribe((v) => (selCont = v)),
+      api.mining.subscribe((v) => (conts = v.containers)),
       api.selectedShuttle.subscribe((v) => (selShuttle = v)),
       api.sites.subscribe((v) => (sites = v)),
       api.selectedSite.subscribe((v) => (selSite = v)),
@@ -61,13 +66,17 @@
   /** The inspector exists only while something is selected; ship stats live behind the ship tab. */
   /** A pinned inspector stays up (empty) when the selection clears. */
   let pinned = $state(isPinned('inspector'));
-  const shown = $derived(selAst !== null || selShuttle !== null || selShip !== null || hasCrew || !!mod || site || !!tile);
+  /** The picked container, while it still exists (once the cut box opens it is gone and the panel closes). */
+  const cont = $derived(selCont === null ? undefined : conts.find((c) => c.id === selCont));
+  const shown = $derived(selAst !== null || !!cont || selShuttle !== null || selShip !== null || hasCrew || !!mod || site || !!tile);
 </script>
 
 {#if shown || pinned}
 <FloatingWindow id="inspector" title="Inspector" min={{ w: 260, h: 140 }} defaultRect={(b) => ({ x: b.left, y: 0, w: wide ? 352 : 300, h: 0, anchor: 'bottom' })} onClose={back} testId="selection-panel" bare pinnable={false} docked width={tabWidth} padded bind:pinned>
   {#if selAst !== null}
     <AsteroidPanel {api} asteroid={selAst} onBack={back} />
+  {:else if cont}
+    <ContainerPanel {api} container={cont} onBack={back} />
   {:else if selShuttle !== null}
     <ShuttlePanel {api} only={selShuttle} onBack={back} />
   {:else if selShip !== null}

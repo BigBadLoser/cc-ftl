@@ -1,4 +1,5 @@
 import { asteroidAt, shipIdOf, shipGrid } from '../sim/regions';
+import { containerAt, ContainerC, rotatedSize } from '../sim';
 import { AsteroidC } from '../sim/asteroids/components';
 import { AboardC, AllegianceC, BodyC, DraftedC, ModuleC, PositionC, ShipC, Struct, VehicleC, footprintTiles, playerFoes, type Sim, type SimEvent } from '../sim';
 import type { Renderer } from '../render/scene';
@@ -49,6 +50,10 @@ export interface Controller {
   /** Asteroid picked by clicking its rock or from the node strip, or null. */
   selectedAsteroid: Readable<number | null>;
   selectAsteroid(id: number | null): void;
+  /** Lost container picked by clicking it (`UiContainer.id`), or null. */
+  selectedContainer: Readable<number | null>;
+  selectContainer(seed: number | null): void;
+  openContainer(id: number): void;
   /** "Target in view": the armed aim and how to arm it. */
   aiming: Aiming;
   alerts: Alerts;
@@ -84,6 +89,8 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
   const siteSel = createStore<number | null>(null);
   const shipSel = createStore<number | null>(null);
   const astSel = createStore<number | null>(null);
+  /** The picked lost container, by its art seed (`UiContainer.id`): it keeps the seed when marked for opening, so the selection follows the cutting. */
+  const contSel = createStore<number | null>(null);
   /** The player's ship (home grid 1) as a ShipC entity id. */
   const homeShipId = () => homeShip(sim);
   const alerts = createAlerts(sim);
@@ -129,6 +136,7 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     tileSel = !!t;
     shipSel.set(null);
     astSel.set(null);
+    contSel.set(null);
     clearCrew();
     modSel.set(null);
     siteSel.set(null);
@@ -153,6 +161,7 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     modSel.set(null);
     shipSel.set(null);
     astSel.set(null);
+    contSel.set(null);
     siteSel.set(null);
     shuttleSel.set(null);
     menu.set(null);
@@ -179,6 +188,7 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     clearCrew();
     shipSel.set(null);
     astSel.set(null);
+    contSel.set(null);
     siteSel.set(null);
     pushSites();
     bridge.setSelected(null);
@@ -192,6 +202,7 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     clearCrew();
     shipSel.set(null);
     astSel.set(null);
+    contSel.set(null);
     modSel.set(null);
     bridge.setSelected(null);
     siteSel.set(id);
@@ -230,6 +241,34 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     else if (s.kind === 'crew') selectCrew(s.id, true);
     else if (s.kind === 'ship') selectShip(s.id);
   };
+  /** Outline the picked container's whole footprint: a loose box by its body, a box being cut by its module (same selection markers as any selected object). */
+  let boxMarked = false;
+  const markBox = () => {
+    const seed = contSel.get();
+    if (seed === null && !boxMarked) return; // nothing picked, nothing drawn
+    let tiles: Tile[] | null = null;
+    for (const id of seed === null ? [] : sim.world.query(ContainerC)) {
+      const c = sim.world.get(id, ContainerC);
+      const def = c && sim.content.modules[c.def];
+      if (!c || !def || (c.seed ?? id) !== seed) continue;
+      const b = sim.world.get(id, BodyC);
+      const m = sim.world.get(id, ModuleC);
+      if (b) {
+        const [w, h] = rotatedSize(def, c.rot);
+        // The body's art is centred on sector point (b.x, b.y); a marker tile sits at its centre minus the half tile of sectorArt.
+        const x0 = b.x - w / 2 + 0.5, y0 = b.y - h / 2 + 0.5;
+        tiles = Array.from({ length: w * h }, (_, i) => ({ x: x0 + (i % w), y: y0 + Math.floor(i / w) }));
+      } else if (m) tiles = footprintTiles(def, m.x, m.y, m.rot);
+      break;
+    }
+    boxMarked = tiles !== null;
+    r?.setSectorSelection(tiles);
+  };
+  const selectContainer = (seed: number | null) => {
+    selectTile(null);
+    if (seed !== null) contSel.set(seed);
+    markBox();
+  };
   const selectAsteroid = (id: number | null) => {
     selectTile(null);
     const a = id === null ? undefined : sim.world.get(id, AsteroidC);
@@ -260,6 +299,9 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     selectShip,
     selectedAsteroid: astSel,
     selectAsteroid,
+    selectedContainer: contSel,
+    selectContainer,
+    openContainer: (id) => sim.enqueue({ type: 'container.open', id }),
     aiming,
     selectedCrew: crewSel,
     selectedGroup: group,
@@ -287,6 +329,7 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
       wasFighting = fighting;
       alerts.sync();
       log.sync();
+      markBox();
       r?.setFoes(playerFoes(sim)); // the red foot marks (upkeep already runs a few times a second)
     },
     toast,
@@ -305,7 +348,7 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
         return true;
       }
       const selected = tileSel || crewSel.get() !== null || group.get().length > 0 || shuttleSel.get() !== null || modSel.get() !== null
-        || siteSel.get() !== null || shipSel.get() !== null || astSel.get() !== null;
+        || siteSel.get() !== null || shipSel.get() !== null || astSel.get() !== null || contSel.get() !== null;
       if (selected) selectTile(null);
       return selected;
     },
@@ -378,6 +421,11 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
           } else if (any && foreignShipTarget(sim, any.shipId, homeShipId()) !== null) {
             // A station or another ship: its inspector (the same panel as its node-strip button), without moving the camera.
             selectShip(any.shipId, false);
+          } else if (!tile && !any && containerAt(sim, renderer.pickSector(sx, sy).x, renderer.pickSector(sx, sy).y) !== null) {
+            // Loose cargo: its inspector (Open there orders the cutting, containers/open.ts), like an asteroid's panel.
+            const st = renderer.pickSector(sx, sy);
+            const id = containerAt(sim, st.x, st.y) as number;
+            selectContainer(sim.world.get(id, ContainerC)?.seed ?? id);
           } else if (!tile && !any && asteroidAt(sim, renderer.pickSector(sx, sy).x, renderer.pickSector(sx, sy).y)) {
             // plain asteroid rock (or a hidden base under it): the asteroid's panel
             const st = renderer.pickSector(sx, sy);

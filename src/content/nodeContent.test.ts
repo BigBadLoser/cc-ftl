@@ -43,13 +43,14 @@ describe('node content table', () => {
       expect(FIELD_KINDS.reduce((n, k) => n + (s[k] ?? 0), 0)).toBeCloseTo(0.3 + (t >= 3 ? 0.006 * t : 0), 2);
       expect(s['derelict'] ?? 0).toBeCloseTo(0.05 + 0.012 * t, 2);
       expect(s['research'] ?? 0).toBeCloseTo(0.1 - 0.01 * t, 2);
+      expect(s['lostCargo'] ?? 0).toBeCloseTo(0.04, 2); // common at every tier, its share taken out of the quiet one
     }
   });
 
   it('leaves a quiet share by tier, matching the sampled draws', () => {
     for (let t = 0; t <= DANGER_MAX; t++) {
       const q = quietShare(table, { tier: t, ...calm });
-      expect(q).toBeGreaterThan(0.45);
+      expect(q).toBeGreaterThan(0.4);
       expect(q).toBeLessThan(0.6);
       expect(shares(table, t)['quiet'] ?? 0).toBeCloseTo(q, 2);
     }

@@ -6,6 +6,7 @@ order: 9
 <script lang="ts">
   import Stat from '../../../lib/Stat.svelte'
   import ModuleTable from '../../../lib/ModuleTable.svelte'
+  import ComingLater from '../../../lib/ComingLater.svelte'
 </script>
 
 Wrecks, asteroids and abandoned hulls are free materials if you can reach them. This page covers finding a derelict,
@@ -35,6 +36,22 @@ deeper **probe** (a hacker of skill 4) gives counts.
 
 > **Warning:** a derelict can be infested. You can't salvage a wreck while anything hostile is aboard: a living hostile
 > crew member, an egg sac or a nest. Clear the wreck first (see [Boarding](../boarding/)).
+
+## Lost cargo
+
+Now and then a node holds one or two sealed containers adrift with no ship attached. Each one carries the colours of the
+faction that lost it and holds a single kind of goods. Deeper out the loads are richer, and a few are contraband.
+
+To open one, click it: its panel shows the faction livery it wears and says its contents are unknown until it is opened.
+Press Open. A salvage order starts on the box, a crew member takes the shuttle out and cuts it open where it floats, and
+only when that job is finished do the goods spill out. The crew then stage them and the shuttle carries them home, as
+with any wreck. While the cutting is under way the panel says so.
+
+<ComingLater>
+
+Towing a container home whole, and the rare container holding a sleeper in stasis, are not in the game yet.
+
+</ComingLater>
 
 ## Salvage orders
 

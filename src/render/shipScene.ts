@@ -51,6 +51,8 @@ export interface ShipSceneOptions {
   suitAirSec?(): number;
   /** Look of the ship's structural beams; default civil. */
   beamLook?: BeamLook;
+  /** Draw only the modules of this grid, no tiles (`ShipC.unseen`). */
+  bare?: boolean;
   /** The ship's hull colours (hullArt); default plain. */
   hullPaint?: HullPaint;
   /** The renderer's shared crew composite (crewAtlas.ts). */
@@ -110,7 +112,7 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
   const inside = () => (roofed ? null : { grid });
   const gate = o.gate ?? OPEN_GATE;
   let whole = false;
-  const view = createGridView(grid, atlas, L, { emergency: () => emergency, overlayWorld: { world, modules, roomTiers: o.roomTiers }, beamLook: () => o.beamLook ?? DEFAULT_BEAM_LOOK, hullPaint: () => o.hullPaint ?? PLAIN_PAINT, gate });
+  const view = createGridView(grid, atlas, L, { emergency: () => emergency, overlayWorld: { world, modules, roomTiers: o.roomTiers }, beamLook: () => o.beamLook ?? DEFAULT_BEAM_LOOK, hullPaint: () => o.hullPaint ?? PLAIN_PAINT, gate, bare: () => !!o.bare });
   const crewView = createCrewView(world, atlas, L, {
     target: () => ({ shipId: grid.id, ox: grid.x0, oy: grid.y0 }),
     hidden: (x, y) => crewHidden(grid, roofed, x, y),
