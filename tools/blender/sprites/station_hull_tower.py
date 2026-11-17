@@ -69,7 +69,8 @@ def tower(f, s0, zk):
     _top_plate(f, a, b, top, out - c * LINE)
     _side(f, b, s0 + 1)
     zb = z0 - STEEP * TOWER_OUT * px                        # (the slope's foot on the face; a shadow under it)
-    SD._rect(f, a, b, s.z_at(zb, SHADOW[0]), zb, D + 0.001, SHADOW[1])
+    if core.TINT is None:                                   # (a shadow falls on the livery: the mask pass leaves it out)
+        SD._rect(f, a, b, s.z_at(zb, SHADOW[0]), zb, D + 0.001, SHADOW[1])
     # the dark block, a seam across its middle; its top's line across the box's front
     q0 = (round((b - a) / LINE) - WIDE) // 2
     u0, u1 = across(q0 + WIDE), across(q0)
@@ -110,7 +111,7 @@ def _top_plate(f, a, b, top, front):
     d1 = front - PLATE_CLEAR * LINE
     d0 = d1 - PLATE_DEEP * LINE
     z1 = top + PLATE_UP * px
-    f.part(u0, u1, [(d0, top - 0.01), (d0, z1), (d1, z1), (d1, top - 0.01)], [None, SH.TOP_P, PLATE_SIDE, None],
+    f.part(u0, u1, [(d0, top - 0.01), (d0, z1), (d1, z1), (d1, top - 0.01)], [None, SH.TOP, PLATE_SIDE, None],
            PLATE_SIDE, end=False)
     zl = z1 + T.PAINT
     for p, q in (((u0, d0), (u1, d0 + LINE)), ((u0, d1 - LINE), (u1, d1)), ((u0, d0), (u0 + LINE, d1)),

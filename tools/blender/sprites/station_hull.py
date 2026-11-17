@@ -105,7 +105,7 @@ class RoundSection(Section):
 
     def cols(self, prof, role):
         """Edge tones by facing and height: the top TOP, the bullnose its bands, the face FACE (FACE_P under BAND_Z,
-        FACE_LO under the groove: the livery band, unless role is "bare"); faces turned back or down unseen."""
+        FACE_LO under the groove: the livery band); faces turned back or down unseen."""
         n = len(prof)
         dc, zc = sum(p[0] for p in prof) / n, sum(p[1] for p in prof) / n
         out = []
@@ -125,9 +125,7 @@ class RoundSection(Section):
                 a = (self._angle(z0) + self._angle(z1)) / 2      # (by angle, not height: the top facets are flat)
                 out.append(_band(1 - a / (math.pi / 2)))
             else:
-                bare = role == "bare"
-                out.append(FACE if zm > BAND_Z else (FACE if bare else FACE_P) if zm > GROOVE else
-                           ("stL" if bare else FACE_LO))
+                out.append(FACE if zm > BAND_Z else FACE_P if zm > GROOVE else FACE_LO)
         return out
 
 

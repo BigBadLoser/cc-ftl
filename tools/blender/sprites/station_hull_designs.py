@@ -177,6 +177,7 @@ def blocks(f, s0, s1):
                                                                         # step darker: its inside is the seam's tone)
     _rect(f, u1, u1 + LINE, zf, s.z_at(SH.GROOVE, -1), D + 0.002, SH.GROOVE_D)   # (a dark seam down its near
                                                                         # edge, up into the groove's line)
+    SH.livery_rect(f, u0, u1, zf, zt, D)                    # (in the livery band: its shade falls on the paint)
 
 
 def gap(s):
@@ -264,7 +265,6 @@ def _module(f, s0, zk):
     fd = out + 0.001
     _rect(f, a, a + LINE, z0, z1, fd, BOX_LINE)
     zs = z1 - LOW_LINE * px                                 # a seam across it
-    SH.livery_rect(f, a, b, z0, zs - px, out)               # (under it, in the livery: the ref's)
     _rect(f, a, b, zs - px, zs, fd, MID_LINE)
     i = LOW_FRAME                                           # an outline under it, its corner px left out
     u0, u1, za, zb = a + i * LINE, b - i * LINE, z0 + i * px, zs - px - LOW_FRAME_TOP * px

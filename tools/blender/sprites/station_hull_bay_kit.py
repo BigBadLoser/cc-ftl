@@ -46,6 +46,8 @@ def _shadow(f, m, w, out, zb, n, px):
     """The body's shadow on the face under it: its outline on screen carried UNDER_SHADOW px down, a shade lighter on
     the face's lighter band under the groove."""
     from .station_hull import GROOVE
+    if core.TINT is not None:                               # (a shadow falls on the livery: the mask pass leaves it out)
+        return
     a, b = m - w / 2 * LINE, m + w / 2 * LINE
     low = [(m + w / 2 * LINE * math.cos(math.pi * i / n), zb - (UNDER_SHADOW[0] + out / 2 * math.sin(math.pi * i / n)) * px)
            for i in range(n + 1)]
