@@ -73,6 +73,8 @@ export interface ShuttleViewHost {
    * lifting out of it. `project` maps sector tiles to its art px; the zIndex is a sector depth (x + y in tiles).
    */
   low: { layer: Container; project(sx: number, sy: number): Pt };
+  /** The ship whose tiles hold a sector tile (0: none): which ship's pad an airlock opens onto (`padOfAirlock`). */
+  shipOf(t: { x: number; y: number }): number;
 }
 
 export interface ShuttleView {
@@ -123,6 +125,8 @@ interface Track {
   trail: Sample[];
   /** Last seen sitting on a landing pad: its take-off has no bay doors to wait for. */
   padded: boolean;
+  /** The rotation of the pad it last stood on (its take-off turns from it). */
+  padRot: number;
   /** Rear ramp of a shuttle on a pad: 0 shut to 1 open, and when crew were last about it. */
   ramp: number;
   rampBusy: number;
@@ -181,7 +185,7 @@ export function createShuttleView(world: World, atlas: Atlas, modules: Readonly<
   const padTarget = (v: Vehicle): { x: number; y: number; rot: number } | null => {
     if (v.dest?.type === 'bay') { const m = world.get(v.home, ModuleC); return m && isLandingPad(modules[m.def]) ? m : null; }
     if (v.dest?.type === 'dock') {
-      const id = padOfAirlock(world, modules, () => 0, v.dest.airlock);
+      const id = padOfAirlock(world, modules, host.shipOf, v.dest.airlock);
       return id ? world.get(id, ModuleC) ?? null : null;
     }
     return null;
@@ -240,7 +244,7 @@ export function createShuttleView(world: World, atlas: Atlas, modules: Readonly<
           tube.visible = false;
           root.addChild(body, glow, tube);
           host.layer.addChild(root);
-          t = { root, body, glow, key: '', x: b.x, y: b.y, heading: b.heading, state: v.state, z: CRUISE_Z, pose: null, low: false, dockedAt: -Infinity, undockedAt: -Infinity, tube, tubeBody, tubeGlow, tubeBehind: false, launched: -Infinity, landed: -Infinity, trail: [], padded: false, ramp: 0, rampBusy: -Infinity };
+          t = { root, body, glow, key: '', x: b.x, y: b.y, heading: b.heading, state: v.state, z: CRUISE_Z, pose: null, low: false, dockedAt: -Infinity, undockedAt: -Infinity, tube, tubeBody, tubeGlow, tubeBehind: false, launched: -Infinity, landed: -Infinity, trail: [], padded: false, padRot: 0, ramp: 0, rampBusy: -Infinity };
           tracks.set(id, t);
         }
         if (t.state !== v.state) {
@@ -250,7 +254,10 @@ export function createShuttleView(world: World, atlas: Atlas, modules: Readonly<
             t.trail = [];
           } else if (v.state === 'stowed') t.landed = now;
           if (v.state === 'docked') [t.dockedAt, t.undockedAt] = [now, -Infinity];
-          else if (t.state === 'docked') [t.undockedAt, t.trail] = [now, []];
+          else if (t.state === 'docked' && t.padded) {
+            // Off a landing pad (#509): the pad take-off (gear up, lift), never the collar's undock.
+            [t.launched, t.heading, t.trail, t.pose] = [now, parkedIndex(t.padRot) * EIGHTH, [], null];
+          } else if (t.state === 'docked') [t.undockedAt, t.trail] = [now, []];
           t.state = v.state;
         }
         const sinceLaunch = now - t.launched;
@@ -261,11 +268,12 @@ export function createShuttleView(world: World, atlas: Atlas, modules: Readonly<
         const landing = v.state === 'stowed' && sinceLand < RETURN_LAND.end * BAY_FRAME_MS;
         const padOn = padUnder(v, b), pad = !!padOn;
         if (v.state !== 'flying') t.padded = pad;
+        if (padOn) t.padRot = padOn.rot;
         // Gear phase of a pad take-off or landing: the sprite frame (0 up to 4 down) and the height.
         let gear: { frame: number; z: number; rot: number } | null = null;
         if (v.state === 'flying') {
           const to = padTarget(v);
-          if (t.padded && sinceLaunch < PAD_GEAR.liftMs) gear = { frame: 4 - Math.round(4 * ease(sinceLaunch / PAD_GEAR.gearMs)), z: CRUISE_Z * ease(sinceLaunch / PAD_GEAR.liftMs), rot: bayRot(v) };
+          if (t.padded && sinceLaunch < PAD_GEAR.liftMs) gear = { frame: 4 - Math.round(4 * ease(sinceLaunch / PAD_GEAR.gearMs)), z: CRUISE_Z * ease(sinceLaunch / PAD_GEAR.liftMs), rot: t.padRot };
           else if (to && Math.hypot(to.x + 4.5 - b.x, to.y + 4.5 - b.y) < PAD_GEAR.range) {
             const d = Math.hypot(to.x + 4.5 - b.x, to.y + 4.5 - b.y) / PAD_GEAR.range;
             gear = { frame: Math.round(4 * ease(Math.min(1, (1 - d) * 1.6))), z: CRUISE_Z * ease(d), rot: to.rot };

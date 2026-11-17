@@ -3,6 +3,7 @@ import { AllegianceC, FerryC, TransferC, regionStock, ferryFree, ferryRegions, p
 import { JobC } from '../sim/crew/components';
 import type { Command } from '../sim';
 import { isLandingPad } from '../sim/modules/landingPad';
+import { dockSpot, padHome } from '../sim/vehicles/handlers';
 import { localOf } from './moduleSnapshot';
 import { costsOf } from './logisticsSnapshot';
 import { buildableFor } from '../sim/vehicles/assemble';
@@ -121,8 +122,10 @@ export function buildShuttles(sim: Sim): UiShuttles {
     if (!m || shipIdOf(sim, m) === PLAYER) continue;
     const shipId = shipIdOf(sim, m);
     const ship = sim.world.get(shipId, ShipC);
-    if (!ship || ship.state === 'fled' || (ship.outpost?.dock && ship.outpost.dock !== id)) continue; // an outpost's other airlocks open onto ground
-    airlocks.push({ id, shipId, ship: ship.name, working: airlockWorking(sim, id), busy: claimed.has(id), ...localOf(sim, shipIdOf(sim, m), m.x, m.y) });
+    // Only docks: an outpost's other airlocks open onto ground; a pad another shuttle calls home is taken.
+    const spot = dockSpot(sim, id);
+    if (!ship || ship.state === 'fled' || !spot) continue;
+    airlocks.push({ id, shipId, ship: ship.name, working: airlockWorking(sim, id), busy: claimed.has(id) || (spot.pad !== 0 && padHome(sim, spot.pad) !== 0), ...localOf(sim, shipIdOf(sim, m), m.x, m.y) });
   }
   const shuttles: UiShuttles['shuttles'] = [];
   for (const v of vehicleViews(sim)) {

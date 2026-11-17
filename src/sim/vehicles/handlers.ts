@@ -35,20 +35,37 @@ export function launch(sim: Sim, id: number, v: Vehicle): string | null {
 }
 
 /** Why a vehicle cannot head for this airlock, or null. */
+/**
+ * Whether a shuttle may dock at an airlock at all, and how: `{ pad }` with the landing pad it opens onto (#509), `{ pad: 0 }` for one
+ * open to space, null for an outpost airlock that opens onto ground (an asteroid outpost has one dock, on its rock face; a surface
+ * base's docks are its pads). The one answer to "is this airlock a dock", for the dock command and the shuttle panel.
+ */
+export function dockSpot(sim: Sim, airlock: number): { pad: number } | null {
+  const m = sim.world.get(airlock, ModuleC);
+  if (!m) return null;
+  const pad = airlockPad(sim, airlock);
+  if (pad) return { pad };
+  const host = shipById(sim, shipIdOf(sim, m));
+  return host?.outpost?.dock && host.outpost.dock !== airlock ? null : { pad: 0 };
+}
+
+/** The shuttle that calls a landing pad home (0: none), whose pad is never given to another. */
+export const padHome = (sim: Sim, pad: number): number => sim.world.get(pad, VehicleBayC)?.vehicle ?? 0;
+
 export function dockError(sim: Sim, id: number, airlock: number): string | null {
   const m = sim.world.get(airlock, ModuleC);
   if (!m || !sim.world.has(airlock, AirlockC)) return 'noAirlock';
   if (!airlockWorking(sim, airlock)) return 'airlockDown';
   const host = shipById(sim, shipIdOf(sim, m));
   if (host?.state === 'fled') return 'badTarget';
-  // An asteroid outpost has one dock (on its rock face, open to space); its other airlocks open onto ground.
-  // A surface base's pads are its docks: a shuttle lands on a pad whose home is free (the home shuttle's own is never given away), and its crew walk to the airlock beside it (#509).
-  const pad = airlockPad(sim, airlock);
-  if (pad) {
-    const home = sim.world.get(pad, VehicleBayC)?.vehicle ?? 0;
+  // A shuttle lands on a pad whose home is free (the home shuttle's own is never given away), and its crew walk to the airlock beside it (#509).
+  const spot = dockSpot(sim, airlock);
+  if (!spot) return 'notDock';
+  if (spot.pad) {
+    const home = padHome(sim, spot.pad);
     if (home !== 0 && home !== id) return 'padTaken';
-    if (!bayWorking(sim, pad)) return 'bayDown';
-  } else if (host?.outpost?.dock && host.outpost.dock !== airlock) return 'notDock';
+    if (!bayWorking(sim, spot.pad)) return 'bayDown';
+  }
   for (const other of sim.world.query(VehicleC)) {
     const o = sim.world.get(other, VehicleC) as Vehicle;
     if (other !== id && (o.dock === airlock || (o.dest?.type === 'dock' && o.dest.airlock === airlock))) return 'occupied';
