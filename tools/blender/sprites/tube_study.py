@@ -387,8 +387,38 @@ def _hull_job(rot):
                 out.extend(AL._hull_items(f"tube.hull.r{rot}.{lv}", rot, lv))
         finally:
             AL.HALF, AL.ROW, AL._stub_ends, AL._trim.__defaults__, AL._stub.__defaults__ = keep
-        return out
+        return _doorway(out, rot)
     return run
+
+
+def _doorway(items, rot):
+    """The hull row's items with the far port's doorway cut through: its px inside the port's mouth (tube_port.through,
+    as the port sprite has it, drawn over the row) cleared, so through the open hatch the room behind shows, not the
+    row's hull (closed, the port's hatch fills its mouth). The mouth is placed as in the port's job (its origin the
+    tube's first tile) and moved onto the row's anchor (its front tile) by the two tiles' offset on screen, as the game
+    draws them (tubeArt.tubePieces)."""
+    from . import post, tube_port
+    core.clear_scene_meshes()
+    o, at = (2, (-1.0, 0.0)) if rot == 1 else (1, (0.0, -1.0))   # (the port job's: the door tile from the first tile)
+    inside, mouth = tube_port.through(o, at)
+    for ob in inside:
+        ob.hide_render = True
+    xmin, xmax, ymin, ymax = core.extent_px([mouth])
+    W = 2 * (int(math.ceil(max(-xmin, xmax))) + 5)
+    H = 2 * (int(math.ceil(max(-ymin, ymax))) + 5)
+    _, a = core.render(W, H, "color")
+    hole = post.blocks(a > 0.5, core.SS).mean(-1) > 0.5
+    gx, gy = (1, -1) if rot == 1 else (-1, 1)                   # (the first tile from the row's front tile)
+    sx, sy = (gx - gy) * core.TILE_W // 2, (gx + gy) * core.TILE_H // 2
+    ys, xs = np.nonzero(hole)
+    for it in items:
+        h, w = it["rgba"].shape[:2]
+        iy, ix = ys - H // 2 + sy + it["ay"], xs - W // 2 + sx + it["ax"]
+        keep = (iy >= 0) & (iy < h) & (ix >= 0) & (ix < w)
+        it["rgba"][iy[keep], ix[keep], 3] = 0
+        if "g" in it:
+            it["g"][iy[keep], ix[keep]] = 0
+    return items
 
 
 def jobs():
