@@ -68,7 +68,39 @@ export function importGraph(root = process.cwd()) {
     return prev;
   };
   const chain = (prev, f) => { const c = []; for (let x = f; x != null; x = prev.get(x)) c.push(x); return c; };
-  return { files, known, deps, importers, reach, chain };
+  /** Import cycles (strongly connected groups of 2+ files) among the files `keep` accepts, largest first. */
+  const cycles = (keep = () => true) => {
+    const nodes = files.filter(keep);
+    const inSet = new Set(nodes);
+    const index = new Map(), low = new Map(), stack = [], on = new Set(), out = [];
+    let n = 0;
+    const visit = (root) => { // iterative Tarjan (the graph is deep enough to overflow a recursive one)
+      const work = [[root, 0]];
+      index.set(root, n); low.set(root, n++); stack.push(root); on.add(root);
+      while (work.length) {
+        const top = work[work.length - 1];
+        const [v] = top;
+        const ds = [...(deps.get(v) ?? [])].filter((d) => inSet.has(d));
+        if (top[1] < ds.length) {
+          const w = ds[top[1]++];
+          if (!index.has(w)) { index.set(w, n); low.set(w, n++); stack.push(w); on.add(w); work.push([w, 0]); }
+          else if (on.has(w)) low.set(v, Math.min(low.get(v), index.get(w)));
+          continue;
+        }
+        work.pop();
+        if (work.length) { const u = work[work.length - 1][0]; low.set(u, Math.min(low.get(u), low.get(v))); }
+        if (low.get(v) === index.get(v)) {
+          const group = [];
+          let w;
+          do { w = stack.pop(); on.delete(w); group.push(w); } while (w !== v);
+          if (group.length > 1) out.push(group.sort());
+        }
+      }
+    };
+    for (const f of nodes) if (!index.has(f)) visit(f);
+    return out.sort((a, b) => b.length - a.length);
+  };
+  return { files, known, deps, importers, reach, chain, cycles };
 }
 
 /** Test files by tier: fast (`*.test.ts` minus slow/soak) unless `all`. */
