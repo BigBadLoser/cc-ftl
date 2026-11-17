@@ -1111,6 +1111,30 @@
  "swXD": {
   "hex": "#332f2b"
  },
+ "bgL": {
+  "hex": "#8e8270",
+  "set": "berm"
+ },
+ "bg": {
+  "hex": "#786d5d",
+  "set": "berm"
+ },
+ "bgM": {
+  "hex": "#635a4d",
+  "set": "berm"
+ },
+ "bgD": {
+  "hex": "#463f36",
+  "set": "berm"
+ },
+ "brH": {
+  "hex": "#a89a83",
+  "set": "berm"
+ },
+ "brM": {
+  "hex": "#48423c",
+  "set": "berm"
+ },
  "rkDM": {
   "hex": "#3f3a35"
  },

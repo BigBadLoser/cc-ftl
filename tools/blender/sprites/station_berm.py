@@ -25,10 +25,12 @@ REACH = 0.46                        # tiles out from the outline: where it has t
 REACH_SWING = 0.12                 # give or take
 END_LIFT, END_R = 0.75, 0.3          # a heap straddling a run's type-1 tile boundary: its lift (a share of H0), radius
 # The variants' characters: an ordinary stretch, one with a boulder, a low dusty one (mounds: count range; lift: their
-# height's scale; rocks, pebbles: count ranges; boulder: its radius range or None).
-CHARACTER = ({"mounds": (1, 3), "lift": 1.0, "rocks": (2, 5), "pebbles": (3, 6), "boulder": None},
-             {"mounds": (1, 2), "lift": 0.8, "rocks": (1, 3), "pebbles": (2, 4), "boulder": (0.12, 0.15)},
-             {"mounds": (2, 4), "lift": 0.35, "rocks": (0, 1), "pebbles": (6, 10), "boulder": None})
+# height's scale; big: a clump's main rock's radius range, and the chance the stretch has one; rocks: its small
+# companions' count range; pebbles: count range).
+CHARACTER = ({"mounds": (1, 3), "lift": 1.0, "big": ((0.12, 0.15), 0.35), "rocks": (1, 4), "pebbles": (3, 6)},
+             {"mounds": (1, 2), "lift": 0.8, "big": ((0.15, 0.18), 0.5), "rocks": (0, 3), "pebbles": (2, 4)},
+             {"mounds": (2, 4), "lift": 0.35, "big": ((0.07, 0.09), 0.15), "rocks": (0, 1), "pebbles": (6, 10)})
+SMALL = (0.045, 0.07)               # tiles: a companion rock's radius range
 CLUMP = 0.11                        # tiles: a clump's spread (its rocks gather round one spot, the boulder's if any)
 VARIANTS = 3                        # per key, picked per tile; each its own heaps, reach and rocks, faded to the shared
 VAR_SHARE = 0.8                     # shape at its stretch's ends so neighbours of any variant meet
@@ -136,19 +138,19 @@ def _height(d, w, x, y, mounds, u=None, ends=(0, 0)):
     if r >= 1:
         return 0.0
     f = (1 - r) ** 2.0
-    return max(0.0, h0 * f * (1 + 0.06 * per2(x * 5, y * 5, 817, n=4)))
+    return max(0.0, h0 * f)
 
 
 def _col(n, x, y, frac):
     """Dust in broad calm patches, not per facet (a facet is under a px: by its own normal the dust speckles and the
     rocks drown in it): by height up the drift (frac: 0 at the toe, 1 at the wall's height), patchy, its toe the
     ground's own tone (no outline); only a really steep slope shaded, one turned from the camera the dark."""
-    if n.x + n.y < -0.35:
-        return "gdD"
+    if n.x + n.y < -0.5:
+        return "bgM"
     t = frac + 0.18 * per2(x * 2.5, y * 2.5, 823, n=3) / 1.5
-    if n.z < 0.5:
-        return "gdM" if t > 0.3 else "gdD"
-    return "gdL" if t > 0.72 else "gd" if t > 0.38 or t < 0.12 else "gdM"
+    if n.z < 0.45:
+        return "bgM"
+    return "bgL" if t > 0.6 else "bg"
 
 
 def along(key):
@@ -174,7 +176,7 @@ def berm(key, var=0, ends=(0, 0)):
         return []
     k = Canvas(f"berm_{HO.name(key)}_{var}_{ends[0]}{ends[1]}")
     xs = [-1.0 + 2 * i / (2 * N) for i in range(2 * N + 1)]
-    r = rng(9000 + sum(map(ord, key)) + 101 * var)
+    r = rng(9000 + sum(map(ord, key)) + 101 * var + 13 * (2 * ends[0] + ends[1]))   # (each end type its own rocks)
     mounds = _mounds(poly, fronts, r, ch)
     Z = {}
     for y in xs:
@@ -197,13 +199,11 @@ def berm(key, var=0, ends=(0, 0)):
                 cx, cy = sum(p.x for p in pts) / 3, sum(p.y for p in pts) / 3
                 polyg(k, pts, _col(nn, cx, cy, sum(zs) / 3 / (H0 / core.ZPX)), up)
     hz = lambda g, x, y: _height(g[0], g[1], x, y, mounds, U(x, y), ends)                # noqa: E731
-    # the rocks in one clump: round the boulder, else round a spot of their own (a stretch with none stays bare)
-    at = _scatter(k, poly, fronts, hz, r, 1, ch["boulder"], (0.05, 0.4), 0.3, wmin=0.6) if ch["boulder"] else []
-    want = int(r.integers(*ch["rocks"]))
-    if want and not at:
-        at = _scatter(k, poly, fronts, hz, r, 1, None, (0.0, 0.5), 0.0, wmin=0.55)
-    if want and at:
-        _scatter(k, poly, fronts, hz, r, want, (0.08, 0.13), (0.0, 0.9), 0.35, near=at[0])
+    # the rocks in one clump: a big one, a companion or two round it (a stretch without one stays bare)
+    size, p = ch["big"]
+    at = _scatter(k, poly, fronts, hz, r, 1, size, (0.05, 0.75), 0.2, wmin=0.3) if r.uniform() < p else []
+    if at:
+        _scatter(k, poly, fronts, hz, r, int(r.integers(*ch["rocks"])), SMALL, (0.0, 0.9), 0.3, near=at[0])
     _scatter(k, poly, fronts, hz, r, int(r.integers(*ch["pebbles"])), (0.014, 0.03), (0.7, 1.35), 0.15)
     return k.build()
 
@@ -213,7 +213,7 @@ def _scatter(k, poly, fronts, hz, r, want, size, band, sink, wmin=0.3, near=None
     sunk by sink of their height into the drift; nearer the wall more likely, round `near` (a clump) if given. Each
     clear of its stretch's ends (no rock cut at a tile's edge). Returns where they went."""
     placed = []
-    for _ in range(want * 40):
+    for _ in range(want * 200):
         if len(placed) >= want:
             break
         if near is None:
@@ -251,9 +251,9 @@ def _rock(k, c, rr, r, sink):
         mid_p = sum(pts, Vector()) / len(pts)
         if n.dot(mid_p - c) < 0:
             n = -n
-        lit = n.x + n.y                                 # (lit from over the camera: the rock's tones are all darker
-        col = ("gdL" if n.z > 0.6 else "rkL" if lit > 0.3 else "rkM" if lit > -0.2 else "rkD")   # than the dust's: a
-                                                        # light top, darker sides, so it stands out of the dust both ways)
+        # (a light top, then two dark sides, the one toward x darker: an iso stone reads by its value steps, and its
+        # sides stay darker than any dust so it stands out of the drift)
+        col = "brH" if n.z > 0.6 else "bgM" if n.y >= n.x else "brM"
         polyg(k, pts, col, n)
     for a, b, ma, mb in zip(ring, ring[1:] + ring[:1], mid, mid[1:] + mid[:1]):
         face([a, b, mb, ma])

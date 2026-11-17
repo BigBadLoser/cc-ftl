@@ -381,7 +381,7 @@ def _berm(n, v, ends=None):
     from . import station_hull_diag as SG
     k = _unname(n)
     core.clear_scene_meshes()
-    post.select(True)
+    post.select("only:berm")
     own = BM.berm(k, v, ends or (0, 0))
     if not own:
         return []
