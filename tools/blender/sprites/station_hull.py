@@ -41,8 +41,7 @@ BANDS = (("stW", 0.36), ("stB", 0.26), ("stH", 0.18), ("stL", 0.12), ("stS", 0.0
 # seam behind the bullnose; their tones the plain ones' (FACE, FACE_LO, TOP), named apart so the mask (core.TINT,
 # the `.tint` layer drawn in the station's deco colour) follows the part, not the tone; the lines over them stay out
 FACE_P, TOP_P, SEAM_P = "stPS", "stPT", "stPM"         # (SEAM_P: a design's dark panel in the livery)
-DARK_P, END_P = "stPD", "stPE"                          # (a recess's insides in the livery: GROOVE_D's, END's tones)
-TINT = {FACE_P, FACE_LO, TOP_P, SEAM_P, DARK_P, END_P}
+TINT = {FACE_P, FACE_LO, TOP_P, SEAM_P}
 BAND_Z = 0.80                       # the face's band's top over the deck (tiles; the reference's: about 0.44 of the
                                     # upright face)
 PLUMB_BAND = 3                      # the seams stand plumb on screen from this band's top down (stL)
@@ -106,7 +105,7 @@ class RoundSection(Section):
 
     def cols(self, prof, role):
         """Edge tones by facing and height: the top TOP, the bullnose its bands, the face FACE (FACE_P under BAND_Z,
-        FACE_LO under the groove: the livery band); faces turned back or down unseen."""
+        FACE_LO under the groove: the livery band, unless role is "bare"); faces turned back or down unseen."""
         n = len(prof)
         dc, zc = sum(p[0] for p in prof) / n, sum(p[1] for p in prof) / n
         out = []
@@ -126,7 +125,9 @@ class RoundSection(Section):
                 a = (self._angle(z0) + self._angle(z1)) / 2      # (by angle, not height: the top facets are flat)
                 out.append(_band(1 - a / (math.pi / 2)))
             else:
-                out.append(FACE if zm > BAND_Z else FACE_P if zm > GROOVE else FACE_LO)
+                bare = role == "bare"
+                out.append(FACE if zm > BAND_Z else (FACE if bare else FACE_P) if zm > GROOVE else
+                           ("stL" if bare else FACE_LO))
         return out
 
 

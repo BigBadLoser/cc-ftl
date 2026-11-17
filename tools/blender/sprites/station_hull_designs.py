@@ -57,16 +57,15 @@ LOW_LIT = "stL"                     # a faint lit px under the box's top edge an
 HOLE_FOOT = "stL"                   # (the foot of a window let into a box's front, seen from over it)
 TOP_LIT = "stB"                     # (the near edge of the top box's top: two steps over its tone)
 MID_LINE = SH.GROOVE_D              # the seam across each box (the darker seam tone)
-RECESS_LIT = SH.FACE_LO             # the recess: a lit px where its upright inside meets its lean
-RECESS_SHADE = (SH.DARK_P, 6)       # its lip's shadow on its lean: tone, px down from its top
+RECESS_LIT = "stL"                  # the recess: a lit px where its upright inside meets its lean
+RECESS_SHADE = (SH.GROOVE_D, 6)     # its lip's shadow on its lean: tone, px down from its top
 GAP_SHADE = SH.SEAM                    # the top box's shadow in the gap under it
 RECESS = (11, 21, 0)                # a recess in the face: px across, its top px under the groove (down to the seam where
                                     # the step meets the face)
 RECESS_IN, RECESS_FOOT, RECESS_BACK = 1, 5, 4   # its inside: upright RECESS_IN px in for RECESS_FOOT px, then leaning
                                     # back to RECESS_BACK px in at its top
-RECESS_FACE, RECESS_SLOPE, RECESS_WALL = SH.DARK_P, SH.SEAM_P, SH.END_P   # its inside's upright face, its lean, its
-                                    # ends (the recess in the livery band: its insides take the paint, the lines in it
-                                    # don't)
+RECESS_FACE, RECESS_SLOPE, RECESS_WALL = SH.GROOVE_D, SH.SEAM, "stE"   # its inside's upright face, its lean, its ends
+                                    # (bare: no livery in it, the ref's)
 RECESS_SEAM = "stE"                 # the step's seam carried along its foot
 
 
@@ -149,14 +148,19 @@ def blocks(f, s0, s1):
     """The face's armour on a whole span in the module design: the base's two blocks, the lower one round the recess,
     and the recess's inside."""
     s = f.sec
-    f.block(s0, s1, SH.GROOVE, s.H)
+    zk = s.band_z(SH.PLUMB_BAND)                            # (the middle slot out over its seams, as _module's boxes)
+    v0, v1 = (f.at_face(s0 + fr, zk) for fr in SH.SEAMS)
+    a, b = min(v0, v1) - LINE / 2, max(v0, v1) + LINE / 2
+    f.block(s0, a, SH.GROOVE, s.H)
+    f.block(a, b, SH.GROOVE, s.H, "bare")                   # (under the lower box, over the recess: no livery)
+    f.block(b, s1, SH.GROOVE, s.H)
     p0, p1, n = RECESS
     u0, u1 = _span(s0, p0, p1)
     zt, zf = s.z_at(SH.GROOVE, n), SH.FOOT_H                # (its foot on the step: the seam where the step meets the
                                                             # face breaks across it)
     f.block(s0, u0, 0.0, SH.GROOVE)
     f.block(u1, s1, 0.0, SH.GROOVE)
-    f.block(u0, u1, 0.0, zf)
+    f.block(u0, u1, 0.0, zf, "bare")                        # (its foot: bare, as the recess)
     if zt < SH.GROOVE - 1e-6:
         f.block(u0, u1, zt, SH.GROOVE)
     zk = s.z_at(zf, -RECESS_FOOT)
