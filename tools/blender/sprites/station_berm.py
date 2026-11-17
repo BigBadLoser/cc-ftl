@@ -21,6 +21,7 @@ H0 = 8.0                            # px: the drift against the wall, on average
 H_MIN = 0.7                         # the drift never thins under this share of H0 at the wall (it buries the step)
 H_SWING = 0.3                       # how far that heaps up and thins along the wall (a share of H0, each way)
 STEP = 0.14                         # tiles out from the outline: the foot step front (3/32, its blocks a 32nd more)
+CREST = 0.35                        # the full-height crest's share of STEP out from the wall
 REACH = 0.46                        # tiles out from the outline: where it has thinned to the ground, on average
 REACH_SWING = 0.12                 # give or take
 END_LIFT, END_R = 0.75, 0.3          # a heap straddling a run's type-1 tile boundary: its lift (a share of H0), radius
@@ -47,19 +48,21 @@ RUN_CHARACTER = (
      "prof": (0.3, 1.0, 3.4, -0.3)},                                         # a long low fan
     {"mounds": (2, 3), "lift": 1.0, "big": ((0.07, 0.09), 0.3), "rocks": (0, 1), "pebbles": (3, 6),
      "prof": (0.0, 1.4, 1.6, 0.0)})                                          # lumpy
-CHARACTER = (
-    {"mounds": (1, 3), "lift": 1.0, "big": ((0.12, 0.15), 0.35), "rocks": (1, 4), "pebbles": (3, 6),
-     "prof": (0.0, 1.0, 2.0, 0.0)},
-    {"mounds": (1, 2), "lift": 0.8, "big": ((0.15, 0.18), 0.5), "rocks": (0, 3), "pebbles": (2, 4),
+CHARACTER = (                                                                # (no low fan: seen edge-on at a
+    {"mounds": (2, 4), "lift": 1.0, "big": ((0.12, 0.15), 0.35), "rocks": (1, 4), "pebbles": (3, 6),   # building's end
+     "prof": (0.0, 1.0, 2.0, 0.0)},                                                                   # it read as a
+    {"mounds": (2, 3), "lift": 0.9, "big": ((0.15, 0.18), 0.5), "rocks": (0, 3), "pebbles": (2, 4),    # flat ramp)
      "prof": (0.12, 2.0, 1.2, 0.15)},
-    {"mounds": (2, 4), "lift": 0.35, "big": ((0.07, 0.09), 0.15), "rocks": (0, 1), "pebbles": (6, 10),
-     "prof": (0.2, 1.0, 3.0, -0.2)})
+    {"mounds": (3, 5), "lift": 1.0, "big": ((0.07, 0.09), 0.15), "rocks": (0, 1), "pebbles": (3, 6),
+     "prof": (0.0, 1.4, 1.6, 0.0)})
 RUN = len(RUN_CHARACTER)
 SMALL = (0.045, 0.07)               # tiles: a companion rock's radius range
 CLUMP = 0.11                        # tiles: a clump's spread (its rocks gather round one spot, the boulder's if any)
 VARIANTS = len(CHARACTER)           # per key but a straight run's, picked per tile; each its own heaps, reach and rocks,
 VAR_SHARE = 0.8                     # faded to the shared shape at its stretch's ends so neighbours of any variant meet
 N = 32                              # surface grid cells per tile
+INNER = 0.08                        # tiles: the drift runs on this far in under a front's face (the hull hides it there),
+                                    # so it meets a face seen edge-on with no dashed line of the face's edge between
 OVER = 0.05                         # tiles: a stretch's drift runs on this far past an end on the tile's edge, under its
                                     # neighbour's (the same shape there: window 0), so no seam opens between the sprites
                                     # (a chamfer's corner-bevel tile owns a sliver between two half tiles: its hull showed)
@@ -109,7 +112,7 @@ def _dist(poly, fronts, p, turns=()):
     two (window 0), or round a turn: where the outline bends at the tile's edge into a neighbour's straight wall (turns:
     (vertex, the two normals); the neighbour's band and this one meet along the wedge's sides). A front turned from the
     camera has its drift too (the hull hides it but where it wraps round a far corner)."""
-    best = None
+    best, inner = None, None
     m = len(poly)
     for j, (a, lab) in enumerate(poly):
         if lab is None:
@@ -121,6 +124,9 @@ def _dist(poly, fronts, p, turns=()):
         t = (p - a).dot(ab) / L2 if L2 > 1e-12 else 0.0
         d = n.dot(p) - c
         if d <= 0:
+            if d > -INNER and -1e-9 <= t <= 1 + 1e-9 and all(f[0].dot(p) <= f[1] for f in fronts):
+                w = math.sin(math.pi * max(0.0, min(1.0, t))) ** 2 * min(1.0, math.sqrt(L2) / 0.5)
+                inner = (0.0, w) if inner is None or w > inner[1] else inner
             continue
         ov = OVER / math.sqrt(L2) if L2 > 1e-12 else 0.0
         lo = -ov if max(abs(a.x), abs(a.y)) > 0.5 - 1e-6 else 0.0
@@ -142,7 +148,7 @@ def _dist(poly, fronts, p, turns=()):
         sg = _cross(n1, n2)
         if _cross(n1, q) * sg >= 0 and _cross(q, n2) * sg >= 0 and (best is None or q.length < best[0]):
             best = (q.length, 0.0)
-    return best
+    return best if best is not None or not all(f[0].dot(p) <= f[1] for f in fronts) else inner
 
 
 def _turns(key, poly, fronts, ends):
@@ -208,7 +214,9 @@ def _height(d, w, x, y, mounds, u=None, ends=(0, 0), prof=(0.0, 1.0, 2.0, 0.0)):
     dr, a, b, dh = prof
     h0 = H0 * max(H_MIN, 1 + H_SWING * heap + lift + w * dh) / core.ZPX
     reach = max(0.12, REACH + REACH_SWING * heap + 0.05 * per2(x * 4, y * 4, 815, n=4) + 0.3 * lift + w * dr)
-    r = max(0.0, d - STEP) / max(0.08, reach - STEP)   # (full height over the step, then a concave scree)
+    s0 = STEP * CREST                                   # (a round crest just off the wall, then the fall: a shelf
+    r = max(0.0, d - s0) / max(0.08, reach - s0)        # full height over the whole step read as a flat-topped ramp
+                                                        # where a wall is seen edge-on; the step stays buried)
     if r >= 1:
         return 0.0
     a, b = 1 + w * (a - 1), 2 + w * (b - 2)           # (concave scree at a = 1, b = 2; a dome as a grows)
@@ -238,15 +246,13 @@ def along(key):
 
 
 def berm(key, var=0, ends=(0, 0)):
-    """The berm's objects for a tile with this key in variant var (none if no visible front of it has any); ends: a
+    """The berm's objects for a tile with this key in variant var; ends: a
     straight run's boundary types at its lower and higher coordinate ends (1 a heap straddling the boundary), or a
     diagonal's turns (see _turns: 1 where its neighbour there is a straight wall)."""
     ax = along(key)
     ch = RUN_CHARACTER[var % RUN] if ax is not None else CHARACTER[var % VARIANTS]
     U = (lambda x, y: (x, y)[ax]) if ax is not None else (lambda x, y: None)
     fronts = _fronts(key)
-    if not any(f[2] for f in fronts):
-        return []
     poly = _poly(fronts)
     if not poly:
         return []
