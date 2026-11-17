@@ -21,6 +21,8 @@ from . import wall3d_ext_window_end as EN
 from .wall3d_ext_geom import D
 
 PART = [None]                       # the piece being built: "w1" | "w2" | "w3" (None: not a window)
+HEAD = 7                            # the header's upright front: px tall under its chamfer (the window's top, the
+                                    # posts' top)
 SILL = 10                           # the sill's front's top: this many px over the groove
 JAMB_IN = 1 / 32                    # the posts (the jambs) this far behind the face
 PANE_IN = 5 / 32                    # the pane's front this far behind the posts' (the ship's)
@@ -62,8 +64,8 @@ def _span(f, s, s0, s1, zt):
     part, H, Z = PART[0], s.H, core.ZPX
     WIN.PART = part
     fr, dv = D, D - JAMB_IN                             # (the face; the posts' front)
-    zh = s.z_at(zt, -1) + 0.5 * SD.BOX_OUT / Z          # (the header's foot: the line under the bullnose's top, as
-    zs = s.z_at(SH.GROOVE, -SILL)                       # the module's top box's; the sill's front's top)
+    zh = H + (SD.BOX_UP - SD.BOX_CHAMFER - HEAD) / Z    # (the header's foot: its front HEAD px under its chamfer)
+    zs = s.z_at(SH.GROOVE, -SILL)                       # (the sill's front's top)
     gl = dv - PANE_IN                                   # (the pane's front)
     zj = zs                                             # (the sill's top: flat, no slope)
     dp = gl - WIN.PANE / 2
