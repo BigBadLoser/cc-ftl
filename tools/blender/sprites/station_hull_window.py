@@ -164,6 +164,9 @@ def _head(f, a, b, z0, ends, foot, tile):
         for p0, p1 in spans:
             f.part(p0, p1, [(d1, top), (d0, top), (d0, top + px), (d1, top + px)],
                    [None, TOP_PLATE_SIDE, TOP_PLATE_TOP, TOP_PLATE_SIDE], TOP_PLATE_SIDE, end=False)
+            f.k.poly([T.P(f.ax, f.plane, v, top + px + T.PAINT, d) for v, d in ((p0, d1), (p1, d1),
+                      (p1, d1 + T3.TOP_PX), (p0, d1 + T3.TOP_PX))], SD.F, 3, core.Vector((0, 0, 1)),
+                     fixed=T.SEAM_PASS or TOP_PLATE_SIDE)  # (its top's far edge, dark)
     d0 = back - SD.PLATE_BACK * ln + SD.PLATE_R * ln
     for u, col, on in ((a, SD.BOX_LINE, ends[0]), (b - ln, SD.TOP_LIT, ends[1])):   # (its edges along its top)
         if on:
