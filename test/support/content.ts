@@ -3,14 +3,15 @@ import { newGame } from '../../src/sim/newGame';
 import type { ChunkData } from '../../src/sim/galaxy/types';
 import { content } from '../../src/content';
 import { cachedWorld } from './world';
+import { fileCache } from './cache';
 
 /** The only test support module that may import `content` (sim tests cannot, so they never import this one). */
 export { content };
 
-/** A fresh independent copy of `newGame(seed, content)`, built once per worker. Use it where a test only needs the starting game. */
+/** A fresh independent copy of `newGame(seed, content)`, built once per test file. Use it where a test only needs the starting game. */
 export const cachedNewGame = (seed: number): ReturnType<typeof newGame> => cachedWorld(`newGame:${seed}`, () => newGame(seed, content));
 
-const edited = new Map<string, typeof content>();
+const edited = fileCache<string, typeof content>();
 
 /**
  * `content` whose generated galaxy for `seed` has `edit` applied to every chunk it makes. Generated chunks are shared and frozen in a

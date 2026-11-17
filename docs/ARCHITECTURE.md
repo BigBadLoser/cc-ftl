@@ -404,7 +404,7 @@ Shared test helpers live in `test/support/` (repo root); use them instead of a l
 - `world.ts` (sim-only):
   - `expectReplayable(build, ticks, { every = 10, saveAt? })` builds twice, steps both and compares `serialize` every `every` ticks;
     with `saveAt` one copy is saved and reloaded on the way; `events: []` collects the first copy's events for a test that also asserts something happened. A failure names the first tick that differs (it re-runs per tick to find it).
-  - `cachedWorld(key, build)` builds once per worker and returns a fresh `deserialize(serialize(world))` clone per call. Use it when many
+  - `cachedWorld(key, build)` builds once per test file (a `fileCache` from `test/support/cache.ts`, emptied after each file so a shared worker's heap does not grow) and returns a fresh `deserialize(serialize(world))` clone per call. Use it when many
     tests start from the same expensive state (a game run to a scene); build fresh when a test is about the build itself, or about
     state a save does not hold. Clones are independent: never share a mutable node or world between tests.
 - `content.ts` (the only module that may import `content`): `content`, `cachedNewGame(seed)`.
@@ -446,7 +446,7 @@ file (Vite resolves it in the browser build, Vitest and the profiler, which all 
 - A hook is `hooks/<name>.ts`, `defineHook({ afterBuild?, tick?, event? })` with `ctx.after(ticks, fn)` / `ctx.when(pred, fn)` (tick-based, so deterministic). They read
   the sim and send commands. They are not `?hook` (the `__cc` debug API). The app loop calls `built.afterTick()` / `built.onEvents()`; tests and the profiler use `play(built, ticks)`
   or the same calls. Hooks: `inspect.fight`, `inspect.select`, `boarding`, `log`, `busy.arrive`, `medpod.deliver`, `stasis.unpowered`.
-- Tests (`test/support/scenario.ts`): `scenario(name, opts)` builds fresh; `cachedScenario(name, opts)` builds once per worker and returns a clone (`cachedWorld`'s rules), keyed
+- Tests (`test/support/scenario.ts`): `scenario(name, opts)` builds fresh; `cachedScenario(name, opts)` builds once per test file and returns a clone (`cachedWorld`'s rules), keyed
   by name + canonical JSON of seed, params and overrides, so two worlds never share a key. Turning sim systems off is not available; add it for a focused unit test when one needs it.
 - `?scenario=<name>&<flag>...&seed=&starter=&credits=&items=&speed=&ticks=&hooks=` (`url.ts`); `src/app/scenarioStart.ts` builds it on the running game before the first frame and
   applies the UI requests. Profiler: `--scenario preset:<name>`.

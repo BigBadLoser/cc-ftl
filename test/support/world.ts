@@ -3,6 +3,7 @@ import type { SimEvent } from '../../src/sim/events';
 import type { Sim } from '../../src/sim/sim';
 import type { ContentRegistry } from '../../src/sim/registry';
 import { run } from './run';
+import { fileCache } from './cache';
 
 export interface ReplayOpts {
   /** Compare the saved state of the two sims every this many ticks (and at the end). Default 10: per-tick comparison is expensive. */
@@ -42,11 +43,11 @@ export function expectReplayable(build: () => Sim, ticks: number, opts: ReplayOp
   throw new Error(`${what} diverge: first differing saved state at tick ${exact ?? 'unknown (not reproducible per tick)'} (of ${ticks})`);
 }
 
-const built = new Map<string, { json: string; content: ContentRegistry }>();
+const built = fileCache<string, { json: string; content: ContentRegistry }>();
 
 /**
- * A fresh, independent copy of an expensive starting world. `build` runs once per key per worker (vitest runs most files with
- * `isolate: false`, so the cache is shared by every file a worker runs: that is the point); every call returns
+ * A fresh, independent copy of an expensive starting world. `build` runs once per key per test file (the cache is a
+ * `fileCache`, emptied after each file so a shared worker's heap does not grow); every call returns
  * `deserialize(serialize(built))`, so tests cannot affect each other through it.
  *
  * Limits. A clone is exactly what a save holds: anything the sim keeps outside `serialize` is rebuilt, not copied (the

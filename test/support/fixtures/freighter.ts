@@ -12,6 +12,7 @@ import { giveItems } from '../../../src/sim/story/effects';
 import type { SceneShipRecipe } from '../../../src/sim/scene/types';
 import { content } from '../content';
 import { run } from '../run';
+import { fileCache } from '../cache';
 
 /** The distress freighter (#173 step 5): a helpless ship, aid by hail with guests aboard, the reactor clock (fires, then it blows), raiders, the observer. */
 
@@ -37,7 +38,7 @@ export function routeOf(sim: Sim, hops: number): string[] {
 export const EVENT = 'event.distress_call';
 export const base = content.events[EVENT] as EventDef;
 /** The content with the freighter's raiders fixed: left out, there from the start, or coming on their clock. */
-export const raiderContent = new Map<string, typeof content>();
+export const raiderContent = fileCache<string, typeof content>();
 export function withRaiders(mode: 'none' | 'here' | 'coming'): typeof content {
   const made = raiderContent.get(mode);
   if (made) return made;

@@ -6,14 +6,15 @@ import { validateOutpost } from '../../../src/sim/outposts/validate';
 import type { ModuleDef } from '../../../src/sim/registry';
 import { Struct } from '../../../src/sim/structure';
 import { content } from '../content';
+import { fileCache } from '../cache';
 
 export const outpostCtx = { ores: Object.values(content.ores) as OreDef[], modules: content.modules, stations: content.stations };
 const MODS: Record<string, ModuleDef> = content.modules;
 
 type Outpost = NonNullable<ReturnType<typeof generateOutpost>>;
-const built = new Map<string, Outpost | null>();
+const built = fileCache<string, Outpost | null>();
 
-/** A generated outpost, once per (style, seed, kind) per worker. Read-only: never mutate the result. */
+/** A generated outpost, once per (style, seed, kind) per test file. Read-only: never mutate the result. */
 export function cachedOutpost(style: 'surface' | 'dug', seed: number, kind?: string): Outpost | null {
   const key = `${style}:${seed}:${kind ?? ''}`;
   if (!built.has(key)) built.set(key, generateOutpost(style, seed, outpostCtx, kind as never));

@@ -35,7 +35,7 @@ export function bedAt(sim: Sim, def = 'module.hydroponics'): number {
   throw new Error('no room for the bed');
 }
 
-/** The starter game with the larder emptied of everything but what a test adds, one bed, and the crew fed so only the test's crew member acts (built once per worker, cloned per call). */
+/** The starter game with the larder emptied of everything but what a test adds, one bed, and the crew fed so only the test's crew member acts (built once per test file, cloned per call). */
 export function farmGame(): { sim: Sim; bed: number; crew: number[] } {
   const sim = cachedWorld('farm:game', () => {
     const g = newGame(3, content);

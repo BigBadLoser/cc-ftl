@@ -7,14 +7,15 @@ import type { StationDef, StationSize } from '../../../src/sim/shipgen/stationTy
 import { structureParts } from '../../../src/sim/shipgen/validate';
 import { content } from '../content';
 import { stations } from '../../../src/content/stations';
+import { fileCache } from '../cache';
 
 /** Station generation checks shared by the fast tests (one seed) and the slow sweeps (the other seeds). */
 export type StationId = keyof typeof stations;
 export const stationIds = Object.keys(stations) as StationId[];
 export const defs = content.modules as Record<string, ModuleDef>;
 
-const cache = new Map<string, StationResult>();
-/** A built station, once per (kind, size, seed) per worker. Read-only: never mutate the result. */
+const cache = fileCache<string, StationResult>();
+/** A built station, once per (kind, size, seed) per test file. Read-only: never mutate the result. */
 export function gen(id: StationId, size: StationSize, seed: number): StationResult {
   const k = `${id} ${size} ${seed}`;
   let hit = cache.get(k);

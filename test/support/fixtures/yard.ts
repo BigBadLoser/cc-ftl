@@ -10,7 +10,7 @@ export type Tile = { x: number; y: number };
 
 /**
  * A started game with a trading station of `size` east of the player and 5000 credits. With the default content it is built once
- * per worker and cloned per call; custom content builds fresh.
+ * per test file and cloned per call; custom content builds fresh.
  */
 export function yardGame(size: 'outpost' | 'station' | 'hub' = 'station', kind = 'station.trading', c: typeof content = content): { sim: Sim; station: number; me: number } {
   const build = (): Sim => {

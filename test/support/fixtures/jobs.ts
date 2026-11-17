@@ -1,4 +1,4 @@
-/** Shared setup for the station-job tests: a game at a board, an accepted offer, and the delivery arrived at its destination (both cached per worker). */
+/** Shared setup for the station-job tests: a game at a board, an accepted offer, and the delivery arrived at its destination (both cached per test file). */
 import { content } from '../content';
 import type { SimEvent } from '../../../src/sim/events';
 import { galaxyIndex, ensureAround } from '../../../src/sim/galaxy/state';
@@ -24,7 +24,7 @@ export function goTo(sim: Sim, node: string): void {
   }
 }
 
-/** A new game of `seed` with the map around the start generated (cached per worker; each call is a fresh clone). */
+/** A new game of `seed` with the map around the start generated (cached per test file; each call is a fresh clone). */
 export const aroundGame = (seed: number): Sim =>
   cachedWorld(`jobs.around.${seed}`, () => {
     const sim = newGame(seed, content);

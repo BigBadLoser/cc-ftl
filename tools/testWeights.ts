@@ -16,6 +16,7 @@ export default {
  "src/content/freighter.test.ts": 31,
  "src/content/freighter.slow.test.ts": 22,
  "test/support/sim.test.ts": 3,
+ "test/support/cache.test.ts": 1,
  "tools/importCycles.test.ts": 2,
  "test/support/content.test.ts": 3,
  "src/content/scenario/inspectFight.test.ts": 43.1,
