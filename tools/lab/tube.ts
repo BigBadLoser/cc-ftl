@@ -3,6 +3,7 @@ import type { Atlas } from '../../src/render/assets/loader';
 import type { ClipDef } from '../../src/render/assets/manifest';
 import { artZoom, createCrewFilter, crewFilters, crewPalette, setFilterTint, setFilterZoom } from '../../src/render/assets/palette';
 import { drawLayers } from '../../src/render/crewSprites';
+import { TILE_H, TILE_W } from '../../src/render/iso';
 import { lightTint } from '../../src/render/lightTint';
 import { crewLoadout, preloadLayers } from '../../src/render/loadout';
 import { tubePieces, type TubeLook } from '../../src/render/tubeArt';
@@ -10,10 +11,10 @@ import type { WallLevel } from '../../src/render/tiles';
 import type { TubeRun } from '../../src/sim/tube';
 import type { LabCell, LabPanel } from './panel';
 
-const TW = 64;
-const TH = 32;
+const TW = TILE_W;                                     // (the game's tile in world px: the art draws at ART_SCALE)
+const TH = TILE_H;
 const PAD = 16;
-const TALL = 140;                                      // headroom over the run for the hull row and ports, px
+const TALL = 300;                                      // headroom over the run for the hull row and ports, px
 
 /** Draw the first existing sprite of `ids`, with its glow, anchored at (ox, oy). */
 function put(root: Container, atlas: Atlas, id: string, ox: number, oy: number): void {
@@ -36,6 +37,8 @@ const run = (axis: 'x' | 'y', len: number): TubeRun => {
 };
 
 const CLIP = 'idle';
+/** `hide=tube.port.w,tube.junction`: pieces left out (by id prefix), to see what each one covers. */
+const HIDE = new URLSearchParams(globalThis.location?.search ?? '').get('hide')?.split(',') ?? [];
 /** Crew stood along a run (tiles from its first floor tile): inside it, across the seams, at its near end and either side of the near door's middle. */
 const STAND = [0, 0.45, 0.55, 1.3, 2.4, 2.8, 3.4];
 
@@ -65,7 +68,7 @@ function scene(root: Container, atlas: Atlas, r: TubeRun, look: TubeLook, ox: nu
   for (let d = 0; d <= w + h - 2; d++) for (let x = 0; x < w; x++) if (d - x >= 0 && d - x < h) put(root, atlas, `rock.ground.m15.v${(x * 5 + (d - x) * 3) % 8}`, sx(x, d - x), sy(x, d - x));
   const dx = r.axis === 'x' ? 1 : 0, dy = 1 - dx;
   const items = [
-    ...tubePieces(r, look).map((p) => ({ d: p.x + p.y + p.dz, draw: () => { put(root, atlas, p.id, sx(p.x, p.y), sy(p.x, p.y)); return undefined; } })),
+    ...tubePieces(r, look).filter((p) => !HIDE.some((h) => h && p.id.startsWith(h))).map((p) => ({ d: p.x + p.y + p.dz, draw: () => { put(root, atlas, p.id, sx(p.x, p.y), sy(p.x, p.y)); return undefined; } })),
     ...(crew ? crew.at.filter((k) => k < r.len + 0.5) : []).map((k, n) => {
       const x = r.x + dx * k, y = r.y + dy * k;
       return { d: x + y, draw: () => figure(root, atlas, crew!.look, 11 * (n + 1), { x: sx(x, y), y: sy(x, y) }, crew!.zoom) };
@@ -83,7 +86,7 @@ export const tubePanel: LabPanel = {
   id: 'tube',
   title: 'Prefab base tube',
   zoom: 1,
-  help: 'crew=1: only x and y runs three long, cut and roofed, with crew stood along them and in the near door (stand=0,1.5: where, tiles from the first)',
+  help: 'crew=1: only x and y runs three long, cut and roofed, with crew stood along them and in the near door (stand=0,1.5: where, tiles from the first); hide=tube.port.w leaves pieces out by id prefix',
   async cells({ atlas, params }) {
     for (const p of ['tube.', 'rock.ground.m15']) atlas.ids(p).forEach((id) => atlas.stat(id)); // queue the sheets
     const crewOn = params.get('crew') === '1';

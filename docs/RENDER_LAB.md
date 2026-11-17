@@ -58,6 +58,8 @@ move in a browser).
   x and y runs one, three and five tiles long, doors shut and open, each wall view level, and roofed. The hull row is unpainted here.
   `crew=1`: three-tile runs, cut and roofed, with crew stood along them (across the tile seams) and in the near door, to check the glass's
   front layer over them; `stand=2.8,3.4` places them (tiles from the first; the near door is the tile after the last).
+  `hide=tube.hull,tube.port` leaves out the pieces whose ids start with those prefixes. The panel spaces tiles as the game does
+  (`TILE_W`, `TILE_H`).
 - `windows-tool`: the Window build tool (#516) as the game draws it, on a ship section (an interior wall along x and one along y meeting in a
   T, the hull around them). A DOM page like `build`: one renderer over the layout lab's stamped world, and the game's own `createPaintTools`
   put on build > window at each size and hovered over a tile, so the preview tint and the hint (the build menu's own element) are the game's.
