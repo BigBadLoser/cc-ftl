@@ -41,13 +41,6 @@ SILL_TOP = "stL"                    # the sill's flat top under the glass
 FRAME = 9 / 32                      # an end piece's outer frame (the whole section), along the face
 JAMB = 5 / 32                       # the jamb inside it
 BACK_WALL = "stE"                   # the window's back wall
-SILL_BOX = (14, 3, 6, 2)            # a middle tile's box under the window: px wide, px out, from px over the deck to px
-                                    # under the sill's top
-SILL_SLATS = (2, 3, 3)              # its vent slats: px in from its sides, px in from its top and foot, px apart
-SILL_SIDE = (5, 2, 5)               # the plates either side of it: px wide, px out, their tops px under its top
-SILL_PLATE = (3, 1, 3)              # an end tile's plate under its opening: px in from the jamb and the tile's end, px
-                                    # out, its top px under the box's
-SILL_FRONT, SILL_LOW = SH.FACE, "stM"   # the box's front; the side plates' and end plates' fronts
 TONES = {"hsXK": "stK", "hsK": "stK", "hsXD": "stE", "hsD": "stDE", "hsXM": "stD", "hsXS": "stD", "hsM": "stM",
          "hsXL": "stM", "hsS": "stS", "hsL": "stL", "hsH": "stH", "hsW": "stB"}
 
@@ -107,7 +100,6 @@ def _span(f, s, s0, s1, zt):
     f.block(u0, u1, 0.0, SH.GROOVE)                                     # the sill: the face, its top flat back
     pf = [(db, SH.GROOVE), (fr, SH.GROOVE), (fr, zs), (db, zs)]         # to the window's back
     f.part(u0, u1, pf, [None, SH.FACE, SILL_TOP, None], None, end=False)
-    _sill_dress(f, fm, s0, s1, w0, zs, end)
     zr = zh - WIN.SLOPE_H / Z * (JAMB + WIN.SLOPE) / WIN.SLOPE          # (the top corner's foot at the rib)
     _head(f, u0, u1, zh, (part == "w1", part == "w3"), zr, (s0, s1))             # the header: a square box
     f.part(*seg(w0, s1)[:2], [(0.0, zj), (db, zj), (db, zh), (0.0, zh)], [None, BACK_WALL, None, None], None,
@@ -181,34 +173,6 @@ def _head(f, a, b, z0, ends, foot, tile):
             f.k.poly([T.P(f.ax, f.plane, v, top + T.PAINT, d) for v, d in ((u, d0), (u + ln, d0),
                       (u + ln, out - c * ln), (u, out - c * ln))], SD.F, 3, core.Vector((0, 0, 1)),
                      fixed=T.SEAM_PASS or col)
-
-
-def _sill_dress(f, fm, s0, s1, w0, zs, end):
-    """The front under the window: on a middle tile a proud box centred on it (SILL_BOX, its front slatted) with a lower
-    plate either side (SILL_SIDE); on an end tile a plate under its opening (SILL_PLATE: fm takes W1's u)."""
-    px, ln = 1 / core.ZPX, SD.LINE
-    bw, bo, b0, b1 = SILL_BOX
-    z0, z1 = b0 * px, zs - b1 * px
-
-    def box(f, a, b, out, top, front, cap=(SD.BOX_SIDE, SD.BOX_SIDE)):
-        d = D + out * ln
-        f.part(a, b, [(D, z0), (d, z0), (d, top), (D, top)], [None, front, SD.TOP_LIT, None], cap, end=False)
-        return d
-    if end:
-        i, out, dz = SILL_PLATE
-        box(fm, w0 + i * ln, s1 - i * ln, out, z1 - dz * px, SILL_LOW)
-        return
-    m = round((s0 + s1) / 2 / ln) * ln
-    a, b = m - bw / 2 * ln, m + bw / 2 * ln
-    sw, so, sd = SILL_SIDE
-    for p0, p1 in ((a - sw * ln, a), (b, b + sw * ln)):
-        box(f, p0, p1, so, z1 - sd * px, SILL_LOW)
-    d = box(f, a, b, bo, z1, SILL_FRONT)
-    si, st, sg = SILL_SLATS
-    z = z1 - st * px
-    while z - px >= z0 + st * px - 1e-6:
-        SD._rect(f, a + si * ln, b - si * ln, z - px, z, d + 0.0005, VENT_LINE)
-        z -= sg * px
 
 
 def _head_dress(f, a, b, z0, d, ends=(False, False)):
