@@ -149,22 +149,24 @@ describe('prisoner deals: the slab is delivered for real', () => {
     expect(sim.world.get(wheel, StasisWheelC)!.slots.filter((x) => x === SLOT_EMPTY)).toHaveLength(9);
   });
 
-  it("a station with a shuttle of its own sends it, and pays once it is home with the slab", () => {
+  it("with no shuttle of yours the station sends its own (a real one, from its hangar), and pays once it is home with the slab", () => {
     const { sim, station, prisoner } = game('navy', 'navy');
-    sim.world.get(station, TraderC)!.profile = 'trader.freighter'; // a trader kind that sends a shuttle
+    const me = playerShip(sim)!;
+    for (const id of [...sim.world.query(VehicleC)]) if (sim.world.get(id, VehicleC)!.homeShip === me) sim.world.destroyEntity(id);
     const before = sim.trade.credits;
     const run = accept(sim, station, prisoner);
     expect(run.handover?.via).toBe('station');
-    until(sim, () => inShuttle(sim, prisoner), 240);
     const shuttle = run.vehicle;
+    expect(sim.world.get(shuttle, VehicleC)).toMatchObject({ homeShip: station, state: 'stowed' });
+    until(sim, () => inShuttle(sim, prisoner), 900);
     until(sim, () => run.phase === 'out', 30);
     expect(sim.trade.credits).toBe(before);
-    const ev = until(sim, () => run.phase === 'done', 240);
+    const ev = until(sim, () => run.phase === 'done', 900);
     expect(ev.some((e) => e.type === 'prisoner.handedOver')).toBe(true);
-    expect(sim.world.get(shuttle, VehicleC)?.hover).toBe(station); // paid at its station
+    expect(sim.world.get(shuttle, VehicleC)?.state).toBe('stowed'); // paid at its station, back in its bay
     expect(sim.trade.credits).toBeGreaterThan(before);
     step(sim, 2);
-    expect(sim.world.has(shuttle, VehicleC)).toBe(false); // gone home, slab and all
+    expect(sim.world.get(shuttle, VehicleC)).toMatchObject({ homeShip: station, state: 'stowed', autopilot: false }); // the station's again
     expect(ev.some((e) => e.type === 'stasis.lost')).toBe(false);
   });
 

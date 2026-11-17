@@ -89,9 +89,9 @@ describe('stations in the node', () => {
 
   it('trades by shuttle: the instant fallback is gone', () => {
     const { sim, station } = withStation();
-    const plan = planCourier(sim, station, [], [{ item: 'item.metal', count: 5 }]);
+    const plan = planCourier(sim, station);
     expect(plan).toMatchObject({ courier: 'you' });
-    expect(planCourier(sim, 99999, [], [{ item: 'item.metal', count: 5 }])).toEqual({ error: 'noTrader' });
+    expect(planCourier(sim, 99999)).toEqual({ error: 'noTrader' });
   });
 
   it('a pirate den stays dormant until provoked, then fights', () => {

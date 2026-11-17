@@ -52,7 +52,7 @@ export const tradeHandlers: { [T in TradeCommandType]: Handler<T> } = {
     const queued = !!liveDealWith(sim, offer.ship);
     const c = checkOffer(sim, offer.ship, offer.give, offer.get, offer.barter);
     if (c.error || !c.quote) return reject(sim, cmd.type, c.error ?? 'noPrice');
-    const plan = planCourier(sim, offer.ship, c.give, c.get, false, queued);
+    const plan = planCourier(sim, offer.ship, false, queued);
     if ('error' in plan) return reject(sim, cmd.type, plan.error);
     // More than one hold: haul trips in turn, each settled as it lands (see Deal.trip). The funds for the whole order were checked above.
     const trips = planTrips(sim, offer.ship, c.give, c.get, plan.cap, offer.barter);
@@ -81,7 +81,8 @@ export const tradeHandlers: { [T in TradeCommandType]: Handler<T> } = {
     }
     // Once the shuttle has left with the goods there is nothing to call back, except at a station dock: the run is
     // unwound there (goods back where they were) and the shuttle flies home.
-    const atStation = deal.phase === 'dockStation' || deal.phase === 'stationWork';
+    // (The trader's shuttle can be called back until it leaves its own bay: theirRun.ts.)
+    const atStation = deal.courier === 'you' && (deal.phase === 'dockStation' || deal.phase === 'stationWork');
     // A hiring run can be called off until the recruits are aboard and the shuttle has left the station.
     const fetching = !!deal.crew && (deal.phase === 'out' || atStation);
     if (deal.phase !== 'dispatch' && deal.phase !== 'load' && !atStation && !fetching) return reject(sim, cmd.type, 'inTransit');

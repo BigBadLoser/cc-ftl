@@ -128,7 +128,7 @@ describe('queued deals', () => {
     sim.enqueue({ type: 'trade.cancel', id: first.id });
     step(sim);
     expect(first.phase).toBe('failed');
-    expect(sim.trade.credits).toBe(start); // the first one's escrow came back
+    expect(sim.trade.credits + second.held).toBe(start); // the first one's escrow came back (the second may have started at once, on the station's shuttle)
     for (let i = 0; i < 400 && second.phase === 'queued'; i++) step(sim);
     expect(second.phase).not.toBe('queued');
     expect(second.held).toBeGreaterThan(0);

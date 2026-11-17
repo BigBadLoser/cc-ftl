@@ -1,5 +1,5 @@
 import { expect } from 'vitest';
-import { ShipC, TraderC, VehicleC, newGame, playerItems, type Sim } from '../sim';
+import { ShipC, TraderC, VehicleC, newGame, playerItems, playerShip, type Sim } from '../sim';
 import { isLive } from '../sim/trade/deals';
 import { holding } from '../sim/trade/player';
 import { content } from './index';
@@ -41,23 +41,21 @@ export function metalLike(sim: Sim, item: string): number {
   return playerItems(sim, item) + sim.world.query(VehicleC).reduce((n, id) => n + (sim.world.get(id, VehicleC)!.cargo.find((c) => c.item === item)?.count ?? 0), 0);
 }
 
-/** A started game with a generated freighter (it has its own shuttle) in the node. */
-let freighterSeed = 1; // the first seed with a freighter is the same every time, so later calls skip the ones before it
-export function withFreighter(): { sim: Sim; ship: number } {
-  for (let seed = freighterSeed; seed < 80; seed++) {
-    const sim = newGame(1, content);
-    sim.galaxy.fleets = [];
-    sim.enqueue({ type: 'debug.spawnGenerated', faction: 'faction.civilian', seed, depth: 2, cx: 130, cy: 70 });
-    sim.step();
-    sim.events.drain();
-    const ship = sim.world.query(ShipC).find((i) => sim.world.get(i, ShipC)!.gen?.role === 'freighter');
-    if (ship) { freighterSeed = seed; return { sim, ship }; }
-  }
-  throw new Error('no freighter found');
+/** A started game with a trading outpost and no shuttle of the player's: the station's own (real, in its hangar) carries every deal (#548). */
+export function withStation(): { sim: Sim; ship: number } {
+  const sim = newGame(1, content);
+  sim.enqueue({ type: 'debug.spawnStation', kind: 'station.trading', size: 'outpost', seed: 4 });
+  sim.step();
+  const ship = sim.world.query(ShipC).find((i) => sim.world.get(i, ShipC)!.immobile)!;
+  const me = playerShip(sim);
+  for (const id of [...sim.world.query(VehicleC)]) if (sim.world.get(id, VehicleC)!.homeShip === me) sim.world.destroyEntity(id);
+  sim.events.drain();
+  return { sim, ship };
 }
 
+/** `withStation`, hailed, with an order of 12 metal accepted: the station's shuttle carries it. */
 export function order() {
-  const { sim, ship } = withFreighter();
+  const { sim, ship } = withStation();
   sim.enqueue({ type: 'trade.hail', ship });
   run(sim, 2);
   const t = sim.world.get(ship, TraderC)!;
@@ -70,4 +68,3 @@ export function order() {
   expect(sim.trade.deals[0]!.courier).toBe('them');
   return { sim, ship, before, stock };
 }
-

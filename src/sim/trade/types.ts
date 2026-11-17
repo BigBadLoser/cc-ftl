@@ -46,8 +46,6 @@ export interface TraderDef {
   match: { faction?: string; role?: string; side?: Faction };
   /** Added to the faction's relation (a liner is friendlier than a freighter's skeleton crew, say). */
   relation?: number;
-  /** Has its own shuttle: it flies goods to the player instead of the player fetching them. */
-  shuttle: boolean;
   /** Price multipliers of this kind of trader (default 1), and per item tag (multiplied in for every tag the item has). */
   sell?: number;
   buy?: number;

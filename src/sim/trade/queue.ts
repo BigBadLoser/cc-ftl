@@ -1,8 +1,7 @@
 import { ShipC } from '../combat/components';
 import type { Sim } from '../sim';
-import { VehicleC } from '../vehicles/components';
 import { planCourier } from './courier';
-import { holdTrip, isLive, setPhase, trimHistory } from './deals';
+import { holdTrip, isLive, setPhase, takeCourier, trimHistory } from './deals';
 import { playerItems } from './player';
 import { TraderC, type Deal } from './types';
 
@@ -38,7 +37,7 @@ export function stepQueued(sim: Sim, d: Deal): void {
   if (!sim.world.get(d.ship, TraderC) || !sim.world.has(d.ship, ShipC)) return dropQueued(sim, d, 'traderGone');
   if (sim.trade.deals.some((o) => o !== d && o.ship === d.ship && isLive(o) && (o.phase !== 'queued' || o.id < d.id))) return;
   if ((sim.tick + d.id) % 10 !== 0) return;
-  const plan = planCourier(sim, d.ship, d.give, d.get);
+  const plan = planCourier(sim, d.ship);
   if ('error' in plan) {
     if (plan.error === 'noTrader' || plan.error === 'noShip' || plan.error === 'noCourier') dropQueued(sim, d, plan.error);
     return; // a busy shuttle or no free airlock: wait
@@ -53,7 +52,5 @@ export function stepQueued(sim: Sim, d: Deal): void {
   d.airlock = plan.airlock;
   setPhase(sim, d, 'dispatch');
   holdTrip(sim, d, sim.world.get(d.ship, TraderC));
-  const v = plan.vehicle ? sim.world.get(plan.vehicle, VehicleC) : undefined;
-  if (v && d.courier === 'you') v.autopilot = true;
-  if (v && d.give.length > 0) v.outbound = true;
+  takeCourier(sim, d);
 }

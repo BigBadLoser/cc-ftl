@@ -41,7 +41,7 @@ export const trade = {
   traders: {
     // --- Civilian roles (the generator's hull families) ---
     'trader.freighter': {
-      name: 'Freighter', match: { faction: 'faction.civilian', role: 'freighter' }, shuttle: true, sell: 0.92, buy: 0.95,
+      name: 'Freighter', match: { faction: 'faction.civilian', role: 'freighter' }, sell: 0.92, buy: 0.95,
       tagMods: { raw: { sell: 0.9 }, refined: { sell: 0.95 } }, credits: [300, 900],
       stock: [
         { item: 'item.metal', min: 20, max: 60 }, { item: 'item.scrap_hull', min: 10, max: 40 }, { item: 'item.polymer', min: 8, max: 30 },
@@ -50,7 +50,7 @@ export const trade = {
       ],
     },
     'trader.liner': {
-      name: 'Liner', match: { faction: 'faction.civilian', role: 'liner' }, shuttle: true, sell: 1.05, buy: 1,
+      name: 'Liner', match: { faction: 'faction.civilian', role: 'liner' }, sell: 1.05, buy: 1,
       tagMods: { food: { sell: 0.9, buy: 1.25 }, weapon: { sell: 1.3, buy: 0.5 } }, credits: [500, 1400],
       stock: [
         { item: 'item.ration', min: 15, max: 45 }, { item: 'item.electronics', min: 3, max: 10 }, { item: 'item.ice', min: 5, max: 20, chance: 0.6 },
@@ -58,7 +58,7 @@ export const trade = {
       ],
     },
     'trader.mining': {
-      name: 'Mining ship', match: { faction: 'faction.civilian', role: 'mining' }, shuttle: false, sell: 0.9, buy: 1,
+      name: 'Mining ship', match: { faction: 'faction.civilian', role: 'mining' }, sell: 0.9, buy: 1,
       tagMods: { raw: { sell: 0.8 }, components: { buy: 1.25 } }, credits: [200, 700],
       stock: [
         { item: 'item.ice', min: 20, max: 70 }, { item: 'item.scrap_hull', min: 20, max: 80 }, { item: 'item.metal', min: 15, max: 50 },
@@ -68,7 +68,7 @@ export const trade = {
     },
     // Stations by kind. They have no shuttle: the player's shuttle flies every run. Depots sell no hand weapons.
     'trader.station.trading': {
-      name: 'Trade station', match: { faction: 'station.trading' }, shuttle: false, credits: [2000, 6000],
+      name: 'Trade station', match: { faction: 'station.trading' }, credits: [2000, 6000],
       stock: [
         { item: 'item.metal', min: 40, max: 120 }, { item: 'item.electronics', min: 15, max: 40 }, { item: 'item.polymer', min: 15, max: 50 },
         { item: 'item.parts', min: 8, max: 25 }, { item: 'item.ration', min: 30, max: 80 }, { item: 'item.ice', min: 10, max: 40 },
@@ -86,18 +86,18 @@ export const trade = {
     },
     'trader.station.mining': {
       // Ore is cheap where it is dug; parts and electronics are dear out on the rocks (issue #222).
-      name: 'Mining station', match: { faction: 'station.mining' }, shuttle: false, sell: 0.9, credits: [1200, 3500],
+      name: 'Mining station', match: { faction: 'station.mining' }, sell: 0.9, credits: [1200, 3500],
       tagMods: { ore: { sell: 0.8, buy: 0.85 }, components: { buy: 1.3 } },
       stock: [{ item: 'item.metal', min: 80, max: 200 }, { item: 'item.ice', min: 40, max: 120 }, { item: 'item.scrap_hull', min: 20, max: 80 }, { item: 'item.parts', min: 4, max: 12 },
         { item: 'item.iron_ore', min: 60, max: 180 }, { item: 'item.rare_ore', min: 6, max: 24 }, { item: 'item.fuel', min: 20, max: 60 },
         { item: 'item.energy_crystal', min: 40, max: 120 }],
     },
     'trader.station.farming': {
-      name: 'Agri station', match: { faction: 'station.farming' }, shuttle: false, credits: [800, 2500],
+      name: 'Agri station', match: { faction: 'station.farming' }, credits: [800, 2500],
       stock: [{ item: 'item.ration', min: 60, max: 180 }, { item: 'item.grain', min: 30, max: 100 }, { item: 'item.polymer', min: 10, max: 40 }, { item: 'item.ice', min: 10, max: 30 }, { item: 'item.fuel', min: 15, max: 40 }, { item: 'item.water', min: 20, max: 60 }],
     },
     'trader.station.research': {
-      name: 'Research station', match: { faction: 'station.research' }, shuttle: false, credits: [1500, 4000],
+      name: 'Research station', match: { faction: 'station.research' }, credits: [1500, 4000],
       stock: [
         { item: 'item.electronics', min: 30, max: 80 }, { item: 'item.parts', min: 10, max: 30 }, { item: 'item.polymer', min: 15, max: 45 },
         { item: 'item.metal', min: 15, max: 50 }, { item: 'item.ration', min: 15, max: 40 }, { item: 'item.fuel', min: 20, max: 50 },
@@ -110,7 +110,7 @@ export const trade = {
     },
     'trader.station.military': {
       // Military surplus: older, middle-grade hand weapons (tiers 1-2, never the best) at a modest markup; it still buys.
-      name: 'Depot quartermaster', match: { faction: 'station.military' }, shuttle: false, credits: [1500, 4000],
+      name: 'Depot quartermaster', match: { faction: 'station.military' }, credits: [1500, 4000],
       surplus: { tag: 'weapon', maxTier: 2, min: 2, max: 8, markup: 1.1 },
       stock: [{ item: 'item.missile', min: 10, max: 30 }, { item: 'item.parts', min: 10, max: 30 }, { item: 'item.electronics', min: 10, max: 30 }, { item: 'item.metal', min: 20, max: 60 }, { item: 'item.fuel', min: 20, max: 50 },
         { item: 'item.stasis_slab', min: 2, max: 6, chance: 0.7 },
@@ -118,7 +118,7 @@ export const trade = {
         { item: 'item.upg_prism', min: 1, max: 1, chance: 0.3 }, { item: 'item.upg_frag', min: 1, max: 1, chance: 0.3 }, { item: 'item.upg_rail', min: 1, max: 1, chance: 0.2 }, { item: 'item.upg_thermite', min: 1, max: 1, chance: 0.2 }],
     },
     'trader.station.pirate': {
-      name: 'Den fence', match: { faction: 'station.pirate' }, shuttle: false, tagMods: { weapon: { sell: 0.85 }, scrap: { buy: 1.2 } }, credits: [300, 1200],
+      name: 'Den fence', match: { faction: 'station.pirate' }, tagMods: { weapon: { sell: 0.85 }, scrap: { buy: 1.2 } }, credits: [300, 1200],
       stock: [
         { item: 'item.scrap_hull', min: 30, max: 100 }, { item: 'item.parts', min: 5, max: 15 }, { item: 'item.ion_pistol', min: 1, max: 4, chance: 0.7 },
         { item: 'item.blade', min: 2, max: 6 }, { item: 'item.rifle', min: 1, max: 3, chance: 0.5 }, { item: 'item.missile', min: 2, max: 10, chance: 0.5 },
@@ -126,7 +126,7 @@ export const trade = {
       ],
     },
     'trader.station': {
-      name: 'Station', match: { faction: 'faction.civilian', role: 'station' }, shuttle: false, credits: [1500, 4000],
+      name: 'Station', match: { faction: 'faction.civilian', role: 'station' }, credits: [1500, 4000],
       stock: [
         { item: 'item.metal', min: 30, max: 90 }, { item: 'item.electronics', min: 10, max: 30 }, { item: 'item.polymer', min: 10, max: 40 },
         { item: 'item.parts', min: 5, max: 20 }, { item: 'item.ration', min: 20, max: 60 }, { item: 'item.ice', min: 10, max: 40 },
@@ -137,11 +137,11 @@ export const trade = {
     },
     // --- Placeholders until the faction system: corp, navy, pirates ---
     'trader.corp': {
-      name: 'Corporate trader', match: { faction: 'faction.corp' }, shuttle: true, sell: 1.1, credits: [1000, 3000],
+      name: 'Corporate trader', match: { faction: 'faction.corp' }, sell: 1.1, credits: [1000, 3000],
       stock: [{ item: 'item.electronics', min: 10, max: 30 }, { item: 'item.parts', min: 5, max: 15 }, { item: 'item.rifle', min: 1, max: 3, chance: 0.5 }],
     },
     'trader.navy': {
-      name: 'Navy quartermaster', match: { faction: 'faction.navy' }, shuttle: true, tagMods: { ammo: { buy: 1.3 } }, credits: [800, 2200],
+      name: 'Navy quartermaster', match: { faction: 'faction.navy' }, tagMods: { ammo: { buy: 1.3 } }, credits: [800, 2200],
       stock: [
         { item: 'item.missile', min: 6, max: 20 }, { item: 'item.rifle', min: 1, max: 4 }, { item: 'item.sidearm', min: 2, max: 6 },
         { item: 'item.ration', min: 15, max: 40 }, { item: 'item.metal', min: 10, max: 30 },
@@ -150,7 +150,7 @@ export const trade = {
       ],
     },
     'trader.pirate': {
-      name: 'Pirate fence', match: { faction: 'faction.scrapper' }, shuttle: false, tagMods: { weapon: { sell: 0.85 }, scrap: { buy: 1.2 } }, credits: [100, 600],
+      name: 'Pirate fence', match: { faction: 'faction.scrapper' }, tagMods: { weapon: { sell: 0.85 }, scrap: { buy: 1.2 } }, credits: [100, 600],
       stock: [
         { item: 'item.scrap_hull', min: 20, max: 80 }, { item: 'item.parts', min: 3, max: 12 }, { item: 'item.ion_pistol', min: 1, max: 3, chance: 0.6 },
         { item: 'item.blade', min: 1, max: 4, chance: 0.6 }, { item: 'item.missile', min: 2, max: 10, chance: 0.5 },
@@ -159,7 +159,7 @@ export const trade = {
     ...pirateTraders,
     // Ships from plain templates (raiders and the like) fall back to their side.
     'trader.raider': {
-      name: 'Raider', match: { side: 'hostile' }, shuttle: false, credits: [50, 300],
+      name: 'Raider', match: { side: 'hostile' }, credits: [50, 300],
       stock: [{ item: 'item.scrap_hull', min: 10, max: 40 }, { item: 'item.sidearm', min: 0, max: 2, chance: 0.5 }],
     },
   },
