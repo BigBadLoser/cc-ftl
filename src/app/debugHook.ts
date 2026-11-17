@@ -204,6 +204,12 @@ export function installDebugHook(sim: Sim, r: Renderer, loop?: Loop): { onEvents
       surrenderCrew: (shipId: number) => { for (const id of sim.world.query(CrewC, PositionC)) if (shipIdOf(sim, sim.world.get(id, PositionC) as never) === shipId && sim.world.get(id, AllegianceC)?.faction !== 'player' && !sim.world.has(id, SurrenderedC)) sim.world.add(id, SurrenderedC, { tick: sim.tick }); },
       /** Put a vehicle (e.g. 'vehicle.mining_pod') in an empty bay module; returns its id (the mining shots). */
       vehicle: (def: string, bay: number) => spawnVehicle(sim, def, bay),
+      /** Hold a stowed vehicle in flight `d` tiles out from its bay's middle, bound for the bay (the landing-gear shots; pause the sim first). */
+      approach: (vehicle: number, d: number) => {
+        const v = sim.world.get(vehicle, VehicleC), b = sim.world.get(vehicle, BodyC);
+        if (!v || !b) return;
+        v.state = 'flying'; v.autopilot = true; v.dest = { type: 'bay' }; b.alt = 2.5; b.x += d; b.heading = Math.PI;
+      },
       /** Set the progress of every module construction site to a share of its work (the ghost shots). */
       siteProgress: (frac: number) => { for (const id of sim.world.query(JobC)) { const j = sim.world.get(id, JobC); if (j?.kind === 'module') j.progress = Math.round(j.work * frac); } },
       /** Put every player crew member on a tile and drop their orders (keeps crew out of the ghost shots). */

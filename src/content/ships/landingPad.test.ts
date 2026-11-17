@@ -6,7 +6,7 @@ import { CrewC, PositionC } from '../../sim/crew/components';
 import type { SimEvent } from '../../sim/events';
 import { ModuleC } from '../../sim/modules/components';
 import { VehicleBayC, VehicleC, AboardC } from '../../sim/vehicles/components';
-import { airlockPad, padAirlock } from '../../sim/modules/landingPad';
+import { PAD_NOSE, airlockPad, padAirlock } from '../../sim/modules/landingPad';
 import { groundPort } from '../../sim/modules/groundMount';
 import { isCabled } from '../../sim/cable';
 import { boardingTile } from '../../sim/vehicles/geometry';
@@ -54,6 +54,9 @@ describe('landing pads', () => {
     const pm = sim.world.get(pads[0]!, ModuleC)!;
     expect(sim.world.get(v, BodyC)).toMatchObject({ x: pm.x + 4.5, y: pm.y + 4.5 });
     const at = boardingTile(sim, v)!;
+    // Crew board at the foot of the rear ramp: the middle of the pad's edge behind the shuttle's tail (opposite its nose).
+    const [nx, ny] = PAD_NOSE[pm.rot % 4]!;
+    expect(at).toMatchObject({ x: pm.x + 4 - nx * 4, y: pm.y + 4 - ny * 4 });
     expect(shipGrid(sim, at.shipId)!.get('struct', at.x, at.y)).toBe(Struct.Ground);
   });
 

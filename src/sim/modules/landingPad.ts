@@ -3,7 +3,6 @@ import type { ModuleDef } from '../registry';
 import { AirlockC, airlockTiles } from './airlock';
 import { ModuleC } from './components';
 import { footprintTiles, rotatedSize } from './footprint';
-import { groundPort } from './groundMount';
 import { shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { VehicleBayC } from '../vehicles/components';
@@ -69,24 +68,18 @@ export function padAirlock(sim: Sim, pad: number): number {
   return best;
 }
 
+/** Unit step along a parked shuttle's nose per pad rotation: +y at rotation 0, turning clockwise with it (render `parkedIndex`: heading 2 + 2 * rot). */
+export const PAD_NOSE: readonly (readonly [number, number])[] = [[0, 1], [-1, 0], [0, -1], [1, 0]];
+
 /**
- * Where crew board and leave a pad (#509): the edge tile of its footprint nearest its airlock's outer door, clear of the cable port.
- * Null when it is no pad.
+ * Where crew board and leave a pad (#509): the middle of the footprint's edge behind the shuttle's tail, at the foot of its rear ramp. The
+ * shuttle's nose and the cable port are a quarter turn apart, so this is never the port's side. Null when it is no pad.
  */
 export function padBoardTile(sim: Sim, pad: number): { x: number; y: number } | null {
   const pm = sim.world.get(pad, ModuleC);
   const def = pm && sim.content.modules[pm.def];
   if (!pm || !def || !isLandingPad(def)) return null;
-  const am = sim.world.get(padAirlock(sim, pad), ModuleC), adef = am && sim.content.modules[am.def];
-  const to = am && adef?.airlock ? airlockTiles(adef, am).outer : { x: pm.x + 4, y: pm.y + 4 };
+  const [nx, ny] = PAD_NOSE[((pm.rot % 4) + 4) % 4] as readonly [number, number];
   const [w, h] = rotatedSize(def, pm.rot);
-  const port = groundPort(def, pm).side;
-  let best: { x: number; y: number } | null = null, bestD = Infinity;
-  for (const t of footprintTiles(def, pm.x, pm.y, pm.rot)) {
-    if (t.x > pm.x && t.y > pm.y && t.x < pm.x + w - 1 && t.y < pm.y + h - 1) continue; // an edge tile
-    if (Math.abs(t.x - port.x) + Math.abs(t.y - port.y) <= 1) continue;
-    const d = Math.abs(t.x - to.x) + Math.abs(t.y - to.y);
-    if (d < bestD) [best, bestD] = [{ x: t.x, y: t.y }, d];
-  }
-  return best;
+  return { x: pm.x + Math.floor((w - 1) / 2) - nx * Math.floor((w - 1) / 2), y: pm.y + Math.floor((h - 1) / 2) - ny * Math.floor((h - 1) / 2) };
 }
