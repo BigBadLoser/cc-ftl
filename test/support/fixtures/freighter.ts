@@ -1,17 +1,16 @@
-import { CombatC, FTL_CHARGE_SEC, START_NODE, ShipC, galaxyIndex, newGame, playerShip, type Sim } from '../sim';
-import { CrewC, PositionC } from '../sim/crew/components';
-import { AllegianceC } from '../sim/fight/components';
-import { shipGrid, shipIdOf } from '../sim/regions';
-import { giveItems } from '../sim/story/effects';
-import type { EventDef } from '../sim';
-import type { SceneShipRecipe } from '../sim/scene/types';
-import { content } from '.';
+import { CombatC, FTL_CHARGE_SEC, START_NODE, ShipC, galaxyIndex, newGame, playerShip, type Sim } from '../../../src/sim';
+import { CrewC, PositionC } from '../../../src/sim/crew/components';
+import { AllegianceC } from '../../../src/sim/fight/components';
+import { shipGrid, shipIdOf } from '../../../src/sim/regions';
+import { giveItems } from '../../../src/sim/story/effects';
+import type { EventDef } from '../../../src/sim';
+import type { SceneShipRecipe } from '../../../src/sim/scene/types';
+import { content } from '../content';
+import { run } from '../run';
 
 /** The distress freighter (#173 step 5): a helpless ship, aid by hail with guests aboard, the reactor clock (fires, then it blows), raiders, the observer. */
 
 /** Setup for the distress freighter tests (freighter.test.ts, freighter.slow.test.ts): a two-hop trip to the signal, the scene deployed, and the state readers. */
-/** Step n ticks, draining events (src fixtures cannot import test/support). */
-const run = (sim: Sim, n: number): void => { for (let i = 0; i < n; i++) { sim.step(); sim.events.drain(); } };
 export const deploy = (sim: Sim) => {
   for (const [x, y] of [[100, 60], [20, 50], [300, 200], [40, 150], [200, 20], [350, 100]] as const) {
     sim.enqueue({ type: 'sector.deploy', x, y });

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ShipC } from '../sim';
 import { run } from '../../test/support/sim';
-import { buildScene, firesOn, fired, freighterOf, timer, withRaiders } from './freighterFixture';
+import { buildScene, firesOn, fired, freighterOf, timer, withRaiders } from '../../test/support/fixtures/freighter';
 
 /** The reactor clock end to end on its natural time (the fast tier starts the same branches near the deadline): unrepaired, the freighter burns, then blows. */
 describe('distress freighter: the natural clock', () => {

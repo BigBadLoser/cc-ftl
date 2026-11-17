@@ -13,7 +13,7 @@ import { run } from '../../test/support/sim';
 import { cachedWorld } from '../../test/support/world';
 
 /** The distress freighter (#173 step 5): a helpless ship, aid by hail with guests aboard, the reactor clock (fires, then it blows), raiders, the observer. */
-import { deploy, withRaiders, signalled, choose, buildScene, freighterOf, spec, timer, firesOn, fired, standOn, countSpace, playerCrewIds } from './freighterFixture';
+import { deploy, withRaiders, signalled, choose, buildScene, freighterOf, spec, timer, firesOn, fired, standOn, countSpace, playerCrewIds } from '../../test/support/fixtures/freighter';
 
 
 /** The scene as `buildScene` leaves it, built once per worker and handed out as a fresh clone (a save round-trip) per test. */
