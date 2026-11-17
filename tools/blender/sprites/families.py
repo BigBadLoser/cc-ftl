@@ -345,9 +345,6 @@ def jobs(name):
     if name == "landing_pad":  # the outdoor landing pad of a surface base (#509)
         from . import landing_pad
         return landing_pad.jobs(), True
-    if name == "shuttle_gear":  # look study, preview only (not in RENDERED): the shuttle's landing gear on its pad (#509)
-        from . import shuttle_gear
-        return shuttle_gear.jobs(), True
     if name == "cable":  # the ground power cable (#514): sheet cable, ids from src/render/groundCable.ts
         from . import cable_duct
         return cable_duct.jobs(), cable_duct.PAL
