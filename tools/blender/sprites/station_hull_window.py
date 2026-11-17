@@ -145,10 +145,16 @@ def _span(f, s, s0, s1, zt):
         zl = zj + fh + sh                                               # the jamb's seam
         pf = [(dp + WIN.PANE / 2, zl), (dv + 0.001, zl), (dv + 0.001, zl + 1 / Z), (dp + WIN.PANE / 2, zl + 1 / Z)]
         fm.part(h0, w0 + 0.001, pf, [WIN.JAMB_SEAM] * 4, (None, WIN.JAMB_SEAM), end=False)
-        ln = SD.LINE
-        for v0, v1, za, zb in ((h0 - ln, h0, zs - 1 / Z, z0), (h0 - ln, s1, zs - 1 / Z, zs)):
+        ln, zc, uc = SD.LINE, zs + sh, h0 + WIN.SLOPE  # (the post's foot's outer corner cut as the opening's: the
+        for v0, v1, za, zb in ((h0 - ln, h0, zc, z0), (uc - ln, s1, zs - 1 / Z, zs)):   # slope)
             p0, p1, _ = seg(v0, v1)                     # seams where the wall's tone changes: down the post's outer
             SD._rect(f, p0, p1, za, zb, D + 0.0005, POST_SEAM)  # edge to the rib's plate, under it and the sill on
+
+        def paint(pts, col, e):                         # (a flat polygon on the face, in W1's u)
+            q = [T.P(f.ax, f.plane, mu(u), z, D + e) for u, z in pts]
+            f.k.poly(q[::-1] if part == "w3" else q, SD.F, 3, T.OUT(f.ax), fixed=T.SEAM_PASS or col)
+        paint([(h0, zs), (uc, zs), (h0, zc)], SH.FACE, 0.0004)      # (the cut: the wall's tone)
+        paint([(h0 - ln, zc), (h0, zc), (uc, zs), (uc - ln, zs)], POST_SEAM, 0.0005)   # (its seam)
         fm.part(h0, w0, [(db, zs), (dv, zs), (dv, zh), (db, zh)], [None, WIN.HEAD_FRONT, None, None],
                 WIN.SIDE, end=False)                    # the post (plain: no recessed panel; both its sides the
                                                         # sides' tone: on W3 its side by the rib shows where the
