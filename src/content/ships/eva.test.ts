@@ -1,14 +1,20 @@
 import { describe, expect, it } from 'vitest';
-import { AirlockC, CrewC, HealthC, ModuleC, PositionC, airlockTiles, isTileWalkable, newGame, suitAir, suitDef, type ModuleDef, type Sim } from '../../sim';
+import { CrewC, HealthC, PositionC } from '../../sim/crew/components';
+import { suitAir, suitDef } from '../../sim/eva/suit';
+import { AirlockC, airlockTiles } from '../../sim/modules/airlock';
+import { ModuleC } from '../../sim/modules/components';
+import { isTileWalkable } from '../../sim/modules/walk';
+import { newGame } from '../../sim/newGame';
+import type { ModuleDef } from '../../sim/registry';
+import type { Sim } from '../../sim/sim';
 import { content } from '../index';
 import { shipIdOf, shipGrid } from '../../sim/regions';
 import { shipIds } from '../../sim/regions';
-import { nth, run } from '../../../test/support/sim';
+import { crewOn, nth, run } from '../../../test/support/sim';
 
 
 const airlockOf = (sim: Sim, shipId: number): number =>
   sim.world.query(AirlockC).find((i) => shipIdOf(sim, sim.world.get(i, ModuleC)) === nth(sim, shipId))!;
-const crewOn = (sim: Sim, shipId: number): number[] => sim.world.query(CrewC).filter((i) => shipIdOf(sim, sim.world.get(i, PositionC)) === nth(sim, shipId));
 const roleOf = (sim: Sim, id: number): string => sim.world.get(id, CrewC)!.role;
 
 describe('EVA content', () => {

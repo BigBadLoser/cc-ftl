@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { content } from '../content';
-import { CrewC, DownedC, HealthC, ModuleC, ShipC, homeShip, newGame, placementError, spawnModule, type Sim } from '../sim';
+import { ShipC } from '../sim/combat/components';
+import { homeShip } from '../sim/combat/ships';
+import { CrewC, DownedC, HealthC } from '../sim/crew/components';
+import { ModuleC } from '../sim/modules/components';
+import { placementError, spawnModule } from '../sim/modules/spawn';
+import { newGame } from '../sim/newGame';
+import type { Sim } from '../sim/sim';
 import { BodyC } from '../sim/body';
 import { droneCap, stunDronesNear } from '../sim/drones/bay';
 import { candidatesFor } from '../sim/drones/work';

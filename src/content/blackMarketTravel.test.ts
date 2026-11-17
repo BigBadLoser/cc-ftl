@@ -1,7 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import {
-  CombatC, FTL_CHARGE_SEC, ShipC, truceHolds, START_NODE, TraderC, contrabandAboard, galaxyIndex, newGame, passingMeets, playerShip, portsAt, storageAdd, type Sim,
-} from '../sim';
+import { contrabandAboard } from '../sim/blackmarket/scan';
+import { truceHolds } from '../sim/blackmarket/truce';
+import { CombatC, ShipC } from '../sim/combat/components';
+import { passingMeets } from '../sim/galaxy/encounters';
+import { portsAt } from '../sim/galaxy/portIndex';
+import { galaxyIndex, START_NODE } from '../sim/galaxy/state';
+import { storageAdd } from '../sim/items/storage';
+import { newGame } from '../sim/newGame';
+import type { Sim } from '../sim/sim';
+import { playerShip } from '../sim/trade/player';
+import { TraderC } from '../sim/trade/types';
+import { FTL_CHARGE_SEC } from '../sim/tuning';
 import type { Fleet } from '../sim/galaxy/types';
 import { ensureChunk, nodeState } from '../sim/galaxy/state';
 import { placementGapError } from '../sim/regions';

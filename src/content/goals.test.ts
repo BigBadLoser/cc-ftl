@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { deserialize, newGame, serialize, type Sim } from '../sim';
+import { newGame } from '../sim/newGame';
+import { deserialize, serialize } from '../sim/save';
+import type { Sim } from '../sim/sim';
 import { offersHere } from '../sim/galaxy/jobOffers';
 import { bumpStat, currentAct } from '../sim/story/goals';
 import { content } from '.';

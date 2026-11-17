@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { HealthC } from '../sim/crew/components';
-import { CombatC, FTL_CHARGE_SEC, START_NODE, deserialize, galaxyIndex, newGame, passingMeets, playerShip, serialize, type Sim } from '../sim';
+import { CombatC } from '../sim/combat/components';
+import { passingMeets } from '../sim/galaxy/encounters';
+import { galaxyIndex, START_NODE } from '../sim/galaxy/state';
+import { newGame } from '../sim/newGame';
+import { deserialize, serialize } from '../sim/save';
+import type { Sim } from '../sim/sim';
+import { playerShip } from '../sim/trade/player';
+import { FTL_CHARGE_SEC } from '../sim/tuning';
 import type { Fleet } from '../sim/galaxy/types';
 import { giveItems } from '../sim/story/effects';
 import { packetCount } from '../sim/sector/packet';

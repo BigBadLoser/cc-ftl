@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { AsteroidC, MiningPodC, VehicleC, homeShip, newGame, placementError, shipGrid, spawnModule, spawnVehicle, totalStock, type Sim } from '../../sim';
+import { AsteroidC } from '../../sim/asteroids/components';
+import { homeShip } from '../../sim/combat/ships';
+import { totalStock } from '../../sim/items/stock';
+import { MiningPodC } from '../../sim/mining/components';
+import { placementError, spawnModule } from '../../sim/modules/spawn';
+import { newGame } from '../../sim/newGame';
+import { shipGrid } from '../../sim/regions';
+import type { Sim } from '../../sim/sim';
+import { VehicleC } from '../../sim/vehicles/components';
+import { spawnVehicle } from '../../sim/vehicles/lifecycle';
 import { content } from '../index';
 
 /** The starter ship with `n` pod bays (first spots that fit, scanning rows), a pod in each, and a field. */

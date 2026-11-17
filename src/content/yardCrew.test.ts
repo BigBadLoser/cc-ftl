@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import {
-  AirlockC, CrewC, ItemStackC, JobC, PositionC, VehicleC, YardCrewC, builtCount, deserialize, isLiveOrder, serialize, yardPrice, yardService,
-} from '../sim';
+import { CrewC, JobC, PositionC } from '../sim/crew/components';
+import { ItemStackC } from '../sim/items/components';
+import { AirlockC } from '../sim/modules/airlock';
+import { deserialize, serialize } from '../sim/save';
+import { VehicleC } from '../sim/vehicles/components';
+import { builtCount } from '../sim/yard/progress';
+import { yardPrice, yardService } from '../sim/yard/rules';
+import { isLiveOrder, YardCrewC } from '../sim/yard/types';
 import { jobFits } from '../sim/crew/jobFit';
 import { drawAir, sourceSupply } from '../sim/eva/airLedger';
 import { SuitC } from '../sim/eva/components';
@@ -13,7 +18,7 @@ import { guestOn } from '../sim/consent/guests';
 import { isInvader, isOffDuty } from '../sim/fight/relations';
 import { shipIdOf } from '../sim/regions';
 import { content } from './index';
-import { outline, planHull, run, yardGame } from './yardFixture';
+import { outline, planHull, run, yardGame } from '../../test/support/fixtures/yard';
 
 describe('the yard crew', () => {
   it('works in rows: the nearest row first, and a row more than one ahead waits', () => {

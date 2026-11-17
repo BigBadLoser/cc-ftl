@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ammoCount } from '../combat/ammo';
 import { stampShip } from '../combat/ships';
-import { content, ring } from '../eva/airFixture';
+import { content, ring } from '../../../test/support/fixtures/air';
 import { StorageC } from '../items/components';
 import { spawnModule } from '../modules/spawn';
 import { Sim } from '../sim';

@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { content } from '../content';
-import { AirlockC, ModuleC, airlockTiles, homeShip, newGame, shipGrid } from '../sim';
+import { content } from './index';
+import { homeShip } from '../sim/combat/ships';
+import { AirlockC, airlockTiles } from '../sim/modules/airlock';
+import { ModuleC } from '../sim/modules/components';
+import { newGame } from '../sim/newGame';
+import { shipGrid } from '../sim/regions';
 import type { Body } from '../sim/body';
 import { mustWaitAtAirlockDoor } from '../sim/modules/airlock';
 import type { Drone } from '../sim/drones/components';

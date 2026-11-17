@@ -1,8 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import { airlockPad } from '../../sim/modules/landingPad';
-import {
-  AirlockC, CombatC, ModuleC, ShipC, Struct, VehicleC, WeaponC, discoverOutpost, homeShip, isDormant, newGame, shipGrid, type OutpostKind, type Sim,
-} from '../../sim';
+import { CombatC, ShipC, WeaponC } from '../../sim/combat/components';
+import { isDormant } from '../../sim/combat/dormant';
+import { homeShip } from '../../sim/combat/ships';
+import { AirlockC } from '../../sim/modules/airlock';
+import { ModuleC } from '../../sim/modules/components';
+import { newGame } from '../../sim/newGame';
+import type { OutpostKind } from '../../sim/outposts/gen';
+import { discoverOutpost } from '../../sim/outposts/state';
+import { shipGrid } from '../../sim/regions';
+import type { Sim } from '../../sim/sim';
+import { Struct } from '../../sim/structure';
+import { VehicleC } from '../../sim/vehicles/components';
 import { FighterC } from '../../sim/fight/components';
 import { StationCrewC } from '../../sim/stations/components';
 import { dockError } from '../../sim/vehicles/handlers';

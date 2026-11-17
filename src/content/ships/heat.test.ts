@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import {
-  CombatC, ModuleC, ProjectileC, WeaponC, deserialize, newGame, serialize, shipGrid, Struct, type Sim, type SimEvent,
-} from '../../sim';
+import { CombatC, ProjectileC, WeaponC } from '../../sim/combat/components';
+import type { SimEvent } from '../../sim/events';
+import { ModuleC } from '../../sim/modules/components';
+import { newGame } from '../../sim/newGame';
+import { shipGrid } from '../../sim/regions';
+import { deserialize, serialize } from '../../sim/save';
+import type { Sim } from '../../sim/sim';
+import { Struct } from '../../sim/structure';
 import { content } from '../index';
 import { shipIds } from '../../sim/regions';
 import { HEAT_MAX, HEAT_PER_LAYER, LOCKOUT_EXIT_HEAT, LOCKOUT_SEC, OVERCHARGE_COOLDOWN_SEC, OVERCHARGE_SEC, VENT_SEC } from '../../sim/combat/heatTuning';

@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { ShipC, TraderC, checkOffer, newGame, playerItems, type Sim } from '../sim';
+import { ShipC } from '../sim/combat/components';
+import { newGame } from '../sim/newGame';
+import type { Sim } from '../sim/sim';
+import { checkOffer } from '../sim/trade/offers';
+import { playerItems } from '../sim/trade/player';
+import { TraderC } from '../sim/trade/types';
 import { isLive } from '../sim/trade/deals';
 import { commitments } from '../sim/trade/commit';
 import { cargoAdd } from '../sim/vehicles/cargo';

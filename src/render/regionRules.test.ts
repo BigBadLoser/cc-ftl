@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { Grid } from '../sim/grid';
 import { Struct } from '../sim/structure';
-import { AllegianceC, CrewC, PositionC, ShipC, newGame } from '../sim';
+import { ShipC } from '../sim/combat/components';
+import { CrewC, PositionC } from '../sim/crew/components';
+import { AllegianceC } from '../sim/fight/components';
+import { newGame } from '../sim/newGame';
 import { content } from '../content';
 import { crewHidden, wantsRoof } from './regionRules';
 

@@ -1,5 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import { CrewC, DownedC, HealthC, ModuleC, MoodC, ShipC, StorageC, TaskC, TICK_HZ, deserialize, homeShip, liftShip, removeModule, stampPacket, newGame, serialize, stat, totalStock, type Sim, type SimEvent } from '../../sim';
+import { TaskC } from '../../sim/ai/components';
+import { ShipC } from '../../sim/combat/components';
+import { homeShip } from '../../sim/combat/ships';
+import { CrewC, DownedC, HealthC, MoodC } from '../../sim/crew/components';
+import type { SimEvent } from '../../sim/events';
+import { StorageC } from '../../sim/items/components';
+import { totalStock } from '../../sim/items/stock';
+import { ModuleC } from '../../sim/modules/components';
+import { removeModule } from '../../sim/modules/spawn';
+import { newGame } from '../../sim/newGame';
+import { deserialize, serialize } from '../../sim/save';
+import { liftShip, stampPacket } from '../../sim/sector/packet';
+import type { Sim } from '../../sim/sim';
+import { stat } from '../../sim/stats';
+import { TICK_HZ } from '../../sim/time';
 import { claimedBed, mealOf } from '../../sim/ai/task';
 import { MOOD_LOW_WORK_MULT, MOOD_VERY_LOW_WORK_MULT } from '../../sim/tuning';
 import { content } from '../index';
@@ -15,7 +29,7 @@ function emptyLarder(sim: Sim): void {
     if (s) s.stacks = s.stacks.filter((st) => st.item !== 'item.ration');
   }
 }
-import { humans, hungry, needs, run } from './needsFixture';
+import { humans, hungry, needs, run } from '../../../test/support/fixtures/needs';
 import { nth } from '../../../test/support/sim';
 
 describe('hunger', () => {

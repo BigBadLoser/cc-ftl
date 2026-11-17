@@ -1,11 +1,20 @@
 import { expect } from 'vitest';
-import { AboardC, AllegianceC, CrewC, ModuleC, PositionC, ShipC, StunC, VehicleC, WeaponC, newGame, type ModuleDef, type Sim, type SimEvent } from '../../sim';
-import { auditReservations } from '../../sim/ai/audit';
-import { content } from '../index';
-import { shipIdOf, shipIds } from '../../sim/regions';
+import { ShipC, WeaponC } from '../../../src/sim/combat/components';
+import { CrewC, PositionC } from '../../../src/sim/crew/components';
+import type { SimEvent } from '../../../src/sim/events';
+import { AllegianceC } from '../../../src/sim/fight/components';
+import { ModuleC } from '../../../src/sim/modules/components';
+import { newGame } from '../../../src/sim/newGame';
+import type { ModuleDef } from '../../../src/sim/registry';
+import { StunC } from '../../../src/sim/robots/components';
+import type { Sim } from '../../../src/sim/sim';
+import { AboardC, VehicleC } from '../../../src/sim/vehicles/components';
+import { auditReservations } from '../../../src/sim/ai/audit';
+import { content } from '../../../src/content/index';
+import { shipIdOf } from '../../../src/sim/regions';
+import { crewOn, eventsOf, nth } from '../sim';
 
-/** The ship with ordinal `n` (1 = the player's, 2 = the first enemy). */
-export const nth = (sim: Sim, n: number): number => shipIds(sim)[n - 1] as number;
+export { crewOn, nth }; // ship with ordinal `n` (1 = the player's, 2 = the first enemy), and its crew
 
 /** Run `n` ticks (or until `stop`), collecting the events; the reservation audit must stay clean on every tick. */
 export function run(sim: Sim, n: number, stop: () => boolean = () => false): SimEvent[] {
@@ -18,10 +27,7 @@ export function run(sim: Sim, n: number, stop: () => boolean = () => false): Sim
   }
   return out;
 }
-export const of = <T extends SimEvent['type']>(events: SimEvent[], type: T): Extract<SimEvent, { type: T }>[] =>
-  events.filter((e): e is Extract<SimEvent, { type: T }> => e.type === type);
-
-export const crewOn = (sim: Sim, n: number): number[] => sim.world.query(CrewC).filter((i) => shipIdOf(sim, sim.world.get(i, PositionC)) === nth(sim, n));
+export { eventsOf as of };
 /** The raider's own crew (not the player's boarders standing on it). */
 export const raiderCrew = (sim: Sim): number[] => crewOn(sim, 2).filter((c) => sim.world.get(c, AllegianceC)?.faction === 'hostile');
 export const roleOf = (sim: Sim, id: number): string => sim.world.get(id, CrewC)!.role;

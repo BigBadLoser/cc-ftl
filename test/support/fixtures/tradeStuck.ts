@@ -1,8 +1,13 @@
 import { expect } from 'vitest';
-import { ShipC, TraderC, VehicleC, newGame, playerItems, type Sim } from '../sim';
-import { isLive } from '../sim/trade/deals';
-import { holding } from '../sim/trade/player';
-import { content } from './index';
+import { ShipC } from '../../../src/sim/combat/components';
+import { newGame } from '../../../src/sim/newGame';
+import type { Sim } from '../../../src/sim/sim';
+import { playerItems } from '../../../src/sim/trade/player';
+import { TraderC } from '../../../src/sim/trade/types';
+import { VehicleC } from '../../../src/sim/vehicles/components';
+import { isLive } from '../../../src/sim/trade/deals';
+import { holding } from '../../../src/sim/trade/player';
+import { content } from '../../../src/content/index';
 
 /** A started game with a hailed trading outpost, and a bought order of 10 metal accepted. */
 export function buying(): { sim: Sim; station: number; start: number } {

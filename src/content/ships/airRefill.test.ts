@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { AirlockC, CrewC, ModuleC, PositionC, SuitC, airSources, airlockAir, newGame, suitAir, suitDef } from '../../sim';
+import { CrewC, PositionC } from '../../sim/crew/components';
+import { airlockAir } from '../../sim/eva/air';
+import { SuitC } from '../../sim/eva/components';
+import { airSources } from '../../sim/eva/sources';
+import { suitAir, suitDef } from '../../sim/eva/suit';
+import { AirlockC } from '../../sim/modules/airlock';
+import { ModuleC } from '../../sim/modules/components';
+import { newGame } from '../../sim/newGame';
 import { shipIdOf } from '../../sim/regions';
 import { content } from '../index';
 import { run } from '../../../test/support/sim';

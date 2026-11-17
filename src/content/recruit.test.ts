@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { AboardC, CrewC, DeadC, ForHireC, PositionC, VehicleC, deserialize, galaxyIndex, serialize, type Sim } from '../sim';
+import { CrewC, DeadC, PositionC } from '../sim/crew/components';
+import { galaxyIndex } from '../sim/galaxy/state';
+import { deserialize, serialize } from '../sim/save';
+import type { Sim } from '../sim/sim';
+import { ForHireC } from '../sim/stations/components';
+import { AboardC, VehicleC } from '../sim/vehicles/components';
 import { shipGrid, shipIdOf } from '../sim/regions';
 import { isTileWalkable } from '../sim/modules/walk';
 import { bayAccessTile } from '../sim/vehicles/geometry';
@@ -10,7 +15,7 @@ import { portRecruits, recruitsHere } from '../sim/galaxy/recruit';
 import { RECRUIT_TURNS } from '../sim/galaxy/tuningRecruit';
 import { content } from '.';
 
-import { atBack, atStation, hire, people, playerCrew, run, step } from './recruitFixture';
+import { atBack, atStation, hire, people, playerCrew, run, step } from '../../test/support/fixtures/recruit';
 const keyOf = (sim: Sim, id: number): string => sim.world.get(id, ForHireC)?.key ?? '';
 const rejected = (ev: ReturnType<Sim['events']['drain']>): string[] => ev.flatMap((e) => (e.type === 'command.rejected' && e.command === 'crew.hire' ? [e.reason] : []));
 describe('crew for hire', () => {

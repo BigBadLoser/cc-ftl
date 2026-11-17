@@ -1,14 +1,25 @@
 import { describe, expect, it } from 'vitest';
-import { AboardC, AllegianceC, CrewC, DeadC, DownedC, DraftedC, EmbarkOrderC, EquipC, FighterC, HealthC, ModuleC, PathC, PositionC, PrioritiesC, ShipC, Struct, SurrenderedC, VehicleC, type ModuleDef, WeaponC, newGame, shipGrid, spawnCrew, type Sim, type SimEvent, WontDoC } from '../../sim';
+import { ShipC, WeaponC } from '../../sim/combat/components';
+import { spawnCrew } from '../../sim/combat/ships';
+import { WontDoC } from '../../sim/crew/background';
+import { CrewC, DeadC, DownedC, DraftedC, HealthC, PathC, PositionC, PrioritiesC } from '../../sim/crew/components';
+import type { SimEvent } from '../../sim/events';
+import { AllegianceC, EquipC, FighterC, SurrenderedC } from '../../sim/fight/components';
+import { ModuleC } from '../../sim/modules/components';
+import { newGame } from '../../sim/newGame';
+import { shipGrid } from '../../sim/regions';
+import type { ModuleDef } from '../../sim/registry';
+import type { Sim } from '../../sim/sim';
+import { Struct } from '../../sim/structure';
+import { AboardC, EmbarkOrderC, VehicleC } from '../../sim/vehicles/components';
 import { content } from '../index';
 import { shipIdOf } from '../../sim/regions';
 import { operatorOf } from '../../sim/combat/operators';
 import { tileKey } from '../../sim/crew/spread';
-import { nth } from '../../../test/support/sim';
+import { crewOn, nth } from '../../../test/support/sim';
 import { run as harnessRun } from '../../../test/support/sim';
 
 const run = (sim: Sim, n: number, stop?: () => boolean): SimEvent[] => harnessRun(sim, n, { stopBefore: stop }); // `stop` is checked before each step
-const crewOn = (sim: Sim, n: number): number[] => sim.world.query(CrewC).filter((i) => shipIdOf(sim, sim.world.get(i, PositionC)) === nth(sim, n));
 const airlockOf = (sim: Sim, n: number): number =>
   sim.world.query(ModuleC).find((i) => shipIdOf(sim, sim.world.get(i, ModuleC)) === nth(sim, n) && sim.world.get(i, ModuleC)!.def === 'module.airlock')!;
 const foesOn = (sim: Sim, n: number): number[] => crewOn(sim, n).filter((c) => sim.world.get(c, AllegianceC)?.faction !== 'player' && !sim.world.has(c, DeadC));

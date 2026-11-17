@@ -1,5 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import { CombatC, ShipC, StorageC, TraderC, ModuleC, deserialize, newGame, serialize, storageAdd, isContraband, unitPrice, quote, hailVerdict, reputationWith, playerItems, type Sim, type SimEvent } from '../sim';
+import { isContraband } from '../sim/blackmarket/services';
+import { CombatC, ShipC } from '../sim/combat/components';
+import type { SimEvent } from '../sim/events';
+import { StorageC } from '../sim/items/components';
+import { storageAdd } from '../sim/items/storage';
+import { ModuleC } from '../sim/modules/components';
+import { newGame } from '../sim/newGame';
+import { deserialize, serialize } from '../sim/save';
+import type { Sim } from '../sim/sim';
+import { playerItems } from '../sim/trade/player';
+import { quote, reputationWith, unitPrice } from '../sim/trade/pricing';
+import { hailVerdict } from '../sim/trade/traders';
+import { TraderC } from '../sim/trade/types';
 import { content } from './index';
 import { shipIdOf } from '../sim/regions';
 import { shipIds } from '../sim/regions';

@@ -1,9 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import {
-  AsteroidC, ShipC, asteroidAt, deserialize, generateAsteroid, homeShip, isAsteroidRock, newGame, ownerAt,
-  serialize, shipAt, shipIdAt, type OreDef, type Sim,
-} from '../../sim';
-import { emptyNeighbour } from './nodeFixture';
+import { AsteroidC } from '../../sim/asteroids/components';
+import { generateAsteroid } from '../../sim/asteroids/gen';
+import type { OreDef } from '../../sim/asteroids/types';
+import { ShipC } from '../../sim/combat/components';
+import { homeShip } from '../../sim/combat/ships';
+import { newGame } from '../../sim/newGame';
+import { asteroidAt, ownerAt, shipAt, shipIdAt } from '../../sim/regions';
+import { deserialize, serialize } from '../../sim/save';
+import type { Sim } from '../../sim/sim';
+import { isAsteroidRock } from '../../sim/structure';
+import { emptyNeighbour } from '../../../test/support/fixtures/node';
 import { content } from '../index';
 import { runLog } from '../../../test/support/sim';
 

@@ -1,8 +1,15 @@
 /** Shared setup for the salvage team tests: a new game with a small sealed derelict beside the home ship, and small run helpers. */
-import { ItemStackC, ShipC, StorageC, VehicleC, homeShip, newGame, stampShip, type ContentRegistry, type Sim, type SimEvent } from '../../sim';
-import { shipIdAt } from '../../sim/regions';
-import { content } from '../index';
-import { storages } from './ferryFixture';
+import { ShipC } from '../../../src/sim/combat/components';
+import { homeShip, stampShip } from '../../../src/sim/combat/ships';
+import type { SimEvent } from '../../../src/sim/events';
+import { ItemStackC, StorageC } from '../../../src/sim/items/components';
+import { newGame } from '../../../src/sim/newGame';
+import type { ContentRegistry } from '../../../src/sim/registry';
+import type { Sim } from '../../../src/sim/sim';
+import { VehicleC } from '../../../src/sim/vehicles/components';
+import { shipIdAt } from '../../../src/sim/regions';
+import { content } from '../../../src/content/index';
+import { storages } from './ferry';
 
 type Ev = SimEvent['type'];
 export const of = <T extends Ev>(all: SimEvent[], type: T): Extract<SimEvent, { type: T }>[] => all.filter((e): e is Extract<SimEvent, { type: T }> => e.type === type);

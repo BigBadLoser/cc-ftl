@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { JobC, PositionC, type Job } from '../crew/components';
 import { findPath } from '../crew/pathfind';
 import { SuitC } from '../eva/components';
-import { airlockOf, crew, run, world } from '../eva/airFixture';
+import { airlockOf, crew, run, world } from '../../../test/support/fixtures/air';
 import { viewOf, indexOf } from '../ai/navView';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';

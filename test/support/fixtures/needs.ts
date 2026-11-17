@@ -1,5 +1,7 @@
-import { newGame, CrewC, NeedsC, type Sim } from '../../sim';
-import { content } from '../index';
+import { CrewC, NeedsC } from '../../../src/sim/crew/components';
+import { newGame } from '../../../src/sim/newGame';
+import type { Sim } from '../../../src/sim/sim';
+import { content } from '../../../src/content/index';
 
 export const run = (sim: Sim, n: number) => { for (let i = 0; i < n; i++) sim.step(); };
 export const humans = (sim: Sim): number[] => sim.world.query(CrewC).filter((id) => sim.world.get(id, CrewC)?.species === 'species.human');

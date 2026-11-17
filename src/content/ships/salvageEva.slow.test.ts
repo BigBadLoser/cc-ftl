@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { AboardC, CrewC, PositionC, ShipC, StorageC, Struct, VehicleC, deserialize, placementError, removeModule, serialize, shipGrid, spawnModule, suitDef, suitTile, writeStruct, type SimEvent } from '../../sim';
+import { ShipC } from '../../sim/combat/components';
+import { CrewC, PositionC } from '../../sim/crew/components';
+import { suitDef, suitTile } from '../../sim/eva/suit';
+import type { SimEvent } from '../../sim/events';
+import { StorageC } from '../../sim/items/components';
+import { placementError, removeModule, spawnModule } from '../../sim/modules/spawn';
+import { shipGrid } from '../../sim/regions';
+import { deserialize, serialize } from '../../sim/save';
+import { Struct, writeStruct } from '../../sim/structure';
+import { AboardC, VehicleC } from '../../sim/vehicles/components';
 import { shipIdOf } from '../../sim/regions';
 import { AwayC, AwaySiteC, SiteRunC } from '../../sim/away/components';
 import { EvaFloatC, SuitC } from '../../sim/eva/components';
@@ -7,9 +16,9 @@ import { NeedsC } from '../../sim/crew/components';
 import { hatchSpot } from '../../sim/eva/shuttle';
 import { StunC } from '../../sim/robots/components';
 import { content } from '../index';
-import { shuttleOf, storages } from './ferryFixture';
-import { looseScrap, of, scrapHome, setup, smallHold } from './salvageEvaFixture';
-import { play } from './awayFixture';
+import { shuttleOf, storages } from '../../../test/support/fixtures/ferry';
+import { looseScrap, of, scrapHome, setup, smallHold } from '../../../test/support/fixtures/salvageEva';
+import { play } from '../../../test/support/fixtures/away';
 
 /**
  * Salvage on an away site (#286 slice 3), the long runs: the checks of the old salvage team's tests, ported to the site's run (the special-case

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { content } from '../content';
-import { CrewC, newGame } from '../sim';
+import { CrewC } from '../sim/crew/components';
+import { newGame } from '../sim/newGame';
 import { buildSocial } from './socialSnapshot';
 import { stageBondHistory } from './bondStage';
 

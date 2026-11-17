@@ -1,5 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { CombatC, CrewC, SkillXpC, spawnCrew, IonC, JobC, ModuleC, PositionC, ProjectileC, ShipC, StorageC, WeaponC, aimDirection, deserialize, newGame, turretPosition, serialize, type ContentRegistry, type ShipTemplate, type Sim, type SimEvent } from '../../sim';
+import { CombatC, IonC, ProjectileC, ShipC, WeaponC } from '../../sim/combat/components';
+import { aimDirection, turretPosition } from '../../sim/combat/geometry';
+import { spawnCrew } from '../../sim/combat/ships';
+import { CrewC, JobC, PositionC } from '../../sim/crew/components';
+import type { SimEvent } from '../../sim/events';
+import { StorageC } from '../../sim/items/components';
+import { ModuleC } from '../../sim/modules/components';
+import { newGame } from '../../sim/newGame';
+import type { ContentRegistry, ShipTemplate } from '../../sim/registry';
+import { deserialize, serialize } from '../../sim/save';
+import type { Sim } from '../../sim/sim';
+import { SkillXpC } from '../../sim/story/components';
 import { content } from '../index';
 import { shipIdOf, shipGrid } from '../../sim/regions';
 import { shipById } from '../../sim/combat/ships';

@@ -1,8 +1,23 @@
 import { describe, expect, it } from 'vitest';
-import {
-  CombatC, FTL_CHARGE_SEC, ModuleC, StorageC, shipIdOf, spawnShip, storageAdd, FUEL_ITEM, START_NODE, TraderC, burnFuel, cheapestHop, deserialize, distressBlocker, econOf, fuelOnSale, fuelStock, galaxyIndex, isStranded, newGame,
-  playerShip, portsAt, serialize, tugQuote, unitPrice, type Sim, type SimEvent,
-} from '../sim';
+import { CombatC } from '../sim/combat/components';
+import { spawnShip } from '../sim/combat/ships';
+import type { SimEvent } from '../sim/events';
+import { burnFuel, FUEL_ITEM, fuelStock } from '../sim/galaxy/fuel';
+import { econOf } from '../sim/galaxy/market';
+import { portsAt } from '../sim/galaxy/portIndex';
+import { galaxyIndex, START_NODE } from '../sim/galaxy/state';
+import { cheapestHop, distressBlocker, fuelOnSale, isStranded, tugQuote } from '../sim/galaxy/stranded';
+import { StorageC } from '../sim/items/components';
+import { storageAdd } from '../sim/items/storage';
+import { ModuleC } from '../sim/modules/components';
+import { newGame } from '../sim/newGame';
+import { shipIdOf } from '../sim/regions';
+import { deserialize, serialize } from '../sim/save';
+import type { Sim } from '../sim/sim';
+import { playerShip } from '../sim/trade/player';
+import { unitPrice } from '../sim/trade/pricing';
+import { TraderC } from '../sim/trade/types';
+import { FTL_CHARGE_SEC } from '../sim/tuning';
 import { reputationOf } from '../sim/story/state';
 import { DISTRESS_TURNS } from '../sim/galaxy/tuning';
 import { onTurn } from '../sim/galaxy/turn';

@@ -1,5 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { ModuleC, ShipC, StorageC, TraderC, VehicleC, destroyVehicle, newGame, storageAdd, unitPrice, playerItems, type Deal, type Sim, type SimEvent } from '../../sim';
+import { ShipC } from '../../sim/combat/components';
+import type { SimEvent } from '../../sim/events';
+import { StorageC } from '../../sim/items/components';
+import { storageAdd } from '../../sim/items/storage';
+import { ModuleC } from '../../sim/modules/components';
+import { newGame } from '../../sim/newGame';
+import type { Sim } from '../../sim/sim';
+import { playerItems } from '../../sim/trade/player';
+import { unitPrice } from '../../sim/trade/pricing';
+import { type Deal, TraderC } from '../../sim/trade/types';
+import { VehicleC } from '../../sim/vehicles/components';
+import { destroyVehicle } from '../../sim/vehicles/lifecycle';
 import { MAX_TRIPS, planTrips } from '../../sim/trade/trips';
 import type { Trip } from '../../sim/trade/types';
 import { shipIds, shipIdOf } from '../../sim/regions';

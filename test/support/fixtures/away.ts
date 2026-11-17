@@ -1,10 +1,14 @@
 /** Shared setup for the away site tests (#286): work on the salvage fixture's wreck, and a party landed on it. */
-import { CrewC, DeadC, DraftedC, JobC, PositionC, ShipC, type ContentRegistry, type Sim, type SimEvent } from '../../sim';
-import { awayLeaks } from '../../sim/away/owned';
-import { content } from '../index';
-import { shipIdOf } from '../../sim/regions';
-import { shuttleOf } from './ferryFixture';
-import { play as playRaw, setup } from './salvageEvaFixture';
+import { ShipC } from '../../../src/sim/combat/components';
+import { CrewC, DeadC, DraftedC, JobC, PositionC } from '../../../src/sim/crew/components';
+import type { SimEvent } from '../../../src/sim/events';
+import type { ContentRegistry } from '../../../src/sim/registry';
+import type { Sim } from '../../../src/sim/sim';
+import { awayLeaks } from '../../../src/sim/away/owned';
+import { content } from '../../../src/content/index';
+import { shipIdOf } from '../../../src/sim/regions';
+import { shuttleOf } from './ferry';
+import { play as playRaw, setup } from './salvageEva';
 
 /** Deconstruct jobs on `n` of the wreck's top hull walls: construction work on the site, reachable from the hull. */
 export function siteWork(sim: Sim, wreck: number, n = 1): number[] {

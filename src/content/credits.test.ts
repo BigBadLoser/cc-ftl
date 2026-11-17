@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { content } from '../content';
-import { newGame, runSummary } from '../sim';
+import { content } from './index';
+import { newGame } from '../sim/newGame';
+import { runSummary } from '../sim/runSummary';
 import { addCredits } from '../sim/trade/credits';
 
 describe('best credits', () => {

@@ -410,6 +410,18 @@ Shared test helpers live in `test/support/` (repo root); use them instead of a l
 - `content.ts` (the only module that may import `content`): `content`, `cachedNewGame(seed)`.
 - Import rule (lint): only `*.test.ts`, `*.slow.test.ts`, `*.soak.test.ts` and `test/support` may import `test/support`; the sim-only
   modules follow the sim's boundary (no `content`, `render`, `ui`, `app`), so `src/sim` tests can use them.
+- `fixtures/` (`test/support/fixtures/*.ts`): scenario setups shared by test files (yard, shuttle, farm, stations, outposts, freighter,
+  boarding, away, ferry, ...). They may reach content; none lives in `src/` any more. A fixture that builds an expensive start uses
+  `cachedWorld` (the yard game, the shuttle scene, the farm game); building a game is cheap (`newGame` is about 9 ms), so cache only
+  what steps or spawns.
+- Tests import the module that owns what they use, never the sim barrel `src/sim/index.ts` (lint, `tools/lint/simBarrelBaseline.js`
+  lists the few files not migrated yet; do not add to it). Through the barrel every test depends on the whole sim.
+- Generated galaxy chunks are cached per (content, seed) and shared by every test in a worker, so `src/sim/testSetup.ts` deep-freezes
+  them: a test that assigns `node.danger`, `node.faction` or `edge.fuel` fails with "read only". Play on `contentEdited(seed, key, edit)`
+  or `contentAtDanger(seed, tier)` (`test/support/content.ts`): a copy of the content with its own generator whose chunks carry the edit.
+- Where a sweep over seeds or sizes is too long for the fast tier, the fast test keeps one seed and the rest moves to the `.slow` file
+  (`stations`, `outposts`); a long natural wait keeps a short version in the fast file that starts near the moment tested and the full
+  wait in the `.slow` file (`food`, `shuttleDefence`).
 - Turn systems off only in a focused unit test with an explicit list; never in a gameplay-outcome test.
 - Where a branch case only needs the moment it tests (party aboard, reactor near its deadline), start there (set the timer, deploy
   from a cached scene) and keep one natural signal-to-rescue test on the production pipeline (`content/freighter.test.ts`).

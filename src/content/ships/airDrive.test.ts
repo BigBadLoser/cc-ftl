@@ -1,9 +1,20 @@
 import { describe, expect, it } from 'vitest';
-import {
-  VehicleC, destroyVehicle,
-  AirlockC, AssignmentC, CarriedC, CrewC, DownedC, HealthC, NeedsC, IntentC, JobC, ModuleC, PickupC, PositionC, ShipC, Struct, SuitC, TICK_HZ, homeShip, newGame, shipGrid,
-  suitAir, suitDef, type Sim, type SimEvent,
-} from '../../sim';
+import { IntentC, PickupC } from '../../sim/ai/components';
+import { ShipC } from '../../sim/combat/components';
+import { homeShip } from '../../sim/combat/ships';
+import { AssignmentC, CarriedC, CrewC, DownedC, HealthC, JobC, NeedsC, PositionC } from '../../sim/crew/components';
+import { SuitC } from '../../sim/eva/components';
+import { suitAir, suitDef } from '../../sim/eva/suit';
+import type { SimEvent } from '../../sim/events';
+import { AirlockC } from '../../sim/modules/airlock';
+import { ModuleC } from '../../sim/modules/components';
+import { newGame } from '../../sim/newGame';
+import { shipGrid } from '../../sim/regions';
+import type { Sim } from '../../sim/sim';
+import { Struct } from '../../sim/structure';
+import { TICK_HZ } from '../../sim/time';
+import { VehicleC } from '../../sim/vehicles/components';
+import { destroyVehicle } from '../../sim/vehicles/lifecycle';
 import { airLines, airMargin } from '../../sim/ai/airNeed';
 import { auditReservations } from '../../sim/ai/audit';
 import { claimedBed } from '../../sim/ai/task';

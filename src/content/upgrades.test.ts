@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { CombatC, ItemStackC, JobC, ModuleC, ProjectileC, ShipC, StorageC, WeaponC, newGame, playerShip, type Sim } from '../sim';
+import { CombatC, ProjectileC, ShipC, WeaponC } from '../sim/combat/components';
+import { JobC } from '../sim/crew/components';
+import { ItemStackC, StorageC } from '../sim/items/components';
+import { ModuleC } from '../sim/modules/components';
+import { newGame } from '../sim/newGame';
+import type { Sim } from '../sim/sim';
+import { playerShip } from '../sim/trade/player';
 import { damageModule } from '../sim/combat/effects';
 import { commitEtaSec } from '../sim/combat/eta';
 import { fitJobOf } from '../sim/upgrades/fit';

@@ -1,8 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import {
-  AssignmentC, CrewC, DraftedC, IntentC, InterruptC, HealthC, JobC, ModuleC, NeedsC, PathC, PositionC, PrioritiesC, TaskC, homeShip, newGame,
-  shipGrid, Struct, type ContentRegistry, type Sim,
-} from '../../sim';
+import { IntentC, InterruptC, TaskC } from '../../sim/ai/components';
+import { homeShip } from '../../sim/combat/ships';
+import { AssignmentC, CrewC, DraftedC, HealthC, JobC, NeedsC, PathC, PositionC, PrioritiesC } from '../../sim/crew/components';
+import { ModuleC } from '../../sim/modules/components';
+import { newGame } from '../../sim/newGame';
+import { shipGrid } from '../../sim/regions';
+import type { ContentRegistry } from '../../sim/registry';
+import type { Sim } from '../../sim/sim';
+import { Struct } from '../../sim/structure';
 import { auditReservations } from '../../sim/ai/audit';
 import { explainCrew } from '../../sim/ai/explain';
 import { hazardHolds } from '../../sim/ai/hazard';

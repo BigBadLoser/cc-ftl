@@ -1,16 +1,28 @@
 import { describe, expect, it } from 'vitest';
-import { AboardC, AllegianceC, CaptureProgressC, CombatC, CrewC, DeadC, DownedC, DraftedC, EquipC, HealthC, ItemStackC, ModuleC, PathC, PositionC, PrisonerC, PrizeC, prizeValue, ShipC, shipIdAt, SurrenderedC, VehicleC, WeaponC, accessTile, cargoCount, deserialize, newGame, serialize, storageCount, StorageC, type ModuleDef, type Sim, type SimEvent } from '../../sim';
+import { prizeValue } from '../../sim/capture/prize';
+import { CaptureProgressC, CombatC, PrizeC, ShipC, WeaponC } from '../../sim/combat/components';
+import { CrewC, DeadC, DownedC, DraftedC, HealthC, PathC, PositionC } from '../../sim/crew/components';
+import type { SimEvent } from '../../sim/events';
+import { AllegianceC, EquipC, PrisonerC, SurrenderedC } from '../../sim/fight/components';
+import { ItemStackC, StorageC } from '../../sim/items/components';
+import { storageCount } from '../../sim/items/storage';
+import { ModuleC } from '../../sim/modules/components';
+import { accessTile } from '../../sim/modules/footprint';
+import { newGame } from '../../sim/newGame';
+import { shipIdAt } from '../../sim/regions';
+import type { ModuleDef } from '../../sim/registry';
+import { deserialize, serialize } from '../../sim/save';
+import type { Sim } from '../../sim/sim';
+import { cargoCount } from '../../sim/vehicles/cargo';
+import { AboardC, VehicleC } from '../../sim/vehicles/components';
 import { content } from '../index';
 import { shipIdOf, shipIds } from '../../sim/regions';
-import { nth } from '../../../test/support/sim';
+import { crewOn, eventsOf, nth } from '../../../test/support/sim';
 import { run as harnessRun } from '../../../test/support/sim';
 
 
 const run = (sim: Sim, n: number, stop?: () => boolean): SimEvent[] => harnessRun(sim, n, { stopBefore: stop }); // `stop` is checked before each step
-const of = <T extends SimEvent['type']>(events: SimEvent[], type: T): Extract<SimEvent, { type: T }>[] =>
-  events.filter((e): e is Extract<SimEvent, { type: T }> => e.type === type);
 const defOf = (sim: Sim, id: number): ModuleDef => content.modules[sim.world.get(id, ModuleC)!.def as keyof typeof content.modules] as ModuleDef;
-const crewOn = (sim: Sim, shipId: number): number[] => sim.world.query(CrewC).filter((i) => shipIdOf(sim, sim.world.get(i, PositionC)) === nth(sim, shipId));
 const modulesOf = (sim: Sim, shipId: number, def: string): number[] =>
   sim.world.query(ModuleC).filter((i) => shipIdOf(sim, sim.world.get(i, ModuleC)) === nth(sim, shipId) && sim.world.get(i, ModuleC)!.def === def);
 const roleOf = (sim: Sim, id: number): string => sim.world.get(id, CrewC)!.role;
@@ -77,7 +89,7 @@ describe('capturing a ship', () => {
     const helm = helmTile(sim, 2);
     sim.enqueue({ type: 'crew.moveTo', id: party[0]!, x: helm.x, y: helm.y, ship: nth(sim, 2) });
     out.push(...run(sim, 900, () => ship(sim, 2).state === 'prize'));
-    expect(of(out, 'ship.captured')).toEqual([{ type: 'ship.captured', ship: nth(sim, 2), by: 'player', from: 'hostile' }]);
+    expect(eventsOf(out, 'ship.captured')).toEqual([{ type: 'ship.captured', ship: nth(sim, 2), by: 'player', from: 'hostile' }]);
     expect(ship(sim, 2)).toMatchObject({ state: 'prize', faction: 'player' });
     for (const c of raiders) expect(sim.world.has(c, DeadC) || sim.world.has(c, PrisonerC)).toBe(true);
     expect(prizeValue(sim, nth(sim, 2))).toBeGreaterThan(0);
@@ -114,7 +126,7 @@ describe('capturing a ship', () => {
     for (const c of party) teleport(sim, c, 2, helm.x + 3, helm.y); // aboard, but off the helm
     const out = run(sim, 300);
     expect(ship(sim, 2).state).toBe('active');
-    expect(of(out, 'ship.captured')).toHaveLength(0);
+    expect(eventsOf(out, 'ship.captured')).toHaveLength(0);
   });
 
   it('weapons and AI go inert after capture and combat ends', () => {
@@ -125,10 +137,10 @@ describe('capturing a ship', () => {
     expect(sim.sector.inCombat).toBe(true);
     const out = capture(sim);
     out.push(...run(sim, 600));
-    expect(of(out, 'combat.ended')).toHaveLength(1);
+    expect(eventsOf(out, 'combat.ended')).toHaveLength(1);
     expect(sim.sector.inCombat).toBe(false);
     const after = run(sim, 600);
-    expect(of(after, 'weapon.fired').filter((e) => e.ship === nth(sim, 2))).toHaveLength(0);
+    expect(eventsOf(after, 'weapon.fired').filter((e) => e.ship === nth(sim, 2))).toHaveLength(0);
     for (const i of sim.world.query(WeaponC)) {
       if (shipIdOf(sim, sim.world.get(i, ModuleC)) === shipIds(sim)[1] as number) expect(sim.world.get(i, WeaponC)).toMatchObject({ charge: 0, shotsLeft: 0 });
     }
@@ -162,14 +174,14 @@ describe('capturing a ship', () => {
     const sim = setup();
     const { party } = stage(sim);
     sim.enqueue({ type: 'ship.scuttle', ship: nth(sim, 1) });
-    expect(of(run(sim, 1), 'command.rejected')[0]).toMatchObject({ command: 'ship.scuttle', reason: 'notPrize' });
+    expect(eventsOf(run(sim, 1), 'command.rejected')[0]).toMatchObject({ command: 'ship.scuttle', reason: 'notPrize' });
     capture(sim);
     sim.enqueue({ type: 'ship.scuttle', ship: nth(sim, 2) });
-    expect(of(run(sim, 1), 'command.rejected')[0]).toMatchObject({ reason: 'crewAboard' });
+    expect(eventsOf(run(sim, 1), 'command.rejected')[0]).toMatchObject({ reason: 'crewAboard' });
     for (const c of party) teleport(sim, c, 1, 5, 5);
     sim.enqueue({ type: 'ship.scuttle', ship: nth(sim, 2) });
     const out = run(sim, 2);
-    expect(of(out, 'ship.destroyed')).toEqual([{ type: 'ship.destroyed', ship: nth(sim, 2) }]);
+    expect(eventsOf(out, 'ship.destroyed')).toEqual([{ type: 'ship.destroyed', ship: nth(sim, 2) }]);
     expect(ship(sim, 2).state).toBe('wreck');
     expect(sim.world.has(nth(sim, 2), PrizeC)).toBe(false);
     expect(crewOn(sim, 2).every((c) => sim.world.has(c, DeadC))).toBe(true);
@@ -187,7 +199,7 @@ describe('losing to boarders', () => {
     expect(run(sim, 150).some((e) => e.type === 'game.lost')).toBe(false); // one defender still stands
     sim.world.add(player[0]!, SurrenderedC, { tick: sim.tick });
     const out = run(sim, 400, () => !!sim.sector.lost);
-    expect(of(out, 'game.lost')).toEqual([{ type: 'game.lost', reason: 'captured' }]);
+    expect(eventsOf(out, 'game.lost')).toEqual([{ type: 'game.lost', reason: 'captured' }]);
     expect(sim.sector.lost).toBe('captured');
     expect(run(sim, 100).filter((e) => e.type === 'game.lost')).toHaveLength(0);
   });

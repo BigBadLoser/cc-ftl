@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { DeployC, ModuleC, WeaponC, isDeployed, newGame, shieldCapacity, type Sim } from '../../sim';
+import { WeaponC } from '../../sim/combat/components';
+import { shieldCapacity } from '../../sim/combat/ships';
+import { DeployC, ModuleC } from '../../sim/modules/components';
+import { isDeployed } from '../../sim/modules/deploy';
+import { newGame } from '../../sim/newGame';
+import type { Sim } from '../../sim/sim';
 import { content } from '../index';
 import { shipIdOf } from '../../sim/regions';
 import { shipIds } from '../../sim/regions';

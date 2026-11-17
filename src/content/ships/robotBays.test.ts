@@ -1,19 +1,26 @@
 import { describe, expect, it } from 'vitest';
-import { CrewC, DeadC, DraftedC, HealthC, JobC, ModuleC, NeedsC, PositionC, StorageC, deserialize, newGame, placementError, serialize, spawnModule, removeModule, findPath, stat, storageAdd, storageCount, type Sim, type SimEvent } from '../../sim';
+import { ShipC } from '../../sim/combat/components';
+import { CrewC, DeadC, DraftedC, HealthC, JobC, NeedsC, PathC, PositionC } from '../../sim/crew/components';
+import { findPath } from '../../sim/crew/pathfind';
+import type { SimEvent } from '../../sim/events';
+import { StorageC } from '../../sim/items/components';
+import { storageAdd, storageCount } from '../../sim/items/storage';
+import { ModuleC } from '../../sim/modules/components';
+import { placementError, removeModule, spawnModule } from '../../sim/modules/spawn';
+import { newGame } from '../../sim/newGame';
+import { deserialize, serialize } from '../../sim/save';
+import type { Sim } from '../../sim/sim';
+import { stat } from '../../sim/stats';
 import { applyEffects } from '../../sim/combat/effects';
 import { content } from '../index';
-import { PathC, ShipC } from '../../sim';
 import { nearestExterior } from '../../sim/eva/shuttle';
 import { shipIdOf, shipGrid } from '../../sim/regions';
 import { shipIds } from '../../sim/regions';
-import { nth } from '../../../test/support/sim';
+import { crewOn, eventsOf, nth } from '../../../test/support/sim';
 import { run as harnessRun } from '../../../test/support/sim';
 
 
 const run = (sim: Sim, n: number, stop?: () => boolean): SimEvent[] => harnessRun(sim, n, { stopBefore: stop }); // `stop` is checked before each step
-const of = <T extends SimEvent['type']>(events: SimEvent[], type: T): Extract<SimEvent, { type: T }>[] =>
-  events.filter((e): e is Extract<SimEvent, { type: T }> => e.type === type);
-const crewOn = (sim: Sim, shipId: number): number[] => sim.world.query(CrewC).filter((i) => shipIdOf(sim, sim.world.get(i, PositionC)) === nth(sim, shipId));
 const roleOf = (sim: Sim, id: number): string => sim.world.get(id, CrewC)!.role;
 const storages = (sim: Sim): number[] => sim.world.query(StorageC).filter((s) => shipIdOf(sim, sim.world.get(s, ModuleC)) === shipIds(sim)[0] as number);
 const stock = (sim: Sim, item: string): number => storages(sim).reduce((n, s) => n + storageCount(sim, s, item), 0);
@@ -101,12 +108,12 @@ describe('repair and charge', () => {
     sim.world.get(robot, NeedsC)!.charge = 19;
     const out = run(sim, 600, () => sim.world.get(robot, CrewC)!.activity === 'charging');
     expect(sim.world.get(robot, CrewC)!.activity).toBe('charging');
-    expect(of(out, 'robot.charging')).toEqual([{ type: 'robot.charging', crew: robot, bay }]);
+    expect(eventsOf(out, 'robot.charging')).toEqual([{ type: 'robot.charging', crew: robot, bay }]);
     expect(sim.world.get(bay!, ModuleC)!.reservedBy).toBe(robot); // its home bay now
     const m = sim.world.get(bay!, ModuleC)!;
     expect(sim.world.get(robot, PositionC)).toMatchObject({ x: m.x, y: m.y });
     const done = run(sim, 2000, () => sim.world.get(robot, CrewC)!.activity !== 'charging');
-    expect(of(done, 'robot.charged')).toHaveLength(1);
+    expect(eventsOf(done, 'robot.charged')).toHaveLength(1);
     expect(charge(sim, robot)).toBeGreaterThanOrEqual(99.9);
   });
 
@@ -144,19 +151,19 @@ describe('robot assembly', () => {
     sim.enqueue({ type: 'module.assembleRobot', moduleId: bay!, role: 'role.robot_worker' });
     sim.enqueue({ type: 'module.assembleRobot', moduleId: bay!, role: 'role.robot_repair' });
     const first = run(sim, 2);
-    expect(of(first, 'command.rejected').map((e) => e.reason)).toEqual(['bayTaken']);
+    expect(eventsOf(first, 'command.rejected').map((e) => e.reason)).toEqual(['bayTaken']);
     sim.enqueue({ type: 'module.assembleRobot', moduleId: bay!, role: 'role.engineer' });
-    expect(of(run(sim, 1), 'command.rejected').map((e) => e.reason)).toEqual(['badRole']);
+    expect(eventsOf(run(sim, 1), 'command.rejected').map((e) => e.reason)).toEqual(['badRole']);
     const out = run(sim, 4000, () => sim.world.query(CrewC).some((c) => roleOf(sim, c) === 'role.robot_worker'));
     const made = sim.world.query(CrewC).find((c) => roleOf(sim, c) === 'role.robot_worker')!;
     expect(made).toBeDefined();
-    expect(of(out, 'robot.assembled')).toEqual([{ type: 'robot.assembled', crew: made, bay, ship: nth(sim, 1) }]);
+    expect(eventsOf(out, 'robot.assembled')).toEqual([{ type: 'robot.assembled', crew: made, bay, ship: nth(sim, 1) }]);
     expect(sim.world.get(bay!, ModuleC)!.reservedBy).toBe(made);
     expect(before.parts - stock(sim, 'item.parts')).toBe(6);
     expect(before.metal - stock(sim, 'item.metal')).toBe(10);
     expect(before.elec - stock(sim, 'item.electronics')).toBe(4);
     sim.enqueue({ type: 'module.assembleRobot', moduleId: bay!, role: 'role.robot_repair' });
-    expect(of(run(sim, 1), 'command.rejected').map((e) => e.reason)).toEqual(['bayTaken']);
+    expect(eventsOf(run(sim, 1), 'command.rejected').map((e) => e.reason)).toEqual(['bayTaken']);
   });
 
   it('cancelling drops the delivered materials and frees the bay', () => {
@@ -169,7 +176,7 @@ describe('robot assembly', () => {
     run(sim, 1);
     expect(sim.world.query(JobC).some((j) => sim.world.get(j, JobC)!.kind === 'assemble')).toBe(false);
     sim.enqueue({ type: 'module.assembleRobot', moduleId: bay!, role: 'role.robot_worker' });
-    expect(of(run(sim, 1), 'command.rejected')).toHaveLength(0);
+    expect(eventsOf(run(sim, 1), 'command.rejected')).toHaveLength(0);
   });
 });
 

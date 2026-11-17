@@ -3,6 +3,7 @@ import tseslint from 'typescript-eslint';
 import svelte from 'eslint-plugin-svelte';
 import globals from 'globals';
 import svelteParser from 'svelte-eslint-parser';
+import simBarrelBaseline from './tools/lint/simBarrelBaseline.js';
 
 /** Build a no-restricted-imports rule from exact names and glob patterns. */
 const noImports = (names, patterns) => ({
@@ -142,4 +143,16 @@ export default tseslint.config(
     files: ['src/ui/kit/**/*.ts', 'src/ui/kit/**/*.svelte'],
     rules: noImports(pixiNames, [...pixiPat, ...pat(['render'])]),
   },
+  {
+    // A test imports the module that owns what it uses, never the sim barrel (src/sim/index.ts): through the barrel every test depends on
+    // the whole sim, so any sim edit selects it. The baseline lists the test files not yet migrated.
+    files: ['**/*.test.ts'],
+    ignores: ['src/sim/**', ...simBarrelBaseline],
+    rules: { '@typescript-eslint/no-restricted-imports': ['error', { patterns: [{ regex: '^(\\.\\./)+(src/)?sim(/index)?$', message: 'Import the module that owns it, not the sim barrel.' }] }] },
+  },
+  ...[['src/sim/*.test.ts', '^\\.(/index)?$'], ['src/sim/*/*.test.ts', '^\\.\\.(/index)?$'], ['src/sim/*/*/*.test.ts', '^\\.\\./\\.\\.(/index)?$']].map(([glob, regex]) => ({
+    files: [glob],
+    ignores: simBarrelBaseline,
+    rules: { '@typescript-eslint/no-restricted-imports': ['error', { patterns: [{ regex, message: 'Import the module that owns it, not the sim barrel.' }] }] },
+  })),
 );

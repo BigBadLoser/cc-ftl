@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { CrewC, HealthC, ModuleC, TICK_HZ, newGame, removeModule, totalStock } from '../../sim';
+import { CrewC, HealthC } from '../../sim/crew/components';
+import { totalStock } from '../../sim/items/stock';
+import { ModuleC } from '../../sim/modules/components';
+import { removeModule } from '../../sim/modules/spawn';
+import { newGame } from '../../sim/newGame';
+import { TICK_HZ } from '../../sim/time';
 import { content } from '../index';
-import { humans, hungry, needs } from './needsFixture';
+import { humans, hungry, needs } from '../../../test/support/fixtures/needs';
 
 // Slow tier: the natural-length hunger run and the ten-minute feeding run. needs.test.ts starts the hunger case near the moment it tests.
 describe('needs, long runs', () => {

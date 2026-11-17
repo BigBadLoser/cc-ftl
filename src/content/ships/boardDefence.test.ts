@@ -1,6 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { sightLine } from '../../sim/fight/los';
-import { AllegianceC, CrewC, DeadC, DownedC, EquipC, ModuleC, WontDoC, StorageC, storageCount, storageTake, FighterC, JobC, PathC, Struct, shipGrid, SurrenderedC, HealthC, PositionC, newGame, spawnCrew, type Sim } from '../../sim';
+import { spawnCrew } from '../../sim/combat/ships';
+import { WontDoC } from '../../sim/crew/background';
+import { CrewC, DeadC, DownedC, HealthC, JobC, PathC, PositionC } from '../../sim/crew/components';
+import { AllegianceC, EquipC, FighterC, SurrenderedC } from '../../sim/fight/components';
+import { StorageC } from '../../sim/items/components';
+import { storageCount, storageTake } from '../../sim/items/storage';
+import { ModuleC } from '../../sim/modules/components';
+import { newGame } from '../../sim/newGame';
+import { shipGrid } from '../../sim/regions';
+import type { Sim } from '../../sim/sim';
+import { Struct } from '../../sim/structure';
 import { content } from '../index';
 import { shipIdOf, shipIds } from '../../sim/regions';
 import { run } from '../../../test/support/sim';

@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import {
-  CombatC, FTL_CHARGE_SEC, START_NODE, ShipC, galaxyIndex, newGame, playerShip, passingMeets, incomingFleets, TICK_HZ, type Sim,
-} from '../sim';
+import { CombatC, ShipC } from '../sim/combat/components';
+import { passingMeets } from '../sim/galaxy/encounters';
+import { incomingFleets } from '../sim/galaxy/incoming';
+import { galaxyIndex, START_NODE } from '../sim/galaxy/state';
+import { newGame } from '../sim/newGame';
+import type { Sim } from '../sim/sim';
+import { TICK_HZ } from '../sim/time';
+import { playerShip } from '../sim/trade/player';
+import { FTL_CHARGE_SEC } from '../sim/tuning';
 import { crossingOf, encounterKind } from '../sim/galaxy/encounters';
 import { stepFleets } from '../sim/galaxy/fleets';
 import { TIME_TURN_TICKS, takeHopTurn, tickTurnClock } from '../sim/galaxy/turn';

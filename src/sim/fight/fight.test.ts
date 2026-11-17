@@ -20,6 +20,7 @@ import { hitChance, wielded } from './weapons';
 import { StorageC } from '../items/components';
 import { shipGrid } from '../regions';
 import { shipIds } from '../regions';
+import { eventsOf } from '../../../test/support/sim';
 
 const mod = (o: Partial<ModuleDef>): ModuleDef => ({
   name: 'm', asset: 'm', footprint: [1, 1], solid: false, power: 0, flammability: 0.1, maxHp: 100, buildWork: 20, ...o,
@@ -103,8 +104,6 @@ function run(sim: Sim, limit: number, stop: () => boolean = () => false): SimEve
   }
   return out;
 }
-const of = <T extends SimEvent['type']>(events: SimEvent[], type: T): Extract<SimEvent, { type: T }>[] =>
-  events.filter((e): e is Extract<SimEvent, { type: T }> => e.type === type);
 const hp = (sim: Sim, id: number): number => sim.world.get(id, HealthC)!.hp;
 const grid = (sim: Sim) => shipGrid(sim, shipIds(sim)[0] as number)!;
 
@@ -162,8 +161,8 @@ describe('line of sight and cover', () => {
         sim.world.get(tgt, HealthC)!.hp = 1e9; // never goes down: count shots
         sim.world.get(tgt, HealthC)!.max = 1e9;
         const ev = run(sim, 20 * 30);
-        hits += of(ev, 'crew.hit').filter((e) => e.crew === shooter).length;
-        shots += of(ev, 'crew.attacked').filter((e) => e.crew === shooter).length;
+        hits += eventsOf(ev, 'crew.hit').filter((e) => e.crew === shooter).length;
+        shots += eventsOf(ev, 'crew.attacked').filter((e) => e.crew === shooter).length;
       }
       return hits / shots;
     };
@@ -183,9 +182,9 @@ describe('crew combat', () => {
     expect(hp(sim, near) + hp(sim, far)).toBe(2 * CREW_MAX_HP); // engage off: no shots at the nearest foe on its own
     sim.enqueue({ type: 'crew.attack', id: gunner, target: far });
     const ev = run(sim, 20 * 20);
-    expect(of(ev, 'crew.attacked').every((e) => e.crew !== gunner || e.target === far)).toBe(true);
-    expect(of(ev, 'crew.attacked').some((e) => e.crew === gunner)).toBe(true);
-    const shot = of(ev, 'crew.attacked').find((e) => e.crew === gunner)!;
+    expect(eventsOf(ev, 'crew.attacked').every((e) => e.crew !== gunner || e.target === far)).toBe(true);
+    expect(eventsOf(ev, 'crew.attacked').some((e) => e.crew === gunner)).toBe(true);
+    const shot = eventsOf(ev, 'crew.attacked').find((e) => e.crew === gunner)!;
     expect(Math.hypot(shot.tx - shot.x, shot.ty - shot.y)).toBeLessThanOrEqual(8); // closed to sidearm range first
     expect(hp(sim, near)).toBe(CREW_MAX_HP);
     expect(hp(sim, far)).toBeLessThan(CREW_MAX_HP);
@@ -197,10 +196,10 @@ describe('crew combat', () => {
     const ally = person(sim, 3, 3, 'player');
     const foe = person(sim, 7, 2, 'hostile');
     sim.enqueue({ type: 'crew.attack', id: gunner, target: foe });
-    expect(of(run(sim, 1), 'command.rejected')[0]).toMatchObject({ reason: 'notDrafted' });
+    expect(eventsOf(run(sim, 1), 'command.rejected')[0]).toMatchObject({ reason: 'notDrafted' });
     sim.enqueue({ type: 'crew.draft', id: gunner, drafted: true });
     sim.enqueue({ type: 'crew.attack', id: gunner, target: ally });
-    expect(of(run(sim, 1), 'command.rejected')[0]).toMatchObject({ reason: 'badTarget' });
+    expect(eventsOf(run(sim, 1), 'command.rejected')[0]).toMatchObject({ reason: 'badTarget' });
     run(sim, 20 * 10);
     expect(hp(sim, foe)).toBeLessThan(CREW_MAX_HP);
     expect(hp(sim, ally)).toBe(CREW_MAX_HP);
@@ -224,7 +223,7 @@ describe('crew combat', () => {
     sim.world.get(foe, HealthC)!.hp = 1e9;
     sim.world.get(fighter, HealthC)!.hp = 1e9;
     const ev = run(sim, 20 * 15);
-    const swings = of(ev, 'crew.attacked');
+    const swings = eventsOf(ev, 'crew.attacked');
     expect(swings.length).toBeGreaterThan(0);
     for (const s of swings) {
       expect(s.ranged).toBe(false);
@@ -240,12 +239,12 @@ describe('crew combat', () => {
     const medic = person(sim, 21, 3, 'player', 'role.medic', undefined, { ...flat(4), medical: 1 });
     sim.world.get(boarder, HealthC)!.hp = 20;
     const ev = run(sim, 20 * 10, () => sim.world.has(boarder, DownedC));
-    expect(of(ev, 'crew.downed').map((e) => e.crew)).toContain(boarder);
-    expect(of(run(sim, 20 * 5), 'crew.rescued')).toEqual([]); // still an enemy: the medic leaves them
+    expect(eventsOf(ev, 'crew.downed').map((e) => e.crew)).toContain(boarder);
+    expect(eventsOf(run(sim, 20 * 5), 'crew.rescued')).toEqual([]); // still an enemy: the medic leaves them
     sim.world.add(boarder, SurrenderedC, { tick: sim.tick });
     const after = run(sim, 20 * 60, () => sim.world.get(boarder, DownedC)?.stabilized === true);
-    expect(of(after, 'crew.rescued').map((e) => e.crew)).toContain(boarder);
-    expect(of(after, 'crew.rescued')[0]!.by).toBe(medic);
+    expect(eventsOf(after, 'crew.rescued').map((e) => e.crew)).toContain(boarder);
+    expect(eventsOf(after, 'crew.rescued')[0]!.by).toBe(medic);
     expect(sim.world.has(boarder, DeadC)).toBe(false);
   });
 
@@ -256,7 +255,7 @@ describe('crew combat', () => {
     sim.world.get(raider, HealthC)!.hp = 1e9;
     const d0 = Math.abs(8 - 5);
     const ev = run(sim, 20 * 6);
-    expect(of(ev, 'crew.attacked').some((e) => e.crew === civ)).toBe(false);
+    expect(eventsOf(ev, 'crew.attacked').some((e) => e.crew === civ)).toBe(false);
     expect(sim.world.get(civ, FighterC)?.mode).toBe('flee');
     const p = sim.world.get(civ, PositionC)!;
     expect(Math.hypot(p.x - sim.world.get(raider, PositionC)!.x, p.y - sim.world.get(raider, PositionC)!.y)).toBeGreaterThan(d0);
@@ -273,7 +272,7 @@ describe('crew combat', () => {
     const modes = new Set<string | undefined>();
     const ev = run(sim, 20 * 6, () => (modes.add(sim.world.get(pax, FighterC)?.mode), false));
     expect(modes.has('engage')).toBe(false);
-    expect(of(ev, 'crew.attacked').some((e) => e.crew === pax)).toBe(false);
+    expect(eventsOf(ev, 'crew.attacked').some((e) => e.crew === pax)).toBe(false);
     expect(sim.world.get(pax, FighterC)?.mode).toBe('flee');
   });
 
@@ -288,7 +287,7 @@ describe('crew combat', () => {
     const defender = person(sim, 4, 3, 'player', 'role.sec', 'item.rifle');
     expect(shipById(sim, shipIds(sim)[0] as number)?.faction).toBe('player');
     const ev = run(sim, 20 * 10);
-    expect(of(ev, 'crew.attacked').some((e) => e.crew === boarder && e.target === defender)).toBe(true);
+    expect(eventsOf(ev, 'crew.attacked').some((e) => e.crew === boarder && e.target === defender)).toBe(true);
   });
 });
 
@@ -301,7 +300,7 @@ describe('equipping', () => {
     const c = person(sim, 3, 3, 'player');
     sim.enqueue({ type: 'crew.equip', id: c, item: 'item.rifle' });
     const ev = run(sim, 20 * 10);
-    expect(of(ev, 'crew.equipped')).toEqual([{ type: 'crew.equipped', crew: c, item: 'item.rifle' }]);
+    expect(eventsOf(ev, 'crew.equipped')).toEqual([{ type: 'crew.equipped', crew: c, item: 'item.rifle' }]);
     expect(sim.world.get(c, EquipC)?.weapon).toBe('item.rifle');
     expect(storageCount(sim, locker, 'item.rifle')).toBe(0);
     sim.enqueue({ type: 'crew.equip', id: c, item: 'item.sidearm' }); // swaps: the rifle goes back
@@ -309,10 +308,10 @@ describe('equipping', () => {
     expect(sim.world.get(c, EquipC)?.weapon).toBe('item.sidearm');
     expect(storageCount(sim, locker, 'item.rifle')).toBe(1);
     sim.enqueue({ type: 'crew.unequip', id: c });
-    expect(of(run(sim, 1), 'crew.unequipped')).toHaveLength(1);
+    expect(eventsOf(run(sim, 1), 'crew.unequipped')).toHaveLength(1);
     expect(sim.world.get(c, EquipC)?.weapon).toBeNull();
     sim.enqueue({ type: 'crew.equip', id: c, item: 'item.blade' });
-    expect(of(run(sim, 1), 'command.rejected')[0]).toMatchObject({ reason: 'noStock' });
+    expect(eventsOf(run(sim, 1), 'command.rejected')[0]).toMatchObject({ reason: 'noStock' });
   });
 
   it('security crew arm themselves from their role loadout', () => {
@@ -342,14 +341,14 @@ describe('surrender', () => {
     const beaten = person(sim, 12, 2, 'hostile', 'role.civ', 'item.sidearm');
     sim.world.get(beaten, HealthC)!.hp = CREW_MAX_HP * SURRENDER_HP_FRAC - 1;
     const ev = run(sim, 40);
-    expect(of(ev, 'crew.surrendered').map((e) => e.crew)).toEqual([beaten]);
+    expect(eventsOf(ev, 'crew.surrendered').map((e) => e.crew)).toEqual([beaten]);
     expect(sim.world.has(beaten, SurrenderedC)).toBe(true);
     expect(isSubdued(sim, beaten)).toBe(true);
     expect(sim.world.get(beaten, EquipC)?.weapon).toBeNull();
     const later = run(sim, 20 * 5);
-    expect(of(later, 'crew.attacked').some((e) => e.crew === beaten)).toBe(false);
+    expect(eventsOf(later, 'crew.attacked').some((e) => e.crew === beaten)).toBe(false);
     // Nobody keeps shooting a prisoner.
-    expect(of(later, 'crew.attacked').some((e) => e.target === beaten)).toBe(false);
+    expect(eventsOf(later, 'crew.attacked').some((e) => e.target === beaten)).toBe(false);
   });
 
   it('does not surrender when healthy, when not outnumbered or when the role never yields', () => {
@@ -393,6 +392,6 @@ describe('determinism and saves', () => {
     run(reloaded, 150);
     expect(serialize(b)).toBe(serialize(a));
     expect(serialize(reloaded)).toBe(serialize(a));
-    expect(of(run(scenario(), 300), 'crew.attacked').length).toBeGreaterThan(0);
+    expect(eventsOf(run(scenario(), 300), 'crew.attacked').length).toBeGreaterThan(0);
   });
 });

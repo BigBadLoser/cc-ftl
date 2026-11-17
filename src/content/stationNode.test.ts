@@ -1,8 +1,18 @@
 import { describe, expect, it } from 'vitest';
-import {
-  CombatC, CrewC, crewSize, FTL_CHARGE_SEC, PositionC, SECURITY_ROLE, ShipC, TraderC, VehicleC, deserialize, galaxyIndex, homeShip, isSurplus, newGame, planCourier,
-  serialize, unitPrice, type Sim,
-} from '../sim';
+import { CombatC, ShipC } from '../sim/combat/components';
+import { homeShip } from '../sim/combat/ships';
+import { CrewC, PositionC } from '../sim/crew/components';
+import { galaxyIndex } from '../sim/galaxy/state';
+import { newGame } from '../sim/newGame';
+import { deserialize, serialize } from '../sim/save';
+import { crewSize, SECURITY_ROLE } from '../sim/shipgen/stationCrew';
+import type { Sim } from '../sim/sim';
+import { planCourier } from '../sim/trade/courier';
+import { unitPrice } from '../sim/trade/pricing';
+import { isSurplus } from '../sim/trade/traders';
+import { TraderC } from '../sim/trade/types';
+import { FTL_CHARGE_SEC } from '../sim/tuning';
+import { VehicleC } from '../sim/vehicles/components';
 import { stationAirlock } from '../sim/trade/stationDock';
 import { shipIdOf } from '../sim/regions';
 import { hostileAct } from '../sim/combat/provoke';

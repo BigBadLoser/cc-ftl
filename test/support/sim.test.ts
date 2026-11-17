@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { Sim } from '../../src/sim';
-import { shipIds, stampShip } from '../../src/sim';
+import { stampShip } from '../../src/sim/combat/ships';
+import { shipIds } from '../../src/sim/regions';
+import { Sim } from '../../src/sim/sim';
 import { cachedWorld, expectReplayable } from './world';
 import { fixtureShip, nth, run, runLog, runSim } from './sim';
 

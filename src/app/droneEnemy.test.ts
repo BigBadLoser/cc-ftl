@@ -1,10 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { content } from '../content';
-import { ProjectileC, ShipC, homeShip, newGame, type Sim, type SimEvent } from '../sim';
+import { ProjectileC, ShipC } from '../sim/combat/components';
+import { homeShip } from '../sim/combat/ships';
+import type { SimEvent } from '../sim/events';
+import { ModuleC } from '../sim/modules/components';
+import { newGame } from '../sim/newGame';
+import type { Sim } from '../sim/sim';
 import { ALT, BodyC } from '../sim/body';
 import { spawnDrone } from '../sim/drones/bay';
 import { DroneC } from '../sim/drones/components';
-import { ModuleC } from '../sim';
 import { shipIds } from '../sim/regions';
 import { DRONE_LAND_GAP_SEC, ENEMY_DRONE_MIN_DEPTH } from '../sim/tuning';
 import { droneScenarioCommands } from '../content/scenario/lib/drone';

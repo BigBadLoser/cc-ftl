@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { AssignmentC, BedOwnerC, CrewC, JobC, ModuleC, NeedsC, PathC, PositionC, PrioritiesC, homeShip, newGame, type Sim } from '../sim';
+import { homeShip } from '../sim/combat/ships';
+import { AssignmentC, BedOwnerC, CrewC, JobC, NeedsC, PathC, PositionC, PrioritiesC } from '../sim/crew/components';
+import { ModuleC } from '../sim/modules/components';
+import { newGame } from '../sim/newGame';
+import type { Sim } from '../sim/sim';
 import { HOUR_TICKS, hourAt } from '../sim/clock';
 import { ScheduleC, blockAt, blockNow, hoursOf, onCall, secToSleep } from '../sim/crew/schedule';
 import { staySec } from '../sim/away/crew';

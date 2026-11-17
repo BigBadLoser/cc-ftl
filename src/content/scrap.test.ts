@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { ItemDef, ModuleDef, RecipeDef } from '../sim';
+import type { ItemDef, ModuleDef, RecipeDef } from '../sim/registry';
 import { content as raw } from './index';
 
 const content = raw as unknown as { items: Record<string, ItemDef>; recipes: Record<string, RecipeDef>; modules: Record<string, ModuleDef> };

@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { galaxyIndex, newGame, portOf, previewHull, type GalaxyContent, type Sim } from '../sim';
+import type { GalaxyContent } from '../sim/galaxy/defs';
+import { portOf } from '../sim/galaxy/portIndex';
+import { galaxyIndex } from '../sim/galaxy/state';
+import { newGame } from '../sim/newGame';
+import { previewHull } from '../sim/shipgen/generate';
+import type { Sim } from '../sim/sim';
 import { syncFleets } from '../sim/galaxy/fleets';
 import { portNode } from '../sim/galaxy/ports';
 import { CATCHUP_MAX } from '../sim/galaxy/tuning';

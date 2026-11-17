@@ -1,18 +1,27 @@
 import { describe, expect, it } from 'vitest';
-import { AllegianceC, CoreLinkC, CrewC, DeadC, DownedC, DraftedC, EquipC, HackedC, HealthC, InertC, ModuleC, PathC, PositionC, PrisonerC, ShipC, StunC, WreckC, deserialize, isSubdued, newGame, serialize, storageCount, StorageC, WeaponC, type ContentRegistry, type ModuleDef, type Sim, type SimEvent } from '../../sim';
+import { ShipC, WeaponC } from '../../sim/combat/components';
+import { CrewC, DeadC, DownedC, DraftedC, HealthC, PathC, PositionC } from '../../sim/crew/components';
+import type { SimEvent } from '../../sim/events';
+import { AllegianceC, EquipC, PrisonerC } from '../../sim/fight/components';
+import { isSubdued } from '../../sim/fight/relations';
+import { StorageC } from '../../sim/items/components';
+import { storageCount } from '../../sim/items/storage';
+import { ModuleC } from '../../sim/modules/components';
+import { newGame } from '../../sim/newGame';
+import type { ContentRegistry, ModuleDef } from '../../sim/registry';
+import { CoreLinkC, HackedC, InertC, StunC, WreckC } from '../../sim/robots/components';
+import { deserialize, serialize } from '../../sim/save';
+import type { Sim } from '../../sim/sim';
 import { applyEffects } from '../../sim/combat/effects';
 import { wantsToSurrender } from '../../sim/fight/surrender';
 import { content } from '../index';
 import { shipIdOf, shipGrid } from '../../sim/regions';
 import { shipIds } from '../../sim/regions';
-import { nth } from '../../../test/support/sim';
+import { crewOn, eventsOf, nth } from '../../../test/support/sim';
 import { run as harnessRun } from '../../../test/support/sim';
 
 
 const run = (sim: Sim, n: number, stop?: () => boolean): SimEvent[] => harnessRun(sim, n, { stopBefore: stop }); // `stop` is checked before each step
-const of = <T extends SimEvent['type']>(events: SimEvent[], type: T): Extract<SimEvent, { type: T }>[] =>
-  events.filter((e): e is Extract<SimEvent, { type: T }> => e.type === type);
-const crewOn = (sim: Sim, shipId: number): number[] => sim.world.query(CrewC).filter((i) => shipIdOf(sim, sim.world.get(i, PositionC)) === nth(sim, shipId));
 const robotsOn = (sim: Sim, shipId: number): number[] => crewOn(sim, shipId).filter((i) => sim.world.get(i, CrewC)!.species.startsWith('species.robot'));
 const modulesOf = (sim: Sim, shipId: number, def: string): number[] =>
   sim.world.query(ModuleC).filter((i) => shipIdOf(sim, sim.world.get(i, ModuleC)) === nth(sim, shipId) && sim.world.get(i, ModuleC)!.def === def);
@@ -94,7 +103,7 @@ describe('robot species', () => {
     const out = run(sim, 2400, () => sim.world.get(robot, HealthC)!.hp >= 120);
     expect(sim.world.get(robot, HealthC)!.hp).toBe(120);
     expect(before - metal()).toBe(3); // 70 hp at 25 hp per unit
-    const done = of(out, 'crew.jobDone').filter((e) => e.kind === 'mend');
+    const done = eventsOf(out, 'crew.jobDone').filter((e) => e.kind === 'mend');
     expect(done).toHaveLength(1);
     expect(roleOf(sim, done[0]!.crew)).toBe('role.engineer');
   });
@@ -106,10 +115,10 @@ describe('robot species', () => {
     const out = run(sim, 2);
     expect(sim.world.has(robot, DeadC) && sim.world.has(robot, WreckC)).toBe(true);
     expect(sim.world.has(robot, DownedC)).toBe(false);
-    expect(of(out, 'robot.wrecked')).toHaveLength(1);
-    expect(of(out, 'crew.downed')).toHaveLength(0);
+    expect(eventsOf(out, 'robot.wrecked')).toHaveLength(1);
+    expect(eventsOf(out, 'crew.downed')).toHaveLength(0);
     const salvaged = run(sim, 3000, () => !sim.world.has(robot, CrewC));
-    expect(of(salvaged, 'robot.salvaged')).toHaveLength(1);
+    expect(eventsOf(salvaged, 'robot.salvaged')).toHaveLength(1);
     expect(sim.world.has(robot, CrewC)).toBe(false);
   });
 
@@ -161,11 +170,11 @@ describe('AI control and capture', () => {
     }
     sim.world.get(core(sim), ModuleC)!.enabled = false;
     const off = run(sim, 2);
-    expect(of(off, 'robot.inert')).toHaveLength(3);
+    expect(eventsOf(off, 'robot.inert')).toHaveLength(3);
     for (const r of robots) expect(isSubdued(sim, r)).toBe(true);
     sim.world.get(core(sim), ModuleC)!.enabled = true;
     const on = run(sim, 2);
-    expect(of(on, 'robot.active')).toHaveLength(3);
+    expect(eventsOf(on, 'robot.active')).toHaveLength(3);
   });
 
   it('a live core blocks capture; once it is destroyed the robots go inert and holding the core takes the ship', () => {
@@ -184,7 +193,7 @@ describe('AI control and capture', () => {
     c.hp = 0;
     const out = run(sim, 400, () => ship(sim, 2).state === 'prize');
     expect(ship(sim, 2)).toMatchObject({ state: 'prize', faction: 'player' });
-    expect(of(out, 'ship.captured')).toEqual([{ type: 'ship.captured', ship: nth(sim, 2), by: 'player', from: 'rogue' }]);
+    expect(eventsOf(out, 'ship.captured')).toEqual([{ type: 'ship.captured', ship: nth(sim, 2), by: 'player', from: 'rogue' }]);
   });
 
   it('inert robots are taken prisoner on capture and stay down', () => {
@@ -214,15 +223,15 @@ describe('AI control and capture', () => {
     expect(sim.world.has(core(sim), HackedC)).toBe(false);
     const out = run(sim, 1000, () => sim.world.has(core(sim), HackedC));
     expect(sim.world.get(core(sim), HackedC)).toMatchObject({ by: 'player', hacker: eng });
-    expect(of(out, 'core.hacked')).toHaveLength(1);
+    expect(eventsOf(out, 'core.hacked')).toHaveLength(1);
     const flip = run(sim, 2);
-    expect(of(flip, 'robot.flipped')).toHaveLength(robots.length);
+    expect(eventsOf(flip, 'robot.flipped')).toHaveLength(robots.length);
     for (const r of robots) {
       expect(sim.world.get(r, AllegianceC)!.faction).toBe('player');
       expect(sim.world.has(r, InertC)).toBe(false);
     }
     sim.enqueue({ type: 'crew.hack', id: crewOn(sim, 1)[0]!, module: core(sim) });
-    expect(of(run(sim, 1), 'command.rejected')).toHaveLength(1); // held: nothing to hack
+    expect(eventsOf(run(sim, 1), 'command.rejected')).toHaveLength(1); // held: nothing to hack
     teleport(sim, eng, 2, ...local(sim, 2, 15, 5)); // the hacker walks away: the hold breaks
     run(sim, 2);
     expect(sim.world.get(core(sim), HackedC)!.hacker).toBe(0);
@@ -249,24 +258,24 @@ describe('robot fabricator', () => {
     const sim = setup(1, fast);
     const start = robotsOn(sim, 2).length;
     const out = run(sim, 200);
-    const made = of(out, 'robot.fabricated').map((e) => e.crew);
+    const made = eventsOf(out, 'robot.fabricated').map((e) => e.crew);
     expect(made).toHaveLength(2);
     expect(robotsOn(sim, 2)).toHaveLength(start + 2);
     expect(made.map((r) => roleOf(sim, r))).toEqual(['role.robot_worker', 'role.robot_security']);
     for (const r of made) expect(sim.world.get(r, CoreLinkC)!.ship).toBe(nth(sim, 2));
     sim.world.get(made[0]!, HealthC)!.hp = 0; // wrecked: the slot frees up
-    expect(of(run(sim, 60), 'robot.fabricated')).toHaveLength(1);
+    expect(eventsOf(run(sim, 60), 'robot.fabricated')).toHaveLength(1);
     sim.world.get(core(sim), ModuleC)!.enabled = false;
     sim.world.get(made[1]!, HealthC)!.hp = 0;
-    expect(of(run(sim, 200), 'robot.fabricated')).toHaveLength(0);
+    expect(eventsOf(run(sim, 200), 'robot.fabricated')).toHaveLength(0);
     sim.world.get(core(sim), ModuleC)!.enabled = true;
-    expect(of(run(sim, 60), 'robot.fabricated')).toHaveLength(1);
+    expect(eventsOf(run(sim, 60), 'robot.fabricated')).toHaveLength(1);
   });
 
   it('stops while unpowered itself', () => {
     const sim = setup(1, fast);
     for (const f of modulesOf(sim, 2, 'module.robotFabricator')) sim.world.get(f, ModuleC)!.enabled = false;
-    expect(of(run(sim, 200), 'robot.fabricated')).toHaveLength(0);
+    expect(eventsOf(run(sim, 200), 'robot.fabricated')).toHaveLength(0);
   });
 });
 
@@ -290,13 +299,13 @@ describe('determinism and saves', () => {
     const ea = run(a, 900);
     run(b, 900);
     expect(serialize(a)).toBe(serialize(b));
-    expect(of(ea, 'crew.hit').length).toBeGreaterThan(0);
+    expect(eventsOf(ea, 'crew.hit').length).toBeGreaterThan(0);
   });
 
   it('save and load mid-fight continues identically', () => {
     const a = fight(3);
     const ea = run(a, 300);
-    expect(of(ea, 'crew.attacked').length).toBeGreaterThan(0);
+    expect(eventsOf(ea, 'crew.attacked').length).toBeGreaterThan(0);
     const b = deserialize(serialize(a), content);
     run(a, 600);
     run(b, 600);

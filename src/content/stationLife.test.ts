@@ -1,9 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { ShipC, deserialize, serialize, type Sim, type SimEvent } from '../sim';
+import { ShipC } from '../sim/combat/components';
+import type { SimEvent } from '../sim/events';
+import { deserialize, serialize } from '../sim/save';
+import type { Sim } from '../sim/sim';
 import { StationAlarmC, StationCrewC, WantedC } from '../sim/stations/components';
 import { content } from './index';
 
-import { intruderRuns, intrude, isGuard, run, station, types } from './stationLifeFixture';
+import { intruderRuns, intrude, isGuard, run, station, types } from '../../test/support/fixtures/stationLife';
 
 describe('station life and security', () => {
   it('a quiet station stays calm; its guards arm themselves and walk their patrol', () => {

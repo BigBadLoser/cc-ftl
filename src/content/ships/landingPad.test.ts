@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { content } from '../index';
-import { ShipC, Sim } from '../../sim';
+import { ShipC } from '../../sim/combat/components';
+import { Sim } from '../../sim/sim';
 import { BodyC } from '../../sim/body';
 import { CrewC, PositionC } from '../../sim/crew/components';
 import type { SimEvent } from '../../sim/events';

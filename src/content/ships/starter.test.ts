@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { CrewC, ModuleC, PLAYER_START, Struct, deserialize, newGame, serialize, type Sim } from '../../sim';
+import { CrewC } from '../../sim/crew/components';
+import { ModuleC } from '../../sim/modules/components';
+import { newGame } from '../../sim/newGame';
+import { deserialize, serialize } from '../../sim/save';
+import type { Sim } from '../../sim/sim';
+import { Struct } from '../../sim/structure';
+import { PLAYER_START } from '../../sim/tuning';
 import { content } from '../index';
 import { shipGrid } from '../../sim/regions';
 import { shipIds } from '../../sim/regions';

@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { ModuleC, TICK_HZ, newGame, placementError, playerShip, ShipC, spawnModule, type Sim } from '../sim';
+import { ShipC } from '../sim/combat/components';
+import { ModuleC } from '../sim/modules/components';
+import { placementError, spawnModule } from '../sim/modules/spawn';
+import { newGame } from '../sim/newGame';
+import type { Sim } from '../sim/sim';
+import { TICK_HZ } from '../sim/time';
+import { playerShip } from '../sim/trade/player';
 import { content } from '../content';
 import { buildFood } from './foodSnapshot';
 import { buildStock } from './logisticsSnapshot';

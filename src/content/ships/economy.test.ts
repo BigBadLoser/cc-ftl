@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { CarryingC, ModuleC, ProductionC, StorageC, deserialize, newGame, serialize, storageCount, totalStock, type Sim } from '../../sim';
+import { CarryingC, ProductionC, StorageC } from '../../sim/items/components';
+import { totalStock } from '../../sim/items/stock';
+import { storageCount } from '../../sim/items/storage';
+import { ModuleC } from '../../sim/modules/components';
+import { newGame } from '../../sim/newGame';
+import { deserialize, serialize } from '../../sim/save';
+import type { Sim } from '../../sim/sim';
 import { content } from '../index';
 import { shipGrid } from '../../sim/regions';
 import { shipIds } from '../../sim/regions';

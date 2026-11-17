@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { assembled } from './stationRecipeFixture';
+import { assembled } from '../../test/support/fixtures/stationRecipe';
 import { stationRecipes } from './stationRecipes';
 
 /** Every recipe on four seeds: all rooms and beds stand, no solid 2x2 wall, the hull holds, every floor tile is reachable. */

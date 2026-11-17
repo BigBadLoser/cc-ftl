@@ -1,11 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { ShipC, TraderC, deserialize, newGame, serialize } from '../sim';
+import { ShipC } from '../sim/combat/components';
+import { newGame } from '../sim/newGame';
+import { deserialize, serialize } from '../sim/save';
+import { TraderC } from '../sim/trade/types';
 import { cargoCount } from '../sim/vehicles/cargo';
 import { VehicleC } from '../sim/vehicles/components';
 import { isLive } from '../sim/trade/deals';
 import { playerCrew } from '../sim/story/world';
 import { content } from './index';
-import { buying, metal, metalLike, order, run, runOut, until } from './tradeStuckFixture';
+import { buying, metal, metalLike, order, run, runOut, until } from '../../test/support/fixtures/tradeStuck';
 
 // Slow tier: the natural-length waits of the stuck-delivery tests (tradeStuck.test.ts starts the same cases a few seconds short of each deadline).
 describe('a delivery that cannot finish, full waits', () => {

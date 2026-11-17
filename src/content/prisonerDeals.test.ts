@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { AllegianceC, CrewC, NeedsC, PositionC, ShipC, newGame, placementError, playerShip, spawnModule, type Sim, type SimEvent } from '../sim';
+import { ShipC } from '../sim/combat/components';
+import { CrewC, NeedsC, PositionC } from '../sim/crew/components';
+import type { SimEvent } from '../sim/events';
+import { AllegianceC } from '../sim/fight/components';
+import { placementError, spawnModule } from '../sim/modules/spawn';
+import { newGame } from '../sim/newGame';
+import type { Sim } from '../sim/sim';
+import { playerShip } from '../sim/trade/player';
 import { heldPrisoners, handOverPrisoner, prisonerOffer, prisonerWorth, stationWants } from '../sim/capture/offers';
 import { PRISONER_DEALS } from '../sim/capture/tuning';
 import { PrisonerC } from '../sim/fight/components';

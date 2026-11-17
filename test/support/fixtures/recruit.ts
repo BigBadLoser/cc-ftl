@@ -1,11 +1,17 @@
 import { expect } from 'vitest';
-import { AboardC, CrewC, ForHireC, deserialize, galaxyIndex, newGame, serialize, type Sim } from '../sim';
-import { AllegianceC } from '../sim/fight/components';
-import { portsAt } from '../sim/galaxy/portIndex';
-import { portRecruits } from '../sim/galaxy/recruit';
-import { ensureAround } from '../sim/galaxy/state';
-import { placementGapError } from '../sim/regions';
-import { content } from '.';
+import { CrewC } from '../../../src/sim/crew/components';
+import { galaxyIndex } from '../../../src/sim/galaxy/state';
+import { newGame } from '../../../src/sim/newGame';
+import { deserialize, serialize } from '../../../src/sim/save';
+import type { Sim } from '../../../src/sim/sim';
+import { ForHireC } from '../../../src/sim/stations/components';
+import { AboardC } from '../../../src/sim/vehicles/components';
+import { AllegianceC } from '../../../src/sim/fight/components';
+import { portsAt } from '../../../src/sim/galaxy/portIndex';
+import { portRecruits } from '../../../src/sim/galaxy/recruit';
+import { ensureAround } from '../../../src/sim/galaxy/state';
+import { placementGapError } from '../../../src/sim/regions';
+import { content } from '../../../src/content';
 
 export const step = (sim: Sim, n = 1): void => {
   for (let i = 0; i < n; i++) sim.step();

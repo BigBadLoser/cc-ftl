@@ -1,4 +1,5 @@
-import { START_NODE, galaxyIndex, nodeOf, type Sim } from '../../sim';
+import { galaxyIndex, nodeOf, START_NODE } from '../../../src/sim/galaxy/state';
+import type { Sim } from '../../../src/sim/sim';
 
 /**
  * The first neighbour of a node (by id) that holds no structure: nothing is populated there on arrival, so a test about archives, cuts or

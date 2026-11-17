@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { AssignmentC, CrewC, JobC, ModuleC, PathC, PositionC, newGame, operatorOf, placementError, type Sim } from '../../sim';
+import { operatorOf } from '../../sim/combat/operators';
+import { AssignmentC, CrewC, JobC, PathC, PositionC } from '../../sim/crew/components';
+import { ModuleC } from '../../sim/modules/components';
+import { placementError } from '../../sim/modules/spawn';
+import { newGame } from '../../sim/newGame';
+import type { Sim } from '../../sim/sim';
 import { operateJobsSystem } from '../../sim/systems/operateJobs';
 import { content } from '../index';
 import { shipIdOf, shipIds } from '../../sim/regions';

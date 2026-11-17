@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { CrewC, ModuleC, homeShip, newGame, shipGrid, type Sim } from '../../../src/sim';
+import { homeShip } from '../../../src/sim/combat/ships';
+import { CrewC } from '../../../src/sim/crew/components';
+import { ModuleC } from '../../../src/sim/modules/components';
+import { newGame } from '../../../src/sim/newGame';
+import { shipGrid } from '../../../src/sim/regions';
+import type { Sim } from '../../../src/sim/sim';
 import { isIdle } from '../../../src/sim/modules/draw';
 import { SHIPS, withShip } from './kits';
 

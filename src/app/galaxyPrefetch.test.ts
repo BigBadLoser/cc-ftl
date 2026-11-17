@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { content as shared } from '../content';
-import { chunkOfId, galaxyGen, newGame, type ContentRegistry } from '../sim';
+import { chunkOfId, galaxyGen } from '../sim/galaxy/generator';
+import { newGame } from '../sim/newGame';
+import type { ContentRegistry } from '../sim/registry';
 import { prefetchGalaxy, setChunkBuilder, type ChunkBuilder } from './galaxyPrefetch';
 import { warmOutlines } from './starmapClusters';
 

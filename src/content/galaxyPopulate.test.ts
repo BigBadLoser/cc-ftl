@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import {
-  AsteroidC, ShipC, TraderC, deserialize, galaxyIndex, moveStock, newGame, portOf, portsAt, serialize, stockAt, econOf, type Port, type Sim,
-} from '../sim';
+import { AsteroidC } from '../sim/asteroids/components';
+import { ShipC } from '../sim/combat/components';
+import { econOf, moveStock, stockAt } from '../sim/galaxy/market';
+import { portOf, portsAt } from '../sim/galaxy/portIndex';
+import type { Port } from '../sim/galaxy/ports';
+import { galaxyIndex } from '../sim/galaxy/state';
+import { newGame } from '../sim/newGame';
+import { deserialize, serialize } from '../sim/save';
+import type { Sim } from '../sim/sim';
+import { TraderC } from '../sim/trade/types';
 import { placementGapError } from '../sim/regions';
 import { liveTrader } from '../sim/galaxy/market';
 import { ensureChunk, ensureAround, nodeState } from '../sim/galaxy/state';

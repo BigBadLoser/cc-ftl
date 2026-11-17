@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import type { ModuleDef, ShipTemplate } from '../../sim';
-import { CrewC, ModuleC, PositionC, homeShip, hullLoad, newGame, shipGrid, type Sim } from '../../sim';
+import { homeShip } from '../../sim/combat/ships';
+import { CrewC, PositionC } from '../../sim/crew/components';
+import { hullLoad } from '../../sim/ftl/capacity';
+import { ModuleC } from '../../sim/modules/components';
+import { newGame } from '../../sim/newGame';
+import { shipGrid } from '../../sim/regions';
+import type { ModuleDef, ShipTemplate } from '../../sim/registry';
+import type { Sim } from '../../sim/sim';
 import { validateTemplate } from '../../sim/shipgen';
 import { content } from '../index';
 import { debugShip } from './debugShip';
