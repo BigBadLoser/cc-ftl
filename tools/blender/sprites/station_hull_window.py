@@ -111,7 +111,9 @@ def _span(f, s, s0, s1, zt):
     pf = [(db, SH.GROOVE), (fr, SH.GROOVE), (fr, zs), (db, zs)]         # to the window's back
     f.part(u0, u1, pf, [None, SH.FACE, SILL_TOP, None], None, end=False)
     if not end:
-        _vent_box(f, s0, s1, zs, gl)
+        a, b = _vent_box(f, s0, s1, zs, gl)
+        for v0, v1 in ((s0, a), (b, s1)):                # (the sill's seam on to the box)
+            SD._rect(f, v0, v1, zs - 1 / Z, zs, D + 0.0005, POST_SEAM)
     zr = zh - WIN.SLOPE_H / Z * (JAMB + WIN.SLOPE) / WIN.SLOPE          # (the top corner's foot at the rib)
     _head(f, u0, u1, zh, (part == "w1", part == "w3"), zr, (s0, s1))             # the header: a square box
     f.part(*seg(w0, s1)[:2], [(0.0, zj), (db, zj), (db, zh), (0.0, zh)], [None, BACK_WALL, None, None], None,
@@ -143,10 +145,10 @@ def _span(f, s, s0, s1, zt):
         zl = zj + fh + sh                                               # the jamb's seam
         pf = [(dp + WIN.PANE / 2, zl), (dv + 0.001, zl), (dv + 0.001, zl + 1 / Z), (dp + WIN.PANE / 2, zl + 1 / Z)]
         fm.part(h0, w0 + 0.001, pf, [WIN.JAMB_SEAM] * 4, (None, WIN.JAMB_SEAM), end=False)
-        ln, ft = SD.LINE, w0 + WIN.SLOPE + WIN.FOOT_W
-        for v0, v1, za, zb in ((h0 - ln, h0, zs - 1 / Z, z0), (h0 - ln, ft, zs - 1 / Z, zs)):
+        ln = SD.LINE
+        for v0, v1, za, zb in ((h0 - ln, h0, zs - 1 / Z, z0), (h0 - ln, s1, zs - 1 / Z, zs)):
             p0, p1, _ = seg(v0, v1)                     # seams where the wall's tone changes: down the post's outer
-            SD._rect(f, p0, p1, za, zb, D + 0.0005, POST_SEAM)  # edge to the rib's plate, under it and the corner
+            SD._rect(f, p0, p1, za, zb, D + 0.0005, POST_SEAM)  # edge to the rib's plate, under it and the sill on
         fm.part(h0, w0, [(db, zs), (dv, zs), (dv, zh), (db, zh)], [None, WIN.HEAD_FRONT, None, None],
                 WIN.SIDE, end=False)                    # the post (plain: no recessed panel; both its sides the
                                                         # sides' tone: on W3 its side by the rib shows where the
@@ -220,6 +222,7 @@ def _vent_box(f, s0, s1, zs, gl):
         z = top - (s1st + i * sp) * px
         SD._rect(f, a + si * ln, a + (si + sw) * ln, z - px, z, rb + 0.0005, VENT_LINE)
         SD._rect(f, a + si * ln, a + (si + sw) * ln, z - 2 * px, z - px, rb + 0.0005, VENT_LIT)
+    return a, b
 
 
 def _head_dress(f, a, b, z0, d, ends=(False, False)):
