@@ -12,6 +12,7 @@ import { RULES } from './rooms/rules/rules';
 import { Layout } from './layout';
 import { placeGroundTurrets, type GroundPlan } from './groundTurrets';
 import { cableRows } from '../cable';
+import { accepts } from '../items/storage';
 import { hullChoices, pickWeighted, planShip, type RoomSpec, type ShipPlan } from './plan';
 import { clusters, hub, rails } from './topoDrone';
 import { ring, spine } from './topoNavy';
@@ -102,7 +103,9 @@ function fitOut(
       const art = defs[id]?.storageArt;
       const ores = art ? items.filter((s) => art[s.item]) : [];
       const pick = ores.length > 0 ? [ores[rng.int(0, ores.length - 1)] as (typeof items)[number]] : items;
-      out.stock.set(idx, pick.map((s) => ({ item: s.item, count: rng.int(s.min, s.max) })).filter((s) => s.count > 0));
+      // Each store keeps only what it accepts (a cold store takes no water): rolled for every listed item all the same, so the draws do not shift.
+      const filter = defs[id]?.storageAccepts ?? null;
+      out.stock.set(idx, pick.map((s) => ({ item: s.item, count: rng.int(s.min, s.max) })).filter((s) => s.count > 0 && accepts(filter, s.item)));
     }
   };
   // Planned modules per room and def, for steps that place only a share of them.

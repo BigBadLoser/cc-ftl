@@ -51,6 +51,8 @@ export interface StationDef {
   motif: string;
   /** Crops (CropDef ids) the hydroponics beds of an asteroid base are set to, in turn from the first bed: it farms out of the box (#508). */
   crops?: readonly string[];
+  /** The messes' pantries (cold stores and racks) start stocked with these; without it they start empty. Stocked as any store: each store takes what it accepts. */
+  pantry?: readonly { item: string; min: number; max: number }[];
   /**
    * The crew sleeps in barracks: rooms of this many beds each (double bunks, so half as many bunks), with this many
    * one-bed cabins beside them. Without it, blocks of one-bed cabins (`assembly/program.ts`).
