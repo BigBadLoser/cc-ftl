@@ -108,20 +108,32 @@ export const ease = (k: number): number => {
 };
 
 /**
- * The one answer to "who draws a vehicle that is leaving or entering its bay": the bay's parked layer (`drawn` false) or the sector
- * layer (`drawn` true). A launch hands over at LAUNCH_LIFT.start, as the doors stand open; a landing is the sector layer's until the
- * claws close on the parked craft (RETURN_LAND.end). `lift` is the craft's height while it rises out of the pit or settles into it
- * (0 pit floor .. 1 cruise), null once it is in plain flight or parked. `sinceLaunch` / `sinceLand` are ms since the state change
- * (Infinity if none).
+ * Leaving and entering through the pit's floor doors (a prototype: the doors are in the pit floor, not the roof). A launch: the doors
+ * stand open from frame `sink`, the craft sinks through them (`sink`..`under`, clipped by the deck), is out of sight beneath the
+ * hull until `emerge`, then comes up beside the hull from under its edge (`emerge`..`up`, clipped by the hull's edge) and is in
+ * plain flight. A landing is the reverse of the sink: from under the floor it rises through the open doors into the claws
+ * (`RETURN_LAND.start`..`RETURN_LAND.end - 2`). Frames of BAY_FRAME_MS.
  */
-export function bayHandoff(stowed: boolean, sinceLaunch: number, sinceLand: number): { drawn: boolean; lift: number | null } {
+export const FLOOR_EXIT = { sink: LAUNCH_LIFT.start, under: LAUNCH_LIFT.start + 4, emerge: LAUNCH_LIFT.start + 6, up: LAUNCH_LIFT.start + 10 };
+
+/**
+ * The one answer to "who draws a vehicle that is leaving or entering its bay": the bay's parked layer (`drawn` false) or the sector
+ * layer (`drawn` true). `lift` is the craft's height (-1 beneath the floor, 0 the pit floor, 1 cruise), null once it is in plain flight
+ * or parked; `clip` what hides its lower part (the `deck` of the pit, the edge of the `hull`). `sinceLaunch` / `sinceLand` are ms since
+ * the state change (Infinity if none).
+ */
+export type BayClip = 'deck' | 'hull' | null;
+export function bayHandoff(stowed: boolean, sinceLaunch: number, sinceLand: number): { drawn: boolean; lift: number | null; clip: BayClip } {
+  const F = BAY_FRAME_MS;
   if (stowed) {
-    if (sinceLand >= RETURN_LAND.end * BAY_FRAME_MS) return { drawn: false, lift: null };
-    return { drawn: true, lift: 1 - ease((sinceLand - RETURN_LAND.start * BAY_FRAME_MS) / ((RETURN_LAND.end - RETURN_LAND.start - 2) * BAY_FRAME_MS)) };
+    if (sinceLand >= RETURN_LAND.end * F || sinceLand < RETURN_LAND.start * F) return { drawn: false, lift: null, clip: null };
+    return { drawn: true, lift: -1 + ease((sinceLand - RETURN_LAND.start * F) / ((RETURN_LAND.end - RETURN_LAND.start - 2) * F)), clip: 'deck' };
   }
-  if (sinceLaunch < LAUNCH_LIFT.start * BAY_FRAME_MS) return { drawn: false, lift: null };
-  if (sinceLaunch >= LAUNCH_LIFT.end * BAY_FRAME_MS) return { drawn: true, lift: null };
-  return { drawn: true, lift: ease((sinceLaunch - LAUNCH_LIFT.start * BAY_FRAME_MS) / ((LAUNCH_LIFT.end - LAUNCH_LIFT.start) * BAY_FRAME_MS)) };
+  if (sinceLaunch < FLOOR_EXIT.sink * F) return { drawn: false, lift: null, clip: null };
+  if (sinceLaunch < FLOOR_EXIT.under * F) return { drawn: true, lift: -ease((sinceLaunch - FLOOR_EXIT.sink * F) / ((FLOOR_EXIT.under - FLOOR_EXIT.sink) * F)), clip: 'deck' };
+  if (sinceLaunch < FLOOR_EXIT.emerge * F) return { drawn: false, lift: null, clip: null };
+  if (sinceLaunch < FLOOR_EXIT.up * F) return { drawn: true, lift: -1 + 2 * ease((sinceLaunch - FLOOR_EXIT.emerge * F) / ((FLOOR_EXIT.up - FLOOR_EXIT.emerge) * F)), clip: 'hull' };
+  return { drawn: true, lift: null, clip: null };
 }
 
 /** A craft that has left its bay catches up with the sim over this long (ms) once the doors have let it go. */
@@ -133,6 +145,8 @@ export interface BayPose {
   drawn: boolean;
   /** Height while it rises out of the pit or settles into it (0 pit floor .. 1 cruise), null in plain flight or parked. */
   lift: number | null;
+  /** What hides the craft's lower part while `lift` is set. */
+  clip: BayClip;
   /** Launched less than the lift plus CATCH_MS ago: its drawn position follows `delayed`. */
   launching: boolean;
   /** Stowed and still settling in (the bay takes over when the claws close). */
@@ -190,10 +204,10 @@ export function createBayTrack(state: string): BayTrack {
       const sinceLaunch = now - launched;
       const sinceLand = now - landed;
       const stowed = s === 'stowed';
-      const h = padded && !stowed ? { drawn: true, lift: null } : bayHandoff(stowed, sinceLaunch, sinceLand);
+      const h = padded && !stowed ? { drawn: true, lift: null, clip: null } : bayHandoff(stowed, sinceLaunch, sinceLand);
       return {
         ...h, sinceLaunch, sinceLand,
-        launching: !stowed && sinceLaunch < LAUNCH_LIFT.end * BAY_FRAME_MS + CATCH_MS,
+        launching: !stowed && sinceLaunch < FLOOR_EXIT.up * BAY_FRAME_MS + CATCH_MS,
         landing: stowed && sinceLand < RETURN_LAND.end * BAY_FRAME_MS,
       };
     },
