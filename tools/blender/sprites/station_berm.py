@@ -1,12 +1,13 @@
-"""MOCK (asteroid base, #524): the rock berm heaped against a ground base's station hull, after the user's station hull
-reference (#1149: rubble along the hull's foot). One sprite per hull key, tile.hull.station.berm.<key name>, drawn over
-the tile's hull piece.
+"""MOCK (asteroid base, #524): dust and rock built up against a ground base's station hull, after the user's station
+hull reference (#1149: rubble along the hull's foot). One sprite per hull key and variant,
+tile.hull.station.berm.<key name>.v<n>, drawn over the tile's hull piece.
 
-A low ridge of the asteroid's levelled ground (rock_ground's tones), heaped over the hull's foot step and falling away
-onto the ground about a third of a tile out, lumpy, with loose stones on it (as rockwall's skirt stones). Its height is a
-function of the distance out from the ship's outline (the key's fronts), so runs, corners and diagonals meet: each tile
-draws the ridge whose foot lies on its own stretch of outline (and the wedge round a convex corner). Rendered with the
-tile's hull piece as a holdout, so where the hull stands in front of it the berm is hidden."""
+A drift of the asteroid's dust (rock_ground's tones) leaning on the hull's foot, burying its step, and falling away in a
+concave scree slope; heaped high in places and thinning to almost nothing in others, its edge ragged; rocks half buried
+in it (crowded near the wall, lit on top) and pebbles scattered past its toe. Its height is a function of the distance
+out from the ship's outline (the key's fronts), so runs, corners and diagonals meet: each tile draws the drift whose
+foot lies on its own stretch of outline (and the wedge round a convex corner). Rendered with the tile's hull piece as a
+holdout, so where the hull stands in front of it the berm is hidden."""
 import math
 
 import numpy as np
@@ -14,19 +15,20 @@ from mathutils import Vector
 
 from . import core
 from . import hull_outline as HO
-from .rock_base import TAU, Canvas, gbase, per2, polyg, rng, tri, quad
+from .rock_base import TAU, Canvas, gbase, per2, polyg, rng, tri
 
-H0 = 7.0                            # px: the ridge's crest over the deck (the foot step's top is 4 px)
-CREST = 0.07                        # tiles out from the outline: the crest (over the step, 3/32 + a block proud)
-REACH = 0.42                        # tiles out from the outline: where it has fallen to the ground (a third of a tile
-                                    # past the step), give or take WOBBLE
-WOBBLE = 0.07
-VARIANTS = 3                        # per key, picked per tile; each its own lumps, reach and stones (VAR_*), faded out at
-VAR_REACH, VAR_H = 0.06, 1.5        # its stretch's ends so neighbours of any variant meet
+H0 = 8.0                            # px: the drift against the wall, on average (the foot step's top is 4 px)
+H_SWING = 0.6                       # how far that heaps up and thins along the wall (a share of H0, each way)
+STEP = 0.14                         # tiles out from the outline: the foot step front (3/32, its blocks a 32nd more)
+REACH = 0.46                        # tiles out from the outline: where it has thinned to the ground, on average
+REACH_SWING = 0.2                  # give or take
+MOUNDS = (1, 3)                     # heaps in the drift per tile and variant (and one more)
+VARIANTS = 3                        # per key, picked per tile; each its own heaps, reach and rocks, faded to the shared
+VAR_SHARE = 0.8                     # shape at its stretch's ends so neighbours of any variant meet
 N = 48                              # surface grid cells per tile
-STONES = (2, 4)                     # loose stones per tile (and variant)
-STONE = ("rk", "rkM", "rk", "rkM")
-EPS = 0.3                           # px: a facet all under this over the ground is not drawn (the ground shows)
+ROCKS = (4, 7)                      # rocks half buried in the drift, per tile and variant
+PEBBLES = (4, 8)                    # pebbles past its toe
+EPS = 0.25                          # px: a facet all under this over the ground is not drawn (the ground shows)
 
 
 def _fronts(key):
@@ -96,28 +98,41 @@ def _dist(poly, fronts, p):
     return best
 
 
-def _height(d, w, x, y, var):
-    """The ridge over the ground at distance d out from the outline (tiles of height); w: the variant's share."""
-    sv = 900 + 37 * var
-    reach = REACH + WOBBLE * per2(x * 2, y * 2, 811, n=3) / 1.5 + w * VAR_REACH * per2(x * 3, y * 3, sv, n=3)
-    h0 = (H0 + 1.2 * per2(x * 3, y * 3, 813, n=3) + w * VAR_H * per2(x * 2.5, y * 2.5, sv + 1, n=3)) / core.ZPX
-    if d < CREST:
-        f = 1.0 - 0.15 * (1 - d / CREST)                # (it leans on the wall: a touch lower at the foot)
-    else:
-        r = min(1.0, (d - CREST) / max(0.05, reach - CREST))
-        f = (1 - r) ** 1.6 * (1 + 0.6 * r)
-    lump = 0.12 * per2(x * 3, y * 3, 817, n=4) + w * 0.12 * per2(x * 3.5, y * 3.5, sv + 2, n=3)
-    return max(0.0, h0 * f * (1 + lump * min(1.0, f * 3)))
+def _mounds(poly, fronts, r):
+    """Heaps in the drift: (x, y, radius, lift), centred on the stretch near the wall (lift a share of H0)."""
+    out = []
+    for _ in range(200):
+        if len(out) >= int(r.integers(*MOUNDS)) + 1:
+            break
+        x, y = r.uniform(-0.75, 0.95), r.uniform(-0.75, 0.95)
+        g = _dist(poly, fronts, Vector((x, y)))
+        if g is None or g[1] < 0.35 or not 0.02 < g[0] < 0.3:
+            continue
+        out.append((x, y, r.uniform(0.09, 0.2), r.uniform(0.4, 1.0)))
+    return out
 
 
-def _col(n, x, y, frac):
-    """Tone by height up the heap (frac: 0 at its toe, 1 at its crest), not by facing (the station hull lights both
-    near faces alike): a light crest, the ground's own tone midway, a darker toe ring outlining it on the ground; a
-    slope turned from the camera (toward the wall) the dark."""
+def _height(d, w, x, y, mounds):
+    """The drift over the ground at distance d out from the outline (tiles of height); w: the variant's share (its
+    mounds fade out toward the stretch's ends)."""
+    heap = 0.75 * per2(x * 1.5, y * 1.5, 811, n=3) / 2.2                                 # along the wall (shared)
+    lift = sum(m[3] * math.exp(-((x - m[0]) ** 2 + (y - m[1]) ** 2) / m[2] ** 2) for m in mounds) * w
+    h0 = H0 * max(0.15, 1 + H_SWING * heap + lift) / core.ZPX
+    reach = max(0.12, REACH + REACH_SWING * heap + 0.05 * per2(x * 4, y * 4, 815, n=4) + 0.3 * lift)
+    r = max(0.0, d - STEP) / max(0.08, reach - STEP)   # (full height over the step, then a concave scree)
+    if r >= 1:
+        return 0.0
+    f = (1 - r) ** 2.0
+    return max(0.0, h0 * f * (1 + 0.06 * per2(x * 5, y * 5, 817, n=4)))
+
+
+def _col(n, x, y):
+    """Dust by steepness (both near faces alike, as the station hull lights them): the flatter, the lighter, in broad
+    soft patches; a slope turned from the camera (toward the wall) the dark."""
     if n.x + n.y < -0.35:
         return "gdD"
-    t = frac + 0.06 * per2(x * 4, y * 4, 823, n=3)
-    return "gdL" if t > 0.62 else "gd" if t > 0.3 else "gdM" if t > 0.08 else "gdD"
+    t = n.z + 0.05 * per2(x * 4, y * 4, 823, n=3)
+    return "gdL" if t > 0.96 else "gd" if t > 0.84 else "gdM" if t > 0.64 else "gdD"
 
 
 def berm(key, var=0):
@@ -130,12 +145,13 @@ def berm(key, var=0):
         return []
     k = Canvas(f"berm_{HO.name(key)}_{var}")
     xs = [-1.0 + 2 * i / (2 * N) for i in range(2 * N + 1)]
+    r = rng(9000 + sum(map(ord, key)) + 101 * var)
+    mounds = _mounds(poly, fronts, r)
     Z = {}
     for y in xs:
         for x in xs:
             g = _dist(poly, fronts, Vector((x, y)))
-            Z[(x, y)] = None if g is None else _height(g[0], g[1], x, y, var)
-    top = max((z for z in Z.values() if z is not None), default=0.0) or 1.0
+            Z[(x, y)] = None if g is None else _height(g[0], g[1], x, y, mounds)
     up = Vector((0, 0, 1))
     for j in range(2 * N):
         for i in range(2 * N):
@@ -150,36 +166,52 @@ def berm(key, var=0):
                 if nn.z < 0:
                     nn = -nn
                 cx, cy = sum(p.x for p in pts) / 3, sum(p.y for p in pts) / 3
-                polyg(k, pts, _col(nn, cx, cy, sum(zs) / 3 / (H0 / core.ZPX)), up)
-    _stones(k, poly, fronts, key, var)
-    objs = k.build()
-    return objs
+                polyg(k, pts, _col(nn, cx, cy), up)
+    _scatter(k, poly, fronts, mounds, r, int(r.integers(*ROCKS)), (0.04, 0.1), (0.0, 0.85), 0.4)
+    _scatter(k, poly, fronts, mounds, r, int(r.integers(*PEBBLES)), (0.014, 0.03), (0.7, 1.35), 0.15)
+    return k.build()
 
 
-def _stones(k, poly, fronts, key, var):
-    """Loose stones on the slope (rockwall.skirt_stones' chunky lumps), clear of the stretch's ends."""
-    r = rng(9000 + sum(map(ord, key)) + 101 * var)
-    want = int(r.integers(*STONES))
+def _scatter(k, poly, fronts, mounds, r, want, size, band, sink):
+    """want rocks of radius in size, at distances out in band (shares of the reach there), sunk by sink of their height
+    into the drift; nearer the wall more likely. Each clear of its stretch's ends (no rock cut at a tile's edge)."""
     placed = 0
-    for _ in range(want * 20):
+    for _ in range(want * 30):
         if placed >= want:
             break
-        x, y = r.uniform(-0.7, 0.9), r.uniform(-0.7, 0.9)
+        x, y = r.uniform(-0.75, 0.95), r.uniform(-0.75, 0.95)
         g = _dist(poly, fronts, Vector((x, y)))
-        if g is None or g[1] < 0.35 or not (CREST * 0.6 < g[0] < REACH * 0.9):
+        if g is None or g[1] < 0.3:
             continue
-        z = gbase(x, y) + _height(g[0], g[1], x, y, var)
-        rr = r.uniform(0.045, 0.075)
-        c = Vector((x, y, z - rr * 0.2))
-        n = Vector((0, 0, 1))
-        u, v = Vector((1, 0, 0)), Vector((0, 1, 0))
-        pts = [c + (u * math.cos(t) * r.uniform(0.75, 1.2) + v * math.sin(t) * r.uniform(0.6, 1.0)) * rr
-               for t in np.linspace(0, TAU, 7, endpoint=False) + r.uniform(0, 1)]
-        mid = [c + (p - c) * 0.6 + n * rr * r.uniform(0.35, 0.55) for p in pts]
-        top = c + n * rr * r.uniform(0.6, 0.85) + u * r.uniform(-0.2, 0.2) * rr
-        col = STONE[int(r.integers(0, 4))]
-        for a, b, ma, mb in zip(pts, pts[1:] + pts[:1], mid, mid[1:] + mid[:1]):
-            lit = ((a + b) / 2 - c).y > 0
-            quad(k, a, b, mb, ma, col if lit else "rkD", (a + b) / 2 - c + n * 0.01)
-            tri(k, ma, mb, top, "rkL", (ma + mb) / 2 - c + n * 0.02)
+        reach = REACH + REACH_SWING * 0.6 * (0.75 * per2(x * 1.5, y * 1.5, 811, n=3) / 2.2)
+        q = max(0.0, g[0] - STEP * 0.5) / max(0.12, reach - STEP * 0.5)
+        if not band[0] <= q <= band[1] or r.uniform() < q * 0.5:
+            continue
+        rr = r.uniform(*size) * (1.15 - 0.4 * min(1.0, q))
+        _rock(k, Vector((x, y, gbase(x, y) + _height(g[0], g[1], x, y, mounds))), rr, r, sink)
         placed += 1
+
+
+def _rock(k, c, rr, r, sink):
+    """A lumpy rock: a ring, a shoulder ring and a top, faced by its normals (lit on top, the rock's tones down its
+    sides, dark turned from the camera)."""
+    up = Vector((0, 0, 1))
+    c = c - up * rr * sink
+    a0 = r.uniform(0, 1)
+    ring = [c + Vector((math.cos(t) * r.uniform(0.75, 1.2), math.sin(t) * r.uniform(0.7, 1.15), 0)) * rr
+            for t in np.linspace(0, TAU, 7, endpoint=False) + a0]
+    mid = [c + (p - c) * r.uniform(0.6, 0.8) + up * rr * r.uniform(0.45, 0.7) for p in ring]
+    top = c + up * rr * r.uniform(0.8, 1.05) + Vector((r.uniform(-0.25, 0.25), r.uniform(-0.25, 0.25), 0)) * rr
+
+    def face(pts):
+        n = (pts[1] - pts[0]).cross(pts[2] - pts[0])
+        n = n.normalized() if n.length > 1e-12 else up
+        mid_p = sum(pts, Vector()) / len(pts)
+        if n.dot(mid_p - c) < 0:
+            n = -n
+        col = ("gdL" if n.z > 0.8 else "rkL" if n.z > 0.45 else "rkM" if n.x + n.y > 0.2 else "rkD" if n.x + n.y > -0.3
+               else "rkK")
+        polyg(k, pts, col, n)
+    for a, b, ma, mb in zip(ring, ring[1:] + ring[:1], mid, mid[1:] + mid[:1]):
+        face([a, b, mb, ma])
+        face([ma, mb, top])
