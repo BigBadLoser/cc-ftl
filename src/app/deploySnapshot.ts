@@ -68,5 +68,5 @@ export function buildJumpWarnings(sim: Sim, ship: number): UiJumpWarnings {
     const v = sim.world.get(id, VehicleC);
     return (v && sim.content.vehicles?.[v.def]?.name) || v?.def || 'Shuttle';
   };
-  return { crew: w.crew.map(crewName), vehicles: w.vehicles.map(vehicleName), hostileDocked: w.hostileDocked.map((id) => ({ id, name: vehicleName(id) })) };
+  return { crew: w.crew.map(crewName), vehicles: w.vehicles.map(vehicleName), hostileDocked: w.hostileDocked.map((id) => ({ id, name: vehicleName(id) })), inspectors: w.inspectors.map(crewName) };
 }

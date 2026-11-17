@@ -421,6 +421,8 @@ export interface UiJumpWarnings {
   vehicles: string[];
   /** Non-player vehicles docked at the ship's airlocks; each can come along or be cut loose. */
   hostileDocked: { id: number; name: string }[];
+  /** Inspectors aboard (names): leaving now carries them off, and that counts as attacking them. */
+  inspectors: string[];
 }
 
 /** The deploy picker's data while the ship waits to be placed. Sector tiles; `keepOut` rects are where the gap rule forbids the ship's top-left corner... see `others`. */

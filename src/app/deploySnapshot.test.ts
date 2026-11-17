@@ -64,7 +64,7 @@ describe('deploy picker data', () => {
 
   it('lists crew away from the ship by name for the jump confirm', () => {
     const sim = newGame(3, content);
-    expect(buildJumpWarnings(sim, playerShip(sim))).toEqual({ crew: [], vehicles: [], hostileDocked: [] });
+    expect(buildJumpWarnings(sim, playerShip(sim))).toEqual({ crew: [], vehicles: [], hostileDocked: [], inspectors: [] });
   });
 
   it('shows no combat while the ship waits to deploy, whatever is placed in the empty sector', () => {

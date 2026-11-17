@@ -12,7 +12,7 @@ import { TraderC } from '../trade/types';
 import { partyJobs } from './search';
 import { hit } from './settle';
 import { go } from './start';
-import { InspectionC, type Inspection } from './types';
+import { InspectionC, inspections, type Inspection } from './types';
 
 /**
  * Fighting the inspectors (#138 step 3, docs/DESIGN.md "Contraband inspections in the world").
@@ -44,6 +44,17 @@ export function onInspectedShip(sim: Sim, id: number, insp: Inspection): boolean
   if (!sim.world.has(id, CrewC) || sim.world.has(id, DeadC) || sim.world.get(id, EvaFloatC)?.mode === 'back') return false;
   const pos = sim.world.get(id, PositionC);
   return !!pos && shipIdOf(sim, pos) === insp.ship;
+}
+
+/**
+ * The inspectors on `ship` that leaving the node now would carry off (`abortInspections`: that counts as fighting them): those of every inspection of the
+ * ship not already a fight, standing on it. The one answer for "are inspectors aboard" (the jump warning, the queued jump, the abort itself).
+ */
+export function inspectorsAboard(sim: Sim, ship: number): number[] {
+  return inspections(sim).flatMap((v) => {
+    const insp = sim.world.get(v, InspectionC)!;
+    return insp.ship === ship && insp.phase !== 'fight' ? insp.crew.filter((id) => onInspectedShip(sim, id, insp)) : [];
+  });
 }
 
 const sideOf = (sim: Sim, faction: string): 'hostile' | 'rogue' => sim.content.galaxy?.factions[faction]?.combatFaction ?? 'hostile';

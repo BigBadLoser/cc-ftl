@@ -7,7 +7,7 @@
   /**
    * The one "before you jump" confirmation, for every way the player commits a jump (the starmap's Jump and Flee). It opens only when
    * something would stay behind: crew away from the ship, shuttles outside it, and (starmap only) a hostile shuttle docked at an airlock,
-   * which can come along or be cut loose (`taking`). Nothing here blocks the jump: Confirm goes, Cancel stays.
+   * which can come along or be cut loose (`taking`); or when inspectors are aboard, whom leaving carries off (that counts as attacking them). Nothing here blocks the jump: Confirm goes, Cancel stays.
    */
   let { warnings, taking = new Set<number>(), onToggle = () => {}, onConfirm, onCancel }: {
     warnings: UiJumpWarnings | null; taking?: Set<number>; onToggle?: (id: number) => void; onConfirm: () => void; onCancel: () => void;
@@ -24,7 +24,8 @@
 
 <Dialog open={!!warnings} onOpenChange={(o) => { if (!o) onCancel(); }} title="Before you jump" testId="jump-confirm">
   {#if warnings}
-    {#if warnings.crew.length || warnings.vehicles.length || warnings.hostileDocked.length}<div class="body">
+    {#if warnings.crew.length || warnings.vehicles.length || warnings.hostileDocked.length || warnings.inspectors.length}<div class="body">
+      {#if warnings.inspectors.length}<p class="warn"><Icon name="person" size={16} /><span>Inspectors aboard: <b>{warnings.inspectors.join(', ')}</b>. Leaving takes them along, and that counts as attacking them.</span></p>{/if}
       {#if warnings.crew.length}<p class="warn"><Icon name="person" size={16} /><span>Left behind: <b>{warnings.crew.join(', ')}</b></span></p>{/if}
       {#if warnings.vehicles.length}<p class="warn"><Icon name="shuttle" size={16} /><span>Not aboard: <b>{warnings.vehicles.join(', ')}</b></span></p>{/if}
       {#each warnings.hostileDocked as d (d.id)}

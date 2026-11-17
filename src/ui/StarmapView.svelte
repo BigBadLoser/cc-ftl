@@ -427,7 +427,7 @@
     queueing = queue;
     if (adrift) return fly(); // nothing is left behind: the ship has already left the node
     const w = api.jumpWarnings(map.ship);
-    if (w.crew.length || w.vehicles.length || w.hostileDocked.length) {
+    if (w.crew.length || w.vehicles.length || w.hostileDocked.length || w.inspectors.length) {
       confirming = w;
       taking = [];
     } else fly();
