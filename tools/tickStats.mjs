@@ -4,7 +4,7 @@
 //   rm -rf .tick-stats && TICK_STATS=1 VITEST_FAST=1 npx vitest run --reporter=json --outputFile=.tick-stats/report.json
 //   node tools/tickStats.mjs [n]           the totals and the n heaviest files by step time (default 30)
 // Step time is measured inside the test process, so a file's "other" time (setup, generation, serialize, assertions, imports) is its
-// wall time minus its step time. Run it on a quiet machine: timings under load are inflated, though shares stay comparable.
+// wall time minus its step time. Files in the isolated project (vite.config.ts ISOLATED) are not instrumented: they show 0 ticks. Run it on a quiet machine: timings under load are inflated, though shares stay comparable.
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { relative } from 'node:path';
 

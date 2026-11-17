@@ -47,7 +47,9 @@ const ISOLATED = [
  */
 const env = (globalThis as unknown as { process: { env: Record<string, string | undefined> } }).process.env; // no @types/node here
 // TICK_STATS=1 adds test/support/tickStats.ts: ticks and step time per test file (node tools/tickStats.mjs reports them).
-const SETUP = ['src/sim/testSetup.ts', ...(env.TICK_STATS === '1' ? ['test/support/tickStats.ts'] : [])];
+// Not in the isolated project: it imports the sim before a file's vi.mock could replace a module the sim loads.
+const SETUP = ['src/sim/testSetup.ts'];
+const SHARED_SETUP = [...SETUP, ...(env.TICK_STATS === '1' ? ['test/support/tickStats.ts'] : [])];
 const SLOW = env.VITEST_FAST === '1' ? ['**/*.slow.test.ts'] : [];
 /** The soak tier (`*.soak.test.ts`: design-number runs over game hours or many seeds) runs only with `VITEST_SOAK=1` (`npm run test:soak`). */
 const SOAK =
@@ -67,7 +69,7 @@ export default defineConfig({
     maxWorkers: 4, // the whole box: the default leaves a core idle
     sequence: { sequencer: WeightedSequencer },
     projects: [
-      { extends: true, test: { name: 'shared', setupFiles: SETUP, include: ['src/**/*.test.ts', 'tools/**/*.test.ts', 'test/**/*.test.ts'], exclude: [...ISOLATED, ...SLOW, ...SOAK], isolate: false } },
+      { extends: true, test: { name: 'shared', setupFiles: SHARED_SETUP, include: ['src/**/*.test.ts', 'tools/**/*.test.ts', 'test/**/*.test.ts'], exclude: [...ISOLATED, ...SLOW, ...SOAK], isolate: false } },
       { extends: true, test: { name: 'isolated', setupFiles: SETUP, include: ISOLATED, exclude: [...SLOW, ...SOAK], isolate: true } },
     ],
   },
