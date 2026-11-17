@@ -45,8 +45,6 @@ VENT_BOX = (15, 4, 1, 17)           # a middle tile's vent box under the window 
                                     # px off the face, its top px over the sill's (run back to the glass), px tall
 VENT_RECESS = (2, 1)                # its front's recess (the slats in it): px in from every edge, px deep
 VENT_FAR, VENT_TOP_FAR = "stM", "stS"   # its front's and top's edges on its end turned from view: a step under each
-VENT_POSTS = ((6, 2, 1, 17, 2), (5, 3, 1, 10, 3))    # the pieces beside its visible end (the ref's C), in turn: px
-                                    # wide, px off the face, top px under the sill's, px tall, a lit line px in
 VENT_PANEL, VENT_PANEL_SIDE = "stM", "stD"   # the recess's floor a step under the front, its sides a step under that
 VENT_SLATS = (3, 8, 3, 5, 3)        # its slats: count, px wide, px in from its a end, the first's px under its top, px
                                     # apart (each a dark row over a lit row)
@@ -189,12 +187,11 @@ def _head(f, a, b, z0, ends, foot, tile):
 
 
 def _vent_box(f, s0, s1, zs, gl):
-    """A middle tile's vent box under the window, with the pieces beside it (VENT_BOX): its front a px off the face, its top a
+    """A middle tile's vent box under the window, centred on the tile (VENT_BOX): its front a px off the face, its top a
     px over the sill's and run back to the glass (gl), its top's front edge lit, slats across its front (VENT_SLATS)."""
     px, ln = 1 / core.ZPX, SD.LINE
     w, out, up, h = VENT_BOX
-    a = s0 + (out + 1) * ln                             # (its front, drawn out past its a end, kept off the tile
-                                                        # before: a sprite draws only its own tile)
+    a = round((s0 + s1) / 2 / ln - w // 2) * ln
     b, top = a + w * ln, zs + up * px
     z0, fr = top - h * px, D + out * ln
     cap = (SD.BOX_SIDE, SD.BOX_SIDE)
@@ -213,13 +210,6 @@ def _vent_box(f, s0, s1, zs, gl):
     SD._rect(f, a, a + ln, z0, top, fr + 0.0005, VENT_FAR)
     f.k.poly([T.P(f.ax, f.plane, u, top + T.PAINT, d) for u, d in ((a, gl), (a + ln, gl), (a + ln, fr), (a, fr))],
              SD.F, 3, core.Vector((0, 0, 1)), fixed=T.SEAM_PASS or VENT_TOP_FAR)
-    u = b
-    for pw, po, pd, ph, pl in VENT_POSTS:                # the pieces beside it
-        pt, pf = zs - pd * px, D + po * ln
-        f.part(u, u + pw * ln, [(D, pt - ph * px), (pf, pt - ph * px), (pf, pt), (D, pt)],
-               [None, VENT_FRONT, VENT_TOP, None], cap, end=False)
-        SD._rect(f, u + pl * ln, u + (pl + 1) * ln, pt - ph * px, pt, pf + 0.0005, VENT_LIT)
-        u += pw * ln
     n, sw, si, s1st, sp = VENT_SLATS
     for i in range(n):
         z = top - (s1st + i * sp) * px
