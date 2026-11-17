@@ -107,10 +107,10 @@ def _span(f, s, s0, s1, zt):
         WIN._slab(f.k, f.ax, f.plane, [(w0, zj), (ut, zj), (ut, zj + fh), (w0 + WIN.SLOPE, zj + fh),
                                        (w0, zj + fh + sh)], db, dv + CORNER_OUT, WIN.HEAD_FRONT,
                   [False, WIN.SIDE, WIN.SILL_FLAT, WIN.SLOPE_COL, False], back=False, mu=mu)
-        WIN._slab(f.k, f.ax, f.plane, [(h0, zh), (h0, zh - sh), (w0, zh - sh), (w0 + WIN.SLOPE, zh)], db,
-                  dv + CORNER_OUT, SH.FACE, [False, WIN.SLOPE_TOP, WIN.SLOPE_TOP, False], back=False,
-                  mu=mu)                                # the top corner, carried across the post to the rib: a
-                                                        # part of the header band (its front's plane and tone)
+        zr = zh - sh * (w0 + WIN.SLOPE - h0) / WIN.SLOPE    # (the slope carried on down to the rib)
+        WIN._slab(f.k, f.ax, f.plane, [(h0, zh), (h0, zr), (w0 + WIN.SLOPE, zh)], db, dv + CORNER_OUT, SH.FACE,
+                  [False, WIN.SLOPE_TOP, False], back=False, mu=mu)     # the top corner: its slope carried on
+                                                        # across the post down to the rib (the header's tone)
         zl = zj + fh + sh                                               # the jamb's seam
         pf = [(dp + WIN.PANE / 2, zl), (dv + 0.001, zl), (dv + 0.001, zl + 1 / Z), (dp + WIN.PANE / 2, zl + 1 / Z)]
         fm.part(h0, w0 + 0.001, pf, [WIN.JAMB_SEAM] * 4, (None, WIN.JAMB_SEAM), end=False)
