@@ -97,7 +97,7 @@ def _span(f, s, s0, s1, zt):
     pf = [(db, SH.GROOVE), (fr, SH.GROOVE), (fr, zs), (db, zs)]         # to the window's back
     f.part(u0, u1, pf, [None, SH.FACE, SILL_TOP, None], None, end=False)
     zr = zh - WIN.SLOPE_H / Z * (JAMB + WIN.SLOPE) / WIN.SLOPE          # (the top corner's foot at the rib)
-    _head(f, u0, u1, zh, (part == "w1", part == "w3"), zr)             # the header: a square box
+    _head(f, u0, u1, zh, (part == "w1", part == "w3"), zr, (s0, s1))             # the header: a square box
     f.part(*seg(w0, s1)[:2], [(0.0, zj), (db, zj), (db, zh), (0.0, zh)], [None, BACK_WALL, None, None], None,
            end=False)                                                   # the window's back wall
     win = WIN._opening(w0, s1, zj, zh, end)
@@ -133,7 +133,7 @@ def _span(f, s, s0, s1, zt):
                                                         # bullnose turns back)
 
 
-def _head(f, a, b, z0, ends, foot):
+def _head(f, a, b, z0, ends, foot, tile):
     """The header over [a, b] (the tile's u): the module design's top box (station_hull_designs._top_box: a px off
     the face, from z0 to a px over the top, its top front edge chamfered, its top a plate run back past the top's
     seam), run on across the window's tiles: its end and its lines only where the window ends (ends: a's, b's), the
@@ -153,7 +153,7 @@ def _head(f, a, b, z0, ends, foot):
                  SD.F, 3, T.OUT(f.ax), fixed=T.SEAM_PASS or SD.BOX_LINE)
     if ends[1]:                                         # (b: its near end, faintly lit)
         SD._rect(f, b - ln, b, foot, top - c * px, out + e, SD.LOW_LIT)
-    _head_dress(f, a, b, z0, out + e, ends)
+    _head_dress(f, *tile, z0, out + e, ends)
     d0 = back - SD.PLATE_BACK * ln + SD.PLATE_R * ln
     for u, col, on in ((a, SD.BOX_LINE, ends[0]), (b - ln, SD.TOP_LIT, ends[1])):   # (its edges along its top)
         if on:
@@ -163,7 +163,8 @@ def _head(f, a, b, z0, ends, foot):
 
 
 def _head_dress(f, a, b, z0, d, ends=(False, False)):
-    """The header's front over [a, b] (its span on this tile), d out: vent lines across its middle (HEAD_VENTS), a
+    """The header's front on the tile [a, b] (placed by the tile, not the header's span on it: the same spacing on
+    every tile of the window), d out: vent lines across its middle (HEAD_VENTS), a
     recessed panel either side of them, centred in what's left (HEAD_RECESS: its fill a step darker, a shadow row
     under its top lip, a lit row on its floor), none on the side where the window ends (ends: a's, b's)."""
     px, ln = 1 / core.ZPX, SD.LINE
