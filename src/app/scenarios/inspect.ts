@@ -1,24 +1,12 @@
-import { AirlockC, CrewC, ModuleC, PositionC, ShipC, TraderC, homeShip, type Command, type Sim } from '../../sim';
+import { CrewC, PositionC, type Command, type Sim } from '../../sim';
+import { inspectStation, inspectCommands } from '../../content/scenario/lib/inspect';
+
+export { inspectStation, inspectCommands };
 import { AllegianceC } from '../../sim/fight/components';
 import { InspectionC } from '../../sim/inspect/types';
 import { shipIdOf } from '../../sim/regions';
 import type { Scenario } from './types';
 
-/** The navy-run station beside the player (the first immobile ship), if it is there yet. */
-export const inspectStation = (sim: Sim): number | undefined =>
-  sim.world.query(ShipC).find((i) => sim.world.get(i, ShipC)?.immobile && sim.world.get(i, TraderC)?.owner === 'navy');
-
-/** The commands that set the scene once the station stands: contraband in the hold (unless `clean`), the airlocks off (`eva`), and the hail. */
-export function inspectCommands(sim: Sim, station: number, opts: { clean?: boolean; eva?: boolean } = {}): Command[] {
-  const ship = homeShip(sim);
-  const locks = sim.world.query(AirlockC).filter((a) => shipIdOf(sim, sim.world.get(a, ModuleC)!) === ship);
-  return [
-    { type: 'debug.setCredits', value: 2000 },
-    ...(opts.clean ? [] : [{ type: 'debug.giveItems' as const, item: 'item.stolen_goods', count: 12 }]),
-    ...(opts.eva ? locks.map((id) => ({ type: 'module.setEnabled' as const, id, enabled: false })) : []),
-    { type: 'trade.hail', ship: station },
-  ];
-}
 
 /**
  * `&fight` (#138 step 3): once the inspectors are aboard and searching, one of the player's crew on the ship is drafted and ordered to attack the lead
