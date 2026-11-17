@@ -1,5 +1,6 @@
 import type { Sprite } from 'pixi.js';
 import type { Grid } from '../sim/grid';
+import { Struct } from '../sim/structure';
 import { tubeRuns, type TubeRun } from '../sim/tube';
 import type { Atlas } from './assets/loader';
 import { HullSprite } from './hullPaint';
@@ -61,7 +62,8 @@ export function createTubeView(grid: Grid, atlas: Atlas, L: Layers, host: TubeVi
         runsRev = grid.revision('struct');
         runs = tubeRuns(grid);
       }
-      const open = (t: { x: number; y: number }) => grid.inBounds(t.x, t.y) && grid.get('door', t.x, t.y) > 128;
+      // A hatch stands open with its door, and once the door is gone (breached: no longer a door tile) the passage shows open.
+      const open = (t: { x: number; y: number }) => grid.inBounds(t.x, t.y) && (grid.get('struct', t.x, t.y) !== Struct.Door || grid.get('door', t.x, t.y) > 128);
       const next = `${atlas.generation}|${grid.revision('struct')}|${roofed}|${level}|${paint.armour}/${paint.deco}|${runs.map((r) => `${open(r.far) ? 1 : 0}${open(r.near) ? 1 : 0}`).join('')}`;
       if (next !== sig) {
         sig = next;
