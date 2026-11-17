@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { componentNames } from '../ecs';
+import '../pipeline'; // loads every system, and with them every component the table must classify
 import { TRANSLATE, translated } from './translate';
 
 describe('packet translation table', () => {
