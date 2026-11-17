@@ -399,7 +399,8 @@ export function fitShell(
   const dockTile = new Set(opened.tiles);
   const fitted = opened.merged > 0 ? rows.map((r, y) => d.lay.cells.slice(y * d.lay.w, y * d.lay.w + r.length).join('')) : rows;
   const template = toTemplate(f, role, factionId, seed, plan, fitted, d);
-  if ((opts.entries?.size ?? 0) > 0) template.apart = true;
+  // Modules standing apart (entered from their own rooms, or cabled on the ground as such): each structure is checked on its own.
+  if ((opts.entries?.size ?? 0) > 0 || (opts.ground?.apart?.length ?? 0) > 0) template.apart = true;
   template.modules = [...(template.modules ?? []), ...(shell.containers ?? []).map((k) => ({ ...k, ...stockOf(rng, f, defs[k.def]) }))];
   const problems = d.error ? [d.error] : validateTemplate(template, defs, opts.immobile ? { immobile: true } : {});
   if (problems.length === 0 && opts.check) problems.push(...opts.check(template, defs));

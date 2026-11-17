@@ -103,9 +103,9 @@ export function prefab(c: Ctx, rooms: readonly RoomSpec[], docks: readonly RoomS
   const [mess, ...commons] = pick((r) => r.dept === 'commons');
   // The ward with its trauma room (a farm or a mine has too few crew for the programme's).
   const ward = pick((r) => r.dept === 'habitation');
-  const trauma: RoomSpec = { ...(ward[0] as RoomSpec), mods: ['module.recovery', 'module.med_bed'], w: 5, h: 4 };
-  delete trauma.annex;
-  const medical = ward.length > 0 && !trade && !ward.some((r) => r.annex) ? [{ ...(ward[0] as RoomSpec), annex: trauma }, ...ward.slice(1)] : ward;
+  const trauma = (r: RoomSpec): RoomSpec => { const t: RoomSpec = { ...r, mods: ['module.recovery', 'module.med_bed'], w: 5, h: 4 }; delete t.annex; return t; };
+  const [head] = ward;
+  const medical = head && !trade && !ward.some((r) => r.annex) ? [{ ...head, annex: trauma(head) }, ...ward.slice(1)] : ward;
   const secure = ordered(pick((r) => r.dept === 'secure' || r.role === 'bridge')), wings = secure.filter((r) => r.role !== 'reactor');
   // The reactors in one room, as long as they need (down both long walls, batteries in the gaps), not the programme's floor.
   const reactors = secure.filter((r) => r.role === 'reactor');
