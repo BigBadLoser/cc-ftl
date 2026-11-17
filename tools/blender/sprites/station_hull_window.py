@@ -27,9 +27,9 @@ SILL = 10                           # the sill's front's top: this many px over 
 JAMB_IN = 0.0                       # the posts (the jambs) this far behind the face (flush)
 HEAD_VENTS = (8, (3, 6))            # the header's vent lines across its middle: px wide, their rows (px over its foot)
 HEAD_RECESS = (4, 1, 7)             # its recessed panels either side: px wide, from px over its foot to px
-TOP_PLATE, TOP_PLATE_FRONT = 5, "stL"     # a middle tile's plates on the header's top: px back, its front,
+TOP_PLATE = 5                       # a middle tile's plates on the header's top: px back,
 TOP_PLATE_TOP = "stS"               # its top a step under the header's top
-TOP_PLATE_SIDE = "stD"              # its ends
+TOP_PLATE_SIDE = "stD"              # its front and ends
 RECESS_FILL, RECESS_SHADE, RECESS_LIT, VENT_LINE = "stM", "stD", "stL", "stD"
 RIB_PLATE = (7, 2)                  # an end piece's plate across its rib and post, its top where the top corner's
 RIB_PLATE_TOP = SD.TOP_LIT          # slope meets the post's inner edge: px tall, px off the wall; its top lit, its
@@ -163,7 +163,7 @@ def _head(f, a, b, z0, ends, foot, tile):
         d1 = d0 - TOP_PLATE * T3.TOP_PX
         for p0, p1 in spans:
             f.part(p0, p1, [(d1, top), (d0, top), (d0, top + px), (d1, top + px)],
-                   [None, TOP_PLATE_FRONT, TOP_PLATE_TOP, TOP_PLATE_SIDE], TOP_PLATE_SIDE, end=False)
+                   [None, TOP_PLATE_SIDE, TOP_PLATE_TOP, TOP_PLATE_SIDE], TOP_PLATE_SIDE, end=False)
     d0 = back - SD.PLATE_BACK * ln + SD.PLATE_R * ln
     for u, col, on in ((a, SD.BOX_LINE, ends[0]), (b - ln, SD.TOP_LIT, ends[1])):   # (its edges along its top)
         if on:
