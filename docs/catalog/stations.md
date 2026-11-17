@@ -8,7 +8,7 @@ Station crews run on the shared crew AI with a director that posts patrol jobs (
 ## Station kinds
 | Name | id | What it does | Status | Where |
 |---|---|---|---|---|
-| Trade station | `station.trading` | Market core, big holds, many docks; recruits, jobs, yard | In game | src/content/stations.ts:84; trading hubs; trader profiles in content/trade.ts |
+| Trade station | `station.trading` | Market core, big holds, many docks; recruits, jobs, yard. As an asteroid outpost, a prefab base whose guns and point defence are turrets on the ground, cabled to the hull (#514) | In game | src/content/stations.ts:84; trading hubs; trader profiles in content/trade.ts |
 | Research station | `station.research` | Consoles and fabricator benches; sells blueprints | In game | src/content/stations.ts:93; structure.station_research (node content table: 10% per node, lower with danger) |
 | Mining station | `station.mining` | Refineries, ore stores; built as a surface mining outpost | In game | src/content/stations.ts:107; sim/outposts/gen.ts; trade profile; no structure.station_mining |
 | Agri station | `station.farming` | Quarters, messes, plazas, ration stock | Partial: no hydroponics | src/content/stations.ts:120; chosen by a market profile (populateSpawn.ts:41); the room list has no hydroponics ("No hydroponics beds on stations") |

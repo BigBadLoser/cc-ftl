@@ -7,10 +7,14 @@ import { SECURITY_ROLE, docksOf, stationCrew } from '../stationCrew';
 import type { RoomSpec } from '../plan';
 import type { StationDef, StationInfo, StationSize } from '../stationTypes';
 import type { FactionDef, GenResult, ShipRoleDef } from '../types';
-import { assemble } from './assemble';
+import { assemble, groundTurrets } from './assemble';
 import { PREFAB_PADS } from './prefab';
 import { stationProgram } from './program';
 import { recipeAt, type Recipe } from './recipe';
+import { OUTSIDE } from '../groundTurrets';
+
+/** Ground round a prefab base's modules and pads, for its turrets (a ring of ground, a turret, a tile to its cable and the hull's). */
+const GROUND_MARGIN = 4 + OUTSIDE;
 
 /** What a harbour's customs hall holds: the officers' desk and their two chairs (rules: CU). */
 const CUSTOMS: RoomSpec = { role: 'plaza', mods: ['module.mess_table', 'module.chair', 'module.chair'], w: 7, h: 3 };
@@ -73,13 +77,17 @@ const infoOf = (def: StationDef, size: StationSize, t: ShipTemplate, defs: Recor
  */
 export function assembleStation(def: StationDef, id: string, size: StationSize, seed: number, defs: Record<string, ModuleDef>, recipe: Recipe): StationResult {
   const rng = new Rng(seedOf(seed, 0));
-  const { ok, rejected } = assemble(rng, recipeAt(recipe, size), stationProgram(rng, def, size, defs));
+  const program = stationProgram(rng, def, size, defs);
+  const { ok, rejected } = assemble(rng, recipeAt(recipe, size), program);
   if (!ok) throw new Error(`assembleStation: ${recipe.name} does not stand for ${id} ${size} seed ${seed}: ${rejected[rejected.length - 1] ?? 'no reason given'}`);
   const pads = ok.pads ?? [];
   // A prefab base's pads are open ground inside its extent.
   const reach = pads.length > 0 ? ([Math.min(...pads.map((p) => p[0])), Math.min(...pads.map((p) => p[1])), Math.max(...pads.map((p) => p[2])), Math.max(...pads.map((p) => p[3]))] as const) : undefined;
   const prefab = ok.recipe.root.kind === 'prefab';
-  const g = ok.ctx.g, snap = g.snapshot(undefined, reach);
+  const g = ok.ctx.g, cell = g.compile(), first = g.snapshot(cell, reach);
+  // A prefab base's turrets stand on the ground round it: its site reaches GROUND_MARGIN tiles past its modules and pads.
+  const M = prefab ? GROUND_MARGIN : 0;
+  const snap = M > 0 ? g.snapshot(cell, [first.x0 - M, first.y0 - M, first.x0 + first.width + M, first.y0 + first.height + M]) : first;
   // A hatch in the outer wall is the airlock's own door: the fit-out stands an airlock module in plain hull.
   const at = (x: number, y: number): string => snap.rows[y]?.[x] ?? '.';
   const rows = snap.rows.map((row, y) => [...row].map((c, x) => (c === 'D' && [at(x + 1, y), at(x - 1, y), at(x, y + 1), at(x, y - 1)].includes('.') ? '#' : c)).join(''));
@@ -87,7 +95,7 @@ export function assembleStation(def: StationDef, id: string, size: StationSize, 
   const made = fitShell(
     rng, stationFaction(def), id, seed, role, 'sections', { crew: stationCrew(rng, def, size) },
     { rows, roomOf: snap.roomOf, width: snap.width, height: snap.height, roles: g.regions.map((r) => r.role), specs: g.regions.map((r) => r.spec ?? (r.dept === 'customs' ? CUSTOMS : undefined)) },
-    `assembly ${recipe.name}`, defs, 0, { immobile: true, airlocksAnyWay: true, gunsAnywhere: true, unarmed: prefab, check: (t, d) => stationProblems(t, d, prefab ? Math.min(PREFAB_PADS, docksOf(def, size)) : docksOf(def, size)) },
+    `assembly ${recipe.name}`, defs, 0, { immobile: true, airlocksAnyWay: true, gunsAnywhere: true, ...(prefab ? { ground: { mods: groundTurrets(ok.recipe, program, defs), keep: pads.map((p) => [p[0] - snap.x0, p[1] - snap.y0, p[2] - snap.x0, p[3] - snap.y0] as const), seed } } : {}), check: (t, d) => stationProblems(t, d, prefab ? Math.min(PREFAB_PADS, docksOf(def, size)) : docksOf(def, size)) },
   );
   made.template.name = `${def.name} ${size === 'station' ? '' : `${size} `}${(seed >>> 0).toString(16).toUpperCase().padStart(4, '0').slice(-4)}`;
   const site = { pads: pads.map((p) => ({ x: p[0] - snap.x0, y: p[1] - snap.y0, w: p[2] - p[0], h: p[3] - p[1] })) };

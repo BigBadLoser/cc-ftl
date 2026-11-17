@@ -155,8 +155,9 @@ import { newYard, type YardState } from './yard/types';
  * v124 (deck finishes and markings, station-generator port): the `floor` grid field (a floor tile's finish: plain deck, heavy plate, clean tile, carpet) and the deck marking masks `markWalkway`, `markApron`, `markKeepClear`, `markHazard` (sim/marks.ts).
  * v125 (player-built windows, #516): the `window` grid field on wall tiles (sim/windows.ts), command 'job.window', and `Job.window` (a window build or deconstruct job).
  * v126 (lost cargo, #503): `Container.faction` (the generator faction whose livery a loose box wears) and `Container.seed` (the id its art was picked by), `Ship.unseen` (a seat ship drawn bare), command 'container.open'; a lost container is marked for opening by standing it on a seat ship.
+ * v127 (ground turrets, #514): the `cable` grid field (a power cable laid over rock ground, sim/cable.ts).
  */
-export const SAVE_VERSION = 126;
+export const SAVE_VERSION = 127;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {

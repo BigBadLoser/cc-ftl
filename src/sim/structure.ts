@@ -87,6 +87,8 @@ export const SHIP_FIELDS = {
   markHazard: 'u8',
   /** A window on a Wall tile (windows.ts: axis, size, index; 0 = none). The tile stays a wall in every system; cleared whenever the tile's struct is written or breached. */
   window: 'u8',
+  /** A power cable laid over a Ground tile (1, else 0): see sim/cable.ts, the one owner of what it means. */
+  cable: 'u8',
 } as const satisfies FieldSpec;
 
 /**
@@ -117,6 +119,7 @@ export const SHIP_EMPTY = {
   markKeepClear: 0,
   markHazard: 0,
   window: 0,
+  cable: 0,
 } as const satisfies Record<keyof typeof SHIP_FIELDS, number>;
 
 /** True for rock mass: solid, airtight and unwalkable like a wall, with no integrity. */

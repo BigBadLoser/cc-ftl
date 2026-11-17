@@ -4,6 +4,7 @@ import type { Grid } from '../sim/grid';
 import { PointDefenseC, WeaponC } from '../sim/combat/components';
 import { ModuleC } from '../sim/modules/components';
 import { rotatedSize } from '../sim/modules/footprint';
+import { isGroundMount } from '../sim/modules/groundMount';
 import { DEPLOY_FRAMES, RISE_PX, deployId, deployStage } from './deployArt';
 import { resolveArt } from './assets/fallback';
 import type { Atlas } from './assets/loader';
@@ -11,7 +12,7 @@ import { createGhostFilter, setGhostZoom } from './ghost';
 import { ROOF_H } from './heights';
 import { depthKey, iso, TILE_H, TILE_W } from './iso';
 import type { Layers } from './layers';
-import { lightTint, mulColor } from './lightTint';
+import { EXTERIOR_TINT, lightTint, mulColor } from './lightTint';
 import type { ModuleDefs } from './moduleView';
 
 export interface TurretView {
@@ -65,12 +66,15 @@ export function createTurretView(world: World, atlas: Atlas, L: Layers, grid: Gr
         const w: { aim: number; charge?: number } | undefined = world.get(id, WeaponC) ?? world.get(id, PointDefenseC);
         const def = m && defs[m.def];
         if (!m || !w || !def || !grid.inBounds(m.x, m.y)) continue;
+        const ground = isGroundMount(def);
+        // A ground mount is always out: content/groundMounts.ts drops deploySec from the .ground defs (they have no deploy art).
         const stage = def.deploySec === undefined ? DEPLOY_FRAMES : deployStage(world, id);
         // Stowed: a hatch on a roofed (enemy) ship, nothing at all on the player's cutaway ship.
         if (stage < 0 && !roofed) continue;
         const out = stage >= DEPLOY_FRAMES;
         const aim = out ? ((Math.round(w.aim) % 8) + 8) % 8 : 0;
-        const stem = `turret.${turretStem(def.asset)}`;
+        // A ground mount's turret (#514): `turret.<stem>.ground.d{n}`, always out and outside, never under a roof.
+        const stem = `turret.${turretStem(ground ? def.asset.replace(/\.ground$/, '') : def.asset)}${ground ? '.ground' : ''}`;
         const base = `${stem}.d${aim}`;
         const charged = out && (w.charge ?? 0) >= 1;
         const art = out
@@ -88,16 +92,16 @@ export function createTurretView(world: World, atlas: Atlas, L: Layers, grid: Gr
         const p = iso(cx, cy);
         t.spr.texture = art.s.tex;
         // Real turret art is modelled on the roof plane (anchor = bay centre on the floor); stand-ins are lifted to it.
-        const lift = art.fallback ? ROOF_H : 0;
+        const lift = art.fallback && !ground ? ROOF_H : 0;
         t.spr.position.set(Math.round(p.x - art.s.ax), Math.round(p.y - art.s.ay - lift + (1 - art.rise) * RISE_PX));
         const lx = Math.min(grid.width - 1, Math.max(0, Math.round(cx)));
         const ly = Math.min(grid.height - 1, Math.max(0, Math.round(cy)));
-        t.spr.tint = mulColor(lightTint(grid.get('light', grid.x0 + lx, grid.y0 + ly), false, -1), art.tint);
+        t.spr.tint = mulColor(ground ? EXTERIOR_TINT : lightTint(grid.get('light', grid.x0 + lx, grid.y0 + ly), false, -1), art.tint);
         // The front tile of the bay, +0.93: over the roof tiles of the footprint, behind the next tile row.
         // On a roofed ship the turret (hatch, opening or deployed) sits on the roof, and its base ring reaches two diagonal rows
         // past the bay's front tile, whose roof plating sorts at +1.9 and +2.9: it sorts above both so the grid lines and
         // plate edges stop at the ring (#260). Turrets keep their order to each other (every bay's offset is the same).
-        t.root.zIndex = depthKey(mx + bw - 1, my + bh - 1) + (roofed ? 2.95 : 0.93);
+        t.root.zIndex = depthKey(mx + bw - 1, my + bh - 1) + (roofed && !ground ? 2.95 : 0.93);
         if (art.fallback && out) {
           while (t.barrel.length < BARREL_AT.length) {
             const dot = new Sprite();
@@ -115,13 +119,13 @@ export function createTurretView(world: World, atlas: Atlas, L: Layers, grid: Gr
             d.anchor.set(0.5);
             d.scale.set(5 - i);
             d.tint = charged ? 0xffe070 : 0xffffff;
-            d.position.set(Math.round(p.x + (dx - dy) * TILE_W / 2 * k), Math.round(p.y - ROOF_H - TILE_H / 2 + (dx + dy) * TILE_H / 2 * k));
+            d.position.set(Math.round(p.x + (dx - dy) * TILE_W / 2 * k), Math.round(p.y - (ground ? 0 : ROOF_H) - TILE_H / 2 + (dx + dy) * TILE_H / 2 * k));
           });
         } else {
           for (const d of t.barrel) d.destroy();
           t.barrel = [];
         }
-        t.root.filters = roofed ? [] : [t.ghost];
+        t.root.filters = roofed || ground ? [] : [t.ghost];
         setGhostZoom(t.ghost, L.scale);
       }
       for (const [id, t] of turrets) {

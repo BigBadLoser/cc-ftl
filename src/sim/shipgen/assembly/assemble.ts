@@ -1,4 +1,6 @@
+import { groundMountId, isGroundMount } from '../../modules/groundMount';
 import type { RoomSpec } from '../plan';
+import type { ModuleDef } from '../../registry';
 import type { Rng } from '../../rng';
 import { Asm, roll } from './asm';
 import type { BandAsk } from './band';
@@ -198,6 +200,18 @@ export function recipeRooms(recipe: Recipe, rooms: readonly RoomSpec[]): readonl
     return pd === 0 ? r : { ...r, mods: r.mods.filter((m) => m !== 'module.pointDefense'), w: Math.max(3, r.w - 3 * pd) };
   };
   return rooms.filter((r) => !r.mods.includes('module.vehicle_bay') && (r.role !== 'dock' || docks.includes(r)) && r.role !== 'weapons' && deptOf(r) !== 'market').map(noPd);
+}
+
+/**
+ * What a recipe's base stands out on the ground instead (#514): a prefab base's guns (its gun rooms' weapons) and its point
+ * defence, as turrets on the levelled rock round it, cabled to its hull (`recipeRooms` leaves them out of the rooms).
+ * Guns first, then point defence. None for any other root.
+ */
+export function groundTurrets(recipe: Recipe, rooms: readonly RoomSpec[], defs: Record<string, ModuleDef>): string[] {
+  if (recipe.root.kind !== 'prefab') return [];
+  const guns = rooms.filter((r) => r.role === 'weapons').flatMap((r) => r.mods.filter((m) => defs[m]?.weapon));
+  // Always the 3x3 ground variant of the gun (its mount, content/groundMounts.ts); a def without one is left out (only a ground mount stands on the rock).
+  return [...guns, ...rooms.flatMap((r) => r.mods.filter((m) => m === 'module.pointDefense'))].map(groundMountId).filter((m) => isGroundMount(defs[m]));
 }
 
 /**
