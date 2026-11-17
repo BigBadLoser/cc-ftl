@@ -1,0 +1,98 @@
+import { describe, expect, it } from 'vitest';
+import { assembleStation, crewSize, deptOf, warehoused, type Recipe, type StationSize } from '../sim';
+import { modules } from './modules';
+import { assembled, programOf } from './stationRecipeFixture';
+import { stationRecipes } from './stationRecipes';
+import { stations } from './stations';
+
+describe('station program', () => {
+  it('merges crate rooms into warehouses that hold every crate', () => {
+    const { rooms } = programOf('station.trading', 'hub', 1);
+    // The market's stalls are small stores of their own, not warehouses.
+    const cargo = rooms.filter((r) => r.role === 'cargo' && r.dept !== 'market');
+    expect(cargo.length).toBeGreaterThan(0);
+    expect(cargo.every((r) => r.warehouse && r.mods.length <= 24)).toBe(true);
+    const crates = [{ role: 'cargo' as const, mods: Array<string>(6).fill('module.storage'), w: 4, h: 3 }, { role: 'cargo' as const, mods: Array<string>(5).fill('module.storage'), w: 4, h: 3 }];
+    expect(warehoused(crates).flatMap((r) => r.mods)).toHaveLength(11);
+  });
+
+  it('has one mess (two at hub size) and a rec room from station size up, as the commons department', () => {
+    const count = (size: StationSize, mod: string): number => programOf('station.mining', size, 1).rooms.filter((r) => r.mods.includes(mod) && deptOf(r) === 'commons').length;
+    expect((['outpost', 'station', 'hub'] as const).map((s) => count(s, 'module.galley'))).toEqual([1, 1, 2]);
+    expect((['outpost', 'station', 'hub'] as const).map((s) => count(s, 'module.arcade'))).toEqual([0, 1, 1]);
+  });
+
+  it('houses the whole crew, with a medbay, no filler plant rooms, every common room a mess or a rec room', () => {
+    for (const kind of ['station.pirate', 'station.military', 'station.farming'] as const) {
+      const { rooms } = programOf(kind, 'station', 2);
+      const beds = rooms.flatMap((r) => r.mods).filter((m) => m === 'module.bed').length;
+      expect(beds).toBe(crewSize(stations[kind], 'station'));
+      expect(rooms.some((r) => r.role === 'medbay')).toBe(true);
+      expect(rooms.filter((r) => r.role === 'plant' && r.mods.every((m) => m === 'module.lifeSupport'))).toHaveLength(0);
+      for (const r of rooms.filter((q) => q.role === 'support' && q.dept === 'commons')) expect(r.mods.some((m) => m === 'module.galley' || m === 'module.arcade'), kind).toBe(true);
+    }
+    expect(programOf('station.farming', 'station', 1).rooms.some((r) => r.role === 'farm')).toBe(true);
+    expect(programOf('station.military', 'hub', 1).rooms.filter((r) => r.mods.includes('module.vehicle_bay'))).toHaveLength(2);
+    // Every station keeps a shuttle.
+    for (const id of Object.keys(stations) as (keyof typeof stations)[]) for (const size of ['outpost', 'station', 'hub'] as const) expect(programOf(id, size, 1).rooms.some((r) => r.mods.includes('module.vehicle_bay')), `${id} ${size}`).toBe(true);
+    // A mining station's pod deck: one hangar with a bay for every pod of its tier.
+    const decks = programOf('station.mining', 'station', 1).rooms.filter((r) => r.mods.includes('module.pod_bay'));
+    expect(decks.map((r) => r.mods)).toEqual([Array<string>(stations['station.mining'].tiers.station.pods ?? 0).fill('module.pod_bay')]);
+  });
+});
+
+describe('station recipes', () => {
+  it('assembles the first tree and the first compound', () => {
+    expect(assembled(stationRecipes.tree[0], 'station.pirate', 'hub', 1)).toEqual([]);
+    expect(assembled(stationRecipes.compound[0], 'station.mining', 'station', 1)).toEqual([]);
+  });
+
+  it('assembles the military star fort at every size, every gun mounted in its corner batteries', () => {
+    const def = stations['station.military'];
+    for (const size of ['outpost', 'station', 'hub'] as const) {
+      expect(assembled(stationRecipes.fort[0], 'station.military', size, 1), size).toEqual([]);
+      const made = assembleStation(def, 'fort', size, 1, modules, stationRecipes.fort[0]);
+      expect(made.problems, size).toEqual([]);
+      expect(made.station?.guns, size).toBe(def.tiers[size].guns);
+    }
+  });
+
+  it('assembles the spine, with its ore store in the works', () => {
+    const { rooms } = programOf('station.mining', 'station', 3);
+    expect(rooms.filter((r) => r.role === 'cargo' && deptOf(r) === 'works')).toHaveLength(1);
+    expect(assembled(stationRecipes.spine[0], 'station.mining', 'station', 3)).toEqual([]);
+  });
+
+  it('assembles departments off a trunk', () => {
+    const trunk: Recipe = {
+      name: 'trunk', root: { kind: 'trunk', pairs: 0.6, step: [8, 12] }, spacing: 2,
+      branches: [
+        { takes: ['harbour'], per: 'together', host: { on: 'trunk' }, neck: 0, docks: true, section: { rooms: [2, 6] }, link: 0 },
+        { takes: ['commons', 'freight', 'works', 'habitation', 'defence'], per: 'department', host: { on: 'trunk' }, neck: 0, section: { rooms: [4, 6], cap: true }, link: [2, 4], most: 2 },
+        { takes: ['secure'], per: 'together', host: { on: 'trunk' }, neck: 0, gated: true, section: { rooms: [3, 8], cap: true }, link: 0 },
+      ],
+    };
+    expect(assembled(trunk, 'station.mining', 'station', 1)).toEqual([]);
+  });
+
+  it('fits a bazaar out through the shared fit-out with no problems: three airlocks, every gun mounted', () => {
+    const g = assembleStation(stations['station.trading'], 'station.trading', 'station', 1, modules, stationRecipes.bazaar[0] as Recipe);
+    expect(g.problems).toEqual([]);
+    expect(g.station.docks).toBe(3);
+    expect(g.station.guns).toBe(stations['station.trading'].tiers.station.guns);
+    expect(g.template.crew).toHaveLength(crewSize(stations['station.trading'], 'station'));
+  });
+
+  it('fits a crescent out with no problems: the pier head holds every airlock', () => {
+    const g = assembleStation(stations['station.trading'], 'station.trading', 'station', 1, modules, stationRecipes.crescent[2] as Recipe);
+    expect(g.problems).toEqual([]);
+    expect(g.station.docks).toBe(3);
+    expect(g.station.guns).toBe(stations['station.trading'].tiers.station.guns);
+    expect(g.template.crew).toHaveLength(crewSize(stations['station.trading'], 'station'));
+  });
+
+  it('rejects a recipe that leaves a department out, and says which', () => {
+    const short: Recipe = { ...stationRecipes.tree[0], branches: stationRecipes.tree[0].branches.filter((b) => !b.takes.includes('secure')) };
+    expect(assembled(short, 'station.mining', 'station', 1)[0]).toMatch(/no part of the recipe takes secure/);
+  });
+});

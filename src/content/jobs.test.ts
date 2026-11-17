@@ -146,7 +146,12 @@ describe('station jobs', () => {
     expect(deal.phase).toBe('done');
     until(sim, () => deal.vehicle === 0, 3000);
     expect(deal.vehicle).toBe(0);
-    for (const vid of sim.world.query(VehicleC)) expect(sim.world.get(vid, VehicleC)).toMatchObject({ state: 'stowed', autopilot: false });
+    // Every vehicle stowed and off autopilot (a station's own that never flew has no autopilot set at all).
+    for (const vid of sim.world.query(VehicleC)) {
+      const v = sim.world.get(vid, VehicleC)!;
+      expect(v.state).toBe('stowed');
+      expect(v.autopilot ?? false).toBe(false);
+    }
   });
 
   it('the crate rides in the player\'s shuttle to the station; the delivery pays only on the drop-off', () => {

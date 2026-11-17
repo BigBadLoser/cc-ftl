@@ -1,0 +1,224 @@
+import type { RoomSpec } from '../plan';
+import type { RoomRole } from '../types';
+import { shuffle } from '../civilKit';
+import { roll, type Asm } from './asm';
+import type { Dept } from './dept';
+import { across } from './across';
+import { block, concourse, corridor, single, type BlockOpts } from './elements';
+import { K } from './lattice';
+import { quay } from './quay';
+import type { Dir, Port } from './model';
+import type { BranchRule, Recipe } from './recipe';
+
+/**
+ * Branches: a recipe's rules grown on a root that is already there. Each rule's rooms are cut into sections, and a
+ * branch (a neck, then its sections in series) is tried at one host port after another until it stands.
+ */
+
+/**
+ * Rooms cut into sections of a size in `range`, as even as they go. Rooms of the `tail` roles (the end room's, and
+ * those kept at the far end) go to the last section, up to a section's worth of them.
+ */
+function chunks(rooms: readonly RoomSpec[], range: readonly [number, number], tail: readonly RoomRole[] = []): RoomSpec[][] {
+  const n = Math.max(1, Math.ceil(rooms.length / range[1]));
+  const out: RoomSpec[][] = Array.from({ length: n }, () => []);
+  const last = n > 1 ? rooms.filter((r) => tail.includes(r.role)).slice(0, range[1]) : [];
+  (out[n - 1] as RoomSpec[]).push(...last);
+  // Biggest first, each to the section with the fewest rooms: every section gets one of the big rooms.
+  for (const r of rooms.filter((x) => !last.includes(x)).sort((a, b) => b.w * b.h - a.w * a.h)) {
+    (out.reduce((p, q) => (q.length < p.length ? q : p)) as RoomSpec[]).push(r);
+  }
+  return out;
+}
+
+const BACK: Record<Dir, Dir> = { n: 's', e: 'w', s: 'n', w: 'e' };
+
+interface Chain { end: Port | null; dir: Dir; took: number }
+
+/**
+ * One block section at a port: as the rule draws it, and when staggered bays build a thick wall or will not fit, as a
+ * slab of one depth (the rooms keep their floor).
+ */
+function section(a: Asm, port: Port, joined: Set<number>, part: readonly RoomSpec[], rule: BranchRule, o: { cap: boolean | RoomSpec['role']; docks?: readonly RoomSpec[]; gate?: boolean; bunks?: readonly RoomSpec[]; noCross?: boolean }): Port[] | null {
+  const { ctx } = a, base = { cap: o.cap, even: !!rule.section.even, cross: o.noCross ? false : typeof rule.section.cross === 'object' ? a.ctx.rng.pick(rule.section.cross) : rule.section.cross ?? false, ...(rule.section.width ? { width: rule.section.width } : {}), ...(rule.section.far ? { far: rule.section.far } : {}), ...(o.docks ? { docks: o.docks } : {}), ...(o.gate ? { gate: true } : {}), ...(o.bunks ? { bunks: o.bunks } : {}) };
+  // A rule with a quay builds its docks and this section's rooms as one.
+  if (rule.quay && o.docks?.length) {
+    // (A pier head's rooms are the street's last rows: at the section's own depth.)
+    const plain: BlockOpts = { ...base, ...(rule.quay.form === 'head' && rule.section.rowDepth ? { rowDepth: rule.section.rowDepth } : {}) };
+    delete plain.docks;
+    return a.place(port, joined, () => quay(ctx, port, part, o.docks ?? [], rule.quay as NonNullable<BranchRule['quay']>, plain), rule.clear);
+  }
+  // A cross street: its street runs across the port's heading, its rows either side of the host and across from it.
+  if (rule.section.across) {
+    const across0 = rule.section.across, host = new Set(a.elements[port.owner]?.regions ?? []);
+    return a.place(port, joined, () => across(ctx, port, part, across0, host), rule.clear);
+  }
+  // Rooms of the departments that stand behind the rows (sheds) are not row rooms.
+  const sheds = part.filter((r) => rule.section.behind?.includes(r.dept as Dept)), front = sheds.length > 0 ? part.filter((r) => !sheds.includes(r)) : part;
+  const as = (rowDepth?: number): Port[] | null => a.place(port, joined, () => block(ctx, port, front, { ...base, ...(sheds.length > 0 ? { behind: sheds } : {}), ...(rowDepth ? { rowDepth } : {}) }), rule.clear);
+  if (rule.section.rowDepth) return as(rule.section.rowDepth);
+  const depths = part.map((r) => Math.min(r.w, r.h)).sort((p, q) => p - q);
+  return as() ?? as(Math.max(4, depths[depths.length >> 1] ?? 4));
+}
+
+/** One branch at a port: neck, then sections in series. Null (and nothing kept) when any part of it does not fit. */
+function branch(a: Asm, given: BranchRule, host: Port, rooms: readonly RoomSpec[], docks: readonly RoomSpec[], bunks: readonly RoomSpec[], each: number): Chain | null {
+  // On a ring's cut end the branch carries the ring's street on, as wide, unless its rule says otherwise.
+  const rule = !given.section.width && host.kind === 'tip' && host.width ? { ...given, section: { ...given.section, width: host.width } } : given;
+  const { ctx } = a, { rng } = ctx;
+  const undo = a.checkpoint();
+  const joined = new Set(a.elements[host.owner]?.regions ?? []), outside = new Set(joined);
+  const fail = (): null => { undo(); return null; };
+  let port = host;
+  // A neck: a corridor before the first section. A gated branch with none is gated at its first section's foot.
+  const neck = (host.kind === 'rim' && roll(rng, rule.neck) > 0 ? host.along : 0) + roll(rng, rule.neck);
+  // A hall in place of a corridor: stepping to one side, else to the other, else straight on.
+  const hall = (from: Port, length: number): Port[] | null => {
+    const h = rule.hall;
+    if (!h) return null;
+    const wide = roll(rng, h.wide), width = rule.section.width ?? 2, shift = (h.shift ? roll(rng, h.shift) : 0) * (rng.chance(0.5) ? 1 : -1);
+    const at = (s: number): Port[] | null => a.place(from, joined, () => concourse(ctx, from, { length, wide, shift: s, width }));
+    return at(shift) ?? (shift ? at(-shift) ?? at(0) : null);
+  };
+  if (neck > 0 && rule.hall) {
+    const ps = hall(port, neck);
+    if (!ps) return fail();
+    port = ps.find((p) => p.kind === 'end') as Port;
+  } else if (neck > 0) {
+    const straight = (): Port[] | null => a.place(port, joined, () => corridor(ctx, port, { length: Math.max(neck, rule.gated ? 3 : 0), ...(rule.gated ? { gated: true } : { pitch: K }) }));
+    // A dogleg to one side, else to the other, else straight.
+    const jog = rule.jog && !rule.gated ? roll(rng, rule.jog) * (rng.chance(0.5) ? 1 : -1) : 0;
+    const bent = (shift: number): Port[] | null => a.place(port, joined, () => corridor(ctx, port, { length: neck, shift }));
+    const ps = Math.abs(jog) >= 2 ? bent(jog) ?? bent(-jog) ?? straight() : straight();
+    if (!ps) return fail();
+    a.corridors++;
+    port = ps.find((p) => p.kind === 'end') as Port;
+  }
+  const parts = chunks(rooms, rule.section.rooms, [...(typeof rule.section.cap === 'string' ? [rule.section.cap] : []), ...(rule.section.far ?? [])]);
+  let end: Port | null = null, took = 0;
+  // Bunks offered to each section in turn (never behind a gate).
+  const offer = (): { bunks?: readonly RoomSpec[] } => (rule.gated || each === 0 ? {} : { bunks: bunks.slice(took, took + each) });
+  const taken = (): void => { took += a.elements[a.elements.length - 1]?.took ?? 0; };
+  const first = { ...(docks.length > 0 ? { docks } : {}), ...(rule.gated && neck === 0 ? { gate: true } : {}) };
+  {
+    for (const [i, part] of parts.entries()) {
+      const last = i === parts.length - 1, here = port;
+      const ps = section(a, here, joined, part, rule, { cap: last ? rule.section.cap ?? false : false, ...(i === 0 ? first : {}), ...offer(), ...(rule.section.crosses !== undefined && i >= rule.section.crosses ? { noCross: true } : {}) });
+      if (!ps) return fail();
+      taken();
+      a.sections++;
+      end = ps.find((p) => p.kind === 'end') ?? null;
+      if (last) break;
+      // Rooms are left for further sections but this one ends the branch (a pier head): never drop them quietly.
+      if (!end) return fail();
+      const from = end, len = roll(rng, rule.link);
+      end = null;
+      if (len === 0) { port = from; continue; } // joined directly: the next section starts where this one's street ends
+      const link = rule.hall ? hall(from, len) : a.place(from, joined, () => corridor(ctx, from, { length: len, ...(rule.gated ? {} : { pitch: K }) }));
+      if (!link) return fail();
+      if (!rule.hall) a.corridors++;
+      port = link.find((p) => p.kind === 'end') as Port;
+    }
+  }
+  // A gated branch is joined by its gate alone: its ports are closed and nothing may stand against it.
+  if (rule.gated) {
+    for (const id of joined) if (!outside.has(id)) a.sealed.add(id);
+    for (const p of a.ports) if (a.sealed.has(p.hall)) p.used = true;
+    end = null;
+  }
+  return { end, dir: host.frame.dir, took };
+}
+
+/** The branches on a root that is already there. Returns why it failed, or '' when everything stands. */
+export function grow(a: Asm, recipe: Recipe, rooms: readonly RoomSpec[], docks: readonly RoomSpec[], trunk: Port[] | null, core: Port | null, pool: RoomSpec[]): string {
+  const { ctx } = a, { rng } = ctx;
+  if (docks.length > 0 && !recipe.branches.some((b) => b.docks)) return 'no part of the recipe takes the docks';
+  const ends: (Port | null)[] = [];
+  let lastTrunk: Port | null = null, cursor = 0, berthed = false;
+  const mean = (b: BranchRule): number => (b.section.rooms[0] + b.section.rooms[1]) / 2;
+  const hosts0 = recipe.branches.filter((b) => !b.gated).reduce((n, b) => n + Math.max(1, Math.ceil(rooms.filter((r) => b.takes.includes(r.dept as Dept)).length / mean(b))), 0);
+  const each = pool.length > 0 ? Math.ceil(pool.length / Math.max(1, hosts0)) + 1 : 0;
+  for (const [k, rule] of recipe.branches.entries()) {
+    const before = a.ports.length;
+    const mine = rooms.filter((r) => rule.takes.includes(r.dept as Dept));
+    const whole = rule.per === 'together' ? [mine] : rule.takes.map((d) => mine.filter((r) => r.dept === d));
+    // A department with more sections than a branch carries is shared out over several branches. Mixed (a scrapper's
+    // way): the rooms are dealt out at random, a section's worth to a branch, whatever their department.
+    const groups = whole.flatMap((grp) => {
+      if (rule.mix) {
+        const pool = shuffle(rng, grp), out: RoomSpec[][] = [];
+        while (pool.length > 0) out.push(pool.splice(0, Math.min(pool.length, rng.int(rule.section.rooms[0], rule.section.rooms[1]))));
+        const last = out[out.length - 1];
+        if (out.length > 1 && last && last.length < rule.section.rooms[0]) (out[out.length - 2] as RoomSpec[]).push(...(out.pop() as RoomSpec[]));
+        return out;
+      }
+      const n = rule.most ? Math.ceil(chunks(grp, rule.section.rooms).length / rule.most) : 1;
+      return n <= 1 ? [grp] : Array.from({ length: n }, (_, i) => grp.filter((_r, j) => j % n === i));
+    });
+    for (const group of groups) {
+      const berths = rule.docks && !berthed ? docks : [];
+      if (group.length + berths.length === 0) continue;
+      let hosts: Port[];
+      if (rule.host.on === 'trunk') {
+        const free = (trunk ?? []).filter((p) => !p.used).sort((p, q) => p.along - q.along || p.side - q.side);
+        // Opposite the branch before, when the roll says pairs.
+        const mate = lastTrunk && recipe.root.kind === 'trunk' && rng.chance(recipe.root.pairs) ? free.find((p) => p.along === lastTrunk?.along && p.side !== lastTrunk.side) : undefined;
+        hosts = mate ? [mate, ...free.filter((p) => p !== mate && p.along >= cursor)] : free.filter((p) => p.along >= cursor);
+      } else if (rule.host.on === 'rim') {
+        const prefer = rule.host.prefer;
+        // In the recipe's order of preference, or with `roll` any of them as the seed has it.
+        const turn = rule.host.roll ? rng.int(0, prefer.length - 1) : 0;
+        const rank = (d: Dir): number => (prefer.indexOf(d) - turn + prefer.length) % prefer.length;
+        hosts = a.ports.filter((p) => p.kind === 'rim' && !p.used && prefer.includes(p.frame.dir)).sort((p, q) => rank(p.frame.dir) - rank(q.frame.dir));
+      } else if (rule.host.on === 'spoke') {
+        const side = rule.host.side;
+        hosts = a.ports.filter((p) => p.kind === 'spoke' && !p.used && side.includes(BACK[p.frame.dir]));
+      } else if (rule.host.on === 'foot') {
+        hosts = a.ports.filter((p) => p.kind === 'foot' && !p.used);
+      } else if (rule.host.on === 'tip') {
+        hosts = a.ports.filter((p) => p.kind === 'tip' && !p.used);
+      } else if (rule.host.on === 'section' || rule.host.on === 'flank') {
+        // The centre first; then the open ports nearest it, a side before an end, with some chance in the order: a
+        // cluster that grows round its middle and not in a line.
+        const open = a.ports.filter((p) => !p.used && (p.kind === 'end' || p.kind === 'side'));
+        const want = new Map(open.map((p) => [p, Math.hypot(p.frame.x - (core?.frame.x ?? 0), p.frame.y) / 30 + (p.kind === 'end' ? 2 : 0) + 0.4 * rng.next()]));
+        hosts = [...(core && !core.used ? [core] : []), ...open.sort((p, q) => (want.get(p) as number) - (want.get(q) as number))];
+        // Any flank the seed picks, a hall's more often than a section's; the ends after them.
+        if (rule.host.on === 'flank') {
+          // Less often straight across from a flank that is taken: a cross is one arrangement, not the rule.
+          const across = (p: Port): boolean => a.ports.some((q) => q !== p && q.used && q.owner === p.owner && q.kind === 'side' && q.along === p.along);
+          // A wing off another wing of the same rule is the rarer arrangement, never the usual one.
+          const own = new Set(a.ports.slice(before));
+          const turn = new Map(hosts.map((p) => [p, rng.next() - (p.node ? 0.35 : 0) + (across(p) ? 0.6 : 0) + (own.has(p) ? 0.3 : 0)]));
+          const flanks = hosts.filter((p) => p.kind === 'side').sort((p, q) => (turn.get(p) as number) - (turn.get(q) as number));
+          hosts = [...flanks, ...hosts.filter((p) => p.kind !== 'side')];
+        }
+      } else {
+        const e = ends[rule.host.rule];
+        hosts = e && !e.used ? [e] : [];
+      }
+      let made: Chain | null = null, at: Port | null = null;
+      for (const h of hosts) { made = branch(a, rule, h, group, berths, pool, each); if (made) { at = h; break; } }
+      if (!made || !at) return `no place for the ${group[0]?.dept ?? 'dock'} branch (${group.length} rooms${berths.length ? `, ${berths.length} docks` : ''}, ${hosts.length} ports tried)`;
+      if (berths.length > 0) berthed = true;
+      pool.splice(0, made.took);
+      if (rule.host.on === 'trunk') {
+        if (!lastTrunk || at.along !== lastTrunk.along) cursor = at.along + (recipe.root.kind === 'trunk' ? roll(rng, recipe.root.step) : 0);
+        lastTrunk = at;
+      }
+      ends[k] = made.end;
+    }
+  }
+  // Cabins no section took: pods on what ports are left.
+  for (const bunk of [...pool]) {
+    const open = a.ports.filter((p) => !p.used && !a.sealed.has(p.hall) && (p.kind === 'end' || p.kind === 'side'));
+    let ok = false;
+    for (const p of open) {
+      const joined = new Set(a.elements[p.owner]?.regions ?? []);
+      if (a.place(p, joined, () => single(ctx, p, bunk))) { ok = true; break; }
+    }
+    if (!ok) return `no place for ${pool.length} cabins`;
+    pool.shift();
+  }
+  return docks.length > 0 && !berthed ? 'the dock block was never built' : '';
+}

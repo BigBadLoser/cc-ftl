@@ -5,7 +5,9 @@ import { DEFAULT_LAYERS, type Layers } from './gridDraw';
 import { commit, fresh, live, redo, undo, type History } from './history';
 import { addModule, contentBounds, deleteRoom, moduleDef, moduleIndex, moduleTiles, newModule, removeModule, rotateModule, takeModuleId, takeRoomId, addRoom, splitRoom, type Rect, type Layout, type Tile } from './layout';
 import { problemsOf, type Problem } from './problems';
-import { placementProblem } from './world';
+import { placementProblem, windowPlanAt } from './world';
+import { addWindow, removeWindowAt, windowIndexAt } from './windows';
+import { rejectionMessage } from '../../src/app/messages';
 import { DEFAULT_SOURCE, buildLayout, specOf, type Source } from './source';
 import { caseOf, caseSlug, decodeLayout, marksOf, parseCase, serializeCase, type CaseFile, type Provenance } from './cases';
 import { changeItems, describeChanges, type Change } from './changes';
@@ -17,7 +19,7 @@ import { anchorFor, newPin, rebase, type Pin } from './pins';
 /** What generated the designs: the generators have no version, so the commit the dev server runs on. */
 const GENERATOR = `commit ${typeof __COMMIT__ === 'string' ? __COMMIT__ : 'dev'}`;
 export const dpr = (): number => window.devicePixelRatio || 1;
-export type Tool = 'select' | 'floor' | 'wall' | 'door' | 'beam' | 'space' | 'room' | 'module' | 'note';
+export type Tool = 'select' | 'floor' | 'wall' | 'door' | 'beam' | 'space' | 'room' | 'module' | 'note' | 'window';
 export interface Ghost { def: string; x: number; y: number; rot: number; error: string | null }
 
 class Lab {
@@ -37,6 +39,9 @@ class Lab {
   armed = $state<string | null>(null);
   rot = $state(0);
   ghost = $state.raw<Ghost | null>(null);
+  /** The Window tool's size (2 to 4) and the run it would build under the pointer (design tiles), with the game's reason when it cannot. */
+  windowSize = $state(3);
+  windowGhost = $state.raw<{ tiles: Tile[]; error: string | null } | null>(null);
   /** A rectangle being dragged (design tiles). */
   drag = $state.raw<{ x: number; y: number; w: number; h: number; ok: boolean } | null>(null);
   problems = $state.raw<Problem[]>([]);
@@ -173,11 +178,26 @@ class Lab {
     this.tool = t;
     if (t !== 'module') this.ghost = null;
     if (t !== 'room') this.drag = null;
+    if (t !== 'window') this.windowGhost = null;
   }
   /** Arm a module for placing (the palette's list). */
   arm(def: string): void {
     this.armed = def;
     this.setTool('module');
+  }
+  /**
+   * The picker (a middle click on the grid): arm the brush that paints what is at a tile. A module arms the module tool with that module
+   * at its turn; a wall, door, beam or floor tile arms that paint tool (floor also takes its room's role for new rooms); space, the Erase tool.
+   */
+  pickBrush([x, y]: Tile): void {
+    const l = this.layout;
+    if (!l || x < 0 || y < 0 || x >= l.width || y >= l.height) return;
+    const m = l.modules.find((mm) => moduleTiles(mm).some(([tx, ty]) => tx === x && ty === y));
+    if (m) { this.rot = m.rot ?? 0; this.arm(m.def); return; }
+    const c = l.cells[y]?.[x] ?? '.';
+    const role = l.rooms[l.roomOf[y * l.width + x] ?? -1]?.role;
+    if (c === '_' && role && role !== 'hall') this.role = role;
+    this.setTool(({ '#': 'wall', D: 'door', '=': 'beam', _: 'floor' } as Record<string, Tool>)[c] ?? 'space');
   }
   /** A module being dragged (its stable id): the ghost shows where it would land, checked with the module itself set aside. */
   moving = $state<number | null>(null);
@@ -197,6 +217,27 @@ class Lab {
     this.idMark = mark;
     this.edit((cur) => addModule(cur, newModule(def, x, y, rot), id));
     this.aim(def, x, y, rot);
+    return true;
+  }
+  /** The Window tool's run under tile (x, y): the game's plan against this layout; over an existing window it is that window (a click removes it). */
+  aimWindow(x: number, y: number): void {
+    const l = this.layout;
+    if (!l || this.compare) { this.windowGhost = null; return; }
+    const i = windowIndexAt(l, x, y);
+    if (i >= 0) { this.windowGhost = { tiles: [[x, y]], error: null }; return; }
+    const plan = windowPlanAt(l, x, y, this.windowSize);
+    this.windowGhost = plan ? { tiles: plan.tiles, error: plan.error ? rejectionMessage(plan.error) : null } : null;
+  }
+  /** Click with the Window tool: remove the window on the tile, else add the run through it when the game's rules accept it. Returns whether the design changed. */
+  clickWindow(x: number, y: number, remove = false): boolean {
+    const l = this.layout;
+    if (!l || this.compare) return false;
+    if (windowIndexAt(l, x, y) >= 0) { this.edit((cur) => removeWindowAt(cur, x, y)); this.aimWindow(x, y); return true; }
+    if (remove) return false;
+    const plan = windowPlanAt(l, x, y, this.windowSize);
+    if (!plan || plan.error) { this.windowGhost = plan ? { tiles: plan.tiles, error: plan.error ? rejectionMessage(plan.error) : null } : null; return false; }
+    this.edit((cur) => addWindow(cur, { x: plan.x, y: plan.y, axis: plan.axis, size: plan.size }));
+    this.aimWindow(x, y);
     return true;
   }
   /** Draw a room over a rectangle; its id never repeats this session. Returns the id. */
@@ -320,6 +361,23 @@ class Lab {
     const body = (await res.json()) as { path?: string; error?: string };
     if (!res.ok || !body.path) throw new Error(body.error ?? `save failed (${res.status})`);
     return body.path;
+  }
+  /** The case as a file the browser saves (to attach in a chat, no repo round trip); returns its file name. */
+  downloadCase(name: string): string {
+    const file = this.caseFile(name);
+    if (!file || !this.provenance) throw new Error('nothing to save');
+    const fileName = `${caseSlug(this.provenance, name)}.json`;
+    const url = URL.createObjectURL(new Blob([serializeCase(file)], { type: 'application/json' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    return fileName;
+  }
+  /** Open a case from a file the user picked (a case JSON saved here or sent back from a chat). */
+  async loadCaseFile(f: File): Promise<void> {
+    this.loadCase(parseCase(await f.text()));
   }
   /**
    * Write the case's images beside its JSON: the original, edited and overlay grids (a fixed modest scale, one frame) and a still of the

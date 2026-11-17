@@ -3,6 +3,8 @@ import { accessTile, footprintTiles, hullOutward, hullRow, hullSide, openTilesOf
 import { footprintFromTiles, widthViolations } from '../footprint';
 import type { ModuleDef, ShipTemplate } from '../registry';
 import { roofMounted } from './layout';
+import { templateCable } from '../cable';
+import { groundPort, isGroundMount } from '../modules/groundMount';
 
 const N8 = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]] as const;
 
@@ -23,6 +25,8 @@ export function validateTemplate(t: ShipTemplate, defs: Record<string, ModuleDef
   const occ = new Int16Array(w * h).fill(-1);
   const solid = new Uint8Array(w * h);
   const mods = t.modules ?? [];
+  const cabled = new Set(templateCable(t).map((c) => c.y * w + c.x));
+  const wired = (tiles: readonly { x: number; y: number }[]): boolean => wiredFrom(tiles, cabled, w, at);
   let supply = 0;
   let demand = 0;
   mods.forEach((m, k) => {
@@ -37,7 +41,9 @@ export function validateTemplate(t: ShipTemplate, defs: Record<string, ModuleDef
     for (const tile of footprintTiles(def, m.x, m.y, m.rot)) {
       const i = tile.y * w + tile.x;
       const onWall = wall.some((q) => q.x === tile.x && q.y === tile.y);
-      if (onWall) {
+      if (m.ground) {
+        if (at(tile.x, tile.y) !== '.' || cabled.has(i)) problems.push(`${name}: off the ground at ${tile.x},${tile.y}`);
+      } else if (onWall) {
         if (at(tile.x, tile.y) !== '#' || at(tile.x + out.x, tile.y + out.y) !== '.') problems.push(`${name}: not on the hull`);
       } else if (def.container ? at(tile.x, tile.y) !== '=' : at(tile.x, tile.y) !== '_') problems.push(`${name}: off the ${def.container ? 'frame' : 'floor'} at ${tile.x},${tile.y}`);
       if (tile.x < 0 || tile.y < 0 || tile.x >= w || tile.y >= h) continue;
@@ -48,7 +54,13 @@ export function validateTemplate(t: ShipTemplate, defs: Record<string, ModuleDef
     if (def.engine && side !== 'e') problems.push(`${name}: engine not on the stern hull`);
     if (def.vehicleBay && !m.vehicle) problems.push(`${name}: bay without a vehicle`);
     if (def.container && !clampedToFrame(at, def, m)) problems.push(`${name}: not clamped to a frame by its short (door) end`);
+    if (m.ground && !wired(footprintTiles(def, m.x, m.y, m.rot))) problems.push(`${name}: no cable to the hull`);
+    if (m.ground && isGroundMount(def)) {
+      const port = groundPort(def, m);
+      if (!cabled.has(port.cable.y * w + port.cable.x)) problems.push(`${name}: no cable at its port`);
+    } else if (m.ground) problems.push(`${name}: not a ground mount`);
   });
+  for (const i of cabled) if (at(i % w, Math.floor(i / w)) !== '.') problems.push(`cable ${i % w},${Math.floor(i / w)}: not on the ground`);
   // The airlocks' tiles turn into doors and chamber floor on spawn.
   for (const m of mods) {
     const def = defs[m.def];
@@ -101,8 +113,9 @@ export function validateTemplate(t: ShipTemplate, defs: Record<string, ModuleDef
   if (start < 0) problems.push('no door');
   else {
     const seen = new Uint8Array(w * h);
-    const stack = [start];
-    seen[start] = 1;
+    // Modules standing apart on open ground are each a walk of their own, from their doors.
+    const stack = t.apart ? Array.from({ length: w * h }, (_, i) => i).filter((i) => cells[i] === 'D' && walk(i % w, Math.floor(i / w))) : [start];
+    for (const i of stack) seen[i] = 1;
     let reached = 0;
     while (stack.length > 0) {
       const i = stack.pop() as number;
@@ -118,7 +131,7 @@ export function validateTemplate(t: ShipTemplate, defs: Record<string, ModuleDef
   }
   // One structure: hull, walls, floors, doors and beams all 4-connected (no pod or beam floating a tile off).
   const parts = structureParts(cells, w, h);
-  if (parts > 1) problems.push(`disconnected: ${parts} separate structures`);
+  if (parts > 1 && !t.apart) problems.push(`disconnected: ${parts} separate structures`);
   const leak = sealProblem(cells, w, h);
   if (leak) problems.push(leak);
   const width = widthProblem(cells, w, h);
@@ -126,6 +139,24 @@ export function validateTemplate(t: ShipTemplate, defs: Record<string, ModuleDef
   const freeFloor = cells.filter((c, i) => c === '_' && !solid[i]).length;
   if ((t.crew ?? []).length > freeFloor) problems.push('no room for the crew');
   return problems;
+}
+
+/**
+ * A ground module's cable: a run of cabled tiles (four ways) from beside its footprint to beside a hull wall.
+ */
+function wiredFrom(tiles: readonly { x: number; y: number }[], cabled: ReadonlySet<number>, w: number, at: (x: number, y: number) => string): boolean {
+  const N4 = [[1, 0], [-1, 0], [0, 1], [0, -1]] as const;
+  const seen = new Set<number>(), stack: number[] = [];
+  for (const t of tiles) for (const [dx, dy] of N4) { const j = (t.y + dy) * w + t.x + dx; if (cabled.has(j) && !seen.has(j)) { seen.add(j); stack.push(j); } }
+  while (stack.length > 0) {
+    const i = stack.pop() as number, x = i % w, y = Math.floor(i / w);
+    for (const [dx, dy] of N4) {
+      if (at(x + dx, y + dy) === '#') return true;
+      const j = (y + dy) * w + x + dx;
+      if (cabled.has(j) && !seen.has(j)) { seen.add(j); stack.push(j); }
+    }
+  }
+  return false;
 }
 
 /**

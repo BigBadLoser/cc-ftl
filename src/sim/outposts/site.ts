@@ -8,33 +8,69 @@ import { footprintTiles, hullOutward, hullSide } from '../modules/footprint';
 import type { ModuleDef, ShipTemplate } from '../registry';
 import { Struct } from '../structure';
 
-/** The airlock that opens to space on the asteroid: its outer door, the collar tile beyond it, and the side it faces (-1 north, 1 south). */
+/**
+ * The airlock that opens to space on the asteroid: its outer door, the collar tile beyond it, the side open space lies
+ * (-1 north, 1 south), the columns of the notch cut from the collar's row out to space, and the template row set at the rock
+ * face. A plain dock's notch is the three columns before it and its face row is its own; a slip dock (a basin harbour,
+ * its airlocks facing each other across a berth that opens north or south) cuts the whole berth and sets the berth's
+ * mouth at the face.
+ */
 export interface Dock {
   outer: { x: number; y: number };
   collar: { x: number; y: number };
   dir: -1 | 1;
+  cols: [number, number];
+  face: number;
 }
 
-/** The north- or south-facing airlock closest to the template's top or bottom edge with nothing built in the three columns beyond it, or null. */
+/** True when the template is open from row `y` out past its edge (towards `dir`) in every column `x0..x1`. */
+function openOut(t: ShipTemplate, x0: number, x1: number, y: number, dir: -1 | 1): boolean {
+  for (let yy = y; yy >= 0 && yy < t.rows.length; yy += dir) for (let x = x0; x <= x1; x++) if ((t.rows[yy]?.[x] ?? '.') !== '.') return false;
+  return true;
+}
+
+/**
+ * The dock nearest the template's top or bottom edge: a north- or south-facing airlock with nothing built in the three
+ * columns beyond it, else an east- or west-facing one in a slip that opens north or south. Null when there is neither.
+ */
 export function pickDock(t: ShipTemplate, defs: Record<string, ModuleDef>): Dock | null {
   const h = t.rows.length;
   let best: Dock | null = null;
   let bestEdge = Infinity;
+  const take = (d: Dock): void => {
+    const edge = d.dir < 0 ? d.outer.y : h - 1 - d.outer.y;
+    if (edge < bestEdge) [best, bestEdge] = [d, edge];
+  };
   for (const m of t.modules ?? []) {
     const def = defs[m.def];
     const side = def?.airlock ? hullSide(def, m.rot) : null;
-    if (!def || (side !== 'n' && side !== 's')) continue;
+    if (!def || !side || m.crew) continue;
     const outer = airlockTiles(def, m).outer;
     const out = hullOutward(side);
-    const edge = side === 'n' ? outer.y : h - 1 - outer.y;
-    const dir: -1 | 1 = side === 'n' ? -1 : 1;
-    let clear = true;
-    for (let y = outer.y + dir; y >= 0 && y < h; y += dir) for (let x = outer.x - 1; x <= outer.x + 1; x++) clear &&= (t.rows[y]?.[x] ?? '.') === '.';
-    if (!clear) continue;
-    if (edge < bestEdge) [best, bestEdge] = [{ outer, collar: { x: outer.x + out.x, y: outer.y + out.y }, dir }, edge];
+    const collar = { x: outer.x + out.x, y: outer.y + out.y };
+    if (side === 'n' || side === 's') {
+      const dir: -1 | 1 = side === 'n' ? -1 : 1;
+      if (openOut(t, outer.x - 1, outer.x + 1, outer.y + dir, dir)) take({ outer, collar, dir, cols: [outer.x - 1, outer.x + 1], face: outer.y });
+      continue;
+    }
+    // A slip: open across from the collar to the far wall; the berth's columns open out north or south past the arms.
+    let far = collar.x;
+    while ((t.rows[outer.y]?.[far] ?? '#') === '.' && far >= 0 && far < (t.rows[outer.y]?.length ?? 0)) far += out.x;
+    if ((t.rows[outer.y]?.[far] ?? '.') === '.' || far === collar.x) continue;
+    const [x0, x1] = out.x > 0 ? [collar.x, far - 1] : [far + 1, collar.x];
+    for (const dir of [-1, 1] as const) {
+      if (!openOut(t, x0, x1, outer.y, dir)) continue;
+      // The mouth: the last row the slip's walls reach, going out.
+      let y = outer.y;
+      while ((t.rows[y + dir]?.[x0 - 1] ?? '.') !== '.' && (t.rows[y + dir]?.[x1 + 1] ?? '.') !== '.') y += dir;
+      take({ outer, collar, dir, cols: [x0, x1], face: y });
+    }
   }
   return best;
 }
+
+/** The eight neighbours, the four orthogonal ones first. */
+const RING = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]] as const;
 
 /**
  * A dug station: the rock is its hull. Hull fill that borders outside and touches no room becomes '.' (the asteroid's rock mass
@@ -43,8 +79,11 @@ export function pickDock(t: ShipTemplate, defs: Record<string, ModuleDef>): Dock
  * frames and containers hanging outside the hull are dropped.
  */
 export function carveInRock(src: ShipTemplate, defs: Record<string, ModuleDef>): ShipTemplate {
-  // Outside cargo frames and the crates on them have no place in rock: the cargo rooms inside stay.
-  const t: ShipTemplate = { ...src, rows: src.rows.map((r) => r.replace(/=/g, '.')), modules: (src.modules ?? []).filter((m) => !defs[m.def]?.container) };
+  // Outside cargo frames and the crates on them have no place in rock: the cargo rooms inside stay. A frame tile that touches the
+  // inside (a diagonal past a hull corner) becomes wall, not rock mass, so it is dressed as that room's face like any other.
+  const near = (x: number, y: number): boolean => RING.some(([dx, dy]) => { const c = src.rows[y + dy]?.[x + dx] ?? '.'; return c !== '#' && c !== '.' && c !== '='; });
+  const frames = src.rows.map((row, y) => Array.from(row, (c, x) => (c === '=' ? (near(x, y) ? '#' : '.') : c)).join(''));
+  const t: ShipTemplate = { ...src, rows: frames, modules: (src.modules ?? []).filter((m) => !defs[m.def]?.container) };
   const keep = new Set<string>();
   for (const m of t.modules ?? []) {
     const def = defs[m.def];
@@ -58,33 +97,41 @@ export function carveInRock(src: ShipTemplate, defs: Record<string, ModuleDef>):
   const at = (x: number, y: number): string => t.rows[y]?.[x] ?? '.';
   // A wall that touches the inside (any neighbour, diagonals too) stays: it is the room's face, dressed rock once stamped, so
   // no raw rock pokes up where two wall runs meet. Only hull fill with no inside beside it goes back to rock mass.
-  const ring = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]] as const;
-  const inside = (x: number, y: number): boolean => ring.some(([dx, dy]) => { const c = at(x + dx, y + dy); return c !== '#' && c !== '.'; });
+  const inside = (x: number, y: number): boolean => RING.some(([dx, dy]) => { const c = at(x + dx, y + dy); return c !== '#' && c !== '.'; });
   const rows = t.rows.map((row, y) => Array.from(row, (c, x) => (
-    c === '#' && !keep.has(`${x},${y}`) && !inside(x, y) && ring.slice(0, 4).some(([dx, dy]) => at(x + dx, y + dy) === '.') ? '.' : c)).join(''));
+    c === '#' && !keep.has(`${x},${y}`) && !inside(x, y) && RING.slice(0, 4).some(([dx, dy]) => at(x + dx, y + dy) === '.') ? '.' : c)).join(''));
   return { ...t, rows };
 }
 
-/** Template tiles (the non-'.' ones) as a lookup, with the template size. */
-export function builtOf(t: ShipTemplate): { w: number; h: number; has: (x: number, y: number) => boolean; count: number } {
-  const w = Math.max(...t.rows.map((r) => r.length));
+/**
+ * Template tiles (the non-'.' ones) as a lookup, with the template size. With `site` (a base of separate modules on
+ * open ground) the whole site: every tile of the template, the ground between the modules and the landing pads included.
+ */
+export function builtOf(t: ShipTemplate, site = false): { w: number; h: number; has: (x: number, y: number) => boolean; count: number } {
+  const w = Math.max(...t.rows.map((r) => r.length)), h = t.rows.length;
+  const has = site
+    ? (x: number, y: number): boolean => x >= 0 && x < w && y >= 0 && y < h
+    : (x: number, y: number): boolean => (t.rows[y]?.[x] ?? '.') !== '.';
   let count = 0;
-  for (const r of t.rows) for (const c of r) if (c !== '.') count++;
-  return { w, h: t.rows.length, has: (x, y) => (t.rows[y]?.[x] ?? '.') !== '.', count };
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (has(x, y)) count++;
+  return { w, h, has, count };
 }
 
 /**
  * Where the template's top-left goes in the plan so the dock's outer door is the asteroid's rock face (the first body row under
  * its three columns from the north, or the last from the south) with open space for the collar beyond. Among the columns that fit,
  * the one that leaves the fewest base tiles over empty space (they would be filled with ground or rock, bulging the outline),
- * then the most central. Null if none keeps that share at or below `maxBulge`.
+ * then the most central. Null if none keeps that share at or below `maxBulge`. A `site` (a prefab base: its dock is a pad's
+ * airlock, its shuttles land on the ground) has no face to meet: it goes wherever its whole site lies on the rock, the
+ * fewest tiles over space and then the most central.
  */
-export function placeAt(plan: AsteroidPlan, t: ShipTemplate, dock: Dock, maxBulge: number): { x: number; y: number; face: number } | null {
-  const b = builtOf(t);
+export function placeAt(plan: AsteroidPlan, t: ShipTemplate, dock: Dock, maxBulge: number, site = false): { x: number; y: number; face: number } | null {
+  const b = builtOf(t, site);
   const space = (x: number, y: number): boolean => plan.struct[y * plan.w + x] === Struct.Space;
+  if (site) return onRock(plan, b, dock, maxBulge, space);
   let best: { x: number; y: number; face: number; bulge: number; off: number } | null = null;
   for (let x0 = 0; x0 + b.w <= plan.w; x0++) {
-    const cols = [x0 + dock.outer.x - 1, x0 + dock.outer.x, x0 + dock.outer.x + 1];
+    const cols = Array.from({ length: dock.cols[1] - dock.cols[0] + 1 }, (_, i) => x0 + dock.cols[0] + i);
     let face = dock.dir < 0 ? 0 : plan.h - 1;
     for (const cx of cols) {
       let y = dock.dir < 0 ? 0 : plan.h - 1;
@@ -93,7 +140,7 @@ export function placeAt(plan: AsteroidPlan, t: ShipTemplate, dock: Dock, maxBulg
       face = dock.dir < 0 ? Math.max(face, y) : Math.min(face, y);
     }
     if (face < 0 || (dock.dir < 0 ? face < 1 : face > plan.h - 2)) continue;
-    const y0 = face - dock.outer.y;
+    const y0 = face - dock.face;
     if (y0 < 0 || y0 + b.h > plan.h) continue;
     let bulge = 0;
     for (let ly = 0; ly < b.h; ly++) for (let lx = 0; lx < b.w; lx++) if (b.has(lx, ly) && space(x0 + lx, y0 + ly)) bulge++;
@@ -101,6 +148,22 @@ export function placeAt(plan: AsteroidPlan, t: ShipTemplate, dock: Dock, maxBulg
     if (!best || bulge < best.bulge || (bulge === best.bulge && off < best.off)) best = { x: x0, y: y0, face, bulge, off };
   }
   return best && best.bulge <= maxBulge * b.count ? { x: best.x, y: best.y, face: best.face } : null;
+}
+
+/** The most central place for a whole site (a box) with the fewest tiles over space, by a summed-area table of space tiles. */
+function onRock(plan: AsteroidPlan, b: { w: number; h: number; count: number }, dock: Dock, maxBulge: number, space: (x: number, y: number) => boolean): { x: number; y: number; face: number } | null {
+  const W = plan.w + 1, sum = new Int32Array(W * (plan.h + 1));
+  for (let y = 0; y < plan.h; y++) for (let x = 0; x < plan.w; x++) sum[(y + 1) * W + x + 1] = (space(x, y) ? 1 : 0) + (sum[y * W + x + 1] as number) + (sum[(y + 1) * W + x] as number) - (sum[y * W + x] as number);
+  const at = (x: number, y: number): number => sum[y * W + x] as number;
+  let best: { x: number; y: number; bulge: number; off: number } | null = null;
+  for (let y0 = 0; y0 + b.h <= plan.h; y0++) {
+    for (let x0 = 0; x0 + b.w <= plan.w; x0++) {
+      const bulge = at(x0 + b.w, y0 + b.h) - at(x0, y0 + b.h) - at(x0 + b.w, y0) + at(x0, y0);
+      const off = Math.abs(x0 + b.w / 2 - plan.w / 2) + Math.abs(y0 + b.h / 2 - plan.h / 2);
+      if (!best || bulge < best.bulge || (bulge === best.bulge && off < best.off)) best = { x: x0, y: y0, bulge, off };
+    }
+  }
+  return best && best.bulge <= maxBulge * b.count ? { x: best.x, y: best.y, face: best.y + dock.face } : null;
 }
 
 /** The tile just outside an airlock module (its docking collar, else past the outer door), in template tiles. */

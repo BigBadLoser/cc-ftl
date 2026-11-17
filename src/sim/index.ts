@@ -128,6 +128,8 @@ export { playerShip, playerShipId, playerShipPackedOk, playerItems } from './tra
 export { liveDealWith, isLive } from './trade/deals';
 export { commitments, type Commitments } from './trade/commit';
 export { ShipGrid, shipGridOf } from './shipGrid';
+export * from './windows';
+export { findJobAt } from './crew/helpers';
 export { packetFromTemplate, liftShip, stampPacket, type ShipPacket, type PacketEntity } from './sector/packet';
 export { archiveSector, restoreArchive, archiveOf, type SectorArchive } from './sector/archive';
 export { liftSet, jumpWarnings, type JumpWarnings, type LiftOptions, type WithDocked } from './sector/members';
@@ -155,6 +157,7 @@ export { stanceBetween, spillSources } from './galaxy/relations';
 export type {
   FactionRelationDef, FactionSpecialityDef, Stance, GalaxyFactionDef, StructureDef, NodeContentTable, NodeContentDef, TierCurve, GalaxyContent, StandingTier, DangerRange, FactionFleetDef, FleetContent, FleetGroupDef, MarketContent, MarketRates, PortKind, PortKindDef, ShipClassDef,
 } from './galaxy/defs';
+export { fieldItems, oreMixFor } from './galaxy/nodeContent';
 export { galaxyIndex, nodeOf, currentNode, START_NODE, type GalaxyIndex } from './galaxy/state';
 export { edgeBetween, planStarRoute } from './galaxy/route';
 export { jumpBlocker } from './galaxy/travel';

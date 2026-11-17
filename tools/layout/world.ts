@@ -3,14 +3,16 @@
  * Built once per layout and kept; building a big station takes about 60 ms.
  */
 import { content } from '../../src/content';
-import { ModuleC, Sim, shipGrid, spawnShip, validateTemplate, type ModuleDef, type ShipTemplate } from '../../src/sim';
+import { windowPlan } from '../../src/app/windowTool';
+import { windowCode, windowRun, ModuleC, Sim, Struct, removeModule as despawn, shipGrid, spawnModule, spawnShip, validateTemplate, type ModuleDef, type ShipTemplate, type WindowAxis } from '../../src/sim';
 import { removeWreck } from '../../src/sim/salvage/remove';
 import { placementError } from '../../src/sim/modules/spawn';
+import { isIdle } from '../../src/sim/modules/draw';
 import { roomsSystem } from '../../src/sim/systems/rooms';
 import { lightingSystem } from '../../src/sim/systems/lighting';
 import { powerSystem } from '../../src/sim/systems/power';
 import { ORIGIN } from './camera';
-import { addModule, clampAt, newModule, removeModule, toTemplate, type Layout } from './layout';
+import { addModule, clampAt, newModule, removeModule, toTemplate, type Layout, type Tile } from './layout';
 
 export interface World { sim: Sim; ship: number }
 const cache = new WeakMap<Layout, World | null>();
@@ -21,16 +23,74 @@ export const fits = (sim: Sim, l: Layout): boolean => ORIGIN + l.width + 8 <= si
 /** Stamp a layout into a sim at ORIGIN and allocate power and light once, as a new game does (nothing is stepped; unlit, the hull tints dark and cold against the roof). Returns the ship, or null if it will not stand. */
 export function stampLayout(sim: Sim, l: Layout): number | null {
   const ship = spawnShip(sim, { ...toTemplate(l), crew: [] }, { faction: (l.origin?.side ?? 'player') as NonNullable<ShipTemplate['faction']>, x: ORIGIN, y: ORIGIN, ...(l.origin ? { gen: l.origin.gen } : {}) });
+  const grid = shipGrid(sim, ship);
+  if (grid) stampWindows(grid, l);
   roomsSystem(sim);
   powerSystem(sim);
   lightingSystem(sim);
-  return shipGrid(sim, ship) ? ship : null;
+  return grid ? ship : null;
+}
+
+/** Write each window's per-tile codes (the game's `windowCode`) into the ship's `window` field; a tile that is not a wall in the stamped ship keeps none. */
+function stampWindows(grid: NonNullable<ReturnType<typeof shipGrid>>, l: Layout): void {
+  if (!grid.has('window')) return;
+  for (const w of l.windows ?? []) {
+    for (const t of windowRun(w.x + ORIGIN, w.y + ORIGIN, w.axis, w.size)) {
+      if (grid.inBounds(t.x, t.y) && grid.get('struct', t.x, t.y) === Struct.Wall) grid.set('window', t.x, t.y, windowCode(w.axis, w.size, t.index));
+    }
+  }
+}
+
+/** The run the Window tool would build with the cursor on design tile (x, y): the game's own `windowPlan` against the layout's stamped world. Null off the ship. */
+export function windowPlanAt(l: Layout, x: number, y: number, size: number): { x: number; y: number; axis: WindowAxis; size: number; tiles: Tile[]; error: string | null } | null {
+  const w = worldOf(l);
+  const plan = w ? windowPlan(w.sim, w.ship, { x: x + ORIGIN, y: y + ORIGIN }, size) : null;
+  return plan ? { x: plan.start.x - ORIGIN, y: plan.start.y - ORIGIN, axis: plan.axis, size, tiles: plan.tiles.map((t): Tile => [t.x - ORIGIN, t.y - ORIGIN]), error: plan.error } : null;
 }
 
 /** Replace the ship a sim holds with another layout, in place (the game's own wreck removal, then a new stamp): the preview's renderer keeps its world. */
 export function restamp(sim: Sim, old: number, l: Layout): number | null {
   removeWreck(sim, old);
   return stampLayout(sim, l);
+}
+
+/** Whether two layouts differ only in their modules (the same tiles, rooms and stamp): an edit `swapModules` can apply. */
+export function sameShell(a: Layout, b: Layout): boolean {
+  if (a.width !== b.width || a.height !== b.height || a.immobile !== b.immobile || a.origin !== b.origin || a.rooms.length !== b.rooms.length) return false;
+  if (a.cells !== b.cells && a.cells.some((row, y) => row !== b.cells[y])) return false;
+  if (a.roomOf !== b.roomOf && a.roomOf.some((r, i) => r !== b.roomOf[i])) return false;
+  return a.rooms.every((r, i) => r.role === b.rooms[i]?.role);
+}
+
+/**
+ * Apply a modules-only edit to a stamped sim: the modules `from` has and `to` lacks go (the game's removal), the ones `to` adds are
+ * spawned (the game's spawn), then power and light are allocated again. The ship, its grid and the renderer's scene of them stay, so
+ * an edit costs the modules it touches instead of a whole restamp. False (the sim untouched) when the edit needs a restamp: a container,
+ * an airlock, a bay, a stasis wheel or a module the sim cannot find.
+ */
+export function swapModules(w: World, from: Layout, to: Layout): boolean {
+  const key = (m: Layout['modules'][number]): string => `${m.def}|${m.x}|${m.y}|${m.rot ?? 0}|${JSON.stringify(m.clamp ?? null)}`;
+  const defs = content.modules as Record<string, ModuleDef>;
+  const left = new Map<string, number>();
+  for (const m of to.modules) left.set(key(m), (left.get(key(m)) ?? 0) + 1);
+  const gone: Layout['modules'][number][] = [];
+  for (const m of from.modules) { const k = key(m), n = left.get(k) ?? 0; if (n > 0) left.set(k, n - 1); else gone.push(m); }
+  const added = to.modules.filter((m) => { const k = key(m), n = left.get(k) ?? 0; if (n > 0) { left.set(k, n - 1); return true; } return false; });
+  const special = (m: Layout['modules'][number]): boolean => !!(defs[m.def]?.container || defs[m.def]?.airlock || defs[m.def]?.vehicleBay || defs[m.def]?.stasisWheel);
+  if ([...gone, ...added].some(special)) return false;
+  // The entities of the removed modules, matched by def and anchor.
+  const ids: number[] = [];
+  for (const m of gone) {
+    let hit = 0;
+    for (const id of w.sim.world.query(ModuleC)) { const c = w.sim.world.get(id, ModuleC); if (c && !ids.includes(id) && c.def === m.def && c.x === ORIGIN + m.x && c.y === ORIGIN + m.y && c.rot === (m.rot ?? 0)) { hit = id; break; } }
+    if (!hit) return false;
+    ids.push(hit);
+  }
+  for (const id of ids) despawn(w.sim, id);
+  for (const m of added) spawnModule(w.sim, m.def, ORIGIN + m.x, ORIGIN + m.y, m.rot ?? 0);
+  powerSystem(w.sim);
+  lightingSystem(w.sim);
+  return true;
 }
 
 /** A fresh sim with the layout stamped in. */
@@ -81,7 +141,8 @@ export function unpowered(l: Layout): number[] {
   for (const id of w.sim.world.query(ModuleC)) {
     const m = w.sim.world.get(id, ModuleC);
     const def = m && content.modules[m.def as keyof typeof content.modules];
-    if (!m || !def || m.powered || (def as { power: number }).power >= 0) continue;
+    // A module idle by its draw rule (a bed with nothing growing) draws nothing and is not short of power.
+    if (!m || !def || m.powered || (def as { power: number }).power >= 0 || isIdle(w.sim, id, def as ModuleDef)) continue;
     const i = l.modules.findIndex((x) => x.def === m.def && x.x === m.x - ORIGIN && x.y === m.y - ORIGIN);
     if (i >= 0) out.push(i);
   }

@@ -9,6 +9,7 @@
 	import MousePointer2 from '@lucide/svelte/icons/mouse-pointer-2';
 	import SquareDashed from '@lucide/svelte/icons/square-dashed';
 	import StickyNote from '@lucide/svelte/icons/sticky-note';
+	import PanelTop from '@lucide/svelte/icons/panel-top';
 	import BrickWall from '@lucide/svelte/icons/brick-wall';
 	import type { Component } from 'svelte';
 	import { Badge } from '$lib/components/ui/badge/index.js';
@@ -31,6 +32,7 @@
 		{ id: 'floor', name: 'Floor', tip: 'Paint floor (F)', icon: Grid2x2 },
 		{ id: 'wall', name: 'Wall', tip: 'Paint an interior wall (W)', icon: BrickWall },
 		{ id: 'door', name: 'Door', tip: 'Place a door (D)', icon: DoorOpen },
+		{ id: 'window', name: 'Window', tip: 'Add a window to a wall; click one to remove it (X)', icon: PanelTop },
 		{ id: 'beam', name: 'Beam', tip: 'Paint frame beams for containers (B)', icon: Equal },
 		{ id: 'space', name: 'Erase', tip: 'Erase to open space (E)', icon: Eraser },
 		{ id: 'room', name: 'Room', tip: 'Draw a room (G)', icon: SquareDashed },
@@ -45,6 +47,8 @@
 		const rooms = $derived((lab.design?.rooms ?? []).filter((r) => r.tiles > 0).reduce((m, r) => m.set(r.role, (m.get(r.role) ?? 0) + 1), new Map<string, number>()));
 	const placed = $derived((lab.design?.modules ?? []).reduce((m, x) => m.set(x.def, (m.get(x.def) ?? 0) + 1), new Map<string, number>()));
 	const roleTypes = $derived(allRoles());
+	/** The design's rooms by what they are (a pantry, a brig: by role and contents), to find and select one. */
+	const here = $derived((lab.design?.rooms ?? []).filter((r) => r.tiles > 0 && r.role !== 'hall').map((r) => ({ id: r.id, name: r.name || r.role, tiles: r.tiles, color: css(roleTint(r.role)) })).sort((p, q) => p.name.localeCompare(q.name) || p.id - q.id));
 
 	/** Every room type the lab knows, with its colour: the new-room type, and what a selected room can become. */
 	function allRoles() {
@@ -80,6 +84,14 @@
 			{/each}
 		</ToggleGroup.Root>
 
+		{#if lab.tool === 'window'}
+			<div class="flex items-center gap-2 text-sm">
+				<span class="text-xs text-muted-foreground">Size</span>
+				<ToggleGroup.Root type="single" value={String(lab.windowSize)} onValueChange={(v) => v && (lab.windowSize = Number(v))} variant="outline" size="sm" spacing={1}>
+					{#each [2, 3, 4] as n (n)}<ToggleGroup.Item value={String(n)} aria-label="{n} tiles">{n}</ToggleGroup.Item>{/each}
+				</ToggleGroup.Root>
+			</div>
+		{/if}
 		<Separator />
 		<Collapsible.Root open={docks.state.groups.modules} onOpenChange={(open) => docks.dispatch({ type: 'group', group: 'modules', open })}>
 			<Collapsible.Trigger class="flex w-full items-center gap-1 text-xs font-medium tracking-wide text-muted-foreground uppercase">
@@ -123,5 +135,21 @@
 				</div>
 			</Collapsible.Content>
 		</Collapsible.Root>
+
+		<Separator />
+		<div class="flex flex-col gap-1">
+			<span class="text-xs font-medium tracking-wide text-muted-foreground uppercase">Rooms here</span>
+			<div class="flex max-h-64 flex-col gap-0.5 overflow-y-auto">
+				{#each here as r (r.id)}
+					<button class="flex items-center gap-2 rounded-md px-1.5 py-1 text-left text-sm hover:bg-muted {lab.selected?.kind === 'room' && lab.selected.id === r.id ? 'bg-muted' : ''}" onclick={() => lab.select({ kind: 'room', id: r.id })}>
+						<span class="size-3 shrink-0 rounded-sm" style="background:{r.color}"></span>
+						<span class="flex-1 truncate">{r.name}</span>
+						<span class="text-xs text-muted-foreground tabular-nums">{r.tiles}</span>
+					</button>
+				{:else}
+					<span class="text-sm text-muted-foreground">No rooms.</span>
+				{/each}
+			</div>
+		</div>
 	</div>
 </ScrollArea>

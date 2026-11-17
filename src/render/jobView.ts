@@ -3,7 +3,10 @@ import type { World } from "../sim/ecs";
 import { JobC } from "../sim/crew/components";
 import type { Grid } from "../sim/grid";
 import { Struct } from "../sim/structure";
+import { decodeWindow } from "../sim/windows";
 import type { Atlas } from "./assets/loader";
+import { PREVIEW_OK } from "./markers";
+import { windowExteriorId } from "./hullArt";
 import { keepsOldPiece, pendingHull, pendingHullKeys } from "./jobHull";
 import type { HullKeys } from "./hullArt";
 import { depthKey, iso } from "./iso";
@@ -27,6 +30,8 @@ export interface JobView {
 
 const BUILD = 0x22d3ee;
 const DECON = 0xff3b3b;
+/** A queued window: the Window tool's valid-preview tint (markers.ts PREVIEW_OK), added over the wall it stands on (a multiply tint would vanish on the wall's own teal), so it reads as the pending window. */
+const WINDOW_GHOST = PREVIEW_OK;
 
 /**
  * Blueprints: the target tile's own sprite, tinted cyan (build, alpha rises with progress) or red (deconstruct). A shipyard tile
@@ -63,6 +68,7 @@ export function createJobView(
     alpha: number,
     key: number,
     layer: Container = L.sorted,
+    blend: "normal" | "add" = "normal",
   ): void {
     for (const chain of chains) {
       const a = atlas.firstOf(chain);
@@ -73,6 +79,7 @@ export function createJobView(
       s.position.set(Math.round(p.x - a.ax), Math.round(p.y - a.ay));
       s.tint = tint;
       s.alpha = alpha;
+      s.blendMode = blend;
       s.zIndex = key;
     }
   }
@@ -120,23 +127,30 @@ export function createJobView(
           const build = j.kind === "build";
           const kind = artKind(build ? j.struct : grid.get("struct", j.x, j.y));
           const frac = j.work > 0 ? Math.min(1, j.progress / j.work) : 0;
-          const tint = build ? BUILD : DECON;
-          const alpha = build ? 0.3 + 0.5 * frac : 0.65;
           const lx = j.x - x0, ly = j.y - y0;
           const key = depthKey(lx, ly) + 0.02;
+          // A queued window draws the pieces the built tile will (a near hull tile its rim ghost, else its wall piece at the cut level),
+          // in the window tint: the same owners as a plain wall ghost (pendingHull, wallPieces), so it never stands taller than the tile will.
+          const win = build && j.window ? decodeWindow(j.window) : null;
           const hg = build && (kind === Struct.Floor || kind === Struct.Wall || kind === Struct.Door) ? pendingHull(hull, final, lx, ly, kind, has) : null;
-          if (hg) {
+          const tint = win ? WINDOW_GHOST : build ? BUILD : DECON;
+          const alpha = win ? 0.5 + 0.4 * frac : build ? 0.3 + 0.5 * frac : 0.65;
+          const blend = win ? "add" : "normal";
+          // A window on a straight near run: the hull window's exterior piece (what the roofed ship draws), else the pieces below.
+          const ext = win && hull ? windowExteriorId(hull, lx, ly, has, win) : null;
+          if (ext) draw([[ext]], lx, ly, tint, alpha, key, L.sorted, blend);
+          else if (hg) {
             if (kind === Struct.Floor) draw([floorChain(lx, ly)], lx, ly, tint, alpha, key - 0.9);
-            if (hg.under) draw([[hg.under]], lx, ly, tint, alpha, key, L.under);
-            if (hg.low) draw([[hg.low]], lx, ly, tint, alpha, key + 0.001);
+            if (hg.under) draw([[hg.under]], lx, ly, tint, alpha, key, L.under, blend);
+            if (hg.low) draw([[hg.low]], lx, ly, tint, alpha, key + 0.001, L.sorted, blend);
             if (kind === Struct.Door)
               for (const pc of wallPieces(kindAt, lx, ly, kind, "down", false))
                 if (keepsOldPiece(kind, true, pc.under)) draw([pc.chain], lx, ly, tint, alpha, key + pc.order * 0.001);
           } else if (kind === Struct.Floor)
             draw([floorChain(lx, ly)], lx, ly, tint, alpha, key - 0.9);
           else if (kind === Struct.Wall || kind === Struct.Door) {
-            for (const pc of wallPieces(kindAt, lx, ly, kind, "down", false))
-              draw([pc.chain], lx, ly, tint, alpha, key + pc.order * 0.001);
+            for (const pc of wallPieces(kindAt, lx, ly, kind, win ? "auto" : "down", false, undefined, win))
+              draw([pc.chain], lx, ly, tint, alpha, key + pc.order * 0.001, L.sorted, blend);
           }
         }
       }

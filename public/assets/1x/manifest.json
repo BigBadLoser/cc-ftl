@@ -5190,6 +5190,9 @@
    "image": "sprites/weapons.png",
    "glow": "sprites/weapons.glow.png"
   },
+  "windows": {
+   "image": "sprites/windows.png"
+  },
   "workbench": {
    "image": "sprites/workbench.png",
    "glow": "sprites/workbench.glow.png"
@@ -76523,8 +76526,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2669,
-    "y": 271,
+    "x": 953,
+    "y": 614,
     "w": 58,
     "h": 103
    },
@@ -76541,8 +76544,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2728,
-    "y": 271,
+    "x": 1012,
+    "y": 614,
     "w": 58,
     "h": 103
    },
@@ -76559,8 +76562,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2787,
-    "y": 271,
+    "x": 1071,
+    "y": 614,
     "w": 58,
     "h": 103
    },
@@ -76577,8 +76580,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2846,
-    "y": 271,
+    "x": 1130,
+    "y": 614,
     "w": 58,
     "h": 103
    },
@@ -76590,6 +76593,82 @@
     2,
     2
    ]
+  },
+  "module.burst_laser.ground.r0": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 2445,
+    "y": 152,
+    "w": 184,
+    "h": 115
+   },
+   "anchor": {
+    "x": 92,
+    "y": 101
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.burst_laser.ground.r1": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 2630,
+    "y": 152,
+    "w": 184,
+    "h": 115
+   },
+   "anchor": {
+    "x": 92,
+    "y": 101
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.burst_laser.ground.r2": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 2815,
+    "y": 152,
+    "w": 184,
+    "h": 115
+   },
+   "anchor": {
+    "x": 92,
+    "y": 101
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.burst_laser.ground.r3": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3000,
+    "y": 152,
+    "w": 184,
+    "h": 115
+   },
+   "anchor": {
+    "x": 92,
+    "y": 101
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
   },
   "module.chair.front.r0": {
    "kind": "static",
@@ -80381,8 +80460,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1409,
-    "y": 271,
+    "x": 2312,
+    "y": 504,
     "w": 70,
     "h": 106
    },
@@ -80399,8 +80478,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1480,
-    "y": 271,
+    "x": 2383,
+    "y": 504,
     "w": 70,
     "h": 106
    },
@@ -80417,8 +80496,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1551,
-    "y": 271,
+    "x": 2454,
+    "y": 504,
     "w": 70,
     "h": 106
    },
@@ -80435,8 +80514,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1622,
-    "y": 271,
+    "x": 2525,
+    "y": 504,
     "w": 70,
     "h": 106
    },
@@ -80448,6 +80527,82 @@
     2,
     2
    ]
+  },
+  "module.flak_cannon.ground.r0": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3185,
+    "y": 152,
+    "w": 184,
+    "h": 115
+   },
+   "anchor": {
+    "x": 92,
+    "y": 101
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.flak_cannon.ground.r1": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3370,
+    "y": 152,
+    "w": 184,
+    "h": 115
+   },
+   "anchor": {
+    "x": 92,
+    "y": 101
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.flak_cannon.ground.r2": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3555,
+    "y": 152,
+    "w": 184,
+    "h": 115
+   },
+   "anchor": {
+    "x": 92,
+    "y": 101
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.flak_cannon.ground.r3": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3740,
+    "y": 152,
+    "w": 184,
+    "h": 115
+   },
+   "anchor": {
+    "x": 92,
+    "y": 101
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
   },
   "module.galley": {
    "kind": "static",
@@ -85875,8 +86030,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1693,
-    "y": 271,
+    "x": 2596,
+    "y": 504,
     "w": 70,
     "h": 106
    },
@@ -85893,8 +86048,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1764,
-    "y": 271,
+    "x": 2667,
+    "y": 504,
     "w": 70,
     "h": 106
    },
@@ -85911,8 +86066,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1835,
-    "y": 271,
+    "x": 2738,
+    "y": 504,
     "w": 70,
     "h": 106
    },
@@ -85929,8 +86084,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1906,
-    "y": 271,
+    "x": 2809,
+    "y": 504,
     "w": 70,
     "h": 106
    },
@@ -85943,12 +86098,88 @@
     2
    ]
   },
+  "module.incendiary_launcher.ground.r0": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1,
+    "y": 273,
+    "w": 184,
+    "h": 115
+   },
+   "anchor": {
+    "x": 92,
+    "y": 101
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.incendiary_launcher.ground.r1": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 186,
+    "y": 273,
+    "w": 184,
+    "h": 115
+   },
+   "anchor": {
+    "x": 92,
+    "y": 101
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.incendiary_launcher.ground.r2": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 371,
+    "y": 273,
+    "w": 184,
+    "h": 115
+   },
+   "anchor": {
+    "x": 92,
+    "y": 101
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.incendiary_launcher.ground.r3": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 556,
+    "y": 273,
+    "w": 184,
+    "h": 115
+   },
+   "anchor": {
+    "x": 92,
+    "y": 101
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
   "module.ion_cannon.bay.r0": {
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1977,
-    "y": 271,
+    "x": 2880,
+    "y": 504,
     "w": 64,
     "h": 106
    },
@@ -85965,8 +86196,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2042,
-    "y": 271,
+    "x": 2945,
+    "y": 504,
     "w": 64,
     "h": 106
    },
@@ -85983,8 +86214,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2107,
-    "y": 271,
+    "x": 3010,
+    "y": 504,
     "w": 64,
     "h": 106
    },
@@ -86001,8 +86232,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2172,
-    "y": 271,
+    "x": 3075,
+    "y": 504,
     "w": 64,
     "h": 106
    },
@@ -86014,6 +86245,82 @@
     2,
     2
    ]
+  },
+  "module.ion_cannon.ground.r0": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 741,
+    "y": 273,
+    "w": 184,
+    "h": 115
+   },
+   "anchor": {
+    "x": 92,
+    "y": 101
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.ion_cannon.ground.r1": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 926,
+    "y": 273,
+    "w": 184,
+    "h": 115
+   },
+   "anchor": {
+    "x": 92,
+    "y": 101
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.ion_cannon.ground.r2": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1111,
+    "y": 273,
+    "w": 184,
+    "h": 115
+   },
+   "anchor": {
+    "x": 92,
+    "y": 101
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.ion_cannon.ground.r3": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1296,
+    "y": 273,
+    "w": 184,
+    "h": 115
+   },
+   "anchor": {
+    "x": 92,
+    "y": 101
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
   },
   "module.life_support": {
    "kind": "static",
@@ -87883,8 +88190,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 800,
-    "y": 152,
+    "x": 3701,
+    "y": 273,
     "w": 85,
     "h": 114
    },
@@ -87901,8 +88208,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 886,
-    "y": 152,
+    "x": 3787,
+    "y": 273,
     "w": 85,
     "h": 114
    },
@@ -87919,8 +88226,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 972,
-    "y": 152,
+    "x": 3873,
+    "y": 273,
     "w": 85,
     "h": 114
    },
@@ -87937,8 +88244,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1058,
-    "y": 152,
+    "x": 3959,
+    "y": 273,
     "w": 85,
     "h": 114
    },
@@ -87950,6 +88257,82 @@
     3,
     3
    ]
+  },
+  "module.mass_driver.ground.r0": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1481,
+    "y": 273,
+    "w": 184,
+    "h": 115
+   },
+   "anchor": {
+    "x": 92,
+    "y": 101
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.mass_driver.ground.r1": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1666,
+    "y": 273,
+    "w": 184,
+    "h": 115
+   },
+   "anchor": {
+    "x": 92,
+    "y": 101
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.mass_driver.ground.r2": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1851,
+    "y": 273,
+    "w": 184,
+    "h": 115
+   },
+   "anchor": {
+    "x": 92,
+    "y": 101
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.mass_driver.ground.r3": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 2036,
+    "y": 273,
+    "w": 184,
+    "h": 115
+   },
+   "anchor": {
+    "x": 92,
+    "y": 101
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
   },
   "module.med_bed": {
    "kind": "static",
@@ -88876,7 +89259,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1388,
+    "x": 2230,
     "y": 1,
     "w": 132,
     "h": 126
@@ -88894,7 +89277,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1521,
+    "x": 2363,
     "y": 1,
     "w": 132,
     "h": 126
@@ -88912,7 +89295,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1654,
+    "x": 2496,
     "y": 1,
     "w": 132,
     "h": 126
@@ -88930,7 +89313,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1787,
+    "x": 2629,
     "y": 1,
     "w": 132,
     "h": 126
@@ -88943,6 +89326,82 @@
     3,
     3
    ]
+  },
+  "module.missile_launcher.ground.r0": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 2221,
+    "y": 273,
+    "w": 184,
+    "h": 115
+   },
+   "anchor": {
+    "x": 92,
+    "y": 101
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.missile_launcher.ground.r1": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 2406,
+    "y": 273,
+    "w": 184,
+    "h": 115
+   },
+   "anchor": {
+    "x": 92,
+    "y": 101
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.missile_launcher.ground.r2": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 2591,
+    "y": 273,
+    "w": 184,
+    "h": 115
+   },
+   "anchor": {
+    "x": 92,
+    "y": 101
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.missile_launcher.ground.r3": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 2776,
+    "y": 273,
+    "w": 184,
+    "h": 115
+   },
+   "anchor": {
+    "x": 92,
+    "y": 101
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
   },
   "module.planter": {
    "kind": "static",
@@ -89570,8 +90029,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2905,
-    "y": 271,
+    "x": 1189,
+    "y": 614,
     "w": 58,
     "h": 103
    },
@@ -89588,8 +90047,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2964,
-    "y": 271,
+    "x": 1248,
+    "y": 614,
     "w": 58,
     "h": 103
    },
@@ -89606,8 +90065,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3023,
-    "y": 271,
+    "x": 1307,
+    "y": 614,
     "w": 58,
     "h": 103
    },
@@ -89624,8 +90083,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3082,
-    "y": 271,
+    "x": 1366,
+    "y": 614,
     "w": 58,
     "h": 103
    },
@@ -89637,6 +90096,82 @@
     2,
     2
    ]
+  },
+  "module.point_defense.ground.r0": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 2961,
+    "y": 273,
+    "w": 184,
+    "h": 115
+   },
+   "anchor": {
+    "x": 92,
+    "y": 101
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.point_defense.ground.r1": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3146,
+    "y": 273,
+    "w": 184,
+    "h": 115
+   },
+   "anchor": {
+    "x": 92,
+    "y": 101
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.point_defense.ground.r2": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3331,
+    "y": 273,
+    "w": 184,
+    "h": 115
+   },
+   "anchor": {
+    "x": 92,
+    "y": 101
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.point_defense.ground.r3": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3516,
+    "y": 273,
+    "w": 184,
+    "h": 115
+   },
+   "anchor": {
+    "x": 92,
+    "y": 101
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
   },
   "module.reactor": {
    "kind": "static",
@@ -162848,7 +163383,7 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3501,
+    "x": 391,
     "y": 1,
     "w": 64,
     "h": 99
@@ -162866,7 +163401,7 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3566,
+    "x": 456,
     "y": 1,
     "w": 64,
     "h": 99
@@ -162884,7 +163419,7 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3631,
+    "x": 521,
     "y": 1,
     "w": 64,
     "h": 99
@@ -162902,7 +163437,7 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3696,
+    "x": 586,
     "y": 1,
     "w": 64,
     "h": 99
@@ -162920,8 +163455,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3548,
-    "y": 282,
+    "x": 3019,
+    "y": 251,
     "w": 62,
     "h": 32
    },
@@ -162938,8 +163473,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3611,
-    "y": 282,
+    "x": 3082,
+    "y": 251,
     "w": 62,
     "h": 32
    },
@@ -162956,8 +163491,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3674,
-    "y": 282,
+    "x": 3145,
+    "y": 251,
     "w": 62,
     "h": 32
    },
@@ -163064,8 +163599,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3737,
-    "y": 282,
+    "x": 3208,
+    "y": 251,
     "w": 62,
     "h": 32
    },
@@ -163082,8 +163617,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3800,
-    "y": 282,
+    "x": 3271,
+    "y": 251,
     "w": 62,
     "h": 32
    },
@@ -163100,8 +163635,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3863,
-    "y": 282,
+    "x": 3334,
+    "y": 251,
     "w": 62,
     "h": 32
    },
@@ -163118,8 +163653,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3926,
-    "y": 282,
+    "x": 3397,
+    "y": 251,
     "w": 62,
     "h": 32
    },
@@ -163136,8 +163671,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3989,
-    "y": 282,
+    "x": 3460,
+    "y": 251,
     "w": 62,
     "h": 32
    },
@@ -172136,8 +172671,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2182,
-    "y": 115,
+    "x": 3785,
+    "y": 1,
     "w": 42,
     "h": 86
    },
@@ -172154,8 +172689,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2225,
-    "y": 115,
+    "x": 3828,
+    "y": 1,
     "w": 42,
     "h": 86
    },
@@ -172172,8 +172707,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2268,
-    "y": 115,
+    "x": 3871,
+    "y": 1,
     "w": 42,
     "h": 86
    },
@@ -172190,8 +172725,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2311,
-    "y": 115,
+    "x": 3914,
+    "y": 1,
     "w": 42,
     "h": 86
    },
@@ -172208,8 +172743,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2354,
-    "y": 115,
+    "x": 3957,
+    "y": 1,
     "w": 42,
     "h": 86
    },
@@ -172226,8 +172761,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2397,
-    "y": 115,
+    "x": 4000,
+    "y": 1,
     "w": 42,
     "h": 86
    },
@@ -172244,8 +172779,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2440,
-    "y": 115,
+    "x": 4043,
+    "y": 1,
     "w": 42,
     "h": 86
    },
@@ -172262,8 +172797,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2483,
-    "y": 115,
+    "x": 1,
+    "y": 110,
     "w": 42,
     "h": 86
    },
@@ -172280,8 +172815,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2640,
-    "y": 115,
+    "x": 158,
+    "y": 110,
     "w": 42,
     "h": 83
    },
@@ -172298,8 +172833,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2683,
-    "y": 115,
+    "x": 201,
+    "y": 110,
     "w": 42,
     "h": 83
    },
@@ -172316,8 +172851,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2726,
-    "y": 115,
+    "x": 244,
+    "y": 110,
     "w": 42,
     "h": 83
    },
@@ -172334,8 +172869,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2769,
-    "y": 115,
+    "x": 287,
+    "y": 110,
     "w": 42,
     "h": 83
    },
@@ -172352,8 +172887,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2812,
-    "y": 115,
+    "x": 330,
+    "y": 110,
     "w": 42,
     "h": 83
    },
@@ -172370,8 +172905,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2855,
-    "y": 115,
+    "x": 373,
+    "y": 110,
     "w": 42,
     "h": 83
    },
@@ -172388,8 +172923,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2898,
-    "y": 115,
+    "x": 416,
+    "y": 110,
     "w": 42,
     "h": 83
    },
@@ -172406,8 +172941,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2941,
-    "y": 115,
+    "x": 459,
+    "y": 110,
     "w": 42,
     "h": 83
    },
@@ -172424,8 +172959,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3128,
-    "y": 115,
+    "x": 1166,
+    "y": 110,
     "w": 64,
     "h": 73
    },
@@ -172442,8 +172977,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3193,
-    "y": 115,
+    "x": 1231,
+    "y": 110,
     "w": 64,
     "h": 73
    },
@@ -172460,8 +172995,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3258,
-    "y": 115,
+    "x": 1296,
+    "y": 110,
     "w": 64,
     "h": 73
    },
@@ -172478,8 +173013,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3323,
-    "y": 115,
+    "x": 1361,
+    "y": 110,
     "w": 64,
     "h": 73
    },
@@ -192980,8 +193515,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2526,
-    "y": 115,
+    "x": 44,
+    "y": 110,
     "w": 23,
     "h": 86
    },
@@ -192998,8 +193533,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1458,
-    "y": 358,
+    "x": 3756,
+    "y": 287,
     "w": 23,
     "h": 19
    },
@@ -193016,8 +193551,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2550,
-    "y": 115,
+    "x": 68,
+    "y": 110,
     "w": 32,
     "h": 86
    },
@@ -193034,8 +193569,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1219,
-    "y": 358,
+    "x": 3560,
+    "y": 287,
     "w": 32,
     "h": 23
    },
@@ -193052,8 +193587,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2583,
-    "y": 115,
+    "x": 101,
+    "y": 110,
     "w": 23,
     "h": 86
    },
@@ -193070,8 +193605,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2607,
-    "y": 115,
+    "x": 125,
+    "y": 110,
     "w": 32,
     "h": 86
    },
@@ -193088,8 +193623,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1482,
-    "y": 358,
+    "x": 3780,
+    "y": 287,
     "w": 23,
     "h": 19
    },
@@ -193106,8 +193641,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1252,
-    "y": 358,
+    "x": 3593,
+    "y": 287,
     "w": 32,
     "h": 23
    },
@@ -193124,8 +193659,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3711,
-    "y": 325,
+    "x": 2349,
+    "y": 287,
     "w": 42,
     "h": 29
    },
@@ -193142,8 +193677,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3754,
-    "y": 325,
+    "x": 2392,
+    "y": 287,
     "w": 42,
     "h": 29
    },
@@ -193160,8 +193695,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3797,
-    "y": 325,
+    "x": 2435,
+    "y": 287,
     "w": 42,
     "h": 29
    },
@@ -193178,8 +193713,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3840,
-    "y": 325,
+    "x": 2478,
+    "y": 287,
     "w": 42,
     "h": 29
    },
@@ -193196,8 +193731,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 260,
-    "y": 282,
+    "x": 3802,
+    "y": 197,
     "w": 53,
     "h": 35
    },
@@ -193214,8 +193749,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 314,
-    "y": 282,
+    "x": 3856,
+    "y": 197,
     "w": 53,
     "h": 35
    },
@@ -193232,8 +193767,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 368,
-    "y": 282,
+    "x": 3910,
+    "y": 197,
     "w": 53,
     "h": 35
    },
@@ -193250,8 +193785,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 422,
-    "y": 282,
+    "x": 3964,
+    "y": 197,
     "w": 53,
     "h": 35
    },
@@ -193268,8 +193803,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 476,
-    "y": 282,
+    "x": 4018,
+    "y": 197,
     "w": 53,
     "h": 35
    },
@@ -193286,8 +193821,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 530,
-    "y": 282,
+    "x": 1,
+    "y": 251,
     "w": 53,
     "h": 35
    },
@@ -193304,8 +193839,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 584,
-    "y": 282,
+    "x": 55,
+    "y": 251,
     "w": 53,
     "h": 35
    },
@@ -193322,8 +193857,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 638,
-    "y": 282,
+    "x": 109,
+    "y": 251,
     "w": 53,
     "h": 35
    },
@@ -193340,8 +193875,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 692,
-    "y": 282,
+    "x": 163,
+    "y": 251,
     "w": 53,
     "h": 35
    },
@@ -193358,8 +193893,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 746,
-    "y": 282,
+    "x": 217,
+    "y": 251,
     "w": 53,
     "h": 35
    },
@@ -193376,8 +193911,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 800,
-    "y": 282,
+    "x": 271,
+    "y": 251,
     "w": 53,
     "h": 35
    },
@@ -193394,8 +193929,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 854,
-    "y": 282,
+    "x": 325,
+    "y": 251,
     "w": 53,
     "h": 35
    },
@@ -193412,8 +193947,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 908,
-    "y": 282,
+    "x": 379,
+    "y": 251,
     "w": 53,
     "h": 35
    },
@@ -193430,8 +193965,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 962,
-    "y": 282,
+    "x": 433,
+    "y": 251,
     "w": 53,
     "h": 35
    },
@@ -193448,8 +193983,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1016,
-    "y": 282,
+    "x": 487,
+    "y": 251,
     "w": 53,
     "h": 35
    },
@@ -193466,8 +194001,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1070,
-    "y": 282,
+    "x": 541,
+    "y": 251,
     "w": 53,
     "h": 35
    },
@@ -193484,8 +194019,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1124,
-    "y": 282,
+    "x": 595,
+    "y": 251,
     "w": 53,
     "h": 35
    },
@@ -193502,8 +194037,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1178,
-    "y": 282,
+    "x": 649,
+    "y": 251,
     "w": 53,
     "h": 35
    },
@@ -193520,8 +194055,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1232,
-    "y": 282,
+    "x": 703,
+    "y": 251,
     "w": 53,
     "h": 35
    },
@@ -193538,8 +194073,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1286,
-    "y": 282,
+    "x": 757,
+    "y": 251,
     "w": 53,
     "h": 35
    },
@@ -193556,8 +194091,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1340,
-    "y": 282,
+    "x": 811,
+    "y": 251,
     "w": 53,
     "h": 35
    },
@@ -193574,8 +194109,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1394,
-    "y": 282,
+    "x": 865,
+    "y": 251,
     "w": 53,
     "h": 35
    },
@@ -193592,8 +194127,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1448,
-    "y": 282,
+    "x": 919,
+    "y": 251,
     "w": 53,
     "h": 35
    },
@@ -193610,8 +194145,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1502,
-    "y": 282,
+    "x": 973,
+    "y": 251,
     "w": 53,
     "h": 35
    },
@@ -193628,8 +194163,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1,
-    "y": 325,
+    "x": 3523,
+    "y": 251,
     "w": 53,
     "h": 32
    },
@@ -193646,8 +194181,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 55,
-    "y": 325,
+    "x": 3577,
+    "y": 251,
     "w": 53,
     "h": 32
    },
@@ -193664,8 +194199,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1556,
-    "y": 282,
+    "x": 1027,
+    "y": 251,
     "w": 64,
     "h": 35
    },
@@ -193682,8 +194217,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1621,
-    "y": 282,
+    "x": 1092,
+    "y": 251,
     "w": 64,
     "h": 35
    },
@@ -193700,8 +194235,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 109,
-    "y": 325,
+    "x": 3631,
+    "y": 251,
     "w": 64,
     "h": 32
    },
@@ -193718,8 +194253,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 174,
-    "y": 325,
+    "x": 3696,
+    "y": 251,
     "w": 64,
     "h": 32
    },
@@ -193736,8 +194271,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3883,
-    "y": 325,
+    "x": 2521,
+    "y": 287,
     "w": 42,
     "h": 29
    },
@@ -193754,8 +194289,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3926,
-    "y": 325,
+    "x": 2564,
+    "y": 287,
     "w": 42,
     "h": 29
    },
@@ -193772,8 +194307,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1686,
-    "y": 282,
+    "x": 1157,
+    "y": 251,
     "w": 53,
     "h": 35
    },
@@ -193790,8 +194325,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1740,
-    "y": 282,
+    "x": 1211,
+    "y": 251,
     "w": 53,
     "h": 35
    },
@@ -193808,8 +194343,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 239,
-    "y": 325,
+    "x": 3761,
+    "y": 251,
     "w": 42,
     "h": 32
    },
@@ -193826,8 +194361,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 282,
-    "y": 325,
+    "x": 3804,
+    "y": 251,
     "w": 42,
     "h": 32
    },
@@ -193844,8 +194379,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 325,
-    "y": 325,
+    "x": 3847,
+    "y": 251,
     "w": 53,
     "h": 32
    },
@@ -193862,8 +194397,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 379,
-    "y": 325,
+    "x": 3901,
+    "y": 251,
     "w": 53,
     "h": 32
    },
@@ -193880,8 +194415,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1794,
-    "y": 282,
+    "x": 1265,
+    "y": 251,
     "w": 53,
     "h": 35
    },
@@ -193898,8 +194433,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1848,
-    "y": 282,
+    "x": 1319,
+    "y": 251,
     "w": 53,
     "h": 35
    },
@@ -193916,8 +194451,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1902,
-    "y": 282,
+    "x": 1373,
+    "y": 251,
     "w": 64,
     "h": 35
    },
@@ -193934,8 +194469,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1967,
-    "y": 282,
+    "x": 1438,
+    "y": 251,
     "w": 64,
     "h": 35
    },
@@ -193952,8 +194487,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 433,
-    "y": 325,
+    "x": 3955,
+    "y": 251,
     "w": 53,
     "h": 32
    },
@@ -193970,8 +194505,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 487,
-    "y": 325,
+    "x": 4009,
+    "y": 251,
     "w": 53,
     "h": 32
    },
@@ -193988,8 +194523,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 541,
-    "y": 325,
+    "x": 1,
+    "y": 287,
     "w": 64,
     "h": 32
    },
@@ -194006,8 +194541,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 606,
-    "y": 325,
+    "x": 66,
+    "y": 287,
     "w": 64,
     "h": 32
    },
@@ -194024,8 +194559,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 671,
-    "y": 325,
+    "x": 131,
+    "y": 287,
     "w": 42,
     "h": 32
    },
@@ -194042,8 +194577,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 714,
-    "y": 325,
+    "x": 174,
+    "y": 287,
     "w": 42,
     "h": 32
    },
@@ -194060,8 +194595,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 757,
-    "y": 325,
+    "x": 217,
+    "y": 287,
     "w": 53,
     "h": 32
    },
@@ -194078,8 +194613,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 811,
-    "y": 325,
+    "x": 271,
+    "y": 287,
     "w": 53,
     "h": 32
    },
@@ -194096,8 +194631,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2032,
-    "y": 282,
+    "x": 1503,
+    "y": 251,
     "w": 53,
     "h": 35
    },
@@ -194114,8 +194649,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2086,
-    "y": 282,
+    "x": 1557,
+    "y": 251,
     "w": 53,
     "h": 35
    },
@@ -194132,8 +194667,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2140,
-    "y": 282,
+    "x": 1611,
+    "y": 251,
     "w": 64,
     "h": 35
    },
@@ -194150,8 +194685,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2205,
-    "y": 282,
+    "x": 1676,
+    "y": 251,
     "w": 64,
     "h": 35
    },
@@ -194168,8 +194703,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 865,
-    "y": 325,
+    "x": 325,
+    "y": 287,
     "w": 53,
     "h": 32
    },
@@ -194186,8 +194721,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 919,
-    "y": 325,
+    "x": 379,
+    "y": 287,
     "w": 53,
     "h": 32
    },
@@ -194204,8 +194739,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 973,
-    "y": 325,
+    "x": 433,
+    "y": 287,
     "w": 64,
     "h": 32
    },
@@ -194222,8 +194757,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1038,
-    "y": 325,
+    "x": 498,
+    "y": 287,
     "w": 64,
     "h": 32
    },
@@ -194240,8 +194775,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3969,
-    "y": 325,
+    "x": 2607,
+    "y": 287,
     "w": 42,
     "h": 29
    },
@@ -194258,8 +194793,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 4012,
-    "y": 325,
+    "x": 2650,
+    "y": 287,
     "w": 42,
     "h": 29
    },
@@ -194276,8 +194811,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2270,
-    "y": 282,
+    "x": 1741,
+    "y": 251,
     "w": 53,
     "h": 35
    },
@@ -194294,8 +194829,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2324,
-    "y": 282,
+    "x": 1795,
+    "y": 251,
     "w": 53,
     "h": 35
    },
@@ -194312,8 +194847,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2378,
-    "y": 282,
+    "x": 1849,
+    "y": 251,
     "w": 53,
     "h": 35
    },
@@ -194330,8 +194865,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2432,
-    "y": 282,
+    "x": 1903,
+    "y": 251,
     "w": 53,
     "h": 35
    },
@@ -194348,8 +194883,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2486,
-    "y": 282,
+    "x": 1957,
+    "y": 251,
     "w": 53,
     "h": 35
    },
@@ -194366,8 +194901,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2540,
-    "y": 282,
+    "x": 2011,
+    "y": 251,
     "w": 53,
     "h": 35
    },
@@ -194384,8 +194919,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2594,
-    "y": 282,
+    "x": 2065,
+    "y": 251,
     "w": 53,
     "h": 35
    },
@@ -194402,8 +194937,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2648,
-    "y": 282,
+    "x": 2119,
+    "y": 251,
     "w": 53,
     "h": 35
    },
@@ -194420,8 +194955,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2702,
-    "y": 282,
+    "x": 2173,
+    "y": 251,
     "w": 53,
     "h": 35
    },
@@ -194438,8 +194973,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2756,
-    "y": 282,
+    "x": 2227,
+    "y": 251,
     "w": 53,
     "h": 35
    },
@@ -194456,8 +194991,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2810,
-    "y": 282,
+    "x": 2281,
+    "y": 251,
     "w": 53,
     "h": 35
    },
@@ -194474,8 +195009,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2864,
-    "y": 282,
+    "x": 2335,
+    "y": 251,
     "w": 53,
     "h": 35
    },
@@ -194492,8 +195027,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1089,
-    "y": 358,
+    "x": 3430,
+    "y": 287,
     "w": 64,
     "h": 25
    },
@@ -194510,8 +195045,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1154,
-    "y": 358,
+    "x": 3495,
+    "y": 287,
     "w": 64,
     "h": 25
    },
@@ -194528,8 +195063,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1285,
-    "y": 358,
+    "x": 3626,
+    "y": 287,
     "w": 64,
     "h": 22
    },
@@ -194546,8 +195081,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1350,
-    "y": 358,
+    "x": 3691,
+    "y": 287,
     "w": 64,
     "h": 22
    },
@@ -194564,8 +195099,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2918,
-    "y": 282,
+    "x": 2389,
+    "y": 251,
     "w": 53,
     "h": 35
    },
@@ -194582,8 +195117,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2972,
-    "y": 282,
+    "x": 2443,
+    "y": 251,
     "w": 53,
     "h": 35
    },
@@ -194600,8 +195135,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3026,
-    "y": 282,
+    "x": 2497,
+    "y": 251,
     "w": 64,
     "h": 35
    },
@@ -194618,8 +195153,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3091,
-    "y": 282,
+    "x": 2562,
+    "y": 251,
     "w": 64,
     "h": 35
    },
@@ -194636,8 +195171,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1103,
-    "y": 325,
+    "x": 563,
+    "y": 287,
     "w": 53,
     "h": 32
    },
@@ -194654,8 +195189,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1157,
-    "y": 325,
+    "x": 617,
+    "y": 287,
     "w": 53,
     "h": 32
    },
@@ -194672,8 +195207,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1211,
-    "y": 325,
+    "x": 671,
+    "y": 287,
     "w": 64,
     "h": 32
    },
@@ -194690,8 +195225,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1276,
-    "y": 325,
+    "x": 736,
+    "y": 287,
     "w": 64,
     "h": 32
    },
@@ -194708,8 +195243,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1,
-    "y": 358,
+    "x": 2693,
+    "y": 287,
     "w": 42,
     "h": 29
    },
@@ -194726,8 +195261,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 44,
-    "y": 358,
+    "x": 2736,
+    "y": 287,
     "w": 42,
     "h": 29
    },
@@ -194744,8 +195279,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 87,
-    "y": 358,
+    "x": 2779,
+    "y": 287,
     "w": 42,
     "h": 29
    },
@@ -194762,8 +195297,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 130,
-    "y": 358,
+    "x": 2822,
+    "y": 287,
     "w": 42,
     "h": 29
    },
@@ -194780,8 +195315,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 173,
-    "y": 358,
+    "x": 2865,
+    "y": 287,
     "w": 42,
     "h": 29
    },
@@ -194798,8 +195333,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 216,
-    "y": 358,
+    "x": 2908,
+    "y": 287,
     "w": 42,
     "h": 29
    },
@@ -194816,8 +195351,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3800,
-    "y": 115,
+    "x": 1426,
+    "y": 110,
     "w": 42,
     "h": 70
    },
@@ -194834,8 +195369,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3843,
-    "y": 115,
+    "x": 1469,
+    "y": 110,
     "w": 42,
     "h": 70
    },
@@ -199348,6 +199883,114 @@
     1
    ]
   },
+  "tile.hull.ext.o1.m10.w1": {
+   "kind": "static",
+   "sheet": "windows",
+   "frame": {
+    "x": 1,
+    "y": 1,
+    "w": 63,
+    "h": 111
+   },
+   "anchor": {
+    "x": 31,
+    "y": 96
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.ext.o1.m10.w1.tint": {
+   "kind": "static",
+   "sheet": "windows",
+   "frame": {
+    "x": 65,
+    "y": 1,
+    "w": 63,
+    "h": 111
+   },
+   "anchor": {
+    "x": 31,
+    "y": 96
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.ext.o1.m10.w2": {
+   "kind": "static",
+   "sheet": "windows",
+   "frame": {
+    "x": 129,
+    "y": 1,
+    "w": 63,
+    "h": 111
+   },
+   "anchor": {
+    "x": 31,
+    "y": 96
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.ext.o1.m10.w2.tint": {
+   "kind": "static",
+   "sheet": "windows",
+   "frame": {
+    "x": 193,
+    "y": 1,
+    "w": 63,
+    "h": 111
+   },
+   "anchor": {
+    "x": 31,
+    "y": 96
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.ext.o1.m10.w3": {
+   "kind": "static",
+   "sheet": "windows",
+   "frame": {
+    "x": 257,
+    "y": 1,
+    "w": 63,
+    "h": 111
+   },
+   "anchor": {
+    "x": 31,
+    "y": 96
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.ext.o1.m10.w3.tint": {
+   "kind": "static",
+   "sheet": "windows",
+   "frame": {
+    "x": 321,
+    "y": 1,
+    "w": 63,
+    "h": 111
+   },
+   "anchor": {
+    "x": 31,
+    "y": 96
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
   "tile.hull.ext.o1.m11": {
    "kind": "static",
    "sheet": "hull",
@@ -199852,6 +200495,114 @@
     1
    ]
   },
+  "tile.hull.ext.o2.m5.w1": {
+   "kind": "static",
+   "sheet": "windows",
+   "frame": {
+    "x": 385,
+    "y": 1,
+    "w": 63,
+    "h": 111
+   },
+   "anchor": {
+    "x": 32,
+    "y": 96
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.ext.o2.m5.w1.tint": {
+   "kind": "static",
+   "sheet": "windows",
+   "frame": {
+    "x": 449,
+    "y": 1,
+    "w": 63,
+    "h": 111
+   },
+   "anchor": {
+    "x": 32,
+    "y": 96
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.ext.o2.m5.w2": {
+   "kind": "static",
+   "sheet": "windows",
+   "frame": {
+    "x": 513,
+    "y": 1,
+    "w": 63,
+    "h": 111
+   },
+   "anchor": {
+    "x": 32,
+    "y": 96
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.ext.o2.m5.w2.tint": {
+   "kind": "static",
+   "sheet": "windows",
+   "frame": {
+    "x": 577,
+    "y": 1,
+    "w": 63,
+    "h": 111
+   },
+   "anchor": {
+    "x": 32,
+    "y": 96
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.ext.o2.m5.w3": {
+   "kind": "static",
+   "sheet": "windows",
+   "frame": {
+    "x": 641,
+    "y": 1,
+    "w": 63,
+    "h": 111
+   },
+   "anchor": {
+    "x": 32,
+    "y": 96
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.ext.o2.m5.w3.tint": {
+   "kind": "static",
+   "sheet": "windows",
+   "frame": {
+    "x": 705,
+    "y": 1,
+    "w": 63,
+    "h": 111
+   },
+   "anchor": {
+    "x": 32,
+    "y": 96
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
   "tile.hull.ext.o2.m8": {
    "kind": "static",
    "sheet": "hull",
@@ -200234,7 +200985,7 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2627,
+    "x": 1,
     "y": 1,
     "w": 64,
     "h": 108
@@ -200414,8 +201165,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1341,
-    "y": 325,
+    "x": 801,
+    "y": 287,
     "w": 64,
     "h": 32
    },
@@ -200432,8 +201183,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1406,
-    "y": 325,
+    "x": 866,
+    "y": 287,
     "w": 64,
     "h": 32
    },
@@ -200450,8 +201201,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1471,
-    "y": 325,
+    "x": 931,
+    "y": 287,
     "w": 64,
     "h": 32
    },
@@ -200468,8 +201219,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 259,
-    "y": 358,
+    "x": 2951,
+    "y": 287,
     "w": 64,
     "h": 29
    },
@@ -200486,8 +201237,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1536,
-    "y": 325,
+    "x": 996,
+    "y": 287,
     "w": 64,
     "h": 32
    },
@@ -200504,8 +201255,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1601,
-    "y": 325,
+    "x": 1061,
+    "y": 287,
     "w": 64,
     "h": 32
    },
@@ -200522,8 +201273,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1666,
-    "y": 325,
+    "x": 1126,
+    "y": 287,
     "w": 39,
     "h": 32
    },
@@ -200540,8 +201291,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1706,
-    "y": 325,
+    "x": 1166,
+    "y": 287,
     "w": 63,
     "h": 32
    },
@@ -200558,8 +201309,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1770,
-    "y": 325,
+    "x": 1230,
+    "y": 287,
     "w": 39,
     "h": 32
    },
@@ -200576,8 +201327,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1810,
-    "y": 325,
+    "x": 1270,
+    "y": 287,
     "w": 39,
     "h": 32
    },
@@ -200594,8 +201345,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 324,
-    "y": 358,
+    "x": 3016,
+    "y": 287,
     "w": 39,
     "h": 29
    },
@@ -200612,8 +201363,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1850,
-    "y": 325,
+    "x": 1310,
+    "y": 287,
     "w": 39,
     "h": 32
    },
@@ -200630,8 +201381,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2292,
-    "y": 358,
+    "x": 528,
+    "y": 320,
     "w": 14,
     "h": 5
    },
@@ -200648,8 +201399,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1962,
-    "y": 358,
+    "x": 198,
+    "y": 320,
     "w": 38,
     "h": 8
    },
@@ -200666,8 +201417,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2181,
-    "y": 358,
+    "x": 417,
+    "y": 320,
     "w": 11,
     "h": 7
    },
@@ -200684,8 +201435,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2307,
-    "y": 358,
+    "x": 543,
+    "y": 320,
     "w": 14,
     "h": 5
    },
@@ -200702,8 +201453,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1890,
-    "y": 325,
+    "x": 1350,
+    "y": 287,
     "w": 39,
     "h": 32
    },
@@ -200720,8 +201471,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1930,
-    "y": 325,
+    "x": 1390,
+    "y": 287,
     "w": 63,
     "h": 32
    },
@@ -200738,8 +201489,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 364,
-    "y": 358,
+    "x": 3056,
+    "y": 287,
     "w": 39,
     "h": 29
    },
@@ -200756,8 +201507,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 404,
-    "y": 358,
+    "x": 3096,
+    "y": 287,
     "w": 63,
     "h": 29
    },
@@ -200774,8 +201525,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1994,
-    "y": 325,
+    "x": 1454,
+    "y": 287,
     "w": 39,
     "h": 32
    },
@@ -200792,8 +201543,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 468,
-    "y": 358,
+    "x": 3160,
+    "y": 287,
     "w": 39,
     "h": 29
    },
@@ -200810,8 +201561,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2034,
-    "y": 325,
+    "x": 1494,
+    "y": 287,
     "w": 39,
     "h": 32
    },
@@ -200828,8 +201579,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 508,
-    "y": 358,
+    "x": 3200,
+    "y": 287,
     "w": 39,
     "h": 29
    },
@@ -200846,8 +201597,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2074,
-    "y": 325,
+    "x": 1534,
+    "y": 287,
     "w": 63,
     "h": 32
    },
@@ -200864,8 +201615,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 548,
-    "y": 358,
+    "x": 3240,
+    "y": 287,
     "w": 63,
     "h": 29
    },
@@ -200882,8 +201633,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2138,
-    "y": 325,
+    "x": 1598,
+    "y": 287,
     "w": 39,
     "h": 32
    },
@@ -200900,8 +201651,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2178,
-    "y": 325,
+    "x": 1638,
+    "y": 287,
     "w": 63,
     "h": 32
    },
@@ -200918,8 +201669,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2322,
-    "y": 358,
+    "x": 558,
+    "y": 320,
     "w": 14,
     "h": 5
    },
@@ -200936,8 +201687,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2001,
-    "y": 358,
+    "x": 237,
+    "y": 320,
     "w": 38,
     "h": 8
    },
@@ -200954,8 +201705,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2040,
-    "y": 358,
+    "x": 276,
+    "y": 320,
     "w": 38,
     "h": 8
    },
@@ -200972,8 +201723,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2079,
-    "y": 358,
+    "x": 315,
+    "y": 320,
     "w": 62,
     "h": 8
    },
@@ -200990,8 +201741,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2193,
-    "y": 358,
+    "x": 429,
+    "y": 320,
     "w": 11,
     "h": 7
    },
@@ -201008,8 +201759,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2205,
-    "y": 358,
+    "x": 441,
+    "y": 320,
     "w": 11,
     "h": 7
    },
@@ -201026,8 +201777,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2217,
-    "y": 358,
+    "x": 453,
+    "y": 320,
     "w": 62,
     "h": 7
    },
@@ -201044,8 +201795,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2337,
-    "y": 358,
+    "x": 573,
+    "y": 320,
     "w": 14,
     "h": 5
    },
@@ -201062,8 +201813,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2142,
-    "y": 358,
+    "x": 378,
+    "y": 320,
     "w": 38,
     "h": 8
    },
@@ -201080,8 +201831,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2280,
-    "y": 358,
+    "x": 516,
+    "y": 320,
     "w": 11,
     "h": 7
    },
@@ -201098,8 +201849,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2242,
-    "y": 325,
+    "x": 1702,
+    "y": 287,
     "w": 64,
     "h": 32
    },
@@ -201116,8 +201867,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2307,
-    "y": 325,
+    "x": 1767,
+    "y": 287,
     "w": 64,
     "h": 32
    },
@@ -201134,8 +201885,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2372,
-    "y": 325,
+    "x": 1832,
+    "y": 287,
     "w": 64,
     "h": 32
    },
@@ -201152,8 +201903,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1959,
-    "y": 358,
+    "x": 195,
+    "y": 320,
     "w": 2,
     "h": 11
    },
@@ -201458,8 +202209,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3156,
-    "y": 282,
+    "x": 2627,
+    "y": 251,
     "w": 32,
     "h": 33
    },
@@ -201476,8 +202227,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3189,
-    "y": 282,
+    "x": 2660,
+    "y": 251,
     "w": 32,
     "h": 33
    },
@@ -201494,8 +202245,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2437,
-    "y": 325,
+    "x": 1897,
+    "y": 287,
     "w": 63,
     "h": 32
    },
@@ -201512,8 +202263,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2501,
-    "y": 325,
+    "x": 1961,
+    "y": 287,
     "w": 33,
     "h": 32
    },
@@ -201530,8 +202281,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1506,
-    "y": 358,
+    "x": 3804,
+    "y": 287,
     "w": 31,
     "h": 17
    },
@@ -201548,8 +202299,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2352,
-    "y": 358,
+    "x": 588,
+    "y": 320,
     "w": 1,
     "h": 2
    },
@@ -201566,8 +202317,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3222,
-    "y": 282,
+    "x": 2693,
+    "y": 251,
     "w": 64,
     "h": 33
    },
@@ -201584,8 +202335,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3287,
-    "y": 282,
+    "x": 2758,
+    "y": 251,
     "w": 64,
     "h": 33
    },
@@ -201602,8 +202353,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3352,
-    "y": 282,
+    "x": 2823,
+    "y": 251,
     "w": 32,
     "h": 33
    },
@@ -201620,8 +202371,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3385,
-    "y": 282,
+    "x": 2856,
+    "y": 251,
     "w": 64,
     "h": 33
    },
@@ -201638,8 +202389,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2354,
-    "y": 358,
+    "x": 590,
+    "y": 320,
     "w": 1,
     "h": 2
    },
@@ -201656,8 +202407,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2535,
-    "y": 325,
+    "x": 1995,
+    "y": 287,
     "w": 33,
     "h": 32
    },
@@ -201674,8 +202425,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1538,
-    "y": 358,
+    "x": 3836,
+    "y": 287,
     "w": 31,
     "h": 17
    },
@@ -201692,8 +202443,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2569,
-    "y": 325,
+    "x": 2029,
+    "y": 287,
     "w": 63,
     "h": 32
    },
@@ -201710,8 +202461,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3450,
-    "y": 282,
+    "x": 2921,
+    "y": 251,
     "w": 32,
     "h": 33
    },
@@ -201728,8 +202479,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3483,
-    "y": 282,
+    "x": 2954,
+    "y": 251,
     "w": 64,
     "h": 33
    },
@@ -201746,8 +202497,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1570,
-    "y": 358,
+    "x": 3868,
+    "y": 287,
     "w": 64,
     "h": 17
    },
@@ -201764,8 +202515,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1635,
-    "y": 358,
+    "x": 3933,
+    "y": 287,
     "w": 64,
     "h": 17
    },
@@ -201782,8 +202533,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1700,
-    "y": 358,
+    "x": 3998,
+    "y": 287,
     "w": 64,
     "h": 17
    },
@@ -201800,8 +202551,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1765,
-    "y": 358,
+    "x": 1,
+    "y": 320,
     "w": 64,
     "h": 17
    },
@@ -201818,8 +202569,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1830,
-    "y": 358,
+    "x": 66,
+    "y": 320,
     "w": 32,
     "h": 17
    },
@@ -201836,8 +202587,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1863,
-    "y": 358,
+    "x": 99,
+    "y": 320,
     "w": 62,
     "h": 17
    },
@@ -201854,8 +202605,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1926,
-    "y": 358,
+    "x": 162,
+    "y": 320,
     "w": 32,
     "h": 17
    },
@@ -207398,8 +208149,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3872,
-    "y": 215,
+    "x": 2145,
+    "y": 197,
     "w": 38,
     "h": 44
    },
@@ -207416,8 +208167,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3186,
-    "y": 215,
+    "x": 1164,
+    "y": 197,
     "w": 38,
     "h": 50
    },
@@ -207434,8 +208185,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3911,
-    "y": 215,
+    "x": 2184,
+    "y": 197,
     "w": 32,
     "h": 44
    },
@@ -207452,8 +208203,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3225,
-    "y": 215,
+    "x": 1203,
+    "y": 197,
     "w": 32,
     "h": 50
    },
@@ -207470,8 +208221,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3944,
-    "y": 215,
+    "x": 2217,
+    "y": 197,
     "w": 38,
     "h": 44
    },
@@ -207488,8 +208239,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3983,
-    "y": 215,
+    "x": 2256,
+    "y": 197,
     "w": 32,
     "h": 44
    },
@@ -207506,8 +208257,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3258,
-    "y": 215,
+    "x": 1236,
+    "y": 197,
     "w": 38,
     "h": 50
    },
@@ -207524,8 +208275,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3297,
-    "y": 215,
+    "x": 1275,
+    "y": 197,
     "w": 32,
     "h": 50
    },
@@ -207578,8 +208329,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2984,
-    "y": 115,
+    "x": 502,
+    "y": 110,
     "w": 38,
     "h": 83
    },
@@ -207596,8 +208347,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1997,
-    "y": 115,
+    "x": 3381,
+    "y": 1,
     "w": 38,
     "h": 88
    },
@@ -207614,8 +208365,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3023,
-    "y": 115,
+    "x": 541,
+    "y": 110,
     "w": 32,
     "h": 83
    },
@@ -207632,8 +208383,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2036,
-    "y": 115,
+    "x": 3420,
+    "y": 1,
     "w": 32,
     "h": 88
    },
@@ -207650,8 +208401,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3056,
-    "y": 115,
+    "x": 574,
+    "y": 110,
     "w": 38,
     "h": 83
    },
@@ -207668,8 +208419,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3095,
-    "y": 115,
+    "x": 613,
+    "y": 110,
     "w": 32,
     "h": 83
    },
@@ -207686,8 +208437,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2069,
-    "y": 115,
+    "x": 3453,
+    "y": 1,
     "w": 38,
     "h": 88
    },
@@ -207704,8 +208455,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2108,
-    "y": 115,
+    "x": 3492,
+    "y": 1,
     "w": 32,
     "h": 88
    },
@@ -207722,8 +208473,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1932,
-    "y": 115,
+    "x": 3316,
+    "y": 1,
     "w": 64,
     "h": 93
    },
@@ -207758,7 +208509,7 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3761,
+    "x": 651,
     "y": 1,
     "w": 64,
     "h": 99
@@ -207794,9 +208545,9 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3826,
+    "x": 716,
     "y": 1,
-    "w": 52,
+    "w": 64,
     "h": 99
    },
    "anchor": {
@@ -207812,9 +208563,9 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3879,
+    "x": 781,
     "y": 1,
-    "w": 52,
+    "w": 64,
     "h": 99
    },
    "anchor": {
@@ -207830,9 +208581,9 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3932,
+    "x": 846,
     "y": 1,
-    "w": 52,
+    "w": 64,
     "h": 99
    },
    "anchor": {
@@ -207848,9 +208599,9 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3985,
+    "x": 911,
     "y": 1,
-    "w": 52,
+    "w": 64,
     "h": 99
    },
    "anchor": {
@@ -207866,9 +208617,9 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 4038,
+    "x": 976,
     "y": 1,
-    "w": 52,
+    "w": 64,
     "h": 99
    },
    "anchor": {
@@ -207884,9 +208635,9 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1,
-    "y": 115,
-    "w": 52,
+    "x": 1041,
+    "y": 1,
+    "w": 64,
     "h": 99
    },
    "anchor": {
@@ -207902,9 +208653,9 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 54,
-    "y": 115,
-    "w": 52,
+    "x": 1106,
+    "y": 1,
+    "w": 64,
     "h": 99
    },
    "anchor": {
@@ -207920,9 +208671,9 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 107,
-    "y": 115,
-    "w": 52,
+    "x": 1171,
+    "y": 1,
+    "w": 64,
     "h": 99
    },
    "anchor": {
@@ -207952,13 +208703,67 @@
     1
    ]
   },
+  "tile.wall.full.m10.win.l": {
+   "kind": "static",
+   "sheet": "windows",
+   "frame": {
+    "x": 769,
+    "y": 1,
+    "w": 64,
+    "h": 99
+   },
+   "anchor": {
+    "x": 32,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.full.m10.win.m": {
+   "kind": "static",
+   "sheet": "windows",
+   "frame": {
+    "x": 834,
+    "y": 1,
+    "w": 64,
+    "h": 99
+   },
+   "anchor": {
+    "x": 32,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.full.m10.win.r": {
+   "kind": "static",
+   "sheet": "windows",
+   "frame": {
+    "x": 899,
+    "y": 1,
+    "w": 64,
+    "h": 99
+   },
+   "anchor": {
+    "x": 32,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
   "tile.wall.full.m11": {
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 160,
-    "y": 115,
-    "w": 54,
+    "x": 1236,
+    "y": 1,
+    "w": 64,
     "h": 99
    },
    "anchor": {
@@ -207992,8 +208797,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 215,
-    "y": 115,
+    "x": 1301,
+    "y": 1,
     "w": 64,
     "h": 99
    },
@@ -208010,9 +208815,9 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2692,
+    "x": 66,
     "y": 1,
-    "w": 54,
+    "w": 64,
     "h": 104
    },
    "anchor": {
@@ -208028,7 +208833,7 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2747,
+    "x": 131,
     "y": 1,
     "w": 64,
     "h": 104
@@ -208046,13 +208851,13 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 280,
-    "y": 115,
-    "w": 54,
+    "x": 1366,
+    "y": 1,
+    "w": 64,
     "h": 99
    },
    "anchor": {
-    "x": 22,
+    "x": 32,
     "y": 83
    },
    "footprint": [
@@ -208082,8 +208887,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 335,
-    "y": 115,
+    "x": 1431,
+    "y": 1,
     "w": 64,
     "h": 99
    },
@@ -208100,13 +208905,13 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 400,
-    "y": 115,
-    "w": 54,
+    "x": 1496,
+    "y": 1,
+    "w": 64,
     "h": 99
    },
    "anchor": {
-    "x": 22,
+    "x": 32,
     "y": 83
    },
    "footprint": [
@@ -208136,7 +208941,7 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2812,
+    "x": 196,
     "y": 1,
     "w": 64,
     "h": 104
@@ -208154,8 +208959,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 455,
-    "y": 115,
+    "x": 1561,
+    "y": 1,
     "w": 64,
     "h": 99
    },
@@ -208172,13 +208977,13 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2877,
+    "x": 261,
     "y": 1,
-    "w": 54,
+    "w": 64,
     "h": 104
    },
    "anchor": {
-    "x": 22,
+    "x": 32,
     "y": 88
    },
    "footprint": [
@@ -208190,13 +208995,13 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1520,
-    "y": 115,
-    "w": 42,
+    "x": 2796,
+    "y": 1,
+    "w": 64,
     "h": 94
    },
    "anchor": {
-    "x": 22,
+    "x": 32,
     "y": 83
    },
    "footprint": [
@@ -208226,13 +209031,13 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3388,
-    "y": 115,
-    "w": 42,
-    "h": 71
+    "x": 646,
+    "y": 110,
+    "w": 64,
+    "h": 83
    },
    "anchor": {
-    "x": 22,
+    "x": 32,
     "y": 83
    },
    "footprint": [
@@ -208244,9 +209049,9 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1563,
-    "y": 115,
-    "w": 52,
+    "x": 2861,
+    "y": 1,
+    "w": 64,
     "h": 94
    },
    "anchor": {
@@ -208262,10 +209067,10 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3431,
-    "y": 115,
-    "w": 52,
-    "h": 71
+    "x": 711,
+    "y": 110,
+    "w": 64,
+    "h": 83
    },
    "anchor": {
     "x": 32,
@@ -208280,13 +209085,13 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1616,
-    "y": 115,
-    "w": 44,
+    "x": 2926,
+    "y": 1,
+    "w": 64,
     "h": 94
    },
    "anchor": {
-    "x": 22,
+    "x": 32,
     "y": 83
    },
    "footprint": [
@@ -208316,13 +209121,13 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1661,
-    "y": 115,
-    "w": 54,
+    "x": 2991,
+    "y": 1,
+    "w": 64,
     "h": 94
    },
    "anchor": {
-    "x": 22,
+    "x": 32,
     "y": 83
    },
    "footprint": [
@@ -208334,13 +209139,13 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3491,
-    "y": 325,
-    "w": 44,
-    "h": 31
+    "x": 3525,
+    "y": 1,
+    "w": 64,
+    "h": 88
    },
    "anchor": {
-    "x": 22,
+    "x": 32,
     "y": 88
    },
    "footprint": [
@@ -208352,13 +209157,13 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3536,
-    "y": 325,
-    "w": 54,
-    "h": 31
+    "x": 3590,
+    "y": 1,
+    "w": 64,
+    "h": 88
    },
    "anchor": {
-    "x": 22,
+    "x": 32,
     "y": 88
    },
    "footprint": [
@@ -208370,9 +209175,9 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 520,
-    "y": 115,
-    "w": 54,
+    "x": 1626,
+    "y": 1,
+    "w": 64,
     "h": 99
    },
    "anchor": {
@@ -208388,8 +209193,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 575,
-    "y": 115,
+    "x": 1691,
+    "y": 1,
     "w": 64,
     "h": 99
    },
@@ -208406,10 +209211,10 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3591,
-    "y": 325,
-    "w": 54,
-    "h": 31
+    "x": 3655,
+    "y": 1,
+    "w": 64,
+    "h": 88
    },
    "anchor": {
     "x": 32,
@@ -208424,8 +209229,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3646,
-    "y": 325,
+    "x": 2219,
+    "y": 287,
     "w": 64,
     "h": 31
    },
@@ -208442,13 +209247,13 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3484,
-    "y": 115,
-    "w": 44,
-    "h": 71
+    "x": 776,
+    "y": 110,
+    "w": 64,
+    "h": 83
    },
    "anchor": {
-    "x": 22,
+    "x": 32,
     "y": 83
    },
    "footprint": [
@@ -208460,13 +209265,13 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3529,
-    "y": 115,
-    "w": 54,
-    "h": 71
+    "x": 841,
+    "y": 110,
+    "w": 64,
+    "h": 83
    },
    "anchor": {
-    "x": 22,
+    "x": 32,
     "y": 83
    },
    "footprint": [
@@ -208478,9 +209283,9 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1716,
-    "y": 115,
-    "w": 54,
+    "x": 3056,
+    "y": 1,
+    "w": 64,
     "h": 94
    },
    "anchor": {
@@ -208496,8 +209301,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1771,
-    "y": 115,
+    "x": 3121,
+    "y": 1,
     "w": 64,
     "h": 94
    },
@@ -208514,10 +209319,10 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3584,
-    "y": 115,
-    "w": 54,
-    "h": 71
+    "x": 906,
+    "y": 110,
+    "w": 64,
+    "h": 83
    },
    "anchor": {
     "x": 32,
@@ -208532,10 +209337,10 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3639,
-    "y": 115,
+    "x": 1835,
+    "y": 110,
     "w": 64,
-    "h": 71
+    "h": 62
    },
    "anchor": {
     "x": 32,
@@ -208550,13 +209355,13 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 640,
-    "y": 115,
-    "w": 44,
+    "x": 1756,
+    "y": 1,
+    "w": 64,
     "h": 99
    },
    "anchor": {
-    "x": 22,
+    "x": 32,
     "y": 88
    },
    "footprint": [
@@ -208568,13 +209373,13 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 685,
-    "y": 115,
-    "w": 54,
+    "x": 1821,
+    "y": 1,
+    "w": 64,
     "h": 99
    },
    "anchor": {
-    "x": 22,
+    "x": 32,
     "y": 88
    },
    "footprint": [
@@ -208586,9 +209391,9 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 740,
-    "y": 115,
-    "w": 52,
+    "x": 1886,
+    "y": 1,
+    "w": 64,
     "h": 99
    },
    "anchor": {
@@ -208622,9 +209427,9 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 793,
-    "y": 115,
-    "w": 54,
+    "x": 1951,
+    "y": 1,
+    "w": 64,
     "h": 99
    },
    "anchor": {
@@ -208658,8 +209463,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 848,
-    "y": 115,
+    "x": 2016,
+    "y": 1,
     "w": 64,
     "h": 99
    },
@@ -208676,13 +209481,13 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 913,
-    "y": 115,
-    "w": 52,
+    "x": 2081,
+    "y": 1,
+    "w": 64,
     "h": 99
    },
    "anchor": {
-    "x": 20,
+    "x": 32,
     "y": 83
    },
    "footprint": [
@@ -208712,13 +209517,13 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 966,
-    "y": 115,
-    "w": 52,
+    "x": 2146,
+    "y": 1,
+    "w": 64,
     "h": 99
    },
    "anchor": {
-    "x": 20,
+    "x": 32,
     "y": 83
    },
    "footprint": [
@@ -208730,13 +209535,13 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1019,
-    "y": 115,
-    "w": 52,
+    "x": 2211,
+    "y": 1,
+    "w": 64,
     "h": 99
    },
    "anchor": {
-    "x": 20,
+    "x": 32,
     "y": 83
    },
    "footprint": [
@@ -208748,13 +209553,13 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1072,
-    "y": 115,
-    "w": 52,
+    "x": 2276,
+    "y": 1,
+    "w": 64,
     "h": 99
    },
    "anchor": {
-    "x": 20,
+    "x": 32,
     "y": 83
    },
    "footprint": [
@@ -208766,13 +209571,13 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1125,
-    "y": 115,
-    "w": 52,
+    "x": 2341,
+    "y": 1,
+    "w": 64,
     "h": 99
    },
    "anchor": {
-    "x": 20,
+    "x": 32,
     "y": 83
    },
    "footprint": [
@@ -208784,13 +209589,13 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1178,
-    "y": 115,
-    "w": 52,
+    "x": 2406,
+    "y": 1,
+    "w": 64,
     "h": 99
    },
    "anchor": {
-    "x": 20,
+    "x": 32,
     "y": 83
    },
    "footprint": [
@@ -208802,13 +209607,13 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1231,
-    "y": 115,
-    "w": 52,
+    "x": 2471,
+    "y": 1,
+    "w": 64,
     "h": 99
    },
    "anchor": {
-    "x": 20,
+    "x": 32,
     "y": 83
    },
    "footprint": [
@@ -208820,13 +209625,13 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1284,
-    "y": 115,
-    "w": 52,
+    "x": 2536,
+    "y": 1,
+    "w": 64,
     "h": 99
    },
    "anchor": {
-    "x": 20,
+    "x": 32,
     "y": 83
    },
    "footprint": [
@@ -208838,13 +209643,13 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1337,
-    "y": 115,
-    "w": 52,
+    "x": 2601,
+    "y": 1,
+    "w": 64,
     "h": 99
    },
    "anchor": {
-    "x": 20,
+    "x": 32,
     "y": 83
    },
    "footprint": [
@@ -208870,17 +209675,71 @@
     1
    ]
   },
+  "tile.wall.full.m5.win.l": {
+   "kind": "static",
+   "sheet": "windows",
+   "frame": {
+    "x": 964,
+    "y": 1,
+    "w": 64,
+    "h": 99
+   },
+   "anchor": {
+    "x": 32,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.full.m5.win.m": {
+   "kind": "static",
+   "sheet": "windows",
+   "frame": {
+    "x": 1029,
+    "y": 1,
+    "w": 64,
+    "h": 99
+   },
+   "anchor": {
+    "x": 32,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.full.m5.win.r": {
+   "kind": "static",
+   "sheet": "windows",
+   "frame": {
+    "x": 1094,
+    "y": 1,
+    "w": 64,
+    "h": 99
+   },
+   "anchor": {
+    "x": 32,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
   "tile.wall.full.m6": {
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2141,
-    "y": 115,
-    "w": 40,
+    "x": 3720,
+    "y": 1,
+    "w": 64,
     "h": 88
    },
    "anchor": {
-    "x": 20,
+    "x": 32,
     "y": 77
    },
    "footprint": [
@@ -208910,13 +209769,13 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 121,
-    "y": 215,
-    "w": 40,
-    "h": 65
+    "x": 1101,
+    "y": 110,
+    "w": 64,
+    "h": 77
    },
    "anchor": {
-    "x": 20,
+    "x": 32,
     "y": 77
    },
    "footprint": [
@@ -208928,13 +209787,13 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1836,
-    "y": 115,
-    "w": 42,
+    "x": 3186,
+    "y": 1,
+    "w": 64,
     "h": 94
    },
    "anchor": {
-    "x": 20,
+    "x": 32,
     "y": 83
    },
    "footprint": [
@@ -208964,13 +209823,13 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1879,
-    "y": 115,
-    "w": 52,
+    "x": 3251,
+    "y": 1,
+    "w": 64,
     "h": 94
    },
    "anchor": {
-    "x": 20,
+    "x": 32,
     "y": 83
    },
    "footprint": [
@@ -208982,13 +209841,13 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3704,
-    "y": 115,
-    "w": 42,
-    "h": 71
+    "x": 971,
+    "y": 110,
+    "w": 64,
+    "h": 83
    },
    "anchor": {
-    "x": 20,
+    "x": 32,
     "y": 83
    },
    "footprint": [
@@ -209000,13 +209859,13 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3747,
-    "y": 115,
-    "w": 52,
-    "h": 71
+    "x": 1036,
+    "y": 110,
+    "w": 64,
+    "h": 83
    },
    "anchor": {
-    "x": 20,
+    "x": 32,
     "y": 83
    },
    "footprint": [
@@ -209018,8 +209877,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1390,
-    "y": 115,
+    "x": 2666,
+    "y": 1,
     "w": 64,
     "h": 99
    },
@@ -209054,8 +209913,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1455,
-    "y": 115,
+    "x": 2731,
+    "y": 1,
     "w": 64,
     "h": 99
    },
@@ -209090,7 +209949,7 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2932,
+    "x": 326,
     "y": 1,
     "w": 64,
     "h": 104
@@ -209108,8 +209967,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 116,
-    "y": 282,
+    "x": 3207,
+    "y": 197,
     "w": 38,
     "h": 36
    },
@@ -209126,8 +209985,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 4016,
-    "y": 215,
+    "x": 2740,
+    "y": 197,
     "w": 38,
     "h": 42
    },
@@ -209144,8 +210003,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 155,
-    "y": 282,
+    "x": 3246,
+    "y": 197,
     "w": 32,
     "h": 36
    },
@@ -209162,8 +210021,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 4055,
-    "y": 215,
+    "x": 2779,
+    "y": 197,
     "w": 32,
     "h": 42
    },
@@ -209180,8 +210039,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 188,
-    "y": 282,
+    "x": 3279,
+    "y": 197,
     "w": 38,
     "h": 36
    },
@@ -209198,8 +210057,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 227,
-    "y": 282,
+    "x": 3318,
+    "y": 197,
     "w": 32,
     "h": 36
    },
@@ -209216,8 +210075,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1,
-    "y": 282,
+    "x": 2812,
+    "y": 197,
     "w": 38,
     "h": 42
    },
@@ -209234,8 +210093,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 40,
-    "y": 282,
+    "x": 2851,
+    "y": 197,
     "w": 32,
     "h": 42
    },
@@ -209252,8 +210111,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3373,
-    "y": 215,
+    "x": 1566,
+    "y": 197,
     "w": 64,
     "h": 47
    },
@@ -209270,8 +210129,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2283,
-    "y": 215,
+    "x": 193,
+    "y": 197,
     "w": 64,
     "h": 52
    },
@@ -209288,9 +210147,63 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2348,
-    "y": 215,
-    "w": 53,
+    "x": 258,
+    "y": 197,
+    "w": 64,
+    "h": 52
+   },
+   "anchor": {
+    "x": 32,
+    "y": 36
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.low.m10.win.l": {
+   "kind": "static",
+   "sheet": "windows",
+   "frame": {
+    "x": 1549,
+    "y": 1,
+    "w": 64,
+    "h": 52
+   },
+   "anchor": {
+    "x": 32,
+    "y": 36
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.low.m10.win.m": {
+   "kind": "static",
+   "sheet": "windows",
+   "frame": {
+    "x": 1614,
+    "y": 1,
+    "w": 64,
+    "h": 52
+   },
+   "anchor": {
+    "x": 32,
+    "y": 36
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.low.m10.win.r": {
+   "kind": "static",
+   "sheet": "windows",
+   "frame": {
+    "x": 1679,
+    "y": 1,
+    "w": 64,
     "h": 52
    },
    "anchor": {
@@ -209306,9 +210219,9 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2402,
-    "y": 215,
-    "w": 58,
+    "x": 323,
+    "y": 197,
+    "w": 64,
     "h": 52
    },
    "anchor": {
@@ -209324,8 +210237,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2461,
-    "y": 215,
+    "x": 388,
+    "y": 197,
     "w": 63,
     "h": 52
    },
@@ -209342,9 +210255,9 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1265,
-    "y": 215,
-    "w": 58,
+    "x": 3127,
+    "y": 110,
+    "w": 64,
     "h": 58
    },
    "anchor": {
@@ -209360,8 +210273,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1324,
-    "y": 215,
+    "x": 3192,
+    "y": 110,
     "w": 63,
     "h": 58
    },
@@ -209378,13 +210291,13 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2525,
-    "y": 215,
-    "w": 58,
+    "x": 452,
+    "y": 197,
+    "w": 64,
     "h": 52
    },
    "anchor": {
-    "x": 26,
+    "x": 32,
     "y": 36
    },
    "footprint": [
@@ -209396,8 +210309,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2584,
-    "y": 215,
+    "x": 517,
+    "y": 197,
     "w": 63,
     "h": 52
    },
@@ -209414,13 +210327,13 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2648,
-    "y": 215,
-    "w": 58,
+    "x": 581,
+    "y": 197,
+    "w": 64,
     "h": 52
    },
    "anchor": {
-    "x": 26,
+    "x": 32,
     "y": 36
    },
    "footprint": [
@@ -209432,8 +210345,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1388,
-    "y": 215,
+    "x": 3256,
+    "y": 110,
     "w": 63,
     "h": 58
    },
@@ -209450,8 +210363,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2707,
-    "y": 215,
+    "x": 646,
+    "y": 197,
     "w": 63,
     "h": 52
    },
@@ -209468,13 +210381,13 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1452,
-    "y": 215,
-    "w": 58,
+    "x": 3320,
+    "y": 110,
+    "w": 64,
     "h": 58
    },
    "anchor": {
-    "x": 26,
+    "x": 32,
     "y": 42
    },
    "footprint": [
@@ -209486,13 +210399,13 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3438,
-    "y": 215,
-    "w": 47,
+    "x": 1631,
+    "y": 197,
+    "w": 64,
     "h": 47
    },
    "anchor": {
-    "x": 26,
+    "x": 32,
     "y": 36
    },
    "footprint": [
@@ -209504,13 +210417,13 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 655,
-    "y": 358,
-    "w": 47,
-    "h": 26
+    "x": 3351,
+    "y": 197,
+    "w": 64,
+    "h": 36
    },
    "anchor": {
-    "x": 26,
+    "x": 32,
     "y": 36
    },
    "footprint": [
@@ -209522,9 +210435,9 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3486,
-    "y": 215,
-    "w": 52,
+    "x": 1696,
+    "y": 197,
+    "w": 63,
     "h": 47
    },
    "anchor": {
@@ -209540,10 +210453,10 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 703,
-    "y": 358,
-    "w": 52,
-    "h": 26
+    "x": 3416,
+    "y": 197,
+    "w": 63,
+    "h": 36
    },
    "anchor": {
     "x": 31,
@@ -209558,13 +210471,13 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3539,
-    "y": 215,
-    "w": 52,
+    "x": 1760,
+    "y": 197,
+    "w": 64,
     "h": 47
    },
    "anchor": {
-    "x": 26,
+    "x": 32,
     "y": 36
    },
    "footprint": [
@@ -209576,13 +210489,13 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3592,
-    "y": 215,
-    "w": 57,
+    "x": 1825,
+    "y": 197,
+    "w": 63,
     "h": 47
    },
    "anchor": {
-    "x": 26,
+    "x": 32,
     "y": 36
    },
    "footprint": [
@@ -209594,13 +210507,13 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2633,
-    "y": 325,
-    "w": 52,
-    "h": 32
+    "x": 2884,
+    "y": 197,
+    "w": 64,
+    "h": 42
    },
    "anchor": {
-    "x": 26,
+    "x": 32,
     "y": 42
    },
    "footprint": [
@@ -209612,13 +210525,13 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2686,
-    "y": 325,
-    "w": 57,
-    "h": 32
+    "x": 2949,
+    "y": 197,
+    "w": 63,
+    "h": 42
    },
    "anchor": {
-    "x": 26,
+    "x": 32,
     "y": 42
    },
    "footprint": [
@@ -209630,9 +210543,9 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2051,
-    "y": 215,
-    "w": 57,
+    "x": 4029,
+    "y": 110,
+    "w": 63,
     "h": 53
    },
    "anchor": {
@@ -209648,8 +210561,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2109,
-    "y": 215,
+    "x": 1,
+    "y": 197,
     "w": 62,
     "h": 53
    },
@@ -209666,10 +210579,10 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2744,
-    "y": 325,
-    "w": 57,
-    "h": 32
+    "x": 3013,
+    "y": 197,
+    "w": 63,
+    "h": 42
    },
    "anchor": {
     "x": 31,
@@ -209684,8 +210597,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2802,
-    "y": 325,
+    "x": 2093,
+    "y": 287,
     "w": 62,
     "h": 32
    },
@@ -209702,13 +210615,13 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 756,
-    "y": 358,
-    "w": 52,
-    "h": 26
+    "x": 3480,
+    "y": 197,
+    "w": 64,
+    "h": 36
    },
    "anchor": {
-    "x": 26,
+    "x": 32,
     "y": 36
    },
    "footprint": [
@@ -209720,13 +210633,13 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 809,
-    "y": 358,
-    "w": 57,
-    "h": 26
+    "x": 3545,
+    "y": 197,
+    "w": 63,
+    "h": 36
    },
    "anchor": {
-    "x": 26,
+    "x": 32,
     "y": 36
    },
    "footprint": [
@@ -209738,9 +210651,9 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3650,
-    "y": 215,
-    "w": 57,
+    "x": 1889,
+    "y": 197,
+    "w": 63,
     "h": 47
    },
    "anchor": {
@@ -209756,8 +210669,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3708,
-    "y": 215,
+    "x": 1953,
+    "y": 197,
     "w": 62,
     "h": 47
    },
@@ -209774,10 +210687,10 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 867,
-    "y": 358,
-    "w": 57,
-    "h": 26
+    "x": 3609,
+    "y": 197,
+    "w": 63,
+    "h": 36
    },
    "anchor": {
     "x": 31,
@@ -209792,8 +210705,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 925,
-    "y": 358,
+    "x": 3304,
+    "y": 287,
     "w": 62,
     "h": 26
    },
@@ -209810,13 +210723,13 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2172,
-    "y": 215,
-    "w": 52,
+    "x": 64,
+    "y": 197,
+    "w": 64,
     "h": 53
    },
    "anchor": {
-    "x": 26,
+    "x": 32,
     "y": 42
    },
    "footprint": [
@@ -209828,13 +210741,13 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2225,
-    "y": 215,
-    "w": 57,
+    "x": 129,
+    "y": 197,
+    "w": 63,
     "h": 53
    },
    "anchor": {
-    "x": 26,
+    "x": 32,
     "y": 42
    },
    "footprint": [
@@ -209846,9 +210759,9 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2771,
-    "y": 215,
-    "w": 53,
+    "x": 710,
+    "y": 197,
+    "w": 64,
     "h": 52
    },
    "anchor": {
@@ -209864,9 +210777,9 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2825,
-    "y": 215,
-    "w": 58,
+    "x": 775,
+    "y": 197,
+    "w": 64,
     "h": 52
    },
    "anchor": {
@@ -209882,8 +210795,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2884,
-    "y": 215,
+    "x": 840,
+    "y": 197,
     "w": 63,
     "h": 52
    },
@@ -209900,13 +210813,13 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2948,
-    "y": 215,
-    "w": 53,
+    "x": 904,
+    "y": 197,
+    "w": 64,
     "h": 52
    },
    "anchor": {
-    "x": 21,
+    "x": 32,
     "y": 36
    },
    "footprint": [
@@ -209918,13 +210831,67 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3002,
-    "y": 215,
-    "w": 53,
+    "x": 969,
+    "y": 197,
+    "w": 64,
     "h": 52
    },
    "anchor": {
-    "x": 21,
+    "x": 32,
+    "y": 36
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.low.m5.win.l": {
+   "kind": "static",
+   "sheet": "windows",
+   "frame": {
+    "x": 1744,
+    "y": 1,
+    "w": 64,
+    "h": 52
+   },
+   "anchor": {
+    "x": 32,
+    "y": 36
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.low.m5.win.m": {
+   "kind": "static",
+   "sheet": "windows",
+   "frame": {
+    "x": 1809,
+    "y": 1,
+    "w": 64,
+    "h": 52
+   },
+   "anchor": {
+    "x": 32,
+    "y": 36
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.low.m5.win.r": {
+   "kind": "static",
+   "sheet": "windows",
+   "frame": {
+    "x": 1874,
+    "y": 1,
+    "w": 64,
+    "h": 52
+   },
+   "anchor": {
+    "x": 32,
     "y": 36
    },
    "footprint": [
@@ -209936,13 +210903,13 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 73,
-    "y": 282,
-    "w": 42,
+    "x": 3077,
+    "y": 197,
+    "w": 64,
     "h": 42
    },
    "anchor": {
-    "x": 21,
+    "x": 32,
     "y": 31
    },
    "footprint": [
@@ -209954,13 +210921,13 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1415,
-    "y": 358,
-    "w": 42,
-    "h": 21
+    "x": 2284,
+    "y": 287,
+    "w": 64,
+    "h": 31
    },
    "anchor": {
-    "x": 21,
+    "x": 32,
     "y": 31
    },
    "footprint": [
@@ -209972,13 +210939,13 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3771,
-    "y": 215,
-    "w": 47,
+    "x": 2016,
+    "y": 197,
+    "w": 64,
     "h": 47
    },
    "anchor": {
-    "x": 21,
+    "x": 32,
     "y": 36
    },
    "footprint": [
@@ -209990,13 +210957,13 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3819,
-    "y": 215,
-    "w": 52,
+    "x": 2081,
+    "y": 197,
+    "w": 63,
     "h": 47
    },
    "anchor": {
-    "x": 21,
+    "x": 32,
     "y": 36
    },
    "footprint": [
@@ -210008,13 +210975,13 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 988,
-    "y": 358,
-    "w": 47,
-    "h": 26
+    "x": 3673,
+    "y": 197,
+    "w": 64,
+    "h": 36
    },
    "anchor": {
-    "x": 21,
+    "x": 32,
     "y": 36
    },
    "footprint": [
@@ -210026,13 +210993,13 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1036,
-    "y": 358,
-    "w": 52,
-    "h": 26
+    "x": 3738,
+    "y": 197,
+    "w": 63,
+    "h": 36
    },
    "anchor": {
-    "x": 21,
+    "x": 32,
     "y": 36
    },
    "footprint": [
@@ -210044,8 +211011,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3056,
-    "y": 215,
+    "x": 1034,
+    "y": 197,
     "w": 64,
     "h": 52
    },
@@ -210062,8 +211029,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3121,
-    "y": 215,
+    "x": 1099,
+    "y": 197,
     "w": 64,
     "h": 52
    },
@@ -210080,8 +211047,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1511,
-    "y": 215,
+    "x": 3385,
+    "y": 110,
     "w": 64,
     "h": 58
    },
@@ -210098,8 +211065,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1576,
-    "y": 215,
+    "x": 3450,
+    "y": 110,
     "w": 64,
     "h": 55
    },
@@ -210134,8 +211101,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 378,
-    "y": 215,
+    "x": 2156,
+    "y": 110,
     "w": 64,
     "h": 60
    },
@@ -210170,9 +211137,9 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 443,
-    "y": 215,
-    "w": 53,
+    "x": 2221,
+    "y": 110,
+    "w": 64,
     "h": 60
    },
    "anchor": {
@@ -210202,13 +211169,67 @@
     1
    ]
   },
+  "tile.wall.m10.win.l": {
+   "kind": "static",
+   "sheet": "windows",
+   "frame": {
+    "x": 1159,
+    "y": 1,
+    "w": 64,
+    "h": 60
+   },
+   "anchor": {
+    "x": 32,
+    "y": 44
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.m10.win.m": {
+   "kind": "static",
+   "sheet": "windows",
+   "frame": {
+    "x": 1224,
+    "y": 1,
+    "w": 64,
+    "h": 60
+   },
+   "anchor": {
+    "x": 32,
+    "y": 44
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.m10.win.r": {
+   "kind": "static",
+   "sheet": "windows",
+   "frame": {
+    "x": 1289,
+    "y": 1,
+    "w": 64,
+    "h": 60
+   },
+   "anchor": {
+    "x": 32,
+    "y": 44
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
   "tile.wall.m11": {
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 497,
-    "y": 215,
-    "w": 54,
+    "x": 2286,
+    "y": 110,
+    "w": 64,
     "h": 60
    },
    "anchor": {
@@ -210242,8 +211263,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 552,
-    "y": 215,
+    "x": 2351,
+    "y": 110,
     "w": 63,
     "h": 60
    },
@@ -210260,9 +211281,9 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3886,
-    "y": 115,
-    "w": 54,
+    "x": 1512,
+    "y": 110,
+    "w": 64,
     "h": 66
    },
    "anchor": {
@@ -210278,8 +211299,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3941,
-    "y": 115,
+    "x": 1577,
+    "y": 110,
     "w": 63,
     "h": 66
    },
@@ -210296,13 +211317,13 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 616,
-    "y": 215,
-    "w": 54,
+    "x": 2415,
+    "y": 110,
+    "w": 64,
     "h": 60
    },
    "anchor": {
-    "x": 22,
+    "x": 32,
     "y": 44
    },
    "footprint": [
@@ -210332,8 +211353,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 671,
-    "y": 215,
+    "x": 2480,
+    "y": 110,
     "w": 63,
     "h": 60
    },
@@ -210350,13 +211371,13 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 735,
-    "y": 215,
-    "w": 54,
+    "x": 2544,
+    "y": 110,
+    "w": 64,
     "h": 60
    },
    "anchor": {
-    "x": 22,
+    "x": 32,
     "y": 44
    },
    "footprint": [
@@ -210386,8 +211407,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 4005,
-    "y": 115,
+    "x": 1641,
+    "y": 110,
     "w": 63,
     "h": 66
    },
@@ -210404,8 +211425,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 790,
-    "y": 215,
+    "x": 2609,
+    "y": 110,
     "w": 63,
     "h": 60
    },
@@ -210422,13 +211443,13 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1,
-    "y": 215,
-    "w": 54,
+    "x": 1705,
+    "y": 110,
+    "w": 64,
     "h": 66
    },
    "anchor": {
-    "x": 22,
+    "x": 32,
     "y": 50
    },
    "footprint": [
@@ -210440,13 +211461,13 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1641,
-    "y": 215,
-    "w": 43,
+    "x": 3515,
+    "y": 110,
+    "w": 64,
     "h": 55
    },
    "anchor": {
-    "x": 22,
+    "x": 32,
     "y": 44
    },
    "footprint": [
@@ -210476,13 +211497,13 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2865,
-    "y": 325,
-    "w": 43,
-    "h": 32
+    "x": 2289,
+    "y": 197,
+    "w": 64,
+    "h": 44
    },
    "anchor": {
-    "x": 22,
+    "x": 32,
     "y": 44
    },
    "footprint": [
@@ -210494,9 +211515,9 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1685,
-    "y": 215,
-    "w": 52,
+    "x": 3580,
+    "y": 110,
+    "w": 63,
     "h": 55
    },
    "anchor": {
@@ -210512,10 +211533,10 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2909,
-    "y": 325,
-    "w": 52,
-    "h": 32
+    "x": 2354,
+    "y": 197,
+    "w": 63,
+    "h": 44
    },
    "anchor": {
     "x": 31,
@@ -210530,13 +211551,13 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1738,
-    "y": 215,
-    "w": 44,
+    "x": 3644,
+    "y": 110,
+    "w": 64,
     "h": 55
    },
    "anchor": {
-    "x": 22,
+    "x": 32,
     "y": 44
    },
    "footprint": [
@@ -210566,13 +211587,13 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1783,
-    "y": 215,
-    "w": 53,
+    "x": 3709,
+    "y": 110,
+    "w": 63,
     "h": 55
    },
    "anchor": {
-    "x": 22,
+    "x": 32,
     "y": 44
    },
    "footprint": [
@@ -210584,13 +211605,13 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 2962,
-    "y": 325,
-    "w": 44,
-    "h": 32
+    "x": 1308,
+    "y": 197,
+    "w": 64,
+    "h": 50
    },
    "anchor": {
-    "x": 22,
+    "x": 32,
     "y": 50
    },
    "footprint": [
@@ -210602,13 +211623,13 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3007,
-    "y": 325,
-    "w": 53,
-    "h": 32
+    "x": 1373,
+    "y": 197,
+    "w": 63,
+    "h": 50
    },
    "anchor": {
-    "x": 22,
+    "x": 32,
     "y": 50
    },
    "footprint": [
@@ -210620,9 +211641,9 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 162,
-    "y": 215,
-    "w": 53,
+    "x": 1900,
+    "y": 110,
+    "w": 63,
     "h": 61
    },
    "anchor": {
@@ -210638,8 +211659,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 216,
-    "y": 215,
+    "x": 1964,
+    "y": 110,
     "w": 62,
     "h": 61
    },
@@ -210656,10 +211677,10 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3061,
-    "y": 325,
-    "w": 53,
-    "h": 32
+    "x": 1437,
+    "y": 197,
+    "w": 63,
+    "h": 50
    },
    "anchor": {
     "x": 31,
@@ -210674,8 +211695,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3115,
-    "y": 325,
+    "x": 2156,
+    "y": 287,
     "w": 62,
     "h": 32
    },
@@ -210692,13 +211713,13 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3178,
-    "y": 325,
-    "w": 44,
-    "h": 32
+    "x": 2418,
+    "y": 197,
+    "w": 64,
+    "h": 44
    },
    "anchor": {
-    "x": 22,
+    "x": 32,
     "y": 44
    },
    "footprint": [
@@ -210710,13 +211731,13 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3223,
-    "y": 325,
-    "w": 53,
-    "h": 32
+    "x": 2483,
+    "y": 197,
+    "w": 63,
+    "h": 44
    },
    "anchor": {
-    "x": 22,
+    "x": 32,
     "y": 44
    },
    "footprint": [
@@ -210728,9 +211749,9 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1837,
-    "y": 215,
-    "w": 53,
+    "x": 3773,
+    "y": 110,
+    "w": 63,
     "h": 55
    },
    "anchor": {
@@ -210746,8 +211767,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1891,
-    "y": 215,
+    "x": 3837,
+    "y": 110,
     "w": 62,
     "h": 55
    },
@@ -210764,10 +211785,10 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3277,
-    "y": 325,
-    "w": 53,
-    "h": 32
+    "x": 2547,
+    "y": 197,
+    "w": 63,
+    "h": 44
    },
    "anchor": {
     "x": 31,
@@ -210782,10 +211803,10 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3331,
-    "y": 325,
+    "x": 3367,
+    "y": 287,
     "w": 62,
-    "h": 32
+    "h": 26
    },
    "anchor": {
     "x": 31,
@@ -210800,13 +211821,13 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 279,
-    "y": 215,
-    "w": 44,
+    "x": 2027,
+    "y": 110,
+    "w": 64,
     "h": 61
    },
    "anchor": {
-    "x": 22,
+    "x": 32,
     "y": 50
    },
    "footprint": [
@@ -210818,13 +211839,13 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 324,
-    "y": 215,
-    "w": 53,
+    "x": 2092,
+    "y": 110,
+    "w": 63,
     "h": 61
    },
    "anchor": {
-    "x": 22,
+    "x": 32,
     "y": 50
    },
    "footprint": [
@@ -210836,9 +211857,9 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 854,
-    "y": 215,
-    "w": 53,
+    "x": 2673,
+    "y": 110,
+    "w": 64,
     "h": 60
    },
    "anchor": {
@@ -210872,9 +211893,9 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 908,
-    "y": 215,
-    "w": 54,
+    "x": 2738,
+    "y": 110,
+    "w": 64,
     "h": 60
    },
    "anchor": {
@@ -210908,8 +211929,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 963,
-    "y": 215,
+    "x": 2803,
+    "y": 110,
     "w": 63,
     "h": 60
    },
@@ -210926,13 +211947,13 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1027,
-    "y": 215,
-    "w": 53,
+    "x": 2867,
+    "y": 110,
+    "w": 64,
     "h": 60
    },
    "anchor": {
-    "x": 21,
+    "x": 32,
     "y": 44
    },
    "footprint": [
@@ -210962,13 +211983,13 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1081,
-    "y": 215,
-    "w": 53,
+    "x": 2932,
+    "y": 110,
+    "w": 64,
     "h": 60
    },
    "anchor": {
-    "x": 21,
+    "x": 32,
     "y": 44
    },
    "footprint": [
@@ -210994,17 +212015,71 @@
     1
    ]
   },
+  "tile.wall.m5.win.l": {
+   "kind": "static",
+   "sheet": "windows",
+   "frame": {
+    "x": 1354,
+    "y": 1,
+    "w": 64,
+    "h": 60
+   },
+   "anchor": {
+    "x": 32,
+    "y": 44
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.m5.win.m": {
+   "kind": "static",
+   "sheet": "windows",
+   "frame": {
+    "x": 1419,
+    "y": 1,
+    "w": 64,
+    "h": 60
+   },
+   "anchor": {
+    "x": 32,
+    "y": 44
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.wall.m5.win.r": {
+   "kind": "static",
+   "sheet": "windows",
+   "frame": {
+    "x": 1484,
+    "y": 1,
+    "w": 64,
+    "h": 60
+   },
+   "anchor": {
+    "x": 32,
+    "y": 44
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
   "tile.wall.m6": {
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3330,
-    "y": 215,
-    "w": 42,
+    "x": 1501,
+    "y": 197,
+    "w": 64,
     "h": 50
    },
    "anchor": {
-    "x": 21,
+    "x": 32,
     "y": 39
    },
    "footprint": [
@@ -211034,13 +212109,13 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 612,
-    "y": 358,
-    "w": 42,
-    "h": 27
+    "x": 3142,
+    "y": 197,
+    "w": 64,
+    "h": 39
    },
    "anchor": {
-    "x": 21,
+    "x": 32,
     "y": 39
    },
    "footprint": [
@@ -211052,13 +212127,13 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1954,
-    "y": 215,
-    "w": 43,
+    "x": 3900,
+    "y": 110,
+    "w": 64,
     "h": 55
    },
    "anchor": {
-    "x": 21,
+    "x": 32,
     "y": 44
    },
    "footprint": [
@@ -211088,13 +212163,13 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1998,
-    "y": 215,
-    "w": 52,
+    "x": 3965,
+    "y": 110,
+    "w": 63,
     "h": 55
    },
    "anchor": {
-    "x": 21,
+    "x": 32,
     "y": 44
    },
    "footprint": [
@@ -211106,13 +212181,13 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3394,
-    "y": 325,
-    "w": 43,
-    "h": 32
+    "x": 2611,
+    "y": 197,
+    "w": 64,
+    "h": 44
    },
    "anchor": {
-    "x": 21,
+    "x": 32,
     "y": 44
    },
    "footprint": [
@@ -211124,13 +212199,13 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 3438,
-    "y": 325,
-    "w": 52,
-    "h": 32
+    "x": 2676,
+    "y": 197,
+    "w": 63,
+    "h": 44
    },
    "anchor": {
-    "x": 21,
+    "x": 32,
     "y": 44
    },
    "footprint": [
@@ -211142,8 +212217,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1135,
-    "y": 215,
+    "x": 2997,
+    "y": 110,
     "w": 64,
     "h": 60
    },
@@ -211178,8 +212253,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 1200,
-    "y": 215,
+    "x": 3062,
+    "y": 110,
     "w": 64,
     "h": 60
    },
@@ -211214,8 +212289,8 @@
    "kind": "static",
    "sheet": "walls",
    "frame": {
-    "x": 56,
-    "y": 215,
+    "x": 1770,
+    "y": 110,
     "w": 64,
     "h": 66
    },
@@ -211232,8 +212307,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 516,
-    "y": 380,
+    "x": 916,
+    "y": 719,
     "w": 156,
     "h": 94
    },
@@ -211250,8 +212325,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 673,
-    "y": 380,
+    "x": 1073,
+    "y": 719,
     "w": 156,
     "h": 94
    },
@@ -211269,8 +212344,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1268,
-    "y": 479,
+    "x": 3748,
+    "y": 818,
     "w": 104,
     "h": 84
    },
@@ -211287,8 +212362,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1373,
-    "y": 479,
+    "x": 3853,
+    "y": 818,
     "w": 104,
     "h": 84
    },
@@ -211306,8 +212381,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 830,
-    "y": 380,
+    "x": 1230,
+    "y": 719,
     "w": 156,
     "h": 94
    },
@@ -211324,8 +212399,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 987,
-    "y": 380,
+    "x": 1387,
+    "y": 719,
     "w": 156,
     "h": 94
    },
@@ -211343,8 +212418,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2660,
-    "y": 380,
+    "x": 3878,
+    "y": 719,
     "w": 142,
     "h": 89
    },
@@ -211361,8 +212436,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2803,
-    "y": 380,
+    "x": 1,
+    "y": 818,
     "w": 142,
     "h": 89
    },
@@ -211380,8 +212455,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1,
-    "y": 271,
+    "x": 206,
+    "y": 504,
     "w": 156,
     "h": 108
    },
@@ -211398,8 +212473,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 158,
-    "y": 271,
+    "x": 363,
+    "y": 504,
     "w": 156,
     "h": 108
    },
@@ -211417,8 +212492,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 763,
-    "y": 271,
+    "x": 1666,
+    "y": 504,
     "w": 104,
     "h": 107
    },
@@ -211435,8 +212510,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 868,
-    "y": 271,
+    "x": 1771,
+    "y": 504,
     "w": 104,
     "h": 107
    },
@@ -211454,8 +212529,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 315,
-    "y": 271,
+    "x": 520,
+    "y": 504,
     "w": 156,
     "h": 108
    },
@@ -211472,8 +212547,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 472,
-    "y": 271,
+    "x": 677,
+    "y": 504,
     "w": 156,
     "h": 108
    },
@@ -211491,8 +212566,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2946,
-    "y": 380,
+    "x": 144,
+    "y": 818,
     "w": 142,
     "h": 89
    },
@@ -211509,8 +212584,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3089,
-    "y": 380,
+    "x": 287,
+    "y": 818,
     "w": 142,
     "h": 89
    },
@@ -211528,8 +212603,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2329,
-    "y": 479,
+    "x": 3654,
+    "y": 908,
     "w": 104,
     "h": 56
    },
@@ -211546,8 +212621,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2434,
-    "y": 479,
+    "x": 3759,
+    "y": 908,
     "w": 104,
     "h": 56
    },
@@ -211564,8 +212639,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1144,
-    "y": 380,
+    "x": 1544,
+    "y": 719,
     "w": 104,
     "h": 94
    },
@@ -211582,8 +212657,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 629,
-    "y": 271,
+    "x": 834,
+    "y": 504,
     "w": 133,
     "h": 108
    },
@@ -211600,8 +212675,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1846,
-    "y": 380,
+    "x": 2246,
+    "y": 719,
     "w": 156,
     "h": 93
    },
@@ -211614,12 +212689,308 @@
     2
    ]
   },
+  "turret.burst_laser.ground.d0": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 430,
+    "y": 818,
+    "w": 156,
+    "h": 88
+   },
+   "anchor": {
+    "x": 60,
+    "y": 97
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.burst_laser.ground.d0.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 587,
+    "y": 818,
+    "w": 156,
+    "h": 88
+   },
+   "anchor": {
+    "x": 60,
+    "y": 97
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.burst_laser.ground.d1": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 2696,
+    "y": 908,
+    "w": 104,
+    "h": 77
+   },
+   "anchor": {
+    "x": 52,
+    "y": 87
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.burst_laser.ground.d1.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 2801,
+    "y": 908,
+    "w": 104,
+    "h": 77
+   },
+   "anchor": {
+    "x": 52,
+    "y": 87
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.burst_laser.ground.d2": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 744,
+    "y": 818,
+    "w": 156,
+    "h": 88
+   },
+   "anchor": {
+    "x": 96,
+    "y": 97
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.burst_laser.ground.d2.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 901,
+    "y": 818,
+    "w": 156,
+    "h": 88
+   },
+   "anchor": {
+    "x": 96,
+    "y": 97
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.burst_laser.ground.d3": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 301,
+    "y": 908,
+    "w": 133,
+    "h": 82
+   },
+   "anchor": {
+    "x": 90,
+    "y": 93
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.burst_laser.ground.d3.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 435,
+    "y": 908,
+    "w": 133,
+    "h": 82
+   },
+   "anchor": {
+    "x": 90,
+    "y": 93
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.burst_laser.ground.d4": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 2380,
+    "y": 614,
+    "w": 156,
+    "h": 100
+   },
+   "anchor": {
+    "x": 96,
+    "y": 111
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.burst_laser.ground.d4.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 2537,
+    "y": 614,
+    "w": 156,
+    "h": 100
+   },
+   "anchor": {
+    "x": 96,
+    "y": 111
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.burst_laser.ground.d5": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3210,
+    "y": 614,
+    "w": 104,
+    "h": 99
+   },
+   "anchor": {
+    "x": 52,
+    "y": 110
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.burst_laser.ground.d5.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3315,
+    "y": 614,
+    "w": 104,
+    "h": 99
+   },
+   "anchor": {
+    "x": 52,
+    "y": 110
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.burst_laser.ground.d6": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 2694,
+    "y": 614,
+    "w": 156,
+    "h": 100
+   },
+   "anchor": {
+    "x": 60,
+    "y": 111
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.burst_laser.ground.d6.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 2851,
+    "y": 614,
+    "w": 156,
+    "h": 100
+   },
+   "anchor": {
+    "x": 60,
+    "y": 111
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.burst_laser.ground.d7": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 569,
+    "y": 908,
+    "w": 133,
+    "h": 82
+   },
+   "anchor": {
+    "x": 43,
+    "y": 93
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.burst_laser.ground.d7.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 703,
+    "y": 908,
+    "w": 133,
+    "h": 82
+   },
+   "anchor": {
+    "x": 43,
+    "y": 93
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
   "turret.burst_laser.stowed": {
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2539,
-    "y": 479,
+    "x": 3864,
+    "y": 908,
     "w": 104,
     "h": 56
    },
@@ -211636,8 +213007,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2120,
-    "y": 380,
+    "x": 2744,
+    "y": 719,
     "w": 107,
     "h": 92
    },
@@ -211654,8 +213025,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2228,
-    "y": 380,
+    "x": 2852,
+    "y": 719,
     "w": 107,
     "h": 92
    },
@@ -211674,7 +213045,7 @@
    "sheet": "weapons",
    "frame": {
     "x": 207,
-    "y": 380,
+    "y": 719,
     "w": 102,
     "h": 96
    },
@@ -211692,7 +213063,7 @@
    "sheet": "weapons",
    "frame": {
     "x": 310,
-    "y": 380,
+    "y": 719,
     "w": 102,
     "h": 96
    },
@@ -211710,8 +213081,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2336,
-    "y": 380,
+    "x": 2960,
+    "y": 719,
     "w": 107,
     "h": 92
    },
@@ -211728,8 +213099,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2444,
-    "y": 380,
+    "x": 3068,
+    "y": 719,
     "w": 107,
     "h": 92
    },
@@ -211747,8 +213118,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3438,
-    "y": 380,
+    "x": 1438,
+    "y": 818,
     "w": 115,
     "h": 87
    },
@@ -211765,8 +213136,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3554,
-    "y": 380,
+    "x": 1554,
+    "y": 818,
     "w": 115,
     "h": 87
    },
@@ -211784,8 +213155,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2237,
-    "y": 271,
+    "x": 3776,
+    "y": 504,
     "w": 107,
     "h": 104
    },
@@ -211802,8 +213173,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2345,
-    "y": 271,
+    "x": 3884,
+    "y": 504,
     "w": 107,
     "h": 104
    },
@@ -211821,8 +213192,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2588,
-    "y": 152,
+    "x": 2333,
+    "y": 389,
     "w": 102,
     "h": 111
    },
@@ -211839,8 +213210,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2691,
-    "y": 152,
+    "x": 2436,
+    "y": 389,
     "w": 102,
     "h": 111
    },
@@ -211858,8 +213229,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2453,
-    "y": 271,
+    "x": 1,
+    "y": 614,
     "w": 107,
     "h": 104
    },
@@ -211876,8 +213247,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2561,
-    "y": 271,
+    "x": 109,
+    "y": 614,
     "w": 107,
     "h": 104
    },
@@ -211895,8 +213266,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3670,
-    "y": 380,
+    "x": 1670,
+    "y": 818,
     "w": 115,
     "h": 87
    },
@@ -211913,8 +213284,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3786,
-    "y": 380,
+    "x": 1786,
+    "y": 818,
     "w": 115,
     "h": 87
    },
@@ -211932,8 +213303,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2644,
-    "y": 479,
+    "x": 3969,
+    "y": 908,
     "w": 102,
     "h": 56
    },
@@ -211950,8 +213321,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2747,
-    "y": 479,
+    "x": 1,
+    "y": 993,
     "w": 102,
     "h": 56
    },
@@ -211968,8 +213339,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1478,
-    "y": 479,
+    "x": 1011,
+    "y": 908,
     "w": 102,
     "h": 79
    },
@@ -211986,8 +213357,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 973,
-    "y": 271,
+    "x": 1876,
+    "y": 504,
     "w": 102,
     "h": 107
    },
@@ -212004,8 +213375,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2552,
-    "y": 380,
+    "x": 3176,
+    "y": 719,
     "w": 107,
     "h": 91
    },
@@ -212018,12 +213389,308 @@
     2
    ]
   },
+  "turret.flak_cannon.ground.d0": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3958,
+    "y": 818,
+    "w": 99,
+    "h": 84
+   },
+   "anchor": {
+    "x": 43,
+    "y": 95
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.flak_cannon.ground.d0.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1,
+    "y": 908,
+    "w": 99,
+    "h": 84
+   },
+   "anchor": {
+    "x": 43,
+    "y": 95
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.flak_cannon.ground.d1": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1058,
+    "y": 818,
+    "w": 86,
+    "h": 88
+   },
+   "anchor": {
+    "x": 43,
+    "y": 99
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.flak_cannon.ground.d1.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1145,
+    "y": 818,
+    "w": 86,
+    "h": 88
+   },
+   "anchor": {
+    "x": 43,
+    "y": 99
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.flak_cannon.ground.d2": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 101,
+    "y": 908,
+    "w": 99,
+    "h": 84
+   },
+   "anchor": {
+    "x": 56,
+    "y": 95
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.flak_cannon.ground.d2.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 201,
+    "y": 908,
+    "w": 99,
+    "h": 84
+   },
+   "anchor": {
+    "x": 56,
+    "y": 95
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.flak_cannon.ground.d3": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1114,
+    "y": 908,
+    "w": 107,
+    "h": 79
+   },
+   "anchor": {
+    "x": 64,
+    "y": 90
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.flak_cannon.ground.d3.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1222,
+    "y": 908,
+    "w": 107,
+    "h": 79
+   },
+   "anchor": {
+    "x": 64,
+    "y": 90
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.flak_cannon.ground.d4": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 413,
+    "y": 719,
+    "w": 99,
+    "h": 96
+   },
+   "anchor": {
+    "x": 56,
+    "y": 107
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.flak_cannon.ground.d4.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 513,
+    "y": 719,
+    "w": 99,
+    "h": 96
+   },
+   "anchor": {
+    "x": 56,
+    "y": 107
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.flak_cannon.ground.d5": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1425,
+    "y": 614,
+    "w": 86,
+    "h": 103
+   },
+   "anchor": {
+    "x": 43,
+    "y": 114
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.flak_cannon.ground.d5.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1512,
+    "y": 614,
+    "w": 86,
+    "h": 103
+   },
+   "anchor": {
+    "x": 43,
+    "y": 114
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.flak_cannon.ground.d6": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 613,
+    "y": 719,
+    "w": 99,
+    "h": 96
+   },
+   "anchor": {
+    "x": 43,
+    "y": 107
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.flak_cannon.ground.d6.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 713,
+    "y": 719,
+    "w": 99,
+    "h": 96
+   },
+   "anchor": {
+    "x": 43,
+    "y": 107
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.flak_cannon.ground.d7": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1330,
+    "y": 908,
+    "w": 107,
+    "h": 79
+   },
+   "anchor": {
+    "x": 43,
+    "y": 90
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.flak_cannon.ground.d7.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1438,
+    "y": 908,
+    "w": 107,
+    "h": 79
+   },
+   "anchor": {
+    "x": 43,
+    "y": 90
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
   "turret.flak_cannon.stowed": {
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2850,
-    "y": 479,
+    "x": 104,
+    "y": 993,
     "w": 102,
     "h": 56
    },
@@ -212040,8 +213707,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 132,
-    "y": 479,
+    "x": 2164,
+    "y": 818,
     "w": 102,
     "h": 86
    },
@@ -212058,8 +213725,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 235,
-    "y": 479,
+    "x": 2267,
+    "y": 818,
     "w": 102,
     "h": 86
    },
@@ -212077,8 +213744,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3232,
-    "y": 380,
+    "x": 1232,
+    "y": 818,
     "w": 102,
     "h": 88
    },
@@ -212095,8 +213762,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3335,
-    "y": 380,
+    "x": 1335,
+    "y": 818,
     "w": 102,
     "h": 88
    },
@@ -212114,8 +213781,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 338,
-    "y": 479,
+    "x": 2370,
+    "y": 818,
     "w": 102,
     "h": 86
    },
@@ -212132,8 +213799,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 441,
-    "y": 479,
+    "x": 2473,
+    "y": 818,
     "w": 102,
     "h": 86
    },
@@ -212151,8 +213818,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3589,
-    "y": 271,
+    "x": 3420,
+    "y": 614,
     "w": 112,
     "h": 99
    },
@@ -212169,8 +213836,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3702,
-    "y": 271,
+    "x": 3533,
+    "y": 614,
     "w": 112,
     "h": 99
    },
@@ -212188,8 +213855,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1144,
-    "y": 152,
+    "x": 1,
+    "y": 389,
     "w": 102,
     "h": 114
    },
@@ -212206,8 +213873,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1247,
-    "y": 152,
+    "x": 104,
+    "y": 389,
     "w": 102,
     "h": 114
    },
@@ -212225,8 +213892,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2814,
-    "y": 1,
+    "x": 460,
+    "y": 152,
     "w": 102,
     "h": 119
    },
@@ -212243,8 +213910,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2917,
-    "y": 1,
+    "x": 563,
+    "y": 152,
     "w": 102,
     "h": 119
    },
@@ -212262,8 +213929,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1350,
-    "y": 152,
+    "x": 207,
+    "y": 389,
     "w": 102,
     "h": 114
    },
@@ -212280,8 +213947,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1453,
-    "y": 152,
+    "x": 310,
+    "y": 389,
     "w": 102,
     "h": 114
    },
@@ -212299,8 +213966,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3815,
-    "y": 271,
+    "x": 3646,
+    "y": 614,
     "w": 112,
     "h": 99
    },
@@ -212317,8 +213984,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3928,
-    "y": 271,
+    "x": 3759,
+    "y": 614,
     "w": 112,
     "h": 99
    },
@@ -212336,8 +214003,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2953,
-    "y": 479,
+    "x": 207,
+    "y": 993,
     "w": 102,
     "h": 56
    },
@@ -212354,8 +214021,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3056,
-    "y": 479,
+    "x": 310,
+    "y": 993,
     "w": 102,
     "h": 56
    },
@@ -212372,8 +214039,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1581,
-    "y": 479,
+    "x": 2906,
+    "y": 908,
     "w": 102,
     "h": 70
    },
@@ -212390,7 +214057,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 336,
+    "x": 1981,
     "y": 152,
     "w": 102,
     "h": 116
@@ -212408,8 +214075,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1165,
-    "y": 479,
+    "x": 3645,
+    "y": 818,
     "w": 102,
     "h": 85
    },
@@ -212422,12 +214089,308 @@
     2
    ]
   },
+  "turret.incendiary_launcher.ground.d0": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1808,
+    "y": 908,
+    "w": 99,
+    "h": 78
+   },
+   "anchor": {
+    "x": 48,
+    "y": 89
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.incendiary_launcher.ground.d0.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1908,
+    "y": 908,
+    "w": 99,
+    "h": 78
+   },
+   "anchor": {
+    "x": 48,
+    "y": 89
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.incendiary_launcher.ground.d1": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 837,
+    "y": 908,
+    "w": 86,
+    "h": 80
+   },
+   "anchor": {
+    "x": 43,
+    "y": 91
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.incendiary_launcher.ground.d1.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 924,
+    "y": 908,
+    "w": 86,
+    "h": 80
+   },
+   "anchor": {
+    "x": 43,
+    "y": 91
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.incendiary_launcher.ground.d2": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 2008,
+    "y": 908,
+    "w": 99,
+    "h": 78
+   },
+   "anchor": {
+    "x": 51,
+    "y": 89
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.incendiary_launcher.ground.d2.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 2108,
+    "y": 908,
+    "w": 99,
+    "h": 78
+   },
+   "anchor": {
+    "x": 51,
+    "y": 89
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.incendiary_launcher.ground.d3": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3284,
+    "y": 719,
+    "w": 104,
+    "h": 91
+   },
+   "anchor": {
+    "x": 61,
+    "y": 102
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.incendiary_launcher.ground.d3.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3389,
+    "y": 719,
+    "w": 104,
+    "h": 91
+   },
+   "anchor": {
+    "x": 61,
+    "y": 102
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.incendiary_launcher.ground.d4": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3140,
+    "y": 504,
+    "w": 99,
+    "h": 106
+   },
+   "anchor": {
+    "x": 51,
+    "y": 117
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.incendiary_launcher.ground.d4.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3240,
+    "y": 504,
+    "w": 99,
+    "h": 106
+   },
+   "anchor": {
+    "x": 51,
+    "y": 117
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.incendiary_launcher.ground.d5": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1901,
+    "y": 389,
+    "w": 86,
+    "h": 112
+   },
+   "anchor": {
+    "x": 43,
+    "y": 123
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.incendiary_launcher.ground.d5.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1988,
+    "y": 389,
+    "w": 86,
+    "h": 112
+   },
+   "anchor": {
+    "x": 43,
+    "y": 123
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.incendiary_launcher.ground.d6": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3340,
+    "y": 504,
+    "w": 99,
+    "h": 106
+   },
+   "anchor": {
+    "x": 48,
+    "y": 117
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.incendiary_launcher.ground.d6.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3440,
+    "y": 504,
+    "w": 99,
+    "h": 106
+   },
+   "anchor": {
+    "x": 48,
+    "y": 117
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.incendiary_launcher.ground.d7": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3494,
+    "y": 719,
+    "w": 104,
+    "h": 91
+   },
+   "anchor": {
+    "x": 43,
+    "y": 102
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.incendiary_launcher.ground.d7.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3599,
+    "y": 719,
+    "w": 104,
+    "h": 91
+   },
+   "anchor": {
+    "x": 43,
+    "y": 102
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
   "turret.incendiary_launcher.stowed": {
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3159,
-    "y": 479,
+    "x": 413,
+    "y": 993,
     "w": 102,
     "h": 56
    },
@@ -212444,8 +214407,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1249,
-    "y": 380,
+    "x": 1649,
+    "y": 719,
     "w": 116,
     "h": 94
    },
@@ -212462,8 +214425,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1366,
-    "y": 380,
+    "x": 1766,
+    "y": 719,
     "w": 116,
     "h": 94
    },
@@ -212482,7 +214445,7 @@
    "sheet": "weapons",
    "frame": {
     "x": 1,
-    "y": 380,
+    "y": 719,
     "w": 102,
     "h": 98
    },
@@ -212500,7 +214463,7 @@
    "sheet": "weapons",
    "frame": {
     "x": 104,
-    "y": 380,
+    "y": 719,
     "w": 102,
     "h": 98
    },
@@ -212518,8 +214481,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1483,
-    "y": 380,
+    "x": 1883,
+    "y": 719,
     "w": 116,
     "h": 94
    },
@@ -212536,8 +214499,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1600,
-    "y": 380,
+    "x": 2000,
+    "y": 719,
     "w": 116,
     "h": 94
    },
@@ -212555,8 +214518,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 544,
-    "y": 479,
+    "x": 2576,
+    "y": 818,
     "w": 122,
     "h": 86
    },
@@ -212573,8 +214536,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 667,
-    "y": 479,
+    "x": 2699,
+    "y": 818,
     "w": 122,
     "h": 86
    },
@@ -212592,8 +214555,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3530,
-    "y": 152,
+    "x": 3449,
+    "y": 389,
     "w": 116,
     "h": 109
    },
@@ -212610,8 +214573,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3647,
-    "y": 152,
+    "x": 3566,
+    "y": 389,
     "w": 116,
     "h": 109
    },
@@ -212629,8 +214592,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3794,
-    "y": 1,
+    "x": 1440,
+    "y": 152,
     "w": 102,
     "h": 118
    },
@@ -212647,8 +214610,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3897,
-    "y": 1,
+    "x": 1543,
+    "y": 152,
     "w": 102,
     "h": 118
    },
@@ -212666,8 +214629,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3764,
-    "y": 152,
+    "x": 3683,
+    "y": 389,
     "w": 116,
     "h": 109
    },
@@ -212684,8 +214647,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3881,
-    "y": 152,
+    "x": 3800,
+    "y": 389,
     "w": 116,
     "h": 109
    },
@@ -212703,8 +214666,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 790,
-    "y": 479,
+    "x": 2822,
+    "y": 818,
     "w": 122,
     "h": 86
    },
@@ -212721,8 +214684,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 913,
-    "y": 479,
+    "x": 2945,
+    "y": 818,
     "w": 122,
     "h": 86
    },
@@ -212740,8 +214703,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3262,
-    "y": 479,
+    "x": 516,
+    "y": 993,
     "w": 102,
     "h": 56
    },
@@ -212758,8 +214721,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3365,
-    "y": 479,
+    "x": 619,
+    "y": 993,
     "w": 102,
     "h": 56
    },
@@ -212776,8 +214739,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 413,
-    "y": 380,
+    "x": 813,
+    "y": 719,
     "w": 102,
     "h": 96
    },
@@ -212794,7 +214757,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1,
+    "x": 1646,
     "y": 152,
     "w": 102,
     "h": 118
@@ -212812,8 +214775,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2003,
-    "y": 380,
+    "x": 2403,
+    "y": 719,
     "w": 116,
     "h": 93
    },
@@ -212826,12 +214789,308 @@
     2
    ]
   },
+  "turret.ion_cannon.ground.d0": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3068,
+    "y": 818,
+    "w": 111,
+    "h": 86
+   },
+   "anchor": {
+    "x": 46,
+    "y": 97
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.ion_cannon.ground.d0.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3180,
+    "y": 818,
+    "w": 111,
+    "h": 86
+   },
+   "anchor": {
+    "x": 46,
+    "y": 97
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.ion_cannon.ground.d1": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3704,
+    "y": 719,
+    "w": 86,
+    "h": 91
+   },
+   "anchor": {
+    "x": 43,
+    "y": 102
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.ion_cannon.ground.d1.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3791,
+    "y": 719,
+    "w": 86,
+    "h": 91
+   },
+   "anchor": {
+    "x": 43,
+    "y": 102
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.ion_cannon.ground.d2": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3292,
+    "y": 818,
+    "w": 111,
+    "h": 86
+   },
+   "anchor": {
+    "x": 65,
+    "y": 97
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.ion_cannon.ground.d2.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3404,
+    "y": 818,
+    "w": 111,
+    "h": 86
+   },
+   "anchor": {
+    "x": 65,
+    "y": 97
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.ion_cannon.ground.d3": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 2208,
+    "y": 908,
+    "w": 121,
+    "h": 78
+   },
+   "anchor": {
+    "x": 71,
+    "y": 89
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.ion_cannon.ground.d3.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 2330,
+    "y": 908,
+    "w": 121,
+    "h": 78
+   },
+   "anchor": {
+    "x": 71,
+    "y": 89
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.ion_cannon.ground.d4": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1702,
+    "y": 614,
+    "w": 111,
+    "h": 101
+   },
+   "anchor": {
+    "x": 65,
+    "y": 112
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.ion_cannon.ground.d4.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1814,
+    "y": 614,
+    "w": 111,
+    "h": 101
+   },
+   "anchor": {
+    "x": 65,
+    "y": 112
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.ion_cannon.ground.d5": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3275,
+    "y": 389,
+    "w": 86,
+    "h": 110
+   },
+   "anchor": {
+    "x": 43,
+    "y": 121
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.ion_cannon.ground.d5.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3362,
+    "y": 389,
+    "w": 86,
+    "h": 110
+   },
+   "anchor": {
+    "x": 43,
+    "y": 121
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.ion_cannon.ground.d6": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1926,
+    "y": 614,
+    "w": 111,
+    "h": 101
+   },
+   "anchor": {
+    "x": 46,
+    "y": 112
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.ion_cannon.ground.d6.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 2038,
+    "y": 614,
+    "w": 111,
+    "h": 101
+   },
+   "anchor": {
+    "x": 46,
+    "y": 112
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.ion_cannon.ground.d7": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 2452,
+    "y": 908,
+    "w": 121,
+    "h": 78
+   },
+   "anchor": {
+    "x": 50,
+    "y": 89
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.ion_cannon.ground.d7.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 2574,
+    "y": 908,
+    "w": 121,
+    "h": 78
+   },
+   "anchor": {
+    "x": 50,
+    "y": 89
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
   "turret.ion_cannon.stowed": {
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3468,
-    "y": 479,
+    "x": 722,
+    "y": 993,
     "w": 102,
     "h": 56
    },
@@ -212848,7 +215107,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1920,
+    "x": 2762,
     "y": 1,
     "w": 152,
     "h": 126
@@ -212866,7 +215125,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2073,
+    "x": 2915,
     "y": 1,
     "w": 152,
     "h": 126
@@ -212885,7 +215144,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1130,
+    "x": 1360,
     "y": 1,
     "w": 128,
     "h": 133
@@ -212903,7 +215162,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1259,
+    "x": 1489,
     "y": 1,
     "w": 128,
     "h": 133
@@ -212922,7 +215181,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2226,
+    "x": 3068,
     "y": 1,
     "w": 152,
     "h": 126
@@ -212940,7 +215199,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2379,
+    "x": 3221,
     "y": 1,
     "w": 152,
     "h": 126
@@ -212959,8 +215218,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2794,
-    "y": 152,
+    "x": 2539,
+    "y": 389,
     "w": 183,
     "h": 111
    },
@@ -212977,8 +215236,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2978,
-    "y": 152,
+    "x": 2723,
+    "y": 389,
     "w": 183,
     "h": 111
    },
@@ -212996,7 +215255,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 518,
+    "x": 748,
     "y": 1,
     "w": 152,
     "h": 134
@@ -213014,7 +215273,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 671,
+    "x": 901,
     "y": 1,
     "w": 152,
     "h": 134
@@ -213070,7 +215329,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 824,
+    "x": 1054,
     "y": 1,
     "w": 152,
     "h": 134
@@ -213088,7 +215347,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 977,
+    "x": 1207,
     "y": 1,
     "w": 152,
     "h": 134
@@ -213107,8 +215366,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3162,
-    "y": 152,
+    "x": 2907,
+    "y": 389,
     "w": 183,
     "h": 111
    },
@@ -213125,8 +215384,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3346,
-    "y": 152,
+    "x": 3091,
+    "y": 389,
     "w": 183,
     "h": 111
    },
@@ -213144,8 +215403,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1684,
-    "y": 479,
+    "x": 3009,
+    "y": 908,
     "w": 128,
     "h": 68
    },
@@ -213162,8 +215421,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1717,
-    "y": 380,
+    "x": 2117,
+    "y": 719,
     "w": 128,
     "h": 94
    },
@@ -213216,7 +215475,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2532,
+    "x": 3604,
     "y": 1,
     "w": 152,
     "h": 125
@@ -213230,12 +215489,308 @@
     3
    ]
   },
+  "turret.mass_driver.ground.d0": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3886,
+    "y": 1,
+    "w": 152,
+    "h": 120
+   },
+   "anchor": {
+    "x": 66,
+    "y": 123
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.mass_driver.ground.d0.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1,
+    "y": 152,
+    "w": 152,
+    "h": 120
+   },
+   "anchor": {
+    "x": 66,
+    "y": 123
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.mass_driver.ground.d1": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3374,
+    "y": 1,
+    "w": 114,
+    "h": 126
+   },
+   "anchor": {
+    "x": 57,
+    "y": 130
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.mass_driver.ground.d1.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3489,
+    "y": 1,
+    "w": 114,
+    "h": 126
+   },
+   "anchor": {
+    "x": 57,
+    "y": 130
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.mass_driver.ground.d2": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 154,
+    "y": 152,
+    "w": 152,
+    "h": 120
+   },
+   "anchor": {
+    "x": 86,
+    "y": 123
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.mass_driver.ground.d2.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 307,
+    "y": 152,
+    "w": 152,
+    "h": 120
+   },
+   "anchor": {
+    "x": 86,
+    "y": 123
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.mass_driver.ground.d3": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 217,
+    "y": 614,
+    "w": 183,
+    "h": 104
+   },
+   "anchor": {
+    "x": 111,
+    "y": 108
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.mass_driver.ground.d3.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 401,
+    "y": 614,
+    "w": 183,
+    "h": 104
+   },
+   "anchor": {
+    "x": 111,
+    "y": 108
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.mass_driver.ground.d4": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1618,
+    "y": 1,
+    "w": 152,
+    "h": 128
+   },
+   "anchor": {
+    "x": 86,
+    "y": 131
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.mass_driver.ground.d4.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1771,
+    "y": 1,
+    "w": 152,
+    "h": 128
+   },
+   "anchor": {
+    "x": 86,
+    "y": 131
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.mass_driver.ground.d5": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 518,
+    "y": 1,
+    "w": 114,
+    "h": 138
+   },
+   "anchor": {
+    "x": 57,
+    "y": 142
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.mass_driver.ground.d5.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 633,
+    "y": 1,
+    "w": 114,
+    "h": 138
+   },
+   "anchor": {
+    "x": 57,
+    "y": 142
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.mass_driver.ground.d6": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1924,
+    "y": 1,
+    "w": 152,
+    "h": 128
+   },
+   "anchor": {
+    "x": 66,
+    "y": 131
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.mass_driver.ground.d6.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 2077,
+    "y": 1,
+    "w": 152,
+    "h": 128
+   },
+   "anchor": {
+    "x": 66,
+    "y": 131
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.mass_driver.ground.d7": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 585,
+    "y": 614,
+    "w": 183,
+    "h": 104
+   },
+   "anchor": {
+    "x": 72,
+    "y": 108
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.mass_driver.ground.d7.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 769,
+    "y": 614,
+    "w": 183,
+    "h": 104
+   },
+   "anchor": {
+    "x": 72,
+    "y": 108
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
   "turret.mass_driver.stowed": {
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1813,
-    "y": 479,
+    "x": 3138,
+    "y": 908,
     "w": 128,
     "h": 68
    },
@@ -213252,8 +215807,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3020,
-    "y": 1,
+    "x": 666,
+    "y": 152,
     "w": 128,
     "h": 119
    },
@@ -213270,8 +215825,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3149,
-    "y": 1,
+    "x": 795,
+    "y": 152,
     "w": 128,
     "h": 119
    },
@@ -213289,8 +215844,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1556,
-    "y": 152,
+    "x": 413,
+    "y": 389,
     "w": 128,
     "h": 114
    },
@@ -213307,8 +215862,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1685,
-    "y": 152,
+    "x": 542,
+    "y": 389,
     "w": 128,
     "h": 114
    },
@@ -213326,8 +215881,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3278,
-    "y": 1,
+    "x": 924,
+    "y": 152,
     "w": 128,
     "h": 119
    },
@@ -213344,8 +215899,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3407,
-    "y": 1,
+    "x": 1053,
+    "y": 152,
     "w": 128,
     "h": 119
    },
@@ -213363,8 +215918,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2330,
-    "y": 152,
+    "x": 2075,
+    "y": 389,
     "w": 128,
     "h": 112
    },
@@ -213381,8 +215936,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2459,
-    "y": 152,
+    "x": 2204,
+    "y": 389,
     "w": 128,
     "h": 112
    },
@@ -213400,8 +215955,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1814,
-    "y": 152,
+    "x": 671,
+    "y": 389,
     "w": 128,
     "h": 114
    },
@@ -213418,8 +215973,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1943,
-    "y": 152,
+    "x": 800,
+    "y": 389,
     "w": 128,
     "h": 114
    },
@@ -213437,8 +215992,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2072,
-    "y": 152,
+    "x": 929,
+    "y": 389,
     "w": 128,
     "h": 114
    },
@@ -213455,8 +216010,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2201,
-    "y": 152,
+    "x": 1058,
+    "y": 389,
     "w": 128,
     "h": 114
    },
@@ -213474,8 +216029,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3536,
-    "y": 1,
+    "x": 1182,
+    "y": 152,
     "w": 128,
     "h": 119
    },
@@ -213492,8 +216047,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3665,
-    "y": 1,
+    "x": 1311,
+    "y": 152,
     "w": 128,
     "h": 119
    },
@@ -213511,7 +216066,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 439,
+    "x": 2084,
     "y": 152,
     "w": 128,
     "h": 116
@@ -213529,7 +216084,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 568,
+    "x": 2213,
     "y": 152,
     "w": 128,
     "h": 116
@@ -213548,8 +216103,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1942,
-    "y": 479,
+    "x": 3267,
+    "y": 908,
     "w": 128,
     "h": 68
    },
@@ -213566,8 +216121,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2071,
-    "y": 479,
+    "x": 3396,
+    "y": 908,
     "w": 128,
     "h": 68
    },
@@ -213584,8 +216139,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1036,
-    "y": 479,
+    "x": 3516,
+    "y": 818,
     "w": 128,
     "h": 86
    },
@@ -213602,7 +216157,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2685,
+    "x": 3757,
     "y": 1,
     "w": 128,
     "h": 123
@@ -213620,7 +216175,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 104,
+    "x": 1749,
     "y": 152,
     "w": 128,
     "h": 118
@@ -213634,12 +216189,308 @@
     3
    ]
   },
+  "turret.missile_launcher.ground.d0": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1187,
+    "y": 389,
+    "w": 118,
+    "h": 114
+   },
+   "anchor": {
+    "x": 60,
+    "y": 117
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.missile_launcher.ground.d0.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1306,
+    "y": 389,
+    "w": 118,
+    "h": 114
+   },
+   "anchor": {
+    "x": 60,
+    "y": 117
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.missile_launcher.ground.d1": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 968,
+    "y": 504,
+    "w": 114,
+    "h": 108
+   },
+   "anchor": {
+    "x": 57,
+    "y": 112
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.missile_launcher.ground.d1.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1083,
+    "y": 504,
+    "w": 114,
+    "h": 108
+   },
+   "anchor": {
+    "x": 57,
+    "y": 112
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.missile_launcher.ground.d2": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1425,
+    "y": 389,
+    "w": 118,
+    "h": 114
+   },
+   "anchor": {
+    "x": 58,
+    "y": 117
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.missile_launcher.ground.d2.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1544,
+    "y": 389,
+    "w": 118,
+    "h": 114
+   },
+   "anchor": {
+    "x": 58,
+    "y": 117
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.missile_launcher.ground.d3": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3540,
+    "y": 504,
+    "w": 117,
+    "h": 105
+   },
+   "anchor": {
+    "x": 57,
+    "y": 109
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.missile_launcher.ground.d3.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3658,
+    "y": 504,
+    "w": 117,
+    "h": 105
+   },
+   "anchor": {
+    "x": 57,
+    "y": 109
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.missile_launcher.ground.d4": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1198,
+    "y": 504,
+    "w": 118,
+    "h": 108
+   },
+   "anchor": {
+    "x": 58,
+    "y": 111
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.missile_launcher.ground.d4.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1317,
+    "y": 504,
+    "w": 118,
+    "h": 108
+   },
+   "anchor": {
+    "x": 58,
+    "y": 111
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.missile_launcher.ground.d5": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1436,
+    "y": 504,
+    "w": 114,
+    "h": 108
+   },
+   "anchor": {
+    "x": 57,
+    "y": 112
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.missile_launcher.ground.d5.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1551,
+    "y": 504,
+    "w": 114,
+    "h": 108
+   },
+   "anchor": {
+    "x": 57,
+    "y": 112
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.missile_launcher.ground.d6": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1663,
+    "y": 389,
+    "w": 118,
+    "h": 113
+   },
+   "anchor": {
+    "x": 60,
+    "y": 116
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.missile_launcher.ground.d6.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1782,
+    "y": 389,
+    "w": 118,
+    "h": 113
+   },
+   "anchor": {
+    "x": 60,
+    "y": 116
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.missile_launcher.ground.d7": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3917,
+    "y": 389,
+    "w": 117,
+    "h": 109
+   },
+   "anchor": {
+    "x": 60,
+    "y": 113
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.missile_launcher.ground.d7.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1,
+    "y": 504,
+    "w": 117,
+    "h": 109
+   },
+   "anchor": {
+    "x": 60,
+    "y": 113
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
   "turret.missile_launcher.stowed": {
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2200,
-    "y": 479,
+    "x": 3525,
+    "y": 908,
     "w": 128,
     "h": 68
    },
@@ -213656,8 +216507,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3244,
-    "y": 271,
+    "x": 2150,
+    "y": 614,
     "w": 114,
     "h": 101
    },
@@ -213674,8 +216525,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1076,
-    "y": 271,
+    "x": 1979,
+    "y": 504,
     "w": 102,
     "h": 107
    },
@@ -213692,8 +216543,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3359,
-    "y": 271,
+    "x": 2265,
+    "y": 614,
     "w": 114,
     "h": 101
    },
@@ -213710,8 +216561,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3902,
-    "y": 380,
+    "x": 1902,
+    "y": 818,
     "w": 130,
     "h": 87
    },
@@ -213728,8 +216579,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1179,
-    "y": 271,
+    "x": 2082,
+    "y": 504,
     "w": 114,
     "h": 107
    },
@@ -213746,7 +216597,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 697,
+    "x": 2342,
     "y": 152,
     "w": 102,
     "h": 116
@@ -213764,8 +216615,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1294,
-    "y": 271,
+    "x": 2197,
+    "y": 504,
     "w": 114,
     "h": 107
    },
@@ -213782,8 +216633,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1,
-    "y": 479,
+    "x": 2033,
+    "y": 818,
     "w": 130,
     "h": 87
    },
@@ -213800,8 +216651,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3571,
-    "y": 479,
+    "x": 825,
+    "y": 993,
     "w": 102,
     "h": 56
    },
@@ -213818,8 +216669,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3674,
-    "y": 479,
+    "x": 928,
+    "y": 993,
     "w": 102,
     "h": 56
    },
@@ -213836,8 +216687,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3141,
-    "y": 271,
+    "x": 1599,
+    "y": 614,
     "w": 102,
     "h": 102
    },
@@ -213854,7 +216705,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 233,
+    "x": 1878,
     "y": 152,
     "w": 102,
     "h": 118
@@ -213872,8 +216723,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3474,
-    "y": 271,
+    "x": 3008,
+    "y": 614,
     "w": 114,
     "h": 100
    },
@@ -213886,12 +216737,156 @@
     2
    ]
   },
+  "turret.point_defense.ground.d0": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 2520,
+    "y": 719,
+    "w": 111,
+    "h": 93
+   },
+   "anchor": {
+    "x": 48,
+    "y": 104
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.point_defense.ground.d1": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3123,
+    "y": 614,
+    "w": 86,
+    "h": 100
+   },
+   "anchor": {
+    "x": 43,
+    "y": 111
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.point_defense.ground.d2": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 2632,
+    "y": 719,
+    "w": 111,
+    "h": 93
+   },
+   "anchor": {
+    "x": 63,
+    "y": 104
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.point_defense.ground.d3": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1546,
+    "y": 908,
+    "w": 130,
+    "h": 79
+   },
+   "anchor": {
+    "x": 77,
+    "y": 90
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.point_defense.ground.d4": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3872,
+    "y": 614,
+    "w": 111,
+    "h": 99
+   },
+   "anchor": {
+    "x": 63,
+    "y": 110
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.point_defense.ground.d5": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 119,
+    "y": 504,
+    "w": 86,
+    "h": 109
+   },
+   "anchor": {
+    "x": 43,
+    "y": 120
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.point_defense.ground.d6": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3984,
+    "y": 614,
+    "w": 111,
+    "h": 99
+   },
+   "anchor": {
+    "x": 48,
+    "y": 110
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.point_defense.ground.d7": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1677,
+    "y": 908,
+    "w": 130,
+    "h": 79
+   },
+   "anchor": {
+    "x": 53,
+    "y": 90
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
   "turret.point_defense.stowed": {
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3777,
-    "y": 479,
+    "x": 1031,
+    "y": 993,
     "w": 102,
     "h": 56
    },

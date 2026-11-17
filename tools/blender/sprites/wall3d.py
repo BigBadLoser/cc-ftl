@@ -105,6 +105,30 @@ class Relief:
                     out.append((list(range(base, base + len(kept))),) + tuple(f[1:]))
             m.f = out
 
+    def clip_above(self, z, start=(0, 0)):
+        """Cut the polygons from start (an index into each mesh's) off at height z: what lies under it stays."""
+        for m, s0 in zip((self.m, self.ns), start):
+            if m is None:
+                continue
+            out = m.f[:s0]
+            for f in m.f[s0:]:
+                pts = [m.v[i] for i in f[0]]
+                if max(p[2] for p in pts) <= z + 1e-6:
+                    out.append(f)
+                    continue
+                kept = []
+                for p, q in zip(pts, pts[1:] + pts[:1]):                    # (Sutherland-Hodgman, one plane)
+                    if p[2] <= z:
+                        kept.append(p)
+                    if (p[2] <= z) != (q[2] <= z):
+                        t = (z - p[2]) / (q[2] - p[2])
+                        kept.append(tuple(a + (b - a) * t for a, b in zip(p, q)))
+                if len(kept) >= 3 and min(p[2] for p in kept) < z - 1e-6:
+                    base = len(m.v)
+                    m.v += [tuple(p) for p in kept]
+                    out.append((list(range(base, base + len(kept))),) + tuple(f[1:]))
+            m.f = out
+
     def build(self):
         """Its objects: the mesh, and the one casting no shadow if any (flagged "noshadow")."""
         obs = [self.m.build()]
@@ -122,6 +146,17 @@ def OUT(ax):
     return Vector((0, 1, 0)) if ax == "y" else Vector((1, 0, 0))
 
 
+V2 = False              # the default walls' second look (wall3d_v2) while a piece builds: the interior windows'
+BARE = False            # the default walls' ramp without its panel (a window tile: wall3d_iwin_def)
+OPEN = None             # a window's opening along x on the piece (x0, x1): the faces' fields it runs into keep no
+                        # panel art
+RAIL_LAYOUT = None      # f(a, b) -> (u0, u1, middle?): the rail's blocks on a window tile (wall3d_iwin_ramp), in
+                        # place of wall3d_v2._blocks
+LIP_OUT = 0             # px: a window's opening widened this far past the default post (wall3d_iwin_ramp post_in): the
+                        # lip's seams by its ends move out with it
+PRE_HOOK = None         # as a piece starts to build: f(sp) (wall3d_iwin_ramp: which tiles are a window's)
+HOOK = None             # while a piece builds: f(k, sp) on its Relief before it builds (wall3d_iwin_def: a window's
+                        # opening)
 SEAM_PASS = None        # a damage seam pass (wall3d_ext_dented, sprung plates) sets this to a key colour: painted lines
                         # (seams, panel outlines, plates' shading) draw in it, everything else near black
 SEAM_DARK = "hsXK"
@@ -217,9 +252,9 @@ def paint(k, ax, plane, u0, u1, z0, z1, on, fam, lvl):
     slab(k, ax, plane, u0, u1, z0, z1, on + PAINT, fam, lvl)
 
 
-def posts(k, ax, plane, a, b, ends, z0, z1, fam):
-    """A post at each tile edge and each face end (running on round an outer corner), a groove down each; returns
-    the fields between them: (u0, u1)."""
+def posts(k, ax, plane, a, b, ends, z0, z1, fam, groove=True):
+    """A post at each tile edge and each face end (running on round an outer corner), a groove down each (unless
+    not groove); returns the fields between them: (u0, u1)."""
     fields = []
     for u0, u1 in spans(a, b):
         f0, f1 = u0, u1
@@ -230,7 +265,8 @@ def posts(k, ax, plane, a, b, ends, z0, z1, fam):
             q0, q1 = (edge - x, edge + STILE) if lo else (edge - STILE, edge + x)
             slab(k, ax, plane, q0, q1, z0, z1, FR, fam, 3, ends=(not seam, True) if lo else (True, not seam))
             g = edge + 0.065 if lo else edge - 0.065 - LINE
-            paint(k, ax, plane, g, g + LINE, z0, z1, FR, fam, 1)
+            if groove:
+                paint(k, ax, plane, g, g + LINE, z0, z1, FR, fam, 1)
             if lo:
                 f0 = edge + STILE
             else:
@@ -251,6 +287,9 @@ def header_marks(k, ax, plane, a, b, z0, z1, fam):
 def wall_face(k, ax, plane, a, b, ends, zs, top, full):
     """Partition (set 7): a low band, posts with a groove, a header in three blocks; in each field an outlined panel
     with two ochre bars in a dark slot, a raised bar across it and two fine lines under it."""
+    if V2:                                              # (the second look: wall3d_v2)
+        from . import wall3d_v2
+        return wall3d_v2.wall_face(k, ax, plane, a, b, ends, zs, top, full)
     F = "wall"
     zb = zs + 0.2
     run(k, ax, plane, a, b, ends, zs - 0.03, zb, FR, F, 3, 0)                                    # low band
@@ -337,6 +376,9 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
     """The face's posts and fields carried down the slope: a narrow plate under each post, a wide one under each field
     with a panel (a raised frame, a lighter plate sunk in it and a dark slot under it), on the shell's dark joints,
     mitred round corners."""
+    if V2 and fam == "wall" and style().plain:          # (the second look: wall3d_v2)
+        from . import wall3d_v2
+        return wall3d_v2.skirt(k, sp, ax, plane, a, b, fam, ends)
     run_, zs = sp.run, sp.zs
     ft = getattr(sp, "foot", 0.0)               # (a look whose ramp ends in an upright face this high)
     o = OUT(ax)
@@ -620,6 +662,8 @@ def block(mask, fam, deco=None, name=None, level="cut", corners=0, shell=None, d
     no_cap no cap plates. above: only what stands over that height (hull_cap), its faces there a black cut."""
     global END_TOPS, SHELL
     sp = SHELL = (shell or style().shell or Shell)(mask, fam, level, 1 if deco == 1 else 0, corners)
+    if PRE_HOOK:
+        PRE_HOOK(sp)
     k = Relief(name or f"wall3d_{fam}_{mask}_{level}_{corners}")
     if above is not None:                               # (its faces over the height black, whatever the look says)
         face_col = sp.col_face
@@ -646,6 +690,15 @@ def block(mask, fam, deco=None, name=None, level="cut", corners=0, shell=None, d
         if not getattr(sp, "no_skirt", False):
             skirt(k, sp, ax, plane, a, b, "blue" if hull else "wall", ends)
         if top <= sp.zs + 0.05:
+            if style().shelf and not hull:              # a stub over a shelf: the face's art from the shelf up to
+                from .faction.shell import _ends        # the cut (its lip and seams), cut off there, over a backing
+                from .wall3d_v2 import lip_heights      # (a wall's end face: the backing only)
+                k.top = top
+                paint(k, ax, plane, a, b, lip_heights(sp.zs)[0] - 0.01, top, -PAINT, "wall", 2)
+                if not _ends(ax, plane, b, ends)[0]:
+                    n0 = (len(k.m.f), len(k.ns.f) if k.ns is not None else 0)
+                    (style().wall or wall_face)(k, ax, plane, a, b, ends, sp.zs, top, False)
+                    k.clip_above(top, n0)
             continue
         full = top > W.skirt_top() + W.CUT + 0.05            # the hull stays full in the cutaway
         k.top = None if full else top
@@ -653,6 +706,8 @@ def block(mask, fam, deco=None, name=None, level="cut", corners=0, shell=None, d
             (dress or style().hull or hull_face)(k, ax, plane, a, b, ends, sp.zs, top, full, sp.variant)
         else:
             (style().wall or wall_face)(k, ax, plane, a, b, ends, sp.zs, top, full)
+    if HOOK:
+        HOOK(k, sp)
     return k.build()
 
 

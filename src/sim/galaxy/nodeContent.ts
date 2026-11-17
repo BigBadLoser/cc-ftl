@@ -51,8 +51,31 @@ export function rollNodeContent(table: NodeContentTable, site: NodeContentSite, 
   return null;
 }
 
+/** The table entry that places a structure (the first one, in table order), or undefined. */
+export const entryOfStructure = (table: NodeContentTable, structure: string): NodeContentDef | undefined =>
+  Object.values(table.entries).find((e) => e.structure === structure);
+
+/**
+ * The one owner of an asteroid field's yield mix: the ores of a field placed as `structure`, each with the weight its table entry gives it (ores
+ * the mix omits are left out). Returns undefined when the structure has no mix, and the caller falls back to the ores' own default weights
+ * (debug and scenario fields).
+ */
+export function oreMixFor<O extends { weight: number }>(
+  table: NodeContentTable | undefined, ores: Readonly<Record<string, O>>, structure: string | undefined,
+): O[] | undefined {
+  const mix = structure && table ? entryOfStructure(table, structure)?.ores : undefined;
+  if (!mix) return undefined;
+  return Object.entries(mix).filter(([id, w]) => w > 0 && ores[id]).map(([id, w]) => ({ ...(ores[id] as O), weight: w }));
+}
+
+/** The item ids a field placed as `structure` yields: what its mix mines (one answer for the starmap's resource list). */
+export const fieldItems = (table: NodeContentTable | undefined, ores: Readonly<Record<string, { weight: number; item: string }>>, structure: string): string[] =>
+  (oreMixFor(table, ores, structure) ?? []).map((o) => o.item);
+
 /** Table problems (empty list when valid): unknown structures, bad curves or ranges. Content tests assert it is empty. */
-export function nodeContentErrors(table: NodeContentTable, content: Pick<GalaxyContent, 'structures' | 'factions'>): string[] {
+export function nodeContentErrors(
+  table: NodeContentTable, content: Pick<GalaxyContent, 'structures' | 'factions'>, oreIds?: readonly string[],
+): string[] {
   const errs: string[] = [];
   const kinds = new Set(Object.values(content.factions).map((f) => f.kind));
   const curve = (what: string, c: TierCurve) => {
@@ -66,6 +89,11 @@ export function nodeContentErrors(table: NodeContentTable, content: Pick<GalaxyC
     const { min = -Infinity, max = Infinity } = e.danger;
     if (min > max) errs.push(`${id}: danger min above max`);
     if (!(entryWeightPeak(e, min, max) > 0)) errs.push(`${id}: weight is 0 over its whole danger range`);
+    for (const [ore, w] of Object.entries(e.ores ?? {})) {
+      if (!(w >= 0)) errs.push(`${id}: ore ${ore} has a bad weight`);
+      if (oreIds && !oreIds.includes(ore)) errs.push(`${id}: unknown ore ${ore}`);
+    }
+    if (content.structures[e.structure]?.kind === 'asteroids' && !Object.values(e.ores ?? {}).some((w) => w > 0)) errs.push(`${id}: a field needs an ore mix`);
     for (const k of e.notIn ?? []) if (!kinds.has(k)) errs.push(`${id}: notIn names no faction kind ${k}`);
   }
   return errs;

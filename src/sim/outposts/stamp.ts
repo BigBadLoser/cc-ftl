@@ -7,6 +7,8 @@ import { spawnCrew } from '../combat/ships';
 import { outfitStation } from '../stations/spawn';
 import { ShipGrid } from '../shipGrid';
 import { Struct } from '../structure';
+import { layCable, templateCable } from '../cable';
+import { footprintTiles } from '../modules/footprint';
 import { gridFromTemplate, placeTemplateModules } from '../ship';
 import type { Sim } from '../sim';
 import type { OutpostPlan } from './gen';
@@ -19,7 +21,8 @@ export function outpostFaction(o: OutpostPlan): Faction {
 /**
  * Stamp an outpost with its asteroid's top-left at sector (x, y): the asteroid (`stampAsteroid`, gap-checked), then the base:
  * every non-'.' template tile with all its fields (structure, air, temperature) from the template grid (a dug base's metal walls become finished rock walls, `Struct.RockWall`), its modules, and a
- * `ShipC` region over the base rectangle that owns those tiles. The rock and ground inside the rectangle stay the asteroid's,
+ * `ShipC` region over the base rectangle that owns those tiles, and a prefab base's ground cable (laid over the ground, cable.ts)
+ * and the turrets at its ends. The rock and ground inside the rectangle stay the asteroid's,
  * so the base's field systems see rock mass as walls. Then the station is outfitted like any station (`outfitStation`: trader and
  * station life) and crewed, security included (`spawnCrew` from the template's roles). Returns { asteroid, ship }.
  */
@@ -45,6 +48,12 @@ export function stampOutpost(sim: Sim, o: OutpostPlan, x: number, y: number): { 
     name: o.template.name, faction: outpostFaction(o), state: 'active', x: bx, y: by, width: dense.width, height: dense.height,
     hullMax: hullSum(new ShipGrid(0, g, bx, by, dense.width, dense.height)), integrity: 1, immobile: true, dormant: 1, outpost: { style: o.style, kind: o.kind, hidden: o.style === 'dug' },
   });
+  // A prefab base's ground cable, and what stands on the ground at its ends (its turrets): the base's (cable.ts).
+  for (const c of templateCable(o.template)) if (layCable(g, bx + c.x, by + c.y)) built.push([bx + c.x, by + c.y]);
+  for (const m of o.template.modules ?? []) {
+    const def = m.ground && sim.content.modules[m.def];
+    if (def) for (const f of footprintTiles(def, bx + m.x, by + m.y, m.rot)) built.push([f.x, f.y]);
+  }
   for (const [tx, ty] of built) g.set('ship', tx, ty, ship);
   // The dock airlock: the one whose outer door sits on the plan's dock tile (the only airlock a shuttle may dock at).
   for (const id of sim.world.query(AirlockC, ModuleC)) {

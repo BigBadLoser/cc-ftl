@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { newGame } from '../sim';
+import type { ModuleDef } from '../sim';
 import { content } from '../content';
 import type { Renderer } from '../render/scene';
 import type { UiApi, UiToolState } from '../ui/api';
@@ -20,7 +21,7 @@ describe('build catalog', () => {
   it('puts every module in a known category and reaches it from some tab', () => {
     const known = new Set(CATEGORIES.map((c) => c.id as string));
     const tabs = visibleCategories(entries, true);
-    for (const id of Object.keys(content.modules)) {
+    for (const id of Object.keys(content.modules).filter((k) => !(content.modules as Record<string, ModuleDef>)[k]?.groundMount)) {
       const e = entries.find((x) => x.id === id && x.kind === 'module');
       expect(e, id).toBeDefined();
       expect(known.has(e!.category), `${id} category`).toBe(true);
@@ -113,7 +114,7 @@ describe('placement tool state', () => {
   const setup = () => {
     const bridge = { setSelected: () => undefined, setHovered: () => undefined, sites: createStore([]), yard: createStore({ plan: { ship: 0, tiles: [], connected: [], loose: [], blocked: [], floor: [], bad: [], hull: { now: 0, afterAll: 0, capacity: 0, max: 0 } }, quote: null, order: null }) } as unknown as Bridge;
     const c = createController(newGame(1, content), bridge);
-    const h = c.attach({ setPreview: () => undefined, setAreas: () => undefined, setWorldGrid: () => undefined, setCutLine: () => undefined, setHover: () => undefined, setSites: () => undefined, setModuleGhost: () => undefined } as unknown as Renderer);
+    const h = c.attach({ setPreview: () => undefined, setAreas: () => undefined, setWorldGrid: () => undefined, setCutLine: () => undefined, setHover: () => undefined, setSites: () => undefined, setModuleGhost: () => undefined, setWindowGhost: () => undefined } as unknown as Renderer);
     return { c, h };
   };
 
@@ -181,7 +182,7 @@ describe('combat start', () => {
     const sim2 = newGame(1, content);
     const bridge = { setSelected: () => undefined, setHovered: () => undefined, sites: createStore([]), yard: createStore({ plan: { ship: 0, tiles: [], connected: [], loose: [], blocked: [], floor: [], bad: [], hull: { now: 0, afterAll: 0, capacity: 0, max: 0 } }, quote: null, order: null }) } as unknown as Bridge;
     const c = createController(sim2, bridge);
-    const h = c.attach({ setPreview: () => undefined, setAreas: () => undefined, setWorldGrid: () => undefined, setCutLine: () => undefined, setHover: () => undefined, setSites: () => undefined, setModuleGhost: () => undefined, setCutaway: () => undefined, setFoes: () => undefined } as unknown as Renderer);
+    const h = c.attach({ setPreview: () => undefined, setAreas: () => undefined, setWorldGrid: () => undefined, setCutLine: () => undefined, setHover: () => undefined, setSites: () => undefined, setModuleGhost: () => undefined, setWindowGhost: () => undefined, setCutaway: () => undefined, setFoes: () => undefined } as unknown as Renderer);
     c.setTool({ tool: 'deconstruct' });
     c.upkeep();
     expect(toolOf(c).tool).toBe('deconstruct'); // no fight: untouched

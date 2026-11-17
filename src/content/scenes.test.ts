@@ -368,9 +368,12 @@ describe('provoking a neutral', () => {
     const { sim, skiff } = inScene(3, crewed as typeof content);
     fireOn(sim, skiff);
     expect(sim.world.get(skiff, ShipC)).toMatchObject({ faction: 'hostile', provoked: 'fired' });
-    const out = step(sim, 60 * 20);
+    // A trader's crew rank repairs above the guns: the gun is manned once the crates the volley broke are mended, and
+    // how long that takes turns on where they stood (seed 3: a little over a minute). Two minutes is ample.
+    let back = false;
+    for (let i = 0; i < 120 * 20 && !back; i++) back = step(sim).some((e) => e.type === 'weapon.fired' && e.ship === skiff);
     expect(sim.sector.inCombat).toBe(true);
-    expect(out.some((e) => e.type === 'weapon.fired' && e.ship === skiff)).toBe(true);
+    expect(back).toBe(true);
   });
 
   it('standing down drops aims at neutrals and lifts the holds', () => {

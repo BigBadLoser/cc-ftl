@@ -1,9 +1,10 @@
 /**
  * Asteroid outpost generator (pure, seeded): a big asteroid plus a small station on it. An outpost is a real `station.<kind>` of the
- * 'outpost' size tier (shipgen/stationGen.ts: room recipes, crew and security, docks), run by the station director like any station;
+ * 'outpost' size tier (shipgen/stationBuild.ts: room recipes, crew and security, docks), run by the station director like any station;
  * this file only fits it onto rock. Enemies and NPC factions use the same generator and pick by `kind`.
  * - 'surface' (trading, farming, mining): an open asteroid; the station stands on levelled rock ground (a pad one tile wider than
- *   the station) with its dock airlock at the asteroid's edge, facing open space.
+ *   the station) with its dock airlock at the asteroid's edge, facing open space. A prefab base (`StationResult.site`, the
+ *   trading outpost's) stands anywhere on the rock instead, its whole site levelled: its dock is the airlock of a landing pad.
  * - 'dug' (pirate, criminal, covert): a dense asteroid; the station's rooms are carved into rock mass, which stands in for every
  *   outer wall (`carveInRock`), a rock roof hides it, and one airlock is set in a notch of the rock face.
  * A dug base keeps only its dock airlock; a surface outpost keeps other airlocks only where they open on ground or space (not rock mass).
@@ -12,7 +13,9 @@ import { generateAsteroid } from '../asteroids/gen';
 import type { AsteroidPlan, OreDef } from '../asteroids/types';
 import type { ModuleDef, ShipTemplate } from '../registry';
 import { Rng } from '../rng';
-import { generateStation, type StationResult } from '../shipgen/stationGen';
+import { rotateLayout } from '../shipgen/rotate';
+import { buildStation } from '../shipgen/stationBuild';
+import type { StationResult } from '../shipgen/assembly/station';
 import type { StationDef } from '../shipgen/stationTypes';
 import { isAsteroidRock, Struct } from '../structure';
 import { builtOf, carveInRock, dropBuriedAirlocks, pickDock, placeAt, type Dock } from './site';
@@ -62,9 +65,13 @@ function recount(plan: AsteroidPlan): void {
   plan.mass = rock ? mass / rock : 0;
 }
 
-/** Level (surface) or pack (dug) the base and the ring round it, and open the dock's notch to space. */
-function shape(plan: AsteroidPlan, style: OutpostStyle, t: ShipTemplate, dock: Dock, at: { x: number; y: number; face: number }): void {
-  const b = builtOf(t);
+/**
+ * Level (surface) or pack (dug) the base and the ring round it, and open the dock's notch to space. A base on open ground
+ * (`site`: separate modules) is levelled across its whole site, the ground between its modules and its landing pads
+ * included, and has no notch: its dock is a pad's airlock, opening on the ground.
+ */
+function shape(plan: AsteroidPlan, style: OutpostStyle, t: ShipTemplate, dock: Dock, at: { x: number; y: number; face: number }, site = false): void {
+  const b = builtOf(t, site);
   const fill = style === 'surface' ? Struct.Ground : Struct.Rock;
   const clear = (i: number) => { plan.ore[i] = 0; plan.amt[i] = 0; };
   for (let ly = -OUTPOST.ring; ly < b.h + OUTPOST.ring; ly++) {
@@ -79,9 +86,10 @@ function shape(plan: AsteroidPlan, style: OutpostStyle, t: ShipTemplate, dock: D
       if (style === 'surface' || b.has(lx, ly)) clear(i);
     }
   }
-  // the notch: three columns of open space from the dock's collar out to the plan's edge
-  for (let cx = at.x + dock.outer.x - 1; cx <= at.x + dock.outer.x + 1; cx++) {
-    for (let py = at.y + dock.collar.y; py >= 0 && py < plan.h; py += dock.dir) {
+  // the notch: the dock's columns open to space from its outer door's row out to the plan's edge
+  if (site) return;
+  for (let cx = at.x + dock.cols[0]; cx <= at.x + dock.cols[1]; cx++) {
+    for (let py = at.y + dock.outer.y; py >= 0 && py < plan.h; py += dock.dir) {
       if (b.has(cx - at.x, py - at.y)) continue;
       const i = py * plan.w + cx;
       plan.struct[i] = Struct.Space;
@@ -104,19 +112,25 @@ export function generateOutpost(style: OutpostStyle, seed: number, content: Outp
   for (let s = 0; s < OUTPOST.stations; s++) {
     let station: StationResult;
     try {
-      station = generateStation(def, stationKind, 'outpost', (seed + s * 104729) >>> 0, content.modules);
+      station = buildStation(def, stationKind, 'outpost', (seed + s * 104729) >>> 0, content.modules, def.outpostAssembly ?? def.assembly);
     } catch {
       continue;
     }
-    const dock = station.problems.length === 0 ? pickDock(station.template, content.modules) : null;
+    if (station.problems.length > 0) continue;
+    // An assembled station's harbour may face east or west: turn it a quarter at a time until a dock faces north or south.
+    let dock = pickDock(station.template, content.modules);
+    for (let q = 1; q < 4 && !dock; q++) {
+      station = rotateLayout(station, content.modules);
+      dock = pickDock(station.template, content.modules);
+    }
     if (!dock) continue;
     const template = { ...(style === 'dug' ? carveInRock(station.template, content.modules) : station.template), name: `${k} outpost` };
-    const b = builtOf(template);
+    const site = !!station.site && style === 'surface', b = builtOf(template, site);
     for (let t = 0; t < OUTPOST.tries; t++) {
       const plan = generateAsteroid('big', (seed + (s * OUTPOST.tries + t) * 7919) >>> 0, content.ores, { coverage: style === 'surface' ? 'open' : 'dense', minSize: Math.max(b.w, b.h) + 12 });
-      const at = placeAt(plan, template, dock, OUTPOST.bulge);
+      const at = placeAt(plan, template, dock, OUTPOST.bulge, site);
       if (!at) continue;
-      shape(plan, style, template, dock, at);
+      shape(plan, style, template, dock, at, site);
       recount(plan);
       // Airlocks whose outside is rock mass go (a dug base keeps only its dock; the dock's notch is the one open side).
       const open = (o: { x: number; y: number }): boolean => style === 'surface' && plan.struct[(at.y + o.y) * plan.w + at.x + o.x] !== Struct.Rock;

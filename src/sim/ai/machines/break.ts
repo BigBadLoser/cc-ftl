@@ -3,6 +3,7 @@ import { ownedBedPlan } from '../../crew/beds';
 import { PathC, type Path, type Position } from '../../crew/components';
 import { clearPath, isSettled, origin } from '../../crew/helpers';
 import { findPath, type Tile } from '../../crew/pathfind';
+import { walkOpts } from '../../eva/route';
 import { fleePath } from '../../fight/flee';
 import { isCombatReady, isHostile } from '../../fight/relations';
 import { hiddenFrom } from '../../fight/rescue';
@@ -66,7 +67,7 @@ function hiddenWalk(sim: Sim, id: number, grid: Grid, ship: number, pos: Positio
         if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
         const x = from.x + dx, y = from.y + dy;
         if (!isTileWalkable(sim, grid, x, y) || !hiddenFrom(sim, grid, { x, y }, threats)) continue;
-        const steps = findPath(sim, ship, from, { x, y });
+        const steps = findPath(sim, ship, from, { x, y }, walkOpts(sim, id));
         if (steps && steps.length > 0) return steps;
       }
     }

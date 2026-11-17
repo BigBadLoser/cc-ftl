@@ -153,8 +153,10 @@ import { newYard, type YardState } from './yard/types';
  * v122 (prisoner deals, #116): `Deal.handover.prisoner` (a prisoner's slab sold at a station, `job` optional), `StasisJob.phase` 'unstow' with `deliver` and `lifted`.
  * v123: `Prize.hullValue` removed (no hull sale; the value only sizes the loot at capture).
  * v124 (deck finishes and markings, station-generator port): the `floor` grid field (a floor tile's finish: plain deck, heavy plate, clean tile, carpet) and the deck marking masks `markWalkway`, `markApron`, `markKeepClear`, `markHazard` (sim/marks.ts).
+ * v125 (player-built windows, #516): the `window` grid field on wall tiles (sim/windows.ts), command 'job.window', and `Job.window` (a window build or deconstruct job).
+ * v126 (ground turrets, #514): the `cable` grid field (a power cable laid over rock ground, sim/cable.ts).
  */
-export const SAVE_VERSION = 124;
+export const SAVE_VERSION = 126;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {

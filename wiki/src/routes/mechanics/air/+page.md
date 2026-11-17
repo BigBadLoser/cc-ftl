@@ -20,3 +20,9 @@ A vent looks after itself:
 - If you left it set to open, it **opens again by itself** once the hazard is gone and power is back.
 
 The door's panel says why a vent you set open is shut: a hazard nearby, or no power. Airlock doors have no vent.
+
+## Walking out without air
+
+Crew without a suit never take a route through vacuum or across an asteroid's bare rock. When their work is out there, like
+a turret to repair or an asteroid farm's greenhouse to tend, they put on a suit at an airlock first and take it off again
+when they come back in.

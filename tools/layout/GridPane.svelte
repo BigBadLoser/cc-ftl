@@ -9,10 +9,11 @@
 	import ShipSettings from './ShipSettings.svelte';
 	import PinMarkers from './PinMarkers.svelte';
 	import { moduleCues, moduleIndex, moveModule, PAINT_CHAR, resizeRoom, roomRect, shapeTiles, stroke, type Layout, type PaintTool, type Rect, type StrokeTool, type Tile } from './layout';
+	import { windowTilesOf } from './windows';
 
 	type Edge = 'n' | 's' | 'e' | 'w';
 	type Mode =
-		| { k: 'pan'; x: number; y: number }
+		| { k: 'pan'; x: number; y: number; pick?: Tile; moved?: boolean }
 		| { k: 'paint'; a: Tile; tool: StrokeTool; erase: boolean; room: number | undefined }
 		| { k: 'room'; a: Tile }
 		| { k: 'edge'; id: number; edge: Edge; base: Layout; rect: Rect }
@@ -34,8 +35,8 @@
 	let shape = $state.raw<Tile[] | null>(null);
 
 	const marks = $derived.by((): Mark[] => {
-		const d = lab.design;
-		if (!d) return [];
+		const d = lab.design, l = lab.layout;
+		if (!d || !l) return [];
 		if (lab.compare) return [...(lab.tab === 'overlay' && lab.diff ? diffMarks(d, lab.diff) : []), { tiles: lab.flag, color: 'rgba(255,70,70,1)' }];
 		// the hovered-room overlay is for picking: it stays out of the way of a paint tool
 		const out: Mark[] = [
@@ -44,7 +45,11 @@
 			{ tiles: lab.flag, color: 'rgba(255,70,70,1)' },
 		];
 		// the tile the active tool will affect under the pointer (a room drag shows its rectangle instead; a module its ghost)
-		if ((shape || pointer) && lab.tool !== 'select' && lab.tool !== 'note' && !lab.drag && (shape || lab.tool !== 'module')) out.push({ tiles: shape ?? [pointer as Tile], color: erasing ? 'rgba(255,90,90,1)' : 'rgba(255,255,255,1)', fill: false });
+		if ((shape || pointer) && lab.tool !== 'select' && lab.tool !== 'note' && lab.tool !== 'window' && !lab.drag && (shape || lab.tool !== 'module')) out.push({ tiles: shape ?? [pointer as Tile], color: erasing ? 'rgba(255,90,90,1)' : 'rgba(255,255,255,1)', fill: false });
+		const wg = lab.tool === 'window' ? lab.windowGhost : null;
+		if (wg) out.push({ tiles: wg.tiles, color: wg.error ? 'rgba(255,70,70,1)' : 'rgba(90,255,120,1)' });
+		const wt = windowTilesOf(l);
+		if (wt.length) out.push({ tiles: wt, color: 'rgba(120,200,255,1)', fill: false });
 		if (lab.ghost) out.push({ tiles: lab.ghostTiles(), color: lab.ghost.error ? 'rgba(255,70,70,1)' : 'rgba(90,255,120,1)' });
 		const cue = cues();
 		if (cue) out.push({ tiles: cue.access, color: 'rgba(240,177,58,1)', shape: 'square' });
@@ -160,12 +165,16 @@
 		const tool = lab.tool;
 		// the right button erases what the active tool paints (a note: the one under the pointer); the select tool pans with it
 		const erase = e.button === 2 && tool !== 'select';
+		// the middle button pans on a drag and, on a click, picks the brush that paints what is under it
+		if (e.button === 1 && l && !lab.compare) { e.preventDefault(); mode = { k: 'pan', x: e.clientX, y: e.clientY, pick: tile, moved: false }; return; }
 		if ((e.button !== 0 && !erase) || space || !l || lab.compare) { mode = { k: 'pan', x: e.clientX, y: e.clientY }; return; }
 		erasing = erase;
 		if (erase && tool === 'note') { lab.erasePinAt(fx, fy); return; }
 		if (isPaint(tool) || (erase && (tool === 'room' || tool === 'module'))) {
 			mode = { k: 'paint', a: tile, tool: tool as StrokeTool, erase, room: room() };
 			shape = shapeTiles(mode.tool, tile, tile);
+		} else if (tool === 'window') {
+			lab.clickWindow(tile[0], tile[1], erase);
 		} else if (tool === 'note') {
 			// a note goes where the pointer is (Alt: free, not attached to what is there)
 			lab.addPin(fx, fy, e.altKey);
@@ -191,6 +200,7 @@
 		const m = mode;
 		pointer = !lab.compare && (!m || m.k === 'paint') ? tile : null;
 		if (m?.k === 'pan') {
+			if (Math.abs(e.clientX - m.x) + Math.abs(e.clientY - m.y) > 0) m.moved = true;
 			lab.view = panned('grid', lab.view, dpr(), e.clientX - m.x, e.clientY - m.y);
 			m.x = e.clientX;
 			m.y = e.clientY;
@@ -227,6 +237,7 @@
 		if (lab.compare) return;
 		// no gesture: hover, the ghost, the cursor
 		if (lab.tool === 'module') lab.aim(lab.armed, tile[0], tile[1]);
+		if (lab.tool === 'window') lab.aimWindow(tile[0], tile[1]);
 		lab.setHover(pick(tile));
 		cursor = lab.tool !== 'select' ? 'crosshair' : edgeAt(fx, fy)?.edge === 'e' || edgeAt(fx, fy)?.edge === 'w' ? 'ew-resize' : edgeAt(fx, fy) ? 'ns-resize' : 'default';
 	}
@@ -239,7 +250,8 @@
 			shape = null;
 			const { tool, erase, room: first } = m;
 			if (tiles) lab.edit((cur) => stroke(cur, tool, erase, tiles, first)); // one undo step per stroke
-		} else if (m?.k === 'edge') lab.end();
+		} else if (m?.k === 'pan' && m.pick && !m.moved) lab.pickBrush(m.pick);
+		else if (m?.k === 'edge') lab.end();
 		else if (m?.k === 'room') {
 			const r = lab.drag;
 			lab.drag = null;
@@ -282,6 +294,7 @@
 		style="width:{box.w}px;height:{box.h}px;cursor:{space ? 'grab' : cursor}"
 		{@attach onWheel(wheel)}
 		oncontextmenu={(e) => e.preventDefault()}
+		onmousedown={(e) => { if (e.button === 1) e.preventDefault(); }}
 		onpointerdown={down}
 		onpointermove={move}
 		onpointerup={up}
@@ -306,5 +319,6 @@
 	<div class="pointer-events-none absolute inset-y-0" style="left:{side ? paneBox.w : 0}px;width:{paneBox.w}px"><PinMarkers space="grid" box={paneBox} /></div>
 	<div class="absolute top-2 left-3"><ShipSettings /></div>
 	<div class="pointer-events-none absolute right-3 bottom-2 text-xs text-muted-foreground tabular-nums" aria-label="Grid zoom">{percentOf(lab.view.zoom, dpr())}%</div>
+	{#if lab.tool === 'window' && lab.windowGhost?.error && !lab.compare}<div class="pointer-events-none absolute bottom-2 left-3 rounded bg-destructive/85 px-2 py-1 text-xs text-white">Cannot go here: {lab.windowGhost.error}</div>{/if}
 	{#if lab.ghost?.error && !lab.compare}<div class="pointer-events-none absolute bottom-2 left-3 rounded bg-destructive/85 px-2 py-1 text-xs text-white">Cannot go here: {lab.ghost.error}</div>{/if}
 </div>

@@ -2,8 +2,10 @@
 /**
  * Ship layout contact sheets without Blender or sprite art.
  *   node tools/shipgen/cli.js <faction|all> [--from 1] [--count 12] [--depth 0] [--out dir] [--scale 10] [--views detail|silhouette|assembly|structure|all]
- *   node tools/shipgen/cli.js station.<kind>|station.all [--size outpost|station|hub|outpost,hub|all] [--layout stationWheel]: station sheets.
+ *   node tools/shipgen/cli.js station.<kind>|station.all [--size outpost|station|hub|outpost,hub|all] [--layout assembly.bazaar.1]: station
+ *   sheets, built as the game builds them, or by one assembly recipe.
  *   --views labels: one labelled image a seed (rooms named, furniture coded, a key: tools/shipgen/labels.ts).
+ *   --views marks: the same with the deck's edge markings drawn (src/sim/shipgen/markings.ts).
  *   --ruin 0.2,0.5,0.9 [--cause combat|decay|both]: derelict ruin sheets instead (tools/shipgen/ruinView.ts).
  *   --templates <file.ts> [--views detail,structure,silhouette,iso] [--scale 12]: hand-drawn templates (a module exporting
  *   `variants`, e.g. tools/shipgen/starters/*.ts) side by side, one PNG per view (tools/shipgen/templates.ts).
@@ -54,6 +56,29 @@ const server = await createServer({ server: { middlewareMode: true }, appType: '
 try {
   const lib = await server.ssrLoadModule('/tools/shipgen/draw.ts');
   mkdirSync(out, { recursive: true });
+  // `--mock <file.ts>`: a hand-made mock (a module exporting `mock()`: a template, captions, problems) as a labelled
+  // image, and as a layout lab case (open it at /tools/layout/?case=<slug>).
+  if (opt('mock')) {
+    const file = opt('mock');
+    const mod = await server.ssrLoadModule(`/${file.replace(/^\.?\//, '')}`);
+    const [lv, tv, lay, cases] = await Promise.all(['/tools/shipgen/labels.ts', '/tools/shipgen/templates.ts', '/tools/layout/layout.ts', '/tools/layout/cases.ts'].map((p) => server.ssrLoadModule(p)));
+    const name = file.split('/').pop().replace(/\.ts$/, '');
+    const m = mod.mock();
+    for (const p of m.problems) console.log(`problem: ${p}`);
+    const g = tv.templateResult(m.template.name, m.template);
+    for (const { x, y, role } of m.roles ?? []) { const room = g.roomOf[y * g.width + x]; if (room >= 0 && g.rooms[room]) g.rooms[room].role = role; }
+    const r = lv.labelOf(g, m.template.name, Number(opt('scale', 16)), m.captions, false);
+    const f = join(out, `${name}-labels.png`);
+    writeFileSync(f, png(r.width, r.height, r.data));
+    console.log(f);
+    const layout = lay.layoutOfGen(g, m.template.name, true);
+    const source = { kind: 'blank', id: '', family: '', size: 'station', layout: '', seed: 1, depth: 0, spec: '', generator: 'mock' };
+    const slug = `mock-${name}`;
+    writeFileSync(join(import.meta.dirname, '..', 'layout', 'cases', `${slug}.json`), cases.serializeCase(cases.caseOf(m.template.name, source, layout, layout, [], [])));
+    console.log(`case: /tools/layout/?case=${slug}`);
+    for (const c of m.captions) if (c.cx !== undefined) console.log(`room ${c.text}: view=${c.cx + lay.PAD},${c.cy + lay.PAD}`);
+    process.exit(0);
+  }
   if (opt('templates')) {
     const tv = await server.ssrLoadModule('/tools/shipgen/templates.ts');
     const file = opt('templates');
@@ -101,16 +126,16 @@ try {
   for (const f of factions) {
     const base = join(out, f.startsWith('station.') ? f.replace(':', '-').replace(/,/g, '+').replace('@', '-') : `${f.replace('faction.', '').replace(':', '-')}-d${depth}`);
     let text = '';
-    if (views.includes('labels')) {
+    for (const v of views.filter((x) => x === 'labels' || x === 'marks')) {
       const lv = await server.ssrLoadModule('/tools/shipgen/labels.ts');
       for (let seed = from; seed < from + count; seed++) {
-        const r = lv.labelView(f, seed, depth);
-        const file = `${base}-labels-s${seed}.png`;
+        const r = lv.labelView(f, seed, depth, 16, v === 'marks');
+        const file = `${base}-${v}-s${seed}.png`;
         writeFileSync(file, png(r.width, r.height, r.data));
         console.log(file);
       }
     }
-    for (const view of views.filter((v) => v !== 'labels')) {
+    for (const view of views.filter((v) => v !== 'labels' && v !== 'marks')) {
       const sheet = lib.contactSheet(f, from, count, depth, scale, 2600, view);
       const file = view === 'detail' ? `${base}.png` : `${base}-${view}.png`;
       writeFileSync(file, png(sheet.raster.width, sheet.raster.height, sheet.raster.data));
