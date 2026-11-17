@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { content } from '../index';
+import { cachedOutpost, expectAirlocksClear } from '../../../test/support/fixtures/outposts';
 import { AsteroidC } from '../../sim/asteroids/components';
 import type { OreDef } from '../../sim/asteroids/types';
 import { CombatC, ShipC } from '../../sim/combat/components';
@@ -17,7 +18,6 @@ import { LEVEL_TICKS } from '../../sim/rock/dig';
 import { deserialize, serialize } from '../../sim/save';
 import { Sim } from '../../sim/sim';
 import { Struct, writeStruct } from '../../sim/structure';
-import { airlockOutside } from '../../sim/outposts/site';
 import { StationAlarmC, StationC, StationCrewC } from '../../sim/stations/components';
 import { TraderC } from '../../sim/trade/types';
 import { runLog } from '../../../test/support/sim';
@@ -29,7 +29,7 @@ describe('outposts', () => {
   for (const style of ['surface', 'dug'] as const) {
     it(`${style}: deterministic and valid`, () => {
       for (let seed = 1; seed <= 4; seed++) {
-        const a = generateOutpost(style, seed, CTX)!;
+        const a = cachedOutpost(style, seed)!; // (built once: the airlock test below reuses it)
         expect(a, `seed ${seed}`).not.toBeNull();
         const b = generateOutpost(style, seed, CTX)!;
         expect(b.template).toEqual(a.template);
@@ -39,27 +39,8 @@ describe('outposts', () => {
     });
   }
 
-  it('airlocks never open into rock: a dug base has only its dock, whose collar is space (seeds 1..20)', () => {
-    for (const style of ['dug', 'surface'] as const) {
-      for (let seed = 1; seed <= 20; seed++) {
-        const o = generateOutpost(style, seed, CTX);
-        if (!o) continue;
-        const plan = o.asteroid;
-        const at = (x: number, y: number) => (x < 0 || y < 0 || x >= plan.w || y >= plan.h ? Struct.Space : plan.struct[y * plan.w + x]);
-        const locks = (o.template.modules ?? []).filter((m) => MODS[m.def]?.airlock);
-        expect(locks.length, `${style} #${seed}`).toBeGreaterThan(0);
-        if (style === 'dug') {
-          expect(locks.length, `dug #${seed}`).toBe(1);
-          expect(at(o.at.x + o.dock.collar.x, o.at.y + o.dock.collar.y)).toBe(Struct.Space);
-        }
-        for (const m of locks) {
-          const out = airlockOutside(MODS[m.def]!, m);
-          expect(at(o.at.x + out.x, o.at.y + out.y), `${style} #${seed} airlock ${m.x},${m.y}`).not.toBe(Struct.Rock);
-        }
-        expect(o.station.station.docks).toBe(locks.length);
-        expect(validateOutpost(o, content.modules), `${style} #${seed}`).toEqual([]);
-      }
-    }
+  it('airlocks never open into rock: a dug base has only its dock, whose collar is space (seeds 1..4; 5..20 in outposts.slow.test.ts)', () => {
+    for (const style of ['dug', 'surface'] as const) for (let seed = 1; seed <= 4; seed++) expectAirlocksClear(style, seed);
   });
 
   it('each kind is built from its station kind at the outpost tier, with crew and security', () => {
