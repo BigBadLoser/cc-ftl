@@ -22,7 +22,9 @@ from .wall3d_ext_geom import D
 
 PART = [None]                       # the piece being built: "w1" | "w2" | "w3" (None: not a window)
 SILL = 10                           # the sill's front's top: this many px over the groove
-JAMB_IN = 5 / 32                    # the jamb's front (and the slope's top) this far behind the face
+JAMB_IN = 1 / 32                    # the posts (the jambs) this far behind the face
+PANE_IN = 2 / 32                    # the pane's front this far behind the posts'
+SILL_TOP = "stL"                    # the sill's flat top under the glass
 FRAME = 2 / 32                      # an end piece's outer frame (the whole section), along the face
 JAMB = 5 / 32                       # the jamb inside it
 BACK_WALL = "stE"                   # the window's back wall
@@ -59,11 +61,11 @@ def span(f, s, s0, s1, zt):
 def _span(f, s, s0, s1, zt):
     part, H, Z = PART[0], s.H, core.ZPX
     WIN.PART = part
-    fr, dv = D, D - JAMB_IN                             # (the face; the jamb's front, the slope's top)
+    fr, dv = D, D - JAMB_IN                             # (the face; the posts' front)
     zh = s.z_at(zt, -1) + 0.5 * SD.BOX_OUT / Z          # (the header's foot: the line under the bullnose's top, as
     zs = s.z_at(SH.GROOVE, -SILL)                       # the module's top box's; the sill's front's top)
-    gl = dv - WIN.PANE_IN                               # (the pane's front)
-    zj = zs + WIN.SILL_RISE * (fr - dv) / (fr - gl) / Z     # (the slope's top, as the ship's rise)
+    gl = dv - PANE_IN                                   # (the pane's front)
+    zj = zs                                             # (the sill's top: flat, no slope)
     dp = gl - WIN.PANE / 2
     db = max(0.0, dp - WIN.PANE / 2 - WIN.WALL_BACK)    # (the window's back)
     end = part in ("w1", "w3")
@@ -82,16 +84,9 @@ def _span(f, s, s0, s1, zt):
             f.part(u0, u1, pf, s.cols(pf, "face"), cp, end=False)
         h0, w0 = s0 + FRAME, s0 + FRAME + JAMB
     u0, u1, _ = seg(h0, s1)
-    pf = [(db, 0.0), (fr, 0.0), (fr, zs), (dv, zj), (db, zj)]           # the sill: its slope, then flat back
-    cols = [None, SH.FACE, WIN.SILL_SLOPE, WIN.SILL_FLAT, None]
-    if end:
-        WIN._w1_sill(fm, s0, h0, s1, db, fr, zs, dv, zj, SH.FACE)
-    elif part == "w2":
-        WIN._w2_sill(f, s, s0, s1, u0, u1, pf, cols, db, fr, zs)
-        WIN._w2_plate(f, s, s0, s1, fr, zs, dv, zj)
-    else:
-        f.part(u0, u1, pf, cols, None, end=False)
-    f.line(u0, u1, SH.FOOT_H, SH.GROOVE, SH.FACE_LO, bevel=False)       # (the face's lower band, on the sill's front)
+    f.block(u0, u1, 0.0, SH.GROOVE)                                     # the sill: the face, its top flat back
+    pf = [(db, SH.GROOVE), (fr, SH.GROOVE), (fr, zs), (db, zs)]         # to the window's back
+    f.part(u0, u1, pf, [None, SH.FACE, SILL_TOP, None], None, end=False)
     _head(f, u0, u1, zh, (part == "w1", part == "w3"))                 # the header: a square box
     f.part(*seg(w0, s1)[:2], [(0.0, zj), (db, zj), (db, zh), (0.0, zh)], [None, BACK_WALL, None, None], None,
            end=False)                                                   # the window's back wall
@@ -116,7 +111,6 @@ def _span(f, s, s0, s1, zt):
         pf = [(dp + WIN.PANE / 2, zl), (dv + 0.001, zl), (dv + 0.001, zl + 1 / Z), (dp + WIN.PANE / 2, zl + 1 / Z)]
         fm.part(h0, w0 + 0.001, pf, [WIN.JAMB_SEAM] * 4, (None, WIN.JAMB_SEAM), end=False)
         EN.jamb(fm, h0, w0, db, dv, zl, zh, WIN.HEAD_FRONT, WIN.SIDE)
-        EN.studs(fm, s, h0, dv, zl, zh)
 
 
 def _head(f, a, b, z0, ends):
