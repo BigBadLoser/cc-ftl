@@ -22,7 +22,7 @@ upgrades) plugs into `UpgradeMods.weapon` (a patch over the fitted weapon's def)
 Flak is an ordinary ammo weapon (starts on HOLD); HOLD, or hold all, stops all fire. Its art (#357): turret `turret_flak.py`,
 bay `turret_bay_flak.py`, no `artTint` (turrets never take it). Drones are covered by point defence and defence drones, not flak.
 Combat: a left click on a foe weapon (not aiming) opens a read-only inspector (`app/foeModule.ts` is the place for a future
-scanner gate). Debug starts live in `app/scenarios/`. Save version 97.
+scanner gate). Debug starts are presets in `content/scenario/` (see ARCHITECTURE "Scenario builder"). Save version 97.
 Rules from its review: read a weapon module's def through `weaponDefOf` (or a shot's through `firedWeapon`), never `sim.content.weapons`
 directly; every job aimed at a placed module posts `moduleSite` (`modules/footprint.ts`, the rotated footprint) so crew work it from any side.
 Slice 2 (merged in #351): the seven behaviour upgrades in `content/upgradesBehaviour.ts`, all data over general fields: `WeaponDef.ammoPerShot`
