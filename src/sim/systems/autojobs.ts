@@ -3,7 +3,7 @@ import type { ModuleDef } from '../registry';
 import { rescueSpot } from '../away/rescue';
 import { abortTask } from '../ai/task';
 import { breachTiles, canAffordWall } from '../crew/breach';
-import { CarriedC, DownedC, JobC, PositionC, type Job } from '../crew/components';
+import { CarriedC, CrewC, DownedC, JobC, PositionC, type Job, type Position } from '../crew/components';
 import { origin } from '../crew/helpers';
 import { bedsToTend } from '../crew/treatment';
 import { ModuleC } from '../modules/components';
@@ -22,6 +22,15 @@ import { moduleSite } from '../modules/footprint';
 const CONDITIONAL_WORK = 1;
 /** How often (ticks) the hull is scanned for holes to post wall jobs on. */
 const BREACH_SCAN_TICKS = 10;
+
+/** Is there a free bed some crew member on the patient's ship could walk to from the patient's tile? The medic is chosen later, so any crew member's walk mode will do (a suited medic reaches a bed through thin air that the patient could not). */
+function bedForRescue(sim: Sim, patient: number, pos: Position): boolean {
+  const ship = shipIdOf(sim, pos);
+  return sim.world.query(CrewC, PositionC).some((c) => {
+    const p = sim.world.get(c, PositionC);
+    return !!p && shipIdOf(sim, p) === ship && !!findFreeBed(sim, ship, c, origin(pos), false, undefined, bedUseOf(sim, patient));
+  });
+}
 
 function addJob(sim: Sim, job: Partial<Job> & Pick<Job, 'category' | 'kind' | 'x' | 'y'>): void {
   const id = sim.world.createEntity();
@@ -92,7 +101,7 @@ export function autoJobsSystem(sim: Sim): void {
     const downed = sim.world.get(id, DownedC);
     const pos = sim.world.get(id, PositionC);
     if (!downed || !pos || downed.stabilized || seen.has(`rescue:${id}`)) continue;
-    if (!downed.bed && !findFreeBed(sim, shipIdOf(sim, pos), id, origin(pos), false, undefined, bedUseOf(sim, id)) && !rescueSpot(sim, id)) continue; // nowhere to take them
+    if (!downed.bed && !bedForRescue(sim, id, pos) && !rescueSpot(sim, id)) continue; // nowhere to take them
     addJob(sim, { category: 'medical', kind: 'rescue', x: pos.x, y: pos.y, target: id, bed: downed.bed });
   }
   // A medical bed with a patient in it gets a tend job (medical category): a medic stands beside it, and the patient heals faster while they do.
