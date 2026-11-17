@@ -11,7 +11,7 @@ describe('tube art', () => {
     expect(tubePieces(X, look).map((p) => `${p.id}@${p.x},${p.y}`)).toEqual([
       'tube.hull.r1.cut@4,3', 'tube.hull.r1.cut.tint@4,3', 'tube.port.e@5,2',
       'tube.x.west@5,2', 'tube.x.west.front@5,2', 'tube.x.mid@6,2', 'tube.x.mid.front@6,2', 'tube.x.east@7,2', 'tube.x.east.front@7,2',
-      'tube.port.w@7,2', 'tube.junction.w.open@8,3',
+      'tube.port.w@7,2', 'tube.junction.w.open@8,3', 'tube.junction.w.open.front@8,3',
     ]);
   });
 
@@ -28,8 +28,18 @@ describe('tube art', () => {
   });
 
   it('a front layer covers crew up to the next tile, but stops at the end of the tube', () => {
-    const fronts = tubePieces(X, look).filter((q) => q.id.endsWith('.front')).map((q) => q.dz);
+    const fronts = tubePieces(X, look).filter((q) => q.id.startsWith('tube.x.') && q.id.endsWith('.front')).map((q) => q.dz);
     expect(fronts).toEqual([0.9, 0.9, 0.5]);
+  });
+
+  it('the junction either side of crew in the near door: its back over the near port, its front to the middle of the door', () => {
+    const d = (q: { x: number; y: number; dz: number }) => q.x + q.y + q.dz;
+    const p = tubePieces(X, look), port = p.find((q) => q.id === 'tube.port.w')!;
+    const [back, front] = p.filter((q) => q.id.startsWith('tube.junction')).map(d) as [number, number];
+    const door = X.near.x + X.near.y;
+    expect(back).toBeGreaterThan(d(port));
+    expect(back).toBeLessThan(door - 0.45);
+    expect(front).toBeCloseTo(door + 0.02);
   });
 
   it('the wall tiles it stands in for', () => {

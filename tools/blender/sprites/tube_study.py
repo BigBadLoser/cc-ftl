@@ -341,21 +341,28 @@ def _mouth(own, wide, inside, mouth, c, op):
     return np.where(use[..., None], ci, c), op | use
 
 
-def _junction_job(o, t):
-    """tube.junction.<e|w|s|n>[.open] (on a wall facing +x / -x / +y / -y): the junction's inboard piece with its hatch
-    (tube_junction), anchored at its front tile (the door tile's +y neighbour, on a y wall its +x one: drawn after the
-    wall row it stands in)."""
-    def run(o=o, t=t):
+def _junction_job(o, t, half=None):
+    """tube.junction.<e|w|s|n>[.open][.front] (on a wall facing +x / -x / +y / -y): the junction's inboard piece with its
+    hatch (tube_junction), anchored at its front tile (the door tile's +y neighbour, on a y wall its +x one: drawn after the
+    wall row it stands in). On the near module's wall (o 8 / 4) in two layers either side of crew in the door tile
+    (tube_junction.halves): the bore, hatch and floors (`half` 'back', no suffix), the room face round it ('front')."""
+    def run(o=o, t=t, half=half):
         import bpy
         from . import env_build as E, post, tube_junction
-        aid = f"tube.junction.{ {2: 'e', 8: 'w', 1: 's', 4: 'n'}[o] }" + (".open" if t else "")
+        aid = f"tube.junction.{ {2: 'e', 8: 'w', 1: 's', 4: 'n'}[o] }" + (".open" if t else "") + (".front" if half == "front" else "")
         core.clear_scene_meshes()
         post.select("tube+hull+walls")
-        objs = tube_junction.piece(o, t, at=(0.0, -1.0) if o in (2, 8) else (-1.0, 0.0))
+        at = (0.0, -1.0) if o in (2, 8) else (-1.0, 0.0)
+        objs = tube_junction.piece(o, t, at=at)
         sc = bpy.context.scene
         sc.cycles.samples = SAMPLES
         try:
-            it = E.crop_item(aid, (1, 1), *E.render_sprite(aid, "block", objs)[:5])
+            if half is None:
+                it = E.crop_item(aid, (1, 1), *E.render_sprite(aid, "block", objs)[:5])
+            else:
+                back, front = tube_junction.halves(objs, o, at)
+                own = front if half == "front" else back
+                it = E.crop_item(aid, (1, 1), *E.render_sprite(aid, "over", (own, back + front))[:5])
         finally:
             sc.cycles.samples = core.SAMPLES
         return [it] if it else []
@@ -387,4 +394,4 @@ def _hull_job(rot):
 def jobs():
     return ([_seg_job(p, a, h) for a in ("x", "y") for p in PARTS for h in ("back", "front")] +
             [_port_job(o, d) for o in (2, 1) for d in (False, True)] + [_port_job(8), _port_job(4)] +
-            [_junction_job(o, t) for o in (8, 4) for t in (0.0, 1.0)] + [_hull_job(1), _hull_job(2)])
+            [_junction_job(o, t, h) for o in (8, 4) for t in (0.0, 1.0) for h in ("back", "front")] + [_hull_job(1), _hull_job(2)])

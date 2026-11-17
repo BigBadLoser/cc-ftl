@@ -36,8 +36,8 @@ const run = (axis: 'x' | 'y', len: number): TubeRun => {
 };
 
 const CLIP = 'idle';
-/** Crew stood along a run (tiles from its first floor tile): inside it, across the seams, at its near end and in the near door. */
-const STAND = [0, 0.45, 0.55, 1.3, 2.4, 3.2];
+/** Crew stood along a run (tiles from its first floor tile): inside it, across the seams, at its near end and either side of the near door's middle. */
+const STAND = [0, 0.45, 0.55, 1.3, 2.4, 2.8, 3.4];
 
 type Look = ReturnType<typeof crewLoadout>;
 
@@ -59,14 +59,14 @@ function figure(root: Container, atlas: Atlas, look: Look, seed: number, at: { x
  * Ground under the patch, then the run's pieces (tubeArt.tubePieces) and any crew in the game's depth order: tile depth plus the
  * piece's `dz`, a crew member's at their position. Returns the crew's layers.
  */
-function scene(root: Container, atlas: Atlas, r: TubeRun, look: TubeLook, ox: number, oy: number, w: number, h: number, crew?: { look: Look; zoom: number }) {
+function scene(root: Container, atlas: Atlas, r: TubeRun, look: TubeLook, ox: number, oy: number, w: number, h: number, crew?: { look: Look; zoom: number; at: number[] }) {
   const sx = (x: number, y: number) => ox + ((x - y) * TW) / 2;
   const sy = (x: number, y: number) => oy + ((x + y) * TH) / 2;
   for (let d = 0; d <= w + h - 2; d++) for (let x = 0; x < w; x++) if (d - x >= 0 && d - x < h) put(root, atlas, `rock.ground.m15.v${(x * 5 + (d - x) * 3) % 8}`, sx(x, d - x), sy(x, d - x));
   const dx = r.axis === 'x' ? 1 : 0, dy = 1 - dx;
   const items = [
     ...tubePieces(r, look).map((p) => ({ d: p.x + p.y + p.dz, draw: () => { put(root, atlas, p.id, sx(p.x, p.y), sy(p.x, p.y)); return undefined; } })),
-    ...(crew ? STAND.filter((k) => k < r.len + 0.5) : []).map((k, n) => {
+    ...(crew ? crew.at.filter((k) => k < r.len + 0.5) : []).map((k, n) => {
       const x = r.x + dx * k, y = r.y + dy * k;
       return { d: x + y, draw: () => figure(root, atlas, crew!.look, 11 * (n + 1), { x: sx(x, y), y: sy(x, y) }, crew!.zoom) };
     }),
@@ -83,7 +83,7 @@ export const tubePanel: LabPanel = {
   id: 'tube',
   title: 'Prefab base tube',
   zoom: 1,
-  help: 'crew=1: only x and y runs three long, cut and roofed, with crew stood along them and in the near door',
+  help: 'crew=1: only x and y runs three long, cut and roofed, with crew stood along them and in the near door (stand=0,1.5: where, tiles from the first)',
   async cells({ atlas, params }) {
     for (const p of ['tube.', 'rock.ground.m15']) atlas.ids(p).forEach((id) => atlas.stat(id)); // queue the sheets
     const crewOn = params.get('crew') === '1';
@@ -96,14 +96,15 @@ export const tubePanel: LabPanel = {
     const cells: LabCell[] = [];
     if (crewOn) {
       const zoom = Number(params.get('zoom') ?? 1);
+      const at = params.get('stand')?.split(',').map(Number).filter((k) => Number.isFinite(k)) ?? STAND;
       for (const axis of ['x', 'y'] as const)
         for (const [name, look] of [['cut', { level: 'cut', roofed: false, farOpen: true, nearOpen: true }], ['roofed', { level: 'up', roofed: true, farOpen: true, nearOpen: true }]] as [string, TubeLook][]) {
           const r = run(axis, 3);
           const w = axis === 'x' ? 7 : 5, h = axis === 'y' ? 7 : 5;
           cells.push({
-            label: `${axis} 3: ${name}, crew`, note: `crew at ${STAND.join(', ')} tiles along`, w: ((w + h) * TW) / 2 + PAD * 2, h: ((w + h) * TH) / 2 + TALL + PAD * 2, newRow: name === 'cut',
+            label: `${axis} 3: ${name}, crew`, note: `crew at ${at.join(', ')} tiles along`, w: ((w + h) * TW) / 2 + PAD * 2, h: ((w + h) * TH) / 2 + TALL + PAD * 2, newRow: name === 'cut',
             mount(root) {
-              const figs = scene(root, atlas, r, look, PAD + (h * TW) / 2, PAD + TALL + TH / 2, w, h, { look: crewLook, zoom });
+              const figs = scene(root, atlas, r, look, PAD + (h * TW) / 2, PAD + TALL + TH / 2, w, h, { look: crewLook, zoom, at });
               return (t) => { for (const parts of figs) drawLayers({ parts, glows: [] }, CLIP, 2, t); };
             },
           });

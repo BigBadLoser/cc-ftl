@@ -14,10 +14,12 @@ import type { WallLevel } from './tiles';
  *    tile takes no floor, and the walls beside it no art (the region's tile art sees them as outside, regionTiles.ts).
  *  - the near port `tube.port.w|n` on the last floor tile, over its glass and the crew there (the ring faces the camera).
  *  - unroofed, the near junction `tube.junction.w|n[.open]` (the inboard frame and hatch through the near module's back wall) at the
- *    near door's front tile; the grid draws no wall on the door and its two neighbours then. Roofed, they are the hull's.
+ *    near door's front tile; the grid draws no wall on the door and its two neighbours then. Roofed, they are the hull's. Two
+ *    layers either side of crew in the door: the bore, hatch and floors under them, from the door tile's far edge; `.front`, the
+ *    room face with its frame, over them up to the door's middle (crew past it stand in the room, in front of it).
  *
  * Back to front: the hull row, the far port and the glass's back layer, all just under the crew on their tiles; the glass's front
- * layer and the near port over the crew; the junction over the wall row it replaces.
+ * layer and the near port over the crew; the junction's back, then its front over crew in the door.
  */
 export interface TubePiece {
   id: string;
@@ -63,7 +65,11 @@ export function tubePieces(r: TubeRun, v: TubeLook): TubePiece[] {
     out.push({ id: `tube.${r.axis}.${part}.front`, x: r.x + dx * k, y: r.y + dy * k, dz: k === r.len - 1 ? FRONT_END : FRONT });
   }
   out.push({ id: `tube.port.${x ? 'w' : 'n'}`, x: r.near.x - dx, y: r.near.y - dy, dz: FRONT_END + 0.005 });
-  if (!v.roofed) out.push({ id: `tube.junction.${x ? 'w' : 'n'}${v.nearOpen ? '.open' : ''}`, x: r.near.x + dy, y: r.near.y + dx, dz: 0.02 });
+  if (!v.roofed) {
+    // (at the door's front tile, one deeper than the door: the back just over the near port, the front just past the door's middle)
+    const id = `tube.junction.${x ? 'w' : 'n'}${v.nearOpen ? '.open' : ''}`, at = { x: r.near.x + dy, y: r.near.y + dx };
+    out.push({ id, ...at, dz: -1.49 }, { id: `${id}.front`, ...at, dz: -0.98 });
+  }
   return out;
 }
 

@@ -228,6 +228,47 @@ def _relief(b, f, dz):
     _raise(b, [(-w(z0), dz + z0), (w(z0), dz + z0), (w(z1), dz + z1), (-w(z1), dz + z1)], f, 0.03, "tbIn")
 
 
+CUT = 0.001                                               # the halves' plane (d): just behind the sunk face
+
+
+def halves(obs, o, at=(0.0, 0.0)):
+    """(back, front): copies of the junction's objects cut at the sunk face's plane, so crew in the door tile stand between
+    them: the back the bore, the hatch, the outer face and every floor (under the crew); the front the room's side, the sunk
+    face with its frame and lamps and the ribs' room halves (over them). o 8 / 4 only (the room toward the camera)."""
+    import bmesh
+    import bpy
+    from mathutils import Vector
+    dn = core.G(-1.0, 0.0, 0.0) if o == 8 else core.G(0.0, -1.0, 0.0)         # (d's direction: toward the tube)
+    co = core.G(at[0], at[1], 0.0) + dn * CUT
+    floor = 0.01
+    out = ([], [])
+    bpy.context.view_layer.update()
+    for ob in obs:
+        for k in (0, 1):
+            c = ob.copy()
+            c.data = ob.data.copy()
+            bpy.context.scene.collection.objects.link(c)
+            bpy.context.view_layer.update()
+            m, inv = c.matrix_world, c.matrix_world.inverted()
+            bm = bmesh.new()
+            bm.from_mesh(c.data)
+            bmesh.ops.bisect_plane(bm, geom=bm.verts[:] + bm.edges[:] + bm.faces[:], dist=1e-6, plane_co=inv @ co,
+                                   plane_no=(inv.to_3x3() @ dn))
+            gone = []
+            for f in bm.faces:
+                ws = [m @ v.co for v in f.verts]
+                mid = sum(ws, Vector()) / len(ws)
+                room = (mid - co).dot(dn) < 0 and max(w.z for w in ws) > floor
+                if room != (k == 1):
+                    gone.append(f)
+            bmesh.ops.delete(bm, geom=gone, context="FACES")
+            bm.to_mesh(c.data)
+            bm.free()
+            out[k].append(c)
+        ob.hide_render = True
+    return out
+
+
 def piece(o=8, t=0.0, at=(0.0, 0.0), hatch_only=False):
     """The junction's objects, its door tile's centre at grid offset `at` from the sprite's origin. `hatch_only`: the
     leaf and its threshold alone (in the far port's bore, tube_port.through: the port's own bore round them)."""
