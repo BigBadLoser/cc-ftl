@@ -36,6 +36,8 @@ export interface Layout {
    * stamps it the way the game does and the renderer picks its livery (container colours, logos) from the faction. Absent for a blank grid or a starter.
    */
   origin?: { gen: { faction: string; seed: number; depth: number; role?: string }; side: string };
+  /** A prefab base: it stands on levelled asteroid ground, which the preview lays round it (world.ts `groundUnder`). */
+  ground?: true;
 }
 export interface Rect { x: number; y: number; w: number; h: number }
 export type Tile = [number, number];
