@@ -120,13 +120,16 @@ export function exteriorIds(h: HullKeys, x: number, y: number, has: (id: string)
   if (h.ground) {
     // MOCK (#524): the station look's piece where it has one (tile.hull.station.ext.*, tile.roof.station.g.*), else the ship's.
     const st = (id: string) => id.replace("tile.hull.ext.", "tile.hull.station.ext.").replace("tile.roof.g.", "tile.roof.station.g.");
-    const ids = shipExteriorIds(h, x, y, (id) => has(st(id)), base, win);
+    const ids = shipExteriorIds(h, x, y, (id) => has(st(id)), base, win, STATION_DESIGNS);
     if (ids) return ids.map(st);
   }
   return shipExteriorIds(h, x, y, has, base, win);
 }
 
-function shipExteriorIds(h: HullKeys, x: number, y: number, has: (id: string) => boolean, base = false, win: WindowTile | null = null): string[] | null {
+/** MOCK (#524): the station's straight-run designs (a1..a5: station_hull_designs.DESIGNS), the ship's being a1..a3. */
+const STATION_DESIGNS = 5;
+
+function shipExteriorIds(h: HullKeys, x: number, y: number, has: (id: string) => boolean, base = false, win: WindowTile | null = null, designs = 3): string[] | null {
   const k = h.at(x, y);
   if (!k) return null;
   if (!hullKeyGeneric(k)) {
@@ -134,7 +137,8 @@ function shipExteriorIds(h: HullKeys, x: number, y: number, has: (id: string) =>
     // A window tile of a straight near run: its window piece, else the design pick.
     const w = base ? null : windowExteriorId(h, x, y, has, win);
     if (w) return [w];
-    const v = STRAIGHT.has(id) && !base ? ["", ".a1", ".a2", ".a3"][pickDesign(x, y, 4, 1)] : "";
+    const d = STRAIGHT.has(id) && !base ? pickDesign(x, y, designs + 1, 1) : 0;
+    const v = d ? `.a${d}` : "";
     for (const c of [id + v, id]) if (has(c)) return [c];
   }
   const n = hullKeyName(k);
