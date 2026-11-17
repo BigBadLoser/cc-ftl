@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { content } from '../content';
+import { content } from './index';
 import { addCredits } from '../sim/trade/credits';
 import { newGame } from '../sim/newGame';
 import { runSummary } from '../sim/runSummary';

@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { content } from '../../content';
-import { newGame } from '../../sim/newGame';
-import { pipeline, systemLabels } from '../../sim/pipeline';
-import type { Probe } from '../../sim/probe';
-import { serialize } from '../../sim/save';
+import { content } from './index';
+import { newGame } from '../sim/newGame';
+import { pipeline, systemLabels } from '../sim/pipeline';
+import type { Probe } from '../sim/probe';
+import { serialize } from '../sim/save';
 
 function fake(): { probe: Probe; log: string[] } {
   const log: string[] = [];
