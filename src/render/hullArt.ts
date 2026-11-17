@@ -144,8 +144,10 @@ function shipExteriorIds(h: HullKeys, x: number, y: number, has: (id: string) =>
 /** MOCK (#524): the rock berm heaped against a ground base's station hull on this tile, or null. */
 export function bermId(h: HullKeys, x: number, y: number, has: (id: string) => boolean): string | null {
   const k = h.ground ? h.at(x, y) : "";
-  const id = k ? `tile.hull.station.berm.${hullKeyName(k)}` : "";
-  return id && has(id) ? id : null;
+  if (!k) return null;
+  // its variant (station_berm.VARIANTS) by a hash of the tile
+  const id = `tile.hull.station.berm.${hullKeyName(k)}.v${(tileHash(x + 3 * 7919, y - 3 * 104729) >>> 8) % 3}`;
+  return has(id) ? id : null;
 }
 
 /** The bay look a tile's belly takes. */

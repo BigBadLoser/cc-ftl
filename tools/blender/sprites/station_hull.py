@@ -375,17 +375,17 @@ def _generic(n):
     return out
 
 
-def _berm(n):
+def _berm(n, v):
     from . import env_build, post
     from . import station_berm as BM
     from . import station_hull_diag as SG
     k = _unname(n)
     core.clear_scene_meshes()
     post.select(True)
-    own = BM.berm(k)
+    own = BM.berm(k, v)
     if not own:
         return []
-    sid = f"tile.hull.station.berm.{n}"
+    sid = f"tile.hull.station.berm.{n}.v{v}"
     it = env_build.crop_item(sid, (1, 1), *env_build.render_sprite(sid, "wide", (own, own + SG.piece(k))))
     return [it] if it else []
 
@@ -394,7 +394,8 @@ def jobs():
     """The run set, and each straight run in each design (tile.hull.station.ext.o<o>.m<mask>.a<design>)."""
     out = [lambda m=m, o=o: _item(f"tile.hull.station.ext.o{o}.m{m}", lambda: _wide(m, o)) for m, o in MOCK_RUN]
     out += [lambda n=n: _generic(n) for n in MOCK_KEYS]
-    out += [lambda n=n: _berm(n) for n in MOCK_KEYS + MOCK_BERM]
+    from . import station_berm as BM
+    out += [lambda n=n, v=v: _berm(n, v) for n in MOCK_KEYS + MOCK_BERM for v in range(BM.VARIANTS)]
     return out + [lambda m=m, o=o, v=v: _item(f"tile.hull.station.ext.o{o}.m{m}.a{v}", lambda: _wide(m, o, v))
                   for (m, o) in STRAIGHT for v in SD.DESIGNS]
 

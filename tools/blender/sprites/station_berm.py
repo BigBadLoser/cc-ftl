@@ -16,14 +16,16 @@ from . import core
 from . import hull_outline as HO
 from .rock_base import TAU, Canvas, gbase, per2, polyg, rng, tri, quad
 
-H0 = 6.5                            # px: the ridge's crest over the deck (the foot step's top is 4 px)
+H0 = 7.0                            # px: the ridge's crest over the deck (the foot step's top is 4 px)
 CREST = 0.07                        # tiles out from the outline: the crest (over the step, 3/32 + a block proud)
 REACH = 0.42                        # tiles out from the outline: where it has fallen to the ground (a third of a tile
                                     # past the step), give or take WOBBLE
 WOBBLE = 0.07
+VARIANTS = 3                        # per key, picked per tile; each its own lumps, reach and stones (VAR_*), faded out at
+VAR_REACH, VAR_H = 0.06, 1.5        # its stretch's ends so neighbours of any variant meet
 N = 48                              # surface grid cells per tile
-STONES = (3, 6)                     # loose stones per tile
-STONE = ("rkL", "rk", "rkM", "rk")
+STONES = (2, 4)                     # loose stones per tile (and variant)
+STONE = ("rk", "rkM", "rk", "rkM")
 EPS = 0.3                           # px: a facet all under this over the ground is not drawn (the ground shows)
 
 
@@ -60,8 +62,10 @@ def _poly(fronts):
 
 
 def _dist(poly, fronts, p):
-    """Distance out from this tile's stretch of outline (a visible front's edge, or the wedge round a convex corner
-    between two), or None where another tile's stretch owns p (or it is inside the ship, or behind a far front)."""
+    """(distance out from this tile's stretch of outline, the variant window there), or None where another tile's
+    stretch owns p (or it is inside the ship, or behind a far front). The stretch: a visible front's edge (the window
+    sin^2 along it: 0 at its ends, where the next tile's variant takes over), or the wedge round a convex corner between
+    two (window 0)."""
     best = None
     m = len(poly)
     for j, (a, lab) in enumerate(poly):
@@ -78,7 +82,8 @@ def _dist(poly, fronts, p):
         if -1e-9 <= t <= 1 + 1e-9:
             if not seen:
                 return None
-            best = d if best is None else min(best, d)
+            w = math.sin(math.pi * max(0.0, min(1.0, t))) ** 2 * min(1.0, math.sqrt(L2) / 0.5)
+            best = (d, w) if best is None or d < best[0] else best
     for j, (v, lab) in enumerate(poly):                 # convex corners: a vertex between two front edges
         prev = poly[j - 1][1]
         if lab is None or prev is None or lab == prev:
@@ -86,44 +91,51 @@ def _dist(poly, fronts, p):
         n1, n2 = fronts[prev][0], fronts[lab][0]
         q = p - v
         if q.dot(n1) > 0 and q.dot(n2) > 0 and fronts[prev][2] and fronts[lab][2]:
-            best = q.length if best is None else min(best, q.length)       # (in a strip the edge's own is nearer)
+            if best is None or q.length < best[0]:      # (in a strip the edge's own is nearer)
+                best = (q.length, 0.0)
     return best
 
 
-def _height(d, x, y):
-    """The ridge over the ground at distance d out from the outline (tiles of height)."""
-    reach = REACH + WOBBLE * per2(x * 2, y * 2, 811, n=3) / 1.5
-    h0 = (H0 + 1.2 * per2(x * 3, y * 3, 813, n=3)) / core.ZPX
+def _height(d, w, x, y, var):
+    """The ridge over the ground at distance d out from the outline (tiles of height); w: the variant's share."""
+    sv = 900 + 37 * var
+    reach = REACH + WOBBLE * per2(x * 2, y * 2, 811, n=3) / 1.5 + w * VAR_REACH * per2(x * 3, y * 3, sv, n=3)
+    h0 = (H0 + 1.2 * per2(x * 3, y * 3, 813, n=3) + w * VAR_H * per2(x * 2.5, y * 2.5, sv + 1, n=3)) / core.ZPX
     if d < CREST:
         f = 1.0 - 0.15 * (1 - d / CREST)                # (it leans on the wall: a touch lower at the foot)
     else:
         r = min(1.0, (d - CREST) / max(0.05, reach - CREST))
         f = (1 - r) ** 1.6 * (1 + 0.6 * r)
-    lump = 0.22 * per2(x * 4, y * 4, 817, n=5) + 0.06 * per2(x * 8, y * 8, 819, n=4)
+    lump = 0.12 * per2(x * 3, y * 3, 817, n=4) + w * 0.12 * per2(x * 3.5, y * 3.5, sv + 2, n=3)
     return max(0.0, h0 * f * (1 + lump * min(1.0, f * 3)))
 
 
-def _col(n, x, y):
-    """Tone by facing (lit from +y and over), mottled."""
-    s = n.z * 0.7 + n.y * 0.45 - n.x * 0.15 + 0.04 * per2(x * 3, y * 3, 823, n=3)
-    return "gdL" if s > 0.86 else "gd" if s > 0.66 else "gdM" if s > 0.42 else "gdD"
+def _col(n, x, y, frac):
+    """Tone by height up the heap (frac: 0 at its toe, 1 at its crest), not by facing (the station hull lights both
+    near faces alike): a light crest, the ground's own tone midway, a darker toe ring outlining it on the ground; a
+    slope turned from the camera (toward the wall) the dark."""
+    if n.x + n.y < -0.35:
+        return "gdD"
+    t = frac + 0.06 * per2(x * 4, y * 4, 823, n=3)
+    return "gdL" if t > 0.62 else "gd" if t > 0.3 else "gdM" if t > 0.08 else "gdD"
 
 
-def berm(key):
-    """The berm's objects for a tile with this key (none if no visible front of it has any)."""
+def berm(key, var=0):
+    """The berm's objects for a tile with this key in variant var (none if no visible front of it has any)."""
     fronts = _fronts(key)
     if not any(f[2] for f in fronts):
         return []
     poly = _poly(fronts)
     if not poly:
         return []
-    k = Canvas(f"berm_{HO.name(key)}")
+    k = Canvas(f"berm_{HO.name(key)}_{var}")
     xs = [-1.0 + 2 * i / (2 * N) for i in range(2 * N + 1)]
     Z = {}
     for y in xs:
         for x in xs:
-            d = _dist(poly, fronts, Vector((x, y)))
-            Z[(x, y)] = None if d is None else _height(d, x, y)
+            g = _dist(poly, fronts, Vector((x, y)))
+            Z[(x, y)] = None if g is None else _height(g[0], g[1], x, y, var)
+    top = max((z for z in Z.values() if z is not None), default=0.0) or 1.0
     up = Vector((0, 0, 1))
     for j in range(2 * N):
         for i in range(2 * N):
@@ -138,26 +150,26 @@ def berm(key):
                 if nn.z < 0:
                     nn = -nn
                 cx, cy = sum(p.x for p in pts) / 3, sum(p.y for p in pts) / 3
-                polyg(k, pts, _col(nn, cx, cy), up)
-    _stones(k, poly, fronts, key)
+                polyg(k, pts, _col(nn, cx, cy, sum(zs) / 3 / (H0 / core.ZPX)), up)
+    _stones(k, poly, fronts, key, var)
     objs = k.build()
     return objs
 
 
-def _stones(k, poly, fronts, key):
-    """Loose stones on the slope (rockwall.skirt_stones' chunky lumps)."""
-    r = rng(9000 + sum(map(ord, key)))
+def _stones(k, poly, fronts, key, var):
+    """Loose stones on the slope (rockwall.skirt_stones' chunky lumps), clear of the stretch's ends."""
+    r = rng(9000 + sum(map(ord, key)) + 101 * var)
     want = int(r.integers(*STONES))
     placed = 0
     for _ in range(want * 20):
         if placed >= want:
             break
         x, y = r.uniform(-0.7, 0.9), r.uniform(-0.7, 0.9)
-        d = _dist(poly, fronts, Vector((x, y)))
-        if d is None or not (CREST * 0.6 < d < REACH * 0.95):
+        g = _dist(poly, fronts, Vector((x, y)))
+        if g is None or g[1] < 0.35 or not (CREST * 0.6 < g[0] < REACH * 0.9):
             continue
-        z = gbase(x, y) + _height(d, x, y)
-        rr = r.uniform(0.03, 0.055)
+        z = gbase(x, y) + _height(g[0], g[1], x, y, var)
+        rr = r.uniform(0.045, 0.075)
         c = Vector((x, y, z - rr * 0.2))
         n = Vector((0, 0, 1))
         u, v = Vector((1, 0, 0)), Vector((0, 1, 0))
@@ -168,6 +180,6 @@ def _stones(k, poly, fronts, key):
         col = STONE[int(r.integers(0, 4))]
         for a, b, ma, mb in zip(pts, pts[1:] + pts[:1], mid, mid[1:] + mid[:1]):
             lit = ((a + b) / 2 - c).y > 0
-            quad(k, a, b, mb, ma, col if lit else "rkM", (a + b) / 2 - c + n * 0.01)
-            tri(k, ma, mb, top, "rkL" if lit else col, (ma + mb) / 2 - c + n * 0.02)
+            quad(k, a, b, mb, ma, col if lit else "rkD", (a + b) / 2 - c + n * 0.01)
+            tri(k, ma, mb, top, "rkL", (ma + mb) / 2 - c + n * 0.02)
         placed += 1
