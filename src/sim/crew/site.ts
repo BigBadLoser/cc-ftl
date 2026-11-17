@@ -9,6 +9,7 @@ import { stat } from '../stats';
 import { TICK_HZ } from '../time';
 import { AssignmentC, CrewC, DeadC, DraftedC, JobC, PositionC, PrioritiesC, type Job } from './components';
 import { isIncapacitated, jobGoal, refusesWork, origin } from './helpers';
+import { walkOpts } from '../eva/route';
 import { findPath } from './pathfind';
 
 /** Why a construction site is stuck (the first that applies). */
@@ -117,7 +118,7 @@ function siteBlock(sim: Sim, id: number, job: Job, ship: number, capable: number
   const reach = (goal: { x: number; y: number; adjacent: boolean; w?: number; h?: number }): boolean =>
     capable.some((c) => {
       const p = sim.world.get(c, PositionC);
-      return !!p && findPath(sim, ship, origin(p), goal) !== null;
+      return !!p && findPath(sim, ship, origin(p), goal, walkOpts(sim, c)) !== null;
     });
   if (!reach(jobGoal(job))) return { kind: 'siteUnreachable' };
   const res = reservations(sim);
