@@ -5,6 +5,7 @@ import type { ModuleDef, ShipTemplate } from '../registry';
 import { roofMounted } from './layout';
 import { templateCable } from '../cable';
 import { groundPort, isGroundMount } from '../modules/groundMount';
+import { isLandingPad } from '../modules/landingPad';
 
 const N8 = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]] as const;
 
@@ -52,9 +53,10 @@ export function validateTemplate(t: ShipTemplate, defs: Record<string, ModuleDef
       if (def.solid && !open.some((o) => o.x === tile.x && o.y === tile.y)) solid[i] = 1;
     }
     if (def.engine && side !== 'e') problems.push(`${name}: engine not on the stern hull`);
-    if (def.vehicleBay && !m.vehicle) problems.push(`${name}: bay without a vehicle`);
+    if (def.vehicleBay && !def.vehicleBay.pad && !m.vehicle) problems.push(`${name}: bay without a vehicle`);
     if (def.container && !clampedToFrame(at, def, m)) problems.push(`${name}: not clamped to a frame by its short (door) end`);
-    if (m.ground && !wired(footprintTiles(def, m.x, m.y, m.rot))) problems.push(`${name}: no cable to the hull`);
+    if (m.ground && !isLandingPad(def) && !wired(footprintTiles(def, m.x, m.y, m.rot))) problems.push(`${name}: no cable to the hull`);
+    if (m.ground && isLandingPad(def)) return; // a pad is open ground, no cable
     if (m.ground && isGroundMount(def)) {
       const port = groundPort(def, m);
       if (!cabled.has(port.cable.y * w + port.cable.x)) problems.push(`${name}: no cable at its port`);
@@ -77,7 +79,7 @@ export function validateTemplate(t: ShipTemplate, defs: Record<string, ModuleDef
     const def = defs[m.def];
     if (!def) continue;
     const a = accessTile(def, m.x, m.y, m.rot);
-    if (a && !walk(a.x, a.y)) problems.push(`${m.def}@${m.x},${m.y}: access tile blocked`);
+    if (a && !isLandingPad(def) && !walk(a.x, a.y)) problems.push(`${m.def}@${m.x},${m.y}: access tile blocked`);
     for (const o of openTilesOf(def, m.x, m.y, m.rot)) if (!walk(o.x, o.y)) problems.push(`${m.def}@${m.x},${m.y}: chair blocked`);
     if (roofMounted(def)) {
       for (const tile of footprintTiles(def, m.x, m.y, m.rot)) {

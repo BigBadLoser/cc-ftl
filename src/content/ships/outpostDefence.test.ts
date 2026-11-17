@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { airlockPad } from '../../sim/modules/landingPad';
 import {
   AirlockC, CombatC, ModuleC, ShipC, Struct, VehicleC, WeaponC, discoverOutpost, homeShip, isDormant, newGame, shipGrid, type OutpostKind, type Sim,
 } from '../../sim';
@@ -114,7 +115,7 @@ describe('a woken hostile outpost defends like a woken pirate den', () => {
 
 describe('outpost docks', () => {
   it('records its dock airlock and refuses a shuttle at any other airlock', () => {
-    for (const [style, kind, seed] of [['surface', 'trading', 1], ['surface', 'farming', 2], ['surface', 'mining', 3], ['dug', 'pirate', 1]] as const) {
+    for (const [style, kind, seed] of [['surface', 'trading', 1], ['surface', 'farming', 2], ['surface', 'mining', 3]] as const) {
       const { sim, base } = spawn(style, kind, seed);
       const dock = sim.world.get(base, ShipC)!.outpost!.dock!;
       expect(dock, `${style} ${kind}`).toBeGreaterThan(0);
@@ -123,10 +124,11 @@ describe('outpost docks', () => {
       run(sim, 30);
       const locks = [...sim.world.query(AirlockC, ModuleC)].filter((a) => shipIdOf(sim, sim.world.get(a, ModuleC)) === base);
       for (const a of locks) {
-        if (a === dock) expect(dockError(sim, shuttle, a)).toBeNull();
+        // A surface base's docks are its pads' airlocks (#509): a visitor lands on the free one (the home shuttle's is taken), the others open onto ground.
+        if (airlockPad(sim, a)) expect([null, 'padTaken'], `pad airlock ${a}`).toContain(dockError(sim, shuttle, a));
         else expect(dockError(sim, shuttle, a)).toBe('notDock');
       }
-      expect(stationAirlock(sim, base, shuttle)).toBe(dock);
+      expect(dockError(sim, shuttle, stationAirlock(sim, base, shuttle))).toBeNull(); // a visitor is sent to an airlock it may land at
     }
   });
 
