@@ -24,8 +24,8 @@ HEAD = 9                            # the header's upright front: px tall under 
                                     # posts' top)
 SILL = 10                           # the sill's front's top: this many px over the groove
 JAMB_IN = 0.0                       # the posts (the jambs) this far behind the face (flush)
-RIB_PLATE = (4, 2)                  # an end piece's plate across its rib under the top corner's foot: px tall, px
-RIB_PLATE_TOP = SD.TOP_LIT          # off the wall; its top lit
+RIB_PLATE = (7, 2)                  # an end piece's plate across its rib and post, its top where the top corner's
+RIB_PLATE_TOP = SD.TOP_LIT          # slope meets the post's inner edge: px tall, px off the wall; its top lit
 CORNER_OUT = 0.0                    # the opening's bottom corner pieces stand this far out past the posts' front (flush)
 PANE_IN = 5 / 32                    # the pane's front this far behind the posts' (the ship's)
 SILL_TOP = "stL"                    # the sill's flat top under the glass
@@ -115,9 +115,9 @@ def _span(f, s, s0, s1, zt):
                   [WIN.SIDE, SD.BOX_SIDE, False], back=False, mu=mu)    # the top corner: its slope carried on
                                                         # across the post down to the rib, flush with the header
                                                         # (its front's tone; its sloped side the box's ends')
-        z1 = zr                                         # a plate from the tile's edge in to where the top corner
-        z0, po = z1 - RIB_PLATE[0] / Z, D + RIB_PLATE[1] * SD.LINE      # meets the post, under it
-        fm.part(s0, h0, [(0.0, z0), (po, z0), (po, z1), (0.0, z1)], [None, SH.FACE, RIB_PLATE_TOP, None],
+        z1 = zh - sh                                    # a plate from the tile's edge in to where the top corner's
+        z0, po = z1 - RIB_PLATE[0] / Z, D + RIB_PLATE[1] * SD.LINE      # slope meets the post's inner edge, under it
+        fm.part(s0, w0, [(0.0, z0), (po, z0), (po, z1), (0.0, z1)], [None, SH.FACE, RIB_PLATE_TOP, None],
                 SD.BOX_SIDE, end=False)
         zl = zj + fh + sh                                               # the jamb's seam
         pf = [(dp + WIN.PANE / 2, zl), (dv + 0.001, zl), (dv + 0.001, zl + 1 / Z), (dp + WIN.PANE / 2, zl + 1 / Z)]
