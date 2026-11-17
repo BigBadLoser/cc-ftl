@@ -17,6 +17,7 @@ import { footprintTiles } from '../../sim/modules/footprint';
 import { groundPort, isGroundMount } from '../../sim/modules/groundMount';
 import { ownerAt, shipIdOf } from '../../sim/regions';
 import { hostileAct } from '../../sim/combat/provoke';
+import { factionsHostile } from '../../sim/combat/factions';
 import { SuitC } from '../../sim/eva/components';
 import { WeaponC } from '../../sim/combat/components';
 import { mannedConsole } from '../../sim/combat/operators';
@@ -48,18 +49,24 @@ function setup(seed = 1): { sim: Sim; base: number; turrets: number[] } {
   return { sim, base, turrets };
 }
 
-/**
- * Provoke the base into a fight. A neutral outpost is dormant, and a hostile act on a dormant base only wakes it (stations/alarm,
- * combat/provoke.ts); the next one turns it.
- */
+/** Provoke the base into a fight: one hostile act wakes a dormant neutral outpost and turns it (combat/provoke.ts). */
 function provoke(sim: Sim, base: number): void {
-  hostileAct(sim, base, 'fired');
   hostileAct(sim, base, 'fired');
 }
 
 const N4 = [[1, 0], [-1, 0], [0, 1], [0, -1]] as const;
 
 describe('ground turrets', () => {
+  it('one hostile act wakes a neutral outpost and turns it hostile (#526)', () => {
+    const { sim, base } = setup();
+    expect(factionsHostile(sim.world.get(base, ShipC)!.faction, 'player')).toBe(false);
+    expect(sim.world.get(base, ShipC)!.dormant).not.toBeUndefined();
+    hostileAct(sim, base, 'fired');
+    const s = sim.world.get(base, ShipC)!;
+    expect(s.dormant).toBeUndefined();
+    expect(factionsHostile(s.faction, 'player')).toBe(true);
+  });
+
   it('a prefab outpost stands its guns and point defence on the ground, each cabled to a hull wall and the base\'s', () => {
     const { sim, base, turrets } = setup();
     const defs = turrets.map((id) => MODS[sim.world.get(id, ModuleC)!.def]!);

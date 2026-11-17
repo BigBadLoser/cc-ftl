@@ -3,8 +3,10 @@ import type { ModuleDef } from '../registry';
 import { rescueSpot } from '../away/rescue';
 import { abortTask } from '../ai/task';
 import { breachTiles, canAffordWall } from '../crew/breach';
-import { CarriedC, DownedC, JobC, PositionC, type Job } from '../crew/components';
-import { origin } from '../crew/helpers';
+import { CarriedC, CrewC, DownedC, JobC, PositionC, type Job } from '../crew/components';
+import { isIncapacitated } from '../crew/helpers';
+import { jobFits } from '../crew/jobFit';
+import { walkOpts } from '../eva/route';
 import { bedsToTend } from '../crew/treatment';
 import { ModuleC } from '../modules/components';
 import { ShipC } from '../combat/components';
@@ -22,6 +24,24 @@ import { moduleSite } from '../modules/footprint';
 const CONDITIONAL_WORK = 1;
 /** How often (ticks) the hull is scanned for holes to post wall jobs on. */
 const BREACH_SCAN_TICKS = 10;
+
+/**
+ * Could some crew member who may take this rescue job (`jobFits`, which excludes the patient; and not downed) walk to a free bed from the patient's tile? The medic is
+ * chosen later, so any such crew member will do. The answer depends only on the walk mode (`walkOpts`), so one search runs for each distinct mode.
+ */
+function bedForRescue(sim: Sim, job: Job): boolean {
+  const patient = job.target ?? 0, ship = shipIdOf(sim, job), use = bedUseOf(sim, patient);
+  const tried = new Set<string>();
+  for (const c of sim.world.query(CrewC, PositionC)) {
+    const p = sim.world.get(c, PositionC);
+    if (!p || isIncapacitated(sim, c) || !jobFits(sim, c, p, job)) continue;
+    const mode = JSON.stringify(walkOpts(sim, c));
+    if (tried.has(mode)) continue;
+    tried.add(mode);
+    if (findFreeBed(sim, ship, c, { x: job.x, y: job.y }, false, undefined, use)) return true;
+  }
+  return false;
+}
 
 function addJob(sim: Sim, job: Partial<Job> & Pick<Job, 'category' | 'kind' | 'x' | 'y'>): void {
   const id = sim.world.createEntity();
@@ -92,8 +112,9 @@ export function autoJobsSystem(sim: Sim): void {
     const downed = sim.world.get(id, DownedC);
     const pos = sim.world.get(id, PositionC);
     if (!downed || !pos || downed.stabilized || seen.has(`rescue:${id}`)) continue;
-    if (!downed.bed && !findFreeBed(sim, shipIdOf(sim, pos), origin(pos), false, undefined, bedUseOf(sim, id)) && !rescueSpot(sim, id)) continue; // nowhere to take them
-    addJob(sim, { category: 'medical', kind: 'rescue', x: pos.x, y: pos.y, target: id, bed: downed.bed });
+    const job: Job = { category: 'medical', kind: 'rescue', x: pos.x, y: pos.y, target: id, bed: downed.bed, struct: 0, work: CONDITIONAL_WORK, progress: 0, reservedBy: 0 };
+    if (!downed.bed && !bedForRescue(sim, job) && !rescueSpot(sim, id)) continue; // nowhere to take them, or no one who could
+    addJob(sim, job);
   }
   // A medical bed with a patient in it gets a tend job (medical category): a medic stands beside it, and the patient heals faster while they do.
   for (const bed of tendBeds) {

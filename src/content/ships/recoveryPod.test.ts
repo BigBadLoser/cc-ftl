@@ -153,7 +153,7 @@ describe('recovery pod', () => {
     const ship = homeShip(sim);
     const pos = sim.world.get(crew[0] as number, PositionC)!;
     const from = { x: pos.x, y: pos.y };
-    const pick = (use: 'sleep' | 'walking' | 'critical'): number | null => findFreeBed(sim, ship, from, false, undefined, use)?.bed ?? null;
+    const pick = (use: 'sleep' | 'walking' | 'critical'): number | null => findFreeBed(sim, ship, crew[0] as number, from, false, undefined, use)?.bed ?? null;
     expect(pick('critical')).toBe(pod);
     expect(pick('walking')).toBe(med);
     sim.world.get(med, ModuleC)!.reservedBy = 99; // no medical bed free
