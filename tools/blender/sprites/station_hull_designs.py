@@ -57,14 +57,17 @@ LOW_LIT = "stL"                     # a faint lit px under the box's top edge an
 HOLE_FOOT = "stL"                   # (the foot of a window let into a box's front, seen from over it)
 TOP_LIT = "stB"                     # (the near edge of the top box's top: two steps over its tone)
 MID_LINE = SH.GROOVE_D              # the seam across each box (the darker seam tone)
-RECESS_LIT = "stL"                  # the recess: a lit px where its upright inside meets its lean
-RECESS_SHADE = (SH.GROOVE_D, 6)     # its lip's shadow on its lean: tone, px down from its top
+RECESS_LIT = SH.FACE_LO             # the recess: a lit px where its upright inside meets its lean
+RECESS_SHADE = (SH.DARK_P, 6)       # its lip's shadow on its lean: tone, px down from its top
 GAP_SHADE = SH.SEAM                    # the top box's shadow in the gap under it
 RECESS = (11, 21, 0)                # a recess in the face: px across, its top px under the groove (down to the seam where
                                     # the step meets the face)
 RECESS_IN, RECESS_FOOT, RECESS_BACK = 1, 5, 4   # its inside: upright RECESS_IN px in for RECESS_FOOT px, then leaning
                                     # back to RECESS_BACK px in at its top
-RECESS_FACE, RECESS_SLOPE, RECESS_WALL = SH.GROOVE_D, SH.SEAM, "stE"   # its inside's upright face, its lean, its ends
+RECESS_FACE, RECESS_SLOPE, RECESS_WALL = SH.DARK_P, SH.SEAM_P, SH.END_P   # its inside's upright face, its lean, its
+                                    # ends (the recess in the livery band: its insides take the paint, the lines in it
+                                    # don't)
+RECESS_SEAM = "stE"                 # the step's seam carried along its foot
 
 
 def dress(f, s0, design, zk):
@@ -173,11 +176,10 @@ def blocks(f, s0, s1):
     zs = zt - n * px
     q = [T.P(f.ax, f.plane, u, z, lean(z)) for u, z in ((u0, zs), (u1, zs), (u1, zt), (u0, zt))]
     f.k.poly(q, F, 3, (T.P(f.ax, 0, 0, di - db, zt - zk) - o).normalized(), fixed=T.SEAM_PASS or col)
-    _rect(f, u0, u1, zf, zf + px, di + 0.001, RECESS_WALL)              # (the step's seam carried along its foot, a
+    _rect(f, u0, u1, zf, zf + px, di + 0.001, RECESS_SEAM)              # (the step's seam carried along its foot, a
                                                                         # step darker: its inside is the seam's tone)
     _rect(f, u1, u1 + LINE, zf, s.z_at(SH.GROOVE, -1), D + 0.002, SH.GROOVE_D)   # (a dark seam down its near
                                                                         # edge, up into the groove's line)
-    SH.livery_rect(f, u0, u1, zf, zt, D)                    # (in the livery band: its shade falls on the paint)
 
 
 def gap(s):

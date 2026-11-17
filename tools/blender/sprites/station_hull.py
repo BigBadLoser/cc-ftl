@@ -41,7 +41,8 @@ BANDS = (("stW", 0.36), ("stB", 0.26), ("stH", 0.18), ("stL", 0.12), ("stS", 0.0
 # seam behind the bullnose; their tones the plain ones' (FACE, FACE_LO, TOP), named apart so the mask (core.TINT,
 # the `.tint` layer drawn in the station's deco colour) follows the part, not the tone; the lines over them stay out
 FACE_P, TOP_P, SEAM_P = "stPS", "stPT", "stPM"         # (SEAM_P: a design's dark panel in the livery)
-TINT = {FACE_P, FACE_LO, TOP_P, SEAM_P}
+DARK_P, END_P = "stPD", "stPE"                          # (a recess's insides in the livery: GROOVE_D's, END's tones)
+TINT = {FACE_P, FACE_LO, TOP_P, SEAM_P, DARK_P, END_P}
 BAND_Z = 0.80                       # the face's band's top over the deck (tiles; the reference's: about 0.44 of the
                                     # upright face)
 PLUMB_BAND = 3                      # the seams stand plumb on screen from this band's top down (stL)
@@ -192,13 +193,6 @@ def stripe(f, s0, zk):
     u0, u1 = s0 + SEAMS[0] + LINE / 2, s0 + SEAMS[1] - LINE / 2
     f.livery(u0, u1, s.z_at(GROOVE, -1), s.H, zk)
     f.top_band(u0, u1, E - round((R_D + TOP_SEAM) * 32) / 32, s.lean_d(s.H), TOP_P)
-
-
-def livery_rect(f, u0, u1, z0, z1, d):
-    """A patch of livery on a plumb front d out (a hair under the lines painted on it), in the mask pass only."""
-    if core.TINT is not None:
-        pts = [T.P(f.ax, f.plane, u, z, d + 0.0005) for u, z in ((u0, z0), (u1, z0), (u1, z1), (u0, z1))]
-        f.k.poly(pts, F, 3, T.OUT(f.ax), fixed=FACE_P)
 
 
 def _part(f, u0, u1, z0, z1, out, face, top, side, end=False):
