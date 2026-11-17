@@ -364,7 +364,10 @@ def _generic(n):
                           (f"tile.roof.station.g.{n}", "block", lambda: SG.roof(k))):
         core.clear_scene_meshes()
         post.select(PALETTE)
-        it = env_build.crop_item(sid, (1, 1), *env_build.render_sprite(sid, kind, fn()))
+        objs = fn()
+        if not (objs[0] if kind == "wide" else objs):
+            continue                                    # (nothing faces the camera: no sprite)
+        it = env_build.crop_item(sid, (1, 1), *env_build.render_sprite(sid, kind, objs))
         out += [it] if it else []
     return out
 
