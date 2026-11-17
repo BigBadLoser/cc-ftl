@@ -9,6 +9,7 @@ import type { ModuleDef } from '../sim';
 export const landingPads: Record<string, ModuleDef> = {
   'module.landing_pad': {
     name: 'Landing pad',
+    scrap: 'hull',
     description: 'Levelled ground a shuttle lands on. Crew suit up at the airlock beside it and walk across.',
     asset: 'module.landing_pad', footprint: [9, 9], solid: false,
     power: -1, powerPriority: 4, flammability: 0, maxHp: 400, buildWork: 600, vehicleBay: { class: 'shuttle', pad: true }, groundMount: true,
