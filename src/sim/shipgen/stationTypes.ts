@@ -14,13 +14,15 @@ export const STATION_SIZES: readonly StationSize[] = ['outpost', 'station', 'hub
 
 /** A kind-specific room: its role, the modules it holds, its interior size, and how many per size tier. */
 export interface StationRoomDef {
-  role: 'farm' | 'industry' | 'armoury' | 'cargo' | 'quarters' | 'support' | 'hangar';
+  role: 'farm' | 'industry' | 'armoury' | 'cargo' | 'quarters' | 'support' | 'hangar' | 'weapons';
   /** Its department in the station assembly, where the role's own is not it (a drone bay is defence, not works). */
   dept?: StationDept;
   mods: readonly string[];
   w: number;
   h: number;
   count: Readonly<Record<StationSize, number>>;
+  /** A drone bay in this room starts with this many drones of this DroneDef id (each bay, up to its slots). */
+  drones?: { def: string; count: number };
   /** Storage in this room starts stocked with these (instead of the station's general stock). */
   items?: readonly { item: string; min: number; max: number }[];
 }
