@@ -348,15 +348,6 @@ def jobs(name):
     if name == "tube":  # the prefab base tube (#508): sheet tube, ids from src/render/tubeArt.ts
         from . import tube_study
         return tube_study.jobs(), tube_study.PAL
-    if name == "cable_study3":  # look study, preview only (not in RENDERED): ground power cable looks, round 4 (#514)
-        from . import cable_study3
-        return cable_study3.jobs(), cable_study3.PAL
-    if name == "cable_study2":  # look study, preview only (not in RENDERED): ground power cable looks, round 3 (#514)
-        from . import cable_study2
-        return cable_study2.jobs(), cable_study2.PAL
-    if name == "cable_study":  # look study, preview only (not in RENDERED): ground power cable looks (#514)
-        from . import cable_study
-        return cable_study.jobs(), cable_study.PAL
     if name == "purifier_g1":  # look study, preview only (not in RENDERED): the picked water purifier, polished (#321)
         from . import purifier_g1
         return purifier_g1.jobs(), purifier_g1.PAL
