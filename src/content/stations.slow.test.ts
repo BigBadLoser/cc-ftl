@@ -4,6 +4,7 @@ import { buildStation } from '../sim/shipgen/stationBuild';
 import { STATION_SIZES, type StationDef } from '../sim/shipgen/stationTypes';
 import { content } from './index';
 import { stations } from './stations';
+import { expectResearch, expectSizes, stationIds, wallsAndCourts } from '../../test/support/fixtures/stations';
 
 const defs = content.modules as Record<string, ModuleDef>;
 
@@ -23,4 +24,21 @@ describe('station sweep', () => {
       }
     }
   }, 900000);
+});
+
+// The fast tests (stations.test.ts) check seed 1; these are the other seeds they used to sweep.
+describe('station generation, more seeds', () => {
+  it('research stations at seeds 2-6 are valid, with labs and the workshop bench and no engines', () => {
+    for (const size of STATION_SIZES) for (const seed of [2, 3, 4, 5, 6]) expectResearch(size, seed);
+  }, 300000);
+
+  it('hubs are much bigger than any ship and outposts are the smallest (seed 2)', () => {
+    for (const id of stationIds) expectSizes(id, 2);
+  }, 300000);
+
+  it('walls are one tile thick, and the kinds have open rooms (market courts, gardens) (seed 5)', () => {
+    let courts = 0;
+    for (const id of stationIds) for (const size of STATION_SIZES) courts += wallsAndCourts(id, size, 5);
+    expect(courts).toBeGreaterThan(3);
+  }, 300000);
 });

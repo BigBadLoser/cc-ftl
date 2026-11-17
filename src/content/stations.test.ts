@@ -3,29 +3,15 @@ import { rotatedSize } from '../sim/modules/footprint';
 import type { ItemDef, ModuleDef } from '../sim/registry';
 import { Rng } from '../sim/rng';
 import { stationProgram } from '../sim/shipgen/assembly/program';
-import type { StationResult } from '../sim/shipgen/assembly/station';
 import { buildStation } from '../sim/shipgen/stationBuild';
-import { crewPosts, crewSize, docksOf, SECURITY_ROLE, stationCrew } from '../sim/shipgen/stationCrew';
+import { crewPosts, crewSize, SECURITY_ROLE, stationCrew } from '../sim/shipgen/stationCrew';
 import { STATION_SIZES, type StationDef, type StationSize } from '../sim/shipgen/stationTypes';
-import { structureParts } from '../sim/shipgen/validate';
 import { content } from './index';
 import { stations } from './stations';
+import { count, defs, expectBuilt, expectResearch, expectSizes, gen, stationIds, wallsAndCourts, type StationId } from '../../test/support/fixtures/stations';
 
-const defs = content.modules as Record<string, ModuleDef>;
-type Id = keyof typeof stations;
-const ids = Object.keys(stations) as Id[];
-const cache = new Map<string, StationResult>();
-const gen = (id: Id, size: StationSize, seed: number): StationResult => {
-  const k = `${id} ${size} ${seed}`;
-  const hit = cache.get(k);
-  if (hit) return hit;
-  const g = buildStation(stations[id] as StationDef, id, size, seed, defs);
-  cache.set(k, g);
-  return g;
-};
-const count = (g: StationResult, id: string): number => (g.template.modules ?? []).filter((m) => m.def === id).length;
-const countBy = (g: StationResult, pred: (d: ModuleDef) => boolean): number =>
-  (g.template.modules ?? []).filter((m) => defs[m.def] && pred(defs[m.def] as ModuleDef)).length;
+type Id = StationId;
+const ids = stationIds;
 
 /** Planned defence of a kind at a size: guns, shields and point defence, plus security crew. */
 function defence(id: Id, size: StationSize): number {
@@ -57,37 +43,14 @@ describe('mining stations', () => {
 
 describe('research stations', () => {
   it('build valid layouts across seeds and sizes, with labs and the workshop bench and no engines', () => {
-    for (const size of STATION_SIZES) {
-      for (const seed of [1, 2, 3, 4, 5, 6]) {
-        const g = gen('station.research', size, seed);
-        const label = `${size} ${seed}`;
-        expect(g.problems, label).toEqual([]);
-        expect(g.station.kind, label).toBe('research');
-        expect(count(g, 'module.research'), label).toBeGreaterThan(0);
-        expect(count(g, 'module.fabricator'), label).toBeGreaterThan(0);
-        expect(countBy(g, (d) => !!d.engine), label).toBe(0);
-        expect(g.station.docks, label).toBeGreaterThanOrEqual(docksOf(stations['station.research'], size));
-      }
-    }
-  }, 120000);
+    for (const size of STATION_SIZES) expectResearch(size, 1); // seeds 2-6: stations.slow.test.ts
+  });
 });
 
 describe('buildStation', () => {
   it('every kind builds a valid outpost, station and hub: one structure, docks, no engines', () => {
-    for (const id of ids) {
-      for (const size of STATION_SIZES) {
-        const g = gen(id, size, 1);
-        const label = `${id} ${size}`;
-        expect(g.problems, label).toEqual([]);
-        expect(g.topology, label).toMatch(/^assembly /);
-        const w = Math.max(...g.template.rows.map((r) => r.length));
-        const cells = g.template.rows.flatMap((r) => Array.from({ length: w }, (_, x) => r[x] ?? '.'));
-        expect(structureParts(cells, w, g.template.rows.length), label).toBe(1);
-        expect(countBy(g, (d) => !!d.engine), label).toBe(0);
-        expect(g.station.docks, label).toBeGreaterThanOrEqual(docksOf(stations[id], size));
-      }
-    }
-  }, 120000);
+    for (const id of ids) for (const size of STATION_SIZES) expectBuilt(id, size, 1);
+  });
 
   it('is deterministic', () => {
     for (const id of ['station.trading', 'station.pirate'] as Id[]) {
@@ -103,16 +66,8 @@ describe('buildStation', () => {
   });
 
   it('hubs are much bigger than any ship and outposts are the smallest', () => {
-    for (const id of ids) {
-      const small = gen(id, 'outpost', 2);
-      const hub = gen(id, 'hub', 2);
-      // Built tiles, not the bounding box: spines have long thin outlines.
-      const filled = (g: StationResult): number => g.template.rows.join('').replace(/\./g, '').length;
-      expect(filled(hub), id).toBeGreaterThan(1.5 * filled(small));
-      expect(filled(gen(id, 'station', 2)), id).toBeGreaterThan(filled(small));
-      expect(Math.max(hub.width, hub.height), id).toBeGreaterThan(70);
-    }
-  }, 120000);
+    for (const id of ids) expectSizes(id, 1); // seed 2: stations.slow.test.ts
+  });
 
   it('kind doctrines are recognisable from their key modules', () => {
     const t = gen('station.trading', 'station', 3);
@@ -202,15 +157,9 @@ describe('station crew and defence', () => {
 describe('station walls and open rooms', () => {
   it('walls are one tile thick, and the kinds have open rooms (market courts, gardens)', () => {
     let courts = 0;
-    for (const id of ids) {
-      for (const size of STATION_SIZES) {
-        const g = gen(id, size, 5);
-        expect(g.metrics?.thickWall ?? 1, `${id} ${size}`).toBeLessThanOrEqual(0.05);
-        courts += g.rooms.filter((r) => r.role === 'plaza' || r.role === 'garden' || r.role === 'drill').length;
-      }
-    }
+    for (const id of ids) for (const size of STATION_SIZES) courts += wallsAndCourts(id, size, 1); // seed 5: stations.slow.test.ts
     expect(courts).toBeGreaterThan(3);
-  }, 120000);
+  });
 
   it('big open rooms are lit to scale: no floor tile of one is more than 6 tiles from a lamp', () => {
     let courts = 0;
