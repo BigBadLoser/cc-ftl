@@ -21,13 +21,14 @@ from .shuttle_craft import transport_shuttle
 
 PAD_Z = 0.24                  # the landing pad's deck
 KEEL = 0.5                    # keel underside above the craft's feet plane (its parked legs' height)
-LIFT = 0.25                   # how much higher the gear stands the body than the parked legs
+LIFT = -0.1                   # the gear stands the body this much off its parked datum (crouched: below it)
 FRAMES = 5
 RAMP_FRAMES = 4               # r1..r4 (r0 = f4)
 
-# (hip u, hip v, hip z, fold direction along u, bay u0, u1, v0, v1, the skin's z there, foot v)
-BAYS = ((-1.6, 1.15, 1.0, 1, -1.72, -0.32, 0.98, 1.32, 0.845, 1.45),
-        (1.55, 0.46, 0.55, -1, 0.58, 1.66, 0.3, 0.62, 0.37, 0.95))
+# (hip u, hip v, hip z, fold direction along u, bay u0, u1, v0, v1, the skin's z there, foot v, foot rake along u)
+# The fore legs rake forward (feet ahead of the hips), the aft legs stand plumb fore-and-aft.
+BAYS = ((-1.6, 1.15, 1.0, 1, -1.72, -0.32, 0.98, 1.32, 0.845, 1.45, 0.0),
+        (1.55, 0.46, 0.55, -1, 0.58, 1.66, 0.3, 0.62, 0.37, 0.95, 0.25))
 
 
 def _ease(t):
@@ -69,12 +70,12 @@ def leg(f, hip, stow, down, L, anchor, s):
 
 def gear(f, s):
     """All four legs at deploy fraction s (0 stowed .. 1 down), the body LIFT above its parked height."""
-    for uh, vh, zh, dirn, u0, u1, v0, v1, zs, fv in BAYS:
+    for uh, vh, zh, dirn, u0, u1, v0, v1, zs, fv, rake in BAYS:
         z = zs + LIFT
         for sv in (-1, 1):
             f.box((u0 + u1) / 2, sv * (v0 + v1) / 2, z + 0.002, u1 - u0, v1 - v0, 0.004, "dark", top="dark")   # the bay
             hip = (uh, sv * vh, zh + LIFT)
-            foot = (0.0, sv * fv - hip[1], 0.06 - hip[2])
+            foot = (rake, sv * fv - hip[1], 0.06 - hip[2])
             L = math.sqrt(sum(x * x for x in foot))
             leg(f, hip, (dirn, 0.0, 0.0), _norm(foot), L, (uh + dirn * 0.35, sv * vh, hip[2]), s)
 
