@@ -96,12 +96,16 @@ def _rect(f, u0, u1, z0, z1, d, col):
     f.k.poly(pts, F, 3, T.OUT(f.ax), fixed=T.SEAM_PASS or col)
 
 
-def _plate(f, a, b, back, top, n=4):
+def _plate(f, a, b, back, top, n=4, ends=(True, True)):
     """The top box's top carried PLATE_BACK px back past `back` as a slab off the hull's top (its back corners rounded
-    PLATE_R px): its top TOP, its sides the boxes' ends' tone."""
+    PLATE_R px, at the ends `ends` says (a's, b's): else square, running on into the next tile): its top TOP, its sides
+    the boxes' ends' tone."""
     r, d0 = PLATE_R * LINE, back - PLATE_BACK * LINE
     pl = [(b, back + 0.001)]
-    for c, sg in ((b - r, 1), (a + r, -1)):                  # (round its two back corners)
+    for c, sg, rd in ((b - r, 1, ends[1]), (a + r, -1, ends[0])):     # (round its two back corners)
+        if not rd:
+            pl.append((b if sg > 0 else a, d0))
+            continue
         for i in range(n + 1):
             t = math.pi / 2 * i / n
             if sg > 0:

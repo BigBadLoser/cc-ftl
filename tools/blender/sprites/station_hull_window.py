@@ -15,6 +15,7 @@ from contextlib import contextmanager
 from . import core
 from . import wall3d as T
 from . import station_hull as SH
+from . import station_hull_designs as SD
 from . import wall3d_ext_window as WIN
 from . import wall3d_ext_window_end as EN
 from .wall3d_ext_geom import D
@@ -59,7 +60,8 @@ def _span(f, s, s0, s1, zt):
     part, H, Z = PART[0], s.H, core.ZPX
     WIN.PART = part
     fr, dv = D, D - JAMB_IN                             # (the face; the jamb's front, the slope's top)
-    zh, zs = zt, s.z_at(SH.GROOVE, -SILL)               # (the header's foot; the sill's front's top)
+    zh = s.z_at(zt, -1) + 0.5 * SD.BOX_OUT / Z          # (the header's foot: the line under the bullnose's top, as
+    zs = s.z_at(SH.GROOVE, -SILL)                       # the module's top box's; the sill's front's top)
     gl = dv - WIN.PANE_IN                               # (the pane's front)
     zj = zs + WIN.SILL_RISE * (fr - dv) / (fr - gl) / Z     # (the slope's top, as the ship's rise)
     dp = gl - WIN.PANE / 2
@@ -90,8 +92,7 @@ def _span(f, s, s0, s1, zt):
     else:
         f.part(u0, u1, pf, cols, None, end=False)
     f.line(u0, u1, SH.FOOT_H, SH.GROOVE, SH.FACE_LO, bevel=False)       # (the face's lower band, on the sill's front)
-    pf = s.sec(zh, H)                                                   # the header: the station's, whole
-    f.part(u0, u1, pf, s.cols(pf, "face"), None, end=False)
+    _head(f, u0, u1, zh, (part == "w1", part == "w3"))                 # the header: a square box
     f.part(*seg(w0, s1)[:2], [(0.0, zj), (db, zj), (db, zh), (0.0, zh)], [None, BACK_WALL, None, None], None,
            end=False)                                                   # the window's back wall
     win = WIN._opening(w0, s1, zj, zh, end)
@@ -116,6 +117,33 @@ def _span(f, s, s0, s1, zt):
         fm.part(h0, w0 + 0.001, pf, [WIN.JAMB_SEAM] * 4, (None, WIN.JAMB_SEAM), end=False)
         EN.jamb(fm, h0, w0, db, dv, zl, zh, WIN.HEAD_FRONT, WIN.SIDE)
         EN.studs(fm, s, h0, dv, zl, zh)
+
+
+def _head(f, a, b, z0, ends):
+    """The header over [a, b] (the tile's u): the module design's top box (station_hull_designs._top_box: a px off
+    the face, from z0 to a px over the top, its top front edge chamfered, its top a plate run back past the top's
+    seam), run on across the window's tiles: its end and its lines only where the window ends (ends: a's, b's)."""
+    H, px, ln = f.sec.H, 1 / core.ZPX, SD.LINE
+    back, top, c = SD._box_back(), H + SD.BOX_UP * px, SD.BOX_CHAMFER
+    out = D + SD.BOX_OUT * ln
+    prof = [(back, z0), (back, top), (out - c * ln, top), (out, top - c * px), (out, z0)]
+    cols = [None, SH.TOP, SH.BANDS[0][0], SH.FACE, None]
+    f.part(a, b, prof, cols, tuple(SD.BOX_SIDE if e else None for e in ends), end=False)
+    SD._plate(f, a, b, back, top, ends=ends)
+    e = 0.001
+    if ends[0]:                                         # (a: the end turned from view, outlined)
+        SD._rect(f, a, a + ln, z0, top - c * px, out + e, SD.BOX_LINE)
+        f.k.poly([T.P(f.ax, f.plane, u, z, d) for u, z, d in ((a, top + e, out - c * ln + e), (a + ln, top + e,
+                  out - c * ln + e), (a + ln, top - c * px + e, out + e), (a, top - c * px + e, out + e))],
+                 SD.F, 3, T.OUT(f.ax), fixed=T.SEAM_PASS or SD.BOX_LINE)
+    if ends[1]:                                         # (b: its near end, faintly lit)
+        SD._rect(f, b - ln, b, z0, top - c * px, out + e, SD.LOW_LIT)
+    d0 = back - SD.PLATE_BACK * ln + SD.PLATE_R * ln
+    for u, col, on in ((a, SD.BOX_LINE, ends[0]), (b - ln, SD.TOP_LIT, ends[1])):   # (its edges along its top)
+        if on:
+            f.k.poly([T.P(f.ax, f.plane, v, top + T.PAINT, d) for v, d in ((u, d0), (u + ln, d0),
+                      (u + ln, out - c * ln), (u, out - c * ln))], SD.F, 3, core.Vector((0, 0, 1)),
+                     fixed=T.SEAM_PASS or col)
 
 
 def _build(m, o, part):
