@@ -26,7 +26,7 @@ import { HullSprite } from "./hullPaint";
 import { keepsOldPiece } from "./jobHull";
 import type { BuildGate } from "./buildBudget";
 import { iso } from "./iso";
-import { bellyIds, engineHullTiles, exteriorIds, gridHullKeys, PLAIN_PAINT, type HullKeys, type HullPaint } from "./hullArt";
+import { bellyIds, bermId, engineHullTiles, exteriorIds, gridHullKeys, PLAIN_PAINT, type HullKeys, type HullPaint } from "./hullArt";
 
 export type { CutawayMode };
 
@@ -422,11 +422,15 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
       ext.forEach((id) => put(id, z + (id.startsWith("tile.roof.") ? (behind ? -0.04 : 0.9) : behind ? -0.05 : 0), L.sorted, solid));
       const b = bellyIds(h, x, y, has);
       if (b?.under) put(b.under, z, L.under, solid);
+      const berm = bermId(h, x, y, has);
+      if (berm) put(berm, z + 0.002, L.sorted, solid);
       return true;
     }
     if (k !== Struct.Floor && hullSide(wallAt, x, y) !== HullSide.Near) return false;
+    const berm = bermId(h, x, y, has);
+    if (berm) put(berm, z + 0.002, L.sorted, solid);
     const b = bellyIds(h, x, y, has, k !== Struct.Floor);
-    if (!b) return false;
+    if (!b) return !!berm;
     if (b.under) put(b.under, z, L.under, solid);
     // Behind the thruster block the engine's hull sprite carries the wall's lower section: the belly's cut top would cover it.
     // Beside a camera-facing airlock's door its hull sprite carries the outer half of the cut hull (the inner half is

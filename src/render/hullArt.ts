@@ -141,6 +141,13 @@ function shipExteriorIds(h: HullKeys, x: number, y: number, has: (id: string) =>
   return has(`tile.hull.ext.g.${n}`) ? [`tile.hull.ext.g.${n}`, `tile.roof.g.${n}`].filter(has) : null;
 }
 
+/** MOCK (#524): the rock berm heaped against a ground base's station hull on this tile, or null. */
+export function bermId(h: HullKeys, x: number, y: number, has: (id: string) => boolean): string | null {
+  const k = h.ground ? h.at(x, y) : "";
+  const id = k ? `tile.hull.station.berm.${hullKeyName(k)}` : "";
+  return id && has(id) ? id : null;
+}
+
 /** The bay look a tile's belly takes. */
 export const tileLook = (x: number, y: number) => BELLY_LOOKS[pickDesign(x, y, BELLY_LOOKS.length, 2)]!;
 

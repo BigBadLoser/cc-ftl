@@ -349,6 +349,9 @@ MOCK_KEYS = ("m1_0_15", "0_m1_15", "m1_m1_m1", "1_m1_m1", "m1_1_m1", "1_1_m1", "
              "0_m1_15~m1_0_15", "1_0_15~0_m1_15", "m1_1_31", "1_1_31", "m1_0_15~0_1_15")
 
 
+MOCK_BERM = ("0_1_15", "1_0_15", "0_1_15~1_0_15")     # (the berm's keys past MOCK_KEYS: the run set's)
+
+
 def _unname(n):
     return n.replace("~", ";").replace("+", "|").replace("_", ",").replace("m", "-")
 
@@ -372,10 +375,26 @@ def _generic(n):
     return out
 
 
+def _berm(n):
+    from . import env_build, post
+    from . import station_berm as BM
+    from . import station_hull_diag as SG
+    k = _unname(n)
+    core.clear_scene_meshes()
+    post.select(True)
+    own = BM.berm(k)
+    if not own:
+        return []
+    sid = f"tile.hull.station.berm.{n}"
+    it = env_build.crop_item(sid, (1, 1), *env_build.render_sprite(sid, "wide", (own, own + SG.piece(k))))
+    return [it] if it else []
+
+
 def jobs():
     """The run set, and each straight run in each design (tile.hull.station.ext.o<o>.m<mask>.a<design>)."""
     out = [lambda m=m, o=o: _item(f"tile.hull.station.ext.o{o}.m{m}", lambda: _wide(m, o)) for m, o in MOCK_RUN]
     out += [lambda n=n: _generic(n) for n in MOCK_KEYS]
+    out += [lambda n=n: _berm(n) for n in MOCK_KEYS + MOCK_BERM]
     return out + [lambda m=m, o=o, v=v: _item(f"tile.hull.station.ext.o{o}.m{m}.a{v}", lambda: _wide(m, o, v))
                   for (m, o) in STRAIGHT for v in SD.DESIGNS]
 
