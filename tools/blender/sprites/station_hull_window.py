@@ -17,7 +17,6 @@ from . import wall3d as T
 from . import station_hull as SH
 from . import station_hull_designs as SD
 from . import wall3d_ext_window as WIN
-from . import wall3d_ext_window_end as EN
 from .wall3d_ext_geom import D
 
 PART = [None]                       # the piece being built: "w1" | "w2" | "w3" (None: not a window)
@@ -25,6 +24,7 @@ HEAD = 9                            # the header's upright front: px tall under 
                                     # posts' top)
 SILL = 10                           # the sill's front's top: this many px over the groove
 JAMB_IN = 1 / 32                    # the posts (the jambs) this far behind the face
+CORNER_OUT = 1 / 32                 # the opening's corner pieces stand this far out past the posts' front
 PANE_IN = 5 / 32                    # the pane's front this far behind the posts' (the ship's)
 SILL_TOP = "stL"                    # the sill's flat top under the glass
 FRAME = 9 / 32                      # an end piece's outer frame (the whole section), along the face
@@ -38,7 +38,7 @@ TONES = {"hsXK": "stK", "hsK": "stK", "hsXD": "stE", "hsD": "stDE", "hsXM": "stD
 def _tones():
     """The ship window modules' tones mapped onto the station's while a piece is built."""
     saved = []
-    for mod in (WIN, EN):
+    for mod in (WIN,):
         for k, v in list(vars(mod).items()):
             if isinstance(v, str) and v in TONES:
                 saved.append((mod, k, v))
@@ -105,14 +105,16 @@ def _span(f, s, s0, s1, zt):
     if end:                                                             # the jamb and its corners (the ship's)
         fh, sh, ut = WIN.FOOT_H / Z, WIN.SLOPE_H / Z, w0 + WIN.SLOPE + WIN.FOOT_W
         WIN._slab(f.k, f.ax, f.plane, [(w0, zj), (ut, zj), (ut, zj + fh), (w0 + WIN.SLOPE, zj + fh),
-                                       (w0, zj + fh + sh)], db, dv, WIN.HEAD_FRONT,
+                                       (w0, zj + fh + sh)], db, dv + CORNER_OUT, WIN.HEAD_FRONT,
                   [False, WIN.SIDE, WIN.SILL_FLAT, WIN.SLOPE_COL, False], back=False, mu=mu)
-        WIN._slab(f.k, f.ax, f.plane, [(w0, zh), (w0, zh - sh), (w0 + WIN.SLOPE, zh)], db, dv, WIN.HEAD_FRONT,
+        WIN._slab(f.k, f.ax, f.plane, [(w0, zh), (w0, zh - sh), (w0 + WIN.SLOPE, zh)], db, dv + CORNER_OUT,
+                  WIN.HEAD_FRONT,
                   [False, WIN.SLOPE_TOP, False], back=False, mu=mu)
         zl = zj + fh + sh                                               # the jamb's seam
         pf = [(dp + WIN.PANE / 2, zl), (dv + 0.001, zl), (dv + 0.001, zl + 1 / Z), (dp + WIN.PANE / 2, zl + 1 / Z)]
         fm.part(h0, w0 + 0.001, pf, [WIN.JAMB_SEAM] * 4, (None, WIN.JAMB_SEAM), end=False)
-        EN.jamb(fm, h0, w0, db, dv, zl, zh, WIN.HEAD_FRONT, WIN.SIDE)
+        fm.part(h0, w0, [(db, 0.0), (dv, 0.0), (dv, zh), (db, zh)], [None, WIN.HEAD_FRONT, None, None],
+                (None, WIN.SIDE), end=False)                            # the post (plain: no recessed panel)
 
 
 def _head(f, a, b, z0, ends):
