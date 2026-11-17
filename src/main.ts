@@ -92,7 +92,9 @@ const signals = createSignalFeed(sim.commands);
 let upkeepFrame = 0;
 // Ships of fleets about to arrive are generated on a worker, so the arrival does not stall a frame (#388).
 const shipGen = workerGenerator();
-const prewarm = shipGen ? createPrewarm(sim, shipGen, () => performance.now()) : null;
+// The route plotted on the starmap: its nodes' stations are built ahead first (#538).
+let plotted: readonly string[] | null = null;
+const prewarm = shipGen ? createPrewarm(sim, shipGen, () => performance.now(), () => plotted) : null;
 const loop = createLoop({
   sim,
   probe: () => probe,
@@ -391,6 +393,9 @@ const api: UiApi = {
   story: bridge.story,
   starmap: bridge.starmap,
   planRoute: bridge.planRoute,
+  plotRoute: (path) => {
+    plotted = path ? [...path] : null;
+  },
   whereToSell: bridge.whereToSell,
   deploy: bridge.deploy,
   deployCheck: bridge.deployCheck,

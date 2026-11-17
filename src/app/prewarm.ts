@@ -2,9 +2,10 @@ import type { Sim } from '../sim';
 import { claimGeneration, nextArrival, provideGenerated, releaseGeneration, warmElsewhere } from '../sim/galaxy/arrivals';
 import { warmCandidates } from '../sim/galaxy/fleetShips';
 import { nodeBuildJobs } from '../sim/galaxy/populatePlan';
+import { galaxyIndex } from '../sim/galaxy/state';
 import type { Contact } from '../sim/galaxy/types';
 import type { GenResult } from '../sim/shipgen/types';
-import { claimBuild, provideBuild, releaseBuild, type BuildJob, type BuildResult } from '../sim/stations/buildMemo';
+import { BUILDS_MAX, claimBuild, provideBuild, releaseBuild, type BuildJob, type BuildResult } from '../sim/stations/buildMemo';
 
 /**
  * Makes a ship the way `generateShip` does, somewhere that does not stall the frame (a worker). Null: it cannot be generated. `build`, where there is
@@ -21,13 +22,24 @@ export const PREWARM_EVERY_MS = 500;
 export const BUILDS_IN_FLIGHT = 2;
 
 /**
- * The station and outpost builds of the nodes on the route not yet populated, nearest first (the node the ship is at, then the ones ahead), while the
- * player's ship is in hyperspace: a first drop builds every structure of its node (#538). Reads only.
+ * The station and outpost builds a first drop may soon need (#538), most likely first, at most BUILDS_MAX - BUILDS_IN_FLIGHT of them so they all fit
+ * in the build memo together (a longer list would evict its own tail and claim it again, forever). Only nodes not yet populated count. Reads only.
+ * - In hyperspace: the nodes on the route from the one the ship is at, nearest first.
+ * - Sitting in a node: the route the player has plotted on the starmap (`plotted`, if any), then the nodes one lane away. A one-hop jump gives the
+ *   worker under a second, less than a hub takes, so the neighbours are built while the ship waits.
  */
-export function routeBuildJobs(sim: Sim): BuildJob[] {
-  const t = sim.galaxy.travel;
-  if (sim.sector.state !== 'hyperspace' || !t) return [];
-  return t.route.slice(t.at).filter((id) => !sim.galaxy.nodes[id]?.populated).flatMap((id) => nodeBuildJobs(sim, id));
+export function buildJobsAhead(sim: Sim, plotted: readonly string[] | null = null): BuildJob[] {
+  const g = sim.galaxy;
+  const t = g.travel;
+  let nodes: string[];
+  if (sim.sector.state === 'hyperspace') {
+    nodes = t ? t.route.slice(t.at) : [];
+  } else {
+    const here = g.current;
+    const lanes = (galaxyIndex(g).adjacent.get(here) ?? []).map((e) => (e.a === here ? e.b : e.a));
+    nodes = [...new Set([...(plotted ?? []), ...lanes])].filter((id) => id !== here);
+  }
+  return nodes.filter((id) => !g.nodes[id]?.populated).flatMap((id) => nodeBuildJobs(sim, id)).slice(0, BUILDS_MAX - BUILDS_IN_FLIGHT);
 }
 
 /**
@@ -36,10 +48,10 @@ export function routeBuildJobs(sim: Sim): BuildJob[] {
  * the sim's memo, so the ship arrives from there as before. While this runs the sim does not warm fleet ships itself (`warmElsewhere`), so it
  * no longer races the scan at high speed. Generation is a pure function of the contact, so the ships are the same ones, and a ship needed
  * before its result is in is still generated on the spot. A failed job gives the claim back and hands warming back to the sim.
- * During a hyperspace trip it also builds the stations and outposts of the nodes ahead (`routeBuildJobs`, #538) into the sim's build memo, so the
- * first drop at one finds them made; a build needed first is made on the spot as ever, and a failed one is released for the sim to make.
+ * It also builds the stations and outposts of the nodes the ship may drop at next (`buildJobsAhead`, #538: the route in hyperspace; the plotted route
+ * and the neighbours while it waits) into the sim's build memo, so the first drop at one finds them made; a build needed first is made on the spot as ever, and a failed one is released for the sim to make.
  */
-export function createPrewarm(sim: Sim, gen: ShipGenerator, now: () => number): { update(): void } {
+export function createPrewarm(sim: Sim, gen: ShipGenerator, now: () => number, plotted: () => readonly string[] | null = () => null): { update(): void } {
   let last = -Infinity;
   warmElsewhere(sim, true);
   const claim = (c: Contact): void => {
@@ -71,7 +83,7 @@ export function createPrewarm(sim: Sim, gen: ShipGenerator, now: () => number): 
       if (next) claim(next);
       const make = gen.build?.bind(gen);
       if (!make || building >= BUILDS_IN_FLIGHT) return;
-      for (const job of routeBuildJobs(sim)) {
+      for (const job of buildJobsAhead(sim, plotted())) {
         if (building >= BUILDS_IN_FLIGHT) break;
         build(job, make);
       }

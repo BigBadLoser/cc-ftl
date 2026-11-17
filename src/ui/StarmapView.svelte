@@ -61,6 +61,8 @@
   const sel = $derived(selected ? nodeById.get(selected) ?? null : null);
   /** Recomputed whenever the map or its fuel/charge figures change. */
   const route = $derived<UiStarRoute | null>(map && sel && sel.known && !sel.current ? api.planRoute(sel.id) : null);
+  // The plotted route's nodes have their stations built ahead in the background (#538).
+  $effect(() => api.plotRoute(route ? route.path : null));
   const travelPts = $derived(trip ? trip.route.slice(trip.at).map((id) => nodeById.get(id)).filter((n): n is UiStarNode => !!n).map((n) => `${n.x},${n.y}`).join(' ') : '');
   const routePts = $derived(travelPts || (route ? route.path.map((id) => nodeById.get(id)).filter((n): n is UiStarNode => !!n).map((n) => `${n.x},${n.y}`).join(' ') : ''));
   const here = $derived(map ? sectorById.get(map.currentSector) ?? null : null);

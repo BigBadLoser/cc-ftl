@@ -1594,6 +1594,8 @@ export interface UiApi {
   /** The starmap view's data, and a route preview to a node (path, fuel, next jump's charge, blocker). */
   starmap: Subscribable<UiStarmap>;
   planRoute(to: string): UiStarRoute | null;
+  /** The route the player has plotted on the starmap (null: none), so the nodes on it are prepared first (a background hint; it changes nothing in the game). */
+  plotRoute(path: readonly string[] | null): void;
   /** Where the goods aboard sell best: per good, the known ports in sensor range that pay most now (the starmap's Sell panel). */
   whereToSell(): UiSellGood[];
   /** The starmap screen opened or closed: it builds its data then, and the world view stops rendering behind it. */
