@@ -26,6 +26,7 @@ const ISOLATED = [
   'src/app/stockHints.test.ts', // these two set `danger` on generated nodes, which are cached per seed
   'src/content/standing.test.ts',
   'src/content/derelictFailure.test.ts',
+  'src/content/researchReach.test.ts', // ~1.4 GB of heap by itself (20 galaxies revealed to radius 14): in a shared worker it ran out of heap on whatever the earlier files left
   'src/content/jobs.test.ts',
   'src/content/ships/envSkip.test.ts',
   'src/render/moduleMemo.test.ts', // switches the module-level memo off and back
