@@ -182,9 +182,10 @@ function fitOut(
     if (missing(id)) return { ...out, error: `no ${id.replace('module.', '')} fits` };
   }
   const guns = (m: Record<string, number>): number => Object.entries(m).filter(([id]) => defs[id]?.weapon).reduce((t, [, n]) => t + n, 0);
-  if (guns(placed) === 0 || guns(placed) * 4 < guns(wanted) * 3) return { ...out, error: 'weapons do not fit' };
+  // Only a fit that wanted guns (or point defence) can fail for them: an unarmed recipe wants none.
+  if (guns(wanted) > 0 && (guns(placed) === 0 || guns(placed) * 4 < guns(wanted) * 3)) return { ...out, error: 'weapons do not fit' };
   const pd = (m: Record<string, number>): number => Object.entries(m).filter(([id]) => defs[id]?.pointDefense).reduce((t, [, n]) => t + n, 0);
-  if (o.ground && pd(placed) < pd(wanted)) return { ...out, error: 'point defence does not fit' };
+  if (o.ground && pd(wanted) > 0 && pd(placed) < pd(wanted)) return { ...out, error: 'point defence does not fit' };
   if ((placed['module.reactor'] ?? 0) < (wanted['module.reactor'] ?? 0)) return { ...out, error: 'reactors do not fit' };
   // Rooms with a recipe are lit after they are furnished, so lamps take the walkways the furniture leaves.
   for (let room = 0; room < roles.length; room++) if (!drawOf(room)) lightRoom(lay, rng, room);
