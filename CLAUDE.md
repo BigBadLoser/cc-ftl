@@ -84,6 +84,7 @@ or removes content. Before non-trivial work, read the index at the top of `docs/
      review runs). Fix whatever it finds; after a later merge of `main`, CI runs again on the push. CI and Codex review
      it, and only the user merges it to `main`. Nothing reaches `main` any other way.
   Docs-only changes (`*.md`, no code) skip the PR and go straight to `main`.
+- Small bug fixes found together go in one PR on one `fix/…` branch, not a PR each.
 - `CHANGELOG.md` holds player-facing patch notes; refactors, tests and tooling stay out. When a PR with a player-visible
   effect merges, add a line under "Unreleased" (New / Changed / Fixed) with its PR link. A Pages deploy is a release
   named by its date: before the user runs the deploy, rename "Unreleased" to that date and start a new empty one. A

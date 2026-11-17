@@ -21,11 +21,12 @@ as the game does, or one recipe by layout name (`assembly.<family>`, below).
 | Recipes (data) | `src/content/stationRecipes.ts` |
 | Recipe types | `src/sim/shipgen/assembly/recipe.ts` |
 | The assembler: candidates, roots, the hard checks | `assemble.ts`, `asm.ts` (placing and taking back), `branch.ts` (rules into branches), `finish.ts` (trim, braces, the room check) |
-| Elements | `prefab.ts` (a prefab base: modules and tubes on open ground), `elements.ts` (corridor, block, single room), `quay.ts` (the harbour), `pierhead.ts` (the harbour as the head of a street), `across.ts` (a cross street: a T, the trade post's), `ring.ts` (ring or arc with its band) |
+| Elements | `prefab.ts` (a prefab base: modules and tubes on open ground; plans `trade`, `farmRows`, `farmCluster`, `mineWing`), `elements.ts` (corridor, block, single room), `quay.ts` (the harbour), `pierhead.ts` (the harbour as the head of a street), `across.ts` (a cross street: a T, the trade post's), `ring.ts` (ring or arc with its band) |
 | Frames and ports | `model.ts` |
 | The wall writer | `regions.ts` (`RegionGrid`) |
 | The lattice ring and band | `lattice.ts`, `band.ts`, `inner.ts`, `corners.ts` |
-| The rooms a station is assembled from | `program.ts` (from `stationPlan.ts`), `quarters.ts` (cabins, barracks), `dept.ts` |
+| The rooms a station is assembled from | `program.ts` (from the plan types in `../plan.ts`), `quarters.ts` (cabins, barracks), `dept.ts`, `sizing.ts` |
+| Other parts | `street.ts` (a street and its rows), `hub.ts` (below), `fort.ts` and `battery.ts` (the star fort and gun batteries), `noses.ts`, `corners.ts` (shoulders) |
 | Hull check | `hull.ts` |
 | The hub inside a ring (the bazaar's market and spokes) | `hub.ts` |
 | Fitting one out (the handoff to the shared fit-out) | `station.ts` (`assembleStation`), `fitShell` in `../generate.ts` |
@@ -159,19 +160,21 @@ rooms beside customs are stretched to the quay's length.
 
 ## Which family for which station kind
 
-The user's call: a kind has its own family (its look), and the recipes inside a family are the seed's variations. Each
-still to be discussed and tweaked one by one.
+The user's call: a kind has its own family (its look), and the recipes inside a family are the seed's variations.
+What `src/content/stations.ts` wires now (`assembly`; `outpostAssembly` for an asteroid outpost):
 
-| Kind | Family |
-|---|---|
-| Mining | the spine only |
-| Trading | the bazaar (designed for it), and maybe the crescent; on a rock (an asteroid outpost) the prefab base |
-| Pirate | the tree |
-| Military | the star fort (`fort`), and the ring with barracks (from the compound); not the square |
-| Research | the crescent and the half ring (arcs), the labs down the half ring's spine; never the square |
-| Farming | a family of its own, not built: like the spine, one main street with long wings off it |
+| Kind | Station | Asteroid outpost |
+|---|---|---|
+| Mining | the spine (`spine[0]`) | `mineWing` |
+| Trading | the bazaar or the crescent | `prefab` (the trade plan) |
+| Pirate | the tree | none |
+| Military | the star fort, or the compound's ring with barracks (`compound[3]`) | none |
+| Research | the compound's two half rings (`compound[1]`, `compound[2]`) | none |
+| Farming | `agri`: one main street with greenhouse wings off it | `farmRows` or `farmCluster` |
 
-The compound stops being a family of its own once its recipes move to military and research.
+The three outpost plans share one skeleton (pads, customs, market hall, mess hub); only the specialist wing differs.
+User, 2026-11-17: a layout of its own per kind would be ideal, but station layout matters little to play, so it is
+parked.
 
 ### Ring interiors: a street down the middle
 
@@ -520,7 +523,7 @@ trade station's rooms: 12 of 12, the same checks.
 `stationRecipes.slow.test.ts` asserts it. Trees are 1,150 to 1,280 floor tiles against 1,270 to 1,420 for the old Tree,
 which has 43 to 56 solid wall blocks.
 
-### The spine (in progress)
+### The spine
 
 `stationRecipes.spine`, on the mining station's rooms (`--family spine`, `--versus` for the old Spine as the first
 row): the harbour at the head of a main street 3 wide, habitation with the commons and the guns along it, the
@@ -550,6 +553,6 @@ differ little.
   not a rule of the band.
 - Seeds change little within one recipe on a ring: the recipe's preferences decide, the seed rolls lengths and sizes.
 - Up to three rooms a station come out under three tiles wide (cabins; two wide is accepted for a cabin).
-- Not built: arcs of varying depth, ports on a curve other than at the axes and cut ends, the
-  spine recipe (next).
-- A cluster takes about 2.5 s to assemble (eight candidates); a ring 0.2 to 0.5 s.
+- Not built: arcs of varying depth, ports on a curve other than at the axes and cut ends.
+- Build time (`node tools/shipgen/bench.js --seeds 24`, 2026-11-17): 0.2 to 1.7 s mean per station, worst a trade hub at
+  3.4 s. It is paid synchronously on spawn, with no cache: a node with several stations stalls on arrival.
