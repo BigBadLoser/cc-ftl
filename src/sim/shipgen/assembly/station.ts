@@ -101,7 +101,11 @@ export function assembleStation(def: StationDef, id: string, size: StationSize, 
   // The crew's airlocks (a prefab base's wing and greenhouses) are no docks for ships.
   if (g.crewLocks.size > 0) made.template.modules = (made.template.modules ?? []).map((m) => (defs[m.def]?.airlock && footprintTiles(defs[m.def] as ModuleDef, m.x, m.y, m.rot).some((t) => g.crewLocks.has(snap.roomOf[t.y * snap.width + t.x] ?? -1)) ? { ...m, crew: true as const } : m));
   // An asteroid farm's beds are set to the kind's crops, in turn: its crew farm them out of the box.
-  if (prefab && def.crops?.length) { let bed = 0; made.template.modules = (made.template.modules ?? []).map((m) => (defs[m.def]?.plot ? { ...m, crop: def.crops?.[bed++ % def.crops.length] as string } : m)); }
+  const crops = prefab ? def.crops ?? [] : [];
+  if (crops.length > 0) {
+    const mods = made.template.modules ?? [], beds = mods.filter((m) => defs[m.def]?.plot);
+    made.template.modules = mods.map((m) => { const k = beds.indexOf(m), crop = k >= 0 ? crops[k % crops.length] : undefined; return crop ? { ...m, crop } : m; });
+  }
   made.template.name = `${def.name} ${size === 'station' ? '' : `${size} `}${(seed >>> 0).toString(16).toUpperCase().padStart(4, '0').slice(-4)}`;
   // A prefab base's tubes: their floor tiles, drawn as glass tubes (tube.ts).
   if (g.tubes.length > 0) made.template.tubes = tubeRows(snap.width, snap.height, new Set(g.tubes.map(([x, y]) => (y - snap.y0) * snap.width + (x - snap.x0))));

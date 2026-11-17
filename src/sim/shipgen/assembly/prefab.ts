@@ -103,9 +103,9 @@ export function prefab(c: Ctx, rooms: readonly RoomSpec[], docks: readonly RoomS
   const [mess, ...commons] = pick((r) => r.dept === 'commons');
   // The ward with its trauma room (a farm or a mine has too few crew for the programme's).
   const ward = pick((r) => r.dept === 'habitation');
-  const trauma: RoomSpec = { ...(ward[0] as RoomSpec), mods: ['module.recovery', 'module.med_bed'], w: 5, h: 4 };
-  delete trauma.annex;
-  const medical = ward.length > 0 && !trade && !ward.some((r) => r.annex) ? [{ ...(ward[0] as RoomSpec), annex: trauma }, ...ward.slice(1)] : ward;
+  const trauma = (r: RoomSpec): RoomSpec => { const t: RoomSpec = { ...r, mods: ['module.recovery', 'module.med_bed'], w: 5, h: 4 }; delete t.annex; return t; };
+  const [head] = ward;
+  const medical = head && !trade && !ward.some((r) => r.annex) ? [{ ...head, annex: trauma(head) }, ...ward.slice(1)] : ward;
   const secure = ordered(pick((r) => r.dept === 'secure' || r.role === 'bridge')), wings = secure.filter((r) => r.role !== 'reactor');
   // The reactors in one room, as long as they need (down both long walls, batteries in the gaps), not the programme's floor.
   const reactors = secure.filter((r) => r.role === 'reactor');
@@ -119,7 +119,9 @@ export function prefab(c: Ctx, rooms: readonly RoomSpec[], docks: readonly RoomS
   // The works, by kind: greenhouses, the refinery, the pod bay with its suit room, the ore stores, the workshop; the rest joins the medbay's branch.
   const farms = trade ? [] : rest.filter((r) => r.role === 'farm'), refineries = trade ? [] : rest.filter(refinery);
   // The suit room (the pod bay's annex in the programme; the pods park outside, not planned here).
-  const suits = plan === 'mineWing' ? rest.filter((r) => r.role === 'support' && r.mods.includes('module.storage_locker')) : plan === 'farmRows' ? [SUIT_ROOM] : [], shop = trade ? [] : rest.filter((r) => r.role === 'industry' && !refinery(r));
+  // A farm's wing has one whatever the programme planned: the planned locker room when there is one, else its own.
+  const lockers = rest.filter((r) => r.role === 'support' && r.mods.includes('module.storage_locker'));
+  const suits = plan === 'mineWing' ? lockers : plan === 'farmRows' ? (lockers.length > 0 ? lockers : [SUIT_ROOM]) : [], shop = trade ? [] : rest.filter((r) => r.role === 'industry' && !refinery(r));
   // The ore stores all alike: four large bins in a square room.
   const oreRooms = trade || farming ? [] : [...rest.filter((r) => r.role === 'cargo'), oreStore].map((r) => ({ ...r, mods: oreStore.mods, w: ORES[0], h: ORES[1] }));
   const used = new Set<RoomSpec>([...farms, ...refineries, ...suits, ...shop, ...rest.filter((r) => r.role === 'cargo' && !trade && !farming)]);
@@ -305,9 +307,11 @@ export function prefab(c: Ctx, rooms: readonly RoomSpec[], docks: readonly RoomS
     return Array.from({ length: size }, (_, r): Slot => ({ west, row: r, size, up: size >= 2 && r === 0, low: r === size - 1 }));
   }));
   const slotOf = new Map<Leg, Slot>();
-  const take = (leg: Leg, ok: (s: Slot) => boolean): void => { const i = Math.max(0, slots.findIndex(ok)); slotOf.set(leg, slots.splice(i, 1)[0] as Slot); };
-  for (const leg of legs.filter((l) => l.low)) take(leg, (s) => s.low);
-  for (const leg of legs.filter((l) => l.command)) take(leg, (s) => s.up || s.low);
+  // A wing takes a low slot (one each side, from two legs on), then the command block an upper or the other low one. Never a slot
+  // that does not fit: no slot fits, no base.
+  const take = (leg: Leg, ok: (s: Slot) => boolean): boolean => { const i = slots.findIndex(ok); if (i < 0) return false; slotOf.set(leg, slots.splice(i, 1)[0] as Slot); return true; };
+  for (const leg of legs.filter((l) => l.low)) if (!take(leg, (s) => s.low)) return { why: 'no low slot for a wing' };
+  for (const leg of legs.filter((l) => l.command)) if (!take(leg, (s) => s.up || s.low)) return { why: 'no slot for the command block' };
   // The rest: the longer in the lower slots, the shorter above.
   slots.sort((a, b) => Number(a.low) - Number(b.low));
   for (const leg of legs.filter((l) => !slotOf.has(l)).sort((a, b) => a.len - b.len)) slotOf.set(leg, slots.shift() as Slot);

@@ -106,7 +106,7 @@ function planned(rng: Rng, def: StationDef, size: StationSize, defs: Record<stri
 
   for (const r of def.rooms) {
     for (let i = 0; i < r.count[size]; i++) {
-      const spec: RoomSpec = { role: r.role, ...(r.dept ? { dept: r.dept } : {}), mods: [...r.mods], w: r.w, h: r.h, ...(r.role === 'armoury' || r.items ? { stock: true } : {}), ...(r.items ? { items: r.items } : {}) };
+      const spec: RoomSpec = { role: r.role, ...(r.dept ? { dept: r.dept } : {}), mods: [...r.mods], w: r.w, h: r.h, ...(r.role === 'armoury' || r.items ? { stock: true } : {}), ...(r.items ? { items: r.items } : {}), ...(r.drones ? { drones: r.drones } : {}) };
       // A market stall keeps its planned size (a stall is small), and so does a greenhouse (its beds fill it; the wings repeat).
       support.push(r.dept === 'market' || r.role === 'farm' ? spec : grown(rng, spec, space));
     }
@@ -196,9 +196,10 @@ function medbays(rooms: readonly RoomSpec[]): RoomSpec[] {
  * The common rooms as a mess and a rec room: the first one (two at hub size) is a mess with a galley and mess tables
  * (a table seats four on its chairs, which come with it at fit-out; seats for about half the crew at once), and from
  * station size up the next is a rec room with arcade cabinets and a game table. Where there is no rec room the game
- * table stands in the mess. Each mess has a pantry beside it (its annex): racks of stores. They are the commons department.
+ * table stands in the mess. Each mess has a pantry beside it (its annex): racks of stores, stocked with `pantry` when the kind has one. They are
+ * the commons department.
  */
-export function withCommons(rooms: readonly RoomSpec[], size: StationSize): RoomSpec[] {
+export function withCommons(rooms: readonly RoomSpec[], size: StationSize, pantry?: StationDef['pantry']): RoomSpec[] {
   const out = rooms.map((r) => ({ ...r, mods: [...r.mods] }));
   const common = out.filter((r) => r.role === 'support' && !r.dept);
   // Every common room is a mess or a rec room (none is left a bare life-support room): half of them messes (two at hub
@@ -215,7 +216,7 @@ export function withCommons(rooms: readonly RoomSpec[], size: StationSize): Room
     // Sized to what it holds, not grown with the station's spaciousness: a big mess with one table reads as empty.
     const [long, short] = mess ? messSize(tables) : [6, 5];
     [r.w, r.h] = r.w >= r.h ? [long, short] : [short, long];
-    if (mess) r.annex = { role: 'cargo', dept: 'commons', mods: Array<string>(Math.max(2, tables)).fill('module.storage_rack'), w: 5, h: 3 };
+    if (mess) r.annex = { role: 'cargo', dept: 'commons', mods: Array<string>(Math.max(2, tables)).fill('module.storage_rack'), w: 5, h: 3, ...(pantry?.length ? { stock: true, items: pantry } : {}) };
   }
   return out;
 }
@@ -224,7 +225,7 @@ export function withCommons(rooms: readonly RoomSpec[], size: StationSize): Room
 export function stationProgram(rng: Rng, def: StationDef, size: StationSize, defs: Record<string, ModuleDef>, o: { commons?: boolean } = {}): RoomSpec[] {
   const { command, rest, docks, space } = planned(rng, def, size, defs);
   const base = warehoused([command, ...shuffle(rng, rest)]);
-  const rooms = o.commons === false ? [...base, ...medbays(base)] : withCommons([...base, ...medbays(base)], size);
+  const rooms = o.commons === false ? [...base, ...medbays(base)] : withCommons([...base, ...medbays(base)], size, def.pantry);
   // Docks beyond the first two draw (their airlocks' lamps); the reactors come last, sized to all of it.
   return [...rooms, ...reactorsFor([...rooms, ...docks.slice(2)], def, size, defs, space), ...docks];
 }

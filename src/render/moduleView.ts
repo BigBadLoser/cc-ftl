@@ -395,8 +395,8 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
         const headLen = head.every((h, i) => raw[0]?.chain[i] === h) ? head.length : 0;
         const withRuin = ruined ? raw.map((l, i) => (i === 0 ? { ...l, chain: mergeRuinChain(l.chain, headLen, wreck.art, wreck.suffix) } : l)) : raw;
         const layers = withRuin.flatMap((layer) => {
-          // Containers ride outside the hull: never under a roof.
-          if (roofed && !def.container && !(layer.at ? layer.roofVisible : layer.tiles === 'hull' || (def.hullEdge && layer.tiles === 'rest'))) return [];
+          // Containers and ground turret mounts ride outside the hull: never under a roof.
+          if (roofed && !def.container && !isGroundMount(def) && !(layer.at ? layer.roofVisible : layer.tiles === 'hull' || (def.hullEdge && layer.tiles === 'rest'))) return [];
           // Roofed, the new hull runs over an engine's hull row (its plain piece): no bulkhead (the thruster block stays, over it).
           if (roofed && def.hullEdge && layer.tiles === 'hull' && !layer.out && host.hullDrawn && hullRow(def, m.x, m.y, m.rot).every((t) => host.hullDrawn!(t.x, t.y))) return [];
           // Roofed, the airlock's door tile takes the new hull's piece; its own hull block only where that has no art.

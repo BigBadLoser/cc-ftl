@@ -287,7 +287,7 @@ export const RULES: Partial<Record<RoomRole, readonly RuleArrangement[]>> = {
     rule: pa,
   }, { name: 'CG warehouse, crates in aisles', weight: 1, when: (n, r) => n.length > 0 && n.every((m) => m === CR) && r.h >= 3, rule: crates }, {
     name: 'OS ore store, bins down both long walls round an aisle', weight: 1,
-    when: (n, r) => n.length > 0 && n.every((m) => m === OB || m === OBL) && Math.min(r.w, r.h) >= 5 && Math.max(r.w, r.h) >= n.length + 1,
+    when: (n, r) => n.length > 0 && (n.every((m) => m === OB) || n.every((m) => m === OBL)) && Math.min(r.w, r.h) >= 5 && Math.max(r.w, r.h) >= n.length + 1,
     rule: ore,
   }],
   core: [{ name: 'CR core vault, the AI core between its point defence', weight: 1, when: (n, r) => count(n, AI) === 1 && r.w >= 3 * n.length - 1, rule: core }],
@@ -297,6 +297,7 @@ export const RULES: Partial<Record<RoomRole, readonly RuleArrangement[]>> = {
     { name: 'BG brig, stasis wheel at the back', weight: 1, when: (n, r) => count(n, SW) === 1 && r.w >= 7 && r.h >= 6, rule: bg },
   ],
   industry: [
+    // Weight 100: in a hall big enough for it, RW is the arrangement (RF and RF2 are for the rooms it does not fit).
     { name: 'RW refinery hall, the machines against the walls, doorways clear', weight: 100, when: (n, r) => n.includes(RF) && Math.min(r.w, r.h) >= 7 && Math.max(r.w, r.h) >= 13, rule: rw },
     { name: 'RF refinery, an ore bin flush under each', weight: 1, when: (n, r) => n.includes(RF) && r.h >= 7 && r.w >= 4 * count(n, RF), rule: rf },
     { name: 'RF2 refineries in rows, an ore bin flush beside each (deep rooms)', weight: 1, when: (n, r) => n.includes(RF) && rf2Fits(r.w, r.h) >= count(n, RF), rule: rf2 },

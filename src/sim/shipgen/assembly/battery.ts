@@ -34,7 +34,9 @@ export function batteries(s: Site, corners: readonly number[], guns: readonly Ro
   }
   const specs = given.map((list): RoomSpec | undefined => {
     const first = list[0];
-    return first ? { ...first, dept: 'defence', mods: list.flatMap((r) => r.mods) } : undefined;
+    // A drone bay merged into a battery keeps its drones (generation fills only drone bays from it).
+    const drones = list.find((r) => r.drones)?.drones;
+    return first ? { ...first, dept: 'defence', mods: list.flatMap((r) => r.mods), ...(drones ? { drones } : {}) } : undefined;
   });
   return { specs, used };
 }

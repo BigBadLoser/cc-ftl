@@ -11,6 +11,8 @@
     danger?: boolean;
     /** Drawn as a commit (green edge): it changes the game for good. */
     commit?: boolean;
+    /** Drawn as an interaction (cyan, like `button.interact`): an order that sends crew to do something. */
+    action?: boolean;
     confirm?: { warning: string; label: string; cancel: string };
   }
 </script>
@@ -53,7 +55,7 @@
       <button class="danger" data-testid={pending.testid} onclick={() => pending && tap(pending)}>{pending.confirm.label}</button>
     {:else}
       {#each buttons as b (b.testid)}
-        <button class:danger={b.danger} class:commit={b.commit} use:tip={{ text: b.title }} disabled={b.disabled} data-testid={b.testid} onclick={() => tap(b)}>{b.label}</button>
+        <button class:danger={b.danger} class:commit={b.commit} class:action={b.action} use:tip={{ text: b.title }} disabled={b.disabled} data-testid={b.testid} onclick={() => tap(b)}>{b.label}</button>
       {/each}
     {/if}
   </div>
@@ -71,5 +73,6 @@
   .group { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 4px; }
   .group button { min-height: 32px; padding: 0 14px; }
   .group button.commit { background: var(--go-fill); border-color: var(--go-edge); }
+  .group button.action { background: var(--act-fill); border-color: var(--act-edge); }
   .group button.danger { border-color: var(--red); color: var(--red); }
 </style>

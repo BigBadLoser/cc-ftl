@@ -14,13 +14,15 @@ export const STATION_SIZES: readonly StationSize[] = ['outpost', 'station', 'hub
 
 /** A kind-specific room: its role, the modules it holds, its interior size, and how many per size tier. */
 export interface StationRoomDef {
-  role: 'farm' | 'industry' | 'armoury' | 'cargo' | 'quarters' | 'support' | 'hangar';
+  role: 'farm' | 'industry' | 'armoury' | 'cargo' | 'quarters' | 'support' | 'hangar' | 'weapons';
   /** Its department in the station assembly, where the role's own is not it (a drone bay is defence, not works). */
   dept?: StationDept;
   mods: readonly string[];
   w: number;
   h: number;
   count: Readonly<Record<StationSize, number>>;
+  /** A drone bay in this room starts with this many drones of this DroneDef id (each bay, up to its slots). */
+  drones?: { def: string; count: number };
   /** Storage in this room starts stocked with these (instead of the station's general stock). */
   items?: readonly { item: string; min: number; max: number }[];
 }
@@ -49,6 +51,8 @@ export interface StationDef {
   motif: string;
   /** Crops (CropDef ids) the hydroponics beds of an asteroid base are set to, in turn from the first bed: it farms out of the box (#508). */
   crops?: readonly string[];
+  /** The messes' pantries (cold stores and racks) start stocked with these; without it they start empty. Stocked as any store: each store takes what it accepts. */
+  pantry?: readonly { item: string; min: number; max: number }[];
   /**
    * The crew sleeps in barracks: rooms of this many beds each (double bunks, so half as many bunks), with this many
    * one-bed cabins beside them. Without it, blocks of one-bed cabins (`assembly/program.ts`).

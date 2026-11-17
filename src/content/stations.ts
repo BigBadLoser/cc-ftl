@@ -102,12 +102,14 @@ export const stations = {
     stock: [{ item: 'item.ration', min: 4, max: 12 }, { item: 'item.polymer', min: 0, max: 4 }],
     // An asteroid farm's beds are set to these, in turn.
     crops: ['crop.greens', 'crop.beans'],
+    // The messes' pantries hold what the greenhouses grow, and rations (cold stores take food and crops only).
+    pantry: [{ item: 'item.greens', min: 4, max: 12 }, { item: 'item.beans', min: 2, max: 8 }, { item: 'item.ration', min: 0, max: 6 }],
     tiers: tiers({ guns: per(2, 4, 8), heavyPct: 15, shields: per(0, 1, 2), pd: per(1, 1, 2), crates: per(12, 24, 40), docks: per(2, 2, 3) }),
     // Greenhouses (long, narrow farms: hydroponics in two rows down their length) and extra common rooms.
     rooms: [
       room('farm', n(6, 'module.hydroponics'), 5, 9, per(2, 4, 8)),
-      // The produce store: cold stores of what the greenhouses grow, beside the cargo.
-      // Water as well, for the beds (planting water is hauled from a store, as on the starter).
+      // The produce store: cold stores of what the greenhouses grow, beside the cargo (merged into the warehouse with its crates).
+      // Water as well, for the beds (planting water is hauled from a store, as on the starter): the crates take it, a cold store does not.
       room('cargo', n(4, 'module.storage_cold'), 7, 3, per(1, 2, 3), [{ item: 'item.ration', min: 6, max: 16 }, { item: 'item.water', min: 6, max: 14 }]),
       room('support', ['module.lifeSupport'], 6, 3, per(1, 2, 4)),
       armoury(per(1, 1, 1)),
@@ -123,8 +125,9 @@ export const stations = {
     weapons: { light: LIGHT, heavy: HEAVY }, shields: [{ value: 'module.shieldGen', weight: 1 }],
     stock: [{ item: 'item.metal', min: 2, max: 6 }, { item: 'item.missile', min: 2, max: 6 }, { item: 'item.electronics', min: 0, max: 3 }],
     tiers: tiers({ bays: per(0, 1, 2), guns: per(4, 12, 24), heavyPct: 50, shields: per(2, 4, 6), pd: per(2, 4, 6), crates: per(6, 14, 28), docks: per(2, 3, 3) }),
-    // Armouries, and drone bays (two drones a bay) in rooms of two: the depot's own patrol. Defence, not works.
-    rooms: [armoury(per(1, 2, 4), 6), { ...room('hangar', n(2, 'module.droneBay'), 6, 4, per(1, 2, 3)), dept: 'defence' }],
+    // Armouries, and drone bays (two defence drones a bay) in pairs: the depot's own patrol, run by its AI core. A drone bay
+    // is built like a weapon bay, so it stands with the guns.
+    rooms: [armoury(per(1, 2, 4), 6), { ...room('weapons', n(2, 'module.droneBay'), 5, 3, per(1, 2, 3)), drones: { def: 'drone.defence', count: 2 } }],
     atrium: { role: 'drill' },
   },
   // Pirate den: scrappy welded modules, light defences (conquerable on purpose), loot stores.

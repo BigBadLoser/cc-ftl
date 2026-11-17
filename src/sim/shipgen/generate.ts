@@ -12,6 +12,7 @@ import { RULES } from './rooms/rules/rules';
 import { Layout } from './layout';
 import { placeGroundTurrets, type GroundPlan } from './groundTurrets';
 import { cableRows } from '../cable';
+import { accepts } from '../items/storage';
 import { hullChoices, pickWeighted, planShip, type RoomSpec, type ShipPlan } from './plan';
 import { clusters, hub, rails } from './topoDrone';
 import { ring, spine } from './topoNavy';
@@ -102,7 +103,9 @@ function fitOut(
       const art = defs[id]?.storageArt;
       const ores = art ? items.filter((s) => art[s.item]) : [];
       const pick = ores.length > 0 ? [ores[rng.int(0, ores.length - 1)] as (typeof items)[number]] : items;
-      out.stock.set(idx, pick.map((s) => ({ item: s.item, count: rng.int(s.min, s.max) })).filter((s) => s.count > 0));
+      // Each store keeps only what it accepts (a cold store takes no water): rolled for every listed item all the same, so the draws do not shift.
+      const filter = defs[id]?.storageAccepts ?? null;
+      out.stock.set(idx, pick.map((s) => ({ item: s.item, count: rng.int(s.min, s.max) })).filter((s) => s.count > 0 && accepts(filter, s.item)));
     }
   };
   // Planned modules per room and def, for steps that place only a share of them.
@@ -184,9 +187,10 @@ function fitOut(
     if (missing(id)) return { ...out, error: `no ${id.replace('module.', '')} fits` };
   }
   const guns = (m: Record<string, number>): number => Object.entries(m).filter(([id]) => defs[id]?.weapon).reduce((t, [, n]) => t + n, 0);
-  if (guns(placed) === 0 || guns(placed) * 4 < guns(wanted) * 3) return { ...out, error: 'weapons do not fit' };
+  // Only a fit that wanted guns (or point defence) can fail for them: an unarmed recipe wants none.
+  if (guns(wanted) > 0 && (guns(placed) === 0 || guns(placed) * 4 < guns(wanted) * 3)) return { ...out, error: 'weapons do not fit' };
   const pd = (m: Record<string, number>): number => Object.entries(m).filter(([id]) => defs[id]?.pointDefense).reduce((t, [, n]) => t + n, 0);
-  if (o.ground && pd(placed) < pd(wanted)) return { ...out, error: 'point defence does not fit' };
+  if (o.ground && pd(wanted) > 0 && pd(placed) < pd(wanted)) return { ...out, error: 'point defence does not fit' };
   if ((placed['module.reactor'] ?? 0) < (wanted['module.reactor'] ?? 0)) return { ...out, error: 'reactors do not fit' };
   // Rooms with a recipe are lit after they are furnished, so lamps take the walkways the furniture leaves.
   for (let room = 0; room < roles.length; room++) if (!drawOf(room)) lightRoom(lay, rng, room);
@@ -397,7 +401,8 @@ export function fitShell(
   const dockTile = new Set(opened.tiles);
   const fitted = opened.merged > 0 ? rows.map((r, y) => d.lay.cells.slice(y * d.lay.w, y * d.lay.w + r.length).join('')) : rows;
   const template = toTemplate(f, role, factionId, seed, plan, fitted, d);
-  if ((opts.entries?.size ?? 0) > 0) template.apart = true;
+  // Modules standing apart (entered from their own rooms, or cabled on the ground as such): each structure is checked on its own.
+  if ((opts.entries?.size ?? 0) > 0 || (opts.ground?.apart?.length ?? 0) > 0) template.apart = true;
   template.modules = [...(template.modules ?? []), ...(shell.containers ?? []).map((k) => ({ ...k, ...stockOf(rng, f, defs[k.def]) }))];
   const problems = d.error ? [d.error] : validateTemplate(template, defs, opts.immobile ? { immobile: true } : {});
   if (problems.length === 0 && opts.check) problems.push(...opts.check(template, defs));

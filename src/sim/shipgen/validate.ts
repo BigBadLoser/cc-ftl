@@ -26,7 +26,7 @@ export function validateTemplate(t: ShipTemplate, defs: Record<string, ModuleDef
   const solid = new Uint8Array(w * h);
   const mods = t.modules ?? [];
   const cabled = new Set(templateCable(t).map((c) => c.y * w + c.x));
-  const wired = (tiles: readonly { x: number; y: number }[]): boolean => wiredFrom(tiles, cabled, w, at);
+  const wired = (tiles: readonly { x: number; y: number }[]): boolean => wiredFrom(tiles, cabled, w, h, at);
   let supply = 0;
   let demand = 0;
   mods.forEach((m, k) => {
@@ -57,7 +57,9 @@ export function validateTemplate(t: ShipTemplate, defs: Record<string, ModuleDef
     if (m.ground && !wired(footprintTiles(def, m.x, m.y, m.rot))) problems.push(`${name}: no cable to the hull`);
     if (m.ground && isGroundMount(def)) {
       const port = groundPort(def, m);
-      if (!cabled.has(port.cable.y * w + port.cable.x)) problems.push(`${name}: no cable at its port`);
+      const { x: cx, y: cy } = port.cable;
+      // Off the template, an index would alias onto the next row: such a port has no cable.
+      if (cx < 0 || cy < 0 || cx >= w || cy >= h || !cabled.has(cy * w + cx)) problems.push(`${name}: no cable at its port`);
     } else if (m.ground) problems.push(`${name}: not a ground mount`);
   });
   for (const i of cabled) if (at(i % w, Math.floor(i / w)) !== '.') problems.push(`cable ${i % w},${Math.floor(i / w)}: not on the ground`);
@@ -98,6 +100,7 @@ export function validateTemplate(t: ShipTemplate, defs: Record<string, ModuleDef
   if (count((d) => d.power > 0) === 0) problems.push('no reactor');
   if (t.boarding && count((d) => !!d.vehicleBay) === 0) problems.push('boards but has no shuttle bay');
   // Doors join walkable tiles on two opposite sides; everything walkable is reachable from the first door.
+  const part = structureLabels(cells, w, h);
   let start = -1;
   let total = 0;
   for (let y = 0; y < h; y++) {
@@ -113,8 +116,11 @@ export function validateTemplate(t: ShipTemplate, defs: Record<string, ModuleDef
   if (start < 0) problems.push('no door');
   else {
     const seen = new Uint8Array(w * h);
-    // Modules standing apart on open ground are each a walk of their own, from their doors.
-    const stack = t.apart ? Array.from({ length: w * h }, (_, i) => i).filter((i) => cells[i] === 'D' && walk(i % w, Math.floor(i / w))) : [start];
+    // Modules standing apart on open ground are each a walk of their own: every structure from its own first door (not from every
+    // door at once, which would let a room cut off from the rest pass on its own inner door).
+    const firstDoor = new Map<number, number>();
+    if (t.apart) for (let i = 0; i < w * h; i++) if (cells[i] === 'D' && walk(i % w, Math.floor(i / w)) && !firstDoor.has(part[i] as number)) firstDoor.set(part[i] as number, i);
+    const stack = t.apart ? [...firstDoor.values()] : [start];
     for (const i of stack) seen[i] = 1;
     let reached = 0;
     while (stack.length > 0) {
@@ -129,9 +135,16 @@ export function validateTemplate(t: ShipTemplate, defs: Record<string, ModuleDef
     }
     if (reached < total) problems.push(`unreachable: ${total - reached} walkable tiles`);
   }
-  // One structure: hull, walls, floors, doors and beams all 4-connected (no pod or beam floating a tile off).
-  const parts = structureParts(cells, w, h);
+  // One structure: hull, walls, floors, doors and beams all 4-connected (no pod or beam floating a tile off). A base of modules
+  // standing apart may have more, but each with an airlock of its own (a module out on the ground, not a piece left floating).
+  const parts = part.reduce((a, b) => Math.max(a, b), 0);
   if (parts > 1 && !t.apart) problems.push(`disconnected: ${parts} separate structures`);
+  else if (parts > 1) {
+    const locked = new Set<number>();
+    for (const m of mods) { const def = defs[m.def]; if (def?.airlock) for (const f of footprintTiles(def, m.x, m.y, m.rot)) locked.add(part[f.y * w + f.x] ?? 0); }
+    const loose = Array.from({ length: parts }, (_, k) => k + 1).filter((p) => !locked.has(p)).length;
+    if (loose > 0) problems.push(`disconnected: ${loose} separate structures with no airlock`);
+  }
   const leak = sealProblem(cells, w, h);
   if (leak) problems.push(leak);
   const width = widthProblem(cells, w, h);
@@ -144,13 +157,15 @@ export function validateTemplate(t: ShipTemplate, defs: Record<string, ModuleDef
 /**
  * A ground module's cable: a run of cabled tiles (four ways) from beside its footprint to beside a hull wall.
  */
-function wiredFrom(tiles: readonly { x: number; y: number }[], cabled: ReadonlySet<number>, w: number, at: (x: number, y: number) => string): boolean {
+function wiredFrom(tiles: readonly { x: number; y: number }[], cabled: ReadonlySet<number>, w: number, h: number, at: (x: number, y: number) => string): boolean {
   const N4 = [[1, 0], [-1, 0], [0, 1], [0, -1]] as const;
+  const inside = (x: number, y: number): boolean => x >= 0 && y >= 0 && x < w && y < h;
   const seen = new Set<number>(), stack: number[] = [];
-  for (const t of tiles) for (const [dx, dy] of N4) { const j = (t.y + dy) * w + t.x + dx; if (cabled.has(j) && !seen.has(j)) { seen.add(j); stack.push(j); } }
+  for (const t of tiles) for (const [dx, dy] of N4) { const j = (t.y + dy) * w + t.x + dx; if (inside(t.x + dx, t.y + dy) && cabled.has(j) && !seen.has(j)) { seen.add(j); stack.push(j); } }
   while (stack.length > 0) {
     const i = stack.pop() as number, x = i % w, y = Math.floor(i / w);
     for (const [dx, dy] of N4) {
+      if (!inside(x + dx, y + dy)) continue;
       if (at(x + dx, y + dy) === '#') return true;
       const j = (y + dy) * w + x + dx;
       if (cabled.has(j) && !seen.has(j)) { seen.add(j); stack.push(j); }
@@ -187,13 +202,18 @@ export function widthProblem(cells: string[], w: number, h: number): string | nu
 
 /** Count 4-connected components of non-space cells (`.` is space). */
 export function structureParts(cells: string[], w: number, h: number): number {
-  const seen = new Uint8Array(w * h);
+  return structureLabels(cells, w, h).reduce((a, b) => Math.max(a, b), 0);
+}
+
+/** Each tile's structure (`structureParts`), numbered from 1 in scan order; 0 on open ground. */
+export function structureLabels(cells: string[], w: number, h: number): Int32Array {
+  const seen = new Int32Array(w * h);
   let parts = 0;
   for (let s = 0; s < w * h; s++) {
     if (seen[s] || cells[s] === '.' || cells[s] === undefined) continue;
     parts++;
     const stack = [s];
-    seen[s] = 1;
+    seen[s] = parts;
     while (stack.length > 0) {
       const i = stack.pop() as number;
       const x = i % w;
@@ -201,11 +221,11 @@ export function structureParts(cells: string[], w: number, h: number): number {
       for (const [nx, ny] of [[x - 1, y], [x + 1, y], [x, y - 1], [x, y + 1]] as const) {
         if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
         const j = ny * w + nx;
-        if (!seen[j] && cells[j] !== '.') { seen[j] = 1; stack.push(j); }
+        if (!seen[j] && cells[j] !== '.' && cells[j] !== undefined) { seen[j] = parts; stack.push(j); }
       }
     }
   }
-  return parts;
+  return seen;
 }
 
 /**
