@@ -4,7 +4,7 @@ import { homeShip } from '../sim/combat/ships';
 import { CrewC, PositionC } from '../sim/crew/components';
 import { galaxyIndex } from '../sim/galaxy/state';
 import { newGame } from '../sim/newGame';
-import { deserialize, serialize } from '../sim/save';
+import { expectReplayable } from '../../test/support/world';
 import { crewSize, SECURITY_ROLE } from '../sim/shipgen/stationCrew';
 import type { Sim } from '../sim/sim';
 import { planCourier } from '../sim/trade/courier';
@@ -137,13 +137,7 @@ describe('stations in the node', () => {
       run(sim, 120);
       return sim;
     };
-    const a = play();
-    const b = play();
-    expect(serialize(a)).toBe(serialize(b));
-    const c = deserialize(serialize(a), content);
-    run(a, 200);
-    run(c, 200);
-    expect(serialize(c)).toBe(serialize(a));
+    expectReplayable(play, 200, { every: 50, saveAt: 1 });
   });
 });
 

@@ -8,7 +8,7 @@ import { storageAdd, storageCount } from '../../sim/items/storage';
 import { ModuleC } from '../../sim/modules/components';
 import { placementError, removeModule, spawnModule } from '../../sim/modules/spawn';
 import { newGame } from '../../sim/newGame';
-import { deserialize, serialize } from '../../sim/save';
+import { expectReplayable } from '../../../test/support/world';
 import type { Sim } from '../../sim/sim';
 import { stat } from '../../sim/stats';
 import { applyEffects } from '../../sim/combat/effects';
@@ -193,15 +193,8 @@ describe('determinism', () => {
   }
 
   it('same seed, same bays, charging and assembly; save/load mid-charge continues identically', () => {
-    const a = scene(5);
-    const b = scene(5);
-    run(a, 700);
-    run(b, 700);
-    expect(serialize(a)).toBe(serialize(b));
-    const c = deserialize(serialize(a), content);
-    run(a, 900);
-    run(c, 900);
-    expect(serialize(c)).toBe(serialize(a));
+    // Two scenes step 1600 ticks and stay identical throughout; one is saved and reloaded at tick 700 (mid-charge).
+    expectReplayable(() => scene(5), 1600, { every: 100, saveAt: 700 });
   });
 
 describe('robots outside (Codex 4449530807)', () => {
