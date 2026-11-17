@@ -1,23 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import {
-  AirlockC, CrewC, HealthC, ModuleC, PositionC, airlockTiles, isTileWalkable, newGame, suitAir, suitDef,
-  type ModuleDef, type Sim, type SimEvent,
-} from '../../sim';
+import { AirlockC, CrewC, HealthC, ModuleC, PositionC, airlockTiles, isTileWalkable, newGame, suitAir, suitDef, type ModuleDef, type Sim } from '../../sim';
 import { content } from '../index';
 import { shipIdOf, shipGrid } from '../../sim/regions';
 import { shipIds } from '../../sim/regions';
+import { nth, run } from '../../../test/support/sim';
 
-/** The ship with ordinal `n` (1 = the player's, 2 = the first enemy). */
-const nth = (sim: Sim, n: number): number => shipIds(sim)[n - 1] as number;
 
-const run = (sim: Sim, n: number): SimEvent[] => {
-  const out: SimEvent[] = [];
-  for (let i = 0; i < n; i++) {
-    sim.step();
-    out.push(...sim.events.drain());
-  }
-  return out;
-};
 const airlockOf = (sim: Sim, shipId: number): number =>
   sim.world.query(AirlockC).find((i) => shipIdOf(sim, sim.world.get(i, ModuleC)) === nth(sim, shipId))!;
 const crewOn = (sim: Sim, shipId: number): number[] => sim.world.query(CrewC).filter((i) => shipIdOf(sim, sim.world.get(i, PositionC)) === nth(sim, shipId));

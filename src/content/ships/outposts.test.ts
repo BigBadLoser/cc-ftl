@@ -7,6 +7,7 @@ import {
 import { airlockOutside } from '../../sim/outposts/site';
 import { StationAlarmC, StationC, StationCrewC } from '../../sim/stations/components';
 import { TraderC } from '../../sim/trade/types';
+import { runLog } from '../../../test/support/sim';
 
 const CTX = { ores: Object.values(content.ores) as OreDef[], modules: content.modules, stations: content.stations };
 const MODS: Record<string, ModuleDef> = content.modules;
@@ -77,15 +78,6 @@ describe('farm outposts start stocked', () => {
   });
 });
 
-function run(sim: Sim, n: number): string[] {
-  const log: string[] = [];
-  for (let i = 0; i < n; i++) {
-    sim.step();
-    for (const e of sim.events.drain()) log.push(e.type === 'command.rejected' ? `rejected:${e.command}:${e.reason}` : e.type);
-  }
-  return log;
-}
-
 /** A sector with one outpost; returns the sim and its base region. */
 function outpost(style: 'surface' | 'dug', seed = 1): { sim: Sim; ship: number; asteroid: number } {
   const sim = new Sim(seed, content);
@@ -116,7 +108,7 @@ describe('outposts are stations in the sector', () => {
     it(`${style} ${kind}: crewed with security, run by the station director, dormant until provoked`, () => {
       const sim = new Sim(5, content);
       sim.enqueue({ type: 'debug.spawnOutpost', style, kind, seed: 2 });
-      expect(run(sim, 1)).toEqual(['outpost.spawned']);
+      expect(runLog(sim, 1)).toEqual(['outpost.spawned']);
       const ship = [...sim.world.query(ShipC)][0]!;
       const s = sim.world.get(ship, ShipC)!;
       expect(s).toMatchObject({ faction: style === 'surface' ? 'neutral' : 'hostile', immobile: true, gen: { faction: `station.${kind}`, role: 'outpost' } });
@@ -150,16 +142,16 @@ describe('outposts are stations in the sector', () => {
 describe('outposts in the sector', () => {
   it('a dug base is airtight: rock mass walls hold its air', () => {
     const { sim, ship } = outpost('dug');
-    run(sim, 30 * 20);
+    runLog(sim, 30 * 20);
     const o2 = floorO2(sim, ship);
     expect(o2.min).toBeGreaterThan(17);
     expect(o2.mean).toBeGreaterThan(19);
-    expect(run(sim, 20)).not.toContain('hull.breach');
+    expect(runLog(sim, 20)).not.toContain('hull.breach');
   });
 
   it('a surface base holds air in its habitats and tubes; the ground around stays vacuum', () => {
     const { sim, ship } = outpost('surface');
-    run(sim, 30 * 20);
+    runLog(sim, 30 * 20);
     expect(floorO2(sim, ship).min).toBeGreaterThan(17);
     const g = shipGrid(sim, ship)!;
     for (let y = g.y0; y < g.y0 + g.height; y++) for (let x = g.x0; x < g.x0 + g.width; x++) if (g.get('struct', x, y) === Struct.Ground) expect(g.get('o2', x, y)).toBe(0);
@@ -167,10 +159,10 @@ describe('outposts in the sector', () => {
 
   it('survives a save and load round trip and plays on identically', () => {
     const { sim } = outpost('dug', 2);
-    run(sim, 40);
+    runLog(sim, 40);
     const b = deserialize(serialize(sim), content);
     expect(serialize(b)).toBe(serialize(sim));
-    expect(run(b, 200)).toEqual(run(sim, 200));
+    expect(runLog(b, 200)).toEqual(runLog(sim, 200));
     expect(serialize(b)).toBe(serialize(sim));
   });
 });
@@ -204,11 +196,11 @@ describe('digging, levelling and building on rock', () => {
     sim.enqueue({ type: 'job.build', ship, x: 16, y: 6, struct: Struct.Floor });
     sim.enqueue({ type: 'job.build', ship, x: 10, y: 4, struct: Struct.Wall });
     sim.enqueue({ type: 'job.build', ship, x: 2, y: 2, struct: Struct.Ground });
-    expect(run(sim, 1)).toEqual(['rejected:job.build:outerLayer', 'rejected:job.build:outerLayer', 'rejected:job.build:rockMass', 'rejected:job.build:notRock']);
+    expect(runLog(sim, 1)).toEqual(['command.rejected:job.build:outerLayer', 'command.rejected:job.build:outerLayer', 'command.rejected:job.build:rockMass', 'command.rejected:job.build:notRock']);
     const before = totalStock(sim, 'item.iron_ore');
     sim.enqueue({ type: 'job.build', ship, x: 9, y: 4, struct: Struct.Floor });
     sim.enqueue({ type: 'job.build', ship, x: 9, y: 6, struct: Struct.Ground });
-    const log = run(sim, 60 * 20);
+    const log = runLog(sim, 60 * 20);
     expect(log).toContain('rock.dug');
     expect(g.get('struct', 9, 4)).toBe(Struct.Floor);
     expect(g.get('ore', 9, 4)).toBe(0);
@@ -229,9 +221,9 @@ describe('digging, levelling and building on rock', () => {
     writeStruct(g, 4, 2, Struct.Ground);
     expect(placementError(sim, ship, 'module.storage', 8, 7, 0)).toBeNull(); // plain ground is a foundation
     spawnCrew(sim, ship, ['role.engineer']);
-    run(sim, 1);
+    runLog(sim, 1);
     sim.enqueue({ type: 'job.buildModule', ship, def: 'module.pod_bay', x: 2, y: 2, rot: 0 });
-    run(sim, 1);
+    runLog(sim, 1);
     const job = [...sim.world.query(JobC)].map((j) => sim.world.get(j, JobC)!).find((j) => j.kind === 'module')!;
     expect(job.work).toBe(content.modules['module.pod_bay'].buildWork + 2 * (LEVEL_TICKS / 2));
   });

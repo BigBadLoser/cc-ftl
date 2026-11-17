@@ -4,6 +4,7 @@ import { SurrenderedC } from '../../sim/fight/components';
 import { shipGrid, shipIdOf, shipIds } from '../../sim/regions';
 import { HOPELESS_HULL, WRECK_BELOW } from '../../sim/tuning';
 import { content } from '../index';
+import { run } from '../../../test/support/sim';
 
 /**
  * Stuck fights (issue #225), part 2: a hostile ship whose fight is hopeless (hull failing, weapons dead, crew cut off or outnumbered)
@@ -27,15 +28,6 @@ function crippled(opts: { weaponsAlive?: boolean } = {}): { sim: Sim; them: numb
 
 const enemyCrew = (sim: Sim, ship: number): number[] =>
   sim.world.query(CrewC, PositionC).filter((id) => shipIdOf(sim, sim.world.get(id, PositionC)) === ship);
-
-function run(sim: Sim, ticks: number): SimEvent[] {
-  const out: SimEvent[] = [];
-  for (let i = 0; i < ticks; i++) {
-    sim.step();
-    out.push(...sim.events.drain());
-  }
-  return out;
-}
 
 describe('hopeless enemies surrender (issue #225)', () => {
   it('the crippled set-up stays above the wreck line (with its guns alive, nothing gives it up)', () => {

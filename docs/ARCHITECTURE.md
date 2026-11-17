@@ -14,6 +14,7 @@ One line per section; read the index, then only the sections your task touches.
 - [Content](#content): Content is TypeScript files exporting objects checked with satisfies WeaponDef (and so on): the
 - [Rendering](#rendering): Two-way contract.
 - [Test tiers](#test-tiers): Fast tier (npm run check:fast, before every commit): lint, typecheck, then VITESTFAST=1 vitest run...
+- [Test harness](#test-harness): `test/support/`: `run`, `nth`, `fixtureShip`, `expectReplayable`, `cachedWorld`; who may import it.
 - [Asset pipeline](#asset-pipeline): Asset creation is decoupled from asset rendering. Models are built as 3D in Blender, then
 - [Crew AI](#crew-ai): The planned crew AI architecture (interrupts, utility AI, job scheduler, HFSM executor) is in...
 - [UI](#ui): Svelte components read snapshots published by app after each tick, or on demand for
@@ -388,6 +389,29 @@ and the draw-call count is the number of times the batch has to break. Keep that
   Files run longest first (`vitest.sequencer.ts`, weights in `tools/testWeights.ts`, refreshed by `npm run test:weights:ci` from CI timings).
 - Vitest runs files in parallel, so one huge file sets the wall time. Split sweeps across files rather than growing one.
 - Test files never import other test files: an imported `*.test.ts` runs its tests again in the importer.
+
+## Test harness
+
+Shared test helpers live in `test/support/` (repo root); use them instead of a local copy of `run`, `nth` or `fixtureShip`.
+
+- `sim.ts` (sim-only; imports only `src/sim`, narrowly, so a test that uses it does not pull the whole pipeline into its import graph):
+  - `run(sim, ticks, { until?, stopBefore? })` steps and drains events, returns the events. `until` is checked after each step,
+    `stopBefore` before it (the first too). `runLog` returns them as strings (`command.rejected:<command>:<reason>` for a rejection),
+    `runSim` returns `{ ticks, events, log }` when the tick count matters.
+  - `nth(sim, n)` (ship by creation order, 1-based), `crewOn(sim, n)`, `eventsOf(events, type)`,
+    `fixtureShip(sim, template)` (an inert prize ship at the origin).
+- `world.ts` (sim-only):
+  - `expectReplayable(build, ticks, { every = 10, saveAt? })` builds twice, steps both and compares `serialize` every `every` ticks;
+    with `saveAt` one copy is saved and reloaded on the way. A failure names the first tick that differs (it re-runs per tick to find it).
+  - `cachedWorld(key, build)` builds once per worker and returns a fresh `deserialize(serialize(world))` clone per call. Use it when many
+    tests start from the same expensive state (a game run to a scene); build fresh when a test is about the build itself, or about
+    state a save does not hold. Clones are independent: never share a mutable node or world between tests.
+- `content.ts` (the only module that may import `content`): `content`, `cachedNewGame(seed)`.
+- Import rule (lint): only `*.test.ts`, `*.slow.test.ts`, `*.soak.test.ts` and `test/support` may import `test/support`; the sim-only
+  modules follow the sim's boundary (no `content`, `render`, `ui`, `app`), so `src/sim` tests can use them.
+- Turn systems off only in a focused unit test with an explicit list; never in a gameplay-outcome test.
+- Where a branch case only needs the moment it tests (party aboard, reactor near its deadline), start there (set the timer, deploy
+  from a cached scene) and keep one natural signal-to-rescue test on the production pipeline (`content/freighter.test.ts`).
 
 ## Asset pipeline
 

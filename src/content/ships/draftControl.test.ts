@@ -1,20 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { AboardC, AllegianceC, CrewC, DeadC, DownedC, DraftedC, EmbarkOrderC, EquipC, FighterC, HealthC, ModuleC, PathC, PositionC, PrioritiesC, ShipC, Struct, SurrenderedC, VehicleC, type ModuleDef, WeaponC, newGame, shipGrid, spawnCrew, type Sim, type SimEvent, WontDoC } from '../../sim';
 import { content } from '../index';
-import { shipIdOf, shipIds } from '../../sim/regions';
+import { shipIdOf } from '../../sim/regions';
 import { operatorOf } from '../../sim/combat/operators';
 import { tileKey } from '../../sim/crew/spread';
+import { nth } from '../../../test/support/sim';
+import { run as harnessRun } from '../../../test/support/sim';
 
-/** The ship with ordinal `n` (1 = the player's, 2 = the first enemy). */
-const nth = (sim: Sim, n: number): number => shipIds(sim)[n - 1] as number;
-const run = (sim: Sim, n: number, stop: () => boolean = () => false): SimEvent[] => {
-  const out: SimEvent[] = [];
-  for (let i = 0; i < n && !stop(); i++) {
-    sim.step();
-    out.push(...sim.events.drain());
-  }
-  return out;
-};
+const run = (sim: Sim, n: number, stop?: () => boolean): SimEvent[] => harnessRun(sim, n, { stopBefore: stop }); // `stop` is checked before each step
 const crewOn = (sim: Sim, n: number): number[] => sim.world.query(CrewC).filter((i) => shipIdOf(sim, sim.world.get(i, PositionC)) === nth(sim, n));
 const airlockOf = (sim: Sim, n: number): number =>
   sim.world.query(ModuleC).find((i) => shipIdOf(sim, sim.world.get(i, ModuleC)) === nth(sim, n) && sim.world.get(i, ModuleC)!.def === 'module.airlock')!;

@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { CombatC, ModuleC, WeaponC, deserialize, newGame, serialize, type ContentRegistry, type ShipTemplate, type Sim, type SimEvent } from '../../sim';
 import { content } from '../index';
-import { shipIdOf, shipIds } from '../../sim/regions';
+import { shipIdOf } from '../../sim/regions';
+import { nth, run } from '../../../test/support/sim';
 
 /** A 14x9 hull with a reactor, a weapons console, a burst laser and a missile launcher (and missiles), facing the passive raider. */
 const gun: ShipTemplate = {
@@ -18,15 +19,6 @@ const gun: ShipTemplate = {
 const dummy: ShipTemplate = { ...content.ships['ship.raider'], crew: [] };
 const reg: ContentRegistry = { ...content, ships: { ...content.ships, 'ship.gun': gun, 'ship.target': dummy } };
 
-const nth = (sim: Sim, n: number): number => shipIds(sim)[n - 1] as number;
-const run = (sim: Sim, n: number): SimEvent[] => {
-  const out: SimEvent[] = [];
-  for (let i = 0; i < n; i++) {
-    sim.step();
-    out.push(...sim.events.drain());
-  }
-  return out;
-};
 const weapon = (sim: Sim, def: string): number =>
   sim.world.query(ModuleC).find((i) => shipIdOf(sim, sim.world.get(i, ModuleC)) === nth(sim, 1) && sim.world.get(i, ModuleC)!.def === def) as number;
 const fired = (events: SimEvent[], id: number): number => events.filter((e) => e.type === 'weapon.fired' && e.weaponId === id).length;

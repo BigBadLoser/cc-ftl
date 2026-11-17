@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { CrewC, ItemStackC, JobC, ModuleC, PositionC, StorageC, TICK_HZ, homeShip, newGame, placementError, shipGrid, siteIds, siteStatus, storageAdd, totalStock, type Sim } from '../../sim';
 import { content } from '../index';
+import { run } from '../../../test/support/sim';
 
 interface Rig { sim: Sim; ship: number; crate: number; crew: number[] }
 
@@ -18,7 +19,6 @@ function rig(def: string, builders = 1, stocked = true): Rig & { at: { x: number
   for (let y = g.y0 + g.height - 1; y >= g.y0 && !at; y--) for (let x = g.x0 + g.width - 1; x >= g.x0 && !at; x--) if (!placementError(sim, ship, def, x, y, 0)) at = { x, y };
   return { sim, ship, crate, crew, at: at! };
 }
-const run = (sim: Sim, ticks: number) => { for (let i = 0; i < ticks; i++) { sim.step(); sim.events.drain(); } };
 const place = (r: Rig & { at: { x: number; y: number } }, def: string) => {
   r.sim.enqueue({ type: 'job.buildModule', ship: r.ship, def, x: r.at.x, y: r.at.y, rot: 0 });
   run(r.sim, 1);

@@ -16,19 +16,13 @@ import { shipIdOf } from '../../sim/regions';
 import { DoorJam, Struct, isWalkable } from '../../sim/structure';
 import { SCHED_CADENCE, SCHED_DIJKSTRA_ABOVE } from '../../sim/tuning';
 import { content } from '../index';
+import { run } from '../../../test/support/sim';
 
 /**
  * The job scheduler (docs/CREW_AI.md 7.4, #194 Phase 2). Its navigation views agree with `findPath` tile for tile; its matching equals an
  * exhaustive reference built on the legacy walk planner (`planSiteWalk`, every pair searched); priorities are strict; the nearest crew member
  * wins; the pass gate skips only unchanged inputs and runs again on the cadence.
  */
-
-const run = (sim: Sim, n: number): void => {
-  for (let i = 0; i < n; i++) {
-    sim.step();
-    sim.events.drain();
-  }
-};
 
 /** Deterministic LCG for picking tiles. */
 const lcg = (seed: number) => {

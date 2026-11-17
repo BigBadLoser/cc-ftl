@@ -13,19 +13,13 @@ import { destroyJob } from '../../sim/items/stacks';
 import { shipIdOf } from '../../sim/regions';
 import { content } from '../index';
 import { landed, siteWork } from './awayFixture';
+import { run } from '../../../test/support/sim';
 
 /**
  * Crew AI Phase 1 (docs/CREW_AI.md section 10): every executor state is reached on a real ship, saved and loaded there, and torn
  * down there. Four boards: a busy starter (builds, hauls, an EVA wall on the hull ring, a hungry, a tired and a downed crew
  * member), a robot with a flat battery and a bay, and two bedless ships (a rescue with nowhere to go, tired crew with no bed).
  */
-
-const run = (sim: Sim, n: number): void => {
-  for (let i = 0; i < n; i++) {
-    sim.step();
-    sim.events.drain();
-  }
-};
 
 /** FNV-1a over a string. */
 function fnv(s: string): number {

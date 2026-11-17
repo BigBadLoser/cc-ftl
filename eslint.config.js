@@ -106,6 +106,20 @@ export default tseslint.config(
     rules: { 'no-restricted-syntax': ['error', ...noGridIds] },
   },
   {
+    // Test support (test/support) is for tests only. A separate rule (not no-restricted-imports) so it cannot be overridden by the per-folder import rules above.
+    files: ['**/*.ts', '**/*.svelte', '**/*.js'],
+    ignores: ['**/*.test.ts', '**/*.slow.test.ts', '**/*.soak.test.ts', 'test/support/**'],
+    rules: {
+      '@typescript-eslint/no-restricted-imports': ['error', { patterns: [{ group: ['**/test/support', '**/test/support/**'], message: 'test/support is for test files only.' }] }],
+    },
+  },
+  {
+    // The sim-only test helpers serve src/sim tests, so they follow the sim's import boundary; only content.ts (used by content tests) may reach content.
+    files: ['test/support/**/*.ts'],
+    ignores: ['test/support/content.ts', 'test/support/content.test.ts'],
+    rules: noImports(pixiNames, [...pixiPat, ...sveltePat, ...pat(['content', 'render', 'ui', 'app'])]),
+  },
+  {
     files: ['src/content/**/*.ts'],
     rules: noImports(pixiNames, [...pixiPat, ...sveltePat, ...pat(['render', 'ui', 'app'])]),
   },

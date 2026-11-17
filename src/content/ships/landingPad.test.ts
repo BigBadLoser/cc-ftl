@@ -13,6 +13,7 @@ import { boardingTile } from '../../sim/vehicles/geometry';
 import { SuitC } from '../../sim/eva/components';
 import { shipGrid, shipIdOf } from '../../sim/regions';
 import { Struct } from '../../sim/structure';
+import { run as harnessRun } from '../../../test/support/sim';
 
 function base(): { sim: Sim; ship: number; pads: number[] } {
   const sim = new Sim(5, content);
@@ -23,15 +24,7 @@ function base(): { sim: Sim; ship: number; pads: number[] } {
   return { sim, ship, pads };
 }
 
-function run(sim: Sim, ticks: number, until?: () => boolean): SimEvent[] {
-  const out: SimEvent[] = [];
-  for (let i = 0; i < ticks; i++) {
-    sim.step();
-    out.push(...sim.events.drain());
-    if (until?.()) break;
-  }
-  return out;
-}
+const run = (sim: Sim, ticks: number, until?: () => boolean): SimEvent[] => harnessRun(sim, ticks, { until }); // `until` is checked after each step
 
 describe('landing pads', () => {
   it('a surface base has its pads, its shuttle on the first, each pad beside an airlock', () => {

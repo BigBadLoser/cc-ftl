@@ -5,15 +5,7 @@ import {
   AsteroidC, FINISH_TICKS, JobC, ShipC, Sim, Struct, TICK_HZ, homeShip, newGame, shipGrid, spawnCrew, stampShip,
   writeStruct,
 } from '../../sim';
-
-function run(sim: Sim, n: number): string[] {
-  const log: string[] = [];
-  for (let i = 0; i < n; i++) {
-    sim.step();
-    for (const e of sim.events.drain()) log.push(e.type === 'command.rejected' ? `rejected:${e.command}:${e.reason}` : e.type);
-  }
-  return log;
-}
+import { runLog } from '../../../test/support/sim';
 
 /** A player room (x 0..13, y 0..9) with empty space east of it (x 14..16) that tests turn into rock ground. */
 function slab(): { sim: Sim; ship: number } {
@@ -36,10 +28,10 @@ describe('finishing rock into a rock wall', () => {
     sim.enqueue({ type: 'job.build', ship, x: 11, y: 2, struct: Struct.RockWall }); // inner rock, no floor beside
     sim.enqueue({ type: 'job.build', ship, x: 15, y: 7, struct: Struct.RockWall });
     sim.enqueue({ type: 'job.build', ship, x: 3, y: 3, struct: Struct.RockWall }); // a floor, not rock
-    expect(run(sim, 1).filter((e) => e.startsWith('rejected'))).toEqual(['rejected:job.build:noFloorBeside', 'rejected:job.build:noFloorBeside', 'rejected:job.build:notRock']);
+    expect(runLog(sim, 1).filter((e) => e.startsWith('command.rejected'))).toEqual(['command.rejected:job.build:noFloorBeside', 'command.rejected:job.build:noFloorBeside', 'command.rejected:job.build:notRock']);
     sim.enqueue({ type: 'job.build', ship, x: 9, y: 4, struct: Struct.RockWall });
     sim.enqueue({ type: 'job.build', ship, x: 13, y: 5, struct: Struct.RockWall });
-    run(sim, 1);
+    runLog(sim, 1);
     const jobs = [...sim.world.query(JobC)].map((j) => sim.world.get(j, JobC)!);
     expect(jobs).toHaveLength(2);
     for (const j of jobs) {
@@ -47,7 +39,7 @@ describe('finishing rock into a rock wall', () => {
       expect(j.needs ?? []).toEqual([]); // free
     }
     expect(FINISH_TICKS).toBe(8 * TICK_HZ);
-    run(sim, 80 * TICK_HZ);
+    runLog(sim, 80 * TICK_HZ);
     expect(g.get('struct', 9, 4)).toBe(Struct.RockWall);
     expect(g.get('struct', 13, 5)).toBe(Struct.RockWall);
     expect(g.get('struct', 15, 7)).toBe(Struct.Rock);
@@ -61,7 +53,7 @@ describe('finishing rock into a rock wall', () => {
     // a rock partition across the room at x 7: air on the west side stays, the vacuum on the east side stays
     for (let y = 1; y < 9; y++) writeStruct(g, 7, y, Struct.RockWall);
     for (let y = 1; y < 9; y++) for (let x = 8; x < 17; x++) { g.set('o2', x, y, 0); g.set('co2', x, y, 0); }
-    run(sim, 600);
+    runLog(sim, 600);
     expect(g.get('o2', 6, 4)).toBeGreaterThan(20);
     expect(g.get('o2', 9, 4)).toBeLessThan(1);
   });
@@ -74,15 +66,15 @@ describe('finishing rock into a rock wall', () => {
     sim.enqueue({ type: 'job.build', ship, x: 7, y: 4, struct: Struct.Door });
     sim.enqueue({ type: 'job.build', ship, x: 7, y: 2, struct: Struct.Wall });
     sim.enqueue({ type: 'job.deconstruct', ship, x: 7, y: 6 });
-    expect(run(sim, 1).filter((e) => e.startsWith('rejected'))).toEqual(['rejected:job.build:rockMass', 'rejected:job.deconstruct:nothingToDeconstruct']);
+    expect(runLog(sim, 1).filter((e) => e.startsWith('command.rejected'))).toEqual(['command.rejected:job.build:rockMass', 'command.rejected:job.deconstruct:nothingToDeconstruct']);
     // the door order is accepted (a door job sits on the rock wall tile, as on a metal wall; it waits for materials here)
     expect([...sim.world.query(JobC)].map((j) => sim.world.get(j, JobC)!)).toMatchObject([{ x: 7, y: 4, struct: Struct.Door }]);
     sim.enqueue({ type: 'job.cancel', ship, x: 7, y: 4 });
-    run(sim, 1);
+    runLog(sim, 1);
     sim.enqueue({ type: 'job.build', ship, x: 7, y: 6, struct: Struct.Floor });
-    run(sim, 1);
+    runLog(sim, 1);
     expect([...sim.world.query(JobC)].map((j) => sim.world.get(j, JobC)!.work)).toEqual([15 * TICK_HZ]);
-    run(sim, 60 * TICK_HZ);
+    runLog(sim, 60 * TICK_HZ);
     expect(g.get('struct', 7, 6)).toBe(Struct.Floor);
   });
 
@@ -93,7 +85,7 @@ describe('finishing rock into a rock wall', () => {
     const asteroid = [...sim.world.query(AsteroidC)][0]!;
     const a = sim.world.get(asteroid, AsteroidC)!;
     sim.enqueue({ type: 'asteroid.claim', asteroid, x: a.x, y: a.y + Math.floor((a.height - 10) / 2), w: 12, h: 10 });
-    run(sim, 1);
+    runLog(sim, 1);
     const base = [...sim.world.query(ShipC)].find((id) => sim.world.get(id, ShipC)?.base)!;
     const g = shipGrid(sim, base)!;
     const cx = g.x0 + 5, cy = g.y0 + 5;
@@ -102,7 +94,7 @@ describe('finishing rock into a rock wall', () => {
     g.set('ship', cx, cy, base);
     expect(homeShip(sim)).not.toBe(base);
     sim.enqueue({ type: 'job.build', ship: base, x: cx + 1, y: cy, struct: Struct.RockWall });
-    expect(run(sim, 1)).not.toContain('rejected:job.build:noFloorBeside');
+    expect(runLog(sim, 1)).not.toContain('command.rejected:job.build:noFloorBeside');
     const job = [...sim.world.query(JobC)].map((j) => sim.world.get(j, JobC)!)[0]!;
     expect(job).toMatchObject({ struct: Struct.RockWall, work: FINISH_TICKS });
   });

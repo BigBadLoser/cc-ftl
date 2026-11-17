@@ -1,17 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { sightLine } from '../../sim/fight/los';
-import { AllegianceC, CrewC, DeadC, DownedC, EquipC, ModuleC, WontDoC, StorageC, storageCount, storageTake, FighterC, JobC, PathC, Struct, shipGrid, SurrenderedC, HealthC, PositionC, newGame, spawnCrew, type Sim, type SimEvent } from '../../sim';
+import { AllegianceC, CrewC, DeadC, DownedC, EquipC, ModuleC, WontDoC, StorageC, storageCount, storageTake, FighterC, JobC, PathC, Struct, shipGrid, SurrenderedC, HealthC, PositionC, newGame, spawnCrew, type Sim } from '../../sim';
 import { content } from '../index';
 import { shipIdOf, shipIds } from '../../sim/regions';
+import { run } from '../../../test/support/sim';
 
-const run = (sim: Sim, n: number): SimEvent[] => {
-  const out: SimEvent[] = [];
-  for (let i = 0; i < n; i++) {
-    sim.step();
-    out.push(...sim.events.drain());
-  }
-  return out;
-};
 const ownShip = (sim: Sim): number => shipIds(sim)[0] as number;
 const player = (sim: Sim): number[] => sim.world.query(CrewC).filter((c) => sim.world.get(c, AllegianceC)?.faction === 'player' && shipIdOf(sim, sim.world.get(c, PositionC)) === ownShip(sim));
 const down = (sim: Sim, c: number): boolean => sim.world.has(c, DownedC) || sim.world.has(c, DeadC);

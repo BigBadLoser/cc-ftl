@@ -2,18 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { AboardC, AllegianceC, CaptureProgressC, CombatC, CrewC, DeadC, DownedC, DraftedC, EquipC, HealthC, ItemStackC, ModuleC, PathC, PositionC, PrisonerC, PrizeC, prizeValue, ShipC, shipIdAt, SurrenderedC, VehicleC, WeaponC, accessTile, cargoCount, deserialize, newGame, serialize, storageCount, StorageC, type ModuleDef, type Sim, type SimEvent } from '../../sim';
 import { content } from '../index';
 import { shipIdOf, shipIds } from '../../sim/regions';
+import { nth } from '../../../test/support/sim';
+import { run as harnessRun } from '../../../test/support/sim';
 
-/** The ship with ordinal `n` (1 = the player's, 2 = the first enemy). */
-const nth = (sim: Sim, n: number): number => shipIds(sim)[n - 1] as number;
 
-const run = (sim: Sim, n: number, stop: () => boolean = () => false): SimEvent[] => {
-  const out: SimEvent[] = [];
-  for (let i = 0; i < n && !stop(); i++) {
-    sim.step();
-    out.push(...sim.events.drain());
-  }
-  return out;
-};
+const run = (sim: Sim, n: number, stop?: () => boolean): SimEvent[] => harnessRun(sim, n, { stopBefore: stop }); // `stop` is checked before each step
 const of = <T extends SimEvent['type']>(events: SimEvent[], type: T): Extract<SimEvent, { type: T }>[] =>
   events.filter((e): e is Extract<SimEvent, { type: T }> => e.type === type);
 const defOf = (sim: Sim, id: number): ModuleDef => content.modules[sim.world.get(id, ModuleC)!.def as keyof typeof content.modules] as ModuleDef;

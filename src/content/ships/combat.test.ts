@@ -4,6 +4,7 @@ import { content } from '../index';
 import { shipIdOf, shipGrid } from '../../sim/regions';
 import { shipById } from '../../sim/combat/ships';
 import { shipIds } from '../../sim/regions';
+import { nth, run } from '../../../test/support/sim';
 
 type Mod = NonNullable<ShipTemplate['modules']>[number];
 
@@ -33,18 +34,8 @@ const withMissiles: Mod = { def: 'module.storage', x: 5, y: 6, rot: 2, stock: [{
 function registry(ships: Record<string, ShipTemplate>): ContentRegistry {
   return { ...content, ships: { ...content.ships, ...ships } };
 }
-const run = (sim: Sim, n: number): SimEvent[] => {
-  const out: SimEvent[] = [];
-  for (let i = 0; i < n; i++) {
-    sim.step();
-    out.push(...sim.events.drain());
-  }
-  return out;
-};
 const ofType = <T extends SimEvent['type']>(events: SimEvent[], type: T): Extract<SimEvent, { type: T }>[] =>
   events.filter((e): e is Extract<SimEvent, { type: T }> => e.type === type);
-/** The ship with ordinal `n` (1 = the player's, 2 = the first enemy). */
-const nth = (sim: Sim, n: number): number => shipIds(sim)[n - 1] as number;
 const modulesOf = (sim: Sim, n: number, def: string): number[] =>
   sim.world.query(ModuleC).filter((i) => shipIdOf(sim, sim.world.get(i, ModuleC)) === nth(sim, n) && sim.world.get(i, ModuleC)!.def === def);
 const combatOf = (sim: Sim, n: number) => sim.world.get(nth(sim, n), CombatC)!;

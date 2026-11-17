@@ -3,20 +3,11 @@ import { ALT, BodyC, CrewC, ModuleC, PositionC, ShipC, VehicleC, WeaponC, bayCen
 import { content } from '../index';
 import { shipIdOf } from '../../sim/regions';
 import { shipIds } from '../../sim/regions';
+import { nth, run } from '../../../test/support/sim';
 
-/** The ship with ordinal `n` (1 = the player's, 2 = the first enemy). */
-const nth = (sim: Sim, n: number): number => shipIds(sim)[n - 1] as number;
 
 // Step 8 of the sector grid: vehicles are free bodies (BodyC) that pin to their bay or dock and fly in sector tiles.
 
-const run = (sim: Sim, n: number): SimEvent[] => {
-  const out: SimEvent[] = [];
-  for (let i = 0; i < n; i++) {
-    sim.step();
-    out.push(...sim.events.drain());
-  }
-  return out;
-};
 const reasons = (ev: SimEvent[]): string[] => ev.filter((e) => e.type === 'command.rejected').map((e) => (e as { reason: string }).reason);
 const shuttleOf = (sim: Sim): number => sim.world.query(VehicleC).find((i) => sim.world.get(i, VehicleC)!.homeShip === nth(sim, 1))!;
 const airlockOf = (sim: Sim, shipId: number): number =>

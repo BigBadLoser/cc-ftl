@@ -9,6 +9,7 @@ import { translated } from '../../sim/sector/translate';
 import { emptyNeighbour } from './nodeFixture';
 import { content } from '../index';
 import { factions } from '../factions/index';
+import { runLog } from '../../../test/support/sim';
 
 /** A ship's state in its own frame: every entity that lifts with it (components moved to ship-local tiles) and its tiles. */
 function local(sim: Sim, ship: number): string {
@@ -26,21 +27,12 @@ function local(sim: Sim, ship: number): string {
   return JSON.stringify({ entities, tiles });
 }
 
-function run(sim: Sim, n: number): string[] {
-  const log: string[] = [];
-  for (let i = 0; i < n; i++) {
-    sim.step();
-    for (const e of sim.events.drain()) log.push(e.type === 'command.rejected' ? `${e.type}:${e.command}:${e.reason}` : e.type);
-  }
-  return log;
-}
-
 /** Run the trip to its last node, then drop out of hyperspace (the ship then waits to deploy). Returns the event log. */
 function land(sim: Sim): string[] {
-  const log: string[] = run(sim, 1); // the queued jump
-  for (let i = 0; i < 20000 && sim.sector.state === 'hyperspace' && (sim.galaxy.travel?.phase === 'hop' || sim.galaxy.travel?.phase === 'story'); i++) { log.push(...run(sim, 1)); sim.story.active = null; }
+  const log: string[] = runLog(sim, 1); // the queued jump
+  for (let i = 0; i < 20000 && sim.sector.state === 'hyperspace' && (sim.galaxy.travel?.phase === 'hop' || sim.galaxy.travel?.phase === 'story'); i++) { log.push(...runLog(sim, 1)); sim.story.active = null; }
   sim.enqueue({ type: 'galaxy.drop' });
-  log.push(...run(sim, 1));
+  log.push(...runLog(sim, 1));
   return log;
 }
 
@@ -65,7 +57,7 @@ const airlockOf = (sim: Sim, ship: number): number =>
 describe('ship packets', () => {
   it('lift then stamp at another offset gives the identical ship modulo translation, and frees its chunks', () => {
     const sim = newGame(4, content);
-    run(sim, 300);
+    runLog(sim, 300);
     const ship = homeShip(sim);
     const before = local(sim, ship);
     const n = sim.world.entityCount;
@@ -81,12 +73,12 @@ describe('ship packets', () => {
   it('a lifted and re-stamped ship plays on exactly like one that stayed (modulo translation)', () => {
     const a = newGame(6, content);
     const b = newGame(6, content);
-    run(a, 200);
-    run(b, 200);
+    runLog(a, 200);
+    runLog(b, 200);
     const ship = homeShip(b);
     stampShip(b, liftShip(b, ship), { x: 261, y: 143 });
-    const la = run(a, 600);
-    const lb = run(b, 600);
+    const la = runLog(a, 600);
+    const lb = runLog(b, 600);
     expect(lb).toEqual(la);
     expect(local(b, ship)).toBe(local(a, ship));
     expect(b.rng.getState()).toBe(a.rng.getState());
@@ -142,7 +134,7 @@ describe('galaxy.jump, archives and sector.deploy', () => {
     sim.galaxy.fleets = []; // this test is about archives: no NPC fleet waits at the node it drops into
     const empty = emptyNeighbour(sim); // an empty node: this test is about archives, so nothing is populated there
     const raider = stampShip(sim, content.ships['ship.raider']!, { faction: 'hostile', x: 160, y: 40, state: 'wreck' });
-    run(sim, 20);
+    runLog(sim, 20);
     const player = homeShip(sim);
     const raiderIds = sim.world.ids().filter((id) => !liftSet(sim, player).includes(id));
     const raiderTiles = Array.from(sim.sector.grid.load('struct', { x: 160, y: 40, w: 40, h: 30 }));
@@ -155,9 +147,9 @@ describe('galaxy.jump, archives and sector.deploy', () => {
     expect(sim.archives[0]!.entities.map((e) => e.id)).toEqual(raiderIds);
     // Deploying: the gap rule and the bounds are checked; then the ship is back with all its entities.
     sim.enqueue({ type: 'sector.deploy', x: -5, y: 0 });
-    expect(run(sim, 1)).toContain('command.rejected:sector.deploy:outOfBounds');
+    expect(runLog(sim, 1)).toContain('command.rejected:sector.deploy:outOfBounds');
     sim.enqueue({ type: 'sector.deploy', x: 100, y: 60 });
-    expect(run(sim, 1)).toContain('sector.deployed');
+    expect(runLog(sim, 1)).toContain('sector.deployed');
     expect(sim.sector.state).toBe('active');
     expect(sim.world.get(player, ShipC)).toMatchObject({ x: 100, y: 60 });
     expect(sim.world.has(raider, ShipC)).toBe(false);
@@ -168,7 +160,7 @@ describe('galaxy.jump, archives and sector.deploy', () => {
     expect(sim.world.ids()).toEqual(raiderIds);
     expect(Array.from(sim.sector.grid.load('struct', { x: 160, y: 40, w: 40, h: 30 }))).toEqual(raiderTiles);
     sim.enqueue({ type: 'sector.deploy', x: 30, y: 40 });
-    expect(run(sim, 1)).toContain('sector.deployed');
+    expect(runLog(sim, 1)).toContain('sector.deployed');
     expect(sim.world.get(raider, ShipC)?.state).toBe('wreck');
   });
 
@@ -176,21 +168,21 @@ describe('galaxy.jump, archives and sector.deploy', () => {
     const sim = newGame(3, content);
     const player = homeShip(sim);
     sim.enqueue({ type: 'galaxy.jump', ship: player, route: [near(sim, 0)] });
-    expect(run(sim, 1)).toContain('command.rejected:galaxy.jump:notCharged');
+    expect(runLog(sim, 1)).toContain('command.rejected:galaxy.jump:notCharged');
     jump(sim, START_NODE);
-    expect(run(sim, 1)).toContain('command.rejected:galaxy.jump:noRoute');
+    expect(runLog(sim, 1)).toContain('command.rejected:galaxy.jump:noRoute');
     stampShip(sim, content.ships['ship.raider']!, { faction: 'hostile', x: 160, y: 40, state: 'wreck' });
     jump(sim, near(sim, 0));
     land(sim);
     jump(sim, START_NODE, undefined, player); // refused while deploying
-    expect(run(sim, 1)).toContain('command.rejected:galaxy.jump:deploying');
+    expect(runLog(sim, 1)).toContain('command.rejected:galaxy.jump:deploying');
     // Back at node 0 the wreck is restored; deploying on top of it breaks the gap rule.
     sim.enqueue({ type: 'sector.deploy', x: 10, y: 10 });
-    run(sim, 1);
+    runLog(sim, 1);
     jump(sim, START_NODE, undefined, player);
     land(sim);
     sim.enqueue({ type: 'sector.deploy', x: 150, y: 35 });
-    expect(run(sim, 1)).toContain('command.rejected:sector.deploy:overlap');
+    expect(runLog(sim, 1)).toContain('command.rejected:sector.deploy:overlap');
   });
 
   it('freezes a restored node while the deploy waits, including after a rejected deploy', () => {
@@ -202,16 +194,16 @@ describe('galaxy.jump, archives and sector.deploy', () => {
     jump(sim, near(sim, 0));
     land(sim);
     sim.enqueue({ type: 'sector.deploy', x: 10, y: 10 });
-    run(sim, 1);
+    runLog(sim, 1);
     jump(sim, START_NODE, undefined, player);
     expect(land(sim)).toContain('sector.jumped');
     const snap = (): string => JSON.stringify({ w: sim.world.serialize(), g: sim.sector.grid.serialize() });
     const before = snap();
     sim.enqueue({ type: 'sector.deploy', x: 150, y: 35 }); // rejected: overlaps the raider
-    expect(run(sim, 120)).toContain('command.rejected:sector.deploy:overlap');
+    expect(runLog(sim, 120)).toContain('command.rejected:sector.deploy:overlap');
     expect(snap()).toBe(before);
     sim.enqueue({ type: 'sector.deploy', x: 30, y: 40 });
-    expect(run(sim, 1)).toContain('sector.deployed');
+    expect(runLog(sim, 1)).toContain('sector.deployed');
   });
 
   it('lists crew and shuttles away; they stay in the archive', () => {
@@ -246,9 +238,9 @@ describe('galaxy.jump, archives and sector.deploy', () => {
     const make = (): Sim => {
       const sim = newGame(8, content);
       sim.enqueue({ type: 'debug.spawnEnemy', template: 'ship.raider', x: 160, y: 40 });
-      run(sim, 100);
+      runLog(sim, 100);
       jump(sim, near(sim, 0));
-      run(sim, 2);
+      runLog(sim, 2);
       return sim;
     };
     const a = make();
@@ -256,12 +248,12 @@ describe('galaxy.jump, archives and sector.deploy', () => {
     expect(serialize(b)).toBe(serialize(a));
     for (const s of [a, b]) {
       s.enqueue({ type: 'sector.deploy', x: 100, y: 60 });
-      run(s, 300);
+      runLog(s, 300);
     }
     const c = deserialize(serialize(b), content);
     expect(c.archives).toHaveLength(1);
-    const lc = run(c, 300);
-    expect(run(a, 300)).toEqual(lc);
+    const lc = runLog(c, 300);
+    expect(runLog(a, 300)).toEqual(lc);
     expect(serialize(c)).toBe(serialize(a));
   });
 });

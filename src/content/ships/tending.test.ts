@@ -1,23 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import {
-  AssignmentC, CrewC, DownedC, HealthC, JobC, ModuleC, NeedsC, PathC, PositionC, PrioritiesC, ShipC, TICK_HZ, newGame, placementError, playerShip, spawnModule,
-  type Sim, type SimEvent,
-} from '../../sim';
+import { AssignmentC, CrewC, DownedC, HealthC, JobC, ModuleC, NeedsC, PathC, PositionC, PrioritiesC, ShipC, TICK_HZ, newGame, placementError, playerShip, spawnModule, type Sim } from '../../sim';
 import { WontDoC } from '../../sim/crew/background';
 import { WONT_DO_WHY, blockWork } from '../../sim/crew/workBlock';
 import { tendingOf } from '../../sim/crew/treatment';
 import { accessTile, footprintTiles } from '../../sim/modules/footprint';
 import { SkillXpC } from '../../sim/story/components';
 import { content } from '../index';
+import { run } from '../../../test/support/sim';
 
-const run = (sim: Sim, n: number): SimEvent[] => {
-  const out: SimEvent[] = [];
-  for (let i = 0; i < n; i++) {
-    sim.step();
-    out.push(...sim.events.drain());
-  }
-  return out;
-};
 const secs = (n: number): number => Math.round(n * TICK_HZ);
 const humans = (sim: Sim): number[] => sim.world.query(CrewC).filter((id) => sim.world.get(id, CrewC)?.species === 'species.human');
 

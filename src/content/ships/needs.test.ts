@@ -1,12 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { shipIds } from '../../sim/regions';
 import { CrewC, DownedC, HealthC, ModuleC, MoodC, ShipC, StorageC, TaskC, TICK_HZ, deserialize, homeShip, liftShip, removeModule, stampPacket, newGame, serialize, stat, totalStock, type Sim, type SimEvent } from '../../sim';
 import { claimedBed, mealOf } from '../../sim/ai/task';
 import { MOOD_LOW_WORK_MULT, MOOD_VERY_LOW_WORK_MULT } from '../../sim/tuning';
 import { content } from '../index';
 
-/** The ship with ordinal `n` (1 = the player's, 2 = the first enemy). */
-const nth = (sim: Sim, n: number): number => shipIds(sim)[n - 1] as number;
 import { PLAYER_START as P0 } from '../../sim/tuning'; // the player ship's sector top-left
 
 const find = (sim: Sim, def: string): number => sim.world.query(ModuleC).find((id) => sim.world.get(id, ModuleC)?.def === def) as number;
@@ -19,6 +16,7 @@ function emptyLarder(sim: Sim): void {
   }
 }
 import { humans, hungry, needs, run } from './needsFixture';
+import { nth } from '../../../test/support/sim';
 
 describe('hunger', () => {
   it('decays at the species rate and starts every crew member part-fed', () => {

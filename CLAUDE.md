@@ -32,6 +32,7 @@ or removes content. Before non-trivial work, read the index at the top of `docs/
   one on `main` by default). `npm run test:weights` does the same from a local full run; prefer the CI one. The weights are per-file
   times that order the run and balance the CI shards
   after adding or reshaping heavy tests.
+- Shared test helpers (`run`, `nth`, `fixtureShip`, `expectReplayable`, `cachedWorld`) live in `test/support/`; use them instead of local copies (see "Test harness" in `docs/ARCHITECTURE.md`).
 - Tests share one module graph (`isolate: false`) except the files listed as isolated in `vite.config.ts`. A test that
   mocks or spies, or changes shared or cached data (the component registry, generated nodes cached per seed), goes on that list.
 - `npm run lab -- --panel <id>`: screenshot a render lab panel, any visual drawn on its own as a grid of stills (dev page

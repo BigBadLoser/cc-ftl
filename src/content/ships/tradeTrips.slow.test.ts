@@ -4,18 +4,11 @@ import { MAX_TRIPS, planTrips } from '../../sim/trade/trips';
 import type { Trip } from '../../sim/trade/types';
 import { shipIds, shipIdOf } from '../../sim/regions';
 import { content } from '../index';
+import { run } from '../../../test/support/sim';
 
 /** One shuttle hold: what a trip carries, for the trader's courier and the player's alike. */
 const HOLD = content.vehicles['vehicle.shuttle'].cargo;
 
-const run = (sim: Sim, n: number): SimEvent[] => {
-  const out: SimEvent[] = [];
-  for (let i = 0; i < n; i++) {
-    sim.step();
-    out.push(...sim.events.drain());
-  }
-  return out;
-};
 const ofType = <T extends SimEvent['type']>(events: SimEvent[], type: T): Extract<SimEvent, { type: T }>[] =>
   events.filter((e): e is Extract<SimEvent, { type: T }> => e.type === type);
 

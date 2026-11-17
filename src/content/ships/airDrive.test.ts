@@ -10,20 +10,14 @@ import { claimedBed } from '../../sim/ai/task';
 import { isThin } from '../../sim/eva/suit';
 import { content } from '../index';
 import { NEST_HOLD_SEC } from '../../sim/tuning';
+import { run as harnessRun } from '../../../test/support/sim';
 
 /**
  * The air drive (#286 slice 1; docs/DESIGN.md "Air as a need"): a suited crew member whose tank drains refills at the nearest source
  * before it runs low, and comes back to the same job; with no source in reach the pickup request goes out.
  */
 
-const run = (sim: Sim, n: number, until?: () => boolean): SimEvent[] => {
-  const out: SimEvent[] = [];
-  for (let i = 0; i < n && !until?.(); i++) {
-    sim.step();
-    out.push(...sim.events.drain());
-  }
-  return out;
-};
+const run = (sim: Sim, n: number, until?: () => boolean): SimEvent[] => harnessRun(sim, n, { stopBefore: until }); // `until` is checked before each step
 
 const thinHere = (sim: Sim, c: number): boolean => {
   const p = sim.world.get(c, PositionC)!;

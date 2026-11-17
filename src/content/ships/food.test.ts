@@ -10,15 +10,8 @@ import { moodFactors } from '../../sim/crew/mood';
 import { content } from '../index';
 import { accessTile, footprintTiles } from '../../sim/modules/footprint';
 import { findPath } from '../../sim/crew/pathfind';
+import { run } from '../../../test/support/sim';
 
-const run = (sim: Sim, n: number): SimEvent[] => {
-  const out: SimEvent[] = [];
-  for (let i = 0; i < n; i++) {
-    sim.step();
-    out.push(...sim.events.drain());
-  }
-  return out;
-};
 const secs = (n: number): number => Math.round(n * TICK_HZ);
 const humans = (sim: Sim): number[] => sim.world.query(CrewC).filter((id) => sim.world.get(id, CrewC)?.species === 'species.human');
 const find = (sim: Sim, def: string): number => sim.world.query(ModuleC).find((id) => sim.world.get(id, ModuleC)?.def === def) as number;

@@ -1,23 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import {
-  AssignmentC, CarryingC, CrewC, DownedC, HealthC, ModuleC, NeedsC, PositionC, RecoveringC, ShipC, TICK_HZ, homeShip, newGame, placementError, playerShip, spawnModule,
-  type Sim, type SimEvent,
-} from '../../sim';
+import { AssignmentC, CarryingC, CrewC, DownedC, HealthC, ModuleC, NeedsC, PositionC, RecoveringC, ShipC, TICK_HZ, homeShip, newGame, placementError, playerShip, spawnModule, type Sim } from '../../sim';
 import { bedUseOf, findFreeBed } from '../../sim/crew/beds';
 import { isIncapacitated } from '../../sim/crew/helpers';
 import { recoverTurn } from '../../sim/ai/machines/sleep';
 import { isCombatReady } from '../../sim/fight/relations';
 import { content } from '../index';
 import { accessTile, footprintTiles } from '../../sim/modules/footprint';
+import { run } from '../../../test/support/sim';
 
-const run = (sim: Sim, n: number): SimEvent[] => {
-  const out: SimEvent[] = [];
-  for (let i = 0; i < n; i++) {
-    sim.step();
-    out.push(...sim.events.drain());
-  }
-  return out;
-};
 const secs = (n: number): number => Math.round(n * TICK_HZ);
 const humans = (sim: Sim): number[] => sim.world.query(CrewC).filter((id) => sim.world.get(id, CrewC)?.species === 'species.human');
 

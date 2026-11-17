@@ -4,9 +4,8 @@ import { content } from '../index';
 import { shipIdOf } from '../../sim/regions';
 import { shipById } from '../../sim/combat/ships';
 import { shipIds } from '../../sim/regions';
+import { nth } from '../../../test/support/sim';
 
-/** The ship with ordinal `n` (1 = the player's, 2 = the first enemy). */
-const nth = (sim: Sim, n: number): number => shipIds(sim)[n - 1] as number;
 
 const TPS = 20;
 
