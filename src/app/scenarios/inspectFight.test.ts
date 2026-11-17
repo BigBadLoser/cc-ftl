@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { CrewC, ModuleC, PositionC, ShipC, TraderC, galaxyIndex, newGame, playerShip, type Sim } from '../../sim';
+import { CrewC, ModuleC, PositionC, ShipC, TraderC, galaxyIndex, playerShip, type Sim } from '../../sim';
 import { content } from '../../content';
+import { cachedScenario } from '../../../test/support/scenario';
 import { AllegianceC } from '../../sim/fight/components';
 import { AwayC } from '../../sim/away/components';
 import { hostileAct } from '../../sim/combat/provoke';
@@ -15,8 +16,6 @@ import { INSPECT_FIGHT_BAN_TURNS, INSPECT_FIGHT_HIT, INSPECT_PATROL_REFUSE_HIT }
 import { AWAY_LIFT_SEC } from '../../sim/tuning';
 import { TICK_HZ } from '../../sim/time';
 import { DeadC, HealthC } from '../../sim/crew/components';
-import { inspectCommands, inspectStation } from './inspect';
-import { patrolCommands, patrolNode } from './patrol';
 
 const live = (sim: Sim): [number, Inspection] => {
   const [id] = sim.world.query(InspectionC);
@@ -33,32 +32,16 @@ function until(sim: Sim, done: () => boolean, n = 6000): string[] {
   }
   return seen;
 }
+/** A station inspection with the inspectors aboard and searching (the `inspect` scenario at `stage=search`, built once per worker). */
 
-/** A station inspection with the inspectors aboard and searching. */
-function stationSearch(): Sim {
-  const sim = newGame(3, content);
-  for (let i = 0; i < 20; i++) sim.step();
-  sim.enqueue({ type: 'debug.spawnStation', kind: 'station.trading', size: 'outpost', seed: 4, owner: 'navy' });
-  sim.step();
-  for (const cmd of inspectCommands(sim, inspectStation(sim)!)) sim.enqueue(cmd);
-  sim.step();
-  until(sim, () => live(sim)[1].phase === 'search');
-  return sim;
-}
+const stationSearch = (): Sim => cachedScenario('inspect', { seed: 3, params: { stage: 'search' } }).sim;
 
 /** A patrol inspection (hailed, complied, deployed) with the inspectors aboard and searching. */
-function patrolSearch(): Sim {
-  const sim = newGame(3, content);
-  for (let i = 0; i < 20; i++) sim.step();
-  for (const cmd of patrolCommands(sim, patrolNode(sim)!)) sim.enqueue(cmd);
-  until(sim, () => sim.galaxy.travel?.phase === 'interdicted', 400);
-  const e = sim.galaxy.encounters.find((x) => x.scan)!;
-  sim.enqueue({ type: 'galaxy.respond', encounter: e.id, choice: 'comply' });
-  sim.step();
-  sim.enqueue({ type: 'sector.deploy', x: 0, y: 0 });
-  until(sim, () => sim.world.query(InspectionC).length > 0 && live(sim)[1].phase === 'search');
-  return sim;
-}
+const patrolSearch = (): Sim => cachedScenario('patrol', { seed: 3, params: { stage: 'search' } }).sim;
+
+/** The same, run on to the moment the inspectors wait for the player's answer (the tests' `until(... 'settle')` then has nothing left to wait for). */
+const stationSettle = (): Sim => cachedScenario('inspect', { seed: 3, params: { stage: 'settle' } }).sim;
+const patrolSettle = (): Sim => cachedScenario('patrol', { seed: 3, params: { stage: 'settle' } }).sim;
 
 /** Draft one of the player's crew on the inspected ship and order them to attack the lead inspector. */
 function attackLead(sim: Sim): void {
@@ -102,7 +85,7 @@ describe('fighting and refusing the inspectors (#138 step 3)', () => {
   });
 
   it('refusing a patrol\'s inspectors: a bigger standing hit, they leave with the goods, and the patrol stays peaceful', () => {
-    const sim = patrolSearch();
+    const sim = patrolSettle();
     const [id, insp] = live(sim);
     until(sim, () => insp.phase === 'settle');
     const key = repKey(sim, insp.faction);
@@ -142,12 +125,7 @@ describe('fighting and refusing the inspectors (#138 step 3)', () => {
   });
 
   it('leaving before the inspectors are aboard is refusing them: no hostility', () => {
-    const sim = newGame(3, content);
-    for (let i = 0; i < 20; i++) sim.step();
-    sim.enqueue({ type: 'debug.spawnStation', kind: 'station.trading', size: 'outpost', seed: 4, owner: 'navy' });
-    sim.step();
-    for (const cmd of inspectCommands(sim, inspectStation(sim)!)) sim.enqueue(cmd);
-    sim.step();
+    const sim = cachedScenario('inspect', { seed: 3 }).sim; // the hail just sent: the inspectors are still on the way
     const [, insp] = live(sim);
     expect(insp.phase).toBe('fly');
     const key = repKey(sim, insp.faction);
@@ -187,7 +165,7 @@ describe('fighting and refusing the inspectors (#138 step 3)', () => {
   });
 
   it('a station refusal stays as built: barred and a hit, the station stays neutral', () => {
-    const sim = stationSearch();
+    const sim = stationSettle();
     const [id, insp] = live(sim);
     until(sim, () => insp.phase === 'settle');
     sim.enqueue({ type: 'inspect.settle', inspection: id, choice: 'refuse' });
@@ -273,7 +251,7 @@ describe('fighting and refusing the inspectors (#138 step 3)', () => {
   });
 
   it('leaving while the inspectors walk back after the answer, still aboard, is a fight too', () => {
-    const sim = stationSearch();
+    const sim = stationSettle();
     const [id, insp] = live(sim);
     until(sim, () => insp.phase === 'settle');
     sim.enqueue({ type: 'inspect.settle', inspection: id, choice: 'fine' });
