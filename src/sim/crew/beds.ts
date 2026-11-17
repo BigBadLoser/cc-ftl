@@ -3,7 +3,8 @@ import { accessTile } from '../modules/footprint';
 import type { ModuleDef } from '../registry';
 import type { Sim } from '../sim';
 import { BedOwnerC, CarriedC, DownedC } from './components';
-import { findPath, type Tile } from './pathfind';
+import { walkOpts } from '../eva/route';
+import { findPath, type PathOpts, type Tile } from './pathfind';
 import { shipIdOf } from '../regions';
 import { berthHolder, freeBerth, releaseBerth } from './berths';
 
@@ -59,19 +60,21 @@ export function bedUsable(def: ModuleDef | undefined, m: Module): boolean {
  * Candidates are tried in order of a lower bound on their path length (Chebyshev distance: a step moves one tile at most; one
  * less when ending beside the bed) and the search stops once the best path found beats every remaining bound, so the answer
  * is the exhaustive one (a candidate whose bound ties the best only wins with a lower id).
+ *
+ * `crew` is who will walk there: the path follows their walk mode (`walkOpts`: unsuited crew keep out of thin air), so a bed they cannot reach is not chosen.
  */
-export function findFreeBed(sim: Sim, shipId: number, from: Tile, adjacent = false, skip?: BedSkip, use: BedUse = 'sleep'): BedPlan | null {
+export function findFreeBed(sim: Sim, shipId: number, from: Tile, adjacent = false, skip?: BedSkip, use: BedUse = 'sleep', crew?: number): BedPlan | null {
   // Sleepers use ordinary beds only. A critical patient (downed: carried in, stabilised) takes a recovery pod first, then a medical bed, then an ordinary bed;
   // a patient who can walk to treatment takes a medical bed first and the pod only when none is free (the pod is for the critical cases). Never an ordinary bed.
   for (const kind of BED_ORDER[use]) {
-    const plan = searchBeds(sim, shipId, from, adjacent, skip, kind);
+    const plan = searchBeds(sim, shipId, from, adjacent, skip, kind, crew === undefined ? undefined : walkOpts(sim, crew));
     if (plan) return plan;
   }
   return null;
 }
 
 /** Only beds of `kind`. */
-function searchBeds(sim: Sim, shipId: number, from: Tile, adjacent: boolean, skip: BedSkip | undefined, kind: BedKind): BedPlan | null {
+function searchBeds(sim: Sim, shipId: number, from: Tile, adjacent: boolean, skip: BedSkip | undefined, kind: BedKind, walk?: PathOpts): BedPlan | null {
   const cands: { id: number; lb: number }[] = [];
   for (const id of sim.world.query(ModuleC)) {
     const m = sim.world.get(id, ModuleC);
@@ -91,7 +94,7 @@ function searchBeds(sim: Sim, shipId: number, from: Tile, adjacent: boolean, ski
     }
     const m = sim.world.get(c.id, ModuleC) as Module;
     const at = bedStandTile(sim.content.modules[m.def] as ModuleDef, m);
-    const steps = findPath(sim, shipId, from, { x: at.x, y: at.y, adjacent });
+    const steps = findPath(sim, shipId, from, { x: at.x, y: at.y, adjacent }, walk);
     if (steps && (!best || steps.length < best.steps.length || (steps.length === best.steps.length && c.id < best.bed))) best = { bed: c.id, steps };
   }
   return best;
@@ -126,6 +129,6 @@ export function ownedBedPlan(sim: Sim, crew: number, shipId: number, from: Tile,
   }
   const m = sim.world.get(owner.bed, ModuleC) as Module;
   if (berthHolder(m, owner.berth ?? 0) !== 0 || skip?.(m.x, m.y)) return null; // their own berth is taken by someone else
-  const steps = findPath(sim, shipId, from, { x: m.x, y: m.y });
+  const steps = findPath(sim, shipId, from, { x: m.x, y: m.y }, walkOpts(sim, crew));
   return steps ? { bed: owner.bed, steps } : null;
 }

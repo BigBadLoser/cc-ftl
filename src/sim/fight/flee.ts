@@ -1,5 +1,6 @@
 import { isTileWalkable } from '../modules/walk';
 import { findPath } from '../crew/pathfind';
+import { walkOpts } from '../eva/route';
 import type { Grid } from '../grid';
 import type { Sim } from '../sim';
 import { FLEE_RADIUS } from '../tuning';
@@ -11,7 +12,7 @@ const TRIES = 6;
 const HIDDEN_BONUS = 8;
 
 /** Steps to the best safe tile within FLEE_RADIUS: far from every threat, close to us, ideally out of sight. Null when cornered. */
-export function fleePath(sim: Sim, grid: Grid, from: Cell, threats: Cell[]): Cell[] | null {
+export function fleePath(sim: Sim, grid: Grid, from: Cell, threats: Cell[], crew?: number): Cell[] | null {
   if (threats.length === 0) return null;
   const nearest = (c: Cell): { d: number; at: Cell } => {
     let best = { d: Infinity, at: threats[0] as Cell };
@@ -37,7 +38,7 @@ export function fleePath(sim: Sim, grid: Grid, from: Cell, threats: Cell[]): Cel
   for (const c of top) if (!sightLine(sim, grid, nearest(c).at, c).visible) c.score += HIDDEN_BONUS;
   top.sort(order);
   for (const c of top.slice(0, TRIES)) {
-    const steps = findPath(sim, grid.id, from, c);
+    const steps = findPath(sim, grid.id, from, c, crew === undefined ? undefined : walkOpts(sim, crew));
     if (steps && steps.length > 0) return steps;
   }
   return null;
