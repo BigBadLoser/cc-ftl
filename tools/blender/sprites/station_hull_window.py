@@ -168,6 +168,9 @@ def _span(f, s, s0, s1, zt):
         fm.part(s0 + gi * ln, w0 + WIN.SLOPE + WIN.FOOT_W,
                 [(D, g0), (D + go * ln, g0), (D + go * ln, g0 + gh / Z), (D, g0 + gh / Z)],
                 [None, WRAP_FRONT, WRAP_TOP, None], WRAP_SIDE, end=False)
+        p0, p1, _ = seg(s0 + gi * ln, w0 + WIN.SLOPE + WIN.FOOT_W)    # (its ends' lines, as the header's: dark
+        for u, col in ((p0, SD.BOX_LINE), (p1 - ln, "stH")):            # on the end turned from view, lit on
+            SD._rect(f, u, u + ln, g0, g0 + gh / Z, D + go * ln + 0.0005, col)   # the near)
         if part == "w3":                                # (the near end's corner: a dark line down its foot's end)
             ft = w0 + WIN.SLOPE + WIN.FOOT_W
             paint([(ft - ln, zs), (ft, zs), (ft, zs + fh), (ft - ln, zs + fh)], FOOT_EDGE, 0.0005)
