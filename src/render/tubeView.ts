@@ -8,7 +8,7 @@ import { depthKey, iso } from './iso';
 import type { Layers } from './layers';
 import { mulColor } from './lightTint';
 import { addStatic } from './sprites';
-import type { WallLevel } from './tiles';
+import { doorShownOpen, type WallLevel } from './tiles';
 import { tubePieces } from './tubeArt';
 import type { HullPaint } from './hullArt';
 
@@ -46,7 +46,7 @@ export function createTubeView(grid: Grid, atlas: Atlas, L: Layers, host: TubeVi
   let sig = '';
   let tintSig = '';
   let runs: TubeRun[] = [];
-  let runsRev = -1;
+  let runsRev = '';
 
   function clear(): void {
     for (const p of placed) p.spr.destroy();
@@ -57,14 +57,15 @@ export function createTubeView(grid: Grid, atlas: Atlas, L: Layers, host: TubeVi
     update() {
       if (!grid.has('tube')) return;
       const roofed = host.roofed(), level = host.level(), paint = host.hullPaint();
-      // (the tube layer moves only with the structure: writeStruct clears it, stamping writes both)
-      if (grid.revision('struct') !== runsRev) {
-        runsRev = grid.revision('struct');
+      // (the runs read the tube layer and the structure: their floor and end doors)
+      const rev = `${grid.revision('struct')}|${grid.revision('tube')}`;
+      if (rev !== runsRev) {
+        runsRev = rev;
         runs = tubeRuns(grid);
       }
       // A hatch stands open with its door, and once the door is gone (breached: no longer a door tile) the passage shows open.
-      const open = (t: { x: number; y: number }) => grid.inBounds(t.x, t.y) && (grid.get('struct', t.x, t.y) !== Struct.Door || grid.get('door', t.x, t.y) > 128);
-      const next = `${atlas.generation}|${grid.revision('struct')}|${roofed}|${level}|${paint.armour}/${paint.deco}|${runs.map((r) => `${open(r.far) ? 1 : 0}${open(r.near) ? 1 : 0}`).join('')}`;
+      const open = (t: { x: number; y: number }) => grid.inBounds(t.x, t.y) && (grid.get('struct', t.x, t.y) !== Struct.Door || doorShownOpen(grid.get('door', t.x, t.y)));
+      const next = `${atlas.generation}|${runsRev}|${roofed}|${level}|${paint.armour}/${paint.deco}|${runs.map((r) => `${open(r.far) ? 1 : 0}${open(r.near) ? 1 : 0}`).join('')}`;
       if (next !== sig) {
         sig = next;
         tintSig = '';

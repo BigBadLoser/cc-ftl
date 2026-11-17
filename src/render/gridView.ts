@@ -19,7 +19,7 @@ import { addStatic } from "./sprites";
 import { haloTex } from "./haloTex";
 import { beamIds, DEFAULT_BEAM_LOOK, type BeamLook } from "./beamArt";
 import { createChunkViews, regionTiles, type ChunkRef } from "./regionTiles";
-import { artKind, floorChain, ghostVertsIn, HULL_REACH, HullSide, hullSide, replacesFloor, wallPieces, type CutawayMode } from "./tiles";
+import { artKind, doorShownOpen, floorChain, ghostVertsIn, HULL_REACH, HullSide, hullSide, replacesFloor, wallPieces, type CutawayMode } from "./tiles";
 import { CarpetSprite } from "./carpetPaint";
 import { DRAWN_MARKINGS, markPieces, WALKWAY_PAINT } from "./deckMarks";
 import { HullSprite } from "./hullPaint";
@@ -199,12 +199,12 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
   /** The module wall tiles the region's tubes' art stands in for (tubeArt.tubeTiles), region-local. */
   function tubeSets(): typeof tube {
     const out = { port: new Set<number>(), row: new Set<number>(), junction: new Set<number>() };
-    const at = (t: { x: number; y: number }) => (grid.inBounds(t.x, t.y) ? (t.y - grid.y0) * width + (t.x - grid.x0) : -1);
+    const add = (set: Set<number>, t: { x: number; y: number }) => { if (grid.inBounds(t.x, t.y)) set.add((t.y - grid.y0) * width + (t.x - grid.x0)); };
     for (const r of tubeRuns(grid)) {
       const t = tubeTiles(r);
-      out.port.add(at(t.port));
-      for (const s of t.row) out.row.add(at(s));
-      for (const s of t.junction) out.junction.add(at(s));
+      add(out.port, t.port);
+      for (const s of t.row) add(out.row, s);
+      for (const s of t.junction) add(out.junction, s);
     }
     return out;
   }
@@ -443,7 +443,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
     v.doorKey = r;
     const door = tiles.data("door", v.c);
     for (const d of v.doors) {
-      const s = ((door?.[d.ci] ?? 0) as number) > 128 ? d.open : d.closed;
+      const s = doorShownOpen((door?.[d.ci] ?? 0) as number) ? d.open : d.closed;
       const [spr, glow, halo] = d.objs;
       if (spr) spr.texture = s.tex;
       if (glow && s.glow) glow.texture = s.glow;
@@ -515,7 +515,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
       const base = `${mode}|${ghosts}|${look}|${paint.armour}/${paint.deco}/${paint.carpet}/${paint.walkway}`;
       // Per-chunk keys only when something in the region moved (tiles outside it read as Space, so its revision covers
       // every input). One chunk ring past the region: ghost verts sit a tile outside its -x / -y edges.
-      const built = `${base}|${grid.revision("struct")}|${mr}|${grid.revision("floor")}|${grid.revision("window")}|${DRAWN_MARKINGS.map((kind) => grid.revision(MARK_FIELDS[kind])).join(",")}`;
+      const built = `${base}|${grid.revision("struct")}|${mr}|${grid.revision("floor")}|${grid.revision("window")}|${grid.has("tube") ? grid.revision("tube") : 0}|${DRAWN_MARKINGS.map((kind) => grid.revision(MARK_FIELDS[kind])).join(",")}`;
       if (built !== builtKey) {
         builtKey = built;
         hull = gridHullKeys(grid, wallAt, width, height);
