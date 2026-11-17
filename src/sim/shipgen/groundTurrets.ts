@@ -1,6 +1,7 @@
 import { airlockTiles } from '../modules/airlock';
 import { footprintTiles, rotatedSize } from '../modules/footprint';
-import { rotForPortDir } from '../modules/groundMount';
+import { groundPort, rotForPortDir } from '../modules/groundMount';
+import { isLandingPad } from '../modules/landingPad';
 import type { ModuleDef } from '../registry';
 import type { Layout } from './layout';
 
@@ -25,6 +26,8 @@ import type { Layout } from './layout';
 export interface GroundPlan {
   /** Module defs to stand on the ground (guns, point defence), placed in this order. */
   mods: readonly string[];
+  /** Landing pads (#509) to stand on the ground first, each on one of the `keep` boxes: the module, the box [x0, y0, x1, y1), the vehicle it is home to. Each is cabled to the hull like a turret. */
+  pads?: readonly { def: string; box: readonly [number, number, number, number]; vehicle?: string }[];
   /** Boxes kept clear (the landing pads), [x0, y0, x1, y1) in layout tiles. */
   keep: readonly (readonly [number, number, number, number])[];
   /** Modules standing apart on the ground (a prefab farm's greenhouses), each as the layout's room ids: each is wired to the base before the turrets. */
@@ -34,8 +37,10 @@ export interface GroundPlan {
 }
 
 export interface GroundFit {
-  /** Indices into `lay.modules` of the turrets placed. */
+  /** Indices into `lay.modules` of the turrets and pads placed. */
   placed: number[];
+  /** Indices into `lay.modules` of the pads, in the plan's order, with the vehicle each is home to (`FinishOpts` makes it). */
+  pads: { index: number; vehicle?: string }[];
   /** Cabled tiles (row-major over the layout). */
   cable: Set<number>;
   /** Modules standing apart that no cable reached (the fit-out then fails and the assembly tries again). */
@@ -58,14 +63,14 @@ export const OUTSIDE = 6;
 /** Place the plan's turrets on the layout's open ground and lay their cables. Turrets that find no spot are left out. */
 export function placeGroundTurrets(lay: Layout, plan: GroundPlan): GroundFit {
   const { w, h } = lay;
-  const out: GroundFit = { placed: [], cable: new Set(), unwired: 0 };
+  const out: GroundFit = { placed: [], pads: [], cable: new Set(), unwired: 0 };
   const ground = (x: number, y: number): boolean => lay.at(x, y) === '.' && lay.inBounds(x, y);
   const free = (x: number, y: number): boolean => ground(x, y) && lay.occ[y * w + x] === -1 && !out.cable.has(y * w + x);
   // The pads themselves (no cable runs over one).
   const onPad = new Uint8Array(w * h);
   for (const [x0, y0, x1, y1] of plan.keep) for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) if (lay.inBounds(x, y)) onPad[y * w + x] = 1;
   // Kept clear: the pads and a tile round them, and the ground before each airlock.
-  const clear = new Uint8Array(w * h);
+  const clear = new Uint8Array(w * h), approach = new Uint8Array(w * h);
   for (const [x0, y0, x1, y1] of plan.keep) for (let y = y0 - 1; y <= y1; y++) for (let x = x0 - 1; x <= x1; x++) if (lay.inBounds(x, y)) clear[y * w + x] = 1;
   const outside: { x: number; y: number }[] = [];
   for (const m of lay.modules) {
@@ -77,7 +82,7 @@ export function placeGroundTurrets(lay: Layout, plan: GroundPlan): GroundFit {
       outside.push({ x: a.outer.x + dx, y: a.outer.y + dy });
       for (let k = 0; k <= APPROACH; k++) for (let s = -2; s <= 2; s++) {
         const x = a.outer.x + dx * (k + 1) + (dy !== 0 ? s : 0), y = a.outer.y + dy * (k + 1) + (dx !== 0 ? s : 0);
-        if (lay.inBounds(x, y)) clear[y * w + x] = 1;
+        if (lay.inBounds(x, y)) clear[y * w + x] = approach[y * w + x] = 1;
       }
     }
   }
@@ -120,6 +125,7 @@ export function placeGroundTurrets(lay: Layout, plan: GroundPlan): GroundFit {
   const open = openness();
   // A small per-base shake on each spot's score (the seed), so bases of the same plan do not all stand them alike.
   const shake = (x: number, y: number): number => { let k = (((plan.seed ?? 0) * 73856093) ^ (x * 19349663) ^ (y * 83492791)) >>> 0; k = Math.imul(k ^ (k >>> 15), 0x2c1b3c6d) >>> 0; return ((k ^ (k >>> 12)) >>> 0) / 0xffffffff; };
+  wirePads();
   wireApart();
   for (const id of plan.mods) {
     const def = lay.defs[id] as ModuleDef | undefined;
@@ -160,6 +166,56 @@ export function placeGroundTurrets(lay: Layout, plan: GroundPlan): GroundFit {
     }
   }
   return out;
+
+  /**
+   * The landing pads (#509): each stands on its box, turned so its port side faces the shortest cable to a hull wall (the same cable rules
+   * as a turret's, from the port tile `groundPort` gives), clear of the airlock approaches. A pad no cable reaches is counted in `unwired`.
+   */
+  function wirePads(): void {
+    for (const pad of plan.pads ?? []) {
+      const def = lay.defs[pad.def] as ModuleDef;
+      const [x, y] = [pad.box[0], pad.box[1]];
+      let best: { rot: number; run: number[] } | null = null;
+      for (let rot = 0; rot < 4; rot++) {
+        const port = groundPort(def, { x, y, rot });
+        const reach = hullReach();
+        const first = port.cable.y * w + port.cable.x;
+        if (!lay.inBounds(port.cable.x, port.cable.y) || !runs(first) || approach[first]) continue;
+        const run = padRun(port, reach);
+        if (run && !run.some((c) => approach[c]) && (!best || run.length < best.run.length)) best = { rot, run };
+      }
+      if (!best) { out.unwired++; continue; }
+      lay.push({ def: pad.def, x, y, rot: best.rot });
+      for (const c of best.run) out.cable.add(c);
+      out.placed.push(lay.modules.length - 1);
+      out.pads.push({ index: lay.modules.length - 1, ...(pad.vehicle ? { vehicle: pad.vehicle } : {}) });
+    }
+  }
+
+  /** The shortest cable from a pad's port: straight out, at most one turn, into a wall; else the way round (`cableFrom`). */
+  function padRun(port: { cable: { x: number; y: number }; dir: { x: number; y: number } }, reach: Int32Array): number[] | null {
+    const ok = (tx: number, ty: number): boolean => lay.inBounds(tx, ty) && runs(ty * w + tx);
+    const { x: dx, y: dy } = port.dir;
+    let best: number[] | null = null;
+    const leg: number[] = [];
+    for (let k = 0, tx = port.cable.x, ty = port.cable.y; k < MAX_CABLE && ok(tx, ty); k++, tx += dx, ty += dy) {
+      leg.push(ty * w + tx);
+      if (wallAt(tx + dx, ty + dy)) { best = [...leg]; break; }
+      for (const [ex, ey] of [[dy, dx], [-dy, -dx]] as const) {
+        const run = [...leg];
+        let ux = tx + ex, uy = ty + ey;
+        while (run.length < MAX_CABLE && (!best || run.length < best.length) && ok(ux, uy)) {
+          run.push(uy * w + ux);
+          if (wallAt(ux + ex, uy + ey)) { best = run; break; }
+          ux += ex; uy += ey;
+        }
+      }
+      if (best) break;
+    }
+    if (best) return best;
+    const i = port.cable.y * w + port.cable.x, r = reach[i] as number;
+    return r >= 1 && r <= MAX_CABLE ? cableFrom(i, reach) : null;
+  }
 
   /**
    * The cable of each module standing apart, a staple: out of a wall of the base square on for two tiles, across the open ground,
@@ -364,7 +420,7 @@ export function placeGroundTurrets(lay: Layout, plan: GroundPlan): GroundFit {
 
   /** True while the ground is one open walk: every airlock's outside reaches every pad and every turret's ring. */
   function opens(): boolean {
-    const walk = (i: number): boolean => { const x = i % w, y = Math.floor(i / w); return ground(x, y) && lay.occ[i] === -1; };
+    const walk = (i: number): boolean => { const x = i % w, y = Math.floor(i / w); const o = lay.occ[i] as number; return ground(x, y) && (o === -1 || isLandingPad(lay.defs[lay.modules[o]!.def])); };
     const start = outside.map((o) => o.y * w + o.x).filter(walk);
     if (start.length === 0) return true;
     const seen = new Uint8Array(w * h);
@@ -376,7 +432,6 @@ export function placeGroundTurrets(lay: Layout, plan: GroundPlan): GroundFit {
       for (const j of [x > 0 ? i - 1 : -1, x < w - 1 ? i + 1 : -1, i - w, i + w]) if (j >= 0 && j < w * h && !seen[j] && walk(j)) { seen[j] = 1; stack.push(j); }
     }
     if (start.some((i) => !seen[i])) return false;
-    for (const [x0, y0, x1, y1] of plan.keep) if (!seen[Math.floor((y0 + y1) / 2) * w + Math.floor((x0 + x1) / 2)]) return false;
     for (const k of out.placed.concat([lay.modules.length - 1])) {
       const m = lay.modules[k]!;
       const tiles = footprintTiles(lay.defs[m.def] as ModuleDef, m.x, m.y, m.rot);

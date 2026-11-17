@@ -52,7 +52,7 @@ export function validateTemplate(t: ShipTemplate, defs: Record<string, ModuleDef
       if (def.solid && !open.some((o) => o.x === tile.x && o.y === tile.y)) solid[i] = 1;
     }
     if (def.engine && side !== 'e') problems.push(`${name}: engine not on the stern hull`);
-    if (def.vehicleBay && !m.vehicle) problems.push(`${name}: bay without a vehicle`);
+    if (def.vehicleBay && !def.vehicleBay.pad && !m.vehicle) problems.push(`${name}: bay without a vehicle`);
     if (def.container && !clampedToFrame(at, def, m)) problems.push(`${name}: not clamped to a frame by its short (door) end`);
     if (m.ground && !wired(footprintTiles(def, m.x, m.y, m.rot))) problems.push(`${name}: no cable to the hull`);
     if (m.ground && isGroundMount(def)) {

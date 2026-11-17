@@ -1,6 +1,7 @@
 import { dockVehicle, stowVehicle } from '../vehicles/transitions';
 import { ALT, BodyC, type Body } from '../body';
-import { CrewC, DeadC, DraftedC, PositionC } from '../crew/components';
+import { AssignmentC, CrewC, DeadC, DraftedC, PositionC } from '../crew/components';
+import { isSuited } from '../eva/suit';
 import { isIncapacitated, isSettled } from '../crew/helpers';
 import { ModuleC } from '../modules/components';
 import { airlockWorking } from '../modules/airlock';
@@ -37,8 +38,14 @@ export function vehicleSystem(sim: Sim): void {
       if (occupants(v).length >= (vehicleDefOf(sim, v)?.capacity ?? 0) + 1) sim.events.emit({ type: 'command.rejected', command: hovering ? 'eva.board' : 'vehicle.embark', reason: 'full' });
       else if (hovering) boardHovering(sim, crew, order.vehicle);
       else boardCrew(sim, crew, order.vehicle);
+    } else if (sim.world.has(crew, AssignmentC)) {
+      continue; // fitting a suit for the walk out to a pad
     } else if (!drafted.target) {
-      sim.world.remove(crew, EmbarkOrderC); // gave up: unreachable
+      // The suit is on (or never needed one): start the walk. Otherwise it gave up: unreachable.
+      if (!order.suited && isSuited(sim, crew)) {
+        order.suited = true;
+        drafted.target = { x: at.x, y: at.y };
+      } else sim.world.remove(crew, EmbarkOrderC);
     }
   }
 
@@ -57,7 +64,7 @@ export function vehicleSystem(sim: Sim): void {
       b.alt = ALT.stowed;
     } else if (v.state === 'docked') {
       const p = dockPoint(sim, v.dock);
-      if (p) [b.x, b.y, b.alt] = [p.x, p.y, ALT.docked];
+      if (p) [b.x, b.y, b.alt] = [p.x, p.y, p.pad ? ALT.stowed : ALT.docked]; // on a pad it sits on the ground
       else undock(sim, id, v);
     }
     if (v.state === 'flying') {

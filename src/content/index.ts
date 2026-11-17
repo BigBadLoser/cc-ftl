@@ -5,6 +5,7 @@ import { crewNames } from './names';
 import { modules as baseModules } from './modules';
 import { tierModules } from './tiers';
 import { groundMounts } from './groundMounts';
+import { landingPads } from './landingPads';
 import { research, researchBands } from './research';
 import { recipes } from './recipes';
 import { crops } from './crops';
@@ -36,7 +37,7 @@ import { starterShips } from './ships/starterShips';
 import { rogueShipyard, rogueShipyardId } from './ships/rogue';
 import { debugShip, debugShipId } from './ships/debugShip';
 
-const modules = { ...baseModules, ...tierModules, ...groundMounts(baseModules) };
+const modules = { ...baseModules, ...tierModules, ...groundMounts(baseModules), ...landingPads };
 
 export const content = {
   ships: { [starterShipId]: starterShip, [raiderShipId]: raiderShip, [raiderBoarderId]: raiderBoarder, [rogueShipyardId]: rogueShipyard, [debugShipId]: debugShip, ...Object.fromEntries(starterShips.map((s) => [s.id, s.template])) },

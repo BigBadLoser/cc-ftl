@@ -12,7 +12,8 @@ def rear_u(z):
     return REAR_BASE_U+(z-.60)*REAR_SLOPE
 
 
-def loading_ramp(f,opening=0):
+def loading_ramp(f,opening=0,floor=0.0):
+    # floor: the ground's height in the craft's frame (below 0 when landing gear stands the body higher than its datum).
     # Fixed angled aperture surround; a dark opaque cap masks the cabin at all times.
     def fixed(v,z,offset=0):
         return f.pt(rear_u(z)-.014-offset,v,z)
@@ -21,7 +22,7 @@ def loading_ramp(f,opening=0):
         f.poly([fixed(v0,z0,.006),fixed(v1,z0,.006),fixed(v1,z1,.006),fixed(v0,z1,.006)],"steelL",flip=True)
     closed=math.atan2(1,REAR_SLOPE)
     # The open ramp reaches ground level from the landing-gear datum.
-    down=math.pi+math.asin((RAMP_HINGE_Z-.024)/RAMP_LENGTH)
+    down=math.pi+math.asin((RAMP_HINGE_Z-floor-.024)/RAMP_LENGTH)
     angle=closed+(down-closed)*max(0,min(1,opening))
     du,dz=math.cos(angle),math.sin(angle)
     def pt(v,t,n=0):

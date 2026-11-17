@@ -303,7 +303,7 @@ from lib.transport_wings import (TRANSPORT_HEIGHT,TRANSPORT_FOLD,TRANSPORT_WING_
                                 TRANSPORT_WING,TRANSPORT_OUTER_WING,transport_wing)
 
 
-def transport_shuttle(heading,state="parked",dz=0,wing_fold=None,ramp_open=0):
+def transport_shuttle(heading,state="parked",dz=0,wing_fold=None,ramp_open=0,ramp_floor=0.0):
     """Fresh concept B. Original v4 is unchanged. Origin is pad centre, feet at z=0.
 
     Parked/docked: broad outer wings fold 180 degrees flat over the aft hull.
@@ -333,7 +333,7 @@ def transport_shuttle(heading,state="parked",dz=0,wing_fold=None,ramp_open=0):
     loft(f,[(-1.55,.57,.65,.14),(-1.0,.83,.61,.16),
             (1.1,.70,.69,.18),(1.8,.34,.92,.12)],"steelD",upper="steelL")
     cabin_details(f,TRANSPORT_HATCH_HEIGHT,TaperedHatchFrame(m,heading,nose))
-    rear_details(f,ramp_open)
+    rear_details(f,ramp_open,ramp_floor)
     for side in (-1,1):
         # A continuous shoulder/nacelle blends the wing root into the engine.
         shoulder=[(-2.04,.30,1.40,.62,side*1.36),(-1.45,.52,1.52,.69,side*1.20),
