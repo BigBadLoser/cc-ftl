@@ -112,13 +112,13 @@ export function spawnCrew(sim: Sim, shipId: number, roles: readonly string[], re
  * break MIN_SHIP_GAP (commands check `placementGapError` first and reject).
  */
 export function stampShip(
-  sim: Sim, src: ShipTemplate | ShipPacket, opts: { faction?: Faction; x: number; y: number; state?: Ship['state'] },
+  sim: Sim, src: ShipTemplate | ShipPacket, opts: { faction?: Faction; x: number; y: number; state?: Ship['state']; crowd?: boolean },
 ): number {
   const packet = 'rows' in src ? packetFromTemplate(src) : src;
   const template = packet.template;
   if (!template) return stampPacket(sim, packet, opts.x, opts.y);
   const rect = { x: opts.x, y: opts.y, w: packet.w, h: packet.h };
-  const gap = placementGapError(sim, rect);
+  const gap = placementGapError(sim, rect, { crowd: opts.crowd });
   if (gap) throw new Error(`stampShip "${template.name}" at (${opts.x}, ${opts.y}): ${gap}`);
   stampTiles(sim, packet, opts.x, opts.y);
   placeTemplateModules(sim, template, opts.x, opts.y);

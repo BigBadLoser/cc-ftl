@@ -163,7 +163,7 @@ export interface FleetContent {
 /** A fixed structure a node can hold. It is a descriptor until the node grids can place it (sector refactor). */
 export interface StructureDef {
   name: string;
-  kind: 'asteroids' | 'station' | 'derelict';
+  kind: 'asteroids' | 'station' | 'derelict' | 'cargo';
   station?: 'trade' | 'military' | 'research';
   /** One or two characters for the starmap badge. */
   badge: string;

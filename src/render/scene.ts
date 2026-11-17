@@ -111,6 +111,8 @@ export interface Renderer {
   /** Selected tile(s) on `shipId`'s grid (default the camera ship's; derelicts and other ships take their own). */
   setSelection(tile: Tile | readonly Tile[] | null, shipId?: number): void;
   setHover(tile: Tile | null): void;
+  /** A loose body's footprint (tiles) in the shared sector layer, as one outline round it; for a body that has no ship grid (a loose container). Null clears. */
+  setSectorSelection(tiles: readonly Tile[] | null): void;
   setPreview(tiles: readonly Tile[], valid?: boolean): void;
   /** Painted areas (the shipyard plan): groups of tiles drawn filled or outlined in a colour, in the sector layer. Empty clears. */
   setAreas(groups: readonly AreaMarks[]): void;
@@ -341,7 +343,10 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   });
 
   // Detached containers: inert bodies at hull height, sorted with the ships' tiles.
-  const boxes = createContainerBodyView(world, atlas, content.modules, { layer: W.low, project: sectorArt });
+  const boxes = createContainerBodyView(world, atlas, content.modules, {
+    layer: W.low, project: sectorArt,
+    livery: (id, faction) => { const l = liveryFor('neutral', `Container ${id}`, content.factions?.[faction]?.art.livery); return { scheme: l.scheme, seed: l.seed }; },
+  });
 
   /** What crew views need to draw EVA: the tank size. */
   const evaHost = () => ({ suitAirSec: () => content.suit?.airSec ?? 240 });
@@ -458,7 +463,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     // eslint-disable-next-line prefer-const -- the gate reads the scene it is built into
     let sc: ShipScene;
     const gate = budget.gate(() => rush || sc.ready());
-    sc = createShipScene(grid, { world, atlas, modules: content.modules, items: content.items, layers, roofed: roofFor(grid.id, s), livery, beamLook: beamLookFor(s.gen?.faction), hullPaint, roomTiers: () => roomTiers(grid.id), crews, faces, liveries, gate, idle: budgetOn ? budget.idle() : undefined, ...evaHost() });
+    sc = createShipScene(grid, { world, atlas, modules: content.modules, items: content.items, layers, roofed: roofFor(grid.id, s), livery, beamLook: beamLookFor(s.gen?.faction), bare: s.unseen, hullPaint, roomTiers: () => roomTiers(grid.id), crews, faces, liveries, gate, idle: budgetOn ? budget.idle() : undefined, ...evaHost() });
     sc.setCutaway(cutaway);
     if (grid.id === refId) {
       sc.view.setOverlay(overlay);
@@ -478,7 +483,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     for (const id of world.query(ShipC)) {
       const s = world.get(id, ShipC);
       const grid = s && sector && shipGridOf(sector, world, id);
-      if (!s || !grid || s.state === 'fled') continue;
+      if (!s || !grid || s.state === 'fled' ) continue;
       live.add(id);
       atlas.attribute(id);
       for (const map of [scenes, building]) {
@@ -843,6 +848,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       selShip = shipId;
       for (const sc of sceneOf(shipId)) sc.view.setSelection(t);
     },
+    setSectorSelection: (tiles) => sectorMarks.setSelection(tiles, true),
     setHover(t) {
       hover = t;
       for (const sc of sceneOf(refId)) sc.view.setHover(t);

@@ -142,9 +142,9 @@ export function stampOwner(grid: GridLike, ship: number, rect: Rect): void {
 /**
  * Why a ship with sector bbox `bbox` cannot be placed, or null: 'overlap' if it shares a tile with another grid or an asteroid
  * rock body's bbox, 'tooClose' if its padded frame comes within MIN_SHIP_GAP of another grid's padded frame or within
- * ASTEROID_GAP of a rock body.
+ * ASTEROID_GAP of a rock body. `crowd` waives 'tooClose' (never 'overlap'): for a seat that must stand exactly where a loose body floats (containers/open.ts).
  */
-export function placementGapError(sim: Sim, bbox: Rect): 'overlap' | 'tooClose' | null {
+export function placementGapError(sim: Sim, bbox: Rect, opts: { crowd?: boolean } = {}): 'overlap' | 'tooClose' | null {
   const reach = padded(bbox, REGION_PAD + MIN_SHIP_GAP);
   let close = false;
   for (const r of regions(sim)) {
@@ -156,7 +156,7 @@ export function placementGapError(sim: Sim, bbox: Rect): 'overlap' | 'tooClose' 
     if (intersects(bbox, part)) return 'overlap';
     if (intersects(rockReach, part)) close = true;
   }
-  return close ? 'tooClose' : null;
+  return close && !opts.crowd ? 'tooClose' : null;
 }
 
 /**

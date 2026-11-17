@@ -1446,9 +1446,23 @@ export interface UiAsteroid {
   pods: number;
 }
 
+/** A lost container in the node: loose and sealed, or being cut open by a crew member. `id` is the box's art seed (it keeps it when marked for opening). */
+export interface UiContainer {
+  id: number;
+  /** The entity `container.open` takes (the loose box). */
+  entity: number;
+  name: string;
+  /** The faction whose livery it wears, or null. */
+  faction: string | null;
+  state: 'drifting' | 'cutting';
+  /** Why it cannot be marked for opening now (the sim's `openRefusal`), or null when it can. */
+  refusal: string | null;
+}
+
 export interface UiMining {
   asteroids: UiAsteroid[];
   pods: UiPod[];
+  containers: UiContainer[];
 }
 
 export interface UiToolState {
@@ -1609,6 +1623,11 @@ export interface UiApi {
   selectedAsteroid: Subscribable<number | null>;
   /** Select an asteroid and move the camera to it (null clears). */
   selectAsteroid(id: number | null): void;
+  /** Lost container picked by clicking it (a `UiContainer` id), or null. */
+  selectedContainer: Subscribable<number | null>;
+  selectContainer(id: number | null): void;
+  /** Order the selected container opened (the `container.open` command by its entity id). */
+  openContainer(id: number): void;
   /** Center the camera on a shuttle (any state). */
   focusShuttle(id: number): void;
   /** The armed "Target in view" aim, or null. */

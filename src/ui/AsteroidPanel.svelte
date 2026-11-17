@@ -6,7 +6,7 @@
   import { Chips } from './kit';
 
   let { api, asteroid, onBack }: { api: UiApi; asteroid: number; onBack: () => void } = $props();
-  let mining = $state<UiMining>({ asteroids: [], pods: [] });
+  let mining = $state<UiMining>({ asteroids: [], pods: [], containers: [] });
   onMount(() => api.mining.subscribe((v) => (mining = v)));
   const a = $derived(mining.asteroids.find((x) => x.id === asteroid));
   // Pods the painted ore goes to (all of them until the player narrows it).

@@ -140,6 +140,20 @@ describe('buildStation', () => {
     expect(p.station.guns).toBeLessThanOrEqual(f.station.guns);
   }, 120000);
 
+  it("a depot's drone bays stand in weapon rooms, each holding two defence drones, with an AI core to run them", () => {
+    // Seed 3 at station size is a star fort: its drone bays stand in the corner batteries with the guns.
+    for (const [size, seed] of [...STATION_SIZES.map((z) => [z, 2] as const), ['station', 3] as const]) {
+      const g = gen('station.military', size, seed);
+      const bays = (g.template.modules ?? []).filter((m) => m.def === 'module.droneBay');
+      expect(bays.length, size).toBeGreaterThan(0);
+      for (const b of bays) expect(b.drones, size).toEqual(['drone.defence', 'drone.defence']);
+      expect(count(g, 'module.aiCore'), size).toBeGreaterThan(0);
+    }
+    const rooms = stationProgram(new Rng(1), stations['station.military'] as StationDef, 'station', defs).filter((r) => r.mods.includes('module.droneBay'));
+    expect(rooms.length).toBeGreaterThan(0);
+    for (const r of rooms) expect(r.role).toBe('weapons');
+  });
+
   it('armouries are stocked with enough hand weapons for the security crew', () => {
     for (const id of ids) {
       const g = gen(id, 'station', 4);

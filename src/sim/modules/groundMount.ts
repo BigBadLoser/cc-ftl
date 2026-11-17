@@ -20,9 +20,11 @@ export const groundMountId = (id: string): string => `${id}${GROUND_SUFFIX}`;
 /** Unit step out of the port side per rotation: +x, +y, -x, -y (the port turns clockwise with the sim rotation). */
 export const PORT_DIR: readonly (readonly [number, number])[] = [[1, 0], [0, 1], [-1, 0], [0, -1]];
 
-/** The rotation whose port side faces a step (dx, dy) out of a mount's centre. */
+/** The rotation whose port side faces a step (dx, dy) out of a mount's centre: straight along one axis, never diagonal. */
 export function rotForPortDir(dx: number, dy: number): number {
-  return Math.max(0, PORT_DIR.findIndex(([x, y]) => x === Math.sign(dx) && y === Math.sign(dy)));
+  const r = PORT_DIR.findIndex(([x, y]) => x === Math.sign(dx) && y === Math.sign(dy));
+  if (r < 0) throw new Error(`rotForPortDir: (${dx}, ${dy}) is not a step along one axis`);
+  return r;
 }
 
 /**

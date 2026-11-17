@@ -95,6 +95,8 @@ export interface Ship {
    * a shuttle may dock at. Outposts are also `immobile` and `dormant` until provoked. See outposts/state.ts.
    */
   outpost?: { style: 'surface' | 'dug'; kind: string; hidden: boolean; dock?: number };
+  /** Drawn bare (modules only, no tiles): a bookkeeping seat that only gives crew a grid to work on (the cut-open container's, containers/open.ts). Render checks it once, when the ship's scene is built. */
+  unseen?: true;
   /** Set on a base the player claimed on an asteroid (`asteroid.claim`): immobile, never disabled or wrecked by the ship-state system. */
   base?: { asteroid: number };
   /** The tick the last severe mental break began aboard (crew/breakdown): a second one within BREAK_ALERT_SHIP_SEC goes to the log, not the alerts. */

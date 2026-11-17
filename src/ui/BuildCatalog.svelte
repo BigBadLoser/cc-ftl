@@ -13,7 +13,7 @@
   let st = $state<UiToolState>({ tool: 'build', build: 'module', moduleDef: null, rot: 0 });
   let stock = $state<UiStock[]>([]);
   let defs = $state<UiModuleDef[]>([]);
-  let mining = $state<UiMining>({ asteroids: [], pods: [] });
+  let mining = $state<UiMining>({ asteroids: [], pods: [], containers: [] });
   let hint = $state<{ x: number; y: number; text: string; ok?: boolean } | null>(null);
   let cat = $state<CategoryId>('structure');
   let query = $state('');
