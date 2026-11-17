@@ -41,8 +41,9 @@ SILL_TOP = "stL"                    # the sill's flat top under the glass
 FRAME = 9 / 32                      # an end piece's outer frame (the whole section), along the face
 JAMB = 5 / 32                       # the jamb inside it
 BACK_WALL = "stE"                   # the window's back wall
-VENT_BOX = (15, 1, 1, 17)           # a middle tile's vent box under the window (the ref's, measured): px wide, its front
+VENT_BOX = (15, 4, 1, 17)           # a middle tile's vent box under the window (the ref's, measured): px wide, its front
                                     # px off the face, its top px over the sill's (run back to the glass), px tall
+VENT_RECESS = (2, 1)                # its front's recess (the slats in it): px in from every edge, px deep
 VENT_SLATS = (3, 8, 3, 6, 3)        # its slats: count, px wide, px in from its a end, the first's px under its top, px
                                     # apart (each a dark row over a lit row)
 VENT_FRONT, VENT_TOP, VENT_EDGE, VENT_LIT = SH.FACE, "stH", SD.TOP_LIT, "stL"   # its front, top, top's front edge,
@@ -192,13 +193,23 @@ def _vent_box(f, s0, s1, zs, gl):
     b, top = a + w * ln, zs + up * px
     z0, fr = top - h * px, D + out * ln
     cap = (SD.BOX_SIDE, SD.BOX_SIDE)
-    f.part(a, b, [(D, z0), (fr, z0), (fr, top), (D, top)], [None, VENT_FRONT, VENT_EDGE, None], cap, end=False)
+    ri, rd = VENT_RECESS
+    rb = fr - rd * ln                                   # (the recess's floor)
+    f.part(a, b, [(D, z0), (rb, z0), (rb, top), (D, top)], [None, VENT_FRONT, VENT_TOP, None], cap, end=False)
     f.part(a, b, [(gl, zs), (D, zs), (D, top), (gl, top)], [None, None, VENT_TOP, None], cap, end=False)
+    zi0, zi1 = z0 + ri * px, top - ri * px
+
+    def rim(u0, u1, za, zb, up):                        # (the frame round the recess)
+        f.part(u0, u1, [(rb, za), (fr, za), (fr, zb), (rb, zb)], [None, VENT_FRONT, up, None], cap, end=False)
+    rim(a, b, zi1, top, VENT_EDGE)
+    rim(a, b, z0, zi0, SD.BOX_SIDE)
+    rim(a, a + ri * ln, zi0, zi1, None)
+    rim(b - ri * ln, b, zi0, zi1, None)
     n, sw, si, s1st, sp = VENT_SLATS
     for i in range(n):
         z = top - (s1st + i * sp) * px
-        SD._rect(f, a + si * ln, a + (si + sw) * ln, z - px, z, fr + 0.0005, VENT_LINE)
-        SD._rect(f, a + si * ln, a + (si + sw) * ln, z - 2 * px, z - px, fr + 0.0005, VENT_LIT)
+        SD._rect(f, a + si * ln, a + (si + sw) * ln, z - px, z, rb + 0.0005, VENT_LINE)
+        SD._rect(f, a + si * ln, a + (si + sw) * ln, z - 2 * px, z - px, rb + 0.0005, VENT_LIT)
 
 
 def _head_dress(f, a, b, z0, d, ends=(False, False)):
