@@ -242,9 +242,9 @@ def build(k, ax, plane, a, b, ends, H):
             for i, w in enumerate(FOOT_BLOCKS[1:-1]):
                 f.part(u, u + w * LINE, _block_prof(s, (i % 2) * up), BLOCK_COLS, GROOVE_D)
                 u += w * LINE
-        elif win and SW.PART[0] == "w2":                         # (a window's middle: one block over both, further
-            f.part(s0 + FOOT_BLOCKS[0] * LINE, s1 - FOOT_BLOCKS[-1] * LINE,             # out)
-                   _block_prof(s, 0, SW.STEP_OUT), BLOCK_COLS, GROOVE_D)
+        elif win:                                                # (a window's: station_hull_window's blocks)
+            for u0, u1, fwd, caps in SW.step_blocks(s0, s1):
+                f.part(u0, u1, _block_prof(s, 0, fwd), BLOCK_COLS, tuple(GROOVE_D if c else None for c in caps))
         elif whole:
             u = s0
             for i, w in enumerate(FOOT_BLOCKS):

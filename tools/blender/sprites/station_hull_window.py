@@ -41,7 +41,8 @@ SILL_TOP = "stL"                    # the sill's flat top under the glass
 FRAME = 9 / 32                      # an end piece's outer frame (the whole section), along the face
 JAMB = 5 / 32                       # the jamb inside it
 BACK_WALL = "stE"                   # the window's back wall
-STEP_OUT = 1                        # a middle tile's step: one block over both (station_hull), this many px further out
+STEP_OUT = 1                        # the step's blocks under the window (station_hull): the middle tile's one over both,
+                                    # this many px further out, run on at its own out into the end tiles' nearer blocks
 POST_SEAM = SH.SEAM                 # the seams round an end piece's post on the wall
 FOOT_EDGE = SH.SEAM                 # the near end's corner's foot: the dark line down its end
 WRAP = (5, 5, 5, 1)                 # the plates bent over the sill's edge, centred between each corner's foot and the
@@ -218,6 +219,21 @@ def _head(f, a, b, z0, ends, foot, tile):
             f.k.poly([T.P(f.ax, f.plane, v, top + T.PAINT, d) for v, d in ((u, d0), (u + ln, d0),
                       (u + ln, out - c * ln), (u, out - c * ln))], SD.F, 3, core.Vector((0, 0, 1)),
                      fixed=T.SEAM_PASS or col)
+
+
+def step_blocks(s0, s1):
+    """The step's blocks under the window piece PART over [s0, s1] (station_hull draws them): (u0, u1, px further out,
+    (a end capped, b end capped)). The middle tile's two as one, STEP_OUT further out, run on across the joins at the
+    step's own out into each end tile's nearer block."""
+    ln, g = SD.LINE, SH.FOOT_BLOCKS
+    b0, b1 = s0 + g[0] * ln, s0 + (g[0] + g[1]) * ln                    # (a tile's blocks: [b0, b1], [c0, c1])
+    c0, c1 = s1 - (g[-1] + g[-2]) * ln, s1 - g[-1] * ln
+    part = PART[0]
+    if part == "w1":
+        return [(b0, b1, 0, (True, True)), (c0, s1, 0, (True, False))]
+    if part == "w3":
+        return [(s0, b1, 0, (False, True)), (c0, c1, 0, (True, True))]
+    return [(s0, b0, 0, (False, False)), (b0, c1, STEP_OUT, (True, True)), (c1, s1, 0, (False, False))]
 
 
 def _box_span(s0, s1):
