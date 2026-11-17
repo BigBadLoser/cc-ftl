@@ -60,6 +60,9 @@ CLUMP = 0.11                        # tiles: a clump's spread (its rocks gather 
 VARIANTS = len(CHARACTER)           # per key but a straight run's, picked per tile; each its own heaps, reach and rocks,
 VAR_SHARE = 0.8                     # faded to the shared shape at its stretch's ends so neighbours of any variant meet
 N = 32                              # surface grid cells per tile
+OVER = 0.05                         # tiles: a stretch's drift runs on this far past an end on the tile's edge, under its
+                                    # neighbour's (the same shape there: window 0), so no seam opens between the sprites
+                                    # (a chamfer's corner-bevel tile owns a sliver between two half tiles: its hull showed)
 EPS = 0.25                          # px: a facet all under this over the ground is not drawn (the ground shows)
 
 
@@ -119,7 +122,10 @@ def _dist(poly, fronts, p, turns=()):
         d = n.dot(p) - c
         if d <= 0:
             continue
-        if -1e-9 <= t <= 1 + 1e-9:
+        ov = OVER / math.sqrt(L2) if L2 > 1e-12 else 0.0
+        lo = -ov if max(abs(a.x), abs(a.y)) > 0.5 - 1e-6 else 0.0
+        hi = 1 + ov if max(abs(b.x), abs(b.y)) > 0.5 - 1e-6 else 1.0
+        if lo - 1e-9 <= t <= hi + 1e-9:
             w = math.sin(math.pi * max(0.0, min(1.0, t))) ** 2 * min(1.0, math.sqrt(L2) / 0.5)
             best = (d, w) if best is None or d < best[0] else best
     for j, (v, lab) in enumerate(poly):                 # convex corners: a vertex between two front edges
