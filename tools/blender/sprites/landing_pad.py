@@ -1,8 +1,9 @@
 """Landing pad (family `landing_pad`, issue #509): the 9x9 outdoor pad a surface base's shuttle and its visitors land on,
 on levelled asteroid ground. A pale sintered slab raised on its body with a bevelled lip, a yellow touchdown ring and
-crosshair, orange lamps on the corners and long orange light strips in its sides. Symmetric: one sprite, no rotations.
+crosshair, orange lamps on the corners and long orange light strips in its sides; in the middle of one side a service
+bay (louvres, a lamp strip, a cyan lamp on top) where the ground power cable plugs in.
 
-  module.landing_pad
+  module.landing_pad.r0-r3   the service bay on the grid +x side at r0, turned like the ground mounts' cable port
 
 Anchored at the front tile's centre, footprint [9, 9]. Game palette plus its unnamed-set extras (no new colours)."""
 import math
@@ -10,7 +11,6 @@ import math
 from . import cmbkit, core
 from . import turret_bays as TB
 from . import turret_concepts as TC
-from . import turret_ground as TG
 from .cmbkit import Frame
 from .turrets import _shift
 
@@ -88,74 +88,29 @@ def raised(f, z, foot=0.0, bevel=False):
     return hb
 
 
-def landing_pad(f, port=None):
+def landing_pad(f, port=True):
     """The picked look: the sintered slab raised 0.24 on its body, a bevelled lip, long orange light strips in the sides;
     the cable's junction box in the middle of the +u side."""
     hb = raised(f, 0.24, bevel=True)
-    side_lamps(f, hb, 0.09, "orange", strip=True, port=bool(port))
+    side_lamps(f, hb, 0.09, "orange", strip=True, port=port)
     if port:
-        port(f, hb)
+        port_bay(f, hb)
 
 
-def port_box(f, hb):
-    """A: the turret mount's junction box, its body running back over the lip, standing proud of the slab."""
-    TG.port3(f, z=0.0, u0=hb - 0.75, u1=N / 2)
 
 
-def port_flush(f, hb):
-    """B: a low box set into the side, flush with the slab's top, a hatch and lamp on its lid."""
-    z1, w = 0.26, 0.3
-    TB.prism(f, rect(hb - 0.5, -w, N / 2, w), 0, z1, "steel", top="steelL")
-    TB.prism(f, rect(hb - 0.42, -w + 0.06, N / 2 - 0.08, w - 0.06), z1, z1 + 0.02, "steelD", top="steel")
-    for k in range(6):
-        v0 = -w + 0.08 + k * (2 * w - 0.16) / 6
-        TB.prism(f, rect(N / 2 - 0.01, v0, N / 2 + 0.005, v0 + (2 * w - 0.16) / 6), 0.08, 0.16, "hazY" if k % 2 == 0 else "hazK", top="hazK")
-    f.box(hb - 0.3, 0.0, z1 + 0.02, 0.08, 0.08, 0.04, "cyan", top="cyan")
 
 
-def port_post(f, hb):
-    """C: a power post on the lip: a squat pillar the cable climbs into, a breaker head and lamp on top."""
-    TB.prism(f, rect(hb - 0.3, -0.24, N / 2, 0.24), 0, 0.3, "steel", top="steelL")       # the socket block at the edge
-    f.vcyl(hb - 0.35, 0.0, 0.24, 0.2, 0.36, "steelD", top="steel", sides=12)
-    f.box(hb - 0.35, 0.0, 0.6, 0.34, 0.3, 0.16, "steel", top="steelL")
-    for k in range(5):
-        f.box(hb - 0.35 + 0.171, -0.12 + k * 0.06, 0.62, 0.01, 0.05, 0.08, "hazY" if k % 2 == 0 else "hazK", top="hazK")
-    f.vcyl(hb - 0.35, 0.0, 0.76, 0.05, 0.05, "cyan", top="cyan", sides=8)
 
 
-def port_socket(f, hb):
-    """D: a socket in the side face: a round plug ring the cable runs into, a flush service hatch and lamp above it."""
-    TB.prism(f, rect(hb - 0.02, -0.28, N / 2, 0.28), 0.02, 0.2, "steelD", top="steel")       # the socket's face plate
-    f.box(N / 2 - 0.01, 0.0, 0.05, 0.02, 0.26, 0.12, "dark", top="dark")                    # the plug's mouth
-    for o in (-0.22, 0.22):
-        f.box(N / 2 - 0.005, o, 0.04, 0.012, 0.04, 0.14, "hazY", top="hazY")
-    TB.prism(f, rect(hb - 0.9, -0.42, hb - 0.12, 0.42), 0.24, 0.252, "steelL", top="steelL")   # flush hatch on the lip
-    TB.prism(f, rect(hb - 0.84, -0.36, hb - 0.18, 0.36), 0.252, 0.256, "steel", top="steel")
-    f.box(hb - 0.5, 0.0, 0.256, 0.1, 0.1, 0.03, "cyan", top="cyan")
 
 
-def ring_at(f, u, ro, ri, z, mat, sides=16):
-    for k in range(sides):
-        a0, a1 = k * math.tau / sides, (k + 1) * math.tau / sides
-        pts = [(u + ro * math.cos(a0), ro * math.sin(a0)), (u + ro * math.cos(a1), ro * math.sin(a1)),
-               (u + ri * math.cos(a1), ri * math.sin(a1)), (u + ri * math.cos(a0), ri * math.sin(a0))]
-        TB.prism(f, pts, z, z + 0.012, mat, top=mat)
 
 
-def port_ramp(f, hb):
-    """E: the cable rides a ribbed ramp up the side onto the lip and ends in a round deck socket with a lit ring."""
-    z = 0.24
-    for k in range(5):                                                             # ramp steps: ground to the lip
-        u0 = N / 2 - (k + 1) * 0.12
-        TB.prism(f, rect(u0, -0.2, N / 2 - k * 0.12, 0.2), 0, 0.05 + k * 0.05, "steel", top="steelL")
-    TB.prism(f, rect(hb - 0.7, -0.2, hb - 0.02, 0.2), z, z + 0.05, "steel", top="steelL")
-    f.vcyl(hb - 0.85, 0.0, z, 0.26, 0.05, "steelD", top="steel", sides=16)
-    ring_at(f, hb - 0.85, 0.2, 0.15, z + 0.05, "cyan")
-    f.vcyl(hb - 0.85, 0.0, z + 0.05, 0.1, 0.03, "dark", top="steelD", sides=10)
 
 
 def port_bay(f, hb):
-    """F: a service bay built into the side: a wider block a little proud of the body, louvres, its own lamp strip, the
+    """The cable's service bay built into the middle of the +u side: a wider block a little proud of the body, louvres, its own lamp strip, the
     socket in its middle."""
     w = 0.75
     TB.prism(f, rect(hb - 0.3, -w, N / 2, w), 0, 0.2, "plate", top="plate")
@@ -169,14 +124,14 @@ def port_bay(f, hb):
     f.box(hb - 0.1, 0.0, 0.28, 0.12, 0.12, 0.03, "cyan", top="cyan")
 
 
-PORTS = {"d": port_socket, "e": port_ramp, "f": port_bay}
 
 
-def pad(rot=0, look="a"):
-    m = core.Mesh(f"landing_pad_{look}")
-    landing_pad(Frame(m, (1 + rot) % 4, square=True), PORTS[look])
+def pad(rot=0):
+    """Rotation r: the service bay (the cable port) on grid +x at r0, turning with r like the ground mounts' port."""
+    m = core.Mesh(f"landing_pad_r{rot}")
+    landing_pad(Frame(m, (1 + rot) % 4, square=True))
     return _shift([m.build()] if cmbkit.REC is None else [], N)
 
 
 def jobs():
-    return [(f"module.landing_pad.{k}.r0", (N, N), "prop", lambda k=k: pad(0, k)) for k in PORTS]
+    return [(f"module.landing_pad.r{r}", (N, N), "prop", lambda r=r: pad(r)) for r in range(4)]
