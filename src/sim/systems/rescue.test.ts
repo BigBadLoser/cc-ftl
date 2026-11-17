@@ -218,6 +218,14 @@ describe('who gets rescued (crew/care.ts)', () => {
     expect(jobFits(sim, mate, sim.world.get(mate, PositionC)!, job)).toBe(true);
   });
 
+  it('posts no rescue job while nobody on their feet could carry the patient', () => {
+    const sim = make();
+    const ours = crew(sim, 6, 3, all(0));
+    down(sim, ours, 'player');
+    autoJobsSystem(sim);
+    expect([...rescueJobs(sim).keys()]).toEqual([]);
+  });
+
   it('rescues a downed prisoner, ranked below a downed crew member', () => {
     const sim = make();
     const ours = crew(sim, 6, 3, all(0));
@@ -226,13 +234,13 @@ describe('who gets rescued (crew/care.ts)', () => {
     down(sim, ours, 'player');
     down(sim, prisoner, 'hostile', 'prisoner');
     down(sim, yielded, 'hostile', 'surrendered');
+    const medic = crew(sim, 9, 3, all(0)); // someone on their feet to carry them
+    sim.world.add(medic, AllegianceC, { faction: 'player' });
     autoJobsSystem(sim);
     const jobs = rescueJobs(sim);
     expect([...jobs.keys()].sort()).toEqual([ours, prisoner, yielded].sort());
     expect(jobs.get(ours)).toBeGreaterThan(jobs.get(prisoner) as number);
     expect(jobs.get(ours)).toBeGreaterThan(jobs.get(yielded) as number);
-    const medic = crew(sim, 9, 3, all(0));
-    sim.world.add(medic, AllegianceC, { faction: 'player' });
     for (const j of sim.world.query(JobC).map((id) => sim.world.get(id, JobC)!)) expect(jobFits(sim, medic, sim.world.get(medic, PositionC)!, j)).toBe(true);
   });
 });
