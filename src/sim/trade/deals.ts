@@ -127,6 +127,7 @@ function agreedValues(sim: Sim, d: Deal): number[] {
 export function holdTrip(sim: Sim, d: Deal, trader: Trader | undefined): void {
   const pay = settlement(d);
   d.getValue = agreedValues(sim, d);
+  d.giveValue = d.give.map((l) => (unitPrice(sim, d.ship, l.item, 'buy') ?? 0) * l.count);
   if (pay > 0) sim.trade.credits -= pay;
   else if (trader) trader.credits += pay;
   if (trader) for (const l of d.get) takeStock(trader.stock, l.item, l.count);

@@ -12,7 +12,6 @@ import { BACK_SEC, DISPATCH_SEC, due, FLIGHT_SEC, LOAD_SEC, UNLOAD_SEC } from '.
 import { addStock, cancelCourierHauls, closeCourier, failDeal, setPhase, settleDeal, touchMarket } from './deals';
 import { settleDock, startUnits } from './dockLedger';
 import { freeAirlock, holding } from './player';
-import { unitPrice } from './pricing';
 import { stageGoods, stationWork, takeDelivery } from './stationDock';
 import { TraderC, type Deal } from './types';
 
@@ -119,21 +118,31 @@ function leaveFar(sim: Sim, d: Deal): void {
 }
 
 /**
- * Given goods the player's crew did not load in time: the deal goes on without them, and the player pays the trader what it would have paid for
- * them (its buying price now), so a sale is never paid for goods not handed over. `d.give` keeps only what is aboard.
+ * Given goods the player's crew did not load in time: the deal settles only what was handed over. The player keeps the rest and is paid nothing for
+ * it (the trader's escrow for it goes back to the trader, at the value agreed when the trip opened: `Deal.giveValue`); nothing is charged.
+ * `d.give` keeps only what is aboard.
  */
 function shortGiven(sim: Sim, d: Deal): void {
-  let owed = 0;
-  d.give = d.give.map((l) => {
+  let unpaid = 0;
+  const kept: ItemQty[] = [];
+  const values: number[] = [];
+  d.give.forEach((l, i) => {
     const n = Math.min(l.count, cargoOf(sim, d.vehicle, l.item));
-    owed += (unitPrice(sim, d.ship, l.item, 'buy') ?? 0) * (l.count - n);
-    return { item: l.item, count: n };
-  }).filter((l) => l.count > 0);
-  const pay = Math.min(Math.round(owed), Math.max(0, sim.trade.credits));
+    const value = d.giveValue?.[i] ?? 0;
+    unpaid += (value * (l.count - n)) / l.count;
+    if (n > 0) {
+      kept.push({ item: l.item, count: n });
+      values.push((value * n) / l.count);
+    }
+  });
+  d.give = kept;
+  d.giveValue = values;
   const trader = sim.world.get(d.ship, TraderC);
-  if (pay <= 0 || !trader) return;
-  addCredits(sim, -pay);
-  trader.credits += pay;
+  if (d.barter || d.balance >= 0 || unpaid <= 0) return; // the player was paying: they keep their goods and pay what they owed, no more
+  const back = Math.min(d.held, Math.round(unpaid));
+  if (trader) trader.credits += back;
+  d.held -= back;
+  d.balance = -d.held;
 }
 
 /** Step 5: fly home. Back in its bay or on its pad: unload what the player sold, or settle when nothing was. */
@@ -159,7 +168,7 @@ function unload(sim: Sim, d: Deal, v: Vehicle): void {
 }
 
 /**
- * The trader's run cannot finish (a timeout, the trader gone). At the player's airlock: the given goods not loaded are paid for (`shortGiven`), and
+ * The trader's run cannot finish (a timeout, the trader gone). At the player's airlock: only the given goods loaded are paid for (`shortGiven`), and
  * what was bought is settled by what was unloaded (`reconcileDelivery`), or, once loading had begun, the shuttle leaves with what is aboard. After
  * that (on the way home or unloading there): the deal stands, and the player's goods still aboard go straight into the trader's stock.
  */

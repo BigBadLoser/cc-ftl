@@ -1,6 +1,7 @@
 import { SiteRunC } from '../away/components';
 import { boardingReserved } from '../boarding/reserve';
 import { ShipC } from '../combat/components';
+import { CrewC } from '../crew/components';
 import type { Sim } from '../sim';
 import { cargoCount } from '../vehicles/cargo';
 import { VehicleC, type Vehicle } from '../vehicles/components';
@@ -96,6 +97,9 @@ export function planCourier(sim: Sim, ship: number, ownShuttle = false, queue = 
 export function sendHome(sim: Sim, id: number): boolean {
   const v = sim.world.get(id, VehicleC);
   if (!v) return true;
+  // People who left the world with the job (inspectors, contractors) are no longer aboard: it flies with nobody at the controls.
+  if (v.pilot && !sim.world.has(v.pilot, CrewC)) v.pilot = 0;
+  v.passengers = v.passengers.filter((c) => sim.world.has(c, CrewC));
   if (v.state === 'stowed' || !bayWorking(sim, v.home)) {
     v.autopilot = false;
     v.outbound = false;

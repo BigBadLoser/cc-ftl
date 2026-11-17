@@ -101,8 +101,8 @@ export function endInspection(sim: Sim, vehicle: number): void {
 }
 
 /**
- * A shuttle made beside a ship that has none of its own to send its inspectors in (a patrol corvette; #551 gives such ships a hangar at
- * generation, and then this goes): the first cargo shuttle type, flying beside the ship. 0 when the content has none.
+ * A shuttle made beside a ship that has none of its own to send its inspectors in (a patrol corvette). Temporary: #551 gives such ships a hangar
+ * at generation, and then this goes: the first cargo shuttle type, flying beside the ship. 0 when the content has none.
  */
 function standIn(sim: Sim, ship: number): number {
   const s = sim.world.get(ship, ShipC);

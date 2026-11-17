@@ -40,7 +40,7 @@ export interface Inspection {
   patrol?: number;
   /**
    * The shuttle was made for this inspection (inspect/start.ts `standIn`): its ship has no shuttle of its own (a patrol corvette), so it leaves the
-   * world with the inspection. Absent: the ship's own real shuttle, which goes home and stays.
+   * world with the inspection. Absent: the ship's own real shuttle, which goes home and stays. Goes with #551 (such ships get a hangar at generation).
    */
   standIn?: true;
   /** A bribe was offered and turned down: it is not offered again. */

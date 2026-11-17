@@ -150,6 +150,8 @@ export interface Deal {
   tick: number;
   /** The agreed value of each `get` line (aligned with `get`, summing to the escrow), fixed when the trip opens: a part-delivered run is settled by it, not by later prices. */
   getValue?: number[];
+  /** The agreed value of each `give` line (aligned with `give`, at the trader's buying price when the trip opened): a sale cut short pays for exactly what was handed over (theirRun.ts `shortGiven`). */
+  giveValue?: number[];
   /** Why a failed deal failed. */
   reason?: string;
   /** How the goods change hands at the trader: docked at a station airlock, or the hover swap (no free station airlock). */
