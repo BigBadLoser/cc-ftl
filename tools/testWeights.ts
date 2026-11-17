@@ -139,7 +139,7 @@ export default {
  "src/content/ships/pointDefence.test.ts": 6.1,
  "src/content/derelictExplore.test.ts": 6,
  "src/content/factions/containers.test.ts": 6,
- "src/app/droneScenario.test.ts": 5.6,
+ "src/content/scenario/droneScenario.test.ts": 5.6,
  "src/content/events.test.ts": 5.6,
  "src/content/ships/ferry.test.ts": 5.6,
  "src/sim/fight/fight.test.ts": 5.6,
@@ -500,5 +500,6 @@ export default {
  "tools/profile/decisions.test.ts": 0.1,
  "tools/shipgen/starters/variants.test.ts": 0.1,
  "src/content/ships/combat.slow.test.ts": 50,
- "src/content/jobs.slow.test.ts": 25
+ "src/content/jobs.slow.test.ts": 25,
+ "src/content/galaxyTraffic.clock.slow.test.ts": 25
 } as Record<string, number>;

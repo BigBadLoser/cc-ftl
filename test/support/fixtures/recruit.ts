@@ -2,7 +2,7 @@ import { expect } from 'vitest';
 import { CrewC } from '../../../src/sim/crew/components';
 import { galaxyIndex } from '../../../src/sim/galaxy/state';
 import { newGame } from '../../../src/sim/newGame';
-import { deserialize, serialize } from '../../../src/sim/save';
+import { cachedWorld } from '../world';
 import type { Sim } from '../../../src/sim/sim';
 import { ForHireC } from '../../../src/sim/stations/components';
 import { AboardC } from '../../../src/sim/vehicles/components';
@@ -45,24 +45,6 @@ export function atStation(): Sim {
   return sim;
 }
 
-/** The hire run, up to the moment the recruit is aboard and the shuttle heads home (phase 'back'), built once and cloned from its save for each test that starts there. */
-let backSnap: { json: string; c: number; cost: number; credits: number; crew: number } | undefined;
-export function atBack(): { sim: Sim; c: number; cost: number; credits: number; crew: number } {
-  if (!backSnap) {
-    const sim = atStation();
-    const [c] = people(sim) as [number];
-    const fh = sim.world.get(c, ForHireC)!;
-    const credits = (sim.trade.credits = 1000);
-    const crew = playerCrew(sim).length;
-    hire(sim, fh.key);
-    run(sim, () => sim.trade.deals[0]?.phase === 'back', 6000);
-    expect(sim.trade.deals[0]?.phase).toBe('back');
-    expect(sim.world.get(c, AboardC)).toBeDefined(); // boarded: the exchange is behind it
-    backSnap = { json: serialize(sim), c, cost: fh.cost, credits, crew };
-  }
-  return { sim: deserialize(backSnap.json, content), c: backSnap.c, cost: backSnap.cost, credits: backSnap.credits, crew: backSnap.crew };
-}
-
 export const people = (sim: Sim): readonly number[] => sim.world.query(ForHireC);
 export const playerCrew = (sim: Sim): number[] => sim.world.query(CrewC).filter((id) => sim.world.get(id, AllegianceC)?.faction === 'player');
 /** Step until `done` or the budget runs out; returns the events seen. */
@@ -81,3 +63,31 @@ export const hire = (sim: Sim, key: string) => {
   sim.step();
   return sim.events.drain();
 };
+
+export interface HireRun { sim: Sim; c: number; cost: number; credits: number; crew: number }
+const hireRun = (key: string, until: string): HireRun => {
+  const sim = cachedWorld(key, () => {
+    const s = key === 'recruit.back' ? atWork().sim : atStation();
+    if (key === 'recruit.work') {
+      const [c] = people(s) as [number];
+      s.trade.credits = 1000;
+      hire(s, s.world.get(c, ForHireC)!.key);
+    }
+    run(s, () => s.trade.deals[0]?.phase === until, 6000);
+    expect(s.trade.deals[0]?.phase).toBe(until);
+    return s;
+  });
+  const [c] = (sim.trade.deals[0]?.crew ?? []) as number[];
+  const cost = sim.trade.deals[0]!.held as number;
+  return { sim, c: c!, cost, credits: 1000, crew: playerCrew(sim).length };
+};
+
+/** The hire run (1000 credits, first candidate) up to the station work, cached; each call is a fresh clone. */
+export const atWork = (): HireRun => hireRun('recruit.work', 'stationWork');
+
+/** The hire run up to the moment the recruit is aboard and the shuttle heads home (phase 'back'), continued from the station-work state; cached. */
+export function atBack(): HireRun {
+  const r = hireRun('recruit.back', 'back');
+  expect(r.sim.world.get(r.c, AboardC)).toBeDefined(); // boarded: the exchange is behind it
+  return r;
+}
