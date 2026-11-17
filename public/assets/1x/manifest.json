@@ -202630,9 +202630,9 @@
    "kind": "static",
    "sheet": "station_hull",
    "frame": {
-    "x": 3011,
+    "x": 2989,
     "y": 1,
-    "w": 45,
+    "w": 44,
     "h": 30
    },
    "anchor": {
@@ -202648,9 +202648,9 @@
    "kind": "static",
    "sheet": "station_hull",
    "frame": {
-    "x": 2672,
+    "x": 2656,
     "y": 1,
-    "w": 45,
+    "w": 43,
     "h": 31
    },
    "anchor": {
@@ -202666,14 +202666,14 @@
    "kind": "static",
    "sheet": "station_hull",
    "frame": {
-    "x": 1961,
+    "x": 2098,
     "y": 1,
-    "w": 48,
-    "h": 36
+    "w": 47,
+    "h": 35
    },
    "anchor": {
     "x": 48,
-    "y": 14
+    "y": 13
    },
    "footprint": [
     1,
@@ -202684,14 +202684,14 @@
    "kind": "static",
    "sheet": "station_hull",
    "frame": {
-    "x": 1814,
+    "x": 1810,
     "y": 1,
-    "w": 48,
-    "h": 37
+    "w": 46,
+    "h": 36
    },
    "anchor": {
     "x": 48,
-    "y": 14
+    "y": 13
    },
    "footprint": [
     1,
@@ -202702,9 +202702,9 @@
    "kind": "static",
    "sheet": "station_hull",
    "frame": {
-    "x": 3057,
+    "x": 3034,
     "y": 1,
-    "w": 45,
+    "w": 44,
     "h": 30
    },
    "anchor": {
@@ -202720,9 +202720,9 @@
    "kind": "static",
    "sheet": "station_hull",
    "frame": {
-    "x": 2718,
+    "x": 2700,
     "y": 1,
-    "w": 45,
+    "w": 43,
     "h": 31
    },
    "anchor": {
@@ -202738,14 +202738,14 @@
    "kind": "static",
    "sheet": "station_hull",
    "frame": {
-    "x": 2010,
+    "x": 2146,
     "y": 1,
-    "w": 48,
-    "h": 36
+    "w": 47,
+    "h": 35
    },
    "anchor": {
     "x": 48,
-    "y": 14
+    "y": 13
    },
    "footprint": [
     1,
@@ -202756,14 +202756,14 @@
    "kind": "static",
    "sheet": "station_hull",
    "frame": {
-    "x": 1863,
+    "x": 1857,
     "y": 1,
-    "w": 48,
-    "h": 37
+    "w": 46,
+    "h": 36
    },
    "anchor": {
     "x": 48,
-    "y": 14
+    "y": 13
    },
    "footprint": [
     1,
@@ -202774,9 +202774,9 @@
    "kind": "static",
    "sheet": "station_hull",
    "frame": {
-    "x": 3103,
+    "x": 3079,
     "y": 1,
-    "w": 45,
+    "w": 44,
     "h": 30
    },
    "anchor": {
@@ -202792,9 +202792,9 @@
    "kind": "static",
    "sheet": "station_hull",
    "frame": {
-    "x": 2764,
+    "x": 2744,
     "y": 1,
-    "w": 45,
+    "w": 43,
     "h": 31
    },
    "anchor": {
@@ -202810,14 +202810,14 @@
    "kind": "static",
    "sheet": "station_hull",
    "frame": {
-    "x": 2059,
+    "x": 2194,
     "y": 1,
-    "w": 48,
-    "h": 36
+    "w": 47,
+    "h": 35
    },
    "anchor": {
     "x": 48,
-    "y": 14
+    "y": 13
    },
    "footprint": [
     1,
@@ -202828,14 +202828,14 @@
    "kind": "static",
    "sheet": "station_hull",
    "frame": {
-    "x": 1912,
+    "x": 1904,
     "y": 1,
-    "w": 48,
-    "h": 37
+    "w": 46,
+    "h": 36
    },
    "anchor": {
     "x": 48,
-    "y": 14
+    "y": 13
    },
    "footprint": [
     1,
@@ -202846,7 +202846,7 @@
    "kind": "static",
    "sheet": "station_hull",
    "frame": {
-    "x": 2402,
+    "x": 2386,
     "y": 1,
     "w": 89,
     "h": 33
@@ -202864,7 +202864,7 @@
    "kind": "static",
    "sheet": "station_hull",
    "frame": {
-    "x": 2492,
+    "x": 2476,
     "y": 1,
     "w": 89,
     "h": 33
@@ -202882,7 +202882,7 @@
    "kind": "static",
    "sheet": "station_hull",
    "frame": {
-    "x": 2582,
+    "x": 2566,
     "y": 1,
     "w": 89,
     "h": 33
@@ -202900,13 +202900,13 @@
    "kind": "static",
    "sheet": "station_hull",
    "frame": {
-    "x": 3149,
+    "x": 3124,
     "y": 1,
-    "w": 44,
+    "w": 43,
     "h": 30
    },
    "anchor": {
-    "x": 0,
+    "x": -1,
     "y": 8
    },
    "footprint": [
@@ -202918,7 +202918,7 @@
    "kind": "static",
    "sheet": "station_hull",
    "frame": {
-    "x": 2810,
+    "x": 2788,
     "y": 1,
     "w": 44,
     "h": 31
@@ -202936,13 +202936,13 @@
    "kind": "static",
    "sheet": "station_hull",
    "frame": {
-    "x": 2255,
+    "x": 2242,
     "y": 1,
-    "w": 48,
+    "w": 47,
     "h": 35
    },
    "anchor": {
-    "x": 0,
+    "x": -1,
     "y": 13
    },
    "footprint": [
@@ -202954,7 +202954,7 @@
    "kind": "static",
    "sheet": "station_hull",
    "frame": {
-    "x": 2108,
+    "x": 1951,
     "y": 1,
     "w": 48,
     "h": 36
@@ -202972,13 +202972,13 @@
    "kind": "static",
    "sheet": "station_hull",
    "frame": {
-    "x": 3194,
+    "x": 3168,
     "y": 1,
-    "w": 44,
+    "w": 43,
     "h": 30
    },
    "anchor": {
-    "x": 0,
+    "x": -1,
     "y": 8
    },
    "footprint": [
@@ -202990,7 +202990,7 @@
    "kind": "static",
    "sheet": "station_hull",
    "frame": {
-    "x": 2855,
+    "x": 2833,
     "y": 1,
     "w": 44,
     "h": 31
@@ -203008,13 +203008,13 @@
    "kind": "static",
    "sheet": "station_hull",
    "frame": {
-    "x": 2304,
+    "x": 2290,
     "y": 1,
-    "w": 48,
+    "w": 47,
     "h": 35
    },
    "anchor": {
-    "x": 0,
+    "x": -1,
     "y": 13
    },
    "footprint": [
@@ -203026,7 +203026,7 @@
    "kind": "static",
    "sheet": "station_hull",
    "frame": {
-    "x": 2157,
+    "x": 2000,
     "y": 1,
     "w": 48,
     "h": 36
@@ -203044,13 +203044,13 @@
    "kind": "static",
    "sheet": "station_hull",
    "frame": {
-    "x": 3239,
+    "x": 3212,
     "y": 1,
-    "w": 44,
+    "w": 43,
     "h": 30
    },
    "anchor": {
-    "x": 0,
+    "x": -1,
     "y": 8
    },
    "footprint": [
@@ -203062,7 +203062,7 @@
    "kind": "static",
    "sheet": "station_hull",
    "frame": {
-    "x": 2900,
+    "x": 2878,
     "y": 1,
     "w": 44,
     "h": 31
@@ -203080,13 +203080,13 @@
    "kind": "static",
    "sheet": "station_hull",
    "frame": {
-    "x": 2353,
+    "x": 2338,
     "y": 1,
-    "w": 48,
+    "w": 47,
     "h": 35
    },
    "anchor": {
-    "x": 0,
+    "x": -1,
     "y": 13
    },
    "footprint": [
@@ -203098,7 +203098,7 @@
    "kind": "static",
    "sheet": "station_hull",
    "frame": {
-    "x": 2206,
+    "x": 2049,
     "y": 1,
     "w": 48,
     "h": 36
@@ -203116,13 +203116,13 @@
    "kind": "static",
    "sheet": "station_hull",
    "frame": {
-    "x": 3284,
+    "x": 3256,
     "y": 1,
-    "w": 43,
+    "w": 42,
     "h": 29
    },
    "anchor": {
-    "x": 0,
+    "x": -1,
     "y": 7
    },
    "footprint": [
@@ -203134,13 +203134,13 @@
    "kind": "static",
    "sheet": "station_hull",
    "frame": {
-    "x": 3328,
+    "x": 3299,
     "y": 1,
-    "w": 43,
+    "w": 42,
     "h": 29
    },
    "anchor": {
-    "x": 0,
+    "x": -1,
     "y": 7
    },
    "footprint": [
@@ -203152,13 +203152,13 @@
    "kind": "static",
    "sheet": "station_hull",
    "frame": {
-    "x": 3372,
+    "x": 3342,
     "y": 1,
-    "w": 43,
+    "w": 42,
     "h": 29
    },
    "anchor": {
-    "x": 0,
+    "x": -1,
     "y": 7
    },
    "footprint": [
@@ -203170,10 +203170,10 @@
    "kind": "static",
    "sheet": "station_hull",
    "frame": {
-    "x": 3728,
+    "x": 3706,
     "y": 1,
     "w": 2,
-    "h": 16
+    "h": 17
    },
    "anchor": {
     "x": 1,
@@ -203188,10 +203188,10 @@
    "kind": "static",
    "sheet": "station_hull",
    "frame": {
-    "x": 3731,
+    "x": 3709,
     "y": 1,
     "w": 2,
-    "h": 16
+    "h": 17
    },
    "anchor": {
     "x": 1,
@@ -203206,10 +203206,10 @@
    "kind": "static",
    "sheet": "station_hull",
    "frame": {
-    "x": 3734,
+    "x": 3712,
     "y": 1,
     "w": 2,
-    "h": 16
+    "h": 17
    },
    "anchor": {
     "x": 1,
@@ -203224,14 +203224,14 @@
    "kind": "static",
    "sheet": "station_hull",
    "frame": {
-    "x": 3539,
+    "x": 3517,
     "y": 1,
     "w": 62,
-    "h": 23
+    "h": 25
    },
    "anchor": {
     "x": 31,
-    "y": 12
+    "y": 14
    },
    "footprint": [
     1,
@@ -203242,14 +203242,14 @@
    "kind": "static",
    "sheet": "station_hull",
    "frame": {
-    "x": 3665,
+    "x": 3643,
     "y": 1,
     "w": 62,
-    "h": 21
+    "h": 20
    },
    "anchor": {
     "x": 31,
-    "y": 10
+    "y": 9
    },
    "footprint": [
     1,
@@ -203260,7 +203260,7 @@
    "kind": "static",
    "sheet": "station_hull",
    "frame": {
-    "x": 3602,
+    "x": 3580,
     "y": 1,
     "w": 62,
     "h": 23
@@ -203278,9 +203278,9 @@
    "kind": "static",
    "sheet": "station_hull",
    "frame": {
-    "x": 3861,
+    "x": 3839,
     "y": 1,
-    "w": 17,
+    "w": 18,
     "h": 9
    },
    "anchor": {
@@ -203296,9 +203296,9 @@
    "kind": "static",
    "sheet": "station_hull",
    "frame": {
-    "x": 3879,
+    "x": 3858,
     "y": 1,
-    "w": 17,
+    "w": 18,
     "h": 9
    },
    "anchor": {
@@ -203314,9 +203314,9 @@
    "kind": "static",
    "sheet": "station_hull",
    "frame": {
-    "x": 3897,
+    "x": 3877,
     "y": 1,
-    "w": 17,
+    "w": 18,
     "h": 9
    },
    "anchor": {
@@ -203334,7 +203334,7 @@
    "frame": {
     "x": 1665,
     "y": 1,
-    "w": 26,
+    "w": 21,
     "h": 39
    },
    "anchor": {
@@ -203350,9 +203350,9 @@
    "kind": "static",
    "sheet": "station_hull",
    "frame": {
-    "x": 1692,
+    "x": 1687,
     "y": 1,
-    "w": 20,
+    "w": 21,
     "h": 39
    },
    "anchor": {
@@ -203368,7 +203368,7 @@
    "kind": "static",
    "sheet": "station_hull",
    "frame": {
-    "x": 1713,
+    "x": 1709,
     "y": 1,
     "w": 26,
     "h": 39
@@ -203386,13 +203386,13 @@
    "kind": "static",
    "sheet": "station_hull",
    "frame": {
-    "x": 3416,
+    "x": 3385,
     "y": 1,
-    "w": 40,
+    "w": 43,
     "h": 29
    },
    "anchor": {
-    "x": 42,
+    "x": 44,
     "y": 7
    },
    "footprint": [
@@ -203404,13 +203404,13 @@
    "kind": "static",
    "sheet": "station_hull",
    "frame": {
-    "x": 3457,
+    "x": 3429,
     "y": 1,
-    "w": 40,
+    "w": 43,
     "h": 29
    },
    "anchor": {
-    "x": 42,
+    "x": 44,
     "y": 7
    },
    "footprint": [
@@ -203422,13 +203422,13 @@
    "kind": "static",
    "sheet": "station_hull",
    "frame": {
-    "x": 3498,
+    "x": 3473,
     "y": 1,
-    "w": 40,
+    "w": 43,
     "h": 29
    },
    "anchor": {
-    "x": 42,
+    "x": 44,
     "y": 7
    },
    "footprint": [
@@ -203440,13 +203440,13 @@
    "kind": "static",
    "sheet": "station_hull",
    "frame": {
-    "x": 3915,
+    "x": 3896,
     "y": 1,
-    "w": 16,
-    "h": 8
+    "w": 18,
+    "h": 9
    },
    "anchor": {
-    "x": 48,
+    "x": 50,
     "y": 8
    },
    "footprint": [
@@ -203458,13 +203458,13 @@
    "kind": "static",
    "sheet": "station_hull",
    "frame": {
-    "x": 3932,
+    "x": 3915,
     "y": 1,
-    "w": 16,
-    "h": 8
+    "w": 18,
+    "h": 9
    },
    "anchor": {
-    "x": 48,
+    "x": 50,
     "y": 8
    },
    "footprint": [
@@ -203476,13 +203476,13 @@
    "kind": "static",
    "sheet": "station_hull",
    "frame": {
-    "x": 3949,
+    "x": 3934,
     "y": 1,
-    "w": 16,
-    "h": 8
+    "w": 18,
+    "h": 9
    },
    "anchor": {
-    "x": 48,
+    "x": 50,
     "y": 8
    },
    "footprint": [
@@ -203494,7 +203494,7 @@
    "kind": "static",
    "sheet": "station_hull",
    "frame": {
-    "x": 1740,
+    "x": 1736,
     "y": 1,
     "w": 24,
     "h": 39
@@ -203512,7 +203512,7 @@
    "kind": "static",
    "sheet": "station_hull",
    "frame": {
-    "x": 1765,
+    "x": 1761,
     "y": 1,
     "w": 20,
     "h": 39
@@ -203530,7 +203530,7 @@
    "kind": "static",
    "sheet": "station_hull",
    "frame": {
-    "x": 1786,
+    "x": 1782,
     "y": 1,
     "w": 27,
     "h": 39
@@ -209542,7 +209542,7 @@
    "kind": "static",
    "sheet": "station_hull",
    "frame": {
-    "x": 3737,
+    "x": 3715,
     "y": 1,
     "w": 62,
     "h": 16
@@ -209560,7 +209560,7 @@
    "kind": "static",
    "sheet": "station_hull",
    "frame": {
-    "x": 2945,
+    "x": 2923,
     "y": 1,
     "w": 32,
     "h": 31
@@ -209578,7 +209578,7 @@
    "kind": "static",
    "sheet": "station_hull",
    "frame": {
-    "x": 2978,
+    "x": 2956,
     "y": 1,
     "w": 32,
     "h": 31
@@ -209596,7 +209596,7 @@
    "kind": "static",
    "sheet": "station_hull",
    "frame": {
-    "x": 3800,
+    "x": 3778,
     "y": 1,
     "w": 60,
     "h": 15

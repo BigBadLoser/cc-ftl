@@ -26,12 +26,13 @@ REACH_SWING = 0.12                 # give or take
 END_LIFT, END_R = 0.75, 0.3          # a heap straddling a run's type-1 tile boundary: its lift (a share of H0), radius
 # The variants' characters: an ordinary stretch, one with a boulder, a low dusty one (mounds: count range; lift: their
 # height's scale; rocks, pebbles: count ranges; boulder: its radius range or None).
-CHARACTER = ({"mounds": (1, 3), "lift": 1.0, "rocks": (4, 7), "pebbles": (3, 6), "boulder": None},
-             {"mounds": (1, 2), "lift": 0.8, "rocks": (2, 4), "pebbles": (2, 4), "boulder": (0.11, 0.14)},
-             {"mounds": (2, 4), "lift": 0.35, "rocks": (0, 2), "pebbles": (6, 10), "boulder": None})
+CHARACTER = ({"mounds": (1, 3), "lift": 1.0, "rocks": (2, 5), "pebbles": (3, 6), "boulder": None},
+             {"mounds": (1, 2), "lift": 0.8, "rocks": (1, 3), "pebbles": (2, 4), "boulder": (0.12, 0.15)},
+             {"mounds": (2, 4), "lift": 0.35, "rocks": (0, 1), "pebbles": (6, 10), "boulder": None})
+CLUMP = 0.11                        # tiles: a clump's spread (its rocks gather round one spot, the boulder's if any)
 VARIANTS = 3                        # per key, picked per tile; each its own heaps, reach and rocks, faded to the shared
 VAR_SHARE = 0.8                     # shape at its stretch's ends so neighbours of any variant meet
-N = 48                              # surface grid cells per tile
+N = 32                              # surface grid cells per tile
 EPS = 0.25                          # px: a facet all under this over the ground is not drawn (the ground shows)
 
 
@@ -138,13 +139,16 @@ def _height(d, w, x, y, mounds, u=None, ends=(0, 0)):
     return max(0.0, h0 * f * (1 + 0.06 * per2(x * 5, y * 5, 817, n=4)))
 
 
-def _col(n, x, y):
-    """Dust by steepness (both near faces alike, as the station hull lights them): the flatter, the lighter, in broad
-    soft patches; a slope turned from the camera (toward the wall) the dark."""
+def _col(n, x, y, frac):
+    """Dust in broad calm patches, not per facet (a facet is under a px: by its own normal the dust speckles and the
+    rocks drown in it): by height up the drift (frac: 0 at the toe, 1 at the wall's height), patchy, its toe the
+    ground's own tone (no outline); only a really steep slope shaded, one turned from the camera the dark."""
     if n.x + n.y < -0.35:
         return "gdD"
-    t = n.z + 0.05 * per2(x * 4, y * 4, 823, n=3)
-    return "gdL" if t > 0.96 else "gd" if t > 0.84 else "gdM" if t > 0.64 else "gdD"
+    t = frac + 0.18 * per2(x * 2.5, y * 2.5, 823, n=3) / 1.5
+    if n.z < 0.5:
+        return "gdM" if t > 0.3 else "gdD"
+    return "gdL" if t > 0.72 else "gd" if t > 0.38 or t < 0.12 else "gdM"
 
 
 def along(key):
@@ -191,23 +195,31 @@ def berm(key, var=0, ends=(0, 0)):
                 if nn.z < 0:
                     nn = -nn
                 cx, cy = sum(p.x for p in pts) / 3, sum(p.y for p in pts) / 3
-                polyg(k, pts, _col(nn, cx, cy), up)
+                polyg(k, pts, _col(nn, cx, cy, sum(zs) / 3 / (H0 / core.ZPX)), up)
     hz = lambda g, x, y: _height(g[0], g[1], x, y, mounds, U(x, y), ends)                # noqa: E731
-    if ch["boulder"]:
-        _scatter(k, poly, fronts, hz, r, 1, ch["boulder"], (0.05, 0.4), 0.3, wmin=0.6)
-    _scatter(k, poly, fronts, hz, r, int(r.integers(*ch["rocks"])), (0.04, 0.1), (0.0, 0.85), 0.4)
+    # the rocks in one clump: round the boulder, else round a spot of their own (a stretch with none stays bare)
+    at = _scatter(k, poly, fronts, hz, r, 1, ch["boulder"], (0.05, 0.4), 0.3, wmin=0.6) if ch["boulder"] else []
+    want = int(r.integers(*ch["rocks"]))
+    if want and not at:
+        at = _scatter(k, poly, fronts, hz, r, 1, None, (0.0, 0.5), 0.0, wmin=0.55)
+    if want and at:
+        _scatter(k, poly, fronts, hz, r, want, (0.08, 0.13), (0.0, 0.9), 0.35, near=at[0])
     _scatter(k, poly, fronts, hz, r, int(r.integers(*ch["pebbles"])), (0.014, 0.03), (0.7, 1.35), 0.15)
     return k.build()
 
 
-def _scatter(k, poly, fronts, hz, r, want, size, band, sink, wmin=0.3):
-    """want rocks of radius in size, at distances out in band (shares of the reach there), sunk by sink of their height
-    into the drift; nearer the wall more likely. Each clear of its stretch's ends (no rock cut at a tile's edge)."""
-    placed = 0
-    for _ in range(want * 30):
-        if placed >= want:
+def _scatter(k, poly, fronts, hz, r, want, size, band, sink, wmin=0.3, near=None):
+    """want rocks of radius in size (None: just pick the spot), at distances out in band (shares of the reach there),
+    sunk by sink of their height into the drift; nearer the wall more likely, round `near` (a clump) if given. Each
+    clear of its stretch's ends (no rock cut at a tile's edge). Returns where they went."""
+    placed = []
+    for _ in range(want * 40):
+        if len(placed) >= want:
             break
-        x, y = r.uniform(-0.75, 0.95), r.uniform(-0.75, 0.95)
+        if near is None:
+            x, y = r.uniform(-0.75, 0.95), r.uniform(-0.75, 0.95)
+        else:
+            x, y = near[0] + r.normal(0, CLUMP), near[1] + r.normal(0, CLUMP)
         g = _dist(poly, fronts, Vector((x, y)))
         if g is None or g[1] < wmin:
             continue
@@ -215,9 +227,11 @@ def _scatter(k, poly, fronts, hz, r, want, size, band, sink, wmin=0.3):
         q = max(0.0, g[0] - STEP * 0.5) / max(0.12, reach - STEP * 0.5)
         if not band[0] <= q <= band[1] or r.uniform() < q * 0.5:
             continue
-        rr = r.uniform(*size) * (1.15 - 0.4 * min(1.0, q))
-        _rock(k, Vector((x, y, gbase(x, y) + hz(g, x, y))), rr, r, sink)
-        placed += 1
+        if size:
+            rr = r.uniform(*size) * (1.15 - 0.4 * min(1.0, q))
+            _rock(k, Vector((x, y, gbase(x, y) + hz(g, x, y))), rr, r, sink)
+        placed.append((x, y))
+    return placed
 
 
 def _rock(k, c, rr, r, sink):
@@ -237,8 +251,9 @@ def _rock(k, c, rr, r, sink):
         mid_p = sum(pts, Vector()) / len(pts)
         if n.dot(mid_p - c) < 0:
             n = -n
-        col = ("gdL" if n.z > 0.8 else "rkL" if n.z > 0.45 else "rkM" if n.x + n.y > 0.2 else "rkD" if n.x + n.y > -0.3
-               else "rkK")
+        lit = n.x + n.y                                 # (lit from over the camera: the rock's tones are all darker
+        col = ("gdL" if n.z > 0.6 else "rkL" if lit > 0.3 else "rkM" if lit > -0.2 else "rkD")   # than the dust's: a
+                                                        # light top, darker sides, so it stands out of the dust both ways)
         polyg(k, pts, col, n)
     for a, b, ma, mb in zip(ring, ring[1:] + ring[:1], mid, mid[1:] + mid[:1]):
         face([a, b, mb, ma])
