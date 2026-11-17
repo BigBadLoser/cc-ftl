@@ -191,7 +191,10 @@ def build(k, ax, plane, a, b, ends, H):
     for s0, s1 in T.spans(a, b):
         whole = s1 - s0 > 1 - 1e-6
         bay = whole and DESIGN[0] == SD.BAY
-        if whole and DESIGN[0] == SD.MODULE:
+        win = whole and SW.PART[0]                       # (a window piece: station_hull_window)
+        if win:
+            SW.span(f, s, s0, s1, zt)
+        elif whole and DESIGN[0] == SD.MODULE:
             SD.blocks(f, s0, s1)
         elif bay:
             SB.blocks(f, s0, s1)
@@ -206,7 +209,7 @@ def build(k, ax, plane, a, b, ends, H):
             f.line(u0, u1, FOOT_H, s.z_at(FOOT_H, -1), GROOVE_D, bevel=False)   # a seam where the step meets the face
         f.top_line(s0, s1, ts - LINE, ts, SEAM)
         f.top_line(s0, s1, rail - LINE, rail, SEAM)
-        if whole:
+        if whole and not win:
             for fr, sg in zip(SEAMS, (1, -1)):
                 u = s0 + fr - LINE / 2
                 if DESIGN[0] == SD.MODULE:                               # (from the groove up; a break in a design)
@@ -343,3 +346,4 @@ def jobs():
 
 from . import station_hull_designs as SD  # noqa: E402  (its designs build on this module)
 from . import station_hull_bay as SB  # noqa: E402
+from . import station_hull_window as SW  # noqa: E402
