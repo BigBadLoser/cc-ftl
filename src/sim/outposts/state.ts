@@ -13,6 +13,14 @@ export function isHiddenOutpost(ship: Ship | undefined): boolean {
   return !!ship?.outpost?.hidden;
 }
 
+/**
+ * True for a base standing on levelled asteroid ground (a surface outpost, prefab or not): it draws the station hull, with the rock
+ * berm heaped against it and no belly under it (render/stationHull.ts).
+ */
+export function standsOnGround(ship: Ship | undefined): boolean {
+  return ship?.outpost?.style === 'surface';
+}
+
 export type DiscoverReason = 'proximity' | 'breach' | 'provoked';
 
 /** Reveal a hidden outpost (it stays dormant unless it was provoked). No-op if it is not hidden. */
