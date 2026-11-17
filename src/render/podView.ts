@@ -11,7 +11,7 @@ import { Z_PX } from './heights';
 import { sectorArt } from './sectorPos';
 import { animNow } from './animClock';
 import { headingIndex } from './shuttleView';
-import { BAY_FRAME_MS, LAUNCH_LIFT, bayHandoff } from './vehicleBayArt';
+import { BAY_FRAME_MS, LAUNCH_LIFT, createBayTrack, type BayTrack } from './vehicleBayArt';
 
 /**
  * Pods (VehicleC with a pod def, placed by their BodyC) drawn with the pipeline sprites (`VehicleDef.asset`): `<art>.fly.d<0..7>`
@@ -37,8 +37,6 @@ const PIT_DEPTH = 0.6;
 const MINE_FRAME_MS = 420;
 /** An escape pod adrift blinks its beacon (`.drift.d<k>.f0` lit, `.f1` dark): ms per cycle and how long it is lit. */
 const BEACON_MS = 1200;
-/** A launched pod catches up with its sim position over this long (ms) once it has left the pit. */
-const CATCH_MS = 600;
 const BEACON_ON_MS = 450;
 /**
  * Docked nose first at an airlock (an escape pod, `.docked.d<k>`, k = the way the hatch faces): the pod lies on its side
@@ -75,8 +73,8 @@ interface Track {
 
 export function createPodView(world: World, atlas: Atlas, host: PodHost): PodView {
   const tracks = new Map<number, Track>();
-  /** Each pod's last state and when it left (and re-entered) its bay, for the bay handoff; x, y: where the launch began. */
-  const phases = new Map<number, { state: string; launched: number; landed: number; x: number; y: number }>();
+  /** Each pod's bay handoff clock and position trail (vehicleBayArt). */
+  const phases = new Map<number, BayTrack>();
   let clock = 0;
   const drop = (id: number): void => {
     const t = tracks.get(id);
@@ -108,15 +106,11 @@ export function createPodView(world: World, atlas: Atlas, host: PodHost): PodVie
         // Who draws a pod in or leaving its bay is vehicleBayArt's `bayHandoff` (as for a shuttle): the bay's `parked` sprite while it
         // sits in the claws and through the first door frames of a launch, this layer while it rises out of the pit and settles back.
         const now = animNow();
-        let ph = phases.get(id);
-        if (!ph) phases.set(id, (ph = { state: v.state, launched: -Infinity, landed: -Infinity, x: b.x, y: b.y }));
-        if (ph.state !== v.state) {
-          if (ph.state === 'stowed') [ph.launched, ph.x, ph.y] = [now, b.x, b.y];
-          else if (v.state === 'stowed') ph.landed = now;
-          ph.state = v.state;
-        }
+        let track = phases.get(id);
+        if (!track) phases.set(id, (track = createBayTrack(v.state)));
+        track.update(v.state, now);
         const baySprite = !out && atlas.ids(`${art}.parked`).length > 0;
-        const hand = baySprite ? bayHandoff(stowed, now - ph.launched, now - ph.landed) : null;
+        const hand = baySprite ? track.pose(v.state, now) : null;
         if (hand && !hand.drawn) continue;
         const rising = hand?.lift != null;
         const low = (stowed && !hand) || !!out || rising;
@@ -154,8 +148,8 @@ export function createPodView(world: World, atlas: Atlas, host: PodHost): PodVie
         show(t, sprite);
         const reach = COLLAR_FACE + POD_HATCH;
         // After liftoff the sim has already flown it on: hold it over the pit while the doors open and the lift runs, then catch up.
-        const held = baySprite && !stowed && !out ? Math.min(1, Math.max(0, (now - ph.launched - LAUNCH_LIFT.end * BAY_FRAME_MS) / CATCH_MS)) : 1;
-        const [sx, sy] = out ? [b.x + out.x * reach, b.y + out.y * reach] : [ph.x + (b.x - ph.x) * held, ph.y + (b.y - ph.y) * held];
+        const at = baySprite && !stowed && hand?.launching ? track.delayed(now, b.x, b.y, LAUNCH_LIFT.start * BAY_FRAME_MS, hand.sinceLaunch) : b;
+        const [sx, sy] = out ? [b.x + out.x * reach, b.y + out.y * reach] : [at.x, at.y];
         const p = sectorArt(sx, sy);
         const lift = (out ? COLLAR_Z - POD_AXIS : rising ? PIT_Z + (POD_Z - PIT_Z) * (hand?.lift ?? 0) : stowed ? PIT_Z : POD_Z) * Z_PX;
         // The shadow stays on the ground under the hovering pod.
