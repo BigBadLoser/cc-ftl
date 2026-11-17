@@ -15,7 +15,7 @@ import { portRecruits, recruitsHere } from '../sim/galaxy/recruit';
 import { RECRUIT_TURNS } from '../sim/galaxy/tuningRecruit';
 import { content } from '.';
 
-import { atBack, atStation, hire, people, playerCrew, run, step } from '../../test/support/fixtures/recruit';
+import { atBack, atStation, atWork, hire, people, playerCrew, run, step } from '../../test/support/fixtures/recruit';
 const keyOf = (sim: Sim, id: number): string => sim.world.get(id, ForHireC)?.key ?? '';
 const rejected = (ev: ReturnType<Sim['events']['drain']>): string[] => ev.flatMap((e) => (e.type === 'command.rejected' && e.command === 'crew.hire' ? [e.reason] : []));
 describe('crew for hire', () => {
@@ -195,19 +195,15 @@ describe('crew for hire', () => {
   });
 
   it('survives a save and load in the middle of a run', () => {
-    const sim = atStation();
-    const [c] = people(sim) as [number];
-    const fh = sim.world.get(c, ForHireC)!;
-    sim.trade.credits = 1000;
-    hire(sim, fh.key);
-    run(sim, () => sim.trade.deals[0]?.phase === 'stationWork', 3000);
+    const { sim, c, cost } = atWork(); // a hire run at the station work, cached (a clone is a save and load)
+    const key = sim.world.get(c, ForHireC)!.key;
     const back = deserialize(serialize(sim), content);
     expect(back.trade.deals[0]?.crew).toEqual([c]);
     run(back, () => back.world.get(c, AllegianceC)?.faction === 'player');
     expect(back.world.get(c, AllegianceC)?.faction).toBe('player');
     run(back, () => back.trade.deals[0]?.phase === 'done');
-    expect(back.trade.credits).toBe(1000 - fh.cost);
-    expect(back.galaxy.recruitLog).toContain(fh.key);
+    expect(back.trade.credits).toBe(1000 - cost);
+    expect(back.galaxy.recruitLog).toContain(key);
   });
 
   it('military stations offer nobody', () => {

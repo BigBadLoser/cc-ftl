@@ -5,6 +5,7 @@ import type { FactionDef, GenResult } from '../../sim/shipgen/types';
 import { structureParts } from '../../sim/shipgen/validate';
 import { content } from '../index';
 import { factions } from './index';
+import { expectMotifs, lopsidedScrappers } from '../../../test/support/fixtures/shipgen';
 
 // Slow soak test (see "Test tiers" in docs/ARCHITECTURE.md): skipped by `npm run check:fast`, always run by `npm run check` and CI.
 const defs = content.modules as Record<string, ModuleDef>;
@@ -25,6 +26,18 @@ describe('ship generator, many seeds', () => {
       expect(bad).toEqual([]);
     }, 90000);
   }
+
+  it('seeds vary the layout: 12 seeds give at least 6 different layouts', () => {
+    for (const id of ids) {
+      const layouts = new Set(Array.from({ length: 12 }, (_, s) => gen(id, s, 3).template.rows.join('\n')));
+      expect(layouts.size, id).toBeGreaterThanOrEqual(6);
+    }
+  }, 90000);
+
+  it('keeps each motif recognisable over seeds 0 to 29, and most scrapper hulls are lopsided', () => {
+    expectMotifs(Array.from({ length: 30 }, (_, s) => s));
+    expect(lopsidedScrappers(20)).toBeGreaterThanOrEqual(18);
+  }, 90000);
 
   it('every ship is one connected structure (hull, walls, floors, beams 4-connected), first attempt mostly (seeds 1 to 12 at depths 1, 4 and 9)', () => {
     for (const id of ids) {

@@ -5,7 +5,7 @@ import { CrewC, PositionC } from '../../sim/crew/components';
 import type { SimEvent } from '../../sim/events';
 import { ModuleC } from '../../sim/modules/components';
 import { newGame } from '../../sim/newGame';
-import { deserialize, serialize } from '../../sim/save';
+import { expectReplayable } from '../../../test/support/world';
 import type { Sim } from '../../sim/sim';
 import { VehicleC } from '../../sim/vehicles/components';
 import { bayCenter, dockPoint } from '../../sim/vehicles/geometry';
@@ -105,20 +105,18 @@ describe('vehicle bodies', () => {
   });
 
   it('is deterministic and survives a save round trip mid-flight', () => {
-    const go = (save: boolean): string => {
+    const sims: Sim[] = [];
+    let v = 0;
+    // Two runs step 660 ticks of the docking flight and stay identical; one is saved and reloaded 60 ticks in, mid-flight.
+    expectReplayable(() => {
       const start = setup(4);
-      const v = start.v;
-      let sim = start.sim;
-      sim.enqueue({ type: 'vehicle.dock', vehicle: v, airlock: airlockOf(sim, 2) });
-      run(sim, 60);
-      if (save) sim = deserialize(serialize(sim), content);
-      expect(sim.world.get(v, BodyC)).toBeDefined();
-      run(sim, 600);
-      expect(sim.world.get(v, VehicleC)!.state).toBe('docked');
-      return serialize(sim);
-    };
-    const plain = go(false);
-    expect(go(false)).toBe(plain);
-    expect(go(true)).toBe(plain);
+      v = start.v;
+      start.sim.enqueue({ type: 'vehicle.dock', vehicle: v, airlock: airlockOf(start.sim, 2) });
+      run(start.sim, 60);
+      expect(start.sim.world.get(v, BodyC)).toBeDefined();
+      sims.push(start.sim);
+      return start.sim;
+    }, 600, { every: 100, saveAt: 1 });
+    expect(sims[0]!.world.get(v, VehicleC)!.state).toBe('docked');
   });
 });

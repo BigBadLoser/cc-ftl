@@ -403,7 +403,7 @@ Shared test helpers live in `test/support/` (repo root); use them instead of a l
     `fixtureShip(sim, template)` (an inert prize ship at the origin).
 - `world.ts` (sim-only):
   - `expectReplayable(build, ticks, { every = 10, saveAt? })` builds twice, steps both and compares `serialize` every `every` ticks;
-    with `saveAt` one copy is saved and reloaded on the way. A failure names the first tick that differs (it re-runs per tick to find it).
+    with `saveAt` one copy is saved and reloaded on the way; `events: []` collects the first copy's events for a test that also asserts something happened. A failure names the first tick that differs (it re-runs per tick to find it).
   - `cachedWorld(key, build)` builds once per worker and returns a fresh `deserialize(serialize(world))` clone per call. Use it when many
     tests start from the same expensive state (a game run to a scene); build fresh when a test is about the build itself, or about
     state a save does not hold. Clones are independent: never share a mutable node or world between tests.

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { stampShip } from '../../src/sim/combat/ships';
+import type { SimEvent } from '../../src/sim/events';
 import { shipIds } from '../../src/sim/regions';
 import { Sim } from '../../src/sim/sim';
 import { cachedWorld, expectReplayable } from './world';
@@ -54,6 +55,16 @@ describe('expectReplayable', () => {
   it('passes for a deterministic build, with and without a mid-run save', () => {
     expectReplayable(build, 30);
     expectReplayable(build, 30, { every: 5, saveAt: 12 });
+  });
+
+  it('hands back the events of the first run', () => {
+    const events: SimEvent[] = [];
+    expectReplayable(() => {
+      const sim = build();
+      sim.enqueue({ type: 'ship.settle', ship: 999, choice: 'letGo' });
+      return sim;
+    }, 3, { events });
+    expect(events.some((e) => e.type === 'command.rejected')).toBe(true);
   });
 
   it('names the first diverging tick', () => {

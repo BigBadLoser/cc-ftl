@@ -9,7 +9,7 @@ import { totalStock } from '../../sim/items/stock';
 import { ModuleC } from '../../sim/modules/components';
 import { removeModule } from '../../sim/modules/spawn';
 import { newGame } from '../../sim/newGame';
-import { deserialize, serialize } from '../../sim/save';
+import { expectReplayable } from '../../../test/support/world';
 import { liftShip, stampPacket } from '../../sim/sector/packet';
 import type { Sim } from '../../sim/sim';
 import { stat } from '../../sim/stats';
@@ -313,18 +313,11 @@ describe('robots and determinism', () => {
   });
 
   it('is deterministic and survives a save round trip mid-meal', { timeout: 60000 }, () => {
-    const make = () => {
-      const { sim, id } = hungry(30);
-      return { sim, id };
-    };
-    const a = make().sim;
-    run(a, 6 * TICK_HZ);
-    const mid = deserialize(serialize(a), content);
-    run(a, 1500);
-    run(mid, 1500);
-    const b = make().sim;
-    run(b, 6 * TICK_HZ + 1500);
-    expect(serialize(a)).toBe(serialize(b));
-    expect(serialize(mid)).toBe(serialize(a));
+    // Two builds, both 6 s into the meal; one is saved and reloaded at once, then both run 1500 ticks.
+    expectReplayable(() => {
+      const { sim } = hungry(30);
+      run(sim, 6 * TICK_HZ);
+      return sim;
+    }, 1500, { every: 100, saveAt: 1 });
   });
 });

@@ -1,21 +1,21 @@
 import { describe, expect, it } from 'vitest';
-import { content } from '../content';
-import { ShipC } from '../sim/combat/components';
-import { homeShip } from '../sim/combat/ships';
-import { CrewC, DownedC, HealthC } from '../sim/crew/components';
-import { ModuleC } from '../sim/modules/components';
-import { placementError, spawnModule } from '../sim/modules/spawn';
-import { newGame } from '../sim/newGame';
-import type { Sim } from '../sim/sim';
-import { BodyC } from '../sim/body';
-import { droneCap, stunDronesNear } from '../sim/drones/bay';
-import { candidatesFor } from '../sim/drones/work';
-import { findPath } from '../sim/crew/pathfind';
-import { shipGrid, shipIdOf } from '../sim/regions';
-import { IonC } from '../sim/combat/components';
-import { DroneC, type Drone } from '../sim/drones/components';
-import { deserialize, serialize } from '../sim/save';
-import { droneScenarioCommands } from '../content/scenario/lib/drone';
+import { content } from '../index';
+import { ShipC } from '../../sim/combat/components';
+import { homeShip } from '../../sim/combat/ships';
+import { CrewC, DownedC, HealthC } from '../../sim/crew/components';
+import { ModuleC } from '../../sim/modules/components';
+import { placementError, spawnModule } from '../../sim/modules/spawn';
+import { newGame } from '../../sim/newGame';
+import type { Sim } from '../../sim/sim';
+import { BodyC } from '../../sim/body';
+import { droneCap, stunDronesNear } from '../../sim/drones/bay';
+import { candidatesFor } from '../../sim/drones/work';
+import { findPath } from '../../sim/crew/pathfind';
+import { shipGrid, shipIdOf } from '../../sim/regions';
+import { IonC } from '../../sim/combat/components';
+import { DroneC, type Drone } from '../../sim/drones/components';
+import { deserialize, serialize } from '../../sim/save';
+import { droneScenarioCommands } from './lib/drone';
 
 const run = (sim: Sim, secs: number): void => {
   for (let i = 0; i < secs * 20; i++) sim.step();
