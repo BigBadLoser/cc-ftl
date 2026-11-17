@@ -304,9 +304,11 @@ export function prefab(c: Ctx, rooms: readonly RoomSpec[], docks: readonly RoomS
     return Array.from({ length: size }, (_, r): Slot => ({ west, row: r, size, up: size >= 2 && r === 0, low: r === size - 1 }));
   }));
   const slotOf = new Map<Leg, Slot>();
-  const take = (leg: Leg, ok: (s: Slot) => boolean): void => { const i = Math.max(0, slots.findIndex(ok)); slotOf.set(leg, slots.splice(i, 1)[0] as Slot); };
-  for (const leg of legs.filter((l) => l.low)) take(leg, (s) => s.low);
-  for (const leg of legs.filter((l) => l.command)) take(leg, (s) => s.up || s.low);
+  // A wing takes a low slot (one each side, from two legs on), then the command block an upper or the other low one. Never a slot
+  // that does not fit: no slot fits, no base.
+  const take = (leg: Leg, ok: (s: Slot) => boolean): boolean => { const i = slots.findIndex(ok); if (i < 0) return false; slotOf.set(leg, slots.splice(i, 1)[0] as Slot); return true; };
+  for (const leg of legs.filter((l) => l.low)) if (!take(leg, (s) => s.low)) return { why: 'no low slot for a wing' };
+  for (const leg of legs.filter((l) => l.command)) if (!take(leg, (s) => s.up || s.low)) return { why: 'no slot for the command block' };
   // The rest: the longer in the lower slots, the shorter above.
   slots.sort((a, b) => Number(a.low) - Number(b.low));
   for (const leg of legs.filter((l) => !slotOf.has(l)).sort((a, b) => a.len - b.len)) slotOf.set(leg, slots.shift() as Slot);
