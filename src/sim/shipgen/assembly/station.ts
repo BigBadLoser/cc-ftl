@@ -96,15 +96,12 @@ export function assembleStation(def: StationDef, id: string, size: StationSize, 
   const made = fitShell(
     rng, stationFaction(def), id, seed, role, 'sections', { crew: stationCrew(rng, def, size) },
     { rows, roomOf: snap.roomOf, width: snap.width, height: snap.height, roles: g.regions.map((r) => r.role), specs: g.regions.map((r) => r.spec ?? (r.dept === 'customs' ? CUSTOMS : undefined)) },
-    `assembly ${recipe.name}`, defs, 0, { immobile: true, airlocksAnyWay: true, gunsAnywhere: true, ...(g.entries.size > 0 ? { entries: g.entries } : {}), ...(prefab ? { ground: { mods: groundTurrets(ok.recipe, program, defs), keep: pads.map((p) => [p[0] - snap.x0, p[1] - snap.y0, p[2] - snap.x0, p[3] - snap.y0] as const), seed, ...(g.apartModules.length > 0 ? { apart: g.apartModules } : {}) } } : {}), check: (t, d) => stationProblems(t, d, prefab ? Math.min(PREFAB_PADS, docksOf(def, size)) : docksOf(def, size)) },
+    `assembly ${recipe.name}`, defs, 0, { immobile: true, airlocksAnyWay: true, gunsAnywhere: true, ...(g.entries.size > 0 ? { entries: g.entries } : {}), ...(prefab ? { ground: { mods: groundTurrets(ok.recipe, program, defs), keep: pads.map((p) => [p[0] - snap.x0, p[1] - snap.y0, p[2] - snap.x0, p[3] - snap.y0] as const), pads: pads.map((p, i) => ({ def: LANDING_PAD, box: [p[0] - snap.x0, p[1] - snap.y0, p[2] - snap.x0, p[3] - snap.y0] as const, ...(i === 0 ? { vehicle: 'vehicle.shuttle' } : {}) })), seed, ...(g.apartModules.length > 0 ? { apart: g.apartModules } : {}) } } : {}), check: (t, d) => stationProblems(t, d, prefab ? Math.min(PREFAB_PADS, docksOf(def, size)) : docksOf(def, size)) },
   );
   // The crew's airlocks (a prefab base's wing and greenhouses) are no docks for ships.
   if (g.crewLocks.size > 0) made.template.modules = (made.template.modules ?? []).map((m) => (defs[m.def]?.airlock && footprintTiles(defs[m.def] as ModuleDef, m.x, m.y, m.rot).some((t) => g.crewLocks.has(snap.roomOf[t.y * snap.width + t.x] ?? -1)) ? { ...m, crew: true as const } : m));
   // An asteroid farm's beds are set to the kind's crops, in turn: its crew farm them out of the box.
   if (prefab && def.crops?.length) { let bed = 0; made.template.modules = (made.template.modules ?? []).map((m) => (defs[m.def]?.plot ? { ...m, crop: def.crops?.[bed++ % def.crops.length] as string } : m)); }
-  // A prefab base keeps its shuttle on a landing pad (#509): the first pad is home to it, the others stay free for visitors. The pad's access side faces its airlock
-  // (the first pad lies west of arrivals, the airlock to its east: rotation 0; the other lies east of it: rotation 2).
-  if (prefab) made.template.modules = [...(made.template.modules ?? []), ...pads.map((p, i) => ({ def: LANDING_PAD, x: p[0] - snap.x0, y: p[1] - snap.y0, rot: i % 2 === 0 ? 0 : 2, ground: true as const, ...(i === 0 ? { vehicle: 'vehicle.shuttle' } : {}) }))];
   made.template.name = `${def.name} ${size === 'station' ? '' : `${size} `}${(seed >>> 0).toString(16).toUpperCase().padStart(4, '0').slice(-4)}`;
   const site = { pads: pads.map((p) => ({ x: p[0] - snap.x0, y: p[1] - snap.y0, w: p[2] - p[0], h: p[3] - p[1] })) };
   return { ...made, failures: rejected, station: infoOf(def, size, made.template, defs), ...(prefab ? { site } : {}) };

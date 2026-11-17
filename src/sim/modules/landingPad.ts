@@ -2,7 +2,8 @@ import type { World } from '../ecs';
 import type { ModuleDef } from '../registry';
 import { AirlockC, airlockTiles } from './airlock';
 import { ModuleC } from './components';
-import { footprintTiles } from './footprint';
+import { footprintTiles, rotatedSize } from './footprint';
+import { groundPort } from './groundMount';
 import { shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { VehicleBayC } from '../vehicles/components';
@@ -64,6 +65,28 @@ export function padAirlock(sim: Sim, pad: number): number {
     const o = airlockTiles(adef, am).outer;
     const d = Math.abs(o.x - (pm.x + 4)) + Math.abs(o.y - (pm.y + 4));
     if (d < bestD || (d === bestD && id < best)) [best, bestD] = [id, d];
+  }
+  return best;
+}
+
+/**
+ * Where crew board and leave a pad (#509): the edge tile of its footprint nearest its airlock's outer door, clear of the cable port.
+ * Null when it is no pad.
+ */
+export function padBoardTile(sim: Sim, pad: number): { x: number; y: number } | null {
+  const pm = sim.world.get(pad, ModuleC);
+  const def = pm && sim.content.modules[pm.def];
+  if (!pm || !def || !isLandingPad(def)) return null;
+  const am = sim.world.get(padAirlock(sim, pad), ModuleC), adef = am && sim.content.modules[am.def];
+  const to = am && adef?.airlock ? airlockTiles(adef, am).outer : { x: pm.x + 4, y: pm.y + 4 };
+  const [w, h] = rotatedSize(def, pm.rot);
+  const port = groundPort(def, pm).side;
+  let best: { x: number; y: number } | null = null, bestD = Infinity;
+  for (const t of footprintTiles(def, pm.x, pm.y, pm.rot)) {
+    if (t.x > pm.x && t.y > pm.y && t.x < pm.x + w - 1 && t.y < pm.y + h - 1) continue; // an edge tile
+    if (Math.abs(t.x - port.x) + Math.abs(t.y - port.y) <= 1) continue;
+    const d = Math.abs(t.x - to.x) + Math.abs(t.y - to.y);
+    if (d < bestD) [best, bestD] = [{ x: t.x, y: t.y }, d];
   }
   return best;
 }

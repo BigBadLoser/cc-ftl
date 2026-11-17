@@ -7,6 +7,8 @@ import type { SimEvent } from '../../sim/events';
 import { ModuleC } from '../../sim/modules/components';
 import { VehicleBayC, VehicleC, AboardC } from '../../sim/vehicles/components';
 import { airlockPad, padAirlock } from '../../sim/modules/landingPad';
+import { groundPort } from '../../sim/modules/groundMount';
+import { isCabled } from '../../sim/cable';
 import { boardingTile } from '../../sim/vehicles/geometry';
 import { SuitC } from '../../sim/eva/components';
 import { shipGrid, shipIdOf } from '../../sim/regions';
@@ -38,6 +40,12 @@ describe('landing pads', () => {
     expect(sim.world.get(pads[0]!, VehicleBayC)!.vehicle).toBeGreaterThan(0);
     expect(sim.world.get(pads[1]!, VehicleBayC)!.vehicle).toBe(0);
     for (const p of pads) expect(padAirlock(sim, p)).toBeGreaterThan(0);
+    // Each pad's cable port is plugged into a cable that runs on to the hull.
+    for (const p of pads) {
+      const m = sim.world.get(p, ModuleC)!;
+      const port = groundPort(sim.content.modules[m.def]!, m);
+      expect(isCabled(sim.sector.grid, port.cable.x, port.cable.y), `pad ${p} port cable`).toBe(true);
+    }
     const v = sim.world.get(pads[0]!, VehicleBayC)!.vehicle;
     expect(sim.world.get(v, VehicleC)!.state).toBe('stowed');
     expect(sim.world.get(v, VehicleC)!.homeShip).toBe(ship); // the shuttle belongs to the base

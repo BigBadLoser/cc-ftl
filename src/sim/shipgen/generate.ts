@@ -175,6 +175,7 @@ function fitOut(
   if (o.ground) {
     const g = placeGroundTurrets(lay, o.ground);
     for (const id of o.ground.mods) wanted[id] = (wanted[id] ?? 0) + 1;
+    for (const pd of g.pads) if (pd.vehicle) out.vehicles.set(pd.index, pd.vehicle); // a pad's home shuttle
     for (const k of g.placed) { const id = lay.modules[k]?.def as string; placed[id] = (placed[id] ?? 0) + 1; }
     out.ground = { placed: new Set(g.placed), cable: g.cable, unwired: g.unwired };
   }

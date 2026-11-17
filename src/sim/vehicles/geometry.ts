@@ -2,7 +2,7 @@ import { shipById } from '../combat/ships';
 import { ModuleC } from '../modules/components';
 import { accessTile, hullOutward, hullSide, rotatedSize } from '../modules/footprint';
 import { airlockTiles } from '../modules/airlock';
-import { airlockPad } from '../modules/landingPad';
+import { airlockPad, isLandingPad, padBoardTile } from '../modules/landingPad';
 import type { Sim } from '../sim';
 import { VehicleBayC, VehicleC } from './components';
 import { shipIdOf } from '../regions';
@@ -31,8 +31,7 @@ export function dockPoint(sim: Sim, airlock: number): DockPoint | null {
   if (!m || !def?.airlock || !ship) return null;
   const pad = airlockPad(sim, airlock);
   const pm = pad ? sim.world.get(pad, ModuleC) : undefined;
-  const pdef = pm && sim.content.modules[pm.def];
-  const acc = pm && pdef && accessTile(pdef, pm.x, pm.y, pm.rot);
+  const acc = pm && padBoardTile(sim, pad);
   const c0 = pad ? bayCenter(sim, pad) : null;
   if (pad && acc && c0) return { shipId: shipIdOf(sim, m), x: c0.x, y: c0.y, inside: acc, pad };
   const t = airlockTiles(def, m);
@@ -75,7 +74,7 @@ export function boardingTile(sim: Sim, vehicle: number): { shipId: number; x: nu
 export function bayAccessTile(sim: Sim, v: { home: number }): { shipId: number; x: number; y: number } | null {
   const m = sim.world.get(v.home, ModuleC);
   const def = m && sim.content.modules[m.def];
-  const t = m && def && accessTile(def, m.x, m.y, m.rot);
+  const t = m && def && (isLandingPad(def) ? padBoardTile(sim, v.home) : accessTile(def, m.x, m.y, m.rot));
   return m && t ? { shipId: shipIdOf(sim, m), x: t.x, y: t.y } : null;
 }
 

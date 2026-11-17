@@ -94,7 +94,7 @@ export const PARKED_DZ = 0.019;
 export function vehicleBayLayers(m: Module, def: ModuleDef, s: BayStep): ModuleLayer[] {
   const a = def.asset;
   // A landing pad (#509) is one flat sprite; the shuttle on it is the shuttle view's.
-  if (isLandingPad(def)) return [{ chain: [a], key: a, tiles: 'all' }];
+  if (isLandingPad(def)) return [{ chain: [`${a}.r${m.rot}`, a], key: a, tiles: 'all' }];
   const out: ModuleLayer[] = [{ chain: [bayId(a, m.rot, s.bay), bayId(a, m.rot, ''), a], key: a, tiles: 'all', strips: true }];
   const craft = craftOf(def);
   if (s.shuttle !== null) out.push({ chain: [parkedId(m.rot, s.shuttle, craft), parkedId(m.rot, '', craft)], key: `${craft}.parked`, tiles: 'all', strips: true, dz: PARKED_DZ });
