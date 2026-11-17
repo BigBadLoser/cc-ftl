@@ -75,11 +75,6 @@ async function run(): Promise<void> {
     (await import('./buildLab')).mountBuildLab(stageEl, params).then(() => (lab.__labReady = true), (e) => { lab.__labError = String(e); lab.__labReady = true; });
     return;
   }
-  if (id === 'bay-exit') {
-    bar.innerHTML = '<a href="?">Render lab</a> <b>Bay exit</b> &nbsp; a pod and a shuttle through the bay floor doors on a ship section; kind=pod|shuttle&mode=launch|land&t=seconds (GIFs: tools/lab/bayExitGif.js)';
-    (await import('./bayExitLab')).mountBayExitLab(stageEl, params).then(() => setTimeout(() => (lab.__labReady = true), 600), (e) => { lab.__labError = String(e); lab.__labReady = true; });
-    return;
-  }
   if (id === 'windows') {
     bar.innerHTML = '<a href="?">Render lab</a> <b>Windows</b> &nbsp; each window the shared frame covers, with mock data';
     (await import('./windowsLab')).mountWindowsLab(stageEl);
