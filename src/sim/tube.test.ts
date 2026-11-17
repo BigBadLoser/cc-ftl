@@ -35,6 +35,17 @@ describe('tubes', () => {
     expect(tubeRuns(g).filter((r) => r.axis === 'x').map((r) => r.len)).toEqual([1, 1]);
   });
 
+  it('a tube keeps its run and axis once the doors at its ends are breached', () => {
+    const g = gridFromTemplate(T);
+    for (const [x, y] of [[4, 2], [8, 2], [10, 4], [10, 6]] as const) writeStruct(g, x, y, Struct.Floor);
+    expect(tubeRuns(g).map((r) => [r.axis, r.len])).toEqual([['x', 3], ['y', 1]]);
+    // (a one-tile tube along x: with its doors gone its axis comes from its walls)
+    const one = gridFromTemplate({ name: 'one', rows: ['#######', '#_D_D_#', '#######'], tubes: ['', '...o'] });
+    writeStruct(one, 2, 1, Struct.Floor);
+    writeStruct(one, 4, 1, Struct.Floor);
+    expect(tubeRuns(one)).toEqual([{ axis: 'x', x: 3, y: 1, len: 1, far: { x: 2, y: 1 }, near: { x: 4, y: 1 } }]);
+  });
+
   it('template rows round-trip', () => {
     const rows = tubeRows(13, 8, new Set([2 * 13 + 5, 2 * 13 + 6, 5 * 13 + 10]));
     expect(templateTubes({ tubes: rows })).toEqual([{ x: 5, y: 2 }, { x: 6, y: 2 }, { x: 10, y: 5 }]);

@@ -45,13 +45,15 @@ export interface TubeRun {
 
 /**
  * The run along which a tube tile lies: along x when the tiles either side of it across y are not tube floor (its walls),
- * else along y. A one-tile tube between two doors reads its axis from the doors.
+ * else along y. A one-tile tube reads its axis from the doors at its ends, and once they are gone (breached) from its walls.
  */
 function axisAt(grid: GridLike, x: number, y: number): 'x' | 'y' {
-  const along = (dx: number, dy: number): boolean => isTube(grid, x + dx, y + dy) || (grid.inBounds(x + dx, y + dy) && grid.get('struct', x + dx, y + dy) === Struct.Door);
+  const is = (dx: number, dy: number, s: number): boolean => grid.inBounds(x + dx, y + dy) && grid.get('struct', x + dx, y + dy) === s;
   if (isTube(grid, x + 1, y) || isTube(grid, x - 1, y)) return 'x';
   if (isTube(grid, x, y + 1) || isTube(grid, x, y - 1)) return 'y';
-  return along(1, 0) || along(-1, 0) ? 'x' : 'y';
+  if (is(1, 0, Struct.Door) || is(-1, 0, Struct.Door)) return 'x';
+  if (is(0, 1, Struct.Door) || is(0, -1, Struct.Door)) return 'y';
+  return is(0, 1, Struct.Wall) && is(0, -1, Struct.Wall) ? 'x' : 'y';
 }
 
 /** Every tube run whose first floor tile lies in the rectangle [x0, x0 + w) x [y0, y0 + h), in row order. */
