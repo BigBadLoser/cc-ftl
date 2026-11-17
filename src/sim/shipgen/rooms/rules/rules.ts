@@ -287,7 +287,7 @@ export const RULES: Partial<Record<RoomRole, readonly RuleArrangement[]>> = {
     rule: pa,
   }, { name: 'CG warehouse, crates in aisles', weight: 1, when: (n, r) => n.length > 0 && n.every((m) => m === CR) && r.h >= 3, rule: crates }, {
     name: 'OS ore store, bins down both long walls round an aisle', weight: 1,
-    when: (n, r) => n.length > 0 && n.every((m) => m === OB || m === OBL) && Math.min(r.w, r.h) >= 5 && Math.max(r.w, r.h) >= n.length + 1,
+    when: (n, r) => n.length > 0 && (n.every((m) => m === OB) || n.every((m) => m === OBL)) && Math.min(r.w, r.h) >= 5 && Math.max(r.w, r.h) >= n.length + 1,
     rule: ore,
   }],
   core: [{ name: 'CR core vault, the AI core between its point defence', weight: 1, when: (n, r) => count(n, AI) === 1 && r.w >= 3 * n.length - 1, rule: core }],

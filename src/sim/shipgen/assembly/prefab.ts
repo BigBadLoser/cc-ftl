@@ -119,7 +119,9 @@ export function prefab(c: Ctx, rooms: readonly RoomSpec[], docks: readonly RoomS
   // The works, by kind: greenhouses, the refinery, the pod bay with its suit room, the ore stores, the workshop; the rest joins the medbay's branch.
   const farms = trade ? [] : rest.filter((r) => r.role === 'farm'), refineries = trade ? [] : rest.filter(refinery);
   // The suit room (the pod bay's annex in the programme; the pods park outside, not planned here).
-  const suits = plan === 'mineWing' ? rest.filter((r) => r.role === 'support' && r.mods.includes('module.storage_locker')) : plan === 'farmRows' ? [SUIT_ROOM] : [], shop = trade ? [] : rest.filter((r) => r.role === 'industry' && !refinery(r));
+  // A farm's wing has one whatever the programme planned: the planned locker room when there is one, else its own.
+  const lockers = rest.filter((r) => r.role === 'support' && r.mods.includes('module.storage_locker'));
+  const suits = plan === 'mineWing' ? lockers : plan === 'farmRows' ? (lockers.length > 0 ? lockers : [SUIT_ROOM]) : [], shop = trade ? [] : rest.filter((r) => r.role === 'industry' && !refinery(r));
   // The ore stores all alike: four large bins in a square room.
   const oreRooms = trade || farming ? [] : [...rest.filter((r) => r.role === 'cargo'), oreStore].map((r) => ({ ...r, mods: oreStore.mods, w: ORES[0], h: ORES[1] }));
   const used = new Set<RoomSpec>([...farms, ...refineries, ...suits, ...shop, ...rest.filter((r) => r.role === 'cargo' && !trade && !farming)]);
