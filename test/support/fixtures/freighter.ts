@@ -1,9 +1,14 @@
-import { CombatC, FTL_CHARGE_SEC, START_NODE, ShipC, galaxyIndex, newGame, playerShip, type Sim } from '../../../src/sim';
+import { CombatC, ShipC } from '../../../src/sim/combat/components';
+import { galaxyIndex, START_NODE } from '../../../src/sim/galaxy/state';
+import { newGame } from '../../../src/sim/newGame';
+import type { Sim } from '../../../src/sim/sim';
+import type { EventDef } from '../../../src/sim/story/defs';
+import { playerShip } from '../../../src/sim/trade/player';
+import { FTL_CHARGE_SEC } from '../../../src/sim/tuning';
 import { CrewC, PositionC } from '../../../src/sim/crew/components';
 import { AllegianceC } from '../../../src/sim/fight/components';
 import { shipGrid, shipIdOf } from '../../../src/sim/regions';
 import { giveItems } from '../../../src/sim/story/effects';
-import type { EventDef } from '../../../src/sim';
 import type { SceneShipRecipe } from '../../../src/sim/scene/types';
 import { content } from '../content';
 import { run } from '../run';

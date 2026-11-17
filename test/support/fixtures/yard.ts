@@ -1,16 +1,28 @@
-import { ShipC, homeShip, newGame, type Sim, type SimEvent } from '../sim';
-import { content } from './index';
+import { ShipC } from '../../../src/sim/combat/components';
+import { homeShip } from '../../../src/sim/combat/ships';
+import { newGame } from '../../../src/sim/newGame';
+import type { Sim } from '../../../src/sim/sim';
+import { content } from '../content';
+import { runSim } from '../run';
+import { cachedWorld } from '../world';
 
 export type Tile = { x: number; y: number };
 
-/** A started game with a trading station of `size` east of the player and 5000 credits. */
+/**
+ * A started game with a trading station of `size` east of the player and 5000 credits. With the default content it is built once
+ * per worker and cloned per call; custom content builds fresh.
+ */
 export function yardGame(size: 'outpost' | 'station' | 'hub' = 'station', kind = 'station.trading', c: typeof content = content): { sim: Sim; station: number; me: number } {
-  const sim = newGame(1, c);
-  for (let i = 0; i < 5; i++) sim.step();
-  sim.enqueue({ type: 'debug.spawnStation', kind, size, seed: 4 });
-  sim.step();
+  const build = (): Sim => {
+    const s = newGame(1, c);
+    for (let i = 0; i < 5; i++) s.step();
+    s.enqueue({ type: 'debug.spawnStation', kind, size, seed: 4 });
+    s.step();
+    s.trade.credits = 5000;
+    return s;
+  };
+  const sim = c === content ? cachedWorld(`yard:${kind}:${size}`, build) : build();
   const station = sim.world.query(ShipC).find((i) => sim.world.get(i, ShipC)!.immobile)!;
-  sim.trade.credits = 5000;
   return { sim, station, me: homeShip(sim) };
 }
 
@@ -34,16 +46,9 @@ export function rect(sim: Sim, me: number, x: number, y: number, w: number, h: n
   return out;
 }
 
-/** Run `n` ticks and return the rejection and yard event log. */
+/** Run `n` ticks and return the rejection and yard event log (the shared `runSim` log, filtered: `rejected:<command>:<reason>`, `yard.*`). */
 export function run(sim: Sim, n: number, until?: () => boolean): string[] {
-  const log: string[] = [];
-  for (let i = 0; i < n; i++) {
-    sim.step();
-    for (const e of sim.events.drain() as SimEvent[]) {
-      if (e.type === 'command.rejected') log.push(`rejected:${e.command}:${e.reason}`);
-      else if (e.type.startsWith('yard.')) log.push(e.type);
-    }
-    if (until?.()) break;
-  }
-  return log;
+  return runSim(sim, n, { until: until && (() => until()) }).log
+    .filter((l) => l.startsWith('command.rejected:') || l.startsWith('yard.'))
+    .map((l) => (l.startsWith('command.rejected:') ? `rejected:${l.slice('command.rejected:'.length)}` : l));
 }
