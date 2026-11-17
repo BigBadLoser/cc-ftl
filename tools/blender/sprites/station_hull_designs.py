@@ -28,8 +28,9 @@ DENTS = ((7, 0, 3, 1.7, (1.0, 1.25, 0.8, 0.9, 1.15, 0.7, 0.95, 1.05), 15),
 GOUGE = (28, 25, 5, 1.0, (1.0, 0.75, 1.1, 1.0, 0.85, 1.25, 0.8, 1.0), 6)   # a long shallow dent out to the tile's edge
 DENT_LIP, DENT_RING, DENT_PIT = "stL", "stM", "stD"
 
-MODULE, TOWER, BAY = 3, 4, 5
-DESIGNS = {1: DENTS + (GOUGE,), 2: DENTS, MODULE: (), TOWER: (), BAY: ()}
+MODULE, TOWER, BAY, STRIPE = 3, 4, 5, 6
+DESIGNS = {1: DENTS + (GOUGE,), 2: DENTS, MODULE: (), TOWER: (), BAY: (), STRIPE: ()}   # (STRIPE: the base, its livery
+                                    # down the middle slot too: the ref's T3-4)
 NO_TABS = {MODULE, TOWER, BAY}      # designs without the groove's tabs (the recess takes the middle slot's foot), the
                                     # plate on the line under the bullnose and that line's lit px (the boxes take the
                                     # middle slot)
@@ -68,6 +69,8 @@ RECESS_FACE, RECESS_SLOPE, RECESS_WALL = SH.GROOVE_D, SH.SEAM, "stE"   # its ins
 
 def dress(f, s0, design, zk):
     """A whole straight span's detail in its design."""
+    if design in (1, STRIPE):                               # (the livery down the middle slot: ref T3-7, T3-4)
+        SH.stripe(f, s0, zk)
     if design in (1, 2):
         for dent in DESIGNS[design]:
             _dent(f, s0, *dent)
@@ -96,7 +99,7 @@ def _rect(f, u0, u1, z0, z1, d, col):
     f.k.poly(pts, F, 3, T.OUT(f.ax), fixed=T.SEAM_PASS or col)
 
 
-def _plate(f, a, b, back, top, n=4, ends=(True, True)):
+def _plate(f, a, b, back, top, n=4, ends=(True, True), col=SH.TOP):
     """The top box's top carried PLATE_BACK px back past `back` as a slab off the hull's top (its back corners rounded
     PLATE_R px, at the ends `ends` says (a's, b's): else square, running on into the next tile): its top TOP, its sides
     the boxes' ends' tone."""
@@ -115,7 +118,7 @@ def _plate(f, a, b, back, top, n=4, ends=(True, True)):
     pl.append((a, back + 0.001))
     H = f.sec.H
     f.k.poly([T.P(f.ax, f.plane, u, top, d) for u, d in pl], F, 3, core.Vector((0, 0, 1)),
-             fixed=T.SEAM_PASS or SH.TOP)
+             fixed=T.SEAM_PASS or col)
     cu, cd = sum(p[0] for p in pl) / len(pl), sum(p[1] for p in pl) / len(pl)
     o = T.P(f.ax, 0, 0, 0, 0)
     for (u0, d0_), (u1, d1) in zip(pl, pl[1:]):
@@ -195,7 +198,7 @@ def _top_box(f, a, b, z0, out, slope=None, steep=1, hole=None):
     back = _box_back()
     top, c = H + BOX_UP * px, BOX_CHAMFER
     prof, cols = [(back, z0), (back, top), (out - c * LINE, top), (out, top - c * px), (out, z0)], \
-        [None, SH.TOP, SH.BANDS[0][0], SH.FACE, None]
+        [None, SH.TOP_P, SH.BANDS[0][0], SH.FACE, None]
     if slope:                                               # (its foot sloped back down to the face, `steep` px down a
         zb = z0 - steep * round((out - D) / LINE) * px      # px it's out)
         prof, cols = [(back, zb)] + prof[1:] + [(D, zb)], cols[:4] + [slope, None]
@@ -203,7 +206,7 @@ def _top_box(f, a, b, z0, out, slope=None, steep=1, hole=None):
         _holed(f, a, b, prof, cols, back, out, hole)
     else:
         f.part(a, b, prof, cols, BOX_SIDE, end=False)
-    _plate(f, a, b, back, top)
+    _plate(f, a, b, back, top, col=SH.TOP_P)                # (its top in the livery: the ref's)
     _rect(f, a, a + LINE, z0, top - c * px, out + 0.001, BOX_LINE)              # (a: the end turned from view)
     _rect(f, b - LINE, b, z0, top - c * px, out + 0.001, LOW_LIT)               # (b: its near end, faintly lit)
     e = 0.001
@@ -261,6 +264,7 @@ def _module(f, s0, zk):
     fd = out + 0.001
     _rect(f, a, a + LINE, z0, z1, fd, BOX_LINE)
     zs = z1 - LOW_LINE * px                                 # a seam across it
+    SH.livery_rect(f, a, b, z0, zs - px, out)               # (under it, in the livery: the ref's)
     _rect(f, a, b, zs - px, zs, fd, MID_LINE)
     i = LOW_FRAME                                           # an outline under it, its corner px left out
     u0, u1, za, zb = a + i * LINE, b - i * LINE, z0 + i * px, zs - px - LOW_FRAME_TOP * px

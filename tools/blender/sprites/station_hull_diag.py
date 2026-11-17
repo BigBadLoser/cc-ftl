@@ -51,7 +51,7 @@ def _cuts(s, c, w, sec, eps=0.0):
 
 
 def _part(g, side, sec, tile, extra=()):
-    """A convex run's parts [(ends, rest)] (split at the groove: the face's two tones), the cuts they share and its
+    """A convex run's parts [(ends, rest)] (split at the groove and the livery band's top: the face's tones), the cuts they share and its
     fronts (s, c, w)."""
     fronts = [_front(f) for f in g]
     faces = [(UP, sec.H), (-UP, 0.0)]
@@ -59,7 +59,9 @@ def _part(g, side, sec, tile, extra=()):
         faces += _cuts(s, c, w, sec)
     faces += list(extra)
     lo, hi = (UP, SH.GROOVE), (-UP, -SH.GROOVE)
-    return [(tile, faces + side + [lo]), (tile, faces + side + [hi])], side + [lo, hi], fronts
+    blo, bhi = (UP, SH.BAND_Z), (-UP, -SH.BAND_Z)           # (and at the livery band's top)
+    return [(tile, faces + side + [lo]), (tile, faces + side + [hi, blo]), (tile, faces + side + [bhi])], \
+        side + [lo, hi, blo, bhi], fronts
 
 
 def _ship(stretch, sec, eps=0.002):
@@ -80,7 +82,7 @@ def _tone(pts, m, fronts, sec):
     if m.z > 0.85 and min(p.z for p in pts) >= sec.H - 1e-6:
         return SH.TOP
     if abs(m.z) < 1e-3 and any(abs(m.dot(s.normalized()) - 1) < 1e-6 for s, _, _ in fronts):
-        return SH.FACE if zc > SH.GROOVE else SH.FACE_LO
+        return SH.FACE if zc > SH.BAND_Z else SH.FACE_P if zc > SH.GROOVE else SH.FACE_LO
     if m.z > 1e-3 and zc > sec.zb - 1e-6:
         return SH._band(1 - sec._angle(zc) / (math.pi / 2))
     return SH.END
@@ -109,12 +111,12 @@ def _emit(rel, parts, fronts, skip, sec):
                 rel.poly([mid, p, q], "steel", 3, m, fixed=across(p, q, i))
 
 
-def _paint(rel, planes, i, col, more=()):
-    """The face on planes[i] of the solid inside planes and `more`, lifted PAINT off it, in col (lifted after the cut:
+def _paint(rel, planes, i, col, more=(), lift=PAINT):
+    """The face on planes[i] of the solid inside planes and `more`, lifted `lift` off it, in col (lifted after the cut:
     a raised plane would be cut away by a near flat neighbour, the bullnose's facets)."""
     for pts, m, j in _solid(list(planes) + list(more)):
         if j == i:
-            rel.poly([p + m * PAINT for p in pts], "steel", 3, m, fixed=T.SEAM_PASS or col)
+            rel.poly([p + m * lift for p in pts], "steel", 3, m, fixed=T.SEAM_PASS or col)
 
 
 def _along(s):
@@ -206,6 +208,9 @@ def _top_lines(rel, g, fronts, mine, cut, top, sec):
     rail = HO.LIP - SH.RAIL - LINE                          # (its line along the back)
     for i in mine:
         f, (s, c, w) = g[i], fronts[i]
+        d = _top_row(sec, c, ts)[0] if _level(s) else ts     # the livery's band on the top, from the seam back (as
+        band = [_lift(HO.at_least(h, d)) for h in g]          # the straight runs': station_hull.TOP_P), under the lines
+        _paint(rel, cut, top, SH.TOP_P, band, PAINT / 2)
         for d0 in (ts, rail):                               # (level: a whole px row)
             d0, d1 = _top_row(sec, c, d0) if _level(s) else (d0, d0 + LINE)
             band = [_lift(HO.at_least(f, d0)), _lift(tuple(-v for v in HO.at_least(f, d1)))]

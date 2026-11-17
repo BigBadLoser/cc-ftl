@@ -26,10 +26,12 @@ def blocks(f, s0, s1):
     H, G = s.H, SH.GROOVE
     u0, u1 = span(f, s0)
     zf, zl = s.z_at(G, -BAY_FOOT), H - BAY_LIP * px
-    f.block(s0, s1, 0.0, G)
+    f.block(s0, u0, 0.0, G)
+    f.block(u0, u1, 0.0, G, "bare")                         # (the bay's slot: no livery, the ref's)
+    f.block(u1, s1, 0.0, G)
     f.block(s0, u0, G, H)
     f.block(u1, s1, G, H)
-    f.block(u0, u1, G, zf)
+    f.block(u0, u1, G, zf, "bare")
     ts = SH.E - round((SH.R_D + SH.TOP_SEAM) * 32) / 32     # (the top's first seam: its back)
     dc = s.lean_d(H)                                        # (where the bullnose began on the top)
     f.part(u0, u1, [(0.0, zl), (0.0, H), (dc, H), (dc, zl)], [None, SH.TOP, BAY_LIP_FACE, None], None, end=False)

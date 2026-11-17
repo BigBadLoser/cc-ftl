@@ -127,7 +127,7 @@ export function exteriorIds(h: HullKeys, x: number, y: number, has: (id: string)
 }
 
 /** MOCK (#524): the station's straight-run designs (a1..a5: station_hull_designs.DESIGNS), the ship's being a1..a3. */
-const STATION_DESIGNS = 5;
+const STATION_DESIGNS = 6;
 
 function shipExteriorIds(h: HullKeys, x: number, y: number, has: (id: string) => boolean, base = false, win: WindowTile | null = null, designs = 3): string[] | null {
   const k = h.at(x, y);

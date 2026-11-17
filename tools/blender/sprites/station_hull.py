@@ -40,8 +40,8 @@ BANDS = (("stW", 0.36), ("stB", 0.26), ("stH", 0.18), ("stL", 0.12), ("stS", 0.0
 # the livery (the reference's topDeco): the face's band up from the step to BAND_Z, and the top from its back to the
 # seam behind the bullnose; their tones the plain ones' (FACE, FACE_LO, TOP), named apart so the mask (core.TINT,
 # the `.tint` layer drawn in the station's deco colour) follows the part, not the tone; the lines over them stay out
-FACE_P, TOP_P = "stPS", "stPT"
-TINT = {FACE_P, FACE_LO, TOP_P}
+FACE_P, TOP_P, SEAM_P = "stPS", "stPT", "stPM"         # (SEAM_P: a design's dark panel in the livery)
+TINT = {FACE_P, FACE_LO, TOP_P, SEAM_P}
 BAND_Z = 0.80                       # the face's band's top over the deck (tiles; the reference's: about 0.44 of the
                                     # upright face)
 PLUMB_BAND = 3                      # the seams stand plumb on screen from this band's top down (stL)
@@ -104,8 +104,8 @@ class RoundSection(Section):
         return lambda z: c if z <= self.zb + 1e-6 else c * (self.lean_d(z) - D + R_D) / R_D
 
     def cols(self, prof, role):
-        """Edge tones by facing and height: the top TOP, the bullnose its bands, the face FACE (FACE_LO under the
-        groove); faces turned back or down unseen."""
+        """Edge tones by facing and height: the top TOP, the bullnose its bands, the face FACE (FACE_P under BAND_Z,
+        FACE_LO under the groove: the livery band, unless role is "bare"); faces turned back or down unseen."""
         n = len(prof)
         dc, zc = sum(p[0] for p in prof) / n, sum(p[1] for p in prof) / n
         out = []
@@ -125,7 +125,9 @@ class RoundSection(Section):
                 a = (self._angle(z0) + self._angle(z1)) / 2      # (by angle, not height: the top facets are flat)
                 out.append(_band(1 - a / (math.pi / 2)))
             else:
-                out.append(FACE if zm > BAND_Z else FACE_P if zm > GROOVE else FACE_LO)
+                bare = role == "bare"
+                out.append(FACE if zm > BAND_Z else (FACE if bare else FACE_P) if zm > GROOVE else
+                           ("stL" if bare else FACE_LO))
         return out
 
 
@@ -136,6 +138,23 @@ class RoundFace(Face):
             super().block(u0, u1, z0, BAND_Z, role, off)
             z0 = BAND_Z
         super().block(u0, u1, z0, z1, role, off)
+
+    def livery(self, u0, u1, z0, z1, zk):
+        """The livery on a band [u0, u1] up the front from z0 to z1 (plumb on screen under zk, as plumb's), in the mask
+        pass only (the art keeps its own shading: the bullnose's bands), a hair under the lines painted over it."""
+        if core.TINT is None:
+            return
+        if z1 > zk:
+            pf = self.on(zk, z1, -0.01, 0.0005)
+            self.part(u0, u1, pf, [FACE_P] * len(pf), FACE_P, end=False)
+        dk = self.sec.lean_d(zk)
+        pts = self.sec.front(z0, min(z1, zk))
+        o, up = T.OUT(self.ax), Vector((0, 0, 1))
+        for (da, za), (db, zb) in zip(pts, pts[1:]):
+            sa, sb = da - dk, db - dk
+            q = [T.P(self.ax, self.plane, u + s, z, d + 0.0005) for u, s, z, d in
+                 ((u0, sa, za, da), (u1, sa, za, da), (u1, sb, zb, db), (u0, sb, zb, db))]
+            self.k.poly(q, F, 3, o * (zb - za) + up * (da - db), fixed=FACE_P)
 
     def top_band(self, u0, u1, d0, d1, col):
         """Face.top_line's band, a hair under the lines painted on the top (they draw over it)."""
@@ -166,6 +185,22 @@ class RoundFace(Face):
     def at_face(self, u, zk):
         """Where a plumb band at u (plumb under zk) stands on the upright face."""
         return u + D - self.sec.lean_d(zk)
+
+
+def stripe(f, s0, zk):
+    """The livery down the middle slot (the ref's T3-4 and T3-7): from the top's band over the bullnose and down the
+    face to the groove, between the seams."""
+    s = f.sec
+    u0, u1 = s0 + SEAMS[0] + LINE / 2, s0 + SEAMS[1] - LINE / 2
+    f.livery(u0, u1, s.z_at(GROOVE, -1), s.H, zk)
+    f.top_band(u0, u1, E - round((R_D + TOP_SEAM) * 32) / 32, s.lean_d(s.H), TOP_P)
+
+
+def livery_rect(f, u0, u1, z0, z1, d):
+    """A patch of livery on a plumb front d out (a hair under the lines painted on it), in the mask pass only."""
+    if core.TINT is not None:
+        pts = [T.P(f.ax, f.plane, u, z, d + 0.0005) for u, z in ((u0, z0), (u1, z0), (u1, z1), (u0, z1))]
+        f.k.poly(pts, F, 3, T.OUT(f.ax), fixed=FACE_P)
 
 
 def _part(f, u0, u1, z0, z1, out, face, top, side, end=False):
