@@ -1,8 +1,9 @@
 """Landing pad (family `landing_pad`, issue #509): the 9x9 outdoor pad a surface base's shuttle and its visitors land on,
 on levelled asteroid ground. A pale sintered slab raised on its body with a bevelled lip, a yellow touchdown ring and
-crosshair, orange lamps on the corners and long orange light strips in its sides. Symmetric: one sprite, no rotations.
+crosshair, orange lamps on the corners and long orange light strips in its sides; in the middle of one side a service
+bay (louvres, a lamp strip, a cyan lamp on top) where the ground power cable plugs in.
 
-  module.landing_pad
+  module.landing_pad.r0-r3   the service bay on the grid +x side at r0, turned like the ground mounts' cable port
 
 Anchored at the front tile's centre, footprint [9, 9]. Game palette plus its unnamed-set extras (no new colours)."""
 import math
@@ -45,16 +46,6 @@ def crosshair(f, z, r, w, mat):
         paint(f, [(c * u - s * v, s * u + c * v) for u, v in pts], z, mat)
 
 
-
-
-
-
-
-
-
-
-
-
 def corner_lamps(f, z, mat="orange", inset=0.55):
     for a in range(4):
         c, s = math.cos(a * math.pi / 2 + math.pi / 4), math.sin(a * math.pi / 2 + math.pi / 4)
@@ -62,20 +53,15 @@ def corner_lamps(f, z, mat="orange", inset=0.55):
         lamp(f, c * d, s * d, z, mat)
 
 
-
-
-
-
-
-
-
-
-def side_lamps(f, h, z, mat, n=3, ln=0.22, strip=False):
-    """Lamps set into the slab's side faces (half side h) at height z: n per side, or long strips."""
+def side_lamps(f, h, z, mat, n=3, ln=0.22, strip=False, port=False):
+    """Lamps set into the slab's side faces (half side h) at height z: n per side, or long strips (none in the middle of
+    the +u side when the cable port is there)."""
     for side in range(4):
         ca, sa = math.cos(side * math.pi / 2), math.sin(side * math.pi / 2)
         ts = [-2.6, 0.0, 2.6] if n == 3 else [-H + 1.2 + k * (2 * H - 2.4) / (n - 1) for k in range(n)]
         for t in ts:
+            if port and side == 0 and t == 0.0:
+                continue
             u, v = h + 0.01, t
             L = 1.4 if strip else ln
             f.box(ca * u - sa * v, sa * u + ca * v, z, 0.06 if side % 2 == 0 else L, L if side % 2 == 0 else 0.06, 0.05, mat, top=mat)
@@ -102,23 +88,50 @@ def raised(f, z, foot=0.0, bevel=False):
     return hb
 
 
-
-
-
-
-def landing_pad(f):
-    """The picked look: the sintered slab raised 0.24 on its body, a bevelled lip, long orange light strips in the sides."""
+def landing_pad(f, port=True):
+    """The picked look: the sintered slab raised 0.24 on its body, a bevelled lip, long orange light strips in the sides;
+    the cable's junction box in the middle of the +u side."""
     hb = raised(f, 0.24, bevel=True)
-    side_lamps(f, hb, 0.09, "orange", strip=True)
+    side_lamps(f, hb, 0.09, "orange", strip=True, port=port)
+    if port:
+        port_bay(f, hb)
 
 
 
 
-def pad():
-    m = core.Mesh("landing_pad")
-    landing_pad(Frame(m, 1, square=True))
+
+
+
+
+
+
+
+
+
+
+def port_bay(f, hb):
+    """The cable's service bay built into the middle of the +u side: a wider block a little proud of the body, louvres, its own lamp strip, the
+    socket in its middle."""
+    w = 0.75
+    TB.prism(f, rect(hb - 0.3, -w, N / 2, w), 0, 0.2, "plate", top="plate")
+    TB.prism(f, rect(hb - 0.3, -w, N / 2 - 0.02, w), 0.2, 0.28, "steel", top="steelL")
+    for k in range(4):                                                             # louvres either side of the socket
+        for sgn in (-1, 1):
+            v = sgn * (0.3 + k * 0.1)
+            f.box(N / 2 - 0.005, v, 0.05, 0.012, 0.05, 0.12, "steelD", top="steelD")
+    f.box(N / 2 - 0.005, 0.0, 0.03, 0.02, 0.3, 0.14, "dark", top="dark")           # socket
+    f.box(N / 2 - 0.005, 0.0, 0.18, 0.015, 0.4, 0.03, "orange", top="orange")      # lamp strip over it
+    f.box(hb - 0.1, 0.0, 0.28, 0.12, 0.12, 0.03, "cyan", top="cyan")
+
+
+
+
+def pad(rot=0):
+    """Rotation r: the service bay (the cable port) on grid +x at r0, turning with r like the ground mounts' port."""
+    m = core.Mesh(f"landing_pad_r{rot}")
+    landing_pad(Frame(m, (1 + rot) % 4, square=True))
     return _shift([m.build()] if cmbkit.REC is None else [], N)
 
 
 def jobs():
-    return [("module.landing_pad", (N, N), "prop", pad)]
+    return [(f"module.landing_pad.r{r}", (N, N), "prop", lambda r=r: pad(r)) for r in range(4)]
