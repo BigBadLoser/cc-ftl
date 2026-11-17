@@ -41,6 +41,7 @@ SILL_TOP = "stL"                    # the sill's flat top under the glass
 FRAME = 9 / 32                      # an end piece's outer frame (the whole section), along the face
 JAMB = 5 / 32                       # the jamb inside it
 BACK_WALL = "stE"                   # the window's back wall
+STEP_OUT = 1                        # a middle tile's step: one block over both (station_hull), this many px further out
 POST_SEAM = SH.SEAM                 # the seams round an end piece's post on the wall
 FOOT_EDGE = SH.SEAM                 # the near end's corner's foot: the dark line down its end
 WRAP = (5, 5, 5, 1)                 # the plates bent over the sill's edge, centred between each corner's foot and the

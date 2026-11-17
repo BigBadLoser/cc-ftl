@@ -161,13 +161,16 @@ def _step_prof(s):
 STEP_COLS = [None, FOOT_TOP, FOOT, None]
 
 
-def _block_prof(s, up=0):
+def _block_prof(s, up=0, fwd=0):
     """A foot block's section: the step's, a px proud of its top and front; its front's top px a lit edge; the back of its
     top (a px out from the face: its px on screen in line with the face's seam a px over the step) carries on the
     seam where the step meets the face, through the block on screen."""
-    zt, out = s.z_at(FOOT_H, -1 - up), FOOT_OUT + LINE         # (`up` px higher still)
+    zt, out = s.z_at(FOOT_H, -1 - up), FOOT_OUT + (1 + fwd) * LINE      # (`up` px higher still, its front `fwd` px
+                                                                        # further out)
     zf = s.z_at(FOOT_H, STEP_FRONT + 1)                         # (its front a px under the step's, flat under)
-    return [(D - 0.01, zf), (D - 0.01, zt), (D + LINE, zt), (D + out, zt), (D + out, s.z_at(zt, 1)), (D + out, zf)]
+    zo = s.z_at(zt, fwd % 2 / 2)                                # (an odd px further out lands its front between screen
+    zf = s.z_at(zf, fwd % 2 / 2)                                # rows: down half a px onto them)
+    return [(D - 0.01, zf), (D - 0.01, zt), (D + LINE, zt), (D + out, zo), (D + out, s.z_at(zo, 1)), (D + out, zf)]
 
 
 BLOCK_COLS = [None, GROOVE_D, BLOCK, BLOCK_LIT, BLOCK, None]
@@ -239,6 +242,9 @@ def build(k, ax, plane, a, b, ends, H):
             for i, w in enumerate(FOOT_BLOCKS[1:-1]):
                 f.part(u, u + w * LINE, _block_prof(s, (i % 2) * up), BLOCK_COLS, GROOVE_D)
                 u += w * LINE
+        elif win and SW.PART[0] == "w2":                         # (a window's middle: one block over both, further
+            f.part(s0 + FOOT_BLOCKS[0] * LINE, s1 - FOOT_BLOCKS[-1] * LINE,             # out)
+                   _block_prof(s, 0, SW.STEP_OUT), BLOCK_COLS, GROOVE_D)
         elif whole:
             u = s0
             for i, w in enumerate(FOOT_BLOCKS):
