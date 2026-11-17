@@ -320,9 +320,9 @@ def gc(f, lift, t):
             g1_leg(f, hip, (dirn, 0.0, 0.0), down, L, (uh + dirn * 0.55, sv * 0.95, hip[2] + 0.06), s, (0.0, sv, 0.0))
 
 
-# ---- round 5: plane-style gear: a hatch on the lower flank opens and the G1 leg swings down out of its bay ----
-BAYS = ((-1.35, 1, 0.86), (1.0, -1, 0.8))          # (hip u, fold direction along u, flank half width there)
-ZB, ZT = 0.48, 0.76                                # the hatch's band on the keel side (above the feet plane, before lift)
+# ---- round 6: bays measured on the hull (tools/blender/review/shuttle_hull_probe.py): aft legs fold into the engine shoulders' flat
+# undersides (z 0.84-0.9 over v 1.0-1.2, room above it inside), fore legs into the belly under the nose near its chines
+# (z 0.36-0.4, half width 0.7 inside). Doors lie on those surfaces; legs and braces cross the skin only inside a hatch.
 HD = 0.35                                          # the first share of t opens the hatch
 
 
@@ -334,56 +334,51 @@ def _leg_t(t):
     return _ease(max(0.0, (t - HD * 0.8) / (1 - HD * 0.8)))
 
 
-def flank_quad(f, u0, u1, pts_vz, mat):
-    """A panel spanning u0..u1 whose cross-section is the (v, z) pair list (two points)."""
-    (va, za), (vb, zb) = pts_vz
-    quad(f, [(u0, va, za), (u1, va, za), (u1, vb, zb), (u0, vb, zb)], mat)
+# (hip u, hip v, hip z, fold direction along u, hatch u0, u1, v0, v1, the skin's z there, foot v)
+BAYS2 = ((-1.6, 1.15, 1.0, 1, -1.72, -0.32, 0.98, 1.32, 0.845, 1.45),
+         (1.55, 0.46, 0.55, -1, 0.58, 1.66, 0.3, 0.62, 0.37, 0.95))
 
 
-def bay_and_leg(f, lift, t, door):
-    zb, zt = ZB + lift, ZT + lift
+def leaf(f, u0, u1, ve, vfree, z, phi, mat):
+    """A door leaf in the skin plane z: hinge along u at v = ve, free edge at v = vfree when shut, swung down by phi."""
+    w = vfree - ve
+    quad(f, [(u0, ve, z), (u1, ve, z), (u1, ve + w * math.cos(phi), z - abs(w) * math.sin(phi)),
+             (u0, ve + w * math.cos(phi), z - abs(w) * math.sin(phi))], mat)
+
+
+def doors_two(f, b, z, k, sv):
+    u0, u1, v0, v1 = b[4], b[5], sv * b[6], sv * b[7]
+    vm = (v0 + v1) / 2
+    phi = math.radians(95) * k
+    leaf(f, u0, u1, v0, vm, z, phi, "steel")
+    leaf(f, u0, u1, v1, vm, z, phi, "steelL")
+
+
+def doors_out(f, b, z, k, sv):
+    leaf(f, b[4], b[5], sv * b[7], sv * b[6], z, math.radians(100) * k, "steelL")
+
+
+def doors_in(f, b, z, k, sv):
+    leaf(f, b[4], b[5], sv * b[6], sv * b[7], z, math.radians(100) * k, "steel")
+
+
+def nacelle_gear(f, lift, t, doors):
     s = _leg_t(t)
-    for uh, dirn, vw in BAYS:
-        L = 0.85
-        ua, ub = sorted((uh - dirn * 0.08, uh + dirn * (L + 0.06)))
+    for b in BAYS2:
+        uh, vh, zh, dirn, u0, u1, v0, v1, zs, fv = b
+        z = zs + lift
         for sv in (-1, 1):
-            vf = sv * vw
-            flank_quad(f, ua, ub, [(vf - sv * 0.004, zb), (vf - sv * 0.004, zt)], "dark")          # the bay's mouth
-            door(f, ua, ub, vf, sv, zb, zt, _hatch_t(t))
-            hip = (uh, sv * (vw - 0.18), (zb + zt) / 2)
-            down, Ld = _down(sv, hip[2], hip[1], sv * (vw + 0.42))
-            g1_leg(f, hip, (dirn, 0.0, 0.0), down, Ld, (uh + dirn * 0.5, sv * (vw - 0.3), zt - 0.02), s, (0.0, sv, 0.0))
+            vm = sv * (v0 + v1) / 2
+            f.box((u0 + u1) / 2, vm, z + 0.002, u1 - u0, v1 - v0, 0.004, "dark", top="dark")    # the bay's mouth
+            doors(f, b, z - 0.003, _hatch_t(t), sv)
+            hip = (uh, sv * vh, zh + lift)
+            down, L = _down(sv, hip[2], hip[1], sv * fv)
+            g1_leg(f, hip, (dirn, 0.0, 0.0), down, L, (uh + dirn * 0.35, sv * vh, hip[2]), s, (0.0, 0.0, -1.0))
 
 
-def _rot(vf, sv, hz, h, phi, up):
-    """A point h along a door from its hinge (at v = vf, z = hz), the door swung out by phi; up: hinged at the top."""
-    return (vf + sv * h * math.sin(phi), hz - h * math.cos(phi) if up else hz + h * math.cos(phi))
-
-
-def drop_door(f, ua, ub, vf, sv, zb, zt, k):
-    """P1: hinged at its bottom edge, the door drops down and out."""
-    phi = math.radians(150) * k
-    flank_quad(f, ua, ub, [(vf + sv * 0.006, zb), _rot(vf + sv * 0.006, sv, zb, zt - zb, phi, False)], "steelL")
-
-
-def gull_door(f, ua, ub, vf, sv, zb, zt, k):
-    """P2: hinged at its top edge, the door swings up and out."""
-    phi = math.radians(110) * k
-    flank_quad(f, ua, ub, [(vf + sv * 0.006, zt), _rot(vf + sv * 0.006, sv, zt, zt - zb, phi, True)], "steelL")
-
-
-def clam_door(f, ua, ub, vf, sv, zb, zt, k):
-    """P3: a clamshell: the upper leaf swings up and out, the lower leaf (round the chine onto the belly) down and in."""
-    zm = (zb + zt) / 2
-    up = math.radians(100) * k
-    flank_quad(f, ua, ub, [(vf + sv * 0.006, zt), _rot(vf + sv * 0.006, sv, zt, zt - zm, up, True)], "steelL")
-    dn = math.radians(120) * k
-    flank_quad(f, ua, ub, [(vf + sv * 0.006, zb), _rot(vf + sv * 0.006, sv, zb, zm - zb, dn, False)], "steel")
-
-
-GEAR = {"p1": (lambda f, lift, t: bay_and_leg(f, lift, t, drop_door), 0.25),
-        "p2": (lambda f, lift, t: bay_and_leg(f, lift, t, gull_door), 0.25),
-        "p3": (lambda f, lift, t: bay_and_leg(f, lift, t, clam_door), 0.25)}
+GEAR = {"h1": (lambda f, lift, t: nacelle_gear(f, lift, t, doors_two), 0.25),
+        "h2": (lambda f, lift, t: nacelle_gear(f, lift, t, doors_out), 0.25),
+        "h3": (lambda f, lift, t: nacelle_gear(f, lift, t, doors_in), 0.25)}
 FRAMES = (0.0, 0.5, 1.0)
 
 def landed(key, t=1.0, heading=0.0):
