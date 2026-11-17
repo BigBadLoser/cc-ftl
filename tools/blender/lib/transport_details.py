@@ -28,9 +28,9 @@ def cabin_details(f,hatch_height,hatch_frame=None):
     pressure_hatch(hatch_frame or f)
 
 
-def rear_details(f,ramp_open=0):
+def rear_details(f,ramp_open=0,ramp_floor=0.0):
     """Inclined loading ramp, engine cooling grilles and reinforced nozzle collars."""
-    loading_ramp(f,ramp_open)
+    loading_ramp(f,ramp_open,ramp_floor)
     for side in (-1,1):
         v=side*1.36
         f.box(-2.054,v,1.69,.022,.39,.25,"steelD")

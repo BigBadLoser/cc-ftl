@@ -9,6 +9,8 @@ footpad. Legs and braces cross the skin only inside a bay opening.
 
   vehicle.shuttle.pad.d{0,2,4,6}.f{0..4}   on the pad, gear f0 stowed .. f4 down and locked (the body lifted by LIFT the
                                            whole way: it settles in the game, not in the sprite); the folded-wing pose
+  vehicle.shuttle.pad.d{0,2,4,6}.r{1..4}   gear down, the rear loading ramp opening: r4 open, its lip on the pad's deck
+                                           (r0 is f4: ramp shut)
 
 Origin = the craft's centre with the pad's ground plane at z 0 (the pad deck at PAD_Z), like craft_item."""
 import math
@@ -21,6 +23,7 @@ PAD_Z = 0.24                  # the landing pad's deck
 KEEL = 0.5                    # keel underside above the craft's feet plane (its parked legs' height)
 LIFT = 0.25                   # how much higher the gear stands the body than the parked legs
 FRAMES = 5
+RAMP_FRAMES = 4               # r1..r4 (r0 = f4)
 
 # (hip u, hip v, hip z, fold direction along u, bay u0, u1, v0, v1, the skin's z there, foot v)
 BAYS = ((-1.6, 1.15, 1.0, 1, -1.72, -0.32, 0.98, 1.32, 0.845, 1.45),
@@ -76,11 +79,12 @@ def gear(f, s):
             leg(f, hip, (dirn, 0.0, 0.0), _norm(foot), L, (uh + dirn * 0.35, sv * vh, hip[2]), s)
 
 
-def on_pad(heading, n):
-    """The shuttle on its pad at gear frame n (0 stowed .. FRAMES - 1 down)."""
+def on_pad(heading, n, ramp=0):
+    """The shuttle on its pad at gear frame n (0 stowed .. FRAMES - 1 down), its rear ramp at frame `ramp` (0 shut ..
+    RAMP_FRAMES open, reaching down LIFT further to the deck)."""
     from lib.transport_forms import FlightFrame
-    objs = transport_shuttle(heading, "docked", dz=PAD_Z + LIFT)
-    m = core.Mesh(f"shuttle_gear_f{n}")
+    objs = transport_shuttle(heading, "docked", dz=PAD_Z + LIFT, ramp_open=_ease(ramp / RAMP_FRAMES), ramp_floor=-LIFT)
+    m = core.Mesh(f"shuttle_gear_f{n}_r{ramp}")
     m.dz = PAD_Z
     gear(FlightFrame(m, heading), _ease(n / (FRAMES - 1)))
     return objs + [m.build()]
