@@ -21,13 +21,13 @@ from . import wall3d_ext_window_end as EN
 from .wall3d_ext_geom import D
 
 PART = [None]                       # the piece being built: "w1" | "w2" | "w3" (None: not a window)
-HEAD = 7                            # the header's upright front: px tall under its chamfer (the window's top, the
+HEAD = 9                            # the header's upright front: px tall under its chamfer (the window's top, the
                                     # posts' top)
 SILL = 10                           # the sill's front's top: this many px over the groove
 JAMB_IN = 1 / 32                    # the posts (the jambs) this far behind the face
 PANE_IN = 5 / 32                    # the pane's front this far behind the posts' (the ship's)
 SILL_TOP = "stL"                    # the sill's flat top under the glass
-FRAME = 2 / 32                      # an end piece's outer frame (the whole section), along the face
+FRAME = 9 / 32                      # an end piece's outer frame (the whole section), along the face
 JAMB = 5 / 32                       # the jamb inside it
 BACK_WALL = "stE"                   # the window's back wall
 TONES = {"hsXK": "stK", "hsK": "stK", "hsXD": "stE", "hsD": "stDE", "hsXM": "stD", "hsXS": "stD", "hsM": "stM",
