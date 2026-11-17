@@ -24,6 +24,7 @@ HEAD = 9                            # the header's upright front: px tall under 
                                     # posts' top)
 SILL = 10                           # the sill's front's top: this many px over the groove
 JAMB_IN = 1 / 32                    # the posts (the jambs) this far behind the face
+CORNER_LIT = SD.TOP_LIT             # the header's top corner: a lit px along its sloping edge
 CORNER_OUT = 1 / 32                 # the opening's corner pieces stand this far out past the posts' front
 PANE_IN = 5 / 32                    # the pane's front this far behind the posts' (the ship's)
 SILL_TOP = "stL"                    # the sill's flat top under the glass
@@ -108,9 +109,14 @@ def _span(f, s, s0, s1, zt):
                                        (w0, zj + fh + sh)], db, dv + CORNER_OUT, WIN.HEAD_FRONT,
                   [False, WIN.SIDE, WIN.SILL_FLAT, WIN.SLOPE_COL, False], back=False, mu=mu)
         zr = zh - sh * (w0 + WIN.SLOPE - h0) / WIN.SLOPE    # (the slope carried on down to the rib)
-        WIN._slab(f.k, f.ax, f.plane, [(h0, zh), (h0, zr), (w0 + WIN.SLOPE, zh)], db, dv + CORNER_OUT, SH.FACE,
-                  [False, WIN.SLOPE_TOP, False], back=False, mu=mu)     # the top corner: its slope carried on
-                                                        # across the post down to the rib (the header's tone)
+        ut, out = w0 + WIN.SLOPE, D + SD.BOX_OUT * SD.LINE
+        WIN._slab(f.k, f.ax, f.plane, [(h0, zh), (h0, zr), (ut, zh)], db, out, SH.FACE,
+                  [False, SD.BOX_SIDE, False], back=False, mu=mu)       # the top corner: its slope carried on
+                                                        # across the post down to the rib, flush with the header
+                                                        # (its front's tone; its sloped side the box's ends')
+        u1 = ut - (ut - h0) / ((zh - zr) * Z)           # (a px row under the header: where the lit edge ends)
+        WIN._slab(f.k, f.ax, f.plane, [(h0, zr), (ut, zh), (u1, zh), (h0, zr + 1 / Z)], out, out + 0.001,
+                  CORNER_LIT, [False] * 4, back=False, mu=mu)            # its lit edge along the slope
         zl = zj + fh + sh                                               # the jamb's seam
         pf = [(dp + WIN.PANE / 2, zl), (dv + 0.001, zl), (dv + 0.001, zl + 1 / Z), (dp + WIN.PANE / 2, zl + 1 / Z)]
         fm.part(h0, w0 + 0.001, pf, [WIN.JAMB_SEAM] * 4, (None, WIN.JAMB_SEAM), end=False)
