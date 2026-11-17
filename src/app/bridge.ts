@@ -205,7 +205,7 @@ export function createBridge(sim: Sim, getProbe: () => Probe = () => NOOP_PROBE)
   let yardStation = 0;
   let lastYard = '';
   const prizes = createStore<UiPrize[]>([]);
-  const mining = createStore<UiMining>({ asteroids: [], pods: [] });
+  const mining = createStore<UiMining>({ asteroids: [], pods: [], containers: [] });
   let lastMining = '';
   const story = createStore<UiStory>({ active: null, last: null });
   let lastStory = '';

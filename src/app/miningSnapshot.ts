@@ -1,5 +1,5 @@
-import { AsteroidC, nodeOf, CrewC, MiningPodC, ShipC, VehicleC, cargoCount, homeShip, type OreDef, type Sim } from '../sim';
-import type { UiAsteroid, UiMining, UiPod } from '../ui/api';
+import { AsteroidC, ContainerC, ModuleC, nodeOf, openRefusal, shipIdOf, CrewC, MiningPodC, ShipC, VehicleC, cargoCount, homeShip, type OreDef, type Sim } from '../sim';
+import type { UiAsteroid, UiContainer, UiMining, UiPod } from '../ui/api';
 
 /** Ore units left per kind over an asteroid's rock (one sweep of its rock bodies' boxes). */
 function oreTotals(sim: Sim, id: number): UiAsteroid['ore'] {
@@ -52,5 +52,20 @@ export function buildMining(sim: Sim): UiMining {
       ore: oreTotals(sim, id), pods: pods.filter((p) => p.asteroid === id).length,
     });
   }
-  return { asteroids, pods };
+  return { asteroids, pods, containers: buildContainers(sim) };
+}
+
+/** The node's lost containers: loose ones (open order pending) and ones whose cutting job runs on a seat ship (`ShipC.unseen`). Keyed by the art seed, which survives the marking. */
+function buildContainers(sim: Sim): UiContainer[] {
+  const out: UiContainer[] = [];
+  for (const id of [...sim.world.query(ContainerC)].sort((a, b) => a - b)) {
+    const c = sim.world.get(id, ContainerC);
+    if (!c || (c.state === 'clamped' && !sim.world.get(shipIdOf(sim, sim.world.get(id, ModuleC)), ShipC)?.unseen)) continue;
+    out.push({
+      id: c.seed ?? id, entity: id, name: 'Container',
+      faction: (c.faction && sim.content.factions?.[c.faction]?.name) || null,
+      state: c.state === 'drifting' ? 'drifting' : 'cutting', refusal: openRefusal(sim, id),
+    });
+  }
+  return out;
 }

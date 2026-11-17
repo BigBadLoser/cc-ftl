@@ -106,7 +106,7 @@ function planned(rng: Rng, def: StationDef, size: StationSize, defs: Record<stri
 
   for (const r of def.rooms) {
     for (let i = 0; i < r.count[size]; i++) {
-      const spec: RoomSpec = { role: r.role, ...(r.dept ? { dept: r.dept } : {}), mods: [...r.mods], w: r.w, h: r.h, ...(r.role === 'armoury' || r.items ? { stock: true } : {}), ...(r.items ? { items: r.items } : {}) };
+      const spec: RoomSpec = { role: r.role, ...(r.dept ? { dept: r.dept } : {}), mods: [...r.mods], w: r.w, h: r.h, ...(r.role === 'armoury' || r.items ? { stock: true } : {}), ...(r.items ? { items: r.items } : {}), ...(r.drones ? { drones: r.drones } : {}) };
       // A market stall keeps its planned size (a stall is small), and so does a greenhouse (its beds fill it; the wings repeat).
       support.push(r.dept === 'market' || r.role === 'farm' ? spec : grown(rng, spec, space));
     }

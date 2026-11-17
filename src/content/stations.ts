@@ -123,8 +123,9 @@ export const stations = {
     weapons: { light: LIGHT, heavy: HEAVY }, shields: [{ value: 'module.shieldGen', weight: 1 }],
     stock: [{ item: 'item.metal', min: 2, max: 6 }, { item: 'item.missile', min: 2, max: 6 }, { item: 'item.electronics', min: 0, max: 3 }],
     tiers: tiers({ bays: per(0, 1, 2), guns: per(4, 12, 24), heavyPct: 50, shields: per(2, 4, 6), pd: per(2, 4, 6), crates: per(6, 14, 28), docks: per(2, 3, 3) }),
-    // Armouries, and drone bays (two drones a bay) in rooms of two: the depot's own patrol. Defence, not works.
-    rooms: [armoury(per(1, 2, 4), 6), { ...room('hangar', n(2, 'module.droneBay'), 6, 4, per(1, 2, 3)), dept: 'defence' }],
+    // Armouries, and drone bays (two defence drones a bay) in pairs: the depot's own patrol, run by its AI core. A drone bay
+    // is built like a weapon bay, so it stands with the guns.
+    rooms: [armoury(per(1, 2, 4), 6), { ...room('weapons', n(2, 'module.droneBay'), 5, 3, per(1, 2, 3)), drones: { def: 'drone.defence', count: 2 } }],
     atrium: { role: 'drill' },
   },
   // Pirate den: scrappy welded modules, light defences (conquerable on purpose), loot stores.

@@ -135,19 +135,20 @@ const structures = {
   'structure.station_trade': { name: 'Trade station', kind: 'station', station: 'trade', badge: 'T', resources: ['item.fuel'], services: ['fuel', 'trade', 'repair', 'recruit'] },
   'structure.station_military': { name: 'Military station', kind: 'station', station: 'military', badge: 'M', resources: [], services: ['fuel', 'repair', 'blueprints'] },
   'structure.station_research': { name: 'Research station', kind: 'station', station: 'research', badge: 'R', resources: ['item.electronics'], services: ['trade', 'blueprints'] },
+  'structure.lost_cargo': { name: 'Lost cargo', kind: 'cargo', badge: 'C', resources: ['item.metal', 'item.parts'] },
   'structure.derelict': { name: 'Old derelict', kind: 'derelict', badge: 'D', resources: ['item.scrap_hull', 'item.scrap_tech', 'item.scrap_energy', 'item.parts'] },
 } satisfies Record<string, StructureDef>;
 
 /**
  * What a node holds besides the sector's faction station, the open trade station and the start node's free one: one weighted draw per node
  * over `quiet` and these entries (sim/galaxy/nodeContent.ts). Weights are shares of one whole, so a new kind either takes its share from
- * `quiet` (lower the quiet curve by the same) or accepts that the others thin out. Rare ore does this: `quiet` falls 0.008 a tier (0.002 as before plus rare ore's 0.006 from tier 3), so the weights sum to 1 from tier 3. At tier t the old independent odds were asteroids 0.30,
+ * `quiet` (lower the quiet curve by the same) or accepts that the others thin out. Rare ore does this: `quiet` falls 0.008 a tier (0.002 as before plus rare ore's 0.006 from tier 3), so the weights sum to 1 from tier 3. Lost cargo takes 0.04 more at every tier, so `quiet` starts at 0.51. At tier t the old independent odds were asteroids 0.30,
  * derelicts 0.05 + 0.012 t, research 0.10 - 0.01 t, and these curves match them. Ship contacts stay outside: they are ships present, not
  * a place, and they sit on top of whatever the node holds.
  */
 // Order matters: one draw walks the entries in order, so `research` stays first (its placement is the old research roll's, see ARCHITECTURE.md).
 const nodeContents = {
-  quiet: { base: 0.55, perTier: -0.008 },
+  quiet: { base: 0.51, perTier: -0.008 },
   entries: {
     research: {
       structure: 'structure.station_research', danger: { min: 0 }, weight: { base: 0.1, perTier: -0.01 }, owner: 'territoryOrCivilian',
@@ -173,6 +174,8 @@ const nodeContents = {
       ores: { 'ore.rare': 5, 'ore.iron': 3 },
     },
     derelict: { structure: 'structure.derelict', danger: { min: 0 }, weight: { base: 0.05, perTier: 0.012 }, owner: 'none', notAtStart: true },
+    // Sealed containers adrift with no ship (#503). Its 0.04 comes out of `quiet`; it comes last so the draws that land on the kinds above stay put.
+    lostCargo: { structure: 'structure.lost_cargo', danger: { min: 0 }, weight: { base: 0.04 }, owner: 'none' },
   },
 } satisfies NodeContentTable;
 

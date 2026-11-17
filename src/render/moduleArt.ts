@@ -295,7 +295,7 @@ export function moduleLayers(world: World, id: number, m: Module, def: ModuleDef
     // on a destroyed one: burnt off) and the clamp gripping it on the frame side.
     const box = world.get(id, ContainerC);
     const clamp = box?.clamp ?? 'n';
-    const shell = containerChain(def, m.rot, m.hp, clamp, containerVariant(id));
+    const shell = containerChain(def, m.rot, m.hp, clamp, containerVariant(box?.seed ?? id));
     const at = clampTile(def, m, clamp);
     const dressed = m.hp > 0 && livery;
     const over = (suffix: string): string[] => shell.chain.map((c) => c + suffix);
@@ -304,7 +304,7 @@ export function moduleLayers(world: World, id: number, m: Module, def: ModuleDef
       ...(dressed ? [
         { chain: over('.paint'), key: `${shell.key}.paint`, tiles: 'all', overlay: 'paint', optional: true, strips: true, dz: 0.001 },
         { chain: over('.lv'), key: `${shell.key}.lv`, tiles: 'all', overlay: 'lv', optional: true, strips: true, dz: 0.002 },
-        { chain: over(`.logo.${containerLogo(id, livery.seed)}`), key: `${shell.key}.logo`, tiles: 'all', optional: true, strips: true, dz: 0.003 },
+        { chain: over(`.logo.${containerLogo(box?.seed ?? id, livery.seed)}`), key: `${shell.key}.logo`, tiles: 'all', optional: true, strips: true, dz: 0.003 },
       ] as ModuleLayer[] : []),
       { chain: [`container.clamp.${clamp}`, 'container.clamp'], key: 'container.clamp', tiles: 'all', at, dz: 0.04 },
     ];
@@ -340,6 +340,8 @@ export function moduleLayers(world: World, id: number, m: Module, def: ModuleDef
     return [base, { chain: [`${a}.crop.${crop}.${stage}${r}`], key: `${a}.crop`, tiles: 'all', dz: 0.01, crop: { crop, stage } }];
   }
   // A ground turret's mount (#514): `module.<stem>.ground.r{n}`, the cable port turned with the rotation; its head is turretView's.
+  // A chain of its own, not moduleAssets: this layer is only the base under the head, and the base has no .active or
+  // .unpowered art.
   if (isGroundMount(def)) return [{ chain: [...stateArt(def, m.rot, active, look).head, `${a}${r}`, a], key: a, tiles: 'all' }];
   if (def.weapon || def.pointDefense) return [{ chain: [`${a}.bay${r}`, `${a}.bay`], key: `${a}.bay`, tiles: 'all' }];
   const main: ModuleLayer = { chain: moduleAssets(world, id, m, def, active, look), key: a, tiles: 'all', anim: stateArt(def, m.rot, active, look).anim };
