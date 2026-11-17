@@ -110,14 +110,16 @@ def _span(f, s, s0, s1, zt):
                   [False, WIN.SIDE, WIN.SILL_FLAT, WIN.SLOPE_COL, False], back=False, mu=mu)
         ut, out = w0 + WIN.SLOPE, D + SD.BOX_OUT * SD.LINE
         WIN._slab(f.k, f.ax, f.plane, [(h0, zh), (h0, zr), (ut, zh)], db, out, SH.FACE,
-                  [False, SD.BOX_SIDE, False], back=False, mu=mu)       # the top corner: its slope carried on
+                  [WIN.SIDE, SD.BOX_SIDE, False], back=False, mu=mu)    # the top corner: its slope carried on
                                                         # across the post down to the rib, flush with the header
                                                         # (its front's tone; its sloped side the box's ends')
         zl = zj + fh + sh                                               # the jamb's seam
         pf = [(dp + WIN.PANE / 2, zl), (dv + 0.001, zl), (dv + 0.001, zl + 1 / Z), (dp + WIN.PANE / 2, zl + 1 / Z)]
         fm.part(h0, w0 + 0.001, pf, [WIN.JAMB_SEAM] * 4, (None, WIN.JAMB_SEAM), end=False)
         fm.part(h0, w0, [(db, 0.0), (dv, 0.0), (dv, zh), (db, zh)], [None, WIN.HEAD_FRONT, None, None],
-                (None, WIN.SIDE), end=False)                            # the post (plain: no recessed panel)
+                WIN.SIDE, end=False)                    # the post (plain: no recessed panel; both its sides the
+                                                        # sides' tone: on W3 its side by the rib shows where the
+                                                        # bullnose turns back)
 
 
 def _head(f, a, b, z0, ends, foot):
