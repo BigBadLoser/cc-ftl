@@ -44,10 +44,11 @@ BACK_WALL = "stE"                   # the window's back wall
 VENT_BOX = (15, 4, 1, 17)           # a middle tile's vent box under the window (the ref's, measured): px wide, its front
                                     # px off the face, its top px over the sill's (run back to the glass), px tall
 VENT_RECESS = (2, 1)                # its front's recess (the slats in it): px in from every edge, px deep
+VENT_FAR = "stM"                    # its front's edge on its end turned from view: a step under the front
 VENT_PANEL, VENT_PANEL_SIDE = "stM", "stD"   # the recess's floor a step under the front, its sides a step under that
 VENT_SLATS = (3, 8, 3, 5, 3)        # its slats: count, px wide, px in from its a end, the first's px under its top, px
                                     # apart (each a dark row over a lit row)
-VENT_FRONT, VENT_TOP, VENT_EDGE, VENT_LIT = SH.FACE, "stH", SD.TOP_LIT, "stL"   # its front, top, top's front edge,
+VENT_FRONT, VENT_TOP, VENT_EDGE, VENT_LIT = SH.FACE, "stL", SD.TOP_LIT, "stL"   # its front, top, top's front edge,
                                     # the slats' lit rows
 TONES = {"hsXK": "stK", "hsK": "stK", "hsXD": "stE", "hsD": "stDE", "hsXM": "stD", "hsXS": "stD", "hsM": "stM",
          "hsXL": "stM", "hsS": "stS", "hsL": "stL", "hsH": "stH", "hsW": "stB"}
@@ -206,6 +207,7 @@ def _vent_box(f, s0, s1, zs, gl):
     rim(a, b, z0, zi0, VENT_PANEL_SIDE)
     rim(a, a + ri * ln, zi0, zi1, None, (SD.BOX_SIDE, VENT_PANEL_SIDE))
     rim(b - ri * ln, b, zi0, zi1, None, (VENT_PANEL_SIDE, SD.BOX_SIDE))
+    SD._rect(f, a, a + ln, z0, top, fr + 0.0005, VENT_FAR)
     n, sw, si, s1st, sp = VENT_SLATS
     for i in range(n):
         z = top - (s1st + i * sp) * px
