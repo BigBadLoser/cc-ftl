@@ -44,4 +44,5 @@ if (!changed.length) console.log('testFast: nothing changed, no tests to run');
 
 const vitestArgs = ['vitest', 'run', base ? `--changed=${base}` : '--changed', '--passWithNoTests', ...rest];
 const r = spawnSync('npx', vitestArgs, { stdio: 'inherit', env: { ...process.env, VITEST_FAST: '1' } });
+if (r.signal || r.error) console.error(`testFast: vitest stopped by ${r.signal ?? r.error?.message}`);
 process.exit(r.status ?? 1);
