@@ -1,15 +1,23 @@
 """The station hull's window (#524; after the station ref's hull window, design reference only): a straight run's design
 over two or more tiles, as the ship hull's (wall3d_ext_window: the same pieces and neighbours, w1 the run's start, w3
-its end, w2 the middles) and built from its parts: its sill (the slope up to the glass, W1's recess and plates, W2's
-framed recess and plates), its end pieces' jamb (wall3d_ext_window_end: the recessed panel, the outer frame's studded
-strip), the opening's corner slopes and the pane (tinted glass, its edges dark lines). The station's own: the header
-(the bullnose and the top over it, whole, down to the line under the bullnose), the sill's front (flush with the face,
-its groove and step), the tones (the ship's mapped onto the station's ramp by brightness: TONES).
+its end, w2 the middles) and built from its parts where they fit: the opening's corner slopes, the jamb's seam and the
+pane (tinted glass, its edges dark lines). The station's own:
+  - the header: the module design's top box run across the window (its ends and lines only where it ends), vent lines
+    and recessed panels on its front, a fall plate on its top over each middle tile's recesses;
+  - the end pieces: the outer frame, a plain post flush with the face, the top corner carried down to the rib, a plate
+    across the rib and post under it, seams on the wall round the post (its foot's outer corner cut on the opening
+    corner's slope) and along the sill, a plate on the groove under the post;
+  - under the window: the sill flush with the face, a slatted vent box on each middle tile, a plate bent over the
+    sill's edge between each corner's foot and the box (across the tiles' join), the step's blocks run into one
+    (step_blocks, drawn by station_hull);
+  - the tones: the ship's mapped onto the station's ramp by brightness (TONES).
+Anything proud of the face is drawn out past its a end on screen: kept off the tile before (a sprite draws only its own
+tile, rendered with a W2 for its neighbours).
 
   tile.hull.station.ext.o<o>.m<mask>.w1/.w2/.w3   (o1 m10 along x, o2 m5 along y; w1 the lower tile coordinate end)
 
-Depths d out from the block's face (the shell's: the armour D deep): the face D, the jamb's front and the slope's top
-JAMB_IN behind it, the pane PANE_IN behind that, the window's back wall WALL_BACK behind the pane."""
+Depths d out from the block's face (the shell's: the armour D deep): the face D, the posts' front JAMB_IN behind it,
+the pane PANE_IN behind that, the window's back wall WALL_BACK behind the pane."""
 from contextlib import contextmanager
 
 from . import core
