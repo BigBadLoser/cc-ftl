@@ -54,7 +54,6 @@ move in a browser).
 - `deck-marks`: the deck markings joined from their quarter pieces on test shapes (a room with a T corridor and a door gap, a diagonal
   staircase, a hazard room beside a hall, keep-clear boxes), the masks set the way the generator will; `kinds=walkway,hazard,keepClear`,
   `paint=b0443a` tints the walkway line.
-- `bay-exit`: a pod and a shuttle leaving and entering their bays through the pit's floor doors, on a lit ship section, through the real renderer (`tools/lab/bayExitLab.ts`; `kind=pod|shuttle&mode=launch|land&t=seconds` draws one frame, the animation clock faked). `node tools/lab/bayExitGif.js <dir>` renders the four GIFs (about 12 minutes each in software GL).
 - `windows-tool`: the Window build tool (#516) as the game draws it, on a ship section (an interior wall along x and one along y meeting in a
   T, the hull around them). A DOM page like `build`: one renderer over the layout lab's stamped world, and the game's own `createPaintTools`
   put on build > window at each size and hovered over a tile, so the preview tint and the hint (the build menu's own element) are the game's.
