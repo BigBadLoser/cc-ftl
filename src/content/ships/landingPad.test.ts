@@ -33,13 +33,14 @@ function run(sim: Sim, ticks: number, until?: () => boolean): SimEvent[] {
 
 describe('landing pads', () => {
   it('a surface base has its pads, its shuttle on the first, each pad beside an airlock', () => {
-    const { sim, pads } = base();
+    const { sim, ship, pads } = base();
     expect(pads.length).toBe(2);
     expect(sim.world.get(pads[0]!, VehicleBayC)!.vehicle).toBeGreaterThan(0);
     expect(sim.world.get(pads[1]!, VehicleBayC)!.vehicle).toBe(0);
     for (const p of pads) expect(padAirlock(sim, p)).toBeGreaterThan(0);
     const v = sim.world.get(pads[0]!, VehicleBayC)!.vehicle;
     expect(sim.world.get(v, VehicleC)!.state).toBe('stowed');
+    expect(sim.world.get(v, VehicleC)!.homeShip).toBe(ship); // the shuttle belongs to the base
     expect(airlockPad(sim, padAirlock(sim, pads[0]!))).toBe(pads[0]);
     // It sits at the pad's middle, on the ground, and its crew board on the pad.
     const pm = sim.world.get(pads[0]!, ModuleC)!;

@@ -128,17 +128,21 @@ export function stampShip(
     width: packet.w, height: packet.h, hullMax: hullSum(new ShipGrid(0, sim.sector.grid, opts.x, opts.y, packet.w, packet.h)), integrity: 1,
   });
   stampOwner(sim.sector.grid, ship, rect);
-  // Template vehicles were spawned with the modules, before their ship existed: they belong to it now.
-  for (const vid of sim.world.query(VehicleC)) {
-    const v = sim.world.get(vid, VehicleC);
-    if (v && !v.homeShip && shipIdOf(sim, sim.world.get(v.home, ModuleC)) === ship) v.homeShip = ship;
-  }
+  claimTemplateVehicles(sim, ship);
   // So are template drones (docked in a bay of the ship).
   for (const did of sim.world.query(DroneC)) {
     const d = sim.world.get(did, DroneC);
     if (d && !d.ship && shipIdOf(sim, sim.world.get(d.bay, ModuleC)) === ship) d.ship = ship;
   }
   return ship;
+}
+
+/** Template vehicles were spawned with the modules, before their ship existed: they belong to it now (every way of stamping a ship with modules calls this). */
+export function claimTemplateVehicles(sim: Sim, ship: number): void {
+  for (const vid of sim.world.query(VehicleC)) {
+    const v = sim.world.get(vid, VehicleC);
+    if (v && !v.homeShip && shipIdOf(sim, sim.world.get(v.home, ModuleC)) === ship) v.homeShip = ship;
+  }
 }
 
 /**

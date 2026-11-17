@@ -237,7 +237,7 @@ export function createShuttleView(world: World, atlas: Atlas, modules: Readonly<
         const landing = v.state === 'stowed' && sinceLand < RETURN_LAND.end * BAY_FRAME_MS;
         const pad = onPad(v, b);
         if (v.state !== 'flying') t.padded = pad;
-        const visible = host.include(ref) && (pad ? true : v.state !== 'stowed' ? !(sinceLaunch < LAUNCH_LIFT.start * BAY_FRAME_MS) : landing);
+        const visible = (pad || host.include(ref)) && (pad ? true : v.state !== 'stowed' ? !(sinceLaunch < LAUNCH_LIFT.start * BAY_FRAME_MS) : landing);
         if (!visible) {
           t.root.visible = false;
           seen.add(id);
