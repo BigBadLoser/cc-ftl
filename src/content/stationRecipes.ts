@@ -235,6 +235,10 @@ export const stationRecipes = {
   prefab: [
     { name: 'zoned: pads, customs, market hall; the mess hub, departments off it', root: { kind: 'prefab' }, quarters: { barracks: [6, 8] }, spacing: 2, branches: [] },
   ],
+  // PROTOTYPE (#508): the farming outposts as prefab bases in two looks, the mining outpost in one.
+  farmRows: [{ name: 'farm hall with greenhouse ribs', root: { kind: 'prefab', plan: 'farmRows' }, quarters: { barracks: [6, 8] }, spacing: 2, branches: [] }],
+  farmCluster: [{ name: 'greenhouse cluster down a long tube', root: { kind: 'prefab', plan: 'farmCluster' }, quarters: { barracks: [6, 8] }, spacing: 2, branches: [] }],
+  mineWing: [{ name: 'refinery wing, ore stores below', root: { kind: 'prefab', plan: 'mineWing' }, quarters: { barracks: [6, 8] }, spacing: 2, branches: [] }],
   tradepost: [
     tradepost('court post: the pier head on a market court, a cross street behind', { front: 'court' }),
     tradepost('waterfront: a quay along the face, a cross street behind customs', { front: 'waterfront' }),

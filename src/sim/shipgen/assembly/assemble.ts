@@ -65,7 +65,7 @@ function tryOnce(rng: Rng, recipe: Recipe, all: readonly RoomSpec[], attempt: nu
   const takers = new Set<string>([...(recipe.root.kind === 'fort' ? recipe.root.takes : []), ...(recipe.root.kind === 'ring' ? [...recipe.root.takes, ...(recipe.root.hub ? [...recipe.root.hub.market, ...recipe.root.hub.spokes, ...(recipe.root.hub.gated ?? [])] : [])] : []), ...recipe.branches.flatMap((b) => b.takes)]);
   if (recipe.root.kind === 'prefab') {
     const ctx = context(new RegionGrid(HALF), null, rng);
-    const made = prefab(ctx, rooms, docks, pool);
+    const made = prefab(ctx, rooms, docks, pool, recipe.root.plan);
     return { asm: new Asm(ctx, recipe.spacing), why: made.why, ...(made.pads ? { pads: made.pads } : {}) };
   }
   const orphans = rooms.filter((r) => !takers.has(r.dept as string));
@@ -199,7 +199,9 @@ export function recipeRooms(recipe: Recipe, rooms: readonly RoomSpec[]): readonl
     const pd = r.mods.filter((m) => m === 'module.pointDefense').length;
     return pd === 0 ? r : { ...r, mods: r.mods.filter((m) => m !== 'module.pointDefense'), w: Math.max(3, r.w - 3 * pd) };
   };
-  return rooms.filter((r) => !r.mods.includes('module.vehicle_bay') && (r.role !== 'dock' || docks.includes(r)) && r.role !== 'weapons' && deptOf(r) !== 'market').map(noPd);
+  // The pods park outside (later), so no pod bay: the suit room that was its annex stays.
+  const noPods = (r: RoomSpec): RoomSpec => (r.role === 'hangar' && r.annex ? { ...r.annex } : r);
+  return rooms.filter((r) => !r.mods.includes('module.vehicle_bay') && (r.role !== 'dock' || docks.includes(r)) && r.role !== 'weapons' && deptOf(r) !== 'market').map(noPods).filter((r) => r.role !== 'hangar').map(noPd);
 }
 
 /**

@@ -98,9 +98,9 @@ traders and patrols. **The first shot you fire, or your first boarding, turns th
 with it.** From then on they fight back, and nothing turns them back. Pirate dens and outposts that sleep wake up when you
 fire on them. At a black-market node under a truce, any attack breaks the truce for everyone there.
 
-A trading post built on an asteroid has no gun rooms. Its guns and point defence are turrets standing on the rock
-around it, each on a wide mount braced by four legs, joined to the base's hull by a power cable that plugs into the
-mount's junction box. They draw the base's power and fire from its command room
+A base built on an asteroid (a trading post, a farm or a mine) has no gun rooms. Its guns and point defence are turrets
+standing on the rock around it, each on a wide mount braced by four legs, joined to the base's hull by a power cable that
+plugs into the mount's junction box. They draw the base's power and fire from its command room
 like any station gun. You can aim at them and knock them out, and the base's crew put on suits and walk out to repair
 them.
 

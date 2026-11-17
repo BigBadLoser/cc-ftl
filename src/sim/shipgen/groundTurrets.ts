@@ -17,6 +17,8 @@ import type { Layout } from './layout';
  *   - no cable runs to the arrivals hall (a room holding an airlock): visitors walk in there;
  *   - a turret keeps a ring of open ground round it (crew walk round it to repair it); it and its cable stand clear of
  *     the landing pads (and a tile round them) and of the ground before each airlock;
+ *   - a module standing apart is cabled to the base as a staple (out of a base wall for two tiles, across, into the pod's wall for
+ *     two tiles; never to or from a wall beside an airlock room), before the turrets (`wireApart`);
  *   - the ground stays one open walk: every pad, every airlock's outside and every turret's ring stays reachable.
  */
 
@@ -25,6 +27,8 @@ export interface GroundPlan {
   mods: readonly string[];
   /** Boxes kept clear (the landing pads), [x0, y0, x1, y1) in layout tiles. */
   keep: readonly (readonly [number, number, number, number])[];
+  /** Modules standing apart on the ground (a prefab farm's greenhouses), each as the layout's room ids: each is wired to the base before the turrets. */
+  apart?: readonly (readonly number[])[];
   /** Varies the spots from base to base (the station's seed). */
   seed?: number;
 }
@@ -34,6 +38,8 @@ export interface GroundFit {
   placed: number[];
   /** Cabled tiles (row-major over the layout). */
   cable: Set<number>;
+  /** Modules standing apart that no cable reached (the fit-out then fails and the assembly tries again). */
+  unwired: number;
 }
 
 /** Ground kept clear before an airlock's outer door, in tiles (its collar and the walk out from it). */
@@ -42,6 +48,8 @@ const APPROACH = 3;
 const MIN_CABLE = 4, MAX_CABLE = 16;
 /** Open ground a turret keeps from any hull on every side (tiles, eight ways): an open pocket, not an alley between pods. */
 const OPEN = 4;
+/** A tile's hull neighbours as bits (`hullAt` in `wireApart`): east, west, south, north. */
+const HULL_E = 1, HULL_W = 2, HULL_S = 4, HULL_N = 8;
 /** The four ways a straight cable run goes (`straightRuns`). */
 const LANE = ['1,0', '-1,0', '0,1', '0,-1'] as const;
 /** How far past the base's bounding box a turret may stand when the pockets inside it are too cramped. */
@@ -50,7 +58,7 @@ export const OUTSIDE = 6;
 /** Place the plan's turrets on the layout's open ground and lay their cables. Turrets that find no spot are left out. */
 export function placeGroundTurrets(lay: Layout, plan: GroundPlan): GroundFit {
   const { w, h } = lay;
-  const out: GroundFit = { placed: [], cable: new Set() };
+  const out: GroundFit = { placed: [], cable: new Set(), unwired: 0 };
   const ground = (x: number, y: number): boolean => lay.at(x, y) === '.' && lay.inBounds(x, y);
   const free = (x: number, y: number): boolean => ground(x, y) && lay.occ[y * w + x] === -1 && !out.cable.has(y * w + x);
   // The pads themselves (no cable runs over one).
@@ -112,6 +120,7 @@ export function placeGroundTurrets(lay: Layout, plan: GroundPlan): GroundFit {
   const open = openness();
   // A small per-base shake on each spot's score (the seed), so bases of the same plan do not all stand them alike.
   const shake = (x: number, y: number): number => { let k = (((plan.seed ?? 0) * 73856093) ^ (x * 19349663) ^ (y * 83492791)) >>> 0; k = Math.imul(k ^ (k >>> 15), 0x2c1b3c6d) >>> 0; return ((k ^ (k >>> 12)) >>> 0) / 0xffffffff; };
+  wireApart();
   for (const id of plan.mods) {
     const def = lay.defs[id] as ModuleDef | undefined;
     if (!def) continue;
@@ -151,6 +160,98 @@ export function placeGroundTurrets(lay: Layout, plan: GroundPlan): GroundFit {
     }
   }
   return out;
+
+  /**
+   * The cable of each module standing apart, a staple: out of a wall of the base square on for two tiles, across the open ground,
+   * and into the pod's wall facing the same way for two tiles (the longer leg takes up any difference in height), out of a top
+   * wall and into a top wall, or out of a bottom wall and into a bottom wall (the shortest of the two sides). Only the first module
+   * takes a staple from the base; each other is ganged on at the back by one the same way, out of the back end wall (facing away
+   * from the base) of the module wired before it and into its own (a staple from the base where that does not fit). Never from or into a wall beside an airlock room. A module none reaches is
+   * counted in `unwired`.
+   */
+  function wireApart(): void {
+    const mods = (plan.apart ?? []).map((ids) => new Set(ids));
+    if (mods.length === 0) return;
+    const wallsOf = (rooms: Set<number>): number[] => {
+      const walls = new Set<number>();
+      for (let i = 0; i < w * h; i++) {
+        if (lay.cells[i] !== '_' || !rooms.has(lay.roomOf[i] as number)) continue;
+        for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const x = (i % w) + dx, y = Math.floor(i / w) + dy; if (lay.at(x, y) === '#') walls.add(y * w + x); }
+      }
+      return [...walls].sort((p, q) => p - q);
+    };
+    const own = mods.map(wallsOf), theirs = new Set(own.flat());
+    const baseWalls: number[] = [];
+    for (let i = 0; i < w * h; i++) if (wallAt(i % w, Math.floor(i / w)) && !theirs.has(i)) baseWalls.push(i);
+    const wired: number[] = [];
+    const ok = (x: number, y: number): boolean => lay.inBounds(x, y) && runs(y * w + x) && !clear[y * w + x];
+    /** The hull tiles four ways round a tile, as bits (HULL_E, HULL_W, HULL_S, HULL_N). */
+    const hullAt = (x: number, y: number): number => {
+      let m = 0;
+      ([[1, 0, HULL_E], [-1, 0, HULL_W], [0, 1, HULL_S], [0, -1, HULL_N]] as const).forEach(([dx, dy, bit]) => { if (lay.inBounds(x + dx, y + dy) && lay.cells[(y + dy) * w + x + dx] !== '.') m |= bit; });
+      return m;
+    };
+    // A staple is worked in (u, v): u runs along its legs (up/down, or east/west when `side` is true), v along its run.
+    const at = (side: boolean, u: number, v: number): number => (side ? v * w + u : u * w + v);
+    const uOf = (side: boolean, i: number): number => (side ? i % w : Math.floor(i / w)), vOf = (side: boolean, i: number): number => (side ? Math.floor(i / w) : i % w);
+    /** The hull bit a leg's first tile touches: the wall behind it (leg on side `s` of the wall: -1 above or west, 1 below or east). */
+    const behind = (side: boolean, s: number): number => (side ? (s < 0 ? HULL_E : HULL_W) : s < 0 ? HULL_S : HULL_N);
+    /** A leg tile on side `s` of the wall at `i`: ground, with that one wall alone touching it. */
+    const leg = (side: boolean, i: number, s: number): boolean => {
+      const u = uOf(side, i) + s, v = vOf(side, i), j = at(side, u, v), x = j % w, y = Math.floor(j / w);
+      return ok(x, y) && hullAt(x, y) === behind(side, s);
+    };
+    /** The staple from wall `bi` to wall `pi` on side `s`, or null: tiles in order, every one clear of any hull but each leg's first. */
+    const staple = (side: boolean, bi: number, pi: number, s: number): number[] | null => {
+      const ub = uOf(side, bi), vb = vOf(side, bi), up = uOf(side, pi), vp = vOf(side, pi);
+      if (vb === vp) return null;
+      const uh = s < 0 ? Math.min(ub, up) - 2 : Math.max(ub, up) + 2;
+      const tiles: number[] = [];
+      const add = (u: number, v: number, first: boolean): boolean => {
+        const j = at(side, u, v);
+        if (!ok(j % w, Math.floor(j / w)) || hullAt(j % w, Math.floor(j / w)) !== (first ? behind(side, s) : 0)) return false;
+        tiles.push(j);
+        return true;
+      };
+      for (let u = ub + s; s < 0 ? u >= uh : u <= uh; u += s) if (!add(u, vb, u === ub + s)) return null;
+      for (let v = vb + Math.sign(vp - vb); vp > vb ? v <= vp : v >= vp; v += Math.sign(vp - vb)) if (!add(uh, v, false)) return null;
+      for (let u = uh - s; s < 0 ? u < up : u > up; u -= s) if (!add(u, vp, u === up + s)) return null;
+      return tiles;
+    };
+    /** The shortest staple on side `s` from any of the walls `from` to any wall of module `k`, or null. */
+    const between = (side: boolean, from: readonly number[], k: number, s: number): number[] | null => {
+      let best: number[] | null = null;
+      const pods = (own[k] as number[]).filter((i) => wallAt(i % w, Math.floor(i / w)) && leg(side, i, s));
+      const bases = from.filter((i) => wallAt(i % w, Math.floor(i / w)) && leg(side, i, s));
+      for (const pi of pods) for (const bi of bases) {
+        // A cheap bound first: the staple is at least this long.
+        if (best && Math.abs(uOf(side, pi) - uOf(side, bi)) + Math.abs(vOf(side, pi) - vOf(side, bi)) >= best.length) continue;
+        const t = staple(side, bi, pi, s);
+        if (t && (!best || t.length < best.length)) best = t;
+      }
+      return best;
+    };
+    /** The shortest staple from the base, out of a top or a bottom wall. */
+    const stapled = (k: number): number[] | null => {
+      let best: number[] | null = null;
+      for (const s of [-1, 1]) { const t = between(false, baseWalls, k, s); if (t && (!best || t.length < best.length)) best = t; }
+      return best;
+    };
+    // The base's middle, to tell which end of a pod is its back (the end walls facing away from the base).
+    const baseX = baseWalls.reduce((n, i) => n + (i % w), 0) / Math.max(1, baseWalls.length);
+    /** A staple at the pods' back: out of the back end wall of the module wired last, along, and into the back end wall of module `k`. */
+    const ganged = (k: number): number[] | null => {
+      const prev = wired[wired.length - 1];
+      if (prev === undefined) return null;
+      const mid = (m: number): number => (own[m] as number[]).reduce((n, i) => n + (i % w), 0) / Math.max(1, (own[m] as number[]).length);
+      return between(true, own[prev] as number[], k, mid(k) < baseX ? -1 : 1);
+    };
+    // The first is stapled to the base; the rest are ganged on at the back, each to the one wired before it (else a staple of its own).
+    for (const [k] of mods.entries()) {
+      const best = k === 0 ? stapled(k) : ganged(k) ?? stapled(k);
+      if (best) { for (const i of best) out.cable.add(i); wired.push(k); } else out.unwired++;
+    }
+  }
 
   /** Whether a cable may run over a tile: open ground, nothing on it, not already cabled, not on a pad. */
   function runs(i: number): boolean {

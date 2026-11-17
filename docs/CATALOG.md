@@ -52,7 +52,7 @@ Things people believe exist and do not (or only partly), and the reverse.
 - **Rogue AI faction:** the faction, its ship generator (`faction.drones`), a shipyard template and a terminal event exist, but the galaxy fields no rogue ships (`ships: []`, issue #427). You do not meet machine fleets in a normal game.
 - **Black markets:** only `bm.lesser` is ever attached to a station. The cartel market, machine bazaar and hiring hall are defined and tested but never spawned. `item.ai_core`, `item.robot_parts`, `item.drone_tech` are sold there and consumed by nothing.
 - **Station fuel and repair services:** listed as tags on trade and military stations; no code implements a repair service, and fuel is simply bought as an item.
-- **Agri station:** the station kind exists but has no hydroponics beds.
+- **Agri station:** greenhouses with hydroponics beds; an asteroid outpost's beds are set to a crop and its crew farm them (detached greenhouses by EVA); on a space station the beds start unset.
 - **Ten hand weapons with art** (laser pistol, shotgun, SMG, plasma cutter...): no item defs (issue #49). Likewise about 32 goods with item sprites (copper, nanites, stim, torpedo, artifact...). Research costs use `item.parts` and `item.rare_ore` as stand-ins for data cores and artifacts.
 - **Cover in combat:** targets do get cover from solid modules, but crew never seek it (issue #50).
 - **Lessons:** the engine is general, but only two lessons exist (combat, hail).

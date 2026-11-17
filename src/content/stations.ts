@@ -79,6 +79,8 @@ export const stations = {
     name: 'Mining station', kind: 'mining', side: 'neutral', motif: 'motif.civilian', barracks: { beds: [6, 8], cabins: 4 }, security: 0.25, space: [0.8, 1.2], crew: CIVIL_CREW,
     // The spine, one straight street only.
     assembly: [[R.spine[0]]],
+    // An asteroid mine: a prefab base, a refinery wing.
+    outpostAssembly: [R.mineWing],
     weapons: { light: LIGHT, heavy: HEAVY }, shields: SMALL_SHIELD,
     stock: [{ item: 'item.metal', min: 4, max: 12 }, { item: 'item.ice', min: 2, max: 8 }, { item: 'item.scrap_hull', min: 0, max: 6 }, { item: 'item.iron_ore', min: 4, max: 14 }, { item: 'item.rare_ore', min: 0, max: 4 }],
     tiers: tiers({ pods: per(2, 4, 6), guns: per(2, 5, 10), heavyPct: 20, shields: per(1, 2, 3), pd: per(1, 2, 3), crates: per(10, 24, 48), docks: per(3, 4, 6) }),
@@ -94,14 +96,21 @@ export const stations = {
   'station.farming': {
     name: 'Agri station', kind: 'farming', side: 'neutral', motif: 'motif.civilian', security: 0.2, space: [1, 1.4], crew: CIVIL_CREW,
     assembly: [R.agri],
+    // An asteroid farm: a prefab base, a farm hall with greenhouse ribs or a greenhouse cluster (the seed picks).
+    outpostAssembly: [R.farmRows, R.farmCluster],
     weapons: { light: LIGHT, heavy: HEAVY }, shields: SMALL_SHIELD,
     stock: [{ item: 'item.ration', min: 4, max: 12 }, { item: 'item.polymer', min: 0, max: 4 }],
+    // An asteroid farm's beds are set to these, in turn.
+    crops: ['crop.greens', 'crop.beans'],
+    // The messes' pantries hold what the greenhouses grow, and rations (cold stores take food and crops only).
+    pantry: [{ item: 'item.greens', min: 4, max: 12 }, { item: 'item.beans', min: 2, max: 8 }, { item: 'item.ration', min: 0, max: 6 }],
     tiers: tiers({ guns: per(2, 4, 8), heavyPct: 15, shields: per(0, 1, 2), pd: per(1, 1, 2), crates: per(12, 24, 40), docks: per(2, 2, 3) }),
     // Greenhouses (long, narrow farms: hydroponics in two rows down their length) and extra common rooms.
     rooms: [
       room('farm', n(6, 'module.hydroponics'), 5, 9, per(2, 4, 8)),
-      // The produce store: cold stores of what the greenhouses grow, beside the cargo.
-      room('cargo', n(4, 'module.storage_cold'), 7, 3, per(1, 2, 3), [{ item: 'item.ration', min: 6, max: 16 }]),
+      // The produce store: cold stores of what the greenhouses grow, beside the cargo (merged into the warehouse with its crates).
+      // Water as well, for the beds (planting water is hauled from a store, as on the starter): the crates take it, a cold store does not.
+      room('cargo', n(4, 'module.storage_cold'), 7, 3, per(1, 2, 3), [{ item: 'item.ration', min: 6, max: 16 }, { item: 'item.water', min: 6, max: 14 }]),
       room('support', ['module.lifeSupport'], 6, 3, per(1, 2, 4)),
       armoury(per(1, 1, 1)),
     ],

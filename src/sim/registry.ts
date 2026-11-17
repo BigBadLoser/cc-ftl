@@ -14,7 +14,7 @@ export type SkillName = 'gunnery' | 'piloting' | 'shielding' | 'melee' | 'constr
 export interface ShipTemplate {
   name: string;
   /** Modules to place at game start; `rot` is quarter turns clockwise (0..3). */
-  modules?: { def: string; x: number; y: number; rot: number; stock?: ItemQty[]; /** Standing production orders of a crafting module (e.g. keep 10 rations). */ orders?: { recipe: string; mode: 'count' | 'keep'; target: number }[]; /** Vehicle def stowed in this module (a vehicle bay). */ vehicle?: string; /** Drone defs docked in this module's slots, in order (a drone bay). */ drones?: string[]; /** Container modules: the side of the footprint clamped to the frame (default 'n'). */ clamp?: 'n' | 'e' | 's' | 'w'; /** A hydroponics bed: the crop (CropDef id) it is set to sow. */ crop?: string; /** A hydroponics bed: starts this many seconds into growing its crop (debug scenarios). */ grown?: number; /** A hydroponics bed: starts with its crop ready to harvest. */ ready?: true; /** Stands on open rock ground outside the hull (template '.'), wired to it by cable (`cable`): an asteroid base's turret. */ ground?: true }[];
+  modules?: { def: string; x: number; y: number; rot: number; stock?: ItemQty[]; /** Standing production orders of a crafting module (e.g. keep 10 rations). */ orders?: { recipe: string; mode: 'count' | 'keep'; target: number }[]; /** Vehicle def stowed in this module (a vehicle bay). */ vehicle?: string; /** Drone defs docked in this module's slots, in order (a drone bay). */ drones?: string[]; /** Container modules: the side of the footprint clamped to the frame (default 'n'). */ clamp?: 'n' | 'e' | 's' | 'w'; /** A hydroponics bed: the crop (CropDef id) it is set to sow. */ crop?: string; /** A hydroponics bed: starts this many seconds into growing its crop (debug scenarios). */ grown?: number; /** A hydroponics bed: starts with its crop ready to harvest. */ ready?: true; /** Stands on open rock ground outside the hull (template '.'), wired to it by cable (`cable`): an asteroid base's turret. */ ground?: true; /** An airlock for the crew's walks outside, not a berth for ships (a prefab base's wing and greenhouse airlocks): no dock is chosen here. */ crew?: true }[];
   /** '.' space, '#' wall, '_' floor, 'D' door, '=' beam. Rows may differ in length; short rows pad with space. */
   rows: string[];
   /** Floor finishes, row for row with `rows`: 'h' heavy plate, 'c' clean tile, 'k' carpet, anything
@@ -22,6 +22,8 @@ export interface ShipTemplate {
   floors?: string[];
   /** Ground power cable, row for row with `rows`: '+' (cable.ts CABLE_CHAR) on a '.' tile that is rock ground once the base stands (an asteroid base's site). */
   cable?: string[];
+  /** Some modules stand apart on open ground (a prefab farm's greenhouses), each its own walk from its airlock: the checks take them one by one. */
+  apart?: true;
   /** Faction of the ship (default 'player' for newGame, 'hostile' for debug.spawnEnemy). */
   faction?: Faction;
   /** Role ids of the crew to spawn. */

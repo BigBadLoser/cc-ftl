@@ -131,6 +131,15 @@ export class RegionGrid {
     return id;
   }
 
+  /** Regions of modules that stand apart on open ground, reached suited from outside, not walked to inside (`stranded` leaves them). */
+  readonly apart = new Set<number>();
+  /** The airlock rooms among them: where a walk inside such a module starts. */
+  readonly entries = new Set<number>();
+  /** The rooms of each module standing apart, one list a module (their cable to the base: groundTurrets.ts). */
+  readonly apartModules: number[][] = [];
+  /** Airlock rooms for the crew's walks outside (not berths for ships). */
+  readonly crewLocks = new Set<number>();
+
   /** A hall; with a spec, a fixture that stands in one (an airlock unit on a quay): open to the halls round it, and a room of the program. */
   hall(role: RoomRole = 'hall', dept?: string, spec?: RoomSpec): number {
     this.regions.push({ role, hall: true, doors: 0, rank: 0, ...(dept ? { dept } : {}), ...(spec ? { spec } : {}) });
@@ -400,9 +409,10 @@ export class RegionGrid {
 
   /**
    * Floor that cannot be walked to from the first hall, as [x, y, region] of one tile a stranded region: a room with no
-   * door, or a hall cut off from the rest. The fit-out places nothing solid while any floor is stranded.
+   * door, or a hall cut off from the rest (but not a region standing `apart`: a module reached across open ground). The fit-out places nothing solid while any floor is stranded.
    */
   stranded(cell: string[] = this.compile()): [number, number, number][] {
+    const apart = this.apart;
     const { size, half } = this;
     const walk = (k: number): boolean => cell[k] === '_' || cell[k] === 'D';
     const start = cell.findIndex((c, k) => c === '_' && (this.own[k] as number) >= 0 && (this.regions[this.own[k] as number] as Region).hall);
@@ -418,6 +428,7 @@ export class RegionGrid {
     for (let k = 0; k < cell.length; k++) {
       if (cell[k] !== '_' || seen[k]) continue;
       const id = this.own[k] as number;
+      if (apart.has(id)) continue;
       if (!out.has(id)) out.set(id, [(k % size) - half, Math.floor(k / size) - half, id]);
     }
     return [...out.values()];

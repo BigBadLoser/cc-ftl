@@ -59,6 +59,24 @@ describe('outposts', () => {
   });
 });
 
+describe('farm outposts start stocked', () => {
+  it('the pantry cold stores hold produce, and no store is stocked with what it does not accept (seeds 1..6)', () => {
+    for (let seed = 1; seed <= 6; seed++) {
+      const o = generateOutpost('surface', seed, CTX, 'farming')!;
+      const stores = (o.template.modules ?? []).filter((m) => MODS[m.def]?.storage);
+      const cold = stores.filter((m) => m.def === 'module.storage_cold');
+      expect(cold.length, `#${seed}`).toBeGreaterThan(0);
+      for (const m of cold) expect(m.stock?.length ?? 0, `#${seed} cold store ${m.x},${m.y}`).toBeGreaterThan(0);
+      for (const m of stores) {
+        const ok = MODS[m.def]!.storageAccepts;
+        for (const s of m.stock ?? []) if (ok) expect(ok, `#${seed} ${m.def}`).toContain(s.item);
+      }
+      // Water for the beds is still aboard (in the crates).
+      expect(stores.some((m) => m.stock?.some((s) => s.item === 'item.water' && s.count > 0)), `#${seed}`).toBe(true);
+    }
+  });
+});
+
 function run(sim: Sim, n: number): string[] {
   const log: string[] = [];
   for (let i = 0; i < n; i++) {

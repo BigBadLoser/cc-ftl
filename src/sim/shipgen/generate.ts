@@ -12,6 +12,7 @@ import { RULES } from './rooms/rules/rules';
 import { Layout } from './layout';
 import { placeGroundTurrets, type GroundPlan } from './groundTurrets';
 import { cableRows } from '../cable';
+import { accepts } from '../items/storage';
 import { hullChoices, pickWeighted, planShip, type RoomSpec, type ShipPlan } from './plan';
 import { clusters, hub, rails } from './topoDrone';
 import { ring, spine } from './topoNavy';
@@ -62,16 +63,17 @@ interface Fitted {
   /** Drone defs docked in the bay at this module index. */
   drones: Map<number, string[]>;
   /** Modules standing on open ground outside the hull (module indices), and the cable that wires them to it (`FinishOpts.ground`). */
-  ground?: { placed: Set<number>; cable: Set<number> };
+  ground?: { placed: Set<number>; cable: Set<number>; unwired: number };
 }
 
 /** Place every room's planned modules in that room; a reason string when something essential does not fit. */
 function fitOut(
   rng: Rng, f: FactionDef, rows: string[], roomOf: Int16Array, roles: RoomRole[], specs: (RoomSpec | undefined)[], defs: Record<string, ModuleDef>,
-  recipes = RECIPES, o: Pick<FinishOpts, 'airlocksAnyWay' | 'gunsAnywhere' | 'immobile' | 'ground'> = {},
+  recipes = RECIPES, o: Pick<FinishOpts, 'airlocksAnyWay' | 'gunsAnywhere' | 'immobile' | 'ground' | 'entries'> = {},
 ): Fitted {
   const lay = new Layout(rows, roomOf, roles, defs);
   lay.gunsOnHull = !o.gunsAnywhere;
+  for (const e of o.entries ?? []) lay.entries.add(e);
   const out: Fitted = { lay, stock: new Map(), vehicles: new Map(), drones: new Map() };
   const jobs: { room: number; def: string; spec: RoomSpec }[] = [];
   specs.forEach((spec, room) => { for (const def of spec?.mods ?? []) jobs.push({ room, def, spec: spec as RoomSpec }); });
@@ -101,7 +103,9 @@ function fitOut(
       const art = defs[id]?.storageArt;
       const ores = art ? items.filter((s) => art[s.item]) : [];
       const pick = ores.length > 0 ? [ores[rng.int(0, ores.length - 1)] as (typeof items)[number]] : items;
-      out.stock.set(idx, pick.map((s) => ({ item: s.item, count: rng.int(s.min, s.max) })).filter((s) => s.count > 0));
+      // Each store keeps only what it accepts (a cold store takes no water): rolled for every listed item all the same, so the draws do not shift.
+      const filter = defs[id]?.storageAccepts ?? null;
+      out.stock.set(idx, pick.map((s) => ({ item: s.item, count: rng.int(s.min, s.max) })).filter((s) => s.count > 0 && accepts(filter, s.item)));
     }
   };
   // Planned modules per room and def, for steps that place only a share of them.
@@ -175,8 +179,9 @@ function fitOut(
     const g = placeGroundTurrets(lay, o.ground);
     for (const id of o.ground.mods) wanted[id] = (wanted[id] ?? 0) + 1;
     for (const k of g.placed) { const id = lay.modules[k]?.def as string; placed[id] = (placed[id] ?? 0) + 1; }
-    out.ground = { placed: new Set(g.placed), cable: g.cable };
+    out.ground = { placed: new Set(g.placed), cable: g.cable, unwired: g.unwired };
   }
+  if (out.ground && out.ground.unwired > 0) return { ...out, error: 'a module standing apart has no cable' };
   const missing = (id: string): boolean => (wanted[id] ?? 0) > 0 && (placed[id] ?? 0) === 0;
   for (const id of ['module.engine', 'module.helm', 'module.airlock', 'module.reactor', 'module.weaponsConsole', 'module.aiCore', 'module.vehicle_bay']) {
     if (missing(id)) return { ...out, error: `no ${id.replace('module.', '')} fits` };
@@ -322,6 +327,8 @@ export interface FinishOpts {
   gunsAnywhere?: boolean;
   /** Turrets to stand on open ground outside the hull, cabled to it (a prefab asteroid base's guns and point defence: groundTurrets.ts). */
   ground?: GroundPlan;
+  /** Rooms where a module standing apart on open ground is entered: the fit-out checks its walk from there (a prefab farm's greenhouses). */
+  entries?: ReadonlySet<number>;
 }
 
 /**
@@ -394,6 +401,8 @@ export function fitShell(
   const dockTile = new Set(opened.tiles);
   const fitted = opened.merged > 0 ? rows.map((r, y) => d.lay.cells.slice(y * d.lay.w, y * d.lay.w + r.length).join('')) : rows;
   const template = toTemplate(f, role, factionId, seed, plan, fitted, d);
+  // Modules standing apart (entered from their own rooms, or cabled on the ground as such): each structure is checked on its own.
+  if ((opts.entries?.size ?? 0) > 0 || (opts.ground?.apart?.length ?? 0) > 0) template.apart = true;
   template.modules = [...(template.modules ?? []), ...(shell.containers ?? []).map((k) => ({ ...k, ...stockOf(rng, f, defs[k.def]) }))];
   const problems = d.error ? [d.error] : validateTemplate(template, defs, opts.immobile ? { immobile: true } : {});
   if (problems.length === 0 && opts.check) problems.push(...opts.check(template, defs));

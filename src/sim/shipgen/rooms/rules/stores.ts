@@ -4,7 +4,7 @@
  * Chairs face their table (r0 -y, r1 +x, r2 +y, r3 -x).
  */
 import type { Piece } from './check';
-import { AR, C, CD, L, OB, P, RK, SW, T, count, range } from './parts';
+import { AR, C, CD, L, OB, OBL, P, RK, SW, T, count, range } from './parts';
 import type { Ctx } from './rules';
 
 /** Left x of each shelf along a back wall: pairs of two-wide units, a tile between pairs (0, 2, 5, 7, 10 ...). */
@@ -47,24 +47,25 @@ const FACING = { rows: { v: 0, nv: 2 }, cols: { v: 3, nv: 1 } } as const;
  * a wider aisle. Door on a long wall: the rows run along x; door on a short wall: down y.
  */
 export function ore(c: Ctx): Piece[] {
-  const { w, h } = c, total = count(c.need, OB), rows = w >= h, f = rows ? FACING.rows : FACING.cols;
+  // Small bins (2 across) or large ones (3 across, 2 deep) in one run.
+  const { w, h } = c, big = count(c.need, OBL) > 0, bin = big ? OBL : OB, bw = big ? 3 : 2, total = count(c.need, bin), rows = w >= h, f = rows ? FACING.rows : FACING.cols;
   const U = rows ? w : h, V = rows ? h : w;
-  const at = (u: number, v: number, rot: number): Piece => P(OB, rows ? u : v, rows ? v : u, rot);
+  const at = (u: number, v: number, rot: number): Piece => P(bin, rows ? u : v, rows ? v : u, rot);
   const blocked = new Set([`${c.d},${h - 1}`, ...[...(c.doors ?? []), ...(c.cut ?? [])].map((e) => `${e.x},${e.y}`)]);
-  const free = (u: number, v: number): boolean => ![0, 1].some((a) => [0, 1].some((b) => blocked.has(rows ? `${u + a},${v + b}` : `${v + b},${u + a}`)));
+  const free = (u: number, v: number): boolean => Array.from({ length: bw }, (_, a) => a).every((a) => [0, 1].every((b) => !blocked.has(rows ? `${u + a},${v + b}` : `${v + b},${u + a}`)));
   const half = Math.ceil(total / 2);
   // Bins along a wall from both ends inward in mirrored pairs (the room's corners first, an aisle left in the middle).
   const wall = (v: number, rot: number): Piece[] => {
     const us: number[] = [];
-    let l = 0, r = U - 2;
+    let l = 0, r = U - bw;
     for (;;) {
       while (l <= r && !free(l, v)) l++;
       while (r > l && !free(r, v)) r--;
       if (l > r) break;
       us.push(l);
-      if (r >= l + 2) us.push(r);
-      l += 2;
-      r -= 2;
+      if (r >= l + bw) us.push(r);
+      l += bw;
+      r -= bw;
     }
     return us.map((u) => at(u, v, rot));
   };
