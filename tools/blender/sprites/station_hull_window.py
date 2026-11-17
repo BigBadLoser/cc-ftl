@@ -47,6 +47,8 @@ WRAP = (5, 5, 5, 1)                 # the plates bent over the sill's edge, cent
                                     # vent box (across the tiles' join, each tile drawing its share): px wide, px down
                                     # the front, px back over the top, px thick
 WRAP_FRONT, WRAP_TOP, WRAP_SIDE = "stL", "stH", SD.BOX_SIDE
+GROOVE_PLATE = (7, 9, 1)            # an end piece's plate on the groove: px in from the tile's end (to the corner's
+                                    # foot's end), px tall, px out (the bent plates' tones)
 VENT_BOX = (15, 4, 1, 17)           # a middle tile's vent box under the window (the ref's, measured): px wide, its front
                                     # px off the face, its top px over the sill's (run back to the glass), px tall
 VENT_RECESS = (2, 1)                # its front's recess (the slats in it): px in from every edge, px deep
@@ -161,6 +163,11 @@ def _span(f, s, s0, s1, zt):
             f.k.poly(q[::-1] if part == "w3" else q, SD.F, 3, T.OUT(f.ax), fixed=T.SEAM_PASS or col)
         paint([(h0, zs), (uc, zs), (h0, zc)], SH.FACE, 0.0004)      # (the cut: the wall's tone)
         paint([(h0 - ln, zc), (h0, zc), (uc, zs), (uc - ln, zs)], POST_SEAM, 0.0005)   # (its seam)
+        gi, gh, go = GROOVE_PLATE                       # a plate on the groove's seam (centred on its dark line),
+        g0 = SH.GROOVE + (0.5 - gh / 2) / Z             # from gi px in from the tile's end to the corner's foot's end
+        fm.part(s0 + gi * ln, w0 + WIN.SLOPE + WIN.FOOT_W,
+                [(D, g0), (D + go * ln, g0), (D + go * ln, g0 + gh / Z), (D, g0 + gh / Z)],
+                [None, WRAP_FRONT, WRAP_TOP, None], WRAP_SIDE, end=False)
         if part == "w3":                                # (the near end's corner: a dark line down its foot's end)
             ft = w0 + WIN.SLOPE + WIN.FOOT_W
             paint([(ft - ln, zs), (ft, zs), (ft, zs + fh), (ft - ln, zs + fh)], FOOT_EDGE, 0.0005)
