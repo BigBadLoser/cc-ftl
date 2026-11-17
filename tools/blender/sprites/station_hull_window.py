@@ -24,7 +24,6 @@ HEAD = 9                            # the header's upright front: px tall under 
                                     # posts' top)
 SILL = 10                           # the sill's front's top: this many px over the groove
 JAMB_IN = 1 / 32                    # the posts (the jambs) this far behind the face
-CORNER_LIT = SD.TOP_LIT             # the header's top corner: a lit px along its sloping edge
 CORNER_OUT = 1 / 32                 # the opening's corner pieces stand this far out past the posts' front
 PANE_IN = 5 / 32                    # the pane's front this far behind the posts' (the ship's)
 SILL_TOP = "stL"                    # the sill's flat top under the glass
@@ -90,7 +89,8 @@ def _span(f, s, s0, s1, zt):
     f.block(u0, u1, 0.0, SH.GROOVE)                                     # the sill: the face, its top flat back
     pf = [(db, SH.GROOVE), (fr, SH.GROOVE), (fr, zs), (db, zs)]         # to the window's back
     f.part(u0, u1, pf, [None, SH.FACE, SILL_TOP, None], None, end=False)
-    _head(f, u0, u1, zh, (part == "w1", part == "w3"))                 # the header: a square box
+    zr = zh - WIN.SLOPE_H / Z * (JAMB + WIN.SLOPE) / WIN.SLOPE          # (the top corner's foot at the rib)
+    _head(f, u0, u1, zh, (part == "w1", part == "w3"), zr)             # the header: a square box
     f.part(*seg(w0, s1)[:2], [(0.0, zj), (db, zj), (db, zh), (0.0, zh)], [None, BACK_WALL, None, None], None,
            end=False)                                                   # the window's back wall
     win = WIN._opening(w0, s1, zj, zh, end)
@@ -108,15 +108,11 @@ def _span(f, s, s0, s1, zt):
         WIN._slab(f.k, f.ax, f.plane, [(w0, zj), (ut, zj), (ut, zj + fh), (w0 + WIN.SLOPE, zj + fh),
                                        (w0, zj + fh + sh)], db, dv + CORNER_OUT, WIN.HEAD_FRONT,
                   [False, WIN.SIDE, WIN.SILL_FLAT, WIN.SLOPE_COL, False], back=False, mu=mu)
-        zr = zh - sh * (w0 + WIN.SLOPE - h0) / WIN.SLOPE    # (the slope carried on down to the rib)
         ut, out = w0 + WIN.SLOPE, D + SD.BOX_OUT * SD.LINE
         WIN._slab(f.k, f.ax, f.plane, [(h0, zh), (h0, zr), (ut, zh)], db, out, SH.FACE,
                   [False, SD.BOX_SIDE, False], back=False, mu=mu)       # the top corner: its slope carried on
                                                         # across the post down to the rib, flush with the header
                                                         # (its front's tone; its sloped side the box's ends')
-        u1 = ut - (ut - h0) / ((zh - zr) * Z)           # (a px row under the header: where the lit edge ends)
-        WIN._slab(f.k, f.ax, f.plane, [(h0, zr), (ut, zh), (u1, zh), (h0, zr + 1 / Z)], out, out + 0.001,
-                  CORNER_LIT, [False] * 4, back=False, mu=mu)            # its lit edge along the slope
         zl = zj + fh + sh                                               # the jamb's seam
         pf = [(dp + WIN.PANE / 2, zl), (dv + 0.001, zl), (dv + 0.001, zl + 1 / Z), (dp + WIN.PANE / 2, zl + 1 / Z)]
         fm.part(h0, w0 + 0.001, pf, [WIN.JAMB_SEAM] * 4, (None, WIN.JAMB_SEAM), end=False)
@@ -124,10 +120,11 @@ def _span(f, s, s0, s1, zt):
                 (None, WIN.SIDE), end=False)                            # the post (plain: no recessed panel)
 
 
-def _head(f, a, b, z0, ends):
+def _head(f, a, b, z0, ends, foot):
     """The header over [a, b] (the tile's u): the module design's top box (station_hull_designs._top_box: a px off
     the face, from z0 to a px over the top, its top front edge chamfered, its top a plate run back past the top's
-    seam), run on across the window's tiles: its end and its lines only where the window ends (ends: a's, b's)."""
+    seam), run on across the window's tiles: its end and its lines only where the window ends (ends: a's, b's), the
+    lines down its ends carried on down the top corner's side to its foot."""
     H, px, ln = f.sec.H, 1 / core.ZPX, SD.LINE
     back, top, c = SD._box_back(), H + SD.BOX_UP * px, SD.BOX_CHAMFER
     out = D + SD.BOX_OUT * ln
@@ -137,12 +134,12 @@ def _head(f, a, b, z0, ends):
     SD._plate(f, a, b, back, top, ends=ends)
     e = 0.001
     if ends[0]:                                         # (a: the end turned from view, outlined)
-        SD._rect(f, a, a + ln, z0, top - c * px, out + e, SD.BOX_LINE)
+        SD._rect(f, a, a + ln, foot, top - c * px, out + e, SD.BOX_LINE)
         f.k.poly([T.P(f.ax, f.plane, u, z, d) for u, z, d in ((a, top + e, out - c * ln + e), (a + ln, top + e,
                   out - c * ln + e), (a + ln, top - c * px + e, out + e), (a, top - c * px + e, out + e))],
                  SD.F, 3, T.OUT(f.ax), fixed=T.SEAM_PASS or SD.BOX_LINE)
     if ends[1]:                                         # (b: its near end, faintly lit)
-        SD._rect(f, b - ln, b, z0, top - c * px, out + e, SD.LOW_LIT)
+        SD._rect(f, b - ln, b, foot, top - c * px, out + e, SD.LOW_LIT)
     d0 = back - SD.PLATE_BACK * ln + SD.PLATE_R * ln
     for u, col, on in ((a, SD.BOX_LINE, ends[0]), (b - ln, SD.TOP_LIT, ends[1])):   # (its edges along its top)
         if on:
