@@ -14,6 +14,5 @@ export default definePart<'items'>({
   apply(ctx, i) {
     if (i.credits !== undefined) ctx.enqueue({ type: 'debug.setCredits', value: i.credits });
     for (const [item, count] of Object.entries(i.give ?? {})) ctx.enqueue({ type: 'debug.giveItems', item, count });
-    ctx.step();
   },
 });

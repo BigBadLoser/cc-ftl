@@ -42,7 +42,7 @@ function orderParts(): Part[] {
     state.set(key, 'visiting');
     const p = byKey.get(key)!;
     for (const a of [...(p.after ?? [])].sort()) {
-      if (!byKey.has(a)) throw new Error(`scenario part ${key}: unknown after "${a}"`);
+      if (!byKey.has(a)) throw new Error(`scenario part ${key}: unknown after "${a}" (have ${[...byKey.keys()].join(',')})`);
       visit(a);
     }
     state.set(key, 'done');

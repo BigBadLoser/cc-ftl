@@ -94,10 +94,12 @@ export function buildScenario(source: string | ScenarioSpec, opts: BuildOpts = {
   const rejected: Record<string, number> = {};
   const requests: UiRequest[] = [];
   const refs: { name: string; args?: unknown }[] = [];
+  let pending = 0;
   const ctx: BuildCtx = {
     sim, content, seed,
-    enqueue: (...cmds) => void cmds.forEach((c) => sim.enqueue(c)),
+    enqueue: (...cmds) => void cmds.forEach((c) => { sim.enqueue(c); pending++; }),
     step(n = 1) {
+      pending = 0;
       const seen: SimEvent[] = [];
       for (let i = 0; i < n; i++) {
         sim.step();
@@ -121,6 +123,7 @@ export function buildScenario(source: string | ScenarioSpec, opts: BuildOpts = {
     const slice = (spec as Record<string, unknown>)[part.key];
     if (slice !== undefined) (part.apply as (c: BuildCtx, s: unknown) => void)(ctx, slice);
   }
+  if (pending) ctx.step(); // commands queued by the last part: applied before the scene is handed over
   for (const name of opts.extraHooks ?? []) refs.push({ name });
   return attachHooks(sim, refs, true, { requests, rejected });
 }

@@ -18,7 +18,7 @@ declare module '../types' { interface ScenarioSpec { steps?: readonly Step[] } }
 /** The escape hatch of a preset: an ordered script of commands and waits, run after every other part. */
 export default definePart<'steps'>({
   key: 'steps',
-  after: ['ship', 'node', 'items'],
+  after: ['ship', 'node', 'items', 'events'],
   apply(ctx, steps) {
     for (const s of steps) {
       const cmds = typeof s.cmds === 'function' ? s.cmds(ctx) : s.cmds ?? [];
