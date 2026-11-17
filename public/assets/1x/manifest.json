@@ -202626,6 +202626,204 @@
     1
    ]
   },
+  "tile.hull.station.berm.0_1_15": {
+   "kind": "static",
+   "sheet": "station_hull",
+   "frame": {
+    "x": 1944,
+    "y": 1,
+    "w": 44,
+    "h": 27
+   },
+   "anchor": {
+    "x": 44,
+    "y": 6
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.station.berm.0_1_15~1_0_15": {
+   "kind": "static",
+   "sheet": "station_hull",
+   "frame": {
+    "x": 1769,
+    "y": 1,
+    "w": 87,
+    "h": 30
+   },
+   "anchor": {
+    "x": 44,
+    "y": 6
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.station.berm.1_0_15": {
+   "kind": "static",
+   "sheet": "station_hull",
+   "frame": {
+    "x": 1857,
+    "y": 1,
+    "w": 43,
+    "h": 28
+   },
+   "anchor": {
+    "x": 0,
+    "y": 6
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.station.berm.1_0_15~0_m1_15": {
+   "kind": "static",
+   "sheet": "station_hull",
+   "frame": {
+    "x": 1901,
+    "y": 1,
+    "w": 42,
+    "h": 28
+   },
+   "anchor": {
+    "x": 0,
+    "y": 6
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.station.berm.1_1_31": {
+   "kind": "static",
+   "sheet": "station_hull",
+   "frame": {
+    "x": 2219,
+    "y": 1,
+    "w": 2,
+    "h": 13
+   },
+   "anchor": {
+    "x": 1,
+    "y": -11
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.station.berm.1_1_m1": {
+   "kind": "static",
+   "sheet": "station_hull",
+   "frame": {
+    "x": 2032,
+    "y": 1,
+    "w": 62,
+    "h": 18
+   },
+   "anchor": {
+    "x": 31,
+    "y": 9
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.station.berm.1_m1_31": {
+   "kind": "static",
+   "sheet": "station_hull",
+   "frame": {
+    "x": 2222,
+    "y": 1,
+    "w": 13,
+    "h": 5
+   },
+   "anchor": {
+    "x": -32,
+    "y": 7
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.station.berm.1_m1_m1": {
+   "kind": "static",
+   "sheet": "station_hull",
+   "frame": {
+    "x": 1684,
+    "y": 1,
+    "w": 18,
+    "h": 36
+   },
+   "anchor": {
+    "x": 1,
+    "y": 21
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.station.berm.m1_0_15~0_1_15": {
+   "kind": "static",
+   "sheet": "station_hull",
+   "frame": {
+    "x": 1989,
+    "y": 1,
+    "w": 42,
+    "h": 27
+   },
+   "anchor": {
+    "x": 42,
+    "y": 6
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.station.berm.m1_1_31": {
+   "kind": "static",
+   "sheet": "station_hull",
+   "frame": {
+    "x": 2236,
+    "y": 1,
+    "w": 13,
+    "h": 5
+   },
+   "anchor": {
+    "x": 45,
+    "y": 6
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.hull.station.berm.m1_1_m1": {
+   "kind": "static",
+   "sheet": "station_hull",
+   "frame": {
+    "x": 1665,
+    "y": 1,
+    "w": 18,
+    "h": 38
+   },
+   "anchor": {
+    "x": 17,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
   "tile.hull.station.ext.g.0_m1_15": {
    "kind": "static",
    "sheet": "station_hull",
@@ -208624,7 +208822,7 @@
    "kind": "static",
    "sheet": "station_hull",
    "frame": {
-    "x": 1731,
+    "x": 2095,
     "y": 1,
     "w": 62,
     "h": 16
@@ -208642,7 +208840,7 @@
    "kind": "static",
    "sheet": "station_hull",
    "frame": {
-    "x": 1665,
+    "x": 1703,
     "y": 1,
     "w": 32,
     "h": 31
@@ -208660,7 +208858,7 @@
    "kind": "static",
    "sheet": "station_hull",
    "frame": {
-    "x": 1698,
+    "x": 1736,
     "y": 1,
     "w": 32,
     "h": 31
@@ -208678,7 +208876,7 @@
    "kind": "static",
    "sheet": "station_hull",
    "frame": {
-    "x": 1794,
+    "x": 2158,
     "y": 1,
     "w": 60,
     "h": 15
