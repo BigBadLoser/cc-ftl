@@ -246,7 +246,81 @@ def r3(f, lift, t):
         f.vcyl(u, v, zt - ext - 0.06, 0.15, 0.06, "steelD", top="steel", sides=12)   # foot pad / bore hatch
 
 
-GEAR = {"r1": (r1, 0.25), "r2": (r2, 0.25), "r3": (r3, 0.2)}
+# ---- round 4: G1 (four splayed legs, braces, round footpads) made retractable, seen from the camera ----
+def _norm(a):
+    n = math.sqrt(sum(x * x for x in a))
+    return tuple(x / n for x in a)
+
+
+def _slerp(a, b, s):
+    return _norm(tuple(a[i] + (b[i] - a[i]) * s for i in range(3)))
+
+
+def g1_leg(f, hip, stow, down, L, anchor, s, pad_stow):
+    """One G1 leg from `hip`, its direction swung from `stow` to `down` (unit vectors) by s; the brace from the hull
+    `anchor` to 0.6 of the leg is the retraction jack; the round footpad folds from flat against the hull (pad_stow,
+    its normal) to flat on the deck."""
+    d = _slerp(stow, down, s)
+    end = tuple(hip[i] + d[i] * L for i in range(3))
+    D.seg(f, hip, end, 0.07, "steelL")
+    D.seg(f, hip, tuple(hip[i] + d[i] * L * 0.45 for i in range(3)), 0.095, "steel")         # the leg's sleeve
+    band(f, hip, end, 0.075, n=3)
+    f.vcyl(hip[0], hip[1], hip[2] - 0.07, 0.085, 0.09, "steelD", sides=8)                    # the hinge
+    mid = tuple(hip[i] + d[i] * L * 0.6 for i in range(3))
+    D.seg(f, anchor, mid, 0.035, "steel")                                                       # brace / jack
+    D.seg(f, anchor, tuple(anchor[i] + (mid[i] - anchor[i]) * 0.5 for i in range(3)), 0.05, "steelD")
+    a = _slerp(pad_stow, (0.0, 0.0, -1.0), s)
+    D.seg(f, end, tuple(end[i] + a[i] * 0.06 for i in range(3)), 0.21, "steelD", cap="steel", capstart="steel")
+
+
+def _down(sv, zk, hip_v, foot_v):
+    """Deployed direction and length: from the hip down to the foot (0.06 above the deck), splayed out to foot_v."""
+    v = (0.0, foot_v - hip_v, 0.06 - zk)
+    L = math.sqrt(sum(x * x for x in v))
+    return _norm(v), L
+
+
+def ga(f, lift, t):
+    """A: legs fold fore-and-aft into channels along the lower flanks (aft pair forward, fore pair aft)."""
+    zk = KEEL + lift
+    s = _legs_t(t)
+    for uh, dirn in ((-1.4, 1), (1.25, -1)):
+        for sv in (-1, 1):
+            hip = (uh, sv * 0.98, zk + 0.05)
+            down, L = _down(sv, hip[2], hip[1], sv * 1.3)
+            ua, ub = sorted((uh, uh + dirn * L))
+            f.box((ua + ub) / 2, sv * 0.93, hip[2] - 0.02, ub - ua + 0.12, 0.08, 0.2, "dark", top="steelD")   # channel
+            g1_leg(f, hip, (dirn, 0.0, 0.0), down, L, (uh + dirn * 0.5, sv * 0.85, zk + 0.18), s, (0.0, sv, 0.0))
+
+
+def gb(f, lift, t):
+    """B: the aft legs fold up under the engine shoulders (into nacelle bays, aft), the fore legs under the nose sides."""
+    zk = KEEL + lift
+    s = _legs_t(t)
+    for uh, vh, zh, dirn in ((-0.35, 1.22, zk + 0.33, -1), (1.3, 0.78, zk, -1)):
+        for sv in (-1, 1):
+            hip = (uh, sv * vh, zh)
+            down, L = _down(sv, zh, hip[1], sv * (vh + 0.3))
+            ua, ub = sorted((uh, uh + dirn * L))
+            well_doors(f, ua - 0.04, ub + 0.04, hip[1] - 0.12, hip[1] + 0.12, zh + 0.02, t)
+            g1_leg(f, hip, (dirn, 0.0, 0.0), down, L, (uh + dirn * 0.55, sv * (vh - 0.15), zh + 0.02), s, (0.0, 0.0, 1.0))
+
+
+def gc(f, lift, t):
+    """C: each leg lives in a pod on the lower flank (a short fairing along the hull) and swings down out of its slot."""
+    zk = KEEL + lift
+    s = _legs_t(t)
+    for uh, dirn in ((-1.45, 1), (1.2, -1)):
+        for sv in (-1, 1):
+            hip = (uh, sv * 1.05, zk + 0.02)
+            down, L = _down(sv, hip[2], hip[1], sv * 1.32)
+            ua, ub = sorted((uh, uh + dirn * L))
+            f.hcyl(ua - 0.08, ub + 0.08, sv * 1.05, hip[2] + 0.04, 0.13, "gW1", sides=10, cap="steelL", capstart="steelL")  # pod
+            f.box((ua + ub) / 2, sv * 1.05, hip[2] - 0.1, ub - ua + 0.1, 0.12, 0.02, "dark", top="dark")    # its slot
+            g1_leg(f, hip, (dirn, 0.0, 0.0), down, L, (uh + dirn * 0.55, sv * 0.95, hip[2] + 0.06), s, (0.0, sv, 0.0))
+
+
+GEAR = {"ga": (ga, 0.25), "gb": (gb, 0.25), "gc": (gc, 0.25)}
 FRAMES = (0.0, 0.5, 1.0)
 
 def landed(key, t=1.0, heading=0.0):
