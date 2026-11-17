@@ -49,7 +49,7 @@ WRAP = (5, 5, 5, 1)                 # the plates bent over the sill's edge, cent
 WRAP_FRONT, WRAP_TOP, WRAP_SIDE = "stL", "stH", SD.BOX_SIDE
 GROOVE_PLATE = (7, 9, 1)            # an end piece's plate on the groove: px in from the tile's end (to the corner's
                                     # foot's end), px tall, px out (the bent plates' tones)
-GROOVE_PLATE_SIDE = "stS"           # its ends: a step over the bent plates'
+GROOVE_PLATE_SIDE = "stL"           # its ends: two steps over the bent plates'
 VENT_BOX = (15, 4, 1, 17)           # a middle tile's vent box under the window (the ref's, measured): px wide, its front
                                     # px off the face, its top px over the sill's (run back to the glass), px tall
 VENT_RECESS = (2, 1)                # its front's recess (the slats in it): px in from every edge, px deep
