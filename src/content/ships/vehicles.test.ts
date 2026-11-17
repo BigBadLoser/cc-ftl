@@ -15,16 +15,13 @@ import { boardingTile } from '../../sim/vehicles/geometry';
 import { destroyVehicle } from '../../sim/vehicles/lifecycle';
 import { vehicleViews } from '../../sim/vehicles/queries';
 import { content } from '../index';
-import { missileRaiderId, shuttleContent } from './shuttleFixture';
+import { missileRaiderId, shuttleContent, shuttleSetup } from '../../../test/support/fixtures/shuttle';
 import { shipIdOf, shipGrid } from '../../sim/regions';
 import { shipIds } from '../../sim/regions';
-import { nth, run } from '../../../test/support/sim';
+import { crewOn, eventsOf, nth, run } from '../../../test/support/sim';
+import { cachedNewGame } from '../../../test/support/content';
 
 
-const of = <T extends SimEvent['type']>(events: SimEvent[], type: T): Extract<SimEvent, { type: T }>[] =>
-  events.filter((e): e is Extract<SimEvent, { type: T }> => e.type === type);
-
-const crewOn = (sim: Sim, shipId: number): number[] => sim.world.query(CrewC).filter((i) => shipIdOf(sim, sim.world.get(i, PositionC)) === nth(sim, shipId));
 const shuttleOf = (sim: Sim, shipId: number): number => sim.world.query(VehicleC).find((i) => sim.world.get(i, VehicleC)!.homeShip === nth(sim, shipId))!;
 const airlockOf = (sim: Sim, shipId: number): number =>
   sim.world.query(ModuleC).find((i) => shipIdOf(sim, sim.world.get(i, ModuleC)) === nth(sim, shipId) && sim.world.get(i, ModuleC)!.def === 'module.airlock')!;
@@ -36,13 +33,7 @@ function disarm(sim: Sim, shipId: number): void {
     if (shipIdOf(sim, m) === nth(sim, shipId)) m.enabled = false; // disabled rather than broken: the crew cannot repair it
   }
 }
-/** Starter (grid 1) facing an optional raider (grid 2) 80 tiles away. */
-function setup(seed = 1, reg: ContentRegistry = content, enemy = 'ship.raider'): Sim {
-  const sim = newGame(seed, reg);
-  sim.enqueue({ type: 'debug.spawnEnemy', template: enemy, x: 100, y: 50 });
-  run(sim, 5);
-  return sim;
-}
+const setup = shuttleSetup; // starter (grid 1) facing an optional raider (grid 2) 80 tiles away
 const roleOf = (sim: Sim, id: number): string => sim.world.get(id, CrewC)!.role;
 function embark(sim: Sim, crew: number[], vehicle: number): SimEvent[] {
   for (const c of crew) sim.enqueue({ type: 'vehicle.embark', crew: c, vehicle });
@@ -57,7 +48,7 @@ describe('shuttle round trip', () => {
     const crew = crewOn(sim, 1);
     const pilot = crew.find((c) => roleOf(sim, c) === 'role.pilot')!;
     const medic = crew.find((c) => roleOf(sim, c) === 'role.medic')!;
-    const boarded = of(embark(sim, [pilot, medic], shuttle), 'crew.embarked');
+    const boarded = eventsOf(embark(sim, [pilot, medic], shuttle), 'crew.embarked');
     expect(boarded.map((e) => e.crew).sort()).toEqual([pilot, medic].sort());
     expect(sim.world.has(pilot, PositionC)).toBe(false); // hidden, on no grid
     expect(sim.world.has(pilot, AboardC)).toBe(true);
@@ -66,23 +57,23 @@ describe('shuttle round trip', () => {
 
     sim.enqueue({ type: 'vehicle.dock', vehicle: shuttle, airlock: airlockOf(sim, 2) });
     const out = run(sim, 600);
-    expect(of(out, 'vehicle.launched')).toHaveLength(1);
-    expect(of(out, 'vehicle.docked')[0]).toMatchObject({ vehicle: shuttle, ship: nth(sim, 2) });
+    expect(eventsOf(out, 'vehicle.launched')).toHaveLength(1);
+    expect(eventsOf(out, 'vehicle.docked')[0]).toMatchObject({ vehicle: shuttle, ship: nth(sim, 2) });
     expect(v().state).toBe('docked');
 
     sim.enqueue({ type: 'vehicle.disembark', vehicle: shuttle });
     sim.enqueue({ type: 'vehicle.disembark', vehicle: shuttle, crew: v().pilot });
-    const landed = of(run(sim, 3), 'crew.disembarked');
+    const landed = eventsOf(run(sim, 3), 'crew.disembarked');
     expect(landed).toHaveLength(2);
     expect(landed.every((e) => e.ship === nth(sim, 2))).toBe(true);
     expect(shipIdOf(sim, sim.world.get(pilot, PositionC))).toBe(nth(sim, 2));
 
-    const back = of(embark(sim, [pilot, medic], shuttle), 'crew.embarked');
+    const back = eventsOf(embark(sim, [pilot, medic], shuttle), 'crew.embarked');
     expect(back).toHaveLength(2);
     sim.enqueue({ type: 'vehicle.return', vehicle: shuttle });
     const home = run(sim, 600);
-    expect(of(home, 'vehicle.undocked')).toHaveLength(1);
-    expect(of(home, 'vehicle.stowed')).toHaveLength(1);
+    expect(eventsOf(home, 'vehicle.undocked')).toHaveLength(1);
+    expect(eventsOf(home, 'vehicle.stowed')).toHaveLength(1);
     expect(v().state).toBe('stowed');
     sim.enqueue({ type: 'vehicle.disembark', vehicle: shuttle });
     sim.enqueue({ type: 'vehicle.disembark', vehicle: shuttle, crew: pilot });
@@ -98,22 +89,22 @@ describe('shuttle round trip', () => {
     const events = embark(sim, crewOn(sim, 1).slice(0, 3), shuttle);
     const v = sim.world.get(shuttle, VehicleC)!;
     expect(1 + v.passengers.length).toBe(2);
-    expect(of(events, 'crew.embarked')).toHaveLength(2);
-    expect(of(events, 'command.rejected').filter((e) => e.reason === 'full')).toHaveLength(1);
+    expect(eventsOf(events, 'crew.embarked')).toHaveLength(2);
+    expect(eventsOf(events, 'command.rejected').filter((e) => e.reason === 'full')).toHaveLength(1);
   });
 
   it('does not launch without a pilot', () => {
-    const sim = newGame(1, content);
+    const sim = cachedNewGame(1);
     const shuttle = shuttleOf(sim, 1);
     sim.enqueue({ type: 'vehicle.launch', vehicle: shuttle });
     const out = run(sim, 2);
-    expect(of(out, 'command.rejected')[0]).toMatchObject({ command: 'vehicle.launch', reason: 'noPilot' });
+    expect(eventsOf(out, 'command.rejected')[0]).toMatchObject({ command: 'vehicle.launch', reason: 'noPilot' });
     expect(sim.world.get(shuttle, VehicleC)!.state).toBe('stowed');
   });
 
   it('a pilot with the piloting skill flies faster', () => {
     const fly = (role: string): number => {
-      const sim = newGame(1, content);
+      const sim = cachedNewGame(1);
       const shuttle = shuttleOf(sim, 1);
       const c = crewOn(sim, 1).find((i) => roleOf(sim, i) === role)!;
       embark(sim, [c], shuttle);
@@ -138,16 +129,16 @@ describe('shuttle combat', () => {
     embark(sim, crew, shuttle);
     sim.enqueue({ type: 'vehicle.launch', vehicle: shuttle });
     const out = run(sim, 20 * 90);
-    expect(of(out, 'vehicle.destroyed')[0]).toMatchObject({ vehicle: shuttle, state: 'flying' });
+    expect(eventsOf(out, 'vehicle.destroyed')[0]).toMatchObject({ vehicle: shuttle, state: 'flying' });
     expect(sim.world.isAlive(shuttle)).toBe(false);
     for (const c of crew) expect(sim.world.has(c, DeadC)).toBe(true);
-    expect(of(out, 'crew.died')).toHaveLength(2);
+    expect(eventsOf(out, 'crew.died')).toHaveLength(2);
   });
 
   it('a stowed shuttle cannot be targeted', () => {
     const sim = setup();
     sim.enqueue({ type: 'combat.setTarget', ship: nth(sim, 2), weaponId: null, targetShip: 0, targetModuleId: 0, targetVehicle: shuttleOf(sim, 1) });
-    expect(of(run(sim, 1), 'command.rejected')[0]).toMatchObject({ reason: 'badTarget' });
+    expect(eventsOf(run(sim, 1), 'command.rejected')[0]).toMatchObject({ reason: 'badTarget' });
   });
 
   it('a shuttle destroyed while docked drops its crew downed at the airlock', () => {
@@ -173,7 +164,7 @@ describe('shuttle combat', () => {
     embark(sim, crew, shuttle);
     sim.enqueue({ type: 'vehicle.dock', vehicle: shuttle, airlock: airlockOf(sim, 1) });
     const out = run(sim, 20 * 25);
-    const pd = of(out, 'vehicle.damaged').filter((e) => e.source === 'pointDefence');
+    const pd = eventsOf(out, 'vehicle.damaged').filter((e) => e.source === 'pointDefence');
     expect(pd.length).toBeGreaterThan(0);
   });
 
@@ -187,19 +178,19 @@ describe('shuttle combat', () => {
     embark(sim, crewOn(sim, 2).slice(0, 1), shuttle);
     sim.enqueue({ type: 'vehicle.dock', vehicle: shuttle, airlock: airlockOf(sim, 1) });
     const out = run(sim, 20 * 25);
-    expect(of(out, 'vehicle.damaged').filter((e) => e.source === 'pointDefence')).toHaveLength(0);
+    expect(eventsOf(out, 'vehicle.damaged').filter((e) => e.source === 'pointDefence')).toHaveLength(0);
   });
 });
 
 describe('crafting and assignment', () => {
   it('a shuttle item in storage fills an empty bay', () => {
-    const sim = newGame(1, content);
+    const sim = cachedNewGame(1);
     const bay = sim.world.query(VehicleBayC)[0] as number;
     sim.enqueue({ type: 'vehicle.assign', bay });
-    expect(of(run(sim, 1), 'command.rejected')[0]).toMatchObject({ reason: 'bayFull' });
+    expect(eventsOf(run(sim, 1), 'command.rejected')[0]).toMatchObject({ reason: 'bayFull' });
     destroyVehicle(sim, shuttleOf(sim, 1));
     sim.enqueue({ type: 'vehicle.assign', bay });
-    expect(of(run(sim, 1), 'command.rejected')[0]).toMatchObject({ reason: 'noShuttle' });
+    expect(eventsOf(run(sim, 1), 'command.rejected')[0]).toMatchObject({ reason: 'noShuttle' });
     const crate = sim.world.query(ModuleC).find((i) => sim.world.get(i, ModuleC)!.def === 'module.storage')!;
     storageAdd(sim, crate, 'item.shuttle', 1);
     sim.enqueue({ type: 'vehicle.assign', bay });
@@ -209,7 +200,7 @@ describe('crafting and assignment', () => {
   });
 
   it('an empty bay builds its own shuttle: crew bring the materials and work it, no fabricator needed (#387)', () => {
-    const sim = newGame(1, content);
+    const sim = cachedNewGame(1);
     const bay = sim.world.query(VehicleBayC)[0] as number;
     destroyVehicle(sim, shuttleOf(sim, 1));
     for (const id of sim.world.query(ModuleC)) if (sim.world.get(id, ModuleC)!.def === 'module.fabricator') sim.world.get(id, ModuleC)!.hp = 0;
@@ -217,15 +208,15 @@ describe('crafting and assignment', () => {
     for (const q of content.vehicles['vehicle.shuttle'].assemble!.cost) storageAdd(sim, crate, q.item, q.count);
     sim.enqueue({ type: 'vehicle.build', bay });
     sim.enqueue({ type: 'vehicle.build', bay }); // one at a time
-    expect(of(run(sim, 1), 'command.rejected')[0]).toMatchObject({ command: 'vehicle.build', reason: 'bayTaken' });
+    expect(eventsOf(run(sim, 1), 'command.rejected')[0]).toMatchObject({ command: 'vehicle.build', reason: 'bayTaken' });
     sim.enqueue({ type: 'vehicle.assign', bay }); // nothing fitted over a build in place
-    expect(of(run(sim, 1), 'command.rejected')[0]).toMatchObject({ command: 'vehicle.assign', reason: 'bayTaken' });
+    expect(eventsOf(run(sim, 1), 'command.rejected')[0]).toMatchObject({ command: 'vehicle.assign', reason: 'bayTaken' });
     const out: SimEvent[] = [];
     for (let i = 0; i < 20 * 600 && vehicleViews(sim).length === 0; i++) out.push(...run(sim, 1));
-    expect(of(out, 'vehicle.assembled')).toHaveLength(1);
+    expect(eventsOf(out, 'vehicle.assembled')).toHaveLength(1);
     expect(sim.world.get(bay, VehicleBayC)?.vehicle).toBeTruthy();
     sim.enqueue({ type: 'vehicle.build', bay });
-    expect(of(run(sim, 1), 'command.rejected')[0]).toMatchObject({ reason: 'bayFull' });
+    expect(eventsOf(run(sim, 1), 'command.rejected')[0]).toMatchObject({ reason: 'bayFull' });
   });
 });
 
@@ -238,16 +229,16 @@ describe('enemy boarding AI', () => {
   it('the plain raider never boards', () => {
     const sim = setup(1, reg, 'ship.raider');
     const out = run(sim, 20 * 60);
-    expect(of(out, 'vehicle.launched')).toHaveLength(0);
+    expect(eventsOf(out, 'vehicle.launched')).toHaveLength(0);
   });
 
   it('sends a party by shuttle to a player airlock and lands it', () => {
     const sim = setup(1, reg, 'ship.raiderBoarder');
     const out = run(sim, 20 * 80);
-    expect(of(out, 'vehicle.launched').length).toBeGreaterThan(0);
-    const dock = of(out, 'vehicle.docked')[0];
+    expect(eventsOf(out, 'vehicle.launched').length).toBeGreaterThan(0);
+    const dock = eventsOf(out, 'vehicle.docked')[0];
     expect(dock).toMatchObject({ ship: nth(sim, 1), airlock: airlockOf(sim, 1) });
-    const landed = of(out, 'crew.disembarked');
+    const landed = eventsOf(out, 'crew.disembarked');
     expect(landed.length).toBeGreaterThanOrEqual(2);
     expect(landed.every((e) => e.ship === nth(sim, 1))).toBe(true);
     for (const e of landed) expect(shipIdOf(sim, sim.world.get(e.crew, PositionC))).toBe(nth(sim, 1));
@@ -260,9 +251,9 @@ describe('enemy boarding AI', () => {
     };
     const sim = setup(1, armed, 'ship.raiderBoarder');
     const out = run(sim, 20 * 120);
-    const landed = of(out, 'crew.disembarked').map((e) => e.crew);
+    const landed = eventsOf(out, 'crew.disembarked').map((e) => e.crew);
     expect(landed.length).toBeGreaterThanOrEqual(2);
-    const shots = of(out, 'crew.attacked').filter((e) => landed.includes(e.crew));
+    const shots = eventsOf(out, 'crew.attacked').filter((e) => landed.includes(e.crew));
     expect(shots.length).toBeGreaterThan(0);
     expect(shots.every((e) => e.weapon === 'item.sidearm' && e.ship === nth(sim, 1))).toBe(true);
   });
@@ -289,7 +280,7 @@ describe('shuttle bay pit', () => {
   const bayDef = content.modules['module.vehicle_bay'] as ModuleDef;
 
   it('is a solid pit: no footprint tile is walkable, and the shuttle boards from the floor east of it in the hatch row', () => {
-    const sim = newGame(1, content);
+    const sim = cachedNewGame(1);
     const bay = sim.world.query(VehicleBayC)[0] as number;
     const m = sim.world.get(bay, ModuleC)!;
     const grid = shipGrid(sim, shipIdOf(sim, m))!;
