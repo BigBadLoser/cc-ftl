@@ -44,7 +44,7 @@ BACK_WALL = "stE"                   # the window's back wall
 VENT_BOX = (15, 4, 1, 17)           # a middle tile's vent box under the window (the ref's, measured): px wide, its front
                                     # px off the face, its top px over the sill's (run back to the glass), px tall
 VENT_RECESS = (2, 1)                # its front's recess (the slats in it): px in from every edge, px deep
-VENT_PANEL = "stM"                  # the recess's floor: a step under the front
+VENT_PANEL, VENT_PANEL_SIDE = "stM", "stD"   # the recess's floor a step under the front, its sides a step under that
 VENT_SLATS = (3, 8, 3, 6, 3)        # its slats: count, px wide, px in from its a end, the first's px under its top, px
                                     # apart (each a dark row over a lit row)
 VENT_FRONT, VENT_TOP, VENT_EDGE, VENT_LIT = SH.FACE, "stH", SD.TOP_LIT, "stL"   # its front, top, top's front edge,
@@ -200,12 +200,12 @@ def _vent_box(f, s0, s1, zs, gl):
     f.part(a, b, [(gl, zs), (D, zs), (D, top), (gl, top)], [None, None, VENT_TOP, None], cap, end=False)
     zi0, zi1 = z0 + ri * px, top - ri * px
 
-    def rim(u0, u1, za, zb, up):                        # (the frame round the recess)
-        f.part(u0, u1, [(rb, za), (fr, za), (fr, zb), (rb, zb)], [None, VENT_FRONT, up, None], cap, end=False)
+    def rim(u0, u1, za, zb, up, cp=cap):                # (the frame round the recess: its sides in it darker)
+        f.part(u0, u1, [(rb, za), (fr, za), (fr, zb), (rb, zb)], [None, VENT_FRONT, up, None], cp, end=False)
     rim(a, b, zi1, top, VENT_EDGE)
-    rim(a, b, z0, zi0, SD.BOX_SIDE)
-    rim(a, a + ri * ln, zi0, zi1, None)
-    rim(b - ri * ln, b, zi0, zi1, None)
+    rim(a, b, z0, zi0, VENT_PANEL_SIDE)
+    rim(a, a + ri * ln, zi0, zi1, None, (SD.BOX_SIDE, VENT_PANEL_SIDE))
+    rim(b - ri * ln, b, zi0, zi1, None, (VENT_PANEL_SIDE, SD.BOX_SIDE))
     n, sw, si, s1st, sp = VENT_SLATS
     for i in range(n):
         z = top - (s1st + i * sp) * px
