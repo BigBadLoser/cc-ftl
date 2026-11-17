@@ -5,6 +5,9 @@ folded-wing pose lifted by the gear onto the pad's deck (PAD_Z):
   vehicle.shuttle.gear.g1   four telescoping legs, knee braces, broad round footpads, open gear doors
   vehicle.shuttle.gear.g2   twin skids along the keel on raked struts
   vehicle.shuttle.gear.g3   tricycle: a nose leg under the cockpit and two heavy main legs with rocker feet
+  vehicle.shuttle.gear.g4   short stout legs under the engine shoulders, square feet, hazard bands
+  vehicle.shuttle.gear.g5   jointed insect legs, a high knee, hex feet
+  vehicle.shuttle.gear.g6   swing-out side frames (A-frames to long foot plates), like the turret outriggers
 
 Origin = the craft's centre, as craft_item; drawn over a pad in the review sheet."""
 import math
@@ -77,7 +80,64 @@ def g3(f, lift):
         door(f, -1.2, v, sv, zk, lu=0.5, lv=0.3)
 
 
-GEAR = {"g1": (g1, 0.25), "g2": (g2, 0.12), "g3": (g3, 0.3)}
+def band(f, a, b, r, n=4):
+    """Hazard bands along a strut from a to b (n alternating yellow and black)."""
+    for k in range(n):
+        t0, t1 = 0.35 + 0.08 * k, 0.35 + 0.08 * (k + 1)
+        p0 = tuple(a[i] + (b[i] - a[i]) * t0 for i in range(3))
+        p1 = tuple(a[i] + (b[i] - a[i]) * t1 for i in range(3))
+        D.seg(f, p0, p1, r, "hazY" if k % 2 == 0 else "hazK")
+
+
+def g4(f, lift):
+    """Short, stout legs straight down from under the engine shoulders, square feet, a hazard band on each."""
+    zk = KEEL + lift + 0.35                                                           # the shoulder underside
+    for u in (-1.75, -0.2):
+        for sv in (-1, 1):
+            v = sv * 1.3
+            f.box(u, v, 0.0, 0.36, 0.36, 0.07, "steelD", top="steel")
+            f.box(u, v, 0.07, 0.2, 0.2, 0.06, "steel", top="steelL")
+            D.seg(f, (u, v, 0.13), (u, v, zk), 0.09, "steelL")
+            D.seg(f, (u, v, zk - 0.25), (u, v, zk + 0.02), 0.12, "steel")             # the sleeve
+            band(f, (u, v, 0.13), (u, v, zk), 0.095, n=3)
+    D.seg(f, (1.6, 0, 0.05), (1.6, 0, KEEL + lift), 0.06, "steelL")                   # light nose prop
+    f.box(1.6, 0, 0.0, 0.24, 0.24, 0.05, "steelD", top="steel")
+
+
+def g5(f, lift):
+    """Jointed insect legs: an upper arm out and up from the hull side to a high knee, a long shin down to a hex foot."""
+    zk = KEEL + lift + 0.15
+    for u in (-1.3, 1.25):
+        for sv in (-1, 1):
+            hip = (u, sv * 0.85, zk)
+            knee = (u + (0.15 if u > 0 else -0.15), sv * 1.55, zk + 0.35)
+            foot = (u + (0.3 if u > 0 else -0.3), sv * 1.75, 0.08)
+            D.seg(f, hip, knee, 0.075, "steelL")
+            f.vcyl(knee[0], knee[1], knee[2] - 0.08, 0.1, 0.16, "steel", top="steelL", sides=8)   # knee joint
+            D.seg(f, knee, foot, 0.06, "steelL")
+            band(f, knee, foot, 0.065, n=3)
+            D.seg(f, (hip[0], hip[1], hip[2] - 0.2), ((knee[0] + foot[0]) / 2, (knee[1] + foot[1]) / 2, (knee[2] + foot[2]) / 2), 0.03, "steel")   # actuator
+            f.vcyl(foot[0], foot[1], 0.0, 0.2, 0.06, "steelD", top="steel", sides=6)
+
+
+def g6(f, lift):
+    """Swing-out side frames (like the turret outriggers): an A-frame hinged at the belly's edge out and down to a long
+    foot plate along each side."""
+    zk = KEEL + lift
+    for sv in (-1, 1):
+        fv = sv * 1.6
+        f.box(-0.1, fv, 0.0, 2.6, 0.26, 0.06, "steelD", top="steel")                  # foot plate
+        f.box(-0.1, fv, 0.06, 2.2, 0.12, 0.05, "hazY", top="hazY")
+        for k in range(6):
+            f.box(-1.2 + k * 0.44, fv, 0.11, 0.2, 0.125, 0.004, "hazK", top="hazK")
+        for u in (-1.1, 0.9):
+            D.seg(f, (u - 0.35, sv * 0.85, zk), (u, fv, 0.1), 0.06, "steelL")         # A-frame
+            D.seg(f, (u + 0.35, sv * 0.85, zk), (u, fv, 0.1), 0.06, "steelL")
+            f.vcyl(u, fv, 0.06, 0.09, 0.1, "steel", top="steelL", sides=8)            # foot hinge
+        D.seg(f, (-1.6, sv * 0.85, zk), (1.4, sv * 0.85, zk), 0.07, "steel")          # hinge beam under the belly edge
+
+
+GEAR = {"g4": (g4, 0.2), "g5": (g5, 0.25), "g6": (g6, 0.2)}
 
 
 def landed(key, heading=0.0):
