@@ -400,6 +400,7 @@ def jobs():
         run = BM.along(k) is not None
         ends = [(a, b) for a in (0, 1) for b in (0, 1)] if run or BM.turn_key(k) else [None]
         out += [lambda n=n, v=v, e=e: _berm(n, v, e) for v in range(BM.RUN if run else BM.VARIANTS) for e in ends]
+    out += SW.jobs()                                    # (the window: w1, w2, w3 along x and y)
     return out + [lambda m=m, o=o, v=v: _item(f"tile.hull.station.ext.o{o}.m{m}.a{v}", lambda: _wide(m, o, v))
                   for (m, o) in STRAIGHT for v in SD.DESIGNS]
 
