@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CrewC, PositionC, ShipC, TraderC, galaxyIndex, newGame, playerShip, type Sim } from '../../sim';
+import { CrewC, ModuleC, PositionC, ShipC, TraderC, galaxyIndex, newGame, playerShip, type Sim } from '../../sim';
 import { content } from '../../content';
 import { AllegianceC } from '../../sim/fight/components';
 import { AwayC } from '../../sim/away/components';
@@ -247,6 +247,13 @@ describe('fighting and refusing the inspectors (#138 step 3)', () => {
       return !!p && shipIdOf(sim, p) === ship;
     });
     expect(aboard.length).toBeGreaterThan(0);
+    // The fight aboard is the subject, not the station's guns: knocked out, they cannot wreck the ship (and end the
+    // inspection with it) before the lift time, whatever the station's fit-out mounts.
+    const station = sim.world.query(ShipC).find((i) => sim.world.get(i, ShipC)!.immobile)!;
+    for (const id of sim.world.query(ModuleC)) {
+      const m = sim.world.get(id, ModuleC)!;
+      if ((content.modules as Record<string, { weapon?: unknown }>)[m.def]?.weapon && sim.sector.grid.get('ship', m.x, m.y) === station) sim.enqueue({ type: 'debug.setModuleHp', id, hp: 0 });
+    }
     // Keep the fight going past the lift time: the inspectors are topped up each tick, so it cannot end before the recall would lift them.
     for (let i = 0; i < (AWAY_LIFT_SEC + 60) * TICK_HZ; i++) {
       for (const c of aboard) {

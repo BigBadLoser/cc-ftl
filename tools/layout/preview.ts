@@ -10,7 +10,7 @@ import { createRenderer, type Renderer } from '../../src/render/scene';
 import { ModuleC, shipGrid } from '../../src/sim';
 import { ORIGIN, type View } from './camera';
 import type { Design } from './design';
-import { buildWorld, fits, restamp, type World } from './world';
+import { buildWorld, fits, restamp, sameShell, swapModules, type World } from './world';
 
 export interface Mark { tiles: readonly [number, number][]; tint: number; solid?: boolean }
 export interface Preview {
@@ -78,7 +78,13 @@ export function createPreview(): Preview {
       const mine = ++generation;
       drop(next);
       next = undefined;
-      // An edit restamps the preview's own sim in place (the renderer keeps its world and rebuilds only the ship's scene).
+      // A furniture-only edit swaps just those modules in the preview's sim (the scene stays); anything else restamps the sim in place
+      // (the renderer keeps its world and rebuilds only the ship's scene).
+      if (cur && sameShell(cur.design.layout, d.layout) && swapModules(cur.world, cur.design.layout, d.layout)) {
+        cur.design = d;
+        applyView(cur);
+        return;
+      }
       if (cur && fits(cur.world.sim, d.layout)) {
         try {
           const ship = restamp(cur.world.sim, cur.world.ship, d.layout);

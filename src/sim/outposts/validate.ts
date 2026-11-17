@@ -11,7 +11,7 @@ const DUG_EXEMPT = /not on the hull|^width: |^seal: /;
 /**
  * Problems with an outpost, empty when sound: the station template passes the ship checks (immobile: modules on floor, access and
  * chairs clear, power balance, one connected structure; a dug base's airlock walls excepted), it has crew and an airlock, the
- * asteroid is sound, the dock's collar opens on space, no airlock opens into rock mass (a dug base has only its dock), and (dug) every carved tile is closed in by rock mass or the base's own
+ * asteroid is sound, the dock's collar opens on space (a prefab base's on its pad's ground), no airlock opens into rock mass (a dug base has only its dock), and (dug) every carved tile is closed in by rock mass or the base's own
  * tiles, corners included (no breach to space or ground).
  */
 export function validateOutpost(o: OutpostPlan, defs: Record<string, ModuleDef>): string[] {
@@ -28,7 +28,10 @@ export function validateOutpost(o: OutpostPlan, defs: Record<string, ModuleDef>)
     const out = airlockOutside(defs[m.def] as ModuleDef, m);
     if (at(o.at.x + out.x, o.at.y + out.y) === Struct.Rock) problems.push(`airlock at ${m.x},${m.y} opens into rock`);
   }
-  if (at(o.at.x + o.dock.collar.x, o.at.y + o.dock.collar.y) !== Struct.Space) problems.push('airlock collar is not open space');
+  // A prefab base's dock is a landing pad's airlock: its collar is the pad's ground.
+  const collar = at(o.at.x + o.dock.collar.x, o.at.y + o.dock.collar.y);
+  if (o.station.site && o.style === 'surface') { if (collar !== Struct.Ground) problems.push('pad airlock does not open on ground'); }
+  else if (collar !== Struct.Space) problems.push('airlock collar is not open space');
   if (o.style === 'dug') {
     for (let ly = 0; ly < o.template.rows.length; ly++) {
       for (let lx = 0; lx < (o.template.rows[ly] as string).length; lx++) {

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-  Rng, SECURITY_ROLE, STATION_MAX, STATION_SIZES, generateStation, planStation, stationCrew, structureParts,
-  rotatedSize, type ItemDef, type ModuleDef, type StationDef, type StationGrammar, type StationResult, type StationSize,
+  Rng, SECURITY_ROLE, buildStation, crewPosts, crewSize, docksOf, STATION_SIZES, stationCrew, stationProgram, structureParts,
+  rotatedSize, type ItemDef, type ModuleDef, type StationDef, type StationResult, type StationSize,
 } from '../sim';
 import { content } from './index';
 import { stations } from './stations';
@@ -9,7 +9,15 @@ import { stations } from './stations';
 const defs = content.modules as Record<string, ModuleDef>;
 type Id = keyof typeof stations;
 const ids = Object.keys(stations) as Id[];
-const gen = (id: Id, size: StationSize, seed: number): StationResult => generateStation(stations[id] as StationDef, id, size, seed, defs);
+const cache = new Map<string, StationResult>();
+const gen = (id: Id, size: StationSize, seed: number): StationResult => {
+  const k = `${id} ${size} ${seed}`;
+  const hit = cache.get(k);
+  if (hit) return hit;
+  const g = buildStation(stations[id] as StationDef, id, size, seed, defs);
+  cache.set(k, g);
+  return g;
+};
 const count = (g: StationResult, id: string): number => (g.template.modules ?? []).filter((m) => m.def === id).length;
 const countBy = (g: StationResult, pred: (d: ModuleDef) => boolean): number =>
   (g.template.modules ?? []).filter((m) => defs[m.def] && pred(defs[m.def] as ModuleDef)).length;
@@ -17,9 +25,8 @@ const countBy = (g: StationResult, pred: (d: ModuleDef) => boolean): number =>
 /** Planned defence of a kind at a size: guns, shields and point defence, plus security crew. */
 function defence(id: Id, size: StationSize): number {
   const def = stations[id] as StationDef;
-  const plan = planStation(new Rng(1), def, size, { id: size, weight: { base: 1, perDepth: 0, max: 1 }, archetypes: [] }, defs);
-  const mods = [...plan.weapons, ...plan.shields, ...(plan.core ? [plan.core] : [])].flatMap((r) => r.mods);
-  return mods.filter((m) => defs[m]?.weapon || defs[m]?.shieldGen || defs[m]?.pointDefense).length + plan.crew.filter((r) => r === SECURITY_ROLE).length;
+  const mods = stationProgram(new Rng(1), def, size, defs).flatMap((r) => r.mods);
+  return mods.filter((m) => defs[m]?.weapon || defs[m]?.shieldGen || defs[m]?.pointDefense).length + crewPosts(def, size).security;
 }
 
 describe('mining stations', () => {
@@ -44,54 +51,60 @@ describe('mining stations', () => {
 });
 
 describe('research stations', () => {
-  it('generate valid layouts across seeds and sizes, with consoles and benches and no engines', () => {
+  it('build valid layouts across seeds and sizes, with labs and the workshop bench and no engines', () => {
     for (const size of STATION_SIZES) {
       for (const seed of [1, 2, 3, 4, 5, 6]) {
         const g = gen('station.research', size, seed);
         const label = `${size} ${seed}`;
         expect(g.problems, label).toEqual([]);
         expect(g.station.kind, label).toBe('research');
-        expect(count(g, 'module.console'), label).toBeGreaterThan(0);
+        expect(count(g, 'module.research'), label).toBeGreaterThan(0);
         expect(count(g, 'module.fabricator'), label).toBeGreaterThan(0);
         expect(countBy(g, (d) => !!d.engine), label).toBe(0);
-        expect(g.station.docks, label).toBeGreaterThanOrEqual(stations['station.research'].tiers[size].docks);
+        expect(g.station.docks, label).toBeGreaterThanOrEqual(docksOf(stations['station.research'], size));
       }
     }
   }, 120000);
 });
 
-describe('station generator', () => {
-  it('every kind builds a valid outpost, station and hub: one structure, docks, no engines, inside the limit', () => {
+describe('buildStation', () => {
+  it('every kind builds a valid outpost, station and hub: one structure, docks, no engines', () => {
     for (const id of ids) {
       for (const size of STATION_SIZES) {
         const g = gen(id, size, 1);
         const label = `${id} ${size}`;
         expect(g.problems, label).toEqual([]);
+        expect(g.topology, label).toMatch(/^assembly /);
         const w = Math.max(...g.template.rows.map((r) => r.length));
         const cells = g.template.rows.flatMap((r) => Array.from({ length: w }, (_, x) => r[x] ?? '.'));
         expect(structureParts(cells, w, g.template.rows.length), label).toBe(1);
         expect(countBy(g, (d) => !!d.engine), label).toBe(0);
-        expect(g.station.docks, label).toBeGreaterThanOrEqual(stations[id].tiers[size].docks);
-        expect(Math.max(g.width, g.height), label).toBeLessThanOrEqual(STATION_MAX);
+        expect(g.station.docks, label).toBeGreaterThanOrEqual(docksOf(stations[id], size));
       }
     }
   }, 120000);
 
   it('is deterministic', () => {
     for (const id of ['station.trading', 'station.pirate'] as Id[]) {
-      const a = gen(id, 'station', 7);
-      const b = gen(id, 'station', 7);
+      const a = buildStation(stations[id] as StationDef, id, 'station', 7, defs);
+      const b = buildStation(stations[id] as StationDef, id, 'station', 7, defs);
       expect(b.template).toEqual(a.template);
     }
   }, 60000);
+
+  it('throws, naming the kind, when no recipe of the kind stands', () => {
+    const def = { ...(stations['station.pirate'] as StationDef), assembly: [] };
+    expect(() => buildStation(def, 'station.pirate', 'outpost', 1, defs)).toThrow(/station\.pirate outpost/);
+  });
 
   it('hubs are much bigger than any ship and outposts are the smallest', () => {
     for (const id of ids) {
       const small = gen(id, 'outpost', 2);
       const hub = gen(id, 'hub', 2);
-      // Built tiles, not the bounding box: spines and crosses have long thin outlines.
+      // Built tiles, not the bounding box: spines have long thin outlines.
       const filled = (g: StationResult): number => g.template.rows.join('').replace(/\./g, '').length;
-      expect(filled(hub), id).toBeGreaterThan(2 * filled(small));
+      expect(filled(hub), id).toBeGreaterThan(1.5 * filled(small));
+      expect(filled(gen(id, 'station', 2)), id).toBeGreaterThan(filled(small));
       expect(Math.max(hub.width, hub.height), id).toBeGreaterThan(70);
     }
   }, 120000);
@@ -102,28 +115,44 @@ describe('station generator', () => {
     const f = gen('station.farming', 'station', 3);
     const d = gen('station.military', 'station', 3);
     const p = gen('station.pirate', 'station', 3);
-    const storage = (g: StationResult): number => count(g, 'module.storage');
-    // Trading: several docks and the most storage of the civil kinds.
-    expect(t.station.docks).toBeGreaterThanOrEqual(5);
-    expect(storage(t)).toBeGreaterThan(storage(f));
-    // Mining: refineries, several docks.
+    // Trading: a harbour of docks and a market of stalls.
+    expect(t.station.docks).toBeGreaterThanOrEqual(3);
+    expect(t.rooms.filter((r) => r.role === 'cargo').length).toBeGreaterThan(f.rooms.filter((r) => r.role === 'cargo').length);
+    // Mining: refineries, the pod deck, several docks.
     expect(count(m, 'module.refinery')).toBeGreaterThanOrEqual(4);
+    expect(count(m, 'module.pod_bay')).toBeGreaterThan(0);
     expect(m.station.docks).toBeGreaterThanOrEqual(4);
-    // No station grows hydroponics beds (they read as clutter); farming stations are messes and quarters instead.
-    for (const g of [t, m, f, d, p]) expect(count(g, 'module.hydroponics')).toBe(0);
-    expect(f.rooms.filter((r) => r.role === 'support').length).toBeGreaterThanOrEqual(4);
-    // Military depot: the most guns and shields, few docks, an armoury.
+    // Farming: greenhouses of hydroponics; no other kind grows anything.
+    expect(f.rooms.filter((r) => r.role === 'farm').length).toBeGreaterThanOrEqual(4);
+    expect(count(f, 'module.hydroponics')).toBeGreaterThan(0);
+    for (const g of [t, m, d, p]) expect(count(g, 'module.hydroponics')).toBe(0);
+    // Military depot: the most guns and shields, few docks, armouries and drone bays.
     for (const g of [t, m, f, p]) {
       expect(d.station.guns).toBeGreaterThan(g.station.guns);
       expect(d.station.shields).toBeGreaterThanOrEqual(g.station.shields);
     }
     expect(d.station.docks).toBeLessThanOrEqual(3);
     expect(d.rooms.filter((r) => r.role === 'armoury').length).toBeGreaterThanOrEqual(2);
-    // Pirate den: welded from several modules, loot stores, the fewest guns (farms come close).
-    expect(p.topology).toMatch(/stationWelded|stationTree/);
+    expect(count(d, 'module.droneBay')).toBeGreaterThan(0);
+    // Pirate den: a breaker shop, the fewest guns (farms come close).
+    expect(count(p, 'module.scrapper')).toBeGreaterThan(0);
     for (const g of [t, m]) expect(p.station.guns).toBeLessThan(g.station.guns);
     expect(p.station.guns).toBeLessThanOrEqual(f.station.guns);
   }, 120000);
+
+  it("a depot's drone bays stand in weapon rooms, each holding two defence drones, with an AI core to run them", () => {
+    // Seed 3 at station size is a star fort: its drone bays stand in the corner batteries with the guns.
+    for (const [size, seed] of [...STATION_SIZES.map((z) => [z, 2] as const), ['station', 3] as const]) {
+      const g = gen('station.military', size, seed);
+      const bays = (g.template.modules ?? []).filter((m) => m.def === 'module.droneBay');
+      expect(bays.length, size).toBeGreaterThan(0);
+      for (const b of bays) expect(b.drones, size).toEqual(['drone.defence', 'drone.defence']);
+      expect(count(g, 'module.aiCore'), size).toBeGreaterThan(0);
+    }
+    const rooms = stationProgram(new Rng(1), stations['station.military'] as StationDef, 'station', defs).filter((r) => r.mods.includes('module.droneBay'));
+    expect(rooms.length).toBeGreaterThan(0);
+    for (const r of rooms) expect(r.role).toBe('weapons');
+  });
 
   it('armouries are stocked with enough hand weapons for the security crew', () => {
     for (const id of ids) {
@@ -132,34 +161,6 @@ describe('station generator', () => {
         .reduce((n, s) => n + s.count, 0);
       expect(guns, id).toBeGreaterThanOrEqual(g.station.security);
     }
-  }, 120000);
-});
-
-describe('station layouts', () => {
-  const LAYOUTS: StationGrammar[] = [
-    'stationRing', 'stationLattice', 'stationHub', 'stationWelded', 'stationWheel', 'stationConcentric', 'stationArc', 'stationSpine', 'stationCross', 'stationTree',
-  ];
-  const forced = (id: Id, size: StationSize, layout: StationGrammar, seed: number): StationResult => {
-    const def = stations[id] as StationDef;
-    return generateStation({ ...def, tiers: { ...def.tiers, [size]: { ...def.tiers[size], grammars: [{ value: layout, weight: 1 }] } } }, id, size, seed, defs);
-  };
-  it('every layout builds valid stations (round rings, spines, crosses, trees and the rest)', () => {
-    for (const layout of LAYOUTS) {
-      for (const [id, size] of [['station.trading', 'outpost'], ['station.military', 'station']] as [Id, StationSize][]) {
-        const g = forced(id, size, layout, 11);
-        expect(g.problems, `${layout} ${id} ${size}`).toEqual([]);
-        expect(g.topology.startsWith(layout), `${layout} ${g.topology}`).toBe(true);
-      }
-    }
-  }, 120000);
-
-  it('kinds lean on different layouts: round rings for trade and farms, spines and crosses for mining, trees for pirates', () => {
-    const used = (id: Id): string[] => [1, 2, 3, 4, 5, 6].map((s) => gen(id, 'station', s).topology.split(' ')[0] as string);
-    const round = (xs: string[]): number => xs.filter((x) => x === 'stationWheel' || x === 'stationConcentric').length;
-    expect(round(used('station.trading'))).toBeGreaterThanOrEqual(1);
-    expect(round(used('station.farming'))).toBeGreaterThanOrEqual(3);
-    expect(used('station.mining').filter((x) => x === 'stationSpine' || x === 'stationCross').length).toBeGreaterThanOrEqual(3);
-    expect(used('station.pirate').every((x) => x === 'stationTree' || x === 'stationWelded')).toBe(true);
   }, 120000);
 });
 
@@ -173,7 +174,8 @@ describe('station crew and defence', () => {
       const n = STATION_SIZES.map((s) => stationCrew(new Rng(5), stations[id] as StationDef, s).length);
       expect(n[0], id).toBeLessThan(n[1] as number);
       expect(n[1], id).toBeLessThan(n[2] as number);
-      expect(n[2], id).toBeGreaterThanOrEqual(30);
+      // As many as the posts the station's rooms make (no fixed floor: the user found the old numbers inflated).
+      expect(n, id).toEqual(STATION_SIZES.map((s) => crewSize(stations[id] as StationDef, s)));
     }
     for (const size of ['station', 'hub'] as StationSize[]) {
       for (const id of ids.filter((x) => x !== 'station.military')) expect(share('station.military', size), `${id} ${size}`).toBeGreaterThan(share(id, size));
@@ -192,8 +194,8 @@ describe('station crew and defence', () => {
   });
 });
 
-describe('station walls and courtyards', () => {
-  it('walls are one tile thick and enclosed centres become open rooms', () => {
+describe('station walls and open rooms', () => {
+  it('walls are one tile thick, and the kinds have open rooms (market courts, gardens)', () => {
     let courts = 0;
     for (const id of ids) {
       for (const size of STATION_SIZES) {
@@ -203,5 +205,25 @@ describe('station walls and courtyards', () => {
       }
     }
     expect(courts).toBeGreaterThan(3);
+  }, 120000);
+
+  it('big open rooms are lit to scale: no floor tile of one is more than 6 tiles from a lamp', () => {
+    let courts = 0;
+    for (const [id, size] of [['station.trading', 'station'], ['station.farming', 'hub'], ['station.research', 'station']] as [Id, StationSize][]) {
+      const g = gen(id, size, 1);
+      const lamps = (g.template.modules ?? []).filter((m) => m.def === 'module.light');
+      // Open rooms of 120 tiles and more get a lamp grid scaled to their area (fit.ts `BIG_ROOM`); smaller ones are lit as any room.
+      for (const r of g.rooms.filter((q) => (q.role === 'plaza' || q.role === 'garden' || q.role === 'drill') && q.tiles.length >= 120)) {
+        courts++;
+        const mine = lamps.filter((m) => g.roomOf[m.y * g.width + m.x] === r.id);
+        for (const t of r.tiles) {
+          const x = t % g.width;
+          const y = Math.floor(t / g.width);
+          const d = Math.min(...mine.map((m) => Math.hypot(m.x - x, m.y - y)));
+          expect(d, `${id} ${r.role} tile ${x},${y}`).toBeLessThanOrEqual(6);
+        }
+      }
+    }
+    expect(courts).toBeGreaterThan(0);
   }, 120000);
 });

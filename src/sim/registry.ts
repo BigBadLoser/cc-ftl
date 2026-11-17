@@ -100,7 +100,7 @@ export interface ContentRegistry {
   galaxy?: GalaxyContent;
   /** Faction content id (e.g. 'faction.scrapper') to definition, for generated ships. Absent = none. */
   factions?: Record<string, FactionDef>;
-  /** Station kinds the station generator builds (src/sim/shipgen/stationGen.ts). */
+  /** Station kinds the station assembly builds (src/sim/shipgen/stationBuild.ts). */
   stations?: Record<string, StationDef>;
   /** Trade: prices' spread, faction stances and trader profiles. Absent = nobody trades. */
   trade?: TradeDef;
@@ -563,6 +563,8 @@ export interface ModuleDef {
    * prisoner frozen while the wheel is powered (`drawsWhen: 'holding'`); crew load and unload it at its `access` (hatch) tile.
    */
   stasisWheel?: { slots: number };
+  /** Its access tiles get a keep-clear box painted on the deck (station gen's deck markings): machines crew service, airlocks and bays. */
+  keepClear?: true;
   /** A galley: hungry crew eat on its access tile (a hot meal lifts mood). Pairs with `crafting` for a food printer. */
   galley?: true;
   /**

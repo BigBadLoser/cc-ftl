@@ -4,9 +4,10 @@
  */
 import { content } from '../../src/content';
 import { windowPlan } from '../../src/app/windowTool';
-import { windowCode, windowRun, ModuleC, Sim, Struct, shipGrid, spawnShip, validateTemplate, type ModuleDef, type ShipTemplate, type WindowAxis } from '../../src/sim';
+import { windowCode, windowRun, ModuleC, Sim, Struct, removeModule as despawn, shipGrid, spawnModule, spawnShip, validateTemplate, type ModuleDef, type ShipTemplate, type WindowAxis } from '../../src/sim';
 import { removeWreck } from '../../src/sim/salvage/remove';
 import { placementError } from '../../src/sim/modules/spawn';
+import { isIdle } from '../../src/sim/modules/draw';
 import { roomsSystem } from '../../src/sim/systems/rooms';
 import { lightingSystem } from '../../src/sim/systems/lighting';
 import { powerSystem } from '../../src/sim/systems/power';
@@ -51,6 +52,46 @@ export function windowPlanAt(l: Layout, x: number, y: number, size: number): { x
 export function restamp(sim: Sim, old: number, l: Layout): number | null {
   removeWreck(sim, old);
   return stampLayout(sim, l);
+}
+
+/** Whether two layouts differ only in their modules (the same tiles, rooms and stamp): an edit `swapModules` can apply. */
+export function sameShell(a: Layout, b: Layout): boolean {
+  if (a.width !== b.width || a.height !== b.height || a.immobile !== b.immobile || a.origin !== b.origin || a.rooms.length !== b.rooms.length) return false;
+  if (a.cells !== b.cells && a.cells.some((row, y) => row !== b.cells[y])) return false;
+  if (a.roomOf !== b.roomOf && a.roomOf.some((r, i) => r !== b.roomOf[i])) return false;
+  return a.rooms.every((r, i) => r.role === b.rooms[i]?.role);
+}
+
+/**
+ * Apply a modules-only edit to a stamped sim: the modules `from` has and `to` lacks go (the game's removal), the ones `to` adds are
+ * spawned (the game's spawn), then power and light are allocated again. The ship, its grid and the renderer's scene of them stay, so
+ * an edit costs the modules it touches instead of a whole restamp. False (the sim untouched) when the edit needs a restamp: a container,
+ * an airlock, a bay, a stasis wheel, a stocked module or a module the sim cannot find.
+ */
+export function swapModules(w: World, from: Layout, to: Layout): boolean {
+  const key = (m: Layout['modules'][number]): string => `${m.def}|${m.x}|${m.y}|${m.rot ?? 0}|${JSON.stringify(m.clamp ?? null)}`;
+  const defs = content.modules as Record<string, ModuleDef>;
+  const left = new Map<string, number>();
+  for (const m of to.modules) left.set(key(m), (left.get(key(m)) ?? 0) + 1);
+  const gone: Layout['modules'][number][] = [];
+  for (const m of from.modules) { const k = key(m), n = left.get(k) ?? 0; if (n > 0) left.set(k, n - 1); else gone.push(m); }
+  const added = to.modules.filter((m) => { const k = key(m), n = left.get(k) ?? 0; if (n > 0) { left.set(k, n - 1); return true; } return false; });
+  // A stocked module too: the game's removal spills its stock on the floor and a spawn starts it empty, so only a restamp keeps it.
+  const special = (m: Layout['modules'][number]): boolean => !!(defs[m.def]?.container || defs[m.def]?.airlock || defs[m.def]?.vehicleBay || defs[m.def]?.stasisWheel || m.stock?.length);
+  if ([...gone, ...added].some(special)) return false;
+  // The entities of the removed modules, matched by def and anchor.
+  const ids: number[] = [];
+  for (const m of gone) {
+    let hit = 0;
+    for (const id of w.sim.world.query(ModuleC)) { const c = w.sim.world.get(id, ModuleC); if (c && !ids.includes(id) && c.def === m.def && c.x === ORIGIN + m.x && c.y === ORIGIN + m.y && c.rot === (m.rot ?? 0)) { hit = id; break; } }
+    if (!hit) return false;
+    ids.push(hit);
+  }
+  for (const id of ids) despawn(w.sim, id);
+  for (const m of added) spawnModule(w.sim, m.def, ORIGIN + m.x, ORIGIN + m.y, m.rot ?? 0);
+  powerSystem(w.sim);
+  lightingSystem(w.sim);
+  return true;
 }
 
 /** A fresh sim with the layout stamped in. */
@@ -101,7 +142,8 @@ export function unpowered(l: Layout): number[] {
   for (const id of w.sim.world.query(ModuleC)) {
     const m = w.sim.world.get(id, ModuleC);
     const def = m && content.modules[m.def as keyof typeof content.modules];
-    if (!m || !def || m.powered || (def as { power: number }).power >= 0) continue;
+    // A module idle by its draw rule (a bed with nothing growing) draws nothing and is not short of power.
+    if (!m || !def || m.powered || (def as { power: number }).power >= 0 || isIdle(w.sim, id, def as ModuleDef)) continue;
     const i = l.modules.findIndex((x) => x.def === m.def && x.x === m.x - ORIGIN && x.y === m.y - ORIGIN);
     if (i >= 0) out.push(i);
   }

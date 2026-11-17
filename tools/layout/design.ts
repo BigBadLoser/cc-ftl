@@ -3,7 +3,7 @@
  * in. Built from a generator's result or a hand-made template; step 1 never edits it.
  */
 import type { ModuleDef, ShipTemplate } from '../../src/sim';
-import { defs, isLamp, moduleCode, NAMES } from '../shipgen/labels';
+import { defs, isLamp, moduleCode, roomKind } from '../shipgen/labels';
 import { moduleTiles, toTemplate, type Layout } from './layout';
 
 export interface DesignModule {
@@ -114,9 +114,12 @@ export function designFromLayout(l: Layout, label: string): Design {
   }
   const covered = new Set<number>();
   for (const m of l.modules) if (!isLamp(defs[m.def] as ModuleDef | undefined)) for (const [x, y] of moduleTiles(m)) covered.add(y * width + x);
+  // What each room holds (by the tile a module stands on), for its name.
+  const held: string[][] = l.rooms.map(() => []);
+  for (const m of l.modules) held[roomOf[m.y * width + m.x] ?? -1]?.push(m.def);
   const rooms: DesignRoom[] = l.rooms.map((rm, id) => {
     const [sx, sy, n] = sums[id] as [number, number, number];
-    const name = NAMES[rm.role] ?? '';
+    const name = rm.role === 'hall' ? '' : roomKind(rm.role, held[id] ?? []);
     const cx = n ? sx / n : 0, cy = n ? sy / n : 0;
     const spot = name && n >= 10 ? labelSpot(l, id, covered, name.length, cx, cy) : { x: cx, y: cy };
     return { id, role: rm.role, name, tiles: n, cx, cy, lx: spot.x, ly: spot.y };

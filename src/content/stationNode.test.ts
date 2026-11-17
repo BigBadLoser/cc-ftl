@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  CombatC, CrewC, FTL_CHARGE_SEC, PositionC, SECURITY_ROLE, ShipC, TraderC, VehicleC, deserialize, galaxyIndex, homeShip, isSurplus, newGame, planCourier,
+  CombatC, CrewC, crewSize, FTL_CHARGE_SEC, PositionC, SECURITY_ROLE, ShipC, TraderC, VehicleC, deserialize, galaxyIndex, homeShip, isSurplus, newGame, planCourier,
   serialize, unitPrice, type Sim,
 } from '../sim';
 import { stationAirlock } from '../sim/trade/stationDock';
@@ -45,7 +45,7 @@ describe('stations in the node', () => {
     expect(s).toMatchObject({ faction: 'neutral', state: 'active', immobile: true, gen: { faction: 'station.trading', role: 'station' } });
     expect(s.dormant).toBeUndefined();
     const crew = crewOn(sim, station);
-    expect(crew.length).toBe(content.stations['station.trading'].tiers.station.crew);
+    expect(crew.length).toBe(crewSize(content.stations['station.trading'], 'station'));
     expect(crew.filter((c) => sim.world.get(c, CrewC)?.role === SECURITY_ROLE).length).toBeGreaterThan(0);
     expect(sim.world.get(station, TraderC)).toMatchObject({ profile: 'trader.station.trading', station: true });
     // No FTL: a flee is refused even with a full charge.

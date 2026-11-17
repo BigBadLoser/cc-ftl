@@ -11,7 +11,10 @@ describe('station life and security', () => {
     expect(guardsOf(sim, st).length).toBeGreaterThan(0);
     const ev: SimEvent[] = [];
     const patrols = (): SimEvent[] => ev.filter((e) => e.type === 'crew.jobDone' && e.kind === 'patrol' && e.ship === st);
-    for (let i = 0; i < 3000 && patrols().length < 3; i++) ev.push(...run(sim, 1)); // until the third watch is done, not a fixed stretch
+    // Until the third watch is done and two posts have been walked, not a fixed stretch: which guard takes which post
+    // first depends on where the station's rooms put them.
+    const places = (): number => new Set(patrols().map((e) => (e.type === 'crew.jobDone' ? `${e.x},${e.y}` : ''))).size;
+    for (let i = 0; i < 3000 && (patrols().length < 3 || places() < 2); i++) ev.push(...run(sim, 1));
     expect(types(ev)).not.toContain('station.alarm');
     expect(sim.world.get(st, StationAlarmC)?.state).toBe('calm');
     // Patrols are ordinary jobs: the station's director posts them, guards take them by priority.

@@ -3,8 +3,9 @@
  * ASCII dump and a validation summary. Used by the node CLI (PNG contact sheets) and the live page.
  */
 import { content } from '../../src/content';
+import { stationRecipes } from '../../src/content/stationRecipes';
 import {
-  accessTile, adjacencyDistance, adjacencySignature, footprintTiles, generateShip, meanPairwise, profileDistance, rotatedSize, silhouetteDistance, silhouetteMask, generateStation, type GenResult, type StationDef, type StationGrammar, type StationSize, type ModuleDef, type RoomRole,
+  accessTile, adjacencyDistance, assembleStation, adjacencySignature, footprintTiles, generateShip, meanPairwise, profileDistance, rotatedSize, silhouetteDistance, silhouetteMask, buildStation, type GenResult, type Recipe, type StationDef, type StationSize, type ModuleDef, type RoomRole,
 } from '../../src/sim';
 import { drawAssemblies, drawSilhouette, drawStructure } from './views';
 
@@ -52,7 +53,7 @@ const GLYPHS: Record<string, string> = Object.fromEntries(Object.entries({
 export const ROLE_TINT: Record<RoomRole, RGB> = {
   bridge: [52, 92, 140], engine: [120, 70, 40], reactor: [120, 110, 40], weapons: [120, 50, 70], shields: [40, 110, 120],
   cargo: [88, 80, 60], quarters: [70, 100, 60], core: [100, 60, 130], hangar: [70, 70, 90], hall: [58, 60, 66],
-  dock: [140, 140, 150], support: [50, 105, 90], farm: [60, 120, 40], industry: [130, 90, 50], armoury: [130, 40, 40], plaza: [110, 96, 70], garden: [70, 130, 70], drill: [90, 80, 90],
+  dock: [140, 140, 150], support: [50, 105, 90], farm: [60, 120, 40], industry: [130, 90, 50], armoury: [130, 40, 40], plaza: [110, 96, 70], garden: [70, 130, 70], drill: [90, 80, 90], medbay: [200, 200, 210], plant: [150, 110, 60],
 };
 
 /** Short labels and colours per module. */
@@ -130,8 +131,13 @@ export function gen(factionSpec: string, seed: number, depth: number): GenResult
 
 export const stationIds = (): string[] => Object.keys(content.stations);
 
+const ASSEMBLY = 'assembly.';
+/** Every station assembly recipe as a layout name: `assembly.<family>` for a family's first, `assembly.<family>.<n>` for the rest. */
+export const assemblyLayouts = (): string[] => Object.entries(stationRecipes).flatMap(([family, recipes]) => recipes.map((_, i) => `${ASSEMBLY}${family}${i > 0 ? `.${i}` : ''}`));
+
 /**
- * `station.trading:hub` builds that kind at one size (`station.trading:hub@stationWheel`: one layout only); `station.trading:outpost,hub` cycles the sizes by seed (seed 1
+ * `station.trading:hub` builds that kind at one size as the game does (`buildStation`; `station.trading:hub@assembly.bazaar.1`: that recipe
+ * only); `station.trading:outpost,hub` cycles the sizes by seed (seed 1
  * the first size, seed 2 the second...), so one sheet shows the smallest and largest side by side. No size: all three.
  */
 export function genStation(spec: string, seed: number): GenResult {
@@ -141,9 +147,12 @@ export function genStation(spec: string, seed: number): GenResult {
   if (!def0) throw new Error(`unknown station ${id}; try ${stationIds().join(', ')}`);
   const list = (sizes ? sizes.split(',') : ['outpost', 'station', 'hub']) as StationSize[];
   const size = list[(seed - 1) % list.length] as StationSize;
-  // `@stationWheel` forces one layout (a layout's sheet).
-  const def = layout ? { ...def0, tiers: { ...def0.tiers, [size]: { ...def0.tiers[size], grammars: [{ value: layout as StationGrammar, weight: 1 }] } } } : def0;
-  return generateStation(def, id, size, seed, defs);
+  if (!layout) return buildStation(def0, id, size, seed, defs);
+  // `@assembly.bazaar` (or `@assembly.tree.2`: that family's third recipe): one recipe only.
+  const [family, n] = layout.startsWith(ASSEMBLY) ? (layout.slice(ASSEMBLY.length).split('.') as [string, string | undefined]) : ['', undefined];
+  const recipe = (stationRecipes as Record<string, readonly Recipe[]>)[family]?.[Number(n ?? 0)];
+  if (!recipe) throw new Error(`unknown assembly recipe ${layout}; try ${assemblyLayouts().join(', ')}`);
+  return assembleStation(def0, id, size, seed, defs, recipe);
 }
 
 /** Draw one layout at (ox, oy), `s` px per tile. */

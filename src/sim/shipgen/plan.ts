@@ -35,6 +35,9 @@ export function shuffle<T>(rng: Rng, a: T[]): T[] {
   return a;
 }
 
+/** A station room's department: what the assembly recipes group and place rooms by. */
+export type StationDept = 'harbour' | 'habitation' | 'commons' | 'market' | 'freight' | 'secure' | 'defence' | 'works' | 'farm';
+
 /** A room the structure must provide: its role, the modules it will hold, and its interior size (tiles). */
 export interface RoomSpec {
   role: RoomRole;
@@ -43,6 +46,8 @@ export interface RoomSpec {
   h: number;
   /** Crates get starting stock; a vehicle bay gets a shuttle. */
   stock?: boolean;
+  /** A star fort's corner battery (assembly/fort.ts): a pointed room furnished along its diagonal (rooms/rules/bastion.ts). */
+  bastion?: true;
   vehicle?: boolean;
   /** A drone bay here is filled with this many drones of this DroneDef id. */
   drones?: { def: string; count: number };
@@ -50,6 +55,21 @@ export interface RoomSpec {
   sealed?: boolean;
   /** Storage here starts with these instead of the faction's stock (a station armoury's weapons). */
   items?: readonly { item: string; min: number; max: number }[];
+  /** Station assembly: the department the room belongs to, when not its role's own (`assembly/dept.ts`). */
+  dept?: StationDept;
+  /** Station assembly: a one-bed cabin cut from a quarters room. */
+  cabin?: boolean;
+  /** Station assembly: false keeps a quarters room whole (a barracks); otherwise it may be cut into cabins. */
+  cabins?: boolean;
+  /** Station assembly: a warehouse (the plan's crate rooms merged), with two doors. */
+  warehouse?: boolean;
+  /**
+   * The station assembly: a small room of its own that stands against this one and opens into it, not onto a hall
+   * (a mess's pantry).
+   */
+  annex?: RoomSpec;
+  /** The station assembly: set on an annex as it is laid in a row, right after its room. */
+  annexed?: boolean;
 }
 
 /** Everything the ship carries, grouped into rooms. Topologies decide where each room goes. */

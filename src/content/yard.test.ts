@@ -437,7 +437,8 @@ describe('shipyard: joining on (#385)', () => {
     sim.enqueue({ type: 'yard.order', station });
     expect(run(sim, 1)).toContain('yard.ordered');
     const order = sim.yard.orders[0]!;
-    run(sim, 6000, () => !isLiveOrder(order));
+    // The run stops once the order ends; the cap only has to outlast the trip home, which depends on the station's layout.
+    run(sim, 9000, () => !isLiveOrder(order));
     expect(order.phase).toBe('done');
     expect(order.opens ?? []).toEqual([]);
     const grid = shipGrid(sim, me)!;

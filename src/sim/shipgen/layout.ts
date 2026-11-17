@@ -32,6 +32,8 @@ export class Layout {
   private readonly protects: number[][] = [];
   readonly defs: Record<string, ModuleDef>;
   roles: RoomRole[];
+  /** The generator's own choice, not a rule of the game: a gun stands beside the hull. Off for the station assembly. */
+  gunsOnHull = true;
 
   constructor(rows: string[], roomOf: Int16Array, roles: RoomRole[], defs: Record<string, ModuleDef>) {
     this.h = rows.length;
@@ -113,7 +115,7 @@ export class Layout {
       if (this.at(ins.x, ins.y) !== '_' || this.occ[ins.y * this.w + ins.x] !== -1) return 'noAccess';
       if (room >= 0 && this.roomOf[ins.y * this.w + ins.x] !== room) return 'otherRoom';
     }
-    if (def.weapon && !tiles.some((t) => this.besideHull(t.x, t.y))) return 'offHull';
+    if (this.gunsOnHull && def.weapon && !tiles.some((t) => this.besideHull(t.x, t.y))) return 'offHull';
     if (roofMounted(def)) {
       for (const t of tiles) {
         for (let dy = -1; dy <= 1; dy++) {

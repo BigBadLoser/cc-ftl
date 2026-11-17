@@ -185,6 +185,20 @@ class Lab {
     this.armed = def;
     this.setTool('module');
   }
+  /**
+   * The picker (a middle click on the grid): arm the brush that paints what is at a tile. A module arms the module tool with that module
+   * at its turn; a wall, door, beam or floor tile arms that paint tool (floor also takes its room's role for new rooms); space, the Erase tool.
+   */
+  pickBrush([x, y]: Tile): void {
+    const l = this.layout;
+    if (!l || x < 0 || y < 0 || x >= l.width || y >= l.height) return;
+    const m = l.modules.find((mm) => moduleTiles(mm).some(([tx, ty]) => tx === x && ty === y));
+    if (m) { this.rot = m.rot ?? 0; this.arm(m.def); return; }
+    const c = l.cells[y]?.[x] ?? '.';
+    const role = l.rooms[l.roomOf[y * l.width + x] ?? -1]?.role;
+    if (c === '_' && role && role !== 'hall') this.role = role;
+    this.setTool(({ '#': 'wall', D: 'door', '=': 'beam', _: 'floor' } as Record<string, Tool>)[c] ?? 'space');
+  }
   /** A module being dragged (its stable id): the ghost shows where it would land, checked with the module itself set aside. */
   moving = $state<number | null>(null);
   /** The ghost of a module with its top-left at (x, y): the game's placement owner's reason it cannot stand there, if any. */
@@ -347,6 +361,23 @@ class Lab {
     const body = (await res.json()) as { path?: string; error?: string };
     if (!res.ok || !body.path) throw new Error(body.error ?? `save failed (${res.status})`);
     return body.path;
+  }
+  /** The case as a file the browser saves (to attach in a chat, no repo round trip); returns its file name. */
+  downloadCase(name: string): string {
+    const file = this.caseFile(name);
+    if (!file || !this.provenance) throw new Error('nothing to save');
+    const fileName = `${caseSlug(this.provenance, name)}.json`;
+    const url = URL.createObjectURL(new Blob([serializeCase(file)], { type: 'application/json' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    return fileName;
+  }
+  /** Open a case from a file the user picked (a case JSON saved here or sent back from a chat). */
+  async loadCaseFile(f: File): Promise<void> {
+    this.loadCase(parseCase(await f.text()));
   }
   /**
    * Write the case's images beside its JSON: the original, edited and overlay grids (a fixed modest scale, one frame) and a still of the

@@ -13,6 +13,9 @@ import { outline, planHull, run, yardGame } from './yardFixture';
 describe('the yard crew, full runs', () => {
   it('a small order is built by the station crew in EVA, they fly home and the escrow settles', () => {
     const { sim, station, me } = yardGame();
+    // The station's own craft, parked in its hangars from the start (#460); the yard shuttle is made for the order and comes on top.
+    const stationCraft = (): number[] => sim.world.query(VehicleC).filter((v) => sim.world.get(v, VehicleC)!.homeShip === station);
+    const resident = stationCraft();
     const trader = sim.world.get(station, TraderC)!;
     const wallet = trader.credits;
     const credits = sim.trade.credits;
@@ -55,7 +58,8 @@ describe('the yard crew, full runs', () => {
     // (the station's own metal stock moves with its trade over a run this long, so only the escrow is checked for metal)
     expect(order.held).toEqual({ credits: 0, metal: 0 });
     expect(sim.world.query(YardCrewC)).toHaveLength(0);
-    expect(sim.world.query(VehicleC).filter((v) => sim.world.get(v, VehicleC)!.homeShip === station)).toHaveLength(0);
+    expect(sim.world.has(order.vehicle, VehicleC)).toBe(false);
+    expect(stationCraft()).toEqual(resident);
     run(sim, 1200); // the ship's own crew, who also worked outside, come back in and hang their suits up
     expect(sim.world.query(SuitC).filter((c) => shipIdOf(sim, sim.world.get(c, PositionC)!) === me)).toEqual([]);
     expect(sim.world.query(CrewC).filter((c) => sim.world.get(c, CrewC)!.role === 'role.engineer' && !sim.world.has(c, YardCrewC)).length).toBeGreaterThan(0);

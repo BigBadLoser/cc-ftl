@@ -19,17 +19,17 @@ const roleName = (role: string): string => (role === 'hall' ? 'corridor' : NAMES
 interface RoomBox { id: number; name: string; x0: number; y0: number; x1: number; y1: number; cx: number; cy: number }
 /** The rooms of a layout with their bounding box and middle (those with floor). */
 function boxes(l: Layout): RoomBox[] {
+  // One pass over the tiles, summing into each room's box.
+  const acc = l.rooms.map(() => ({ n: 0, sx: 0, sy: 0, x0: Infinity, y0: Infinity, x1: -1, y1: -1 }));
+  for (let i = 0; i < l.roomOf.length; i++) {
+    const a = acc[l.roomOf[i] ?? -1];
+    if (!a) continue;
+    const x = i % l.width, y = Math.floor(i / l.width);
+    if (l.cells[y]?.[x] !== '_') continue;
+    a.n++; a.sx += x; a.sy += y; a.x0 = Math.min(a.x0, x); a.y0 = Math.min(a.y0, y); a.x1 = Math.max(a.x1, x); a.y1 = Math.max(a.y1, y);
+  }
   const out: RoomBox[] = [];
-  l.rooms.forEach((r, id) => {
-    let n = 0, sx = 0, sy = 0, x0 = Infinity, y0 = Infinity, x1 = -1, y1 = -1;
-    for (let i = 0; i < l.roomOf.length; i++) {
-      if (l.roomOf[i] !== id) continue;
-      const x = i % l.width, y = Math.floor(i / l.width);
-      if (l.cells[y]?.[x] !== '_') continue;
-      n++; sx += x; sy += y; x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y);
-    }
-    if (n) out.push({ id, name: roleName(r.role), x0, y0, x1, y1, cx: sx / n, cy: sy / n });
-  });
+  l.rooms.forEach((r, id) => { const a = acc[id]; if (a?.n) out.push({ id, name: roleName(r.role), x0: a.x0, y0: a.y0, x1: a.x1, y1: a.y1, cx: a.sx / a.n, cy: a.sy / a.n }); });
   return out;
 }
 /** "the hangar" when the name is unique among the rooms, else "the cargo (room 3)". */
@@ -76,7 +76,8 @@ function sentence(kind: Kind, tiles: [number, number][], where: string): string 
 /** Tile edits as regions (8-connected tiles that changed the same way), in reading order. */
 function tileChanges(a: Layout, b: Layout, rooms: readonly RoomBox[]): Change[] {
   // a room drawn in the edit is one line of its own: its floor and the wall ring round it are not listed again
-  const added = rooms.filter((r) => r.id >= a.rooms.length || !boxes(a).some((x) => x.id === r.id));
+  const had = new Set(boxes(a).map((x) => x.id));
+  const added = rooms.filter((r) => r.id >= a.rooms.length || !had.has(r.id));
   const inAdded = (x: number, y: number): boolean => added.some((r) => x >= r.x0 - 1 && x <= r.x1 + 1 && y >= r.y0 - 1 && y <= r.y1 + 1);
   const byKind = new Map<Kind, Set<number>>();
   const W = Math.max(a.width, b.width);

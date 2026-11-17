@@ -73,7 +73,11 @@ under `tools/shipgen/starters` are stale against them (they were already behind 
 in #392. Next is more to find per node (#171; danger bands #382 folded in: no visible bands, physical finds, plan in the #171 comment of 2026-11-15). #380 research,
 #383 story arcs and #172/#52 goals queue behind them. The test harness (#371) may run alongside.
 
-- **Open PR:** #501 station assembly (#460), ready.
+- **Open PR:** #501 station assembly (#460), ready: it builds every station and outpost (`buildStation`); the station grammars
+  are deleted. See [STATION_ASSEMBLY.md](STATION_ASSEMBLY.md). CHANGELOG line at merge, under Changed: "Stations and outposts:
+  every station and asteroid outpost is now laid out by one modular builder: departments grouped round halls, rings and hubs,
+  rooms that serve another room off it, and lamps centred in each room and corridor. Trading outposts are prefab bases on the
+  rock: landing pads, customs, a market hall and a mess hub with the crew's rooms off it, joined by short tubes."
 - **Open bugs:** #444 (only one of four black markets spawns), #445 (agri station has no hydroponics), #103 (hull glitches).
 - **Open:** recruiting prisoners (#492); #300 in-node events; #303 augments as stat modifiers; #305 shuttle landing in a bay that breaks on approach.
 - **Designed, not started:** new modules (DESIGN.md "New modules"); crew implants (#311) needs its design pass. Addictions are parked.
@@ -165,7 +169,7 @@ mention 2x art describe the earlier state.
   - No movement or maneuvering. Distance only affects projectile travel time.
   - Combat overlay; consoles (weapons/shields/helm) instead of manning each weapon; the AI core
     runs point defence.
-  - Shield generators can sit inside the ship; weapons and engines must touch the hull.
+  - Shield generators and weapons can sit anywhere inside the ship; engines must touch the hull.
   - **Roofed enemy view** instead of fog: special roof tiles mark weapons, shields and engines
     (`ModuleDef.roofAsset`).
 - **Sectors:**
