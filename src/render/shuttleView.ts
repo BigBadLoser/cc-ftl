@@ -14,7 +14,7 @@ import type { Atlas, StaticSprite } from './assets/loader';
 import { Z_PX } from './heights';
 import type { Pt } from './iso';
 import { UNDOCK_DONE_MS, UNDOCK_SLIDE_AT_MS, dockProgress, undockProgress, type DockProgress } from './dockSequence';
-import { BAY_FRAME_MS, CATCH_MS, FLOOR_EXIT, createBayTrack, ease, type BayTrack } from './vehicleBayArt';
+import { BAY_FRAME_MS, CATCH_MS, LAUNCH_LIFT, createBayTrack, ease, type BayTrack } from './vehicleBayArt';
 
 /** Altitude (tiles over the deck) of a shuttle in flight and at a dock, and of its belly on the pit floor. */
 const CRUISE_Z = 0.4;
@@ -280,7 +280,7 @@ export function createShuttleView(world: World, atlas: Atlas, modules: Readonly<
         if (launching || undocking) {
           // Held on the spot (over the open pit / alongside the hull) while the bay doors open or the tube retracts, then it
           // catches up with the sim, which has already sent it on its way.
-          const lag = launching ? (t.padded ? 0 : FLOOR_EXIT.emerge * BAY_FRAME_MS) : UNDOCK_SLIDE_AT_MS;
+          const lag = launching ? (t.padded ? 0 : LAUNCH_LIFT.start * BAY_FRAME_MS) : UNDOCK_SLIDE_AT_MS;
           ({ x: px, y: py } = t.bay.delayed(now, b.x, b.y, lag, launching ? sinceLaunch : sinceUndock));
           [t.x, t.y] = [px, py];
         } else if (Math.hypot(b.x - t.x, b.y - t.y) > 3) [t.x, t.y] = [b.x, b.y];
@@ -369,7 +369,7 @@ export function createShuttleView(world: World, atlas: Atlas, modules: Readonly<
         // retracts and the shuttle slides out, and the lift out of the bay is low until it reaches cruise (render timing; the sim
         // has it airborne already). The pixel lift still comes from CRUISE_Z / DOCK_Z / PIT_Z: `b.alt` switches with the state
         // and does not ramp, so it cannot drive the art.
-        const lifting = launching && sinceLaunch < FLOOR_EXIT.up * BAY_FRAME_MS;
+        const lifting = launching && sinceLaunch < LAUNCH_LIFT.end * BAY_FRAME_MS;
         t.low = !isAirborne(b) || undocking || lifting || !!gear;
         const layer = t.low ? host.low.layer : host.layer;
         if (t.root.parent !== layer) layer.addChild(t.root);

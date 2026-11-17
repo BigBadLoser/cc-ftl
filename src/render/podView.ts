@@ -11,7 +11,7 @@ import { Z_PX } from './heights';
 import { sectorArt } from './sectorPos';
 import { animNow } from './animClock';
 import { headingIndex } from './shuttleView';
-import { BAY_FRAME_MS, FLOOR_EXIT, createBayTrack, type BayTrack } from './vehicleBayArt';
+import { BAY_FRAME_MS, LAUNCH_LIFT, createBayTrack, type BayTrack } from './vehicleBayArt';
 
 /**
  * Pods (VehicleC with a pod def, placed by their BodyC) drawn with the pipeline sprites (`VehicleDef.asset`): `<art>.fly.d<0..7>`
@@ -148,7 +148,7 @@ export function createPodView(world: World, atlas: Atlas, host: PodHost): PodVie
         show(t, sprite);
         const reach = COLLAR_FACE + POD_HATCH;
         // After liftoff the sim has already flown it on: hold it over the pit while the doors open and the lift runs, then catch up.
-        const at = baySprite && !stowed && hand?.launching ? track.delayed(now, b.x, b.y, FLOOR_EXIT.emerge * BAY_FRAME_MS, hand.sinceLaunch) : b;
+        const at = baySprite && !stowed && hand?.launching ? track.delayed(now, b.x, b.y, LAUNCH_LIFT.start * BAY_FRAME_MS, hand.sinceLaunch) : b;
         const [sx, sy] = out ? [b.x + out.x * reach, b.y + out.y * reach] : [at.x, at.y];
         const p = sectorArt(sx, sy);
         const lift = (out ? COLLAR_Z - POD_AXIS : rising ? PIT_Z + (POD_Z - PIT_Z) * (hand?.lift ?? 0) : stowed ? PIT_Z : POD_Z) * Z_PX;

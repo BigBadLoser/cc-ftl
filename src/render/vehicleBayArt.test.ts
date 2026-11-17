@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BAY_FRAME_MS, LAUNCH, LAUNCH_LIFT, RETURN, RETURN_LAND, bayId, createBayAnimator, parkedId, steady, PARKED_DZ, vehicleBayLayers, bayHandoff, FLOOR_EXIT } from './vehicleBayArt';
+import { BAY_FRAME_MS, LAUNCH, LAUNCH_LIFT, RETURN, RETURN_LAND, bayId, createBayAnimator, parkedId, steady, PARKED_DZ, vehicleBayLayers, bayHandoff } from './vehicleBayArt';
 
 describe('vehicle bay art ids', () => {
   it('name the bay state and the shuttle parked in it', () => {
@@ -56,19 +56,15 @@ describe('bay glow depth', () => {
   });
 });
 
-describe("bay handoff through the floor doors", () => {
+describe("bay handoff (who draws a craft entering or leaving its bay)", () => {
   const F = BAY_FRAME_MS;
-  it("sinks through the open doors, hides under the hull, then emerges from under its edge", () => {
-    expect(bayHandoff(false, 0, Infinity).drawn).toBe(false);
-    expect(bayHandoff(false, FLOOR_EXIT.sink * F, Infinity)).toMatchObject({ drawn: true, lift: expect.closeTo(0), clip: "deck" });
-    expect(bayHandoff(false, FLOOR_EXIT.under * F, Infinity).drawn).toBe(false);
-    expect(bayHandoff(false, FLOOR_EXIT.emerge * F, Infinity)).toMatchObject({ drawn: true, lift: -1, clip: "hull" });
-    expect(bayHandoff(false, FLOOR_EXIT.up * F, Infinity)).toEqual({ drawn: true, lift: null, clip: null });
+  it("leaves a launch to the bay until the lift starts, then rises out of the pit", () => {
+    expect(bayHandoff(false, 0, Infinity)).toEqual({ drawn: false, lift: null });
+    expect(bayHandoff(false, LAUNCH_LIFT.start * F, Infinity)).toEqual({ drawn: true, lift: 0 });
+    expect(bayHandoff(false, LAUNCH_LIFT.end * F, Infinity)).toEqual({ drawn: true, lift: null });
   });
-  it("rises through the doors into the claws on a landing, then the bay owns it", () => {
-    expect(bayHandoff(true, Infinity, 0).drawn).toBe(false);
-    expect(bayHandoff(true, Infinity, RETURN_LAND.start * F)).toMatchObject({ drawn: true, lift: -1, clip: "deck" });
-    expect(bayHandoff(true, Infinity, (RETURN_LAND.end - 2) * F).lift).toBe(0);
+  it("draws a landing until the claws close, then the bay owns it", () => {
+    expect(bayHandoff(true, Infinity, RETURN_LAND.end * F - 1).drawn).toBe(true);
     expect(bayHandoff(true, Infinity, RETURN_LAND.end * F).drawn).toBe(false);
   });
 });
