@@ -3,7 +3,7 @@
  * its door(s) onto the hall at the inner end. Guns step along the diagonal from the point inward, each centred on it,
  * a tile apart (roof-mounted guns need a clear tile between them); guns the diagonal cannot hold stand in pairs either
  * side of it, mirrored (the same gun both sides where there are two), spread out toward the sides with a walkway kept
- * along the walls. No batteries: power storage lives in the battery room. The room must pass `roomProblems`. Prototype (#460): the user steers it from the room sample.
+ * along the walls. Drone bays stand in the line with the guns. No batteries: power storage lives in the battery room. The room must pass `roomProblems`. Prototype (#460): the user steers it from the room sample.
  */
 import type { Tile } from '../../../modules/footprint';
 import type { Layout } from '../../layout';
@@ -25,7 +25,7 @@ export function furnishBastion(lay: Layout, room: number, need: readonly string[
   const start = lay.modules.length;
   const undo = (): null => { while (lay.modules.length > start) lay.pop(); return null; };
   const fits = (p: Piece): boolean => lay.fitError(p.def, p.x, p.y, p.rot, room) === null && !nearDoor(p.x, p.y, size(p.def));
-  const guns = need.filter((m) => lay.defs[m]?.weapon || lay.defs[m]?.pointDefense).sort((a, b) => size(b) - size(a));
+  const guns = need.filter((m) => lay.defs[m]?.weapon || lay.defs[m]?.pointDefense || lay.defs[m]?.droneBay).sort((a, b) => size(b) - size(a));
   const reach = Math.ceil(Math.max(Math.abs(P.x - D.x), Math.abs(P.y - D.y)));
   // Down the diagonal from the point: each gun at the first spot that takes it, the next a clear tile on.
   const left: string[] = [];
