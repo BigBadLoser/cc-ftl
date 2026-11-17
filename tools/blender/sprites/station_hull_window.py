@@ -108,7 +108,7 @@ def _span(f, s, s0, s1, zt):
                                        (w0, zj + fh + sh)], db, dv + CORNER_OUT, WIN.HEAD_FRONT,
                   [False, WIN.SIDE, WIN.SILL_FLAT, WIN.SLOPE_COL, False], back=False, mu=mu)
         WIN._slab(f.k, f.ax, f.plane, [(h0, zh), (h0, zh - sh), (w0, zh - sh), (w0 + WIN.SLOPE, zh)], db,
-                  D + SD.BOX_OUT * SD.LINE, SH.FACE, [False, WIN.SLOPE_TOP, WIN.SLOPE_TOP, False], back=False,
+                  dv + CORNER_OUT, SH.FACE, [False, WIN.SLOPE_TOP, WIN.SLOPE_TOP, False], back=False,
                   mu=mu)                                # the top corner, carried across the post to the rib: a
                                                         # part of the header band (its front's plane and tone)
         zl = zj + fh + sh                                               # the jamb's seam
