@@ -42,6 +42,7 @@ FRAME = 9 / 32                      # an end piece's outer frame (the whole sect
 JAMB = 5 / 32                       # the jamb inside it
 BACK_WALL = "stE"                   # the window's back wall
 POST_SEAM = SH.SEAM                 # the seams round an end piece's post on the wall
+FOOT_EDGE = SH.SEAM                 # the near end's corner's foot: the dark line down its end
 WRAP = (5, 5, 5, 1)                 # the plates bent over the sill's edge, centred between each corner's foot and the
                                     # vent box (across the tiles' join, each tile drawing its share): px wide, px down
                                     # the front, px back over the top, px thick
@@ -160,6 +161,9 @@ def _span(f, s, s0, s1, zt):
             f.k.poly(q[::-1] if part == "w3" else q, SD.F, 3, T.OUT(f.ax), fixed=T.SEAM_PASS or col)
         paint([(h0, zs), (uc, zs), (h0, zc)], SH.FACE, 0.0004)      # (the cut: the wall's tone)
         paint([(h0 - ln, zc), (h0, zc), (uc, zs), (uc - ln, zs)], POST_SEAM, 0.0005)   # (its seam)
+        if part == "w3":                                # (the near end's corner: a dark line down its foot's end)
+            ft = w0 + WIN.SLOPE + WIN.FOOT_W
+            paint([(ft - ln, zs), (ft, zs), (ft, zs + fh), (ft - ln, zs + fh)], FOOT_EDGE, 0.0005)
         fm.part(h0, w0, [(db, zs), (dv, zs), (dv, zh), (db, zh)], [None, WIN.HEAD_FRONT, None, None],
                 WIN.SIDE, end=False)                    # the post (plain: no recessed panel; both its sides the
                                                         # sides' tone: on W3 its side by the rib shows where the
