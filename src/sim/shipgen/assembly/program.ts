@@ -163,7 +163,8 @@ export function warehoused(rooms: readonly RoomSpec[]): RoomSpec[] {
   const area = cargo.reduce((t, r) => t + r.w * r.h, 0) / k;
   const out: RoomSpec[] = rooms.filter((r) => !cargo.includes(r));
   for (let i = 0; i < k; i++) {
-    const mine = items.filter((_, j) => j % k === i);
+    // Every warehouse lists every item, each at its share of the amount: a store takes only what it accepts, so a split by index could leave one warehouse's cold stores empty.
+    const mine = items.map((s) => ({ ...s, min: Math.floor(s.min / k), max: Math.max(1, Math.ceil(s.max / k)) }));
     // Wide and shallow (about 8:5), at least five deep for two aisles of racks.
     const h = Math.max(5, Math.round(Math.sqrt(area / 1.6)));
     out.push({ role: 'cargo', mods: mods.filter((_, j) => j % k === i), w: Math.max(h, Math.ceil(area / h)), h, stock: true, warehouse: true, ...(mine.length > 0 ? { items: mine } : {}) });

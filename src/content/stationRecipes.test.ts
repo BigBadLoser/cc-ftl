@@ -16,6 +16,17 @@ describe('station program', () => {
     expect(warehoused(crates).flatMap((r) => r.mods)).toHaveLength(11);
   });
 
+  it('stocks every warehouse with every item, so no cold store goes unstocked (#530)', () => {
+    const room = (item: string) => ({ role: 'cargo' as const, mods: Array<string>(30).fill('module.storage'), w: 6, h: 4, items: [{ item, min: 4, max: 8 }] });
+    const wh = warehoused([room('ration'), room('water'), room('ration'), room('water')]).filter((r) => r.warehouse);
+    expect(wh.length).toBeGreaterThan(1);
+    for (const w of wh) expect(new Set((w.items ?? []).map((i) => i.item))).toEqual(new Set(['ration', 'water']));
+    for (const seed of [1, 2, 3]) {
+      const farm = programOf('station.farming', 'station', seed).rooms.filter((r) => r.warehouse);
+      for (const w of farm) expect(w.items === undefined || w.items.length > 0).toBe(true);
+    }
+  });
+
   it('has one mess (two at hub size) and a rec room from station size up, as the commons department', () => {
     const count = (size: StationSize, mod: string): number => programOf('station.mining', size, 1).rooms.filter((r) => r.mods.includes(mod) && deptOf(r) === 'commons').length;
     expect((['outpost', 'station', 'hub'] as const).map((s) => count(s, 'module.galley'))).toEqual([1, 1, 2]);
