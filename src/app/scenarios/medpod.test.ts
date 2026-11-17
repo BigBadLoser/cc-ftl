@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { BedOwnerC, CrewC, newGame } from '../../sim';
 import { lodgingHere } from '../../sim/consent/guests';
 import { content } from '../../content';
-import { medpodCommands } from './medpod';
+import { medpodCommands } from '../../content/scenario/lib/medpod';
 
 describe('?scenario=medpod', () => {
   it('puts a passenger aboard with a spare bed, and they take it', () => {

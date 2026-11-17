@@ -7,7 +7,7 @@ import { DroneC } from '../sim/drones/components';
 import { ModuleC } from '../sim';
 import { shipIds } from '../sim/regions';
 import { DRONE_LAND_GAP_SEC, ENEMY_DRONE_MIN_DEPTH } from '../sim/tuning';
-import { droneScenarioCommands } from './droneScenario';
+import { droneScenarioCommands } from '../content/scenario/lib/drone';
 
 const TPS = 20;
 

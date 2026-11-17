@@ -15,6 +15,7 @@ One line per section; read the index, then only the sections your task touches.
 - [Rendering](#rendering): Two-way contract.
 - [Test tiers](#test-tiers): Fast tier (npm run check:fast, before every commit): lint, typecheck, then VITESTFAST=1 vitest run...
 - [Test harness](#test-harness): `test/support/`: `run`, `nth`, `fixtureShip`, `expectReplayable`, `cachedWorld`; who may import it.
+- [Scenario builder](#scenario-builder): `src/content/scenario/`: parts, presets and hooks found by glob; one builder for tests, `?scenario=` and the profiler.
 - [Asset pipeline](#asset-pipeline): Asset creation is decoupled from asset rendering. Models are built as 3D in Blender, then
 - [Crew AI](#crew-ai): The planned crew AI architecture (interrupts, utility AI, job scheduler, HFSM executor) is in...
 - [UI](#ui): Svelte components read snapshots published by app after each tick, or on demand for
@@ -412,6 +413,34 @@ Shared test helpers live in `test/support/` (repo root); use them instead of a l
 - Turn systems off only in a focused unit test with an explicit list; never in a gameplay-outcome test.
 - Where a branch case only needs the moment it tests (party aboard, reactor near its deadline), start there (set the timer, deploy
   from a cached scene) and keep one natural signal-to-rescue test on the production pipeline (`content/freighter.test.ts`).
+
+## Scenario builder
+
+One builder (`src/content/scenario/`) makes a scene for tests, `?scenario=` and the profiler. A scene is a **spec** of independent parts; **presets** combine parts;
+**hooks** are code that runs on a built scene. Nothing is listed centrally: parts, presets and hooks are found by `import.meta.glob`, so adding one is adding a
+file (Vite resolves it in the browser build, Vitest and the profiler, which all run under Vite).
+
+- `ScenarioSpec` (`types.ts`) is an interface with no keys of its own: each part adds its key by declaration merging. A part is `parts/<key>.ts`, default export
+  `definePart({ key, after?, apply(ctx, slice) })`; parts apply in topological order of `after`. Parts: `ship` (the only one that makes the sim; hull, seed, crew,
+  skip goals), `node` (warm-up ticks, hop to an empty neighbour, stations), `items`, `prep` and `steps` (scripts of commands and waits before / after the other
+  parts), `events` (story flags, queued event, a trip to its signal, answers, deploy), `crew` (traits, xp, breaks, bonds, fire, drops), `modules` (beds near a module,
+  plots, production orders), `ships` (enemy, generated, derelict, raider), `hooks`, `ui` (speed, selection, tool, camera: data the app applies; tests ignore it).
+  A part changes the sim through commands (the `debug.*` ones, or a new one where none exists); a direct write is allowed only for pre-start setup tests already did
+  (skip goals, a story flag, the queued event) and only inside the owning part.
+- A preset is `presets/<name>.ts` (`presets/inspect/station.ts` is `inspect.station`), default export `definePreset({ doc, params?, starter?, spec(params) })`. `params`
+  are its URL knobs by kind (`flag`, `num`, `str`, `oneOf`). `buildScenario(name | spec, { seed, params, overrides, sim?, extraHooks? })` returns `Built`:
+  the finished scene (the build steps the sim itself), `requests` (UI), `rejected` (command rejections by `command:reason`) and the hooks. `overrides` is a partial spec
+  merged over the preset's (objects merge, arrays replace, `null` deletes); a key no part owns is an error.
+- A hook is `hooks/<name>.ts`, `defineHook({ afterBuild?, tick?, event? })` with `ctx.after(ticks, fn)` / `ctx.when(pred, fn)` (tick-based, so deterministic). They read
+  the sim and send commands. They are not `?hook` (the `__cc` debug API). The app loop calls `built.afterTick()` / `built.onEvents()`; tests and the profiler use `play(built, ticks)`
+  or the same calls. Hooks: `inspect.fight`, `inspect.select`, `boarding`, `log`, `busy.arrive`, `medpod.deliver`, `stasis.unpowered`.
+- Tests (`test/support/scenario.ts`): `scenario(name, opts)` builds fresh; `cachedScenario(name, opts)` builds once per worker and returns a clone (`cachedWorld`'s rules), keyed
+  by name + canonical JSON of seed, params and overrides, so two worlds never share a key. Turning sim systems off is not available; add it for a focused unit test when one needs it.
+- `?scenario=<name>&<flag>...&seed=&starter=&credits=&items=&speed=&ticks=&hooks=` (`url.ts`); `src/app/scenarioStart.ts` builds it on the running game before the first frame and
+  applies the UI requests. Profiler: `--scenario preset:<name>`.
+- Adding things: a file in `presets/`, `parts/` or `hooks/`. Keep `import.meta.glob(` written exactly so in `registry.ts` (no type argument): Vitest's on-disk module cache
+  skips a file only when it contains that text, and a cached registry would not see a file added later. `registry.test.ts` (fast) checks unique names, resolvable `after` and a part for
+  every spec key; `presets.slow.test.ts` builds every preset on the app start and plays 100 ticks.
 
 ## Asset pipeline
 
@@ -1628,7 +1657,7 @@ DESIGN.md "Physical encounters". Three parts kept apart: triggers (the transit d
   its crew `vehicle.embark`, the shuttle `undock`s and `return`s, `home` is set and the skiff is dismissed (`leaveAt` now, so `departScene` jumps it
   out). Refused, an honest skiff is dismissed at once (fact `declined`, rule `honestRefused`). A player shot first (`provoked` set) makes it `sprung` already. Observer facts `ambushed` (`provoked === 'ambush'`) and
   `boardersDown` (party all dead or down), rule filter `trap: true|false`. Scan rows are skill-sharpened (`app/ambushIntel.ts`: gunnery, piloting,
-  hacking). Debug: `?scenario=ambush[&trap|&honest][&signal]` (`app/ambushScenario.ts`, `debug.ambush`).
+  hacking). Debug: `?scenario=ambush[&trap|&honest][&signal]` (`content/scenario/presets/ambush.ts`, `debug.ambush`).
 
 ## Food and farming, `src/sim/farm/`
 

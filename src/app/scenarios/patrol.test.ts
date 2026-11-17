@@ -1,35 +1,21 @@
 import { describe, expect, it } from 'vitest';
-import { newGame, type Sim } from '../../sim';
-import { content } from '../../content';
+import { type Sim } from '../../sim';
+import { cachedScenario } from '../../../test/support/scenario';
 import { InspectionC } from '../../sim/inspect/types';
 import { repKey } from '../../sim/galaxy/standing';
 import { reputationOf } from '../../sim/story/state';
 import { encountersOf } from '../encounterSnapshot';
 import { ShipC, galaxyIndex, playerShip } from '../../sim';
 import { onTurn } from '../../sim/galaxy/turn';
-import { patrolCommands, patrolNode } from './patrol';
 
-/** The scenario's start, stepped until the patrol's hail halts the trip. */
-function hailed(clean = false): Sim {
-  const sim = newGame(3, content);
-  for (let i = 0; i < 20; i++) sim.step();
-  for (const cmd of patrolCommands(sim, patrolNode(sim)!, { clean })) sim.enqueue(cmd);
-  for (let i = 0; i < 400 && sim.galaxy.travel?.phase !== 'interdicted' && sim.sector.state !== 'deploying'; i++) {
-    sim.step();
-    sim.story.active = null;
-  }
-  return sim;
-}
+const patrolParams = (stage: string, clean = false) => ({ stage, ...(clean ? { clean: true } : {}) });
+/** The scenario's start, stepped until the patrol's hail halts the trip (built once per worker, cloned per test). */
+const hailed = (clean = false): Sim => cachedScenario('patrol', { seed: 3, params: patrolParams('interdicted', clean) }).sim;
 
 /** Hailed, complied and deployed: stepped until the patrol's inspection is under way (its shuttle on the way). */
 function boarding(): { sim: Sim; fleet: number; faction: string } {
-  const sim = hailed();
-  const e = sim.galaxy.encounters.find((x) => x.scan)!;
-  sim.enqueue({ type: 'galaxy.respond', encounter: e.id, choice: 'comply' });
-  sim.step();
-  sim.enqueue({ type: 'sector.deploy', x: 0, y: 0 });
-  for (let i = 0; i < 30 && !sim.world.query(InspectionC).length; i++) sim.step();
-  return { sim, fleet: e.fleet, faction: e.faction };
+  const e = hailed().galaxy.encounters.find((x) => x.scan)!; // the encounter the player answers on the way in
+  return { sim: cachedScenario('patrol', { seed: 3, params: patrolParams('boarding') }).sim, fleet: e.fleet, faction: e.faction };
 }
 
 describe('?scenario=patrol', () => {
@@ -121,10 +107,7 @@ describe('?scenario=patrol', () => {
   });
 
   it('a chasing patrol whose faction running made hostile still hails to stop, inside its encounter cooldown', () => {
-    const sim = newGame(3, content);
-    for (let i = 0; i < 20; i++) sim.step();
-    for (const cmd of patrolCommands(sim, patrolNode(sim)!)) sim.enqueue(cmd);
-    sim.step();
+    const sim = cachedScenario('patrol', { seed: 3 }).sim; // the jump just started: the patrol chases
     const f = sim.galaxy.fleets.find((x) => x.chase)!;
     expect(f).toBeDefined();
     sim.story.reputation[repKey(sim, f.faction)] = -100; // running from it again and again

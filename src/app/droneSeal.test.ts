@@ -6,7 +6,7 @@ import { breachesOf } from '../sim/crew/breach';
 import { DroneC } from '../sim/drones/components';
 import { CrewC, PositionC } from '../sim';
 import { shipGrid } from '../sim/regions';
-import { droneScenarioCommands } from './droneScenario';
+import { droneScenarioCommands } from '../content/scenario/lib/drone';
 
 /** The starter with two bays, two repair drones carrying metal, and a hole in the hull. */
 function breached(): { sim: Sim; events: SimEvent[]; step: (secs: number) => void } {
