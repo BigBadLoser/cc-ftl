@@ -5,7 +5,7 @@ import { playerCrew } from '../../sim/story/world';
 import { fullSlabs, slabPlace } from '../../sim/stasis/query';
 import { heldItems } from '../../sim/items/held';
 import { SLAB_ITEM } from '../../sim/stasis/tuning';
-import { newHostiles, prisonerCommands, sealPrizeCommands } from '../../content/scenario/lib/stasis';
+import { newHostiles, prisonerCommands, sealPrizeCommands } from './lib/stasis';
 import { cachedScenario } from '../../../test/support/scenario';
 
 /** The app's start: the Wayfarer, its node populated, the crew rolled. */

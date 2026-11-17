@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CrewC, ModuleC, PositionC, ShipC, TraderC, galaxyIndex, playerShip, type Sim } from '../../sim';
-import { content } from '../../content';
+import { content } from '..';
 import { cachedScenario } from '../../../test/support/scenario';
 import { AllegianceC } from '../../sim/fight/components';
 import { AwayC } from '../../sim/away/components';

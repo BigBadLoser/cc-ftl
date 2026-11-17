@@ -3,11 +3,11 @@
 export default [
   'src/app/ambushScene.test.ts',
   'src/app/scenarios/inspect.test.ts',
-  'src/app/scenarios/inspectFight.test.ts',
-  'src/app/scenarios/medpod.test.ts',
+  'src/content/scenario/inspectFight.test.ts',
+  'src/content/scenario/medpod.test.ts',
   'src/app/scenarios/patrol.test.ts',
   'src/app/scenarios/pirates.test.ts',
-  'src/app/scenarios/stasis.test.ts',
+  'src/content/scenario/stasis.test.ts',
   'src/content/freighter.slow.test.ts',
   'src/content/freighter.test.ts',
 ];
