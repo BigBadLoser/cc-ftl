@@ -57,7 +57,9 @@ export function validateTemplate(t: ShipTemplate, defs: Record<string, ModuleDef
     if (m.ground && !wired(footprintTiles(def, m.x, m.y, m.rot))) problems.push(`${name}: no cable to the hull`);
     if (m.ground && isGroundMount(def)) {
       const port = groundPort(def, m);
-      if (!cabled.has(port.cable.y * w + port.cable.x)) problems.push(`${name}: no cable at its port`);
+      const { x: cx, y: cy } = port.cable;
+      // Off the template, an index would alias onto the next row: such a port has no cable.
+      if (cx < 0 || cy < 0 || cx >= w || cy >= h || !cabled.has(cy * w + cx)) problems.push(`${name}: no cable at its port`);
     } else if (m.ground) problems.push(`${name}: not a ground mount`);
   });
   for (const i of cabled) if (at(i % w, Math.floor(i / w)) !== '.') problems.push(`cable ${i % w},${Math.floor(i / w)}: not on the ground`);

@@ -48,7 +48,7 @@ export function createCableView(grid: Grid, atlas: Atlas, L: Layers, world: Worl
         mounts++;
         if (m.powered && m.hp > 0) powered = true;
       }
-      const next = `${atlas.generation}|${mounts}|${[...ports.keys()].join(';')}|${powered ? 1 : 0}`;
+      const next = `${atlas.generation}|${grid.revision('cable')}|${mounts}|${[...ports].map(([k, v]) => `${k}>${v}`).sort().join(';')}|${powered ? 1 : 0}`;
       if (next === sig) return;
       sig = next;
       clear();
