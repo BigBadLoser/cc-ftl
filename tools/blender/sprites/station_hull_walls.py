@@ -19,7 +19,6 @@ from .wall3d_ext_geom import E, LINE
 
 CUT = "stK"
 FOOT_Z = SH.GROOVE - 2 / core.ZPX       # the near hull's cut: two px under the groove
-THICK = W.TW                            # the near hull's cut band: the partitions' thickness behind its face
 
 
 class CapShell(T.Shell):
@@ -68,16 +67,23 @@ def _lid(k, sp):
         if fam != "hull":
             continue
         if abs(x1 - sp.f) < 1e-6:
-            x0, x1 = max(x0, E - THICK), E
+            x1 = E
         if abs(y1 - sp.f) < 1e-6:
-            y0, y1 = max(y0, E - THICK), E
+            y1 = E
         k.poly([T.Vector((x, y, FOOT_Z)) for x, y in ((x0, y0), (x1, y0), (x1, y1), (x0, y1))], "steel", 3,
                T.Vector((0, 0, 1)), fixed=CUT)
 
 
+def _back(s, c, w):
+    """The cut where the hull ends behind front (s, c, w) (wall3d_belly's: hull_outline.back, d(f) <= back)."""
+    from . import hull_outline as HO
+    return (-s, -(c - w * HO.back((round(s.x), round(s.y)))))
+
+
 def low(n):
     """(objs, kind): the station's generic piece of key name n (station_hull._generic) cut off at FOOT_Z, its section's top
-    a black cut: its solids (and the step) get a top at FOOT_Z (toned CUT) and a back THICK behind each front, everything
+    a black cut: its solids (and the step) get a top at FOOT_Z (toned CUT) and a back where the hull ends behind each front (the ship's cut hull's,
+    hull_outline.back: the tile's inner edge), everything
     dressed on them is clipped there, and the roof's lines are left off."""
     from unittest import mock
     from . import station_hull_diag as SG
@@ -91,15 +97,15 @@ def low(n):
         return [(ends, rest + [lid]) for ends, rest in parts[:1]], shared, fronts
 
     def low_emit(rel, parts, fronts, skip, sec):
-        # (the piece has no back: the roof covers the rest of the tile. Cut low it needs one, as the walls' thickness behind
-        # each front, a solid each: their union is the hull's band round a corner)
+        # (the piece has no back: the roof covers the rest of the tile. Cut low it needs one, where the hull ends behind
+        # each front, a solid each: their union is the hull round a corner)
         for s, c, _w in fronts:
-            back = (-s, -(c - THICK * s.length))
+            back = _back(s, c, _w)
             emit(rel, [(ends, rest + [back]) for ends, rest in parts], fronts, skip, sec)
 
     def low_step(rel, g, cut, sec):
-        for s, c, _w in map(SG._front, g):              # (the step too: the walls' thickness behind each front)
-            step(rel, g, cut + [(-s, -(c - THICK * s.length))], sec)
+        for s, c, w in map(SG._front, g):               # (the step too: the hull's depth behind each front)
+            step(rel, g, cut + [_back(s, c, w)], sec)
 
     def low_tone(pts, m, fronts, sec):
         return CUT if m.z > 0.85 and min(p.z for p in pts) >= FOOT_Z - 1e-6 else tone(pts, m, fronts, sec)
