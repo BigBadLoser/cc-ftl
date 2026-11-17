@@ -290,7 +290,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
           // Behind a tube (its far door's row, its near door and their neighbours) the hull takes its base piece too: a design's
           // relief would show round the tube's port and junction.
           const base = own || tube.row.has(idx) || tube.junction.has(idx);
-          const drew = hull && (!lockDoor(idx) || !ghosts) ? drawHull(hull, x, y, k, ci, v, false, base, decodeWindow(windows?.[ci] ?? 0)) : false;
+          const drew = hull && (!lockDoor(idx) || !ghosts) ? drawHull(hull, x, y, k, ci, v, false, base, decodeWindow(windows?.[ci] ?? 0), tube.row.has(idx) || tube.port.has(idx)) : false;
           const special = own && !drew;
           // Under an airlock's door tile the near hull's belly still runs below the deck (its own sprite is the wall above).
           if (hull && ghosts && lockDoor(idx)) drawHull(hull, x, y, k, ci, v, true);
@@ -393,7 +393,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
    * (an engine's hull row); `base`: a straight run's base design only (an engine's row, an airlock's door). False if it
    * drew nothing.
    */
-  function drawHull(h: HullKeys, x: number, y: number, k: number, ci: number, v: TileChunk, bellyOnly = false, base = false, win: WindowTile | null = null): boolean {
+  function drawHull(h: HullKeys, x: number, y: number, k: number, ci: number, v: TileChunk, bellyOnly = false, base = false, win: WindowTile | null = null, behind = false): boolean {
     const paint = host.hullPaint?.() ?? PLAIN_PAINT;
     const put = (id: string, z: number, parent: Container, solid: boolean) => {
       const s = atlas.stat(id);
@@ -416,8 +416,9 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
     if (!ghosts) {
       const ext = exteriorIds(h, x, y, has, base, win);
       if (!ext) return false;
-      // The roof stand-in at the roof plating's depth: over the tile's piece, under the hull of the tiles in front.
-      ext.forEach((id) => put(id, z + (id.startsWith("tile.roof.") ? 0.9 : 0), L.sorted, solid));
+      // The roof stand-in at the roof plating's depth: over the tile's piece, under the hull of the tiles in front. `behind`: a
+      // tube's hull row or far door, sorted (roof and all) under the tube's art, whose first tile shares the row's front tile's depth.
+      ext.forEach((id) => put(id, z + (id.startsWith("tile.roof.") ? (behind ? -0.04 : 0.9) : behind ? -0.05 : 0), L.sorted, solid));
       const b = bellyIds(h, x, y, has);
       if (b?.under) put(b.under, z, L.under, solid);
       return true;
