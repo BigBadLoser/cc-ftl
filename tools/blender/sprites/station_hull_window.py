@@ -42,8 +42,9 @@ FRAME = 9 / 32                      # an end piece's outer frame (the whole sect
 JAMB = 5 / 32                       # the jamb inside it
 BACK_WALL = "stE"                   # the window's back wall
 POST_SEAM = SH.SEAM                 # the seams round an end piece's post on the wall
-WRAP = (5, 5, 5, 1)                 # an end piece's plate bent over the sill's edge, between the corner's foot and the
-                                    # tile's end: px wide, px down the front, px back over the top, px thick
+WRAP = (5, 5, 5, 1)                 # the plates bent over the sill's edge, centred between each corner's foot and the
+                                    # vent box (across the tiles' join, each tile drawing its share): px wide, px down
+                                    # the front, px back over the top, px thick
 WRAP_FRONT, WRAP_TOP, WRAP_SIDE = "stL", "stH", SD.BOX_SIDE
 VENT_BOX = (15, 4, 1, 17)           # a middle tile's vent box under the window (the ref's, measured): px wide, its front
                                     # px off the face, its top px over the sill's (run back to the glass), px tall
@@ -113,6 +114,7 @@ def _span(f, s, s0, s1, zt):
     f.block(u0, u1, 0.0, SH.GROOVE)                                     # the sill: the face, its top flat back
     pf = [(db, SH.GROOVE), (fr, SH.GROOVE), (fr, zs), (db, zs)]         # to the window's back
     f.part(u0, u1, pf, [None, SH.FACE, SILL_TOP, None], None, end=False)
+    _wraps(f, s0, s1, zs)
     if not end:
         a, b = _vent_box(f, s0, s1, zs, gl)
         for v0, v1 in ((s0, a), (b, s1)):                # (the sill's seam on to the box)
@@ -157,13 +159,6 @@ def _span(f, s, s0, s1, zt):
             q = [T.P(f.ax, f.plane, mu(u), z, D + e) for u, z in pts]
             f.k.poly(q[::-1] if part == "w3" else q, SD.F, 3, T.OUT(f.ax), fixed=T.SEAM_PASS or col)
         paint([(h0, zs), (uc, zs), (h0, zc)], SH.FACE, 0.0004)      # (the cut: the wall's tone)
-        ww, wd, wb, wt = WRAP                           # the plate bent over the sill's edge, centred between the
-        c = round(((w0 + WIN.SLOPE + WIN.FOOT_W) + s1) / 2 / ln - ww / 2) * ln   # corner's foot and the tile's end
-        t, dt = wt / Z, D + wt * ln
-        fm.part(c, c + ww * ln, [(D, zs - wd / Z), (dt, zs - wd / Z), (dt, zs + t), (D, zs + t)],
-                [None, WRAP_FRONT, WRAP_TOP, None], WRAP_SIDE, end=False)          # (down the front)
-        fm.part(c, c + ww * ln, [(D - wb * ln, zs), (D, zs), (D, zs + t), (D - wb * ln, zs + t)],
-                [None, None, WRAP_TOP, None], WRAP_SIDE, end=False)                # (back over the top)
         paint([(h0 - ln, zc), (h0, zc), (uc, zs), (uc - ln, zs)], POST_SEAM, 0.0005)   # (its seam)
         fm.part(h0, w0, [(db, zs), (dv, zs), (dv, zh), (db, zh)], [None, WIN.HEAD_FRONT, None, None],
                 WIN.SIDE, end=False)                    # the post (plain: no recessed panel; both its sides the
@@ -209,13 +204,46 @@ def _head(f, a, b, z0, ends, foot, tile):
                      fixed=T.SEAM_PASS or col)
 
 
+def _box_span(s0, s1):
+    """The vent box's span on a middle tile."""
+    ln, w = SD.LINE, VENT_BOX[0]
+    a = round((s0 + s1) / 2 / ln - w // 2) * ln
+    return a, a + w * ln
+
+
+def _wraps(f, s0, s1, zs):
+    """This tile's share of the plates bent over the sill's edge (WRAP): one centred between W1's corner's foot and
+    the box, one between the box and W3's, each across a join (in the middle tile's u: W1's the tile before, W3's
+    the tile after, mirrored)."""
+    part, ln, T, Z = PART[0], SD.LINE, s1 - s0, core.ZPX
+    ww, wd, wb, wt = WRAP
+    ft = FRAME + JAMB + WIN.SLOPE + WIN.FOOT_W          # (a corner's foot's end, from its tile's outer end)
+    a, b = _box_span(s0, s1)
+    spans = []
+    for c in ((s0 - T + ft + a) / 2, (b + s1 + T - ft) / 2):
+        u0 = round(c / ln - ww / 2) * ln
+        spans.append((u0, u0 + ww * ln))
+    shift = {"w1": T, "w2": 0.0, "w3": -T}[part]       # (the middle tile's u onto this one's)
+    t, dt = wt / Z, D + wt * ln
+    for u0, u1 in spans:
+        u0, u1 = u0 + shift, u1 + shift
+        v0, v1 = max(u0, s0), min(u1, s1)
+        if v1 - v0 < 1e-6:
+            continue
+        cap = (WRAP_SIDE if v0 == u0 else None, WRAP_SIDE if v1 == u1 else None)
+        f.part(v0, v1, [(D, zs - wd / Z), (dt, zs - wd / Z), (dt, zs + t), (D, zs + t)],
+               [None, WRAP_FRONT, WRAP_TOP, None], cap, end=False)      # (down the front)
+        f.part(v0, v1, [(D - wb * ln, zs), (D, zs), (D, zs + t), (D - wb * ln, zs + t)],
+               [None, None, WRAP_TOP, None], cap, end=False)            # (back over the top)
+
+
 def _vent_box(f, s0, s1, zs, gl):
     """A middle tile's vent box under the window, centred on the tile (VENT_BOX): its front a px off the face, its top a
     px over the sill's and run back to the glass (gl), its top's front edge lit, slats across its front (VENT_SLATS)."""
     px, ln = 1 / core.ZPX, SD.LINE
     w, out, up, h = VENT_BOX
-    a = round((s0 + s1) / 2 / ln - w // 2) * ln
-    b, top = a + w * ln, zs + up * px
+    a, b = _box_span(s0, s1)
+    top = zs + up * px
     z0, fr = top - h * px, D + out * ln
     cap = (SD.BOX_SIDE, SD.BOX_SIDE)
     ri, rd = VENT_RECESS
