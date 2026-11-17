@@ -44,6 +44,7 @@ BACK_WALL = "stE"                   # the window's back wall
 VENT_BOX = (15, 4, 1, 17)           # a middle tile's vent box under the window (the ref's, measured): px wide, its front
                                     # px off the face, its top px over the sill's (run back to the glass), px tall
 VENT_RECESS = (2, 1)                # its front's recess (the slats in it): px in from every edge, px deep
+VENT_PANEL = "stM"                  # the recess's floor: a step under the front
 VENT_SLATS = (3, 8, 3, 6, 3)        # its slats: count, px wide, px in from its a end, the first's px under its top, px
                                     # apart (each a dark row over a lit row)
 VENT_FRONT, VENT_TOP, VENT_EDGE, VENT_LIT = SH.FACE, "stH", SD.TOP_LIT, "stL"   # its front, top, top's front edge,
@@ -195,7 +196,7 @@ def _vent_box(f, s0, s1, zs, gl):
     cap = (SD.BOX_SIDE, SD.BOX_SIDE)
     ri, rd = VENT_RECESS
     rb = fr - rd * ln                                   # (the recess's floor)
-    f.part(a, b, [(D, z0), (rb, z0), (rb, top), (D, top)], [None, VENT_FRONT, VENT_TOP, None], cap, end=False)
+    f.part(a, b, [(D, z0), (rb, z0), (rb, top), (D, top)], [None, VENT_PANEL, VENT_TOP, None], cap, end=False)
     f.part(a, b, [(gl, zs), (D, zs), (D, top), (gl, top)], [None, None, VENT_TOP, None], cap, end=False)
     zi0, zi1 = z0 + ri * px, top - ri * px
 
