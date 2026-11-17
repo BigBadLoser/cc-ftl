@@ -60,10 +60,6 @@ CLUMP = 0.11                        # tiles: a clump's spread (its rocks gather 
 VARIANTS = len(CHARACTER)           # per key but a straight run's, picked per tile; each its own heaps, reach and rocks,
 VAR_SHARE = 0.8                     # faded to the shared shape at its stretch's ends so neighbours of any variant meet
 N = 32                              # surface grid cells per tile
-LIP = 0.40 + 2 / core.ZPX           # the dust banked up the wall's face to just under its groove (station_hull.GROOVE):
-LIP_W = 0.16                        # the face's lower band between drift and groove read as a gap; out this far
-INNER = 0.08                        # tiles: the drift runs on this far in under a front's face (the hull hides it there),
-                                    # so a diagonal's grid cells crossing the wall line leave no bare stair along its foot
 EPS = 0.25                          # px: a facet all under this over the ground is not drawn (the ground shows)
 
 
@@ -110,7 +106,7 @@ def _dist(poly, fronts, p, turns=()):
     two (window 0), or round a turn: where the outline bends at the tile's edge into a neighbour's straight wall (turns:
     (vertex, the two normals); the neighbour's band and this one meet along the wedge's sides). A front turned from the
     camera has its drift too (the hull hides it but where it wraps round a far corner)."""
-    best, inner = None, None
+    best = None
     m = len(poly)
     for j, (a, lab) in enumerate(poly):
         if lab is None:
@@ -122,9 +118,6 @@ def _dist(poly, fronts, p, turns=()):
         t = (p - a).dot(ab) / L2 if L2 > 1e-12 else 0.0
         d = n.dot(p) - c
         if d <= 0:
-            if d > -INNER and -1e-9 <= t <= 1 + 1e-9 and all(f[0].dot(p) <= f[1] for f in fronts):
-                w = math.sin(math.pi * max(0.0, min(1.0, t))) ** 2 * min(1.0, math.sqrt(L2) / 0.5)
-                inner = (0.0, w) if inner is None or w > inner[1] else inner
             continue
         if -1e-9 <= t <= 1 + 1e-9:
             w = math.sin(math.pi * max(0.0, min(1.0, t))) ** 2 * min(1.0, math.sqrt(L2) / 0.5)
@@ -143,7 +136,7 @@ def _dist(poly, fronts, p, turns=()):
         sg = _cross(n1, n2)
         if _cross(n1, q) * sg >= 0 and _cross(q, n2) * sg >= 0 and (best is None or q.length < best[0]):
             best = (q.length, 0.0)
-    return best if best is not None or not all(f[0].dot(p) <= f[1] for f in fronts) else inner
+    return best
 
 
 def _turns(key, poly, fronts, ends):
@@ -214,8 +207,7 @@ def _height(d, w, x, y, mounds, u=None, ends=(0, 0), prof=(0.0, 1.0, 2.0, 0.0)):
         return 0.0
     a, b = 1 + w * (a - 1), 2 + w * (b - 2)           # (concave scree at a = 1, b = 2; a dome as a grows)
     f = (1 - r ** a) ** b
-    lip = LIP * max(0.0, 1 - max(d, 0.0) / LIP_W) ** 1.6       # (banked steep against the face, over the step)
-    return max(0.0, h0 * f, lip)
+    return max(0.0, h0 * f)
 
 
 def _col(n, x, y, frac):
@@ -226,7 +218,7 @@ def _col(n, x, y, frac):
         return "bgM"
     t = frac + 0.18 * per2(x * 2.5, y * 2.5, 823, n=3) / 1.5
     if n.z < 0.45:
-        return "bgL" if frac > 1.2 else "bg"           # (steep: the light dims it; banked on the wall lit)
+        return "bgM"
     return "bgL" if t > 0.6 else "bg"
 
 
