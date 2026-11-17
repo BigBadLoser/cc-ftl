@@ -1,16 +1,34 @@
 import type { Sim } from '../sim';
 import { claimGeneration, nextArrival, provideGenerated, releaseGeneration, warmElsewhere } from '../sim/galaxy/arrivals';
 import { warmCandidates } from '../sim/galaxy/fleetShips';
+import { nodeBuildJobs } from '../sim/galaxy/populatePlan';
 import type { Contact } from '../sim/galaxy/types';
 import type { GenResult } from '../sim/shipgen/types';
+import { claimBuild, provideBuild, releaseBuild, type BuildJob, type BuildResult } from '../sim/stations/buildMemo';
 
-/** Makes a ship the way `generateShip` does, somewhere that does not stall the frame (a worker). Null: it cannot be generated. */
+/**
+ * Makes a ship the way `generateShip` does, somewhere that does not stall the frame (a worker). Null: it cannot be generated. `build`, where there is
+ * one, makes a station or outpost the way the sim does (`runBuild`); it rejects when the build fails.
+ */
 export interface ShipGenerator {
   generate(job: { shipgen: string; seed: number; depth: number }): Promise<GenResult | null>;
+  build?(job: BuildJob): Promise<BuildResult>;
 }
 
 /** How often the node is scanned for ships about to turn up. */
 export const PREWARM_EVERY_MS = 500;
+/** Station builds sent to the worker at once: few, so the nearest node's builds are always next when the route changes or a node is passed. */
+export const BUILDS_IN_FLIGHT = 2;
+
+/**
+ * The station and outpost builds of the nodes on the route not yet populated, nearest first (the node the ship is at, then the ones ahead), while the
+ * player's ship is in hyperspace: a first drop builds every structure of its node (#538). Reads only.
+ */
+export function routeBuildJobs(sim: Sim): BuildJob[] {
+  const t = sim.galaxy.travel;
+  if (sim.sector.state !== 'hyperspace' || !t) return [];
+  return t.route.slice(t.at).filter((id) => !sim.galaxy.nodes[id]?.populated).flatMap((id) => nodeBuildJobs(sim, id));
+}
 
 /**
  * Generates the ships of the fleets about to arrive (#388), and the ship the next hostile jump-in would bring, off the main thread:
@@ -18,6 +36,8 @@ export const PREWARM_EVERY_MS = 500;
  * the sim's memo, so the ship arrives from there as before. While this runs the sim does not warm fleet ships itself (`warmElsewhere`), so it
  * no longer races the scan at high speed. Generation is a pure function of the contact, so the ships are the same ones, and a ship needed
  * before its result is in is still generated on the spot. A failed job gives the claim back and hands warming back to the sim.
+ * During a hyperspace trip it also builds the stations and outposts of the nodes ahead (`routeBuildJobs`, #538) into the sim's build memo, so the
+ * first drop at one finds them made; a build needed first is made on the spot as ever, and a failed one is released for the sim to make.
  */
 export function createPrewarm(sim: Sim, gen: ShipGenerator, now: () => number): { update(): void } {
   let last = -Infinity;
@@ -32,6 +52,15 @@ export function createPrewarm(sim: Sim, gen: ShipGenerator, now: () => number): 
       },
     );
   };
+  let building = 0;
+  const build = (job: BuildJob, make: NonNullable<ShipGenerator['build']>): void => {
+    if (!claimBuild(sim, job)) return;
+    building++;
+    make(job).then(
+      (r) => provideBuild(sim, job, r),
+      () => releaseBuild(sim, job),
+    ).finally(() => building--);
+  };
   return {
     update() {
       const t = now();
@@ -40,6 +69,12 @@ export function createPrewarm(sim: Sim, gen: ShipGenerator, now: () => number): 
       for (const c of warmCandidates(sim)) claim(c as Contact);
       const next = nextArrival(sim);
       if (next) claim(next);
+      const make = gen.build?.bind(gen);
+      if (!make || building >= BUILDS_IN_FLIGHT) return;
+      for (const job of routeBuildJobs(sim)) {
+        if (building >= BUILDS_IN_FLIGHT) break;
+        build(job, make);
+      }
     },
   };
 }
