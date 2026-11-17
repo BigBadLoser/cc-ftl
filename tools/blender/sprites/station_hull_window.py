@@ -42,6 +42,9 @@ FRAME = 9 / 32                      # an end piece's outer frame (the whole sect
 JAMB = 5 / 32                       # the jamb inside it
 BACK_WALL = "stE"                   # the window's back wall
 POST_SEAM = SH.SEAM                 # the seams round an end piece's post on the wall
+WRAP = (5, 5, 5, 1)                 # an end piece's plate bent over the sill's edge, between the corner's foot and the
+                                    # tile's end: px wide, px down the front, px back over the top, px thick
+WRAP_FRONT, WRAP_TOP, WRAP_SIDE = "stL", "stH", SD.BOX_SIDE
 VENT_BOX = (15, 4, 1, 17)           # a middle tile's vent box under the window (the ref's, measured): px wide, its front
                                     # px off the face, its top px over the sill's (run back to the glass), px tall
 VENT_RECESS = (2, 1)                # its front's recess (the slats in it): px in from every edge, px deep
@@ -154,6 +157,13 @@ def _span(f, s, s0, s1, zt):
             q = [T.P(f.ax, f.plane, mu(u), z, D + e) for u, z in pts]
             f.k.poly(q[::-1] if part == "w3" else q, SD.F, 3, T.OUT(f.ax), fixed=T.SEAM_PASS or col)
         paint([(h0, zs), (uc, zs), (h0, zc)], SH.FACE, 0.0004)      # (the cut: the wall's tone)
+        ww, wd, wb, wt = WRAP                           # the plate bent over the sill's edge, centred between the
+        c = round(((w0 + WIN.SLOPE + WIN.FOOT_W) + s1) / 2 / ln - ww / 2) * ln   # corner's foot and the tile's end
+        t, dt = wt / Z, D + wt * ln
+        fm.part(c, c + ww * ln, [(D, zs - wd / Z), (dt, zs - wd / Z), (dt, zs + t), (D, zs + t)],
+                [None, WRAP_FRONT, WRAP_TOP, None], WRAP_SIDE, end=False)          # (down the front)
+        fm.part(c, c + ww * ln, [(D - wb * ln, zs), (D, zs), (D, zs + t), (D - wb * ln, zs + t)],
+                [None, None, WRAP_TOP, None], WRAP_SIDE, end=False)                # (back over the top)
         paint([(h0 - ln, zc), (h0, zc), (uc, zs), (uc - ln, zs)], POST_SEAM, 0.0005)   # (its seam)
         fm.part(h0, w0, [(db, zs), (dv, zs), (dv, zh), (db, zh)], [None, WIN.HEAD_FRONT, None, None],
                 WIN.SIDE, end=False)                    # the post (plain: no recessed panel; both its sides the
