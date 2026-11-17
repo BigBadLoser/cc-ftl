@@ -375,17 +375,17 @@ def _generic(n):
     return out
 
 
-def _berm(n, v):
+def _berm(n, v, ends=None):
     from . import env_build, post
     from . import station_berm as BM
     from . import station_hull_diag as SG
     k = _unname(n)
     core.clear_scene_meshes()
     post.select(True)
-    own = BM.berm(k, v)
+    own = BM.berm(k, v, ends or (0, 0))
     if not own:
         return []
-    sid = f"tile.hull.station.berm.{n}.v{v}"
+    sid = f"tile.hull.station.berm.{n}.v{v}" + (f".e{ends[0]}{ends[1]}" if ends else "")
     it = env_build.crop_item(sid, (1, 1), *env_build.render_sprite(sid, "wide", (own, own + SG.piece(k))))
     return [it] if it else []
 
@@ -395,7 +395,9 @@ def jobs():
     out = [lambda m=m, o=o: _item(f"tile.hull.station.ext.o{o}.m{m}", lambda: _wide(m, o)) for m, o in MOCK_RUN]
     out += [lambda n=n: _generic(n) for n in MOCK_KEYS]
     from . import station_berm as BM
-    out += [lambda n=n, v=v: _berm(n, v) for n in MOCK_KEYS + MOCK_BERM for v in range(BM.VARIANTS)]
+    for n in MOCK_KEYS + MOCK_BERM:                     # a straight run's in each pair of end types too
+        ends = [None] if BM.along(_unname(n)) is None else [(a, b) for a in (0, 1) for b in (0, 1)]
+        out += [lambda n=n, v=v, e=e: _berm(n, v, e) for v in range(BM.VARIANTS) for e in ends]
     return out + [lambda m=m, o=o, v=v: _item(f"tile.hull.station.ext.o{o}.m{m}.a{v}", lambda: _wide(m, o, v))
                   for (m, o) in STRAIGHT for v in SD.DESIGNS]
 

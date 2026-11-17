@@ -18,16 +18,20 @@ from . import hull_outline as HO
 from .rock_base import TAU, Canvas, gbase, per2, polyg, rng, tri
 
 H0 = 8.0                            # px: the drift against the wall, on average (the foot step's top is 4 px)
-H_SWING = 0.6                       # how far that heaps up and thins along the wall (a share of H0, each way)
+H_MIN = 0.7                         # the drift never thins under this share of H0 at the wall (it buries the step)
+H_SWING = 0.3                       # how far that heaps up and thins along the wall (a share of H0, each way)
 STEP = 0.14                         # tiles out from the outline: the foot step front (3/32, its blocks a 32nd more)
 REACH = 0.46                        # tiles out from the outline: where it has thinned to the ground, on average
-REACH_SWING = 0.2                  # give or take
-MOUNDS = (1, 3)                     # heaps in the drift per tile and variant (and one more)
+REACH_SWING = 0.12                 # give or take
+END_LIFT, END_R = 0.75, 0.3          # a heap straddling a run's type-1 tile boundary: its lift (a share of H0), radius
+# The variants' characters: an ordinary stretch, one with a boulder, a low dusty one (mounds: count range; lift: their
+# height's scale; rocks, pebbles: count ranges; boulder: its radius range or None).
+CHARACTER = ({"mounds": (1, 3), "lift": 1.0, "rocks": (4, 7), "pebbles": (3, 6), "boulder": None},
+             {"mounds": (1, 2), "lift": 0.8, "rocks": (2, 4), "pebbles": (2, 4), "boulder": (0.11, 0.14)},
+             {"mounds": (2, 4), "lift": 0.35, "rocks": (0, 2), "pebbles": (6, 10), "boulder": None})
 VARIANTS = 3                        # per key, picked per tile; each its own heaps, reach and rocks, faded to the shared
 VAR_SHARE = 0.8                     # shape at its stretch's ends so neighbours of any variant meet
 N = 48                              # surface grid cells per tile
-ROCKS = (4, 7)                      # rocks half buried in the drift, per tile and variant
-PEBBLES = (4, 8)                    # pebbles past its toe
 EPS = 0.25                          # px: a facet all under this over the ground is not drawn (the ground shows)
 
 
@@ -98,26 +102,34 @@ def _dist(poly, fronts, p):
     return best
 
 
-def _mounds(poly, fronts, r):
+def _mounds(poly, fronts, r, ch):
     """Heaps in the drift: (x, y, radius, lift), centred on the stretch near the wall (lift a share of H0)."""
-    out = []
+    out, want = [], int(r.integers(*ch["mounds"]))
     for _ in range(200):
-        if len(out) >= int(r.integers(*MOUNDS)) + 1:
+        if len(out) >= want:
             break
         x, y = r.uniform(-0.75, 0.95), r.uniform(-0.75, 0.95)
         g = _dist(poly, fronts, Vector((x, y)))
         if g is None or g[1] < 0.35 or not 0.02 < g[0] < 0.3:
             continue
-        out.append((x, y, r.uniform(0.09, 0.2), r.uniform(0.4, 1.0)))
+        out.append((x, y, r.uniform(0.14, 0.26), r.uniform(0.3, 0.75) * ch["lift"]))
     return out
 
 
-def _height(d, w, x, y, mounds):
+def _ends_lift(u, ends):
+    """The heaps on the stretch's ends (a run's tile boundaries: ends[0] at u = -0.5, ends[1] at +0.5): a heap
+    centred on a type-1 boundary, the same in the tiles either side of it (a function of the distance to it alone)."""
+    return sum(END_LIFT * math.exp(-((u - c) / END_R) ** 2) for c, e in zip((-0.5, 0.5), ends) if e)
+
+
+def _height(d, w, x, y, mounds, u=None, ends=(0, 0)):
     """The drift over the ground at distance d out from the outline (tiles of height); w: the variant's share (its
-    mounds fade out toward the stretch's ends)."""
+    mounds fade out toward the stretch's ends); u: the position along a straight run (its ends' heaps)."""
     heap = 0.75 * per2(x * 1.5, y * 1.5, 811, n=3) / 2.2                                 # along the wall (shared)
     lift = sum(m[3] * math.exp(-((x - m[0]) ** 2 + (y - m[1]) ** 2) / m[2] ** 2) for m in mounds) * w
-    h0 = H0 * max(0.15, 1 + H_SWING * heap + lift) / core.ZPX
+    lift += _ends_lift(u, ends) if u is not None else 0.0
+    lift = 1.1 * math.tanh(lift / 1.1)                  # (heaps on heaps round off: no cones)
+    h0 = H0 * max(H_MIN, 1 + H_SWING * heap + lift) / core.ZPX
     reach = max(0.12, REACH + REACH_SWING * heap + 0.05 * per2(x * 4, y * 4, 815, n=4) + 0.3 * lift)
     r = max(0.0, d - STEP) / max(0.08, reach - STEP)   # (full height over the step, then a concave scree)
     if r >= 1:
@@ -135,23 +147,36 @@ def _col(n, x, y):
     return "gdL" if t > 0.96 else "gd" if t > 0.84 else "gdM" if t > 0.64 else "gdD"
 
 
-def berm(key, var=0):
-    """The berm's objects for a tile with this key in variant var (none if no visible front of it has any)."""
+def along(key):
+    """A straight run's along-run coordinate (x or y), or None (a corner, a diagonal: plain ends)."""
+    st = HO.parse(key)
+    if len(st) != 1 or len(st[0]) != 1:
+        return None
+    (sx, sy), _ = st[0][0]
+    return 0 if sx == 0 else 1 if sy == 0 else None
+
+
+def berm(key, var=0, ends=(0, 0)):
+    """The berm's objects for a tile with this key in variant var (none if no visible front of it has any); ends: a
+    straight run's boundary types at its lower and higher coordinate ends (1 a heap straddling the boundary)."""
+    ch = CHARACTER[var % len(CHARACTER)]
+    ax = along(key)
+    U = (lambda x, y: (x, y)[ax]) if ax is not None else (lambda x, y: None)
     fronts = _fronts(key)
     if not any(f[2] for f in fronts):
         return []
     poly = _poly(fronts)
     if not poly:
         return []
-    k = Canvas(f"berm_{HO.name(key)}_{var}")
+    k = Canvas(f"berm_{HO.name(key)}_{var}_{ends[0]}{ends[1]}")
     xs = [-1.0 + 2 * i / (2 * N) for i in range(2 * N + 1)]
     r = rng(9000 + sum(map(ord, key)) + 101 * var)
-    mounds = _mounds(poly, fronts, r)
+    mounds = _mounds(poly, fronts, r, ch)
     Z = {}
     for y in xs:
         for x in xs:
             g = _dist(poly, fronts, Vector((x, y)))
-            Z[(x, y)] = None if g is None else _height(g[0], g[1], x, y, mounds)
+            Z[(x, y)] = None if g is None else _height(g[0], g[1], x, y, mounds, U(x, y), ends)
     up = Vector((0, 0, 1))
     for j in range(2 * N):
         for i in range(2 * N):
@@ -167,12 +192,15 @@ def berm(key, var=0):
                     nn = -nn
                 cx, cy = sum(p.x for p in pts) / 3, sum(p.y for p in pts) / 3
                 polyg(k, pts, _col(nn, cx, cy), up)
-    _scatter(k, poly, fronts, mounds, r, int(r.integers(*ROCKS)), (0.04, 0.1), (0.0, 0.85), 0.4)
-    _scatter(k, poly, fronts, mounds, r, int(r.integers(*PEBBLES)), (0.014, 0.03), (0.7, 1.35), 0.15)
+    hz = lambda g, x, y: _height(g[0], g[1], x, y, mounds, U(x, y), ends)                # noqa: E731
+    if ch["boulder"]:
+        _scatter(k, poly, fronts, hz, r, 1, ch["boulder"], (0.05, 0.4), 0.3, wmin=0.6)
+    _scatter(k, poly, fronts, hz, r, int(r.integers(*ch["rocks"])), (0.04, 0.1), (0.0, 0.85), 0.4)
+    _scatter(k, poly, fronts, hz, r, int(r.integers(*ch["pebbles"])), (0.014, 0.03), (0.7, 1.35), 0.15)
     return k.build()
 
 
-def _scatter(k, poly, fronts, mounds, r, want, size, band, sink):
+def _scatter(k, poly, fronts, hz, r, want, size, band, sink, wmin=0.3):
     """want rocks of radius in size, at distances out in band (shares of the reach there), sunk by sink of their height
     into the drift; nearer the wall more likely. Each clear of its stretch's ends (no rock cut at a tile's edge)."""
     placed = 0
@@ -181,14 +209,14 @@ def _scatter(k, poly, fronts, mounds, r, want, size, band, sink):
             break
         x, y = r.uniform(-0.75, 0.95), r.uniform(-0.75, 0.95)
         g = _dist(poly, fronts, Vector((x, y)))
-        if g is None or g[1] < 0.3:
+        if g is None or g[1] < wmin:
             continue
         reach = REACH + REACH_SWING * 0.6 * (0.75 * per2(x * 1.5, y * 1.5, 811, n=3) / 2.2)
         q = max(0.0, g[0] - STEP * 0.5) / max(0.12, reach - STEP * 0.5)
         if not band[0] <= q <= band[1] or r.uniform() < q * 0.5:
             continue
         rr = r.uniform(*size) * (1.15 - 0.4 * min(1.0, q))
-        _rock(k, Vector((x, y, gbase(x, y) + _height(g[0], g[1], x, y, mounds))), rr, r, sink)
+        _rock(k, Vector((x, y, gbase(x, y) + hz(g, x, y))), rr, r, sink)
         placed += 1
 
 

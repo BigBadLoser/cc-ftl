@@ -145,8 +145,14 @@ function shipExteriorIds(h: HullKeys, x: number, y: number, has: (id: string) =>
 export function bermId(h: HullKeys, x: number, y: number, has: (id: string) => boolean): string | null {
   const k = h.ground ? h.at(x, y) : "";
   if (!k) return null;
-  // its variant (station_berm.VARIANTS) by a hash of the tile
-  const id = `tile.hull.station.berm.${hullKeyName(k)}.v${(tileHash(x + 3 * 7919, y - 3 * 104729) >>> 8) % 3}`;
+  // its variant (station_berm.VARIANTS) by a hash of the tile; a straight run's (one front, along x or y) also by its two
+  // tile boundaries' types (1: a heap straddling it), each a hash of the boundary, so the tiles either side agree
+  const name = hullKeyName(k);
+  const v = (tileHash(x + 3 * 7919, y - 3 * 104729) >>> 8) % 3;
+  const edge = (bx: number, by: number, salt: number) => ((tileHash(bx + salt * 7919, by - salt * 104729) >>> 8) % 10 < 4 ? 1 : 0);
+  const run = /^(0_m?1|m?1_0)_[0-9]+$/.test(name) ? (name.startsWith("0_") ? "x" : "y") : null;
+  const ends = run === "x" ? `.e${edge(x, y, 5)}${edge(x + 1, y, 5)}` : run === "y" ? `.e${edge(x, y, 6)}${edge(x, y + 1, 6)}` : "";
+  const id = `tile.hull.station.berm.${name}.v${v}${ends}`;
   return has(id) ? id : null;
 }
 
