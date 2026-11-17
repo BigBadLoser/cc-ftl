@@ -40,7 +40,7 @@ export function recoverTurn(sim: Sim, id: number, crew: Crew, pos: Position, hol
   let plan: BedPlan | null = null;
   if (!claimedBed(sim, id) && crew.activity !== 'recovering') {
     const ship = shipIdOf(sim, pos);
-    plan = findFreeBed(sim, ship, origin(pos), false, (x, y) => unsafeFor(sim, id, ship, x, y), bedUseOf(sim, id), id);
+    plan = findFreeBed(sim, ship, id, origin(pos), false, (x, y) => unsafeFor(sim, id, ship, x, y), bedUseOf(sim, id));
     if (!plan) return false;
   }
   if (holdsJob) abortTask(sim, id, 'drive');
@@ -107,14 +107,14 @@ function goToSleep(sim: Sim, id: number, crew: Crew, pos: Position, toPod: boole
     releaseBedClaim(sim, id); // unreachable: sleep on the floor instead (a pod patient just stays hurt)
     if (toPod) return;
   } else if (toPod) {
-    const plan = planned ?? findFreeBed(sim, ship, origin(pos), false, unsafe, bedUseOf(sim, id), id);
+    const plan = planned ?? findFreeBed(sim, ship, id, origin(pos), false, unsafe, bedUseOf(sim, id));
     if (plan) {
       claimBed(sim, id, plan.bed);
       path.steps = plan.steps;
     }
     return;
   } else {
-    const plan = ownedBedPlan(sim, id, ship, origin(pos), unsafe) ?? findFreeBed(sim, ship, origin(pos), false, unsafe, 'sleep', id);
+    const plan = ownedBedPlan(sim, id, ship, origin(pos), unsafe) ?? findFreeBed(sim, ship, id, origin(pos), false, unsafe);
     if (plan) {
       claimBed(sim, id, plan.bed);
       path.steps = plan.steps;

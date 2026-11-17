@@ -59,7 +59,7 @@ describe('berths', () => {
     expect(freeBerth(bunk, m(sim, b))).toBe(-1);
     expect(auditReservations(sim).problems).toEqual([]); // each berth has its own lifeline
     // The bunk is full: the next search goes to the single bed.
-    const plan = findFreeBed(sim, homeShip(sim), { x: 1, y: 3 });
+    const plan = findFreeBed(sim, homeShip(sim), a, { x: 1, y: 3 });
     expect(plan?.bed).toBe(single);
     claimBed(sim, d, single);
     // The lower berth is freed first: its next claimant takes it, the upper one is untouched.

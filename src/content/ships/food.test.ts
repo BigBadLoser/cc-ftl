@@ -274,10 +274,10 @@ describe('medicinal herbs', () => {
     const med = bedAt(sim, 'module.med_bed');
     const ship = homeShip(sim);
     const from = { x: sim.world.get(crew[0] as number, PositionC)!.x, y: sim.world.get(crew[0] as number, PositionC)!.y };
-    expect(findFreeBed(sim, ship, from)?.bed).not.toBe(med);
+    expect(findFreeBed(sim, ship, crew[0] as number, from)?.bed).not.toBe(med);
     for (const id of sim.world.query(ModuleC)) if (id !== med && content.modules[sim.world.get(id, ModuleC)!.def as 'module.bed'].bed) sim.world.get(id, ModuleC)!.reservedBy = 99;
-    expect(findFreeBed(sim, ship, from)).toBeNull();
-    expect(findFreeBed(sim, ship, from, false, undefined, 'critical')?.bed).toBe(med);
+    expect(findFreeBed(sim, ship, crew[0] as number, from)).toBeNull();
+    expect(findFreeBed(sim, ship, crew[0] as number, from, false, undefined, 'critical')?.bed).toBe(med);
   });
 });
 

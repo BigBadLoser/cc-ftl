@@ -61,13 +61,13 @@ export function bedUsable(def: ModuleDef | undefined, m: Module): boolean {
  * less when ending beside the bed) and the search stops once the best path found beats every remaining bound, so the answer
  * is the exhaustive one (a candidate whose bound ties the best only wins with a lower id).
  *
- * `crew` is who will walk there: the path follows their walk mode (`walkOpts`: unsuited crew keep out of thin air), so a bed they cannot reach is not chosen.
+ * `crew` is who will walk there (the patient, for a check with no medic chosen yet): the path follows their walk mode (`walkOpts`: unsuited crew keep out of thin air), so a bed they cannot reach is not chosen.
  */
-export function findFreeBed(sim: Sim, shipId: number, from: Tile, adjacent = false, skip?: BedSkip, use: BedUse = 'sleep', crew?: number): BedPlan | null {
+export function findFreeBed(sim: Sim, shipId: number, crew: number, from: Tile, adjacent = false, skip?: BedSkip, use: BedUse = 'sleep'): BedPlan | null {
   // Sleepers use ordinary beds only. A critical patient (downed: carried in, stabilised) takes a recovery pod first, then a medical bed, then an ordinary bed;
   // a patient who can walk to treatment takes a medical bed first and the pod only when none is free (the pod is for the critical cases). Never an ordinary bed.
   for (const kind of BED_ORDER[use]) {
-    const plan = searchBeds(sim, shipId, from, adjacent, skip, kind, crew === undefined ? undefined : walkOpts(sim, crew));
+    const plan = searchBeds(sim, shipId, from, adjacent, skip, kind, walkOpts(sim, crew));
     if (plan) return plan;
   }
   return null;

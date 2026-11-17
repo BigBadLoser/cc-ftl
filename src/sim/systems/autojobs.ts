@@ -92,7 +92,7 @@ export function autoJobsSystem(sim: Sim): void {
     const downed = sim.world.get(id, DownedC);
     const pos = sim.world.get(id, PositionC);
     if (!downed || !pos || downed.stabilized || seen.has(`rescue:${id}`)) continue;
-    if (!downed.bed && !findFreeBed(sim, shipIdOf(sim, pos), origin(pos), false, undefined, bedUseOf(sim, id)) && !rescueSpot(sim, id)) continue; // nowhere to take them
+    if (!downed.bed && !findFreeBed(sim, shipIdOf(sim, pos), id, origin(pos), false, undefined, bedUseOf(sim, id)) && !rescueSpot(sim, id)) continue; // nowhere to take them
     addJob(sim, { category: 'medical', kind: 'rescue', x: pos.x, y: pos.y, target: id, bed: downed.bed });
   }
   // A medical bed with a patient in it gets a tend job (medical category): a medic stands beside it, and the patient heals faster while they do.

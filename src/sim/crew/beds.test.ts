@@ -224,7 +224,7 @@ describe('findFreeBed early stop', () => {
             const p = findPath(sim, 1, { x: from[0], y: from[1] }, { x: m.x, y: m.y, adjacent });
             if (p && (!best || p.length < best.steps)) best = { bed: b, steps: p.length };
           }
-          const got = findFreeBed(sim, 1, { x: from[0], y: from[1] }, adjacent);
+          const got = findFreeBed(sim, 1, crew(sim, from[0], from[1]), { x: from[0], y: from[1] }, adjacent);
           expect(got ? { bed: got.bed, steps: got.steps.length } : null).toEqual(best);
           compared++;
         }
@@ -241,9 +241,9 @@ describe('bed search follows the walker\'s walk mode (#534)', () => {
     for (let y = 0; y < 5; y++) for (let x = 0; x < 10; x++) g.set('o2', x, y, x === 5 ? 0 : 21); // a vacuum band splits the room
     const c = crew(sim, 1, 2);
     const from = { x: 1, y: 2 };
-    expect(findFreeBed(sim, 1, from)).not.toBeNull(); // a plain path crosses the band
-    expect(findFreeBed(sim, 1, from, false, undefined, 'sleep', c)).toBeNull();
+    expect(findPath(sim, 1, from, { x: 8, y: 2 })).not.toBeNull(); // a plain path crosses the band
+    expect(findFreeBed(sim, 1, c, from)).toBeNull();
     sim.world.add(c, SuitC, { worn: true });
-    expect(findFreeBed(sim, 1, from, false, undefined, 'sleep', c)).not.toBeNull();
+    expect(findFreeBed(sim, 1, c, from)).not.toBeNull();
   });
 });
