@@ -34,9 +34,16 @@ FOOT_BLOCKS = (6, 7, 6, 7, 6)       # the step's two blocks across a tile: gap, 
                                     # of its top and front
 CHAMFER_SEAM = 1                    # the corner's seams down its chamfer, this many px in from its edges
 
-FACE, FACE_LO, END, TOP = "stS", "stL", "stE", "stL"      # the face, its band under the groove, the shell, the top
+FACE, FACE_LO, END, TOP = "stS", "stPLo", "stE", "stL"    # the face, its band under the groove, the shell, the top
 # the bullnose's bands from its top edge down to the face: colour, share of the arc (the lightest the widest)
 BANDS = (("stW", 0.36), ("stB", 0.26), ("stH", 0.18), ("stL", 0.12), ("stS", 0.08))
+# the livery (the reference's topDeco): the face's band up from the step to BAND_Z, and the top from its back to the
+# seam behind the bullnose; their tones the plain ones' (FACE, FACE_LO, TOP), named apart so the mask (core.TINT,
+# the `.tint` layer drawn in the station's deco colour) follows the part, not the tone; the lines over them stay out
+FACE_P, TOP_P = "stPS", "stPT"
+TINT = {FACE_P, FACE_LO, TOP_P}
+BAND_Z = 0.80                       # the face's band's top over the deck (tiles; the reference's: about 0.44 of the
+                                    # upright face)
 PLUMB_BAND = 3                      # the seams stand plumb on screen from this band's top down (stL)
 SEAM, GROOVE_D, GROOVE_L, UNDER_L = "stM", "stD", "stH", "stH"
 TAB, TAB_TOP, TAB_SIDE = "stB", "stW", "stH"
@@ -44,7 +51,7 @@ PLATE_Z = lambda s, zt: (s.z_at(zt, 3), s.z_at(zt, -3))   # noqa: E731  the plat
                                     # its foot and top on screen, px under / over zt (6 px, centred on the line and
                                     # its lit px under it)
 TAB_W, TAB_IN = 3, 4                # the tabs on the groove: px wide, px in from their seam toward the tile's middle
-FOOT, FOOT_TOP = FACE_LO, "stW"     # the step: its front the face's lower band's tone
+FOOT, FOOT_TOP = "stL", "stW"      # the step: its front the face's lower band's tone (unpainted)
 STEP_FRONT = 4                      # its front px tall, flat under (its blocks' a px more)
 BLOCK, BLOCK_LIT = FACE, "stB"      # its blocks: the face's tone, lit along their front's top edge
 
@@ -118,11 +125,27 @@ class RoundSection(Section):
                 a = (self._angle(z0) + self._angle(z1)) / 2      # (by angle, not height: the top facets are flat)
                 out.append(_band(1 - a / (math.pi / 2)))
             else:
-                out.append(FACE if zm > GROOVE else FACE_LO)
+                out.append(FACE if zm > BAND_Z else FACE_P if zm > GROOVE else FACE_LO)
         return out
 
 
 class RoundFace(Face):
+    def block(self, u0, u1, z0, z1, role="face", off=0.0):
+        """Face.block, split at BAND_Z (the livery band's top: its tones by height, RoundSection.cols)."""
+        if z0 + 1e-6 < BAND_Z < z1 - 1e-6:
+            super().block(u0, u1, z0, BAND_Z, role, off)
+            z0 = BAND_Z
+        super().block(u0, u1, z0, z1, role, off)
+
+    def top_band(self, u0, u1, d0, d1, col):
+        """Face.top_line's band, a hair under the lines painted on the top (they draw over it)."""
+        m0 = self.mt[0] if abs(u0 - self.a) < 1e-6 else 0.0
+        m1 = 1.0 if self.ch or self.mt[1] else 0.0
+        m1 = m1 if abs(u1 - self.b) < 1e-6 else 0.0
+        pts = ((u0 - d0 * m0, d0), (u1 + d0 * m1, d0), (u1 + d1 * m1, d1), (u0 - d1 * m0, d1))
+        self.k.poly([T.P(self.ax, self.plane, u, self.sec.H + T.PAINT / 2, d) for u, d in pts],
+                    F, 3, Vector((0, 0, 1)), fixed=T.SEAM_PASS or col)
+
     def plumb(self, u0, u1, z0, z1, zk, col):
         """A band [u0, u1] up the front from z0 to z1, a line with no lit edge (as Face.line's with bevel=False: its
         core a px, not LINE_W, which goes with a lit edge): over zk it follows the front (Face.line), under it it
@@ -210,6 +233,7 @@ def build(k, ax, plane, a, b, ends, H):
             f.line(u0, u1, s.z_at(GROOVE, 1), GROOVE, GROOVE_L, bevel=False)
         for u0, u1 in (((s0, cut[0]), (cut[1], s1)) if cut else ((s0, s1),)):
             f.line(u0, u1, FOOT_H, s.z_at(FOOT_H, -1), GROOVE_D, bevel=False)   # a seam where the step meets the face
+        f.top_band(s0, s1, back, ts - LINE, TOP_P)
         f.top_line(s0, s1, ts - LINE, ts, SEAM)
         f.top_line(s0, s1, rail - LINE, rail, SEAM)
         if whole and not win:
@@ -336,11 +360,45 @@ PALETTE = "only:station"
 
 
 def _item(sid, build_fn):
+    return masked(sid, "wide", build_fn)
+
+
+def masked(sid, kind, build_fn, render=None):
+    """The piece's item and its `.tint` mask's (hulltiles._items' layout: the piece's own px under the mask, its anchor
+    shifted by the crop); [] if it builds nothing. render(sid, objs) renders the piece (env_build.render_sprite's by
+    default); the mask pass renders the piece's own objects alone (no glass)."""
+    import numpy as np
     from . import env_build, post
     core.clear_scene_meshes()
     post.select(PALETTE)
-    it = env_build.crop_item(sid, (1, 1), *env_build.render_sprite(sid, "wide", build_fn()))
-    return [it] if it else []
+    objs = build_fn()
+    if not (objs[0] if kind == "wide" else objs):
+        return []
+    r = render(sid, objs) if render else env_build.render_sprite(sid, kind, objs)
+    it = env_build.crop_item(sid, (1, 1), *r)
+    if it is None:
+        return []
+    core.clear_scene_meshes()
+    post.select("hull")                                 # (its tintW / tintK)
+    core.TINT = TINT
+    try:
+        objs = build_fn()
+        m = env_build.render_sprite(sid, kind, objs[:2] if render else objs)
+    finally:
+        core.TINT = None
+    if m[1].shape != r[1].shape:
+        return [it]
+    m = m[1] & (m[0].min(-1) > 240) & r[1]
+    if not m.any():
+        return [it]
+    ys, xs = np.where(m)
+    y0, y1, x0, x1 = ys.min(), ys.max() + 1, xs.min(), xs.max() + 1
+    rgba = np.zeros((y1 - y0, x1 - x0, 4), np.uint8)
+    keep = m[y0:y1, x0:x1]
+    rgba[..., :3][keep] = r[0][y0:y1, x0:x1][keep]
+    rgba[..., 3][keep] = 255
+    return [it, {"id": sid + ".tint", "fp": (1, 1), "rgba": rgba, "g": np.zeros_like(rgba), "ax": r[3] - x0,
+                 "ay": r[4] - y0}]
 
 
 # MOCK (asteroid base, #524): only the pieces the prefab base's outline uses (the run set's three and these generic keys).
@@ -362,9 +420,10 @@ def _generic(n):
     from . import wall3d_ext_diag as DG
     k = _unname(n)
     out = []
-    for sid, kind, fn in ((f"tile.hull.station.ext.g.{n}", "block" if DG.uses_art(k) else "wide",
-                           (lambda: SG.piece(k)) if DG.uses_art(k) else (lambda: (SG.piece(k), SG.piece(k, margin=DG.WIDE)))),
-                          (f"tile.roof.station.g.{n}", "block", lambda: SG.roof(k))):
+    sid = f"tile.hull.station.ext.g.{n}"
+    out += masked(sid, "block" if DG.uses_art(k) else "wide",
+                  (lambda: SG.piece(k)) if DG.uses_art(k) else (lambda: (SG.piece(k), SG.piece(k, margin=DG.WIDE))))
+    for sid, kind, fn in ((f"tile.roof.station.g.{n}", "block", lambda: SG.roof(k)),):
         core.clear_scene_meshes()
         post.select(PALETTE)
         objs = fn()

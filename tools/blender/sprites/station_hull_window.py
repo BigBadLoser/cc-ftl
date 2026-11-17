@@ -355,14 +355,10 @@ def _build(m, o, part):
 
 
 def piece(m, o, part):
-    from . import env_build, post
     from .windows import HULL_GLASS, render_glass
     sid = f"tile.hull.station.ext.o{o}.m{m}.{part}"
-    core.clear_scene_meshes()
-    post.select(SH.PALETTE)
-    own, wide, pane = _build(m, o, part)
-    it = env_build.crop_item(sid, (1, 1), *render_glass(sid, own, wide, pane, HULL_GLASS))
-    return [it] if it else []
+    return SH.masked(sid, "wide", lambda: _build(m, o, part),
+                     lambda sid, objs: render_glass(sid, *objs, HULL_GLASS))
 
 
 def jobs():

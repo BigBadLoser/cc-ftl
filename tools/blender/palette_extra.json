@@ -4096,5 +4096,8 @@
   "stL": {"hex": "#8699a4", "set": "station"},
   "stH": {"hex": "#9fadb4", "set": "station"},
   "stB": {"hex": "#b7c0c4", "set": "station"},
-  "stW": {"hex": "#d0d4d4", "set": "station"}
+  "stW": {"hex": "#d0d4d4", "set": "station"},
+  "stPT": {"hex": "#8699a4", "set": "station"},
+  "stPS": {"hex": "#6e8694", "set": "station"},
+  "stPLo": {"hex": "#8699a4", "set": "station"}
 }

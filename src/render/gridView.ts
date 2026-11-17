@@ -401,10 +401,11 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
       for (const [pid, col] of [[id, paint.armour], [`${id}.tint`, paint.deco]] as const) {
         const ps = pid === id ? s : atlas.stat(pid);
         if (!ps) continue;
-        const spr = addPaintSprite(ps, x, y, z + (pid === id ? 0 : 0.0005), parent, id.includes(".station.") ? Sprite : HullSprite);
+        // MOCK (#524): a station's hull keeps its own grey (no armour paint, lit only); its `.tint` livery takes the deco paint.
+        const bare = id.includes(".station.") && pid === id;
+        const spr = addPaintSprite(ps, x, y, z + (pid === id ? 0 : 0.0005), parent, bare ? Sprite : HullSprite);
         v.owned.push(spr);
-        // MOCK (#524): the station hull keeps its own tones (no armour paint), lit only.
-        v.tinted.push({ spr, x, y, ci, wall: true, solid, paint: id.includes(".station.") ? undefined : col });
+        v.tinted.push({ spr, x, y, ci, wall: true, solid, paint: bare ? undefined : col });
       }
     };
     const solid = k !== Struct.Floor;
