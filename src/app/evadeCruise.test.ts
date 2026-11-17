@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { CombatC, newGame, playerHelm, playerShip } from '../sim';
-import { patrolNode } from './scenarios/patrol';
-import { piratesCommands } from './scenarios/pirates';
+import { patrolNode } from '../content/scenario/lib/patrol';
+import { piratesCommands } from '../content/scenario/lib/pirates';
 import { content } from '../content';
 
 /**

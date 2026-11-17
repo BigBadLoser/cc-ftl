@@ -14,7 +14,8 @@ export default definePreset({
     ship: { seed: 3 },
     node: { warm: 20, stations: [{ kind: 'station.trading', size: 'outpost', seed: 4, owner: 'navy', frame: true }] },
     steps: [
-      { cmds: (ctx) => inspectCommands(ctx.sim, inspectStation(ctx.sim)!, { clean: !!p['clean'], eva: !!p['eva'] }) },
+      // No navy station (a populated start node may have no room for one): nothing to hail, the scene is just the node.
+      { cmds: (ctx) => { const station = inspectStation(ctx.sim); return station === undefined ? [] : inspectCommands(ctx.sim, station, { clean: !!p['clean'], eva: !!p['eva'] }); } },
       ...(p['stage'] === 'search' || p['stage'] === 'settle' ? [untilInspectPhase('search')] : []),
       ...(p['stage'] === 'settle' ? [untilInspectPhase('settle')] : []),
     ],

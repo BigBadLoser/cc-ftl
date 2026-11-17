@@ -83,6 +83,7 @@ export function buildScenario(source: string | ScenarioSpec, opts: BuildOpts = {
     const preset = presets.get(source);
     if (!preset) throw new Error(`scenario: unknown preset "${source}" (known: ${[...presets.keys()].join(', ')})`);
     spec = preset.spec(opts.params ?? {});
+    if (preset.starter && !spec.ship?.template) spec = { ...spec, ship: { ...spec.ship, template: preset.starter } }; // the hull the preset wants when it builds the game
   } else spec = source;
   spec = mergeSpec(spec, opts.overrides);
   checkSpec(spec);

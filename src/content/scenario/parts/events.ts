@@ -1,5 +1,6 @@
-import { galaxyIndex, playerShip, type Sim } from '../../../sim';
-import { definePart, type BuildCtx } from '../types';
+import { playerShip } from '../../../sim';
+import { deployShip, routeOf } from '../lib/trip';
+import { definePart } from '../types';
 
 export interface EventsSpec {
   /** Story flags set first. */
@@ -18,34 +19,10 @@ export interface EventsSpec {
 }
 declare module '../types' { interface ScenarioSpec { events?: EventsSpec } }
 
-/** Free spots to try for a deployment, in order (a rejected one overlaps something). */
-const DEPLOY_SPOTS = [[100, 60], [20, 50], [300, 200], [40, 150], [200, 20], [350, 100]] as const;
-
-/** `hops` nodes out from the current one, always taking the first neighbour (by id) not already on the route. */
-export function routeOf(sim: Sim, hops: number): string[] {
-  const adjacent = (id: string): string[] => (galaxyIndex(sim.galaxy).adjacent.get(id) ?? []).map((e) => (e.a === id ? e.b : e.a)).sort();
-  const route = [sim.galaxy.current];
-  for (let h = 0; h < hops; h++) {
-    const next = adjacent(route[route.length - 1] as string).find((n) => !route.includes(n));
-    if (!next) break;
-    route.push(next);
-  }
-  return route.slice(1);
-}
-
-/** Deploy the ship at the first free spot, once the node asks for it. */
-export function deployShip(ctx: BuildCtx): void {
-  for (const [x, y] of DEPLOY_SPOTS) {
-    ctx.enqueue({ type: 'sector.deploy', x, y });
-    ctx.step();
-    if (ctx.sim.sector.state === 'active') return;
-  }
-}
-
 /** Story events and the trip that opens them: the signal, its answers, and the drop-out beside the scene (the pirate ambush, the distress freighter, the medical pod). */
 export default definePart<'events'>({
   key: 'events',
-  after: ['ship', 'node', 'items'],
+  after: ['ship', 'node', 'items', 'prep'],
   apply(ctx, e) {
     const { sim } = ctx;
     // Pre-start setup (as the tests always did): the flag is written, not sent, so the story does not also queue its own delayed copy of the event.

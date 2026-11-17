@@ -9,7 +9,7 @@ import { shipGrid, shipIdOf } from '../sim/regions';
 import { IonC } from '../sim/combat/components';
 import { DroneC, type Drone } from '../sim/drones/components';
 import { deserialize, serialize } from '../sim/save';
-import { droneScenarioCommands } from './droneScenario';
+import { droneScenarioCommands } from '../content/scenario/lib/drone';
 
 const run = (sim: Sim, secs: number): void => {
   for (let i = 0; i < secs * 20; i++) sim.step();

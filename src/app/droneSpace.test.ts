@@ -7,7 +7,7 @@ import { stunDrone } from '../sim/drones/bay';
 import { shipGrid, shipIdOf } from '../sim/regions';
 import { droneInReach } from '../sim/drones/target';
 import { CrewC, PositionC } from '../sim';
-import { droneScenarioCommands } from './droneScenario';
+import { droneScenarioCommands } from '../content/scenario/lib/drone';
 
 const drones = (sim: Sim): Drone[] => sim.world.query(DroneC).map((id) => sim.world.get(id, DroneC) as Drone);
 

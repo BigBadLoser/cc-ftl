@@ -5,7 +5,7 @@ import { deriveAlerts } from '../alertsDerived';
 import { createAlerts } from '../alerts';
 import type { UiAlert } from '../../ui/api';
 import { buildCrewLists } from '../crewSnapshot';
-import { inspectStation } from './inspect';
+import { inspectStation } from '../../content/scenario/lib/inspect';
 import { cachedScenario } from '../../../test/support/scenario';
 
 
