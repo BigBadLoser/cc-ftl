@@ -48,6 +48,8 @@ const APPROACH = 3;
 const MIN_CABLE = 4, MAX_CABLE = 16;
 /** Open ground a turret keeps from any hull on every side (tiles, eight ways): an open pocket, not an alley between pods. */
 const OPEN = 4;
+/** A tile's hull neighbours as bits (`hullAt` in `wireApart`): east, west, south, north. */
+const HULL_E = 1, HULL_W = 2, HULL_S = 4, HULL_N = 8;
 /** The four ways a straight cable run goes (`straightRuns`). */
 const LANE = ['1,0', '-1,0', '0,1', '0,-1'] as const;
 /** How far past the base's bounding box a turret may stand when the pockets inside it are too cramped. */
@@ -183,17 +185,17 @@ export function placeGroundTurrets(lay: Layout, plan: GroundPlan): GroundFit {
     for (let i = 0; i < w * h; i++) if (wallAt(i % w, Math.floor(i / w)) && !theirs.has(i)) baseWalls.push(i);
     const wired: number[] = [];
     const ok = (x: number, y: number): boolean => lay.inBounds(x, y) && runs(y * w + x) && !clear[y * w + x];
-    /** The hull tiles four ways round a tile, as bits (east, west, south, north). */
+    /** The hull tiles four ways round a tile, as bits (HULL_E, HULL_W, HULL_S, HULL_N). */
     const hullAt = (x: number, y: number): number => {
       let m = 0;
-      [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(([dx, dy], k) => { if (lay.inBounds(x + dx!, y + dy!) && lay.cells[(y + dy!) * w + x + dx!] !== '.') m |= 1 << k; });
+      ([[1, 0, HULL_E], [-1, 0, HULL_W], [0, 1, HULL_S], [0, -1, HULL_N]] as const).forEach(([dx, dy, bit]) => { if (lay.inBounds(x + dx, y + dy) && lay.cells[(y + dy) * w + x + dx] !== '.') m |= bit; });
       return m;
     };
     // A staple is worked in (u, v): u runs along its legs (up/down, or east/west when `side` is true), v along its run.
     const at = (side: boolean, u: number, v: number): number => (side ? v * w + u : u * w + v);
     const uOf = (side: boolean, i: number): number => (side ? i % w : Math.floor(i / w)), vOf = (side: boolean, i: number): number => (side ? Math.floor(i / w) : i % w);
     /** The hull bit a leg's first tile touches: the wall behind it (leg on side `s` of the wall: -1 above or west, 1 below or east). */
-    const behind = (side: boolean, s: number): number => (side ? (s < 0 ? 1 : 2) : s < 0 ? 4 : 8);
+    const behind = (side: boolean, s: number): number => (side ? (s < 0 ? HULL_E : HULL_W) : s < 0 ? HULL_S : HULL_N);
     /** A leg tile on side `s` of the wall at `i`: ground, with that one wall alone touching it. */
     const leg = (side: boolean, i: number, s: number): boolean => {
       const u = uOf(side, i) + s, v = vOf(side, i), j = at(side, u, v), x = j % w, y = Math.floor(j / w);
