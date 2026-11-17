@@ -49,7 +49,7 @@ const simSyntax = [
 ];
 
 export default tseslint.config(
-  { ignores: ['dist', 'coverage', 'node_modules', 'spikes', 'docs', 'wiki/**', 'tools/layout/lib/**'] },
+  { ignores: ['dist', 'coverage', 'node_modules', 'spikes', 'docs', 'wiki/**', 'tools/layout/lib/**', '.claude/**'] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   ...svelte.configs['flat/recommended'],
