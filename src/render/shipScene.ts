@@ -143,7 +143,7 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
   const atmosphere = createAtmosphere(world, particles, modules, { target: () => ({ grid }) });
   const turretView = createTurretView(world, atlas, L, grid, modules);
   const cableView = createCableView(grid, atlas, L, world, modules);
-  const tubeView = createTubeView(grid, atlas, L, { roofed: () => roofed, level: () => wallLevel(roofed ? 'up' : cutaway), hullPaint: () => o.hullPaint ?? PLAIN_PAINT, tintAt: (x, y, wall) => view.tintAt(x, y, wall), tintKey: () => view.tintKey() });
+  const tubeView = createTubeView(grid, atlas, L, { roofed: () => roofed, tintAt: (x, y, wall) => view.tintAt(x, y, wall), tintKey: () => view.tintKey() });
   const roof = createRoofView(grid, atlas, L, world, modules, o.livery ?? null, o.liveries ?? null);
   // A dug outpost is roofed with rock, not plating (PLACEHOLDER, rockRoofView.ts).
   // It sits in the fx layer, and while it is on the region's own tile and entity layers hide: the rock around the base is drawn

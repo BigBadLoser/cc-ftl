@@ -1,8 +1,8 @@
 """The prefab base tube's hull port (issue #508, study): where the glass tube (tube_study) meets a module's exterior hull
 wall, built as the engine's thruster block is (hull_engine): an armoured block standing out of the hull's straight run,
 from under the hull's top down to the ground, a round port right through it (the hull's door shows
-through) with a raised collar the tube seats in, bolts round it, two shoulders over the hull's top tying it in. Drawn "over": its px only where it is in front
-of the hull row it stands on, so the hull's own pieces stay as they are.
+through) with a raised collar the tube seats in, bolts round it, two shoulders over the hull's top tying it in. Roofed, drawn "over": its px only where it is in front of the hull
+it stands on, so the hull's own pieces stay as they are; without the roof (the walls cut away) the block alone.
 
 Frame as hull_engine's (d out from the hull tiles' middle line, r along the run, z up), but the port's axis on the
 door tile's centre line, not on the edge between two tiles. Unpainted steel, hull_engine's ramp."""
@@ -15,9 +15,7 @@ from . import wall3d_ext as X
 
 AXIS, RS = 0.78, 0.95                  # the port: the tube's axis height and radius (its walkway flush with the
                                        # rooms' floor, z 0: tube_study)
-ROW = 1.5                              # the hull row it stands on (full height, tube_study's tube.hull): three tiles,
-                                       # the door tile and one either side (the junction's, tube_junction)
-W = 1.3                                # the block's half width along the run: inside the row's, so some hull shows
+W = 1.3                                # the block's half width along the run: inside the three wall tiles, so some hull shows
                                        # either side of it
 DF, ZT, C = HE.DF, HE.ZT, HE.C
 ZF = AXIS - RS - 0.15                  # its foot: under the ground, clipped there (clip_ground) with the port's bottom
@@ -73,7 +71,7 @@ def _builder(o, name, centred=False):
     return b
 
 
-def housing(o):
+def housing(o, shoulders=True):
     """The block, one mesh, at hull_engine's frame (the port's axis half a tile back along the run from the origin; o 8:
     _builder's, on it)."""
     from . import tube_junction as J
@@ -104,7 +102,7 @@ def housing(o):
             HE._box(b, DF, r, z, 0.02)
     zb = HE.H + HE.SH - 0.04                            # shoulders over the hull's top (the engine's, plain)
     shoulder = [(-0.5, ZT - 0.05), (HE.SF, ZT - 0.05), (HE.SF, zb), (HE.SF - 0.04, HE.H + HE.SH), (-0.5, HE.H + HE.SH)]
-    for r0, r1 in HE.SHOULDERS:
+    for r0, r1 in HE.SHOULDERS if shoulders else ():
         b.prism(shoulder, r0, r1)
         b.prism([(-0.42, HE.H + HE.SH), (HE.SF - 0.18, HE.H + HE.SH), (HE.SF - 0.18, HE.H + HE.SH + 0.03),
                  (-0.42, HE.H + HE.SH + 0.03)], r0 + 0.06, r1 - 0.06, lift=1)
@@ -133,16 +131,21 @@ def clip_ground(ob):
     return ob
 
 
-def piece(o, at=(0.0, 0.0)):
+def piece(o, at=(0.0, 0.0), hull=True):
     """(own, wide) for an "over" sprite: the block and the five hull tiles of the run round the door tile, the door
     tile's centre at grid offset `at` from the sprite's origin. o 8 (the wall faces away: the module's wall, drawn after
-    it, covers what lies behind; o 4 the same): the block alone, (own, own)."""
+    it, covers what lies behind; o 4 the same): the block alone, (own, own). Not `hull` (o 2 / 1 without the roof: the
+    walls either side cut away with the view): the block alone, no shoulders (nothing for them to ride on)."""
     if o in (8, 4):
         own = housing(o)
         own.location = own.location + core.G(at[0], at[1], 0.0)
         return [own], [own]
     mask = 5 if o == 2 else 10
     dx, dy = X.STRAIGHT[(mask, o)]
+    if not hull:
+        own = housing(o, shoulders=False)
+        own.location = own.location + core.G(at[0] + 0.5 * dx, at[1] + 0.5 * dy, 0.0)
+        return [own], [own]
     was, T.VARIANT = T.VARIANT, (0, 0)
     try:
         hull = []
@@ -160,7 +163,7 @@ def piece(o, at=(0.0, 0.0)):
 def through(o, at=(0.0, 0.0), is_open=False):
     """What the port shows (the hull's door tile cut through behind it): (inside, mouth). inside: the junction in the
     bore (tube_junction's hatch and threshold alone, closed or open, moved out so the hatch sits as far behind the
-    collar as the near junction's behind its frame; the far junction itself is hidden by the hull row; the port's own
+    collar as the near junction's behind its frame; the far junction itself is hidden behind the block; the port's own
     bore round them), the room's dark behind; mouth: a disc over
     the collar's mouth, its px the ones the inside shows in."""
     from . import tube_junction as J

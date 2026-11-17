@@ -6,7 +6,6 @@ import { drawLayers } from '../../src/render/crewSprites';
 import { lightTint } from '../../src/render/lightTint';
 import { crewLoadout, preloadLayers } from '../../src/render/loadout';
 import { tubePieces, type TubeLook } from '../../src/render/tubeArt';
-import type { WallLevel } from '../../src/render/tiles';
 import type { TubeRun } from '../../src/sim/tube';
 import type { LabCell, LabPanel } from './panel';
 
@@ -76,14 +75,14 @@ function scene(root: Container, atlas: Atlas, r: TubeRun, look: TubeLook, ox: nu
 
 /**
  * `?panel=tube`: the prefab base tube (#508) as tubeArt picks its sprites, on asteroid ground with no module walls round it:
- * x and y runs one, three and five tiles long with both doors shut and both open, at each wall view level, and roofed (the
- * hull row full height, no junction). The hull row is unpainted here (the game paints it with the hull's colours).
+ * x and y runs one, three and five tiles long with both doors shut and both open, and roofed (the far port cut against the
+ * module's hull, no junction; the hull itself is the grid's, not drawn here).
  */
 export const tubePanel: LabPanel = {
   id: 'tube',
   title: 'Prefab base tube',
   zoom: 1,
-  help: 'crew=1: only x and y runs three long, cut and roofed, with crew stood along them and in the near door (stand=0,1.5: where, tiles from the first)',
+  help: 'crew=1: only x and y runs three long, open and roofed, with crew stood along them and in the near door (stand=0,1.5: where, tiles from the first)',
   async cells({ atlas, params }) {
     for (const p of ['tube.', 'rock.ground.m15']) atlas.ids(p).forEach((id) => atlas.stat(id)); // queue the sheets
     const crewOn = params.get('crew') === '1';
@@ -98,11 +97,11 @@ export const tubePanel: LabPanel = {
       const zoom = Number(params.get('zoom') ?? 1);
       const at = params.get('stand')?.split(',').map(Number).filter((k) => Number.isFinite(k)) ?? STAND;
       for (const axis of ['x', 'y'] as const)
-        for (const [name, look] of [['cut', { level: 'cut', roofed: false, farOpen: true, nearOpen: true }], ['roofed', { level: 'up', roofed: true, farOpen: true, nearOpen: true }]] as [string, TubeLook][]) {
+        for (const [name, look] of [['open', { roofed: false, farOpen: true, nearOpen: true }], ['roofed', { roofed: true, farOpen: true, nearOpen: true }]] as [string, TubeLook][]) {
           const r = run(axis, 3);
           const w = axis === 'x' ? 7 : 5, h = axis === 'y' ? 7 : 5;
           cells.push({
-            label: `${axis} 3: ${name}, crew`, note: `crew at ${at.join(', ')} tiles along`, w: ((w + h) * TW) / 2 + PAD * 2, h: ((w + h) * TH) / 2 + TALL + PAD * 2, newRow: name === 'cut',
+            label: `${axis} 3: ${name}, crew`, note: `crew at ${at.join(', ')} tiles along`, w: ((w + h) * TW) / 2 + PAD * 2, h: ((w + h) * TH) / 2 + TALL + PAD * 2, newRow: name === 'open',
             mount(root) {
               const figs = scene(root, atlas, r, look, PAD + (h * TW) / 2, PAD + TALL + TH / 2, w, h, { look: crewLook, zoom, at });
               return (t) => { for (const parts of figs) drawLayers({ parts, glows: [] }, CLIP, 2, t); };
@@ -112,10 +111,9 @@ export const tubePanel: LabPanel = {
       return cells;
     }
     const looks: [string, TubeLook][] = [
-      ['shut, cut', { level: 'cut', roofed: false, farOpen: false, nearOpen: false }],
-      ['open, cut', { level: 'cut', roofed: false, farOpen: true, nearOpen: true }],
-      ...(['up', 'low'] as WallLevel[]).map((level): [string, TubeLook] => [`shut, ${level}`, { level, roofed: false, farOpen: false, nearOpen: false }]),
-      ['roofed', { level: 'up', roofed: true, farOpen: false, nearOpen: false }],
+      ['shut', { roofed: false, farOpen: false, nearOpen: false }],
+      ['open', { roofed: false, farOpen: true, nearOpen: true }],
+      ['roofed', { roofed: true, farOpen: false, nearOpen: false }],
     ];
     for (const axis of ['x', 'y'] as const)
       for (const len of [1, 3, 5])

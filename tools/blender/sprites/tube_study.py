@@ -290,18 +290,19 @@ def _job(look):
     return run
 
 
-def _port_job(o, door=False):
-    """tube.port.w (o 8: a wall facing away, the block alone, drawn before the wall); tube.port.<e|s>[.open], drawn in every view over the hull row (which stands full height there in every view, as
-    the airlock's: its hull sprite module.airlock.hull.r<n>): the bore through the door tile's hull with the corridor
-    door (closed / open) in it and the room's dark behind."""
-    def run(o=o, door=door):
+def _port_job(o, door=False, roofed=False):
+    """tube.port.w (o 8: a wall facing away, the block alone, drawn before the wall); tube.port.<e|s>[.roofed][.open]: the
+    block on the far module's camera-facing wall, the bore through the door tile with the corridor door (closed / open)
+    in it and the room's dark behind. Without the roof the walls either side are cut away with the view: the block alone;
+    `.roofed`, over the module's hull (its px only where in front of it), with the shoulders over the hull's top."""
+    def run(o=o, door=door, roofed=roofed):
         import bpy
         from . import env_build as E, post, tube_port
-        aid = f"tube.port.{ {2: 'e', 1: 's', 8: 'w', 4: 'n'}[o] }" + (".open" if door else "")
+        aid = f"tube.port.{ {2: 'e', 1: 's', 8: 'w', 4: 'n'}[o] }" + (".roofed" if roofed else "") + (".open" if door else "")
         core.clear_scene_meshes()
         post.select("tube+hull+walls")
         at = {2: (-1.0, 0.0), 1: (0.0, -1.0), 8: (1.0, 0.0), 4: (0.0, 1.0)}[o]   # (the door tile, from the tube's tile next to it:
-        own, wide = tube_port.piece(o, at=at)                    #  the sprite's origin)
+        own, wide = tube_port.piece(o, at=at, hull=roofed)       #  the sprite's origin)
         inside, mouth = tube_port.through(o, at, door) if o in (2, 1) else ([], None)
         for ob in inside + ([mouth] if mouth else []):
             ob.hide_render = True
@@ -369,29 +370,7 @@ def _junction_job(o, t, half=None):
     return run
 
 
-def _hull_job(rot):
-    """tube.hull.r<1|2>.<level>[.tint] (rotation 1: a hull row facing +x, 2: +y): the far port's hull row, as the
-    airlock's camera-facing one (airlock.hull: the base exterior hull full height in every view, closed by end cuts) but
-    three tiles long (tube_port.ROW, the block a little narrower): no neighbour's cut hull past its ends, those tiles' own."""
-    def run(rot=rot):
-        from . import airlock as AL, post, tube_port, walls as W
-        post.select(AL.HULL_PAL)
-        row = (-2, -1, 0, 1, 2)
-        keep = AL.HALF, AL.ROW, AL._stub_ends, AL._trim.__defaults__, AL._stub.__defaults__
-        AL.HALF, AL.ROW, AL._stub_ends = tube_port.ROW, row, (lambda r: [])
-        AL._trim.__defaults__, AL._stub.__defaults__ = (-tube_port.ROW, tube_port.ROW), (row,)
-        try:
-            out = []
-            for lv in W.LEVELS:
-                core.clear_scene_meshes()
-                out.extend(AL._hull_items(f"tube.hull.r{rot}.{lv}", rot, lv))
-        finally:
-            AL.HALF, AL.ROW, AL._stub_ends, AL._trim.__defaults__, AL._stub.__defaults__ = keep
-        return out
-    return run
-
-
 def jobs():
     return ([_seg_job(p, a, h) for a in ("x", "y") for p in PARTS for h in ("back", "front")] +
-            [_port_job(o, d) for o in (2, 1) for d in (False, True)] + [_port_job(8), _port_job(4)] +
-            [_junction_job(o, t, h) for o in (8, 4) for t in (0.0, 1.0) for h in ("back", "front")] + [_hull_job(1), _hull_job(2)])
+            [_port_job(o, d, r) for o in (2, 1) for d in (False, True) for r in (False, True)] + [_port_job(8), _port_job(4)] +
+            [_junction_job(o, t, h) for o in (8, 4) for t in (0.0, 1.0) for h in ("back", "front")])
