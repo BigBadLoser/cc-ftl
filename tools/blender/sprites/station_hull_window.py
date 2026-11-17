@@ -16,6 +16,7 @@ from . import core
 from . import wall3d as T
 from . import station_hull as SH
 from . import station_hull_designs as SD
+from . import wall3d_ext_t3 as T3
 from . import wall3d_ext_window as WIN
 from .wall3d_ext_geom import D
 
@@ -26,6 +27,8 @@ SILL = 10                           # the sill's front's top: this many px over 
 JAMB_IN = 0.0                       # the posts (the jambs) this far behind the face (flush)
 HEAD_VENTS = (8, (3, 6))            # the header's vent lines across its middle: px wide, their rows (px over its foot)
 HEAD_RECESS = (4, 1, 7)             # its recessed panels either side: px wide, from px over its foot to px
+TOP_PLATE, TOP_PLATE_FRONT = 5, SD.TOP_LIT  # a middle tile's plates on the header's top: px back, its lit front,
+TOP_PLATE_TOP = "stH"               # its top a step over the header's top
 RECESS_FILL, RECESS_SHADE, RECESS_LIT, VENT_LINE = "stM", "stD", "stL", "stD"
 RIB_PLATE = (7, 2)                  # an end piece's plate across its rib and post, its top where the top corner's
 RIB_PLATE_TOP = SD.TOP_LIT          # slope meets the post's inner edge: px tall, px off the wall; its top lit, its
@@ -153,7 +156,13 @@ def _head(f, a, b, z0, ends, foot, tile):
                  SD.F, 3, T.OUT(f.ax), fixed=T.SEAM_PASS or SD.BOX_LINE)
     if ends[1]:                                         # (b: its near end, faintly lit)
         SD._rect(f, b - ln, b, foot, top - c * px, out + e, SD.LOW_LIT)
-    _head_dress(f, *tile, z0, out + e, ends)
+    spans = _head_dress(f, *tile, z0, out + e, ends)
+    if not any(ends):                                   # (a middle tile: a plate on the top over each recess, from
+        d0 = out - c * ln                               # just behind the chamfer TOP_PLATE px back, a px tall)
+        d1 = d0 - TOP_PLATE * T3.TOP_PX
+        for p0, p1 in spans:
+            f.part(p0, p1, [(d1, top), (d0, top), (d0, top + px), (d1, top + px)],
+                   [None, TOP_PLATE_FRONT, TOP_PLATE_TOP, SD.BOX_SIDE], SD.BOX_SIDE, end=False)
     d0 = back - SD.PLATE_BACK * ln + SD.PLATE_R * ln
     for u, col, on in ((a, SD.BOX_LINE, ends[0]), (b - ln, SD.TOP_LIT, ends[1])):   # (its edges along its top)
         if on:
@@ -175,6 +184,7 @@ def _head_dress(f, a, b, z0, d, ends=(False, False)):
         SD._rect(f, p0, p1, z0 + n * px, z0 + (n + 1) * px, d, VENT_LINE)
     rw, r0, r1 = HEAD_RECESS
     za, zb = z0 + r0 * px, z0 + r1 * px
+    spans = []
     for e0, e1, last in ((a, p0, ends[0]), (p1, b, ends[1])):
         if last or (e1 - e0) / ln < rw + 2:
             continue
@@ -182,6 +192,8 @@ def _head_dress(f, a, b, z0, d, ends=(False, False)):
         SD._rect(f, c, c + rw * ln, za, zb, d, RECESS_FILL)
         SD._rect(f, c, c + rw * ln, zb - px, zb, d + 0.0005, RECESS_SHADE)
         SD._rect(f, c, c + rw * ln, za, za + px, d + 0.0005, RECESS_LIT)
+        spans.append((c, c + rw * ln))
+    return spans
 
 
 def _build(m, o, part):
