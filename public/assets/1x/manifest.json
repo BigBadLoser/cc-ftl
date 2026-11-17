@@ -5167,6 +5167,10 @@
    "image": "sprites/struct.png",
    "glow": "sprites/struct.glow.png"
   },
+  "tube": {
+   "image": "sprites/tube.png",
+   "glow": "sprites/tube.glow.png"
+  },
   "upgrades": {
    "image": "sprites/upgrades.png",
    "glow": "sprites/upgrades.glow.png"
@@ -212302,6 +212306,558 @@
     1,
     1
    ]
+  },
+  "tube.hull.r1.cut": {
+   "kind": "static",
+   "sheet": "tube",
+   "frame": {
+    "x": 1,
+    "y": 1,
+    "w": 127,
+    "h": 143
+   },
+   "anchor": {
+    "x": 32,
+    "y": 128
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tube.hull.r1.cut.tint": {
+   "kind": "static",
+   "sheet": "tube",
+   "frame": {
+    "x": 129,
+    "y": 1,
+    "w": 127,
+    "h": 143
+   },
+   "anchor": {
+    "x": 32,
+    "y": 128
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tube.hull.r1.low": {
+   "kind": "static",
+   "sheet": "tube",
+   "frame": {
+    "x": 257,
+    "y": 1,
+    "w": 127,
+    "h": 143
+   },
+   "anchor": {
+    "x": 32,
+    "y": 128
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tube.hull.r1.low.tint": {
+   "kind": "static",
+   "sheet": "tube",
+   "frame": {
+    "x": 385,
+    "y": 1,
+    "w": 127,
+    "h": 143
+   },
+   "anchor": {
+    "x": 32,
+    "y": 128
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tube.hull.r1.up": {
+   "kind": "static",
+   "sheet": "tube",
+   "frame": {
+    "x": 513,
+    "y": 1,
+    "w": 127,
+    "h": 143
+   },
+   "anchor": {
+    "x": 32,
+    "y": 128
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tube.hull.r1.up.tint": {
+   "kind": "static",
+   "sheet": "tube",
+   "frame": {
+    "x": 641,
+    "y": 1,
+    "w": 127,
+    "h": 143
+   },
+   "anchor": {
+    "x": 32,
+    "y": 128
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tube.hull.r2.cut": {
+   "kind": "static",
+   "sheet": "tube",
+   "frame": {
+    "x": 769,
+    "y": 1,
+    "w": 127,
+    "h": 143
+   },
+   "anchor": {
+    "x": 95,
+    "y": 128
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tube.hull.r2.cut.tint": {
+   "kind": "static",
+   "sheet": "tube",
+   "frame": {
+    "x": 897,
+    "y": 1,
+    "w": 127,
+    "h": 143
+   },
+   "anchor": {
+    "x": 95,
+    "y": 128
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tube.hull.r2.low": {
+   "kind": "static",
+   "sheet": "tube",
+   "frame": {
+    "x": 1025,
+    "y": 1,
+    "w": 127,
+    "h": 143
+   },
+   "anchor": {
+    "x": 95,
+    "y": 128
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tube.hull.r2.low.tint": {
+   "kind": "static",
+   "sheet": "tube",
+   "frame": {
+    "x": 1153,
+    "y": 1,
+    "w": 127,
+    "h": 143
+   },
+   "anchor": {
+    "x": 95,
+    "y": 128
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tube.hull.r2.up": {
+   "kind": "static",
+   "sheet": "tube",
+   "frame": {
+    "x": 1281,
+    "y": 1,
+    "w": 127,
+    "h": 143
+   },
+   "anchor": {
+    "x": 95,
+    "y": 128
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tube.hull.r2.up.tint": {
+   "kind": "static",
+   "sheet": "tube",
+   "frame": {
+    "x": 1409,
+    "y": 1,
+    "w": 127,
+    "h": 143
+   },
+   "anchor": {
+    "x": 95,
+    "y": 128
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tube.junction.n": {
+   "kind": "static",
+   "sheet": "tube",
+   "frame": {
+    "x": 1537,
+    "y": 1,
+    "w": 128,
+    "h": 141
+   },
+   "anchor": {
+    "x": 96,
+    "y": 125
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "tube.junction.n.open": {
+   "kind": "static",
+   "sheet": "tube",
+   "frame": {
+    "x": 1666,
+    "y": 1,
+    "w": 128,
+    "h": 141
+   },
+   "anchor": {
+    "x": 96,
+    "y": 125
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "tube.junction.w": {
+   "kind": "static",
+   "sheet": "tube",
+   "frame": {
+    "x": 1795,
+    "y": 1,
+    "w": 128,
+    "h": 141
+   },
+   "anchor": {
+    "x": 32,
+    "y": 125
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "tube.junction.w.open": {
+   "kind": "static",
+   "sheet": "tube",
+   "frame": {
+    "x": 1924,
+    "y": 1,
+    "w": 128,
+    "h": 141
+   },
+   "anchor": {
+    "x": 32,
+    "y": 125
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "tube.port.e": {
+   "kind": "static",
+   "sheet": "tube",
+   "frame": {
+    "x": 2053,
+    "y": 1,
+    "w": 105,
+    "h": 136
+   },
+   "anchor": {
+    "x": 72,
+    "y": 120
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tube.port.e.open": {
+   "kind": "static",
+   "sheet": "tube",
+   "frame": {
+    "x": 2159,
+    "y": 1,
+    "w": 105,
+    "h": 136
+   },
+   "anchor": {
+    "x": 72,
+    "y": 120
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tube.port.n": {
+   "kind": "static",
+   "sheet": "tube",
+   "frame": {
+    "x": 2477,
+    "y": 1,
+    "w": 107,
+    "h": 129
+   },
+   "anchor": {
+    "x": 74,
+    "y": 92
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tube.port.s": {
+   "kind": "static",
+   "sheet": "tube",
+   "frame": {
+    "x": 2265,
+    "y": 1,
+    "w": 105,
+    "h": 136
+   },
+   "anchor": {
+    "x": 33,
+    "y": 120
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tube.port.s.open": {
+   "kind": "static",
+   "sheet": "tube",
+   "frame": {
+    "x": 2371,
+    "y": 1,
+    "w": 105,
+    "h": 136
+   },
+   "anchor": {
+    "x": 33,
+    "y": 120
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tube.port.w": {
+   "kind": "static",
+   "sheet": "tube",
+   "frame": {
+    "x": 2585,
+    "y": 1,
+    "w": 107,
+    "h": 129
+   },
+   "anchor": {
+    "x": 33,
+    "y": 92
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tube.x.east": {
+   "kind": "static",
+   "sheet": "tube",
+   "frame": {
+    "x": 2883,
+    "y": 1,
+    "w": 86,
+    "h": 93
+   },
+   "anchor": {
+    "x": 47,
+    "y": 79
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "tube.x.mid": {
+   "kind": "static",
+   "sheet": "tube",
+   "frame": {
+    "x": 2693,
+    "y": 1,
+    "w": 94,
+    "h": 95
+   },
+   "anchor": {
+    "x": 47,
+    "y": 79
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "tube.x.one": {
+   "kind": "static",
+   "sheet": "tube",
+   "frame": {
+    "x": 3231,
+    "y": 1,
+    "w": 78,
+    "h": 91
+   },
+   "anchor": {
+    "x": 39,
+    "y": 77
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "tube.x.west": {
+   "kind": "static",
+   "sheet": "tube",
+   "frame": {
+    "x": 2970,
+    "y": 1,
+    "w": 86,
+    "h": 93
+   },
+   "anchor": {
+    "x": 39,
+    "y": 77
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "tube.y.mid": {
+   "kind": "static",
+   "sheet": "tube",
+   "frame": {
+    "x": 2788,
+    "y": 1,
+    "w": 94,
+    "h": 95
+   },
+   "anchor": {
+    "x": 47,
+    "y": 79
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "tube.y.north": {
+   "kind": "static",
+   "sheet": "tube",
+   "frame": {
+    "x": 3057,
+    "y": 1,
+    "w": 86,
+    "h": 93
+   },
+   "anchor": {
+    "x": 47,
+    "y": 77
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "tube.y.one": {
+   "kind": "static",
+   "sheet": "tube",
+   "frame": {
+    "x": 3310,
+    "y": 1,
+    "w": 78,
+    "h": 91
+   },
+   "anchor": {
+    "x": 39,
+    "y": 77
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "tube.y.south": {
+   "kind": "static",
+   "sheet": "tube",
+   "frame": {
+    "x": 3144,
+    "y": 1,
+    "w": 86,
+    "h": 93
+   },
+   "anchor": {
+    "x": 39,
+    "y": 79
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
   },
   "turret.burst_laser.d0": {
    "kind": "static",

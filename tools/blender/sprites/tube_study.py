@@ -1,4 +1,4 @@
-"""Station tube look study (issue #508, preview only): the short tube that joins two prefab base modules, three tiles long, a
+"""The prefab base tube (issue #508, family tube; the game draws it from src/render/tubeArt.ts): the short tube that joins two prefab base modules, three tiles long, a
 floor tile between two wall tiles. Glass looks: the sprite keeps the glass's partial alpha (what is behind or inside shows
 through), so one sprite serves the roofed and the cut view.
 
@@ -351,4 +351,4 @@ def _hull_job(rot):
 def jobs():
     return ([_seg_job(p, a) for a in ("x", "y") for p in PARTS] +
             [_port_job(o, d) for o in (2, 1) for d in (False, True)] + [_port_job(8), _port_job(4)] +
-            [_junction_job(o, t) for o in (2, 8, 1, 4) for t in (0.0, 1.0)] + [_hull_job(1), _hull_job(2)])
+            [_junction_job(o, t) for o in (8, 4) for t in (0.0, 1.0)] + [_hull_job(1), _hull_job(2)])

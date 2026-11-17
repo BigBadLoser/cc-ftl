@@ -4,6 +4,8 @@ import type { Atlas, StaticSprite } from "./assets/loader";
 import { CHUNK_SIZE, type Grid } from "../sim/grid";
 import { ModuleC } from "../sim/modules/components";
 import { airlockDoorTiles, airlockRowTiles } from "./airlockArt";
+import { tubeRuns } from "../sim/tube";
+import { tubeTiles } from "./tubeArt";
 import { Finish, Struct, STRUCT_MAX_HP } from "../sim/structure";
 import { MARK_FIELDS } from "../sim/marks";
 import { decodeWindow, type WindowTile } from "../sim/windows";
@@ -142,12 +144,17 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
   let blockHull = new Set<number>();
   let airlocks = new Set<number>();
   let lockRow = new Set<number>();
+  /** Tubes (tubeArt.tubeTiles): far doors (the port's own, like an airlock's door), the hull row beside them, the near junctions' tiles. */
+  let tube = { port: new Set<number>(), row: new Set<number>(), junction: new Set<number>() };
   /** The region's hull keys (hullArt), null for no new hull art (not a ship). */
   let hull: HullKeys | null = null;
   const has = (id: string) => !!atlas.stat(id);
 
   const kindAt = tiles.kindAt;
   const wallAt = tiles.wallAt; // rock walls stay RockWall: never hull
+  // The wall pieces' neighbours: unroofed, a tube's near junction stands in for its wall tiles (no wall there, its ends face it).
+  const pieceAt = (x: number, y: number): number => (ghosts && tiles.inside(x, y) && tube.junction.has(y * width + x) ? Struct.Space : wallAt(x, y));
+  const lockDoor = (i: number): boolean => airlocks.has(i) || tube.port.has(i);
   // Beam tiles under a cargo container are its seat, not frame: no beam sprite there, and the frame's beams end at it.
   const boxAt = (x: number, y: number): boolean => {
     const gx = x + grid.x0, gy = y + grid.y0;
@@ -187,6 +194,19 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
     return new Set(tiles.filter((t) => grid.inBounds(t.x, t.y)).map((t) => (t.y - grid.y0) * width + (t.x - grid.x0)));
   }
 
+  /** The module wall tiles the region's tubes' art stands in for (tubeArt.tubeTiles), region-local. */
+  function tubeSets(): typeof tube {
+    const out = { port: new Set<number>(), row: new Set<number>(), junction: new Set<number>() };
+    const at = (t: { x: number; y: number }) => (grid.inBounds(t.x, t.y) ? (t.y - grid.y0) * width + (t.x - grid.x0) : -1);
+    for (const r of tubeRuns(grid)) {
+      const t = tubeTiles(r);
+      out.port.add(at(t.port));
+      for (const s of t.row) out.row.add(at(s));
+      for (const s of t.junction) out.junction.add(at(s));
+    }
+    return out;
+  }
+
   /** A chunk's hull keys (a key reads the outline far past the struct strip round the chunk). */
   function hullKeysIn(c: ChunkRef): string {
     if (!hull) return "";
@@ -200,7 +220,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
   function specialsNear(c: ChunkRef): string {
     const r = tiles.chunkRect(c);
     let k = "";
-    for (const [tag, set] of [["e", replaced], ["a", airlocks], ["r", lockRow]] as const)
+    for (const [tag, set] of [["e", replaced], ["a", airlocks], ["r", lockRow], ["p", tube.port], ["q", tube.row], ["j", tube.junction]] as const)
       for (const i of set) {
         const x = i % width;
         const y = (i - x) / width;
@@ -238,6 +258,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
           const stone = raw === Struct.RockWall;
           const k = artKind(raw);
           if (k === Struct.Space || k === Struct.Rock || k === Struct.Ground) continue; // rock: asteroidView
+          if (kindAt(x, y) === Struct.Space) continue; // a prefab base's tube: tubeView draws it (regionTiles.kindAt)
           if (k === Struct.Beam) {
             if (boxAt(x, y)) continue;
             // Low open truss, the same in every wall view level; sprites sit at the tile's depth, overlays just above.
@@ -252,6 +273,8 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
             continue;
           }
           const idx = y * width + x;
+          // Unroofed, a tube's near junction (tubeView) stands on its door and the two wall tiles beside it: nothing of theirs here.
+          if (ghosts && tube.junction.has(idx)) continue;
           // A near-hull ghost replaces the floor plate under it (not under an engine: its bulkhead stands on the deck).
           // An engine's hull row is the hull wall in cutaway / low (the same ghost as the hull around it); with the walls
           // up or roofed the wall is left out and the engine's bulkhead stands there between the hull runs.
@@ -263,16 +286,16 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
           // An engine's hull row and an airlock's door take the base hull piece when roofed (its top closes the roof
           // over them; the designs' relief would clash with the bell or the collar); their own sprites stand there
           // only where the new hull has no art. In cutaway the airlock keeps its own sprites (no door, no belly).
-          const own = gapAt(x, y) || airlocks.has(idx);
-          const drew = hull && (!airlocks.has(idx) || !ghosts) ? drawHull(hull, x, y, k, ci, v, false, own, decodeWindow(windows?.[ci] ?? 0)) : false;
+          const own = gapAt(x, y) || lockDoor(idx);
+          const drew = hull && (!lockDoor(idx) || !ghosts) ? drawHull(hull, x, y, k, ci, v, false, own, decodeWindow(windows?.[ci] ?? 0)) : false;
           const special = own && !drew;
           // Under an airlock's door tile the near hull's belly still runs below the deck (its own sprite is the wall above).
-          if (hull && ghosts && airlocks.has(idx)) drawHull(hull, x, y, k, ci, v, true);
+          if (hull && ghosts && lockDoor(idx)) drawHull(hull, x, y, k, ci, v, true);
           // Under an engine's bulkhead (walls up / roofed) the hull's belly still runs below the deck.
           if (hull && gapAt(x, y) && !drew) drawHull(hull, x, y, k, ci, v, true);
           // Roofed, a tile with the hull from outside has no floor plate (its edge showed below the hull's foot).
           const fin = finish?.[ci] ?? 0;
-          const f = (ghosts && !engineUp && replacesFloor(wallAt, x, y, mode)) || (drew && !ghosts) ? undefined : atlas.firstOf(floorChain(x, y, fin));
+          const f = (ghosts && !engineUp && replacesFloor(pieceAt, x, y, mode)) || (drew && !ghosts) ? undefined : atlas.firstOf(floorChain(x, y, fin));
           if (f && fin === Finish.Carpet && f === atlas.stat("tile.floor.carpet")) {
             // The carpet is grey art the hull-paint step recolours: the ship's carpet paint times the light.
             const spr = addPaintSprite(f, x, y, 0, v.floor, CarpetSprite);
@@ -287,7 +310,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
           if (k === Struct.Floor) continue;
           // The engine's hull row (walls up or roofed) is the engine's own bulkhead sprite: no hull wall on it.
           if (special) continue;
-          for (const piece of wallPieces(wallAt, x, y, stone ? Struct.RockWall : k, mode, ghosts, gapAt, decodeWindow(windows?.[ci] ?? 0))) {
+          for (const piece of wallPieces(pieceAt, x, y, stone ? Struct.RockWall : k, mode, ghosts, gapAt, decodeWindow(windows?.[ci] ?? 0))) {
             if (drew && !keepsOldPiece(k, ghosts, piece.under)) continue; // (a door stays, without its old belly)
             const s = atlas.firstOf(piece.chain);
             if (!s) continue;
@@ -403,7 +426,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
     // Behind the thruster block the engine's hull sprite carries the wall's lower section: the belly's cut top would cover it.
     // Beside a camera-facing airlock's door its hull sprite carries the outer half of the cut hull (the inner half is
     // inside its full-height row and would show through the row's end cut).
-    if (b.low && !blockHull.has(y * width + x) && !lockRow.has(y * width + x)) put(b.low, z + 0.001, L.sorted, solid);
+    if (b.low && !blockHull.has(y * width + x) && !lockRow.has(y * width + x) && !tube.row.has(y * width + x)) put(b.low, z + 0.001, L.sorted, solid);
     return true;
   }
 
@@ -489,6 +512,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
       if (built !== builtKey) {
         builtKey = built;
         hull = gridHullKeys(grid, wallAt, width, height);
+        tube = tubeSets();
         const n = chunks.sync(tiles.chunks(1), (c) => `${base}|${tiles.key("struct", c, HULL_REACH)}|${tiles.rev("floor", c)}|${tiles.rev("window", c)}|${DRAWN_MARKINGS.map((kind) => tiles.rev(MARK_FIELDS[kind], c, 1)).join(",")}|${specialsNear(c)}|${hullKeysIn(c)}`, buildChunk, host.gate);
         if (chunks.pending > 0) builtKey = ""; // the rest on a later update
         if (n > 0) frameKey = "";

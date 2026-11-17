@@ -174,6 +174,7 @@ export function prefab(c: Ctx, rooms: readonly RoomSpec[], docks: readonly RoomS
       g.set(tx - dy, ty - dx, SOLID);
       g.set(tx + dy, ty + dx, SOLID);
       g.set(tx, ty, hall);
+      g.tubes.push([tx, ty]);
     }
     g.gate(x, y);
     g.gate(x + dx * (len + 1), y + dy * (len + 1));

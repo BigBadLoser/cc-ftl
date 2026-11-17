@@ -32,6 +32,7 @@ import { createTargetMarks } from './targetMarks';
 import { crewHidden } from './regionRules';
 import { createTurretView } from './turretView';
 import { createCableView } from './cableView';
+import { createTubeView } from './tubeView';
 import { DEFAULT_BEAM_LOOK, type BeamLook } from './beamArt';
 import { OPEN_GATE, type BuildGate } from './buildBudget';
 
@@ -140,6 +141,7 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
   const atmosphere = createAtmosphere(world, particles, modules, { target: () => ({ grid }) });
   const turretView = createTurretView(world, atlas, L, grid, modules);
   const cableView = createCableView(grid, atlas, L, world, modules);
+  const tubeView = createTubeView(grid, atlas, L, { roofed: () => roofed, level: () => wallLevel(roofed ? 'up' : cutaway), hullPaint: () => o.hullPaint ?? PLAIN_PAINT, tintAt: (x, y, wall) => view.tintAt(x, y, wall), tintKey: () => view.tintKey() });
   const roof = createRoofView(grid, atlas, L, world, modules, o.livery ?? null, o.liveries ?? null);
   // A dug outpost is roofed with rock, not plating (PLACEHOLDER, rockRoofView.ts).
   // It sits in the fx layer, and while it is on the region's own tile and entity layers hide: the rock around the base is drawn
@@ -194,6 +196,7 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
       crewView.update();
       roof.update(gate, o.idle, emergency);
       cableView.update();
+      tubeView.update();
       turretView.update();
       damage.update();
       marks.update(marksOn, targeted, roofed ? ROOF_H : 0);
@@ -239,6 +242,7 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
       jamMarks.dispose();
       sacView.dispose();
       cableView.dispose();
+      tubeView.dispose();
       turretView.dispose();
       crewView.dispose();
       moduleView.dispose();

@@ -1,6 +1,7 @@
 import { ShipC } from './combat/components';
 import type { ShipTemplate } from './registry';
 import { DenseGrid, type GridLike } from './grid';
+import { TUBE_CHAR } from './tube';
 import { ContainerC } from './containers/components';
 import { ProductionC } from './items/components';
 import { PlotC } from './farm/components';
@@ -33,6 +34,7 @@ export function gridFromTemplate(t: ShipTemplate): DenseGrid {
       if (kind !== Struct.Space) writeStruct(grid, x, y, kind);
       const finish = FINISH_CHARS[t.floors?.[y]?.[x] ?? ''];
       if (finish && kind === Struct.Floor) grid.set('floor', x, y, finish);
+      if (kind === Struct.Floor && t.tubes?.[y]?.[x] === TUBE_CHAR) grid.set('tube', x, y, 1);
     }
   });
   for (let y = 0; y < height; y++) {

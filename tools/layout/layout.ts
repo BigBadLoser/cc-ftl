@@ -60,6 +60,9 @@ export function layoutOfGen(g: GenResult, name: string, immobile: boolean): Layo
     cells.push(row);
   }
   const extra: Layout['extra'] = { ...g.template };
+  // Rows that run row for row with the cells (floor finishes, ground cable, tubes) take the same pad.
+  const pad = (rows: string[]): string[] => [...Array<string>(PAD).fill(''), ...rows.map((r) => '.'.repeat(PAD) + r)];
+  for (const k of ['floors', 'cable', 'tubes'] as const) if (g.template[k]) extra[k] = pad(g.template[k]);
   const modules = g.template.modules;
   delete (extra as Partial<ShipTemplate>).name;
   delete (extra as Partial<ShipTemplate>).rows;

@@ -12,6 +12,7 @@ import { PREFAB_PADS } from './prefab';
 import { stationProgram } from './program';
 import { recipeAt, type Recipe } from './recipe';
 import { OUTSIDE } from '../groundTurrets';
+import { tubeRows } from '../../tube';
 
 /** Ground round a prefab base's modules and pads, for its turrets (a ring of ground, a turret, a tile to its cable and the hull's). */
 const GROUND_MARGIN = 4 + OUTSIDE;
@@ -102,6 +103,8 @@ export function assembleStation(def: StationDef, id: string, size: StationSize, 
   // An asteroid farm's beds are set to the kind's crops, in turn: its crew farm them out of the box.
   if (prefab && def.crops?.length) { let bed = 0; made.template.modules = (made.template.modules ?? []).map((m) => (defs[m.def]?.plot ? { ...m, crop: def.crops?.[bed++ % def.crops.length] as string } : m)); }
   made.template.name = `${def.name} ${size === 'station' ? '' : `${size} `}${(seed >>> 0).toString(16).toUpperCase().padStart(4, '0').slice(-4)}`;
+  // A prefab base's tubes: their floor tiles, drawn as glass tubes (tube.ts).
+  if (g.tubes.length > 0) made.template.tubes = tubeRows(snap.width, snap.height, new Set(g.tubes.map(([x, y]) => (y - snap.y0) * snap.width + (x - snap.x0))));
   const site = { pads: pads.map((p) => ({ x: p[0] - snap.x0, y: p[1] - snap.y0, w: p[2] - p[0], h: p[3] - p[1] })) };
   return { ...made, failures: rejected, station: infoOf(def, size, made.template, defs), ...(prefab ? { site } : {}) };
 }
