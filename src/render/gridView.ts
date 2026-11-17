@@ -146,7 +146,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
   let blockHull = new Set<number>();
   let airlocks = new Set<number>();
   let lockRow = new Set<number>();
-  /** Tubes (tubeArt.tubeTiles): far doors (the port's own, like an airlock's door), the wall tiles beside them, the near junctions' tiles. */
+  /** Tubes (tubeArt.tubeTiles): far doors (the port's own, like an airlock's door), the hull row beside them, the near junctions' tiles. */
   let tube = { port: new Set<number>(), row: new Set<number>(), junction: new Set<number>() };
   /** The region's hull keys (hullArt), null for no new hull art (not a ship). */
   let hull: HullKeys | null = null;
@@ -289,7 +289,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
           // over them; the designs' relief would clash with the bell or the collar); their own sprites stand there
           // only where the new hull has no art. In cutaway the airlock keeps its own sprites (no door, no belly).
           const own = gapAt(x, y) || lockDoor(idx);
-          // Behind a tube (its far door's neighbours, its near door and its neighbours) the hull takes its base piece too: a design's
+          // Behind a tube (its far door's row, its near door and their neighbours) the hull takes its base piece too: a design's
           // relief would show round the tube's port and junction.
           const base = own || tube.row.has(idx) || tube.junction.has(idx);
           const drew = hull && (!lockDoor(idx) || !ghosts) ? drawHull(hull, x, y, k, ci, v, false, base, decodeWindow(windows?.[ci] ?? 0), tube.row.has(idx) || tube.port.has(idx)) : false;
@@ -419,7 +419,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
       const ext = exteriorIds(h, x, y, has, base, win);
       if (!ext) return false;
       // The roof stand-in at the roof plating's depth: over the tile's piece, under the hull of the tiles in front. `behind`: a
-      // tube's far door or a wall beside it, sorted (roof and all) under the tube's port, whose first tile shares the front one's depth.
+      // tube's hull row or far door, sorted (roof and all) under the tube's art, whose first tile shares the row's front tile's depth.
       ext.forEach((id) => put(id, z + (id.startsWith("tile.roof.") ? (behind ? -0.04 : 0.9) : behind ? -0.05 : 0), L.sorted, solid));
       const b = bellyIds(h, x, y, has);
       if (b?.under) put(b.under, z, L.under, solid);
@@ -432,7 +432,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
     // Behind the thruster block the engine's hull sprite carries the wall's lower section: the belly's cut top would cover it.
     // Beside a camera-facing airlock's door its hull sprite carries the outer half of the cut hull (the inner half is
     // inside its full-height row and would show through the row's end cut).
-    if (b.low && !blockHull.has(y * width + x) && !lockRow.has(y * width + x)) put(b.low, z + 0.001, L.sorted, solid);
+    if (b.low && !blockHull.has(y * width + x) && !lockRow.has(y * width + x) && !tube.row.has(y * width + x)) put(b.low, z + 0.001, L.sorted, solid);
     return true;
   }
 

@@ -7,7 +7,6 @@
  */
 import { content } from '../../src/content';
 import { createRenderer, type Renderer } from '../../src/render/scene';
-import type { CutawayMode } from '../../src/render/tiles';
 import { ModuleC, shipGrid } from '../../src/sim';
 import { ORIGIN, type View } from './camera';
 import type { Design } from './design';
@@ -23,8 +22,6 @@ export interface Preview {
   setView(v: View): void;
   setMarks(marks: readonly Mark[]): void;
   setShields(on: boolean): void;
-  /** The walls' cutaway (the game's wall view toggle): auto (cut), up or down. */
-  setCutaway(m: CutawayMode): void;
   setRoof(on: boolean): void;
   /** The design tile under a host-relative css px position, and the module there if the pointer is on one. */
   pick(sx: number, sy: number): { x: number; y: number; module: number | null } | null;
@@ -47,7 +44,6 @@ export function createPreview(): Preview {
   let marks: readonly Mark[] = [];
   let shields = false;
   let roof = false;
-  let cutaway: CutawayMode = 'auto';
   // imported faction ships and stations stamp with their real side, so both roof switches follow the toggle
   const setRoofs = (r: { setRoofPlayer(on: boolean): void; setRoofEnemies(on: boolean): void }, on: boolean): void => { r.setRoofPlayer(on); r.setRoofEnemies(on); };
   let paused = false;
@@ -118,7 +114,6 @@ export function createPreview(): Preview {
       setRoofs(r, roof);
       r.setWorldGrid(false);
       r.setShields(shields);
-      r.setCutaway(cutaway);
       r.resize();
       applyMarks(l);
       applyView(l);
@@ -149,11 +144,6 @@ export function createPreview(): Preview {
       roof = on;
       if (cur) setRoofs(cur.r, on);
       if (next) setRoofs(next.r, on);
-    },
-    setCutaway(m) {
-      cutaway = m;
-      cur?.r.setCutaway(m);
-      next?.r.setCutaway(m);
     },
     setShields(on) {
       shields = on;
