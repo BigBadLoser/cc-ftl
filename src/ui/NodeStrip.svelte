@@ -10,7 +10,7 @@
   let prizes = $state<UiPrize[]>([]);
   let combat = $state<UiCombat>({ inCombat: false, player: null, enemies: [] });
   let shuttles = $state<UiShuttles>({ shuttles: [], airlocks: [], targets: [], roster: [], bays: [], regions: [], transfers: [], ferryReady: false });
-  let mining = $state<UiMining>({ asteroids: [], pods: [] });
+  let mining = $state<UiMining>({ asteroids: [], pods: [], containers: [] });
   let selAst = $state<number | null>(null);
   onMount(() => {
     const u = [

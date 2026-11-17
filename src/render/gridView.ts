@@ -53,6 +53,8 @@ export interface GridViewHost {
   hullPaint?(): HullPaint;
   /** Asked before each chunk (re)build (buildBudget.ts); a refused chunk is built on a later update. Default: always. */
   gate?: BuildGate;
+  /** True: draw no tiles at all (floor, walls, hull, markings); the modules on the grid still show. For a ship that is only a seat (`ShipC.unseen`). */
+  bare?(): boolean;
 }
 
 /** Air thinner than this (kPa) is vacuum and gets a cold cast. */
@@ -473,6 +475,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
     tintKey: () => `${grid.revision("light")}|${grid.revision("o2")}|${pulseNow()}`,
     hullDrawn: (gx, gy) => !!hull && !!exteriorIds(hull, gx - grid.x0, gy - grid.y0, has),
     update() {
+      if (host.bare?.()) return;
       const mr = grid.revision("module");
       if (mr !== modRev) {
         modRev = mr;
