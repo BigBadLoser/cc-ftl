@@ -1,22 +1,18 @@
 import { describe, expect, it } from 'vitest';
-import { newGame, type Sim } from '../../sim';
-import { content } from '../../content';
+import { type Sim } from '../../sim';
 import { InspectionC } from '../../sim/inspect/types';
 import { deriveAlerts } from '../alertsDerived';
 import { createAlerts } from '../alerts';
 import type { UiAlert } from '../../ui/api';
 import { buildCrewLists } from '../crewSnapshot';
-import { inspectCommands, inspectStation } from './inspect';
+import { inspectStation } from './inspect';
+import { cachedScenario } from '../../../test/support/scenario';
 
+
+/** The `inspect` scenario just after the hail (built once per worker, cloned per test). */
 function start(opts: { clean?: boolean; eva?: boolean } = {}): Sim {
-  const sim = newGame(3, content);
-  for (let i = 0; i < 20; i++) sim.step();
-  sim.enqueue({ type: 'debug.spawnStation', kind: 'station.trading', size: 'outpost', seed: 4, owner: 'navy' });
-  sim.step();
-  const station = inspectStation(sim);
-  expect(station).toBeDefined();
-  for (const cmd of inspectCommands(sim, station!, opts)) sim.enqueue(cmd);
-  sim.step();
+  const sim = cachedScenario('inspect', { seed: 3, params: opts }).sim;
+  expect(inspectStation(sim)).toBeDefined();
   return sim;
 }
 

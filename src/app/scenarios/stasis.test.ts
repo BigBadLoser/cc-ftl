@@ -1,16 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import { CrewC, ModuleC, PositionC, ShipC, newGame, playerShip } from '../../sim';
+import { CrewC, ModuleC, PositionC, ShipC, playerShip } from '../../sim';
 import { findPath } from '../../sim/crew/pathfind';
 import { playerCrew } from '../../sim/story/world';
 import { fullSlabs, slabPlace } from '../../sim/stasis/query';
 import { heldItems } from '../../sim/items/held';
 import { SLAB_ITEM } from '../../sim/stasis/tuning';
-import { content } from '../../content';
 import { newHostiles, prisonerCommands, sealPrizeCommands } from './stasis';
+import { cachedScenario } from '../../../test/support/scenario';
+
+/** The app's start: the Wayfarer, its node populated, the crew rolled. */
+const WAYFARER = { template: 'ship.wayfarer', populate: true, rolled: true } as const;
 
 describe('?scenario=stasis', () => {
   it('sets a wheel and two prisoners, and the crew hold both in the wheel', () => {
-    const sim = newGame(3, content);
+    const sim = cachedScenario('start', { seed: 3 }).sim;
     sim.step();
     const before = new Set(sim.world.query(CrewC));
     const cmds = prisonerCommands(sim);
@@ -25,7 +28,7 @@ describe('?scenario=stasis', () => {
   });
 
   it('in the app\'s start (the Wayfarer, seed 1, prisoners taken a few ticks in) every slab is accounted for and both prisoners end in the wheel', () => {
-    const sim = newGame(1, content, 'ship.wayfarer', true, 'rolled');
+    const sim = cachedScenario('start', { seed: 1, params: WAYFARER }).sim;
     const before = new Set(sim.world.query(CrewC));
     for (const cmd of prisonerCommands(sim)) sim.enqueue(cmd);
     for (let i = 0; i < 9; i++) sim.step();
@@ -42,7 +45,7 @@ describe('?scenario=stasis', () => {
 
   it('in the app\'s start (the Wayfarer, seed 1) sets the wheel where it walls no rack off (a packed hull may have no such spot on other seeds)', () => {
     for (const seed of [1]) {
-      const sim = newGame(seed, content, 'ship.wayfarer', true, 'rolled');
+      const sim = cachedScenario('start', { seed, params: WAYFARER }).sim;
       const ship = playerShip(sim)!;
       const from = sim.world.get(playerCrew(sim)[0]!, PositionC)!;
       const racks = sim.world.query(ModuleC).filter((id) => sim.world.get(id, ModuleC)!.def === 'module.storage_rack');
@@ -60,7 +63,7 @@ describe('?scenario=stasis', () => {
 
   it.each([1, 2, 3, 4, 5, 6])('on the debug hull (seed %i) the wheel walls no rack off and both prisoners end in the wheel', (seed) => {
     {
-      const sim = newGame(seed, content, 'ship.debug', true, 'rolled');
+      const sim = cachedScenario('start', { seed, params: { template: 'ship.debug', populate: true, rolled: true } }).sim;
       const ship = playerShip(sim)!;
       const from = sim.world.get(playerCrew(sim)[0]!, PositionC)!;
       const at = sim.world.get(ship, ShipC)!;
@@ -88,7 +91,7 @@ describe('?scenario=stasis', () => {
   });
 
   it('?scenario=prisoners&taken&seal: the raider\'s crew, taken as prisoners and marked, are fetched by shuttle and end in the home wheel', () => {
-    const sim = newGame(3, content);
+    const sim = cachedScenario('start', { seed: 3 }).sim;
     sim.step();
     const home = playerShip(sim)!;
     sim.enqueue({ type: 'debug.spawnEnemy', template: 'ship.raider', x: 100, y: 50 });

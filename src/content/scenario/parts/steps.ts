@@ -10,6 +10,8 @@ export interface Step {
   until?: (sim: Sim) => boolean;
   max?: number;
   what?: string;
+  /** Stop quietly at `max` instead of throwing (for a wait that a variant of the scenario never satisfies). */
+  soft?: boolean;
   /** Called after every tick of `until` (e.g. clear an open decision so it does not hold the clock). */
   each?: (sim: Sim) => void;
 }
@@ -27,6 +29,7 @@ export default definePart<'steps'>({
       if (s.until) {
         const max = s.max ?? 6000;
         for (let i = 0; !s.until(ctx.sim); i++) {
+          if (i >= max && s.soft) break;
           if (i >= max) throw new Error(`scenario: "${s.what ?? 'step'}" did not happen within ${max} ticks (tick ${ctx.sim.tick})`);
           ctx.step();
           s.each?.(ctx.sim);

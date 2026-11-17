@@ -3,10 +3,12 @@ import type { Hook, Part, Preset, ScenarioSpec } from './types';
 /**
  * The registry: parts, presets and hooks are found by file glob (Vite resolves it in the browser build, Vitest and the profiler alike), so adding one is
  * adding a file. A part is `parts/<key>.ts`, a preset `presets/<name with / as .>.ts` and a hook `hooks/<name with / as .>.ts`, each the file's default export.
+ * Keep the call written exactly `import.meta.glob(` (no type argument): Vitest's on-disk module cache skips a file only when it contains that text, and a cached
+ * registry would not see a file added later.
  */
-const partFiles = import.meta.glob<{ default: Part }>(['./parts/*.ts', '!./parts/*.test.ts'], { eager: true });
-const presetFiles = import.meta.glob<{ default: Preset }>(['./presets/**/*.ts', '!./presets/**/*.test.ts'], { eager: true });
-const hookFiles = import.meta.glob<{ default: Hook }>(['./hooks/**/*.ts', '!./hooks/**/*.test.ts'], { eager: true });
+const partFiles = import.meta.glob(['./parts/*.ts', '!./parts/*.test.ts'], { eager: true }) as Record<string, { default: Part }>;
+const presetFiles = import.meta.glob(['./presets/**/*.ts', '!./presets/**/*.test.ts'], { eager: true }) as Record<string, { default: Preset }>;
+const hookFiles = import.meta.glob(['./hooks/**/*.ts', '!./hooks/**/*.test.ts'], { eager: true }) as Record<string, { default: Hook }>;
 
 /** `./presets/inspect/station.ts` -> `inspect.station`. */
 const nameOf = (path: string, dir: string): string => path.replace(`./${dir}/`, '').replace(/\.ts$/, '').split('/').join('.');
