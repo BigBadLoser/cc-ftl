@@ -396,8 +396,10 @@ def jobs():
     out += [lambda n=n: _generic(n) for n in MOCK_KEYS]
     from . import station_berm as BM
     for n in MOCK_KEYS + MOCK_BERM:                     # a straight run's in each pair of end types too
-        ends = [None] if BM.along(_unname(n)) is None else [(a, b) for a in (0, 1) for b in (0, 1)]
-        out += [lambda n=n, v=v, e=e: _berm(n, v, e) for v in range(BM.VARIANTS) for e in ends]
+        k = _unname(n)
+        run = BM.along(k) is not None
+        ends = [(a, b) for a in (0, 1) for b in (0, 1)] if run or BM.turn_key(k) else [None]
+        out += [lambda n=n, v=v, e=e: _berm(n, v, e) for v in range(BM.RUN if run else BM.VARIANTS) for e in ends]
     return out + [lambda m=m, o=o, v=v: _item(f"tile.hull.station.ext.o{o}.m{m}.a{v}", lambda: _wide(m, o, v))
                   for (m, o) in STRAIGHT for v in SD.DESIGNS]
 

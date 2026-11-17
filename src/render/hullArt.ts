@@ -145,13 +145,45 @@ function shipExteriorIds(h: HullKeys, x: number, y: number, has: (id: string) =>
 export function bermId(h: HullKeys, x: number, y: number, has: (id: string) => boolean): string | null {
   const k = h.ground ? h.at(x, y) : "";
   if (!k) return null;
-  // its variant (station_berm.VARIANTS) by a hash of the tile; a straight run's (one front, along x or y) also by its two
-  // tile boundaries' types (1: a heap straddling it), each a hash of the boundary, so the tiles either side agree
   const name = hullKeyName(k);
-  const v = (tileHash(x + 3 * 7919, y - 3 * 104729) >>> 8) % 3;
-  const edge = (bx: number, by: number, salt: number) => ((tileHash(bx + salt * 7919, by - salt * 104729) >>> 8) % 10 < 4 ? 1 : 0);
+  const hash = (a: number, b: number, salt: number) => tileHash(a + salt * 7919, b - salt * 104729) >>> 8;
+  const nameAt = (ax: number, ay: number) => { const n = h.at(ax, ay); return n ? hullKeyName(n) : ""; };
+  // a straight run (one front along x or y): station_berm.RUN variants, 0-3 with a rock clump on one tile in every three
+  // along it, 4-7 bare, an even tile taking from one half of each set and an odd one from the other (no two neighbours
+  // alike); its two tile boundaries a heap or not (1 in 10 x 4), only between two tiles of the same run
   const run = /^(0_m?1|m?1_0)_[0-9]+$/.test(name) ? (name.startsWith("0_") ? "x" : "y") : null;
-  const ends = run === "x" ? `.e${edge(x, y, 5)}${edge(x + 1, y, 5)}` : run === "y" ? `.e${edge(x, y, 6)}${edge(x, y + 1, 6)}` : "";
+  if (run) {
+    const [u, l] = run === "x" ? [x, y] : [y, x];
+    const cell = Math.floor(u / 3);
+    const rocky = u - 3 * cell === hash(cell, l, 7) % 3;
+    const v = (rocky ? 0 : 4) + (u & 1 ? 2 : 0) + (hash(x, y, 3) % 2);
+    const [dx, dy] = run === "x" ? [1, 0] : [0, 1];
+    const edge = (bx: number, by: number, ox: number, oy: number, salt: number) =>
+      nameAt(ox, oy) === name && hash(bx, by, salt) % 10 < 4 ? 1 : 0;
+    const salt = run === "x" ? 5 : 6;
+    const ends = `.e${edge(x, y, x - dx, y - dy, salt)}${edge(x + dx, y + dy, x + dx, y + dy, salt)}`;
+    const id = `tile.hull.station.berm.${name}.v${v}${ends}`;
+    return has(id) ? id : null;
+  }
+  const v = hash(x, y, 3) % 3;
+  // a single diagonal front: where it meets a straight wall at the tile's edge the drift turns the corner with it
+  // (station_berm._turns: e<top or bottom vertex><side vertex>, 1 where the neighbour across it has that wall)
+  const m = /^(m?1)_(m?1)_(m?[0-9]+)$/.exec(name);
+  let ends = "";
+  if (m) {
+    const num = (t: string) => (t.startsWith("m") ? -Number(t.slice(1)) : Number(t));
+    const [sx, sy, c] = [num(m[1]!), num(m[2]!), num(m[3]!) / 32];
+    let e0 = 0, e1 = 0;
+    for (const Y of [-0.5, 0.5]) {
+      const vx = (c - sy * Y) / sx;
+      if (Math.abs(vx) <= 0.5 && nameAt(x, y + Math.sign(Y)).split("~").includes(`${sx > 0 ? "" : "m"}1_0_15`)) e0 = 1;
+    }
+    for (const X of [-0.5, 0.5]) {
+      const vy = (c - sx * X) / sy;
+      if (Math.abs(vy) <= 0.5 && nameAt(x + Math.sign(X), y).split("~").includes(`0_${sy > 0 ? "" : "m"}1_15`)) e1 = 1;
+    }
+    ends = `.e${e0}${e1}`;
+  }
   const id = `tile.hull.station.berm.${name}.v${v}${ends}`;
   return has(id) ? id : null;
 }
