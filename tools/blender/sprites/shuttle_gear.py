@@ -137,27 +137,136 @@ def g6(f, lift):
         D.seg(f, (-1.6, sv * 0.85, zk), (1.4, sv * 0.85, zk), 0.07, "steel")          # hinge beam under the belly edge
 
 
-GEAR = {"g4": (g4, 0.2), "g5": (g5, 0.25), "g6": (g6, 0.2)}
+# ---- round 3: retractable mechanisms, each drawn at a deploy fraction t (0 stowed, doors shut .. 1 down and locked) ----
+DOORS = 0.3                     # the first share of t opens the doors; the legs move after
 
 
-def landed(key, heading=0.0):
+def _ease(t):
+    return t * t * (3 - 2 * t)
+
+
+def _doors_t(t):
+    return _ease(min(1.0, t / DOORS))
+
+
+def _legs_t(t):
+    return _ease(max(0.0, (t - DOORS) / (1 - DOORS)))
+
+
+def quad(f, pts, mat):
+    P = [f.pt(*p) for p in pts]
+    f.poly(P, mat)
+    f.poly(P[::-1], mat)
+
+
+def well_doors(f, u0, u1, v0, v1, z, t, along_u=True):
+    """A leg well in the keel underside (u0..u1 x v0..v1) with two leaves hinged on its long edges, swinging down open."""
+    f.box((u0 + u1) / 2, (v0 + v1) / 2, z - 0.005, u1 - u0, v1 - v0, 0.01, "dark", top="dark")
+    phi = math.radians(100) * _doors_t(t)
+    if along_u:                                       # hinges along u at v0 and v1
+        w = (v1 - v0) / 2
+        for e, d in ((v0, 1), (v1, -1)):
+            ve, ze = e + d * w * math.cos(phi), z - 0.012 - w * math.sin(phi)
+            quad(f, [(u0, e, z - 0.012), (u1, e, z - 0.012), (u1, ve, ze), (u0, ve, ze)], "steel")
+    else:                                             # hinges along v at u0 and u1
+        w = (u1 - u0) / 2
+        for e, d in ((u0, 1), (u1, -1)):
+            ue, ze = e + d * w * math.cos(phi), z - 0.012 - w * math.sin(phi)
+            quad(f, [(e, v0, z - 0.012), (e, v1, z - 0.012), (ue, v1, ze), (ue, v0, ze)], "steel")
+
+
+def leg(f, hip, d, L, r=0.065):
+    """A leg from the hip along unit direction d (u, v, z), with a hazard band and a shoe across its end."""
+    end = tuple(hip[i] + d[i] * L for i in range(3))
+    D.seg(f, hip, end, r, "steelL")
+    D.seg(f, hip, tuple(hip[i] + d[i] * L * 0.4 for i in range(3)), r * 1.35, "steel")       # the actuator sleeve
+    band(f, hip, end, r * 1.05, n=3)
+    f.vcyl(hip[0], hip[1], hip[2] - 0.06, 0.07, 0.07, "steelD", sides=8)                      # the hinge boss
+    return end
+
+
+def shoe(f, end, axis, w=0.16):
+    """A flat shoe across the leg's end along `axis` (a unit (u, v, z)), lying on the pad when the leg is down."""
+    a = tuple(end[i] - axis[i] * w for i in range(3))
+    b = tuple(end[i] + axis[i] * w for i in range(3))
+    D.seg(f, a, b, 0.05, "steelD", cap="steel", capstart="steel")
+
+
+def r1(f, lift, t):
+    """Legs that fold flat under the belly fore-and-aft: the aft pair folds forward, the fore pair aft, into wells."""
+    zk = KEEL + lift
+    L = zk - 0.05
+    s = _legs_t(t)
+    for uh, dirn in ((-1.35, 1), (1.15, -1)):
+        for sv in (-1, 1):
+            v = sv * 0.5
+            ua, ub = sorted((uh, uh + dirn * L))
+            well_doors(f, ua - 0.04, ub + 0.04, v - 0.1, v + 0.1, zk, t)
+            a = math.radians(90 * s)                                # 0: along the belly, 90: straight down
+            d = (dirn * math.cos(a), 0.0, -math.sin(a))
+            end = leg(f, (uh, v, zk - 0.03), d, L)
+            shoe(f, end, (math.sin(a), 0.0, dirn * math.cos(a)))
+
+
+def r2(f, lift, t):
+    """Legs that swing out sideways: stowed across the belly in wells, they swing down and out to a splayed stance."""
+    zk = KEEL + lift
+    spl = math.radians(20)
+    L = (zk - 0.05) / math.cos(spl)
+    s = _legs_t(t)
+    for uh in (-1.25, 1.1):
+        for sv in (-1, 1):
+            vh = sv * 0.7
+            v_in = vh - sv * L
+            well_doors(f, uh - 0.1, uh + 0.1, min(vh, v_in) - 0.04, max(vh, v_in) + 0.04, zk, t, along_u=False)
+            al = math.radians(180 + (90 + 20) * s)                  # 180: inward along the belly, 290: down and out
+            d = (0.0, sv * math.cos(al), math.sin(al))
+            end = leg(f, (uh, vh, zk - 0.03), d, L)
+            shoe(f, end, (1.0, 0.0, 0.0))
+
+
+def r3(f, lift, t):
+    """Telescoping legs straight down out of the engine shoulders (and the nose), three nested stages; the foot pad is
+    the hatch that closes the bore."""
+    s = _legs_t(t)
+    for (u, v, ztop, n) in [(-1.7, -1.22, 0.92, 3), (-1.7, 1.22, 0.92, 3), (-0.35, -1.12, 0.92, 3), (-0.35, 1.12, 0.92, 3),
+                            (1.55, 0.0, KEEL - 0.02, 2)]:
+        zt = ztop + lift
+        ext = zt * s                                              # foot from the bore's mouth down to the pad
+        stage = ext / n
+        f.vcyl(u, v, zt - 0.02, 0.16, 0.02, "dark", sides=12)      # the bore's rim
+        for k in range(n):
+            r = 0.1 - 0.018 * k
+            z1 = zt - stage * k
+            z0 = zt - stage * (k + 1)
+            if z1 - z0 > 0.005:
+                f.vcyl(u, v, z0, r, z1 - z0, "steelL" if k % 2 == 0 else "steel", sides=10)
+                if k == 0 and z1 - z0 > 0.12:
+                    band(f, (u, v, z0), (u, v, z1), r + 0.005, n=2)
+        f.vcyl(u, v, zt - ext - 0.06, 0.15, 0.06, "steelD", top="steel", sides=12)   # foot pad / bore hatch
+
+
+GEAR = {"r1": (r1, 0.25), "r2": (r2, 0.25), "r3": (r3, 0.2)}
+FRAMES = (0.0, 0.5, 1.0)
+
+def landed(key, t=1.0, heading=0.0):
     fn, lift = GEAR[key]
     objs = transport_shuttle(heading, "docked", dz=PAD_Z + lift)
-    m = core.Mesh(f"shuttle_gear_{key}")
+    m = core.Mesh(f"shuttle_gear_{key}_{t}")
     m.dz = PAD_Z
-    fn(_frame(m, heading), lift)
+    fn(_frame(m, heading), lift, t)
     return objs + [m.build()]
 
 
-def _item(key):
+def _item(key, t):
     from lib import palette
     from .vehicle_bay import LIVERY, _render
     core.clear_scene_meshes()
     post.select(True)
     for k, hx in LIVERY.items():
         palette._data[k] = {"hex": hx}
-    return [_render(f"vehicle.shuttle.gear.{key}", "prop", landed(key), [], (1, 1))]
+    return [_render(f"vehicle.shuttle.gear.{key}.t{int(t * 2)}", "prop", landed(key, t), [], (1, 1))]
 
 
 def jobs():
-    return [lambda k=k: _item(k) for k in GEAR]
+    return [lambda k=k, t=t: _item(k, t) for k in GEAR for t in FRAMES]
