@@ -41,6 +41,7 @@ SILL_TOP = "stL"                    # the sill's flat top under the glass
 FRAME = 9 / 32                      # an end piece's outer frame (the whole section), along the face
 JAMB = 5 / 32                       # the jamb inside it
 BACK_WALL = "stE"                   # the window's back wall
+POST_SEAM = SH.SEAM                 # the seams round an end piece's post on the wall
 VENT_BOX = (15, 4, 1, 17)           # a middle tile's vent box under the window (the ref's, measured): px wide, its front
                                     # px off the face, its top px over the sill's (run back to the glass), px tall
 VENT_RECESS = (2, 1)                # its front's recess (the slats in it): px in from every edge, px deep
@@ -142,6 +143,10 @@ def _span(f, s, s0, s1, zt):
         zl = zj + fh + sh                                               # the jamb's seam
         pf = [(dp + WIN.PANE / 2, zl), (dv + 0.001, zl), (dv + 0.001, zl + 1 / Z), (dp + WIN.PANE / 2, zl + 1 / Z)]
         fm.part(h0, w0 + 0.001, pf, [WIN.JAMB_SEAM] * 4, (None, WIN.JAMB_SEAM), end=False)
+        ln, ft = SD.LINE, w0 + WIN.SLOPE + WIN.FOOT_W
+        for v0, v1, za, zb in ((h0 - ln, h0, zs - 1 / Z, z0), (h0 - ln, ft, zs - 1 / Z, zs)):
+            p0, p1, _ = seg(v0, v1)                     # seams where the wall's tone changes: down the post's outer
+            SD._rect(f, p0, p1, za, zb, D + 0.0005, POST_SEAM)  # edge to the rib's plate, under it and the corner
         fm.part(h0, w0, [(db, zs), (dv, zs), (dv, zh), (db, zh)], [None, WIN.HEAD_FRONT, None, None],
                 WIN.SIDE, end=False)                    # the post (plain: no recessed panel; both its sides the
                                                         # sides' tone: on W3 its side by the rib shows where the
