@@ -224,7 +224,8 @@ What it changes:
 
 - **Prices**: friends sell for less and pay more (see above).
 - **Hailing**: a hostile faction won't talk to you. The law (navy and corporations) also turns hostile while you are
-  **wanted**: the starmap legend shows your **Notoriety**, and **Hunted by** lists factions sending hunters.
+  **wanted**: the starmap legend shows your **Notoriety**, and **Hunted by** lists factions sending hunters. When hunters
+  reach your node, an urgent alert names them; click it to jump to their ship.
 - **Blueprints**: hostile factions sell nothing and some gear needs high standing.
 - **Interdictions**: a faction that likes you asks less to let you pass.
 
