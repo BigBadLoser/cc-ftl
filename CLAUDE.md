@@ -14,11 +14,13 @@ or removes content. Before non-trivial work, read the index at the top of `docs/
 - `npm test`: Vitest
 - `npm run lint`: ESLint, including the import-boundary rules
 - `npm run typecheck`: `tsc` and `svelte-check`
-- `npm run check:fast`: lint, typecheck, and only the tests affected by uncommitted changes (Vitest's import graph),
-  skipping `*.slow.test.ts` (`VITEST_FAST=1`). Run it before every commit. With nothing uncommitted it tests the branch
-  against `origin/main` instead.
-- `npm run check:push`: the same, but always the whole branch since its merge base with `origin/main` plus uncommitted
-  changes. Run it before pushing a work branch. Vitest never sees untracked files: `git add` new ones first.
+- `npm run check:fast`: lint, typecheck, and the near tests of uncommitted changes (untracked files included): the test
+  files within two imports of what changed, plus edited test files; with nothing uncommitted, the branch against
+  `origin/main`. Run it before every commit. A sim edit reaches most of the suite through three imports, so the rest
+  waits for the push.
+- `npm run check:push`: lint, typecheck and every fast test the branch affects (Vitest's import graph, since the merge
+  base with `origin/main`, plus uncommitted changes), slow tier skipped. Run it before pushing a work branch. `git add`
+  new files first: Vitest's graph never sees untracked ones.
 - `npm run test:why -- <file>`: how many fast test files an edit to `<file>` selects and through which import;
   `--top` lists the files most tests reach. Use it to keep focused tests off `newGame` and the pipeline.
 - Three test tiers by file name: `*.test.ts` (fast), `*.slow.test.ts` (slow: sweeps and long runs, plus a cheap guard of each soak
