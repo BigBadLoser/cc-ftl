@@ -101,7 +101,11 @@ export function assembleStation(def: StationDef, id: string, size: StationSize, 
   // The crew's airlocks (a prefab base's wing and greenhouses) are no docks for ships.
   if (g.crewLocks.size > 0) made.template.modules = (made.template.modules ?? []).map((m) => (defs[m.def]?.airlock && footprintTiles(defs[m.def] as ModuleDef, m.x, m.y, m.rot).some((t) => g.crewLocks.has(snap.roomOf[t.y * snap.width + t.x] ?? -1)) ? { ...m, crew: true as const } : m));
   // An asteroid farm's beds are set to the kind's crops, in turn: its crew farm them out of the box.
-  if (prefab && def.crops?.length) { let bed = 0; made.template.modules = (made.template.modules ?? []).map((m) => (defs[m.def]?.plot ? { ...m, crop: def.crops?.[bed++ % def.crops.length] as string } : m)); }
+  const crops = prefab ? def.crops ?? [] : [];
+  if (crops.length > 0) {
+    let bed = 0;
+    made.template.modules = (made.template.modules ?? []).map((m) => { const crop = defs[m.def]?.plot ? crops[bed++ % crops.length] : undefined; return crop ? { ...m, crop } : m; });
+  }
   made.template.name = `${def.name} ${size === 'station' ? '' : `${size} `}${(seed >>> 0).toString(16).toUpperCase().padStart(4, '0').slice(-4)}`;
   const site = { pads: pads.map((p) => ({ x: p[0] - snap.x0, y: p[1] - snap.y0, w: p[2] - p[0], h: p[3] - p[1] })) };
   return { ...made, failures: rejected, station: infoOf(def, size, made.template, defs), ...(prefab ? { site } : {}) };
