@@ -27,7 +27,7 @@
     {#if warnings.crew.length || warnings.vehicles.length || warnings.hostileDocked.length || warnings.inspectors.length}<div class="body">
       {#if warnings.crew.length}<p class="warn"><Icon name="person" size={16} /><span>Left behind: <b>{warnings.crew.join(', ')}</b></span></p>{/if}
       {#if warnings.vehicles.length}<p class="warn"><Icon name="shuttle" size={16} /><span>Not aboard: <b>{warnings.vehicles.join(', ')}</b></span></p>{/if}
-      {#if warnings.inspectors.length}<p class="warn"><Icon name="person" size={16} /><span>Inspectors aboard: <b>{warnings.inspectors.join(', ')}</b>. Leaving takes them along, and that counts as attacking them.</span></p>{/if}
+      {#if warnings.inspectors.length}<p class="warn"><Icon name="person" size={16} /><span>Inspectors aboard: <b>{warnings.inspectors.join(', ')}</b></span></p>{/if}
       {#each warnings.hostileDocked as d (d.id)}
         <label class="take"><input type="checkbox" checked={taking.has(d.id)} onchange={() => onToggle(d.id)} data-testid="starmap-take" />Take docked {d.name} along (else it is cut loose)</label>
       {/each}
