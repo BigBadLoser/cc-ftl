@@ -26,7 +26,7 @@ export function validateTemplate(t: ShipTemplate, defs: Record<string, ModuleDef
   const solid = new Uint8Array(w * h);
   const mods = t.modules ?? [];
   const cabled = new Set(templateCable(t).map((c) => c.y * w + c.x));
-  const wired = (tiles: readonly { x: number; y: number }[]): boolean => wiredFrom(tiles, cabled, w, at);
+  const wired = (tiles: readonly { x: number; y: number }[]): boolean => wiredFrom(tiles, cabled, w, h, at);
   let supply = 0;
   let demand = 0;
   mods.forEach((m, k) => {
@@ -143,13 +143,15 @@ export function validateTemplate(t: ShipTemplate, defs: Record<string, ModuleDef
 /**
  * A ground module's cable: a run of cabled tiles (four ways) from beside its footprint to beside a hull wall.
  */
-function wiredFrom(tiles: readonly { x: number; y: number }[], cabled: ReadonlySet<number>, w: number, at: (x: number, y: number) => string): boolean {
+function wiredFrom(tiles: readonly { x: number; y: number }[], cabled: ReadonlySet<number>, w: number, h: number, at: (x: number, y: number) => string): boolean {
   const N4 = [[1, 0], [-1, 0], [0, 1], [0, -1]] as const;
+  const inside = (x: number, y: number): boolean => x >= 0 && y >= 0 && x < w && y < h;
   const seen = new Set<number>(), stack: number[] = [];
-  for (const t of tiles) for (const [dx, dy] of N4) { const j = (t.y + dy) * w + t.x + dx; if (cabled.has(j) && !seen.has(j)) { seen.add(j); stack.push(j); } }
+  for (const t of tiles) for (const [dx, dy] of N4) { const j = (t.y + dy) * w + t.x + dx; if (inside(t.x + dx, t.y + dy) && cabled.has(j) && !seen.has(j)) { seen.add(j); stack.push(j); } }
   while (stack.length > 0) {
     const i = stack.pop() as number, x = i % w, y = Math.floor(i / w);
     for (const [dx, dy] of N4) {
+      if (!inside(x + dx, y + dy)) continue;
       if (at(x + dx, y + dy) === '#') return true;
       const j = (y + dy) * w + x + dx;
       if (cabled.has(j) && !seen.has(j)) { seen.add(j); stack.push(j); }
