@@ -41,6 +41,7 @@ const ISOLATED = [
   'src/render/regionTiles.test.ts',
   'src/sim/sector/translate.test.ts', // reads the global component registry that ecs.test.ts adds to
   'src/sim/systems/envSolvers.test.ts',
+  'src/content/stationBuildMemo.test.ts', // mocks buildStation to count and stub the builds
 ];
 
 /**

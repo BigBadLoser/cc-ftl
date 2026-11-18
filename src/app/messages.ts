@@ -7,6 +7,7 @@ const REASONS: Record<string, string> = {
   fleetGone: 'They are gone',
   noEvent: 'You are not in an event grid',
   interdicted: 'Answer the interdiction first',
+  inspectorsAboard: 'Jump called off: inspectors are aboard. Leaving with them counts as attacking them',
   inStory: 'Answer the signal first',
   unknownBlueprint: 'You need this blueprint: buy it at a station',
   notWall: 'A window goes on a wall',

@@ -156,9 +156,10 @@ import { newYard, type YardState } from './yard/types';
  * v125 (player-built windows, #516): the `window` grid field on wall tiles (sim/windows.ts), command 'job.window', and `Job.window` (a window build or deconstruct job).
  * v126 (lost cargo, #503): `Container.faction` (the generator faction whose livery a loose box wears) and `Container.seed` (the id its art was picked by), `Ship.unseen` (a seat ship drawn bare), command 'container.open'; a lost container is marked for opening by standing it on a seat ship.
  * v127 (ground turrets, #514): the `cable` grid field (a power cable laid over rock ground, sim/cable.ts).
- * v128 (one deal flow, #548): a trader's deal (`Deal.courier` 'them') runs on the station's real shuttle through every phase (no shuttle is made up for it, nor for an inspection or a yard order); `TraderDef.shuttle` removed.
+ * v128 (prefab base tubes, #508): the `tube` grid field (a tube's floor tile, drawn as a glass tube: sim/tube.ts).
+ * v129 (one deal flow, #548): a trader's deal (`Deal.courier` 'them') runs on the station's real shuttle through every phase (no shuttle is made up for it, nor for an inspection or a yard order); `TraderDef.shuttle` removed.
  */
-export const SAVE_VERSION = 128;
+export const SAVE_VERSION = 129;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {

@@ -1,7 +1,8 @@
 import { findAsteroidSpot } from '../asteroids/place';
 import type { Command } from '../commands';
 import type { Sim } from '../sim';
-import { generateOutpost, OUTPOST_KINDS, type OutpostContent } from './gen';
+import { builtOutpost } from '../stations/buildMemo';
+import { OUTPOST_KINDS } from './gen';
 import { stampOutpost } from './stamp';
 
 type OutpostCommandType = 'debug.spawnOutpost';
@@ -11,17 +12,12 @@ function reject(sim: Sim, command: string, reason: string): void {
   sim.events.emit({ type: 'command.rejected', command, reason });
 }
 
-/** The content generation reads (ores, modules, station kinds). */
-export function outpostContent(sim: Sim): OutpostContent {
-  return { ores: Object.values(sim.content.ores ?? {}) as OutpostContent['ores'], modules: sim.content.modules, stations: sim.content.stations ?? {} };
-}
-
 export const outpostHandlers: { [T in OutpostCommandType]: Handler<T> } = {
   'debug.spawnOutpost': (sim, cmd) => {
     if (cmd.style !== 'surface' && cmd.style !== 'dug') return reject(sim, cmd.type, 'badStyle');
     if (cmd.kind !== undefined && !OUTPOST_KINDS[cmd.style].includes(cmd.kind)) return reject(sim, cmd.type, 'badKind');
     if (!Number.isInteger(cmd.seed)) return reject(sim, cmd.type, 'badValue');
-    const o = generateOutpost(cmd.style, cmd.seed, outpostContent(sim), cmd.kind);
+    const o = builtOutpost(sim, cmd.style, cmd.seed, cmd.kind);
     if (!o) return reject(sim, cmd.type, 'noLayout');
     const at = cmd.x !== undefined && cmd.y !== undefined ? { x: cmd.x, y: cmd.y } : findAsteroidSpot(sim, o.asteroid);
     if (!at) return reject(sim, cmd.type, 'noRoom');

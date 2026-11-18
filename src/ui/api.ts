@@ -723,7 +723,7 @@ export type UiSubject =
 export type UiAlertKind =
   | 'fire.started' | 'hull.breach' | 'power.shortage' | 'o2.low' | 'crew.downed' | 'suit.airLow' | 'suit.airOut' | 'crew.airUnreachable' | 'away.stranded' | 'crew.starving' | 'crew.break'
   | 'combat.started' | 'creatures.aboard' | 'galaxy.incomingHostile' | 'story.lead' | 'fight.report' | 'boarders.stranded' | 'save.failed' | 'crew.asksToJoin'
-  | 'inspect.waiting' | 'inspect.blocked' | 'ship.disabled' | 'fuel.low' | 'fuel.out' | 'core.lost' | 'vehicle.lost' | 'ship.yielded' | 'stasis.failing';
+  | 'inspect.waiting' | 'inspect.blocked' | 'ship.disabled' | 'fuel.low' | 'fuel.out' | 'core.lost' | 'vehicle.lost' | 'ship.yielded' | 'stasis.failing' | 'hunters.here';
 
 export type UiLogKind =
   | 'fire' | 'breach' | 'crew.downed' | 'crew.died' | 'crew.rescued' | 'module.destroyed' | 'combat' | 'ship.disabled' | 'ship.destroyed'
@@ -1594,6 +1594,8 @@ export interface UiApi {
   /** The starmap view's data, and a route preview to a node (path, fuel, next jump's charge, blocker). */
   starmap: Subscribable<UiStarmap>;
   planRoute(to: string): UiStarRoute | null;
+  /** The route the player has plotted on the starmap (null: none), so the nodes on it are prepared first (a background hint; it changes nothing in the game). */
+  plotRoute(path: readonly string[] | null): void;
   /** Where the goods aboard sell best: per good, the known ports in sensor range that pay most now (the starmap's Sell panel). */
   whereToSell(): UiSellGood[];
   /** The starmap screen opened or closed: it builds its data then, and the world view stops rendering behind it. */

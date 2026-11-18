@@ -22,6 +22,8 @@ export interface ShipTemplate {
   floors?: string[];
   /** Ground power cable, row for row with `rows`: '+' (cable.ts CABLE_CHAR) on a '.' tile that is rock ground once the base stands (an asteroid base's site). */
   cable?: string[];
+  /** Prefab base tubes, row for row with `rows`: 'o' (tube.ts TUBE_CHAR) on a tube's floor tile (drawn as a glass tube). */
+  tubes?: string[];
   /** Some modules stand apart on open ground (a prefab farm's greenhouses), each its own walk from its airlock: the checks take them one by one. */
   apart?: true;
   /** Faction of the ship (default 'player' for newGame, 'hostile' for debug.spawnEnemy). */

@@ -1,7 +1,7 @@
 # Ship generator handoff: navy, drones, scrappers
 
-For a coding agent picking up the generator cold. Read this first, then `docs/SHIPGEN.md` (the design and history,
-newest notes per faction) only for the faction you touch. Branch: `shipgen`.
+Start from `main` and check [project status](STATUS.md) for active work. Use [SHIPGEN.md](SHIPGEN.md) for faction
+design and iteration history and [STATION_ASSEMBLY.md](STATION_ASSEMBLY.md) for station and outpost layouts.
 
 ## Scope and rules
 
@@ -16,8 +16,8 @@ newest notes per faction) only for the faction you touch. Branch: `shipgen`.
   - Content imports only types from sim, and uses `satisfies FactionDef`.
   - Soft limit of about 400 lines per file. Split files rather than grow them.
   - Tests sit next to their code as `*.test.ts`. No test or demo code in `src/` otherwise.
-  - Run `npm run check` (lint, typecheck, test) before every commit. A full run takes about 60 to 80 s; the
-    200-seed validity tests are the slow part.
+  - Run `npm run check:fast` before committing and `npm run check:push` before pushing. See
+    [Test tiers](ARCHITECTURE.md#test-tiers) for full runs and seed sweeps.
 
 ## Pipeline
 
@@ -234,14 +234,14 @@ them into the generators first.
 
 ## Acceptance for any change
 
-- For every faction (navy, drones, scrappers, and civilians once merged), 12/12 seeds valid at depths 1, 4 and 9.
+- For each faction (navy, drones, scrappers and civilians), verify 12 of 12 seeds at depths 1, 4 and 9.
 - No metric average regressing beyond its healthy range; first-attempt success not worse.
 - Before and after sheets (silhouette plus the relevant detail or structure view) attached to the change.
-- `npm run check` green.
+- Run the relevant generator tests and the [branch check](ARCHITECTURE.md#test-tiers).
 
-## Coordination with the civilian work
+## Historical coordination with the civilian work
 
-The civilian generator is being built in parallel on the same branch.
+> These notes record the split of work on the old `shipgen` branch. The civilian generator is now on `main`.
 
 - **It owns:**
   - `src/sim/shipgen/civil*.ts` (new files);

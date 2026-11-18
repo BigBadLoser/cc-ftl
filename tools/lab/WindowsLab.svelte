@@ -51,6 +51,7 @@
           <div class="dlg"><Dialog open title="Before you jump" testId="lab-dialog" dismissable={false}>
             <p class="warn"><Icon name="person" size={16} /><span>Left behind: <b>Mara, Silas</b></span></p>
             <p class="warn"><Icon name="shuttle" size={16} /><span>Not aboard: <b>Skiff</b></span></p>
+            <p class="warn"><Icon name="person" size={16} /><span>Inspectors aboard: <b>Brek, Mox</b>. Leaving takes them along, and that counts as attacking them.</span></p>
             <DecisionBar options={two} onpick={() => {}} />
           </Dialog></div>
         {:else if c.id === 'event'}
