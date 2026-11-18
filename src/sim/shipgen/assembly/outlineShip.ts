@@ -36,6 +36,30 @@ function scaled(sil: Silhouette, sx: number, sy: number): { W: number; H: number
 
 interface Layout { g: RegionGrid }
 
+/** A mess: a galley and tables down a long narrow room (rules.ts M4), the crew's commons. */
+const MESS: RoomSpec = { role: 'support', dept: 'commons', mods: ['module.galley', 'module.mess_table'], w: 6, h: 3 };
+
+/** A lounge: a game table and chairs. */
+const LOUNGE: RoomSpec = { role: 'support', dept: 'commons', mods: ['module.gametable'], w: 4, h: 3 };
+
+/**
+ * Rooms paired across the axis: the same role where there are two, then unlike rooms of a size together (the shape
+ * mirrors, the use need not), and the one left over gets a mess opposite it (a lounge when there is one).
+ */
+function mirrorPairs(specs: RoomSpec[]): [RoomSpec[], RoomSpec[]] {
+  const rest = [...specs];
+  const n: RoomSpec[] = [], s: RoomSpec[] = [];
+  const push = (a: RoomSpec, b: RoomSpec): void => { const w = Math.max(a.w, b.w), h = Math.max(a.h, b.h); n.push({ ...a, w, h }); s.push({ ...b, w, h }); };
+  for (let i = 0; i < rest.length; i++) {
+    const a = rest[i] as RoomSpec, j = rest.findIndex((r, k) => k > i && r.role === a.role);
+    if (j > 0) { push(a, rest[j] as RoomSpec); rest.splice(j, 1); rest.splice(i, 1); i--; }
+  }
+  rest.sort((a, b) => b.w * b.h - a.w * a.h);
+  while (rest.length > 1) push(rest.shift() as RoomSpec, rest.shift() as RoomSpec);
+  if (rest.length === 1) push(rest[0] as RoomSpec, specs.includes(MESS) ? LOUNGE : MESS);
+  return [n, s];
+}
+
 /** Rooms cut into the outline at one scale, or null when they do not fit. */
 function layout(plan: ShipPlan, sil: Silhouette, sx: number, sy: number, type: NavyType): Layout | null {
   const { W, H, inside } = scaled(sil, sx, sy);
@@ -59,21 +83,22 @@ function layout(plan: ShipPlan, sil: Silhouette, sx: number, sy: number, type: N
   if (sternDepth < engine.h) return null;
   const reactors: RoomSpec[] = Array.from({ length: plan.reactors }, () => reactorSpec(1, plan.kit));
 
-  // The bow: the bridge at the nose tip, sized to its plan. Behind it, where the hull is still too narrow for side
-  // rooms, the corridor opens out to the hull (an entry hall) rather than leave a wall more than a tile thick.
+  // The bow: the bridge at the nose tip, sized to its plan; the corridor and side rooms start behind it (where the hull
+  // is still narrow, the corridor's wall is the hull: `thinHull` shaves a second layer).
   const bridge = plan.command;
   let xBr = 0, area = 0;
   while (xBr < xS && (area < 1.3 * bridge.w * bridge.h || top(xBr) < 2)) { area += Math.max(0, 2 * top(xBr) - 1); xBr++; }
   let xBand = xBr + 1;
-  while (xBand < xS && depth(xBand) < MIN_DEPTH - 1) xBand++;
+  while (xBand < xS && depth(xBand) < 1) xBand++;
   if (xBand >= xS - 6) return null;
 
   // Side rooms, paired to mirror, bow to stern by zone (guns forward).
   const guns = plan.weapons;
-  const rest = [...reactors, ...plan.shields, ...(plan.core ? [plan.core] : []), dockSpec(), dockSpec(), ...plan.quarters, ...plan.support, ...plan.cargo, ...plan.hangars]
+  // A crew of three or more eats in a mess; a smaller one where it can (a mess opposite the odd room out, mirrorPairs).
+  const rest = [...(plan.crew.length >= 3 ? [MESS] : []), ...reactors, ...plan.shields, ...(plan.core ? [plan.core] : []), dockSpec(), dockSpec(), ...plan.quarters, ...plan.support, ...plan.cargo, ...plan.hangars]
     .sort((a, b) => ZONE.indexOf(a.role) - ZONE.indexOf(b.role));
   const [gn, gs] = pairUp(guns);
-  const [rn, rs] = pairUp(rest);
+  const [rn, rs] = mirrorPairs(rest);
   const north = [...gn, ...rn], south = [...gs, ...rs];
   if (NAVY_TYPES[type].guns === 'spread' && gn.length > 1) {
     // Spread: the first pair forward, the rest one between every few rooms.
@@ -107,7 +132,7 @@ function layout(plan: ShipPlan, sil: Silhouette, sx: number, sy: number, type: N
       // A reactor lies along its back wall (the hull), so its room is at least its length long; others at least their short side.
       const len = dock ? r.w : r.role === 'reactor' ? r.w : Math.min(r.w, r.h);
       if (dock) { if (!flat(x, r.w)) return null; x += r.w; a = r.w * r.h; }
-      else while (x < xS && (a < r.w * r.h * share || x - x0 < len)) { a += bandArea(x); x++; }
+      else while (x < xS && (a < r.w * r.h * share * (r.role === 'quarters' ? 2 : 1) || x - x0 < len)) { a += bandArea(x); x++; }
       if (a < r.w * r.h || x - x0 < len || x > xS) return null;
       order.push(pair);
       cuts.push([x0, x]);
@@ -143,8 +168,6 @@ function layout(plan: ShipPlan, sil: Silhouette, sx: number, sy: number, type: N
   const hall = g.hall('hall');
   for (let tx = xBr; tx < W; tx++) for (let ty = -1; ty <= 1; ty++) if (inside(tx, ty)) g.set(ox + tx, ty, hall);
   if (lastDock) { const x0 = (cuts[cuts.length - 1] as [number, number])[1]; paint(hall, x0, xS + 1, (y) => Math.abs(y) < top(0) + H); }
-  // The entry hall: the corridor out to the hull where the bands are too shallow for rooms.
-  for (let tx = xBr; tx < xBand; tx++) for (let ty = -H; ty <= H; ty++) if (inside(tx, ty)) g.set(ox + tx, ty, hall);
   return { g };
 }
 
