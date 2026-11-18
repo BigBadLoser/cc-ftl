@@ -6,7 +6,7 @@ import { componentBattleship, componentFrigate, linearHull } from './components'
 import { rollProfile } from './profile';
 import { pickNose } from './topoNavy';
 import type { FactionDef, NavyGrammar } from './types';
-import type { RoomSpec } from './plan';
+import { cargoSpec, type RoomSpec } from './plan';
 import { pairUp } from './topoNavy';
 import { runLen } from './topoParts';
 
@@ -122,8 +122,9 @@ function carrierIsland(c: Ctx, f: FactionDef): boolean {
   const bow = bowGuns ? section(c, bowGuns) : null;
   const bowId = bow ? c.A.attach(root, bow, { side: 'w' }) : root;
   if (bowId === null) return no(c, 'bow');
-  // A nose ahead of it: the carrier's length (aspect 2.8 to 3.6) and the navy's pointed bow.
-  const front = noseBlock(c.rng, pickNose(new Builder(c.rng), f, c.plan));
+  // A nose ahead of it: the carrier's length (aspect 2.8 to 3.6) and the navy's pointed bow. The island stays the bridge and the
+  // guns are already dealt out, so the nose holds stores the size of the command room and no gun (a copy of the plan).
+  const front = noseBlock(c.rng, pickNose(new Builder(c.rng), f, { ...c.plan, command: { ...cargoSpec(2), w: c.plan.command.w, h: c.plan.command.h }, weapons: [] }));
   if (!front || c.A.attach(bowId, front, { side: 'w' }) === null) return no(c, 'nose');
   // Crew, core, stores and the remaining guns in hull decks along the hangar: they give it real volume.
   const decks = deckPair(c, root, root, 'hull', [...j.crew, ...j.core, ...j.stores, ...more.flatMap((s: SectionPlan) => [...s.top, ...s.bottom])], 'start', { xMin: spanOf(c, [root]).xMin });
