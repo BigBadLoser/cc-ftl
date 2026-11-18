@@ -146,3 +146,18 @@ showing old and new side by side. The old code for a family is deleted when the 
 
 Settled: barracks use the bunk (`module.bunk`, in the game but not yet placed by either generator: station barracks still
 plan single beds; switching both is part of step 1) and the existing rules; drones move last, or with their rework.
+
+## Hull shape decisions (navy, outline first)
+
+Settled one part at a time on option sheets (the same body, one part varied), before any room work:
+
+- **Fronts:** A2 (stepped taper, long, mid front), D1 (rounded, short, flat front), D2 (rounded, long), DG (rounded
+  shoulders onto a long straight cheek), AD (stepped, steep at the front, gentle behind). Long spears, chisels, tiered
+  prows and hammers are out.
+- **Gun mounts:** many small bump sponsons are out (they read as lumps). Big gunships: embrasures cut into the side
+  (5a, two deep), with a swept wing pair where it helps (3+5), or one long raked wing root (3c). Smaller ships with
+  fewer guns: one swept wing pair (3a) or two with cut trailing edges (3d); two small low pairs (3b) situationally.
+- **Small families feel agile:** corvettes and frigates stay sleek. Asymmetry only where it reads as designed; parked
+  until the symmetric parts are settled.
+- **Corridors three wide**, so the hull is odd-wide about a centre row and rooms centre on it.
+- **Carriers:** an open hangar with the bays spread inside it, not a walled room a bay.
