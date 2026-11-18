@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { content } from '../index';
-import { ShipC, Struct, deserialize, newGame, serialize } from '../../sim';
+import { ShipC } from '../../sim/combat/components';
+import { Struct } from '../../sim/structure';
+import { deserialize, serialize } from '../../sim/save';
+import { newGame } from '../../sim/newGame';
 import { tubeRuns } from '../../sim/tube';
 
 /** A prefab base's tubes (#508): the generator marks their floor tiles, a door at each end, walls along both sides. */
