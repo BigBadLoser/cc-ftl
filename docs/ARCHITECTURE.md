@@ -7,12 +7,13 @@ One line per section; read the index, then only the sections your task touches.
 - [Stack](#stack): TypeScript (strict), Vite.
 - [Layout and dependency direction](#layout-and-dependency-direction): src/
 - [Simulation core](#simulation-core): Determinism.
-- [Two kinds of state](#two-kinds-of-state): Every ship, station, derelict and wreck is a Grid with:
-  - [1. Grids: tile fields as typed arrays](#1-grids-tile-fields-as-typed-arrays): Every ship, station, derelict and wreck is a Grid with:
+- [Two kinds of state](#two-kinds-of-state): Shared sector tiles and ECS entities.
+  - [1. Grids: tile fields as typed arrays](#1-grids-tile-fields-as-typed-arrays): Region views over the shared tile store.
   - [2. Entities: a small in-house ECS](#2-entities-a-small-in-house-ecs): Crew, modules, doors, items, projectiles, ships and so on. A few hundred to a few thousand entities.
 - [Cross-cutting mechanisms](#cross-cutting-mechanisms): Stat resolver; effects; materials; hauling; one answer per question.
 - [Content](#content): Content is TypeScript files exporting objects checked with satisfies WeaponDef (and so on): the
 - [Rendering](#rendering): Two-way contract.
+  - [Camera passes and layer ownership](#camera-passes-and-layer-ownership)
 - [Test tiers](#test-tiers): fast (`check:fast`: near tests of the change), branch (`check:push`), slow, soak, full CI; `test:why` and `TICK_STATS` to see what a change selects and where time goes.
 - [Test harness](#test-harness): `test/support/`: `run`, `nth`, `fixtureShip`, `expectReplayable`, `cachedWorld`, fixtures; who may import it; [writing a test](#writing-a-test) (start near the moment, no weakening, cost rules).
 - [Scenario builder](#scenario-builder): `src/content/scenario/`: parts, presets and hooks found by glob; one builder for tests, `?scenario=` and the profiler.
@@ -34,18 +35,9 @@ One line per section; read the index, then only the sections your task touches.
 - [Food and farming, `src/sim/farm/`](#food-and-farming-srcsimfarm): `PlotC` on hydroponics beds, `farmSystem`, plant and harvest jobs, meal quality from the cook's skill, herbs in medical beds.
 - [Trade, `src/sim/trade/`](#trade-srcsimtrade): Terminology (user decision, 2026-10-19): a node is one playable grid or location (what older text and code...
 - [Asteroids (slices 1-3 on branch `asteroids`), `src/sim/asteroids/`, `mining/`, `rock/`, `outposts/`](#asteroids-slices-1-3-on-branch-asteroids-srcsimasteroids-mining-rock-outposts): Region model: its own AsteroidC entity plus the owner layer (not a ShipC kind). An asteroid (one big body,...
-- [Starmap (galaxy), `src/sim/galaxy/`](#starmap-galaxy-srcsimgalaxy): Sim only so far (branch galaxy): no UI, no snapshot, no tools. The starmap view, its zoom levels and the...
-- [Sector grid (planned)](#sector-grid-planned): Decision (user, 2026-10-19): a sector is one large grid with everything placed on it. It replaces the...
-  - [Target model in one paragraph](#target-model-in-one-paragraph): sim.sector.grid is a chunked, sparse SectorGrid in sector-tile coordinates. A ship, station, derelict or...
-  - [1. Inventory: what assumes many grids](#1-inventory-what-assumes-many-grids): Size = lines likely touched: S < 30, M 30–150, L > 150. About 780 gridId / sim.grids references in src/...
-  - [2. Data model](#2-data-model): Storage: SectorGrid (sim/sectorGrid.ts, new).
-  - [3. Vehicles as free entities](#3-vehicles-as-free-entities): Position and heading. New BodyC { x, y, heading, alt }: continuous sector tiles, radians, and altitude in...
-  - [4. Placement and jumping](#4-placement-and-jumping): Packets (built in 9a, sim/sector/packet.ts). ShipPacket is the single format for a ship in transit:
-  - [5. Combat on one map](#5-combat-on-one-map): Projectiles. Already sector-space with dt = speed / distance, so travel time is real distance. They launch...
-  - [6. Performance budget (phone target: mid-range Android, 60 fps render, 20 Hz sim)](#6-performance-budget-phone-target-mid-range-android-60-fps-render-20-hz-sim): 
-  - [7. Migration order](#7-migration-order): Amended (user, 2026-10-19). The single shared tile store is confirmed: mining is planned, and building in...
-  - [Step 7 split (planned 2026-10-20)](#step-7-split-planned-2026-10-20): Step 7 is split into four slices. Each keeps npm run check green, changes no behaviour (the sectorEquiv...
-  - [8. Risks (open questions for the user are in `docs/STATUS.md`, "Sector grid decision")](#8-risks-open-questions-for-the-user-are-in-docsstatusmd-sector-grid-decision): Step 6 (the coordinate flip) is the one wide change. It is safe only if step 5 has removed every...
+- [Starmap (galaxy), `src/sim/galaxy/`](#starmap-galaxy-srcsimgalaxy): Galaxy state, the app snapshot, and the Svelte and Pixi starmap.
+- [Sector grid](#sector-grid): Sparse tiles, ship views, and placement in the current node.
+- [Historical sector-grid migration](#historical-sector-grid-migration): The October refactor plan and implementation notes.
 - [Crew AI: one system for every ship (user principle, 2026-10-21)](#crew-ai-one-system-for-every-ship-user-principle-2026-10-21): NPCs use almost exactly the same crew AI as the player's crew. There is no parallel "NPC behaviour" stack:
 - [Stations](#stations): Built by the station assembly, shipgen/stationBuild.ts (kinds and sizes in content/stations.ts; docs/STATION_ASSEMBLY.md) and stamped by
 - [Crew for hire](#crew-for-hire): Trade stations post candidates derived from hashes (galaxy/recruit.ts, tuningRecruit.ts). While the player...
@@ -115,10 +107,8 @@ call each other. The order is the only coupling, and it lives in one file.
 
 ### 1. Grids: tile fields as typed arrays
 
-Every ship, station, derelict and wreck is a `Grid` with:
-- dimensions
-- a world placement
-- per-tile arrays:
+Each playable node has one sparse [sector grid](#sector-grid). A ship, station, derelict or wreck has a bounded
+`ShipGrid` view over it. The shared store holds per-tile arrays for:
   - structure: floor, wall or hull type, door
   - flags: solid, walkable, breach
   - gases (O2, CO2)
@@ -174,11 +164,8 @@ Crew, modules, doors, items, projectiles, ships and so on. A few hundred to a fe
 **Materials.** Flammability, conductivity, hull strength and permeability are content data that the
 field systems read.
 
-**Multi-grid** (being replaced by one grid per sector; see "Sector grid (planned)" below).
-- Positions are `(gridId, x, y)`.
-- Docked or boarded grids connect through airlock and teleporter links in a **portal graph**, and
-  pathfinding spans grids through it.
-- This one mechanism covers boarding, away teams, derelicts, captured ships and future fleets.
+**Tile coordinates.** Runtime positions use sector tiles. Ship templates and generator plans use local tiles until
+they are stamped into the [sector grid](#sector-grid).
 
 **Hauling** (`items/haul.ts`, `items/stock.ts`, `items/plan.ts`).
 - A haul job moves goods from a source (`floor` stack, `storage`, `vehicle` hold) to a destination (`storage`, `vehicle`, a `job`,
@@ -239,8 +226,31 @@ Each placeholder is replaced by pipeline art once that art exists.
 **Depth sorting.** Draw order is by isometric depth (tile `x + y`, then height). Multi-tile objects
 anchor at their front-most footprint tile. Crew sort by their interpolated sub-tile position.
 
-**Batching (#389).** Everything depth-sorted renders through one `RenderLayer`, so its sprites from many sheets interleave
-and the draw-call count is the number of times the batch has to break. Keep that run batchable:
+### Camera passes and layer ownership
+
+[`scene.ts`](../src/render/scene.ts) puts the backdrop, the shared `WorldStack` (`W`), and the sector air stack
+(`SL`) on one Pixi stage. Region views add tiles, roofs, props, crew and local effects through `W.region()`.
+Bodies near the deck use `W.low` so they sort against region art. Airborne bodies and sector combat effects
+draw above that stack through `SL`.
+
+| Stage content | Main view | Combat inset | Minified art bake |
+| --- | --- | --- | --- |
+| Region art and `W.low` | Live art or the baked texture | Live art | Into the texture |
+| Sector air art and effects (`SL.sorted`, `SL.fx`, `SL.fxAdd`) | Live art or the baked texture | Live art | Into the texture |
+| Per-region overlays (`W.ui`) | Drawn directly at the main scale | Hidden | Hidden |
+| Sector overlays (`SL.ui`), including combat indicators and crew marks | Drawn directly at the main scale | Enabled | Hidden |
+| Legacy target marks (`W.marks`) | Hidden | Hidden | Hidden |
+| Space backdrop | Drawn when enabled | Flat inset background | Transparent clear |
+
+`place()` positions both world stacks for each camera and sets overlay visibility. The inset renders the stage
+into its own texture, then the main pass composites the inset sprite. Below camera scale 0.5, `renderMini()`
+can bake the world at 0.5 and downsample it. The main pass then draws the backdrop, baked art, overlays and inset.
+It falls back to drawing live art if the bake would exceed the texture budget. Check which passes need a new
+overlay before choosing its parent. `SL.ui` is enabled in both cameras, and individual views still decide whether
+they have anything to draw.
+
+**Batching (#389).** Depth-sorted region art and low bodies interleave in depth bands. Each band has its own
+Pixi `RenderLayer` and render group. Keep sprites in each band batchable:
 - One batcher (`render/batch.ts`, replacing pixi's default): per-sprite effects are flag bits in the vertex data read by one
   shader, not separate batchers or blend modes. Additive glow (`batchAdditive`) draws under the normal blend with alpha 0, which
   is `add` exactly on an opaque target (only world glows opt in, never art drawn into a transparent texture); hull paint is
@@ -1937,8 +1947,10 @@ shipgen's `structureParts`):
 
 ## Starmap (galaxy), `src/sim/galaxy/`
 
-Sim only so far (branch `galaxy`): no UI, no snapshot, no tools. The starmap view, its zoom levels and the dev tools live on the
-unmerged `starmap-macro-wip` (PR #16) and are described under "Zoom levels" as the target.
+Galaxy generation, routes, travel and encounters live in `src/sim/galaxy/`. The app builds the UI snapshot in
+`src/app/starmapSnapshot.ts` and publishes it through the bridge. `src/ui/StarmapView.svelte` owns map interaction
+and panels, while `src/render/starmap/` draws the zoom levels in Pixi. The starmap issues commands through the app
+to change sim state.
 
 **Terms (user decisions).**
 - **Node:** one playable location (one sector grid; older text says "sector" for it).
@@ -2154,21 +2166,22 @@ more loops: `ROUTE_EXTRA`, `LOOP_CHANCE`; cluster size and spacing: `CLUSTER_SPA
 `GATE_*`, `NO_GATE`; faster danger ramp: `DANGER_STEP`; bigger faction blobs: `TERRITORY_CELL`, `TERRITORY_SCALE`; jump prices: `*_UNITS_PER_FUEL`,
 `ROUTE_CHARGE`; pressure while staying: `ARRIVAL_*`.
 
-## Sector grid (planned)
+## Sector grid
 
-Decision (user, 2026-10-19): **a sector is one large grid with everything placed on it.** It replaces the many-grids model
-above ("Multi-grid", one `Grid` per ship, cross-grid portals, per-grid scenes). Nothing here is built yet. This section is the
-migration plan; the user's answers are in `docs/STATUS.md` ("Sector grid decision").
+`sim.sector.grid` is the sparse, chunked `SectorGrid` for the playable node. A ship or station's `ShipC` holds its
+bounds. The tile store's `ship` field identifies the owner of each tile, and `shipGrid(sim, shipId)` gives
+field systems a bounded view for region work. Reads and writes on that view use sector coordinates directly.
 
-### Target model in one paragraph
+Templates and generated layouts are stamped from local coordinates into the node. Live crew, modules, jobs,
+projectiles and vehicle bodies use sector coordinates. A jump uses a `ShipPacket` from
+`src/sim/sector/packet.ts` to lift the ship and stamp it into the destination. The renderer shows the node
+through the [main and inset cameras](#camera-passes-and-layer-ownership).
 
-`sim.sector.grid` is a chunked, sparse `SectorGrid` in **sector-tile coordinates**. A ship, station, derelict or wreck is a
-**region** of it: the tiles whose `ship` layer holds its `ShipC` entity id, inside the bounding box stored on `ShipC`.
-Every entity position (crew, modules, items, jobs, vehicles, projectiles) is a sector coordinate; `gridId` disappears.
-Field systems (rooms, air, fire, heat, smoke, light, power) iterate **per region frame**, never the whole sector.
-Vehicles are free bodies with continuous position and heading that attach to an airlock or bay. One render scene draws the
-sector; the combat panel is a second camera on it. Templates and the generator keep ship-local coordinates and are
-**stamped** at a sector offset; jumping **lifts** the player's region (plus docked vehicles) and stamps it into the next sector.
+## Historical sector-grid migration
+
+> October 2026 refactor notes. The plan, work branches and performance estimates below describe the migration
+> from separate ship grids. See [Sector grid](#sector-grid) for the live model and [Profiling](PROFILING.md)
+> for measuring the current desktop build.
 
 ### 1. Inventory: what assumes many grids
 
@@ -2376,7 +2389,7 @@ Space tiles keep owner 0; the EVA ring and hover space belong to the region whos
     hull, floating, or on the EVA ring are always drawn, as are crew of any faction outside a hull.
   - Roof livery, roof parts and cutaway mode stay per region.
 
-### 6. Performance budget (phone target: mid-range Android, 60 fps render, 20 Hz sim)
+### 6. Historical mobile performance estimates
 
 | Item | Today | Sector grid | Bound |
 |---|---|---|---|
