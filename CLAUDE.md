@@ -14,7 +14,8 @@ or removes content. Before non-trivial work, read the index at the top of `docs/
 - `npm test`: Vitest
 - `npm run lint`: ESLint, including the import-boundary rules, no test imports in `src`, and unused disable comments
 - `npm run typecheck`: `tsc` and `svelte-check`
-- `npm run check:fast`: lint, typecheck, and the near tests of uncommitted changes (untracked files included): the test
+- `npm run check:fast`: lint, typecheck, the rule checks (`npm run test:rules`: file size, system imports, isolated mocks,
+  import cycles; about a second, run every time since they read files rather than imports), and the near tests of uncommitted changes (untracked files included): the test
   files within two imports of what changed, plus edited test files; with nothing uncommitted, the branch against
   `origin/main`. Run it before every commit. A sim edit reaches most of the suite through three imports, so the rest
   waits for the push.

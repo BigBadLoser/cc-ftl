@@ -1,7 +1,9 @@
 # Agent harness settings (read from main).
 # checks: what the harness runs (in a sandbox worktree) to verify work; each has a name (<= 60 chars), a command `run` and a
 #   `timeout` in seconds (<= 3600, default 600). `tests` is every affected fast test since origin/main (tools/testFast.mjs
-#   fetches origin/main when the worktree lacks it); the slow tier is left to CI.
+#   fetches origin/main when the worktree lacks it); the slow tier is left to CI. `rules` runs the CLAUDE.md
+#   rule checks (file size, system imports, isolated mocks, import cycles, duplication) every time: they read files and git, not
+#   imports, so affected-test selection would skip them.
 # visual_paths: work whose every changed file is art, or under these paths, is not forced through the harness's verify_work:
 #   it is judged from renders and screenshots instead.
 checks:
@@ -9,6 +11,8 @@ checks:
     run: npm run lint
   - name: typecheck
     run: npm run typecheck
+  - name: rules
+    run: npm run test:rules && npx vitest run tools/duplication.slow.test.ts
   - name: tests
     run: npm run test:branch
     timeout: 1800
