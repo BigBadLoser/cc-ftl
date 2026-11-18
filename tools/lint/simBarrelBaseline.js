@@ -8,6 +8,4 @@ export default [
   'src/app/scenarios/patrol.test.ts',
   'src/app/scenarios/pirates.test.ts',
   'src/content/scenario/stasis.test.ts',
-  'src/content/freighter.slow.test.ts',
-  'src/content/freighter.test.ts',
 ];

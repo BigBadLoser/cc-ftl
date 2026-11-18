@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { BodyC } from '../../sim/body';
-import { CrewC, DeadC, DownedC, PositionC } from '../../sim/crew/components';
+import { DeadC, DownedC, PositionC } from '../../sim/crew/components';
 import type { SimEvent } from '../../sim/events';
 import { storageAdd } from '../../sim/items/storage';
 import { ModuleC } from '../../sim/modules/components';
@@ -15,16 +15,13 @@ import { boardingTile } from '../../sim/vehicles/geometry';
 import { destroyVehicle } from '../../sim/vehicles/lifecycle';
 import { vehicleViews } from '../../sim/vehicles/queries';
 import { content } from '../index';
-import { missileRaiderId, shuttleContent, shuttleSetup } from '../../../test/support/fixtures/shuttle';
+import { airlockOf, embark, roleOf, missileRaiderId, runTo, shuttleContent, shuttleOf, shuttleSetup } from '../../../test/support/fixtures/shuttle';
 import { shipIdOf, shipGrid } from '../../sim/regions';
 import { shipIds } from '../../sim/regions';
 import { crewOn, eventsOf, nth, run } from '../../../test/support/sim';
 import { cachedNewGame } from '../../../test/support/content';
 
 
-const shuttleOf = (sim: Sim, shipId: number): number => sim.world.query(VehicleC).find((i) => sim.world.get(i, VehicleC)!.homeShip === nth(sim, shipId))!;
-const airlockOf = (sim: Sim, shipId: number): number =>
-  sim.world.query(ModuleC).find((i) => shipIdOf(sim, sim.world.get(i, ModuleC)) === nth(sim, shipId) && sim.world.get(i, ModuleC)!.def === 'module.airlock')!;
 /** Switch off every weapon of a grid (so a raider cannot shoot the shuttle). */
 function disarm(sim: Sim, shipId: number): void {
   for (const i of sim.world.query(ModuleC)) {
@@ -34,12 +31,6 @@ function disarm(sim: Sim, shipId: number): void {
   }
 }
 const setup = shuttleSetup; // starter (grid 1) facing an optional raider (grid 2) 80 tiles away
-const roleOf = (sim: Sim, id: number): string => sim.world.get(id, CrewC)!.role;
-function embark(sim: Sim, crew: number[], vehicle: number): SimEvent[] {
-  for (const c of crew) sim.enqueue({ type: 'vehicle.embark', crew: c, vehicle });
-  return run(sim, 400);
-}
-
 describe('shuttle round trip', () => {
   it('embark at the bay, launch, fly, dock at the raider airlock, disembark, re-embark and return', () => {
     const sim = setup();
@@ -56,7 +47,7 @@ describe('shuttle round trip', () => {
     expect(v().pilot).not.toBe(0);
 
     sim.enqueue({ type: 'vehicle.dock', vehicle: shuttle, airlock: airlockOf(sim, 2) });
-    const out = run(sim, 600);
+    const out = run(sim, 600, { until: () => v().state === 'docked' });
     expect(eventsOf(out, 'vehicle.launched')).toHaveLength(1);
     expect(eventsOf(out, 'vehicle.docked')[0]).toMatchObject({ vehicle: shuttle, ship: nth(sim, 2) });
     expect(v().state).toBe('docked');
@@ -71,7 +62,7 @@ describe('shuttle round trip', () => {
     const back = eventsOf(embark(sim, [pilot, medic], shuttle), 'crew.embarked');
     expect(back).toHaveLength(2);
     sim.enqueue({ type: 'vehicle.return', vehicle: shuttle });
-    const home = run(sim, 600);
+    const home = run(sim, 600, { until: () => v().state === 'stowed' });
     expect(eventsOf(home, 'vehicle.undocked')).toHaveLength(1);
     expect(eventsOf(home, 'vehicle.stowed')).toHaveLength(1);
     expect(v().state).toBe('stowed');
@@ -128,7 +119,7 @@ describe('shuttle combat', () => {
     const crew = crewOn(sim, 1).slice(0, 2);
     embark(sim, crew, shuttle);
     sim.enqueue({ type: 'vehicle.launch', vehicle: shuttle });
-    const out = run(sim, 20 * 90);
+    const out = run(sim, 20 * 90, { until: () => !sim.world.isAlive(shuttle) });
     expect(eventsOf(out, 'vehicle.destroyed')[0]).toMatchObject({ vehicle: shuttle, state: 'flying' });
     expect(sim.world.isAlive(shuttle)).toBe(false);
     for (const c of crew) expect(sim.world.has(c, DeadC)).toBe(true);
@@ -148,7 +139,7 @@ describe('shuttle combat', () => {
     const crew = crewOn(sim, 1).slice(0, 2);
     embark(sim, crew, shuttle);
     sim.enqueue({ type: 'vehicle.dock', vehicle: shuttle, airlock: airlockOf(sim, 2) });
-    run(sim, 600);
+    run(sim, 600, { until: () => sim.world.get(shuttle, VehicleC)!.state === 'docked' });
     expect(sim.world.get(shuttle, VehicleC)!.state).toBe('docked');
     destroyVehicle(sim, shuttle);
     for (const c of crew) {
@@ -163,7 +154,7 @@ describe('shuttle combat', () => {
     const crew = crewOn(sim, 2).slice(0, 2);
     embark(sim, crew, shuttle);
     sim.enqueue({ type: 'vehicle.dock', vehicle: shuttle, airlock: airlockOf(sim, 1) });
-    const out = run(sim, 20 * 25);
+    const out = runTo(sim, 20 * 25, (e) => e.type === 'vehicle.damaged' && e.source === 'pointDefence');
     const pd = eventsOf(out, 'vehicle.damaged').filter((e) => e.source === 'pointDefence');
     expect(pd.length).toBeGreaterThan(0);
   });
@@ -177,7 +168,7 @@ describe('shuttle combat', () => {
     const shuttle = shuttleOf(sim, 2);
     embark(sim, crewOn(sim, 2).slice(0, 1), shuttle);
     sim.enqueue({ type: 'vehicle.dock', vehicle: shuttle, airlock: airlockOf(sim, 1) });
-    const out = run(sim, 20 * 25);
+    const out = run(sim, 15 * 20); // with its core on, the first point-defence hit lands by tick ~230; the whole 25 s runs in vehicles.slow
     expect(eventsOf(out, 'vehicle.damaged').filter((e) => e.source === 'pointDefence')).toHaveLength(0);
   });
 });
@@ -228,13 +219,15 @@ describe('enemy boarding AI', () => {
 
   it('the plain raider never boards', () => {
     const sim = setup(1, reg, 'ship.raider');
-    const out = run(sim, 20 * 60);
+    const out = run(sim, 20 * 30); // the boarder launches by tick ~380; the whole minute runs in vehicles.slow
+
     expect(eventsOf(out, 'vehicle.launched')).toHaveLength(0);
   });
 
   it('sends a party by shuttle to a player airlock and lands it', () => {
     const sim = setup(1, reg, 'ship.raiderBoarder');
-    const out = run(sim, 20 * 80);
+    let n = 0;
+    const out = runTo(sim, 20 * 80, (e) => e.type === 'crew.disembarked' && ++n >= 2);
     expect(eventsOf(out, 'vehicle.launched').length).toBeGreaterThan(0);
     const dock = eventsOf(out, 'vehicle.docked')[0];
     expect(dock).toMatchObject({ ship: nth(sim, 1), airlock: airlockOf(sim, 1) });
@@ -250,7 +243,11 @@ describe('enemy boarding AI', () => {
       ships: { ...content.ships, 'ship.raiderBoarder': { ...content.ships['ship.raiderBoarder'], boarding: { party: 2, afterSec: 3, losingBelow: 0.6, weapon: 'item.sidearm' } } },
     };
     const sim = setup(1, armed, 'ship.raiderBoarder');
-    const out = run(sim, 20 * 120);
+    const landedSet = new Set<number>();
+    const out = runTo(sim, 20 * 120, (e) => {
+      if (e.type === 'crew.disembarked') landedSet.add(e.crew);
+      return e.type === 'crew.attacked' && landedSet.has(e.crew);
+    });
     const landed = eventsOf(out, 'crew.disembarked').map((e) => e.crew);
     expect(landed.length).toBeGreaterThanOrEqual(2);
     const shots = eventsOf(out, 'crew.attacked').filter((e) => landed.includes(e.crew));
@@ -270,8 +267,8 @@ describe('enemy boarding AI', () => {
     expect(serialize(a)).toBe(serialize(b));
     expect(vehicleViews(a).some((v) => v.state === 'flying')).toBe(true);
     const loaded = deserialize(serialize(a), reg);
-    run(a, 20 * 20);
-    run(loaded, 20 * 20);
+    run(a, 20 * 5); // (20 s in vehicles.slow)
+    run(loaded, 20 * 5);
     expect(serialize(loaded)).toBe(serialize(a));
   });
 });

@@ -253,7 +253,8 @@ describe('hold means hold', () => {
     const enemy = spawn(sim, 'faction.navy', 5, 100, 60, 8);
     (sim.world.get(ship, CombatC) as { target: unknown }).target = { ship: enemy, moduleId: 0 };
     let shots = 0;
-    for (let t = 0; t < 20 * TICK_HZ; t++) {
+    const canFire = o.mode === 'auto' && !o.holdAll; // that case only has to fire once: it stops there; the held cases run the whole 20 s
+    for (let t = 0; t < 20 * TICK_HZ && !(canFire && shots > 0); t++) {
       sim.step();
       for (const e of sim.events.drain()) if (e.type === 'weapon.fired' && e.weapon === 'weapon.flak') shots++;
       (sim.world.get(gun, WeaponC) as { charge: number }).charge = 1;

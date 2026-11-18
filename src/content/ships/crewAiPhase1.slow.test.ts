@@ -25,26 +25,13 @@ import { shipIdOf } from '../../sim/regions';
 import { content } from '../index';
 import { landed, siteWork } from '../../../test/support/fixtures/away';
 import { run } from '../../../test/support/sim';
+import { floorTiles, fnv } from '../../../test/support/fixtures/crewAi';
 
 /**
  * Crew AI Phase 1 (docs/CREW_AI.md section 10): every executor state is reached on a real ship, saved and loaded there, and torn
  * down there. Four boards: a busy starter (builds, hauls, an EVA wall on the hull ring, a hungry, a tired and a downed crew
  * member), a robot with a flat battery and a bay, and two bedless ships (a rescue with nowhere to go, tired crew with no bed).
  */
-
-/** FNV-1a over a string. */
-function fnv(s: string): number {
-  let h = 0x811c9dc5;
-  for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 0x01000193) >>> 0;
-  return h;
-}
-
-function floorTiles(sim: Sim): { x: number; y: number }[] {
-  const g = shipGrid(sim, homeShip(sim))!;
-  const out: { x: number; y: number }[] = [];
-  for (let y = g.y0; y < g.y0 + g.height; y++) for (let x = g.x0; x < g.x0 + g.width; x++) if (g.get('struct', x, y) === Struct.Floor && !g.get('module', x, y)) out.push({ x, y });
-  return out;
-}
 
 function busy(seed: number): Sim {
   const sim = newGame(seed, content, 'ship.starter', false);

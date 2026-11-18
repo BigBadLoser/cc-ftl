@@ -11,6 +11,7 @@ import { shipGrid, shipIdOf } from '../../../src/sim/regions';
 import { giveItems } from '../../../src/sim/story/effects';
 import type { SceneShipRecipe } from '../../../src/sim/scene/types';
 import { content } from '../content';
+import { expect } from 'vitest';
 import { run } from '../run';
 import { fileCache } from '../cache';
 
@@ -111,3 +112,21 @@ export const countSpace = (sim: Sim, ship: number): number => {
   return n;
 };
 export const playerCrewIds = (sim: Sim): number[] => sim.world.query(CrewC, PositionC).filter((id) => sim.world.get(id, AllegianceC)?.faction === 'player');
+
+/** The party flies over, mends the reactor before the clock runs out, and comes home (from a scene with help agreed). */
+export function expectPartyMends(sim: Sim): void {
+  const freighter = freighterOf(sim);
+    const s = spec(sim);
+    let aboard = 0;
+    for (let i = 0; i < 150 && s.aid?.state !== 'done'; i++) {
+      run(sim, 20);
+      aboard = Math.max(aboard, playerCrewIds(sim).filter((c) => shipIdOf(sim, sim.world.get(c, PositionC)!) === freighter).length);
+    }
+    expect(aboard).toBeGreaterThan(0);
+    expect(s.aid?.state).toBe('done');
+    expect(timer(sim).stopped).toBe(true);
+    expect(sim.world.get(freighter, ShipC)).toMatchObject({ faction: 'neutral', state: 'active' });
+    expect(sim.world.get(freighter, ShipC)?.provoked).toBeUndefined();
+    expect(fired(sim)).toContain('helped');
+    expect(fired(sim)).not.toContain('boarded');
+}

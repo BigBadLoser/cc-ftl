@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { CombatC, WeaponC, ShipC, deserialize, playerShip, serialize, remotesDone, type Sim } from '../sim';
+import { CombatC, ShipC, WeaponC } from '../sim/combat/components';
+import { remotesDone } from '../sim/story/requirements';
+import { deserialize, serialize } from '../sim/save';
+import type { Sim } from '../sim/sim';
+import { playerShip } from '../sim/trade/player';
 import { CrewC, DeadC, JobC, PositionC, WorkBlockC } from '../sim/crew/components';
 import { jobFits } from '../sim/crew/jobFit';
 import { AwayC, AwaySiteC } from '../sim/away/components';
@@ -13,7 +17,7 @@ import { run } from '../../test/support/sim';
 import { cachedWorld } from '../../test/support/world';
 
 /** The distress freighter (#173 step 5): a helpless ship, aid by hail with guests aboard, the reactor clock (fires, then it blows), raiders, the observer. */
-import { deploy, withRaiders, signalled, choose, buildScene, freighterOf, spec, timer, firesOn, fired, standOn, countSpace, playerCrewIds } from '../../test/support/fixtures/freighter';
+import { deploy, expectPartyMends, withRaiders, signalled, choose, buildScene, freighterOf, spec, timer, firesOn, fired, standOn, countSpace, playerCrewIds } from '../../test/support/fixtures/freighter';
 
 
 /** The scene as `buildScene` leaves it, built once per worker and handed out as a fresh clone (a save round-trip) per test. */
@@ -54,7 +58,7 @@ describe('distress freighter: the scene', () => {
     const m = sim.world.get(s.failing![0]!, ModuleC)!;
     expect(m.def).toBe('module.reactor');
     expect(m.hp).toBe(Math.round((200 * (s.damage![0]!.pct)) / 100));
-    run(sim, 60 * 20);
+    run(sim, 10 * 20); // (a minute in freighter.slow)
     expect(sim.world.get(freighter, ShipC)?.state).not.toBe('fled');
     expect(sim.world.get(s.failing![0]!, ModuleC)!.hp).toBe(m.hp); // its own crew cannot mend it
   });
@@ -174,23 +178,10 @@ describe('distress freighter: aid by hail', () => {
 
   // Seeds 6, 8 and 9 put the reactor in a room hotter than HOT_ABOVE once it runs again: the party suits up for it (eva/suit.ts `suitNeeded`).
   // Not seed 5: its party mends the reactor in the clock's last seconds, so a fire wave beside it can tip it either way.
-  it.each([3, 6, 8, 9])('end to end (seed %i): the party flies over, mends the reactor before the clock runs out, and comes home', (seed) => {
-    // Seed 3 is the one full run on the production pipeline, from the signal; the others start from the cached scene.
+  it.each([3, 6])('end to end (seed %i): the party flies over, mends the reactor before the clock runs out, and comes home', (seed) => {
+    // Seed 3 is the one full run on the production pipeline, from the signal; the others start from the cached scene (seeds 8 and 9 in freighter.slow).
     const sim = seed === 3 ? buildScene(3, { help: true, c: withRaiders('none') }) : inScene(seed, { help: true }).sim;
-    const freighter = freighterOf(sim);
-    const s = spec(sim);
-    let aboard = 0;
-    for (let i = 0; i < 150 && s.aid?.state !== 'done'; i++) {
-      run(sim, 20);
-      aboard = Math.max(aboard, playerCrewIds(sim).filter((c) => shipIdOf(sim, sim.world.get(c, PositionC)!) === freighter).length);
-    }
-    expect(aboard).toBeGreaterThan(0);
-    expect(s.aid?.state).toBe('done');
-    expect(timer(sim).stopped).toBe(true);
-    expect(sim.world.get(freighter, ShipC)).toMatchObject({ faction: 'neutral', state: 'active' });
-    expect(sim.world.get(freighter, ShipC)?.provoked).toBeUndefined();
-    expect(fired(sim)).toContain('helped');
-    expect(fired(sim)).not.toContain('boarded');
+    expectPartyMends(sim);
   }, 120000);
 
   it('the leave is a consent grant: void once the host is at war with the guests, gone with the site', () => {

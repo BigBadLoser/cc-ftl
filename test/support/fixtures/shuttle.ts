@@ -4,7 +4,13 @@ import { newGame } from '../../../src/sim/newGame';
 import type { ContentRegistry, ShipTemplate } from '../../../src/sim/registry';
 import type { Sim } from '../../../src/sim/sim';
 import { content } from '../content';
+import { CrewC } from '../../../src/sim/crew/components';
+import type { SimEvent } from '../../../src/sim/events';
+import { ModuleC } from '../../../src/sim/modules/components';
+import { shipIdOf } from '../../../src/sim/regions';
+import { AboardC, VehicleC } from '../../../src/sim/vehicles/components';
 import { run } from '../run';
+import { nth } from '../sim';
 import { cachedWorld } from '../world';
 
 /** The starter with a second point-defence module in the quarters. */
@@ -39,4 +45,26 @@ export function shuttleSetup(seed = 1, reg: ContentRegistry = content, enemy = '
   };
   const tag = reg === content ? 'content' : reg === shuttleContent ? 'shuttle' : null;
   return tag ? cachedWorld(`shuttle:${tag}:${seed}:${enemy}`, build) : build();
+}
+
+export const shuttleOf = (sim: Sim, shipId: number): number => sim.world.query(VehicleC).find((i) => sim.world.get(i, VehicleC)!.homeShip === nth(sim, shipId))!;
+export const airlockOf = (sim: Sim, shipId: number): number =>
+  sim.world.query(ModuleC).find((i) => shipIdOf(sim, sim.world.get(i, ModuleC)) === nth(sim, shipId) && sim.world.get(i, ModuleC)!.def === 'module.airlock')!;
+export const roleOf = (sim: Sim, id: number): string => sim.world.get(id, CrewC)!.role;
+
+/** Order `crew` aboard `vehicle` and step until they all are (at most 400 ticks); the events seen. */
+export function embark(sim: Sim, crew: number[], vehicle: number): SimEvent[] {
+  for (const c of crew) sim.enqueue({ type: 'vehicle.embark', crew: c, vehicle });
+  return run(sim, 400, { until: (s) => crew.every((c) => s.world.has(c, AboardC)) });
+}
+
+/** Step one tick at a time, at most `max` ticks, until an event matching `found` is drained; every event seen (that tick's included). */
+export function runTo(sim: Sim, max: number, found: (e: SimEvent) => boolean): SimEvent[] {
+  const out: SimEvent[] = [];
+  for (let i = 0; i < max; i++) {
+    const ev = run(sim, 1);
+    out.push(...ev);
+    if (ev.some(found)) break;
+  }
+  return out;
 }

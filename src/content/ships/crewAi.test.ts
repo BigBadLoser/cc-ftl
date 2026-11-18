@@ -21,6 +21,7 @@ import { explainCrew } from '../../sim/ai/explain';
 import { destroyJob } from '../../sim/items/stacks';
 import { policyOf } from '../../sim/ai/utility';
 import { content } from '../index';
+import { expectScriptedReplay, haulBoard, lcg } from '../../../test/support/fixtures/crewAi';
 
 /**
  * Crew AI Phase 1 (docs/CREW_AI.md section 10) on real boards: the task mirror and reservations stay consistent through combat,
@@ -38,35 +39,6 @@ const run = (sim: Sim, n: number, each: () => void = () => {}): SimEvent[] => {
   }
   return out;
 };
-
-function fnv(s: string): number {
-  let h = 0x811c9dc5;
-  for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 0x01000193) >>> 0;
-  return h;
-}
-
-/** A small deterministic sequence for the tests' own choices (the sim's RNG is not touched). */
-function lcg(seed: number): () => number {
-  let s = seed >>> 0;
-  return () => (s = (Math.imul(s, 1664525) + 1013904223) >>> 0) / 2 ** 32;
-}
-
-function floorTiles(sim: Sim): { x: number; y: number }[] {
-  const g = shipGrid(sim, homeShip(sim))!;
-  const out: { x: number; y: number }[] = [];
-  for (let y = g.y0; y < g.y0 + g.height; y++) for (let x = g.x0; x < g.x0 + g.width; x++) if (g.get('struct', x, y) === Struct.Floor && !g.get('module', x, y)) out.push({ x, y });
-  return out;
-}
-
-/** The starter with metal stacks on its floor to haul. */
-function haulBoard(seed: number): Sim {
-  const sim = newGame(seed, content, 'ship.starter', false);
-  run(sim, 2);
-  const ship = homeShip(sim);
-  for (const t of floorTiles(sim).filter((_, i) => i % 6 === 0)) sim.enqueue({ type: 'debug.spawnItems', ship, x: t.x, y: t.y, item: 'item.metal', count: 7 });
-  run(sim, 1);
-  return sim;
-}
 
 /** Every unit of an item on the board: in storage, on the floor, carried, delivered to jobs. */
 function itemTotal(sim: Sim, item: string): number {
@@ -168,43 +140,8 @@ describe('crew AI phase 1', () => {
     expect(auditReservations(sim).problems).toEqual([]);
   });
 
-  /** One scripted run: hauls, a downed crew member, draft and move orders, a cancelled job. Returns the events and per-tick hashes. */
-  function scripted(saveAt: readonly number[] = []): { events: string; hashes: number[] } {
-    let sim = haulBoard(5);
-    const crew = sim.world.query(CrewC);
-    sim.world.get(crew[1]!, HealthC)!.hp = 0;
-    sim.world.get(crew[2]!, NeedsC)!.rest = 10;
-    const ship = homeShip(sim);
-    const floor = floorTiles(sim);
-    const events: string[] = [];
-    const hashes: number[] = [];
-    for (let i = 0; i < 500; i++) {
-      if (i === 40) sim.enqueue({ type: 'crew.draft', id: crew[0]!, drafted: true });
-      if (i === 41) sim.enqueue({ type: 'crew.moveTo', id: crew[0]!, x: floor[3]!.x, y: floor[3]!.y });
-      if (i === 120) sim.enqueue({ type: 'crew.draft', id: crew[0]!, drafted: false });
-      if (i === 200) sim.enqueue({ type: 'job.build', ship, x: floor[10]!.x, y: floor[10]!.y, struct: Struct.Door });
-      if (i === 260) sim.enqueue({ type: 'job.cancel', ship, x: floor[10]!.x, y: floor[10]!.y });
-      if (saveAt.includes(i)) sim = deserialize(serialize(sim), content);
-      sim.step();
-      events.push(...sim.events.drain().map((e) => JSON.stringify(e)));
-      hashes.push(fnv(serialize(sim)));
-    }
-    return { events: events.join('\n'), hashes };
-  }
-
   it('replays exactly: three runs give the same events and tick hashes, and random save/load points change nothing', () => {
-    const a = scripted();
-    const b = scripted();
-    const c = scripted();
-    expect(b.events).toBe(a.events);
-    expect(c.events).toBe(a.events);
-    expect(b.hashes).toEqual(a.hashes);
-    expect(c.hashes).toEqual(a.hashes);
-    const next = lcg(11);
-    const points = Array.from({ length: 8 }, () => Math.floor(next() * 500)).sort((x, y) => x - y);
-    const d = scripted(points);
-    expect(d.events).toBe(a.events);
-    expect(d.hashes).toEqual(a.hashes);
+    expectScriptedReplay(10); // the state hashed every 10 ticks here, every tick in crewAi.slow
   });
 
   it('the inspector shows each crew member\'s drive, task state path and holds', () => {

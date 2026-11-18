@@ -1,48 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { CombatC, ProjectileC, WeaponC } from '../../sim/combat/components';
+import { ProjectileC, WeaponC } from '../../sim/combat/components';
 import type { SimEvent } from '../../sim/events';
 import { ModuleC } from '../../sim/modules/components';
-import { newGame } from '../../sim/newGame';
 import { shipGrid } from '../../sim/regions';
 import { deserialize, serialize } from '../../sim/save';
-import type { Sim } from '../../sim/sim';
 import { Struct } from '../../sim/structure';
 import { content } from '../index';
-import { shipIds } from '../../sim/regions';
+import { combat, fight, inShip, run, sim, type Fight } from '../../../test/support/fixtures/heat';
 import { HEAT_MAX, HEAT_PER_LAYER, LOCKOUT_EXIT_HEAT, LOCKOUT_SEC, OVERCHARGE_COOLDOWN_SEC, OVERCHARGE_SEC, VENT_SEC } from '../../sim/combat/heatTuning';
 
 const TPS = 20;
 
-interface Fight { sim: Sim; mine: number; foe: number }
-
-/** Starter ship against a raider whose weapons are switched off (so only what a test does moves the meters), after a short settle. */
-function fight(seed = 1, quiet = true): Fight {
-  const sim = newGame(seed, content);
-  const mine = shipIds(sim)[0] as number;
-  sim.enqueue({ type: 'debug.spawnEnemy', template: 'ship.raider', x: 100, y: 50 });
-  sim.step();
-  const foe = shipIds(sim)[1] as number;
-  if (quiet) for (const id of sim.world.query(WeaponC, ModuleC)) if (sim.world.get(id, ModuleC)!.x >= 0 && inShip(sim, id, foe)) sim.world.get(id, ModuleC)!.enabled = false;
-  for (let i = 0; i < 100; i++) sim.step();
-  sim.events.drain();
-  return { sim, mine, foe };
-}
-
-function inShip(sim: Sim, module: number, ship: number): boolean {
-  const g = shipGrid(sim, ship);
-  const m = sim.world.get(module, ModuleC)!;
-  return !!g && g.inBounds(m.x, m.y);
-}
-
-const combat = (f: Fight, who: 'mine' | 'foe' = 'mine') => sim(f).world.get(f[who], CombatC)!;
-const sim = (f: Fight): Sim => f.sim;
-const run = (f: Fight, ticks: number, events?: SimEvent[]): void => {
-  for (let i = 0; i < ticks; i++) {
-    f.sim.step();
-    const drained = f.sim.events.drain() as SimEvent[];
-    if (events) events.push(...drained);
-  }
-};
 /** Shields up (full) and no regeneration pending. */
 const shieldsUp = (f: Fight, who: 'mine' | 'foe' = 'mine'): void => {
   const c = combat(f, who);
@@ -348,6 +316,7 @@ describe('combat heat', () => {
     for (let i = 0; i < 150 * TPS; i++) {
       run(f, 1, ev);
       peak = Math.max(peak, combat(f, 'foe').heat.value);
+      if (ev.some((e) => e.type === 'combat.vented' && e.ship === f.foe) && peak > HEAT_MAX * 0.5) break; // (the whole fight runs in heat.slow)
     }
     expect(ev.some((e) => e.type === 'combat.vented' && e.ship === f.foe)).toBe(true);
     expect(ev.filter((e) => e.type === 'combat.overheated' && e.ship === f.foe)).toHaveLength(0);
