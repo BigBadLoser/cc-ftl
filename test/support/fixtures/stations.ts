@@ -7,20 +7,17 @@ import type { StationDef, StationSize } from '../../../src/sim/shipgen/stationTy
 import { structureParts } from '../../../src/sim/shipgen/validate';
 import { content } from '../content';
 import { stations } from '../../../src/content/stations';
-import { fileCache } from '../cache';
+import { workerCache } from '../cache';
 
 /** Station generation checks shared by the fast tests (one seed) and the slow sweeps (the other seeds). */
 export type StationId = keyof typeof stations;
 export const stationIds = Object.keys(stations) as StationId[];
 export const defs = content.modules as Record<string, ModuleDef>;
 
-const cache = fileCache<string, StationResult>();
-/** A built station, once per (kind, size, seed) per test file. Read-only: never mutate the result. */
+const cache = workerCache<StationResult>('stations.gen', 80, defs);
+/** A built station, once per (kind, size, seed) per worker (shared by the test files it runs). Read-only: never mutate the result. */
 export function gen(id: StationId, size: StationSize, seed: number): StationResult {
-  const k = `${id} ${size} ${seed}`;
-  let hit = cache.get(k);
-  if (!hit) cache.set(k, (hit = buildStation(stations[id] as StationDef, id, size, seed, defs)));
-  return hit;
+  return cache.get(`${id} ${size} ${seed}`, () => buildStation(stations[id] as StationDef, id, size, seed, defs));
 }
 export const count = (g: StationResult, id: string): number => (g.template.modules ?? []).filter((m) => m.def === id).length;
 export const countBy = (g: StationResult, pred: (d: ModuleDef) => boolean): number =>

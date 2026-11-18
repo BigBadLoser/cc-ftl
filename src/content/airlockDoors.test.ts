@@ -3,11 +3,11 @@ import { airlockTiles } from '../sim/modules/airlock';
 import { footprintTiles } from '../sim/modules/footprint';
 import type { ModuleDef } from '../sim/registry';
 import { generateShip } from '../sim/shipgen/generate';
-import { buildStation } from '../sim/shipgen/stationBuild';
-import { STATION_SIZES, type StationDef } from '../sim/shipgen/stationTypes';
+import { STATION_SIZES } from '../sim/shipgen/stationTypes';
 import type { FactionDef, GenResult } from '../sim/shipgen/types';
 import { content } from './index';
 import { stations } from './stations';
+import { gen, type StationId } from '../../test/support/fixtures/stations';
 
 const defs = content.modules as Record<string, ModuleDef>;
 const FIXTURES = ['module.airlock', 'module.light'];
@@ -18,9 +18,9 @@ function sweep(): { name: string; g: GenResult }[] {
   for (const [id, f] of Object.entries(content.factions)) {
     for (let seed = 1; seed <= 6; seed++) out.push({ name: `${id} ${seed}`, g: generateShip(f as FactionDef, id, seed, 1, defs) });
   }
-  for (const [id, def] of Object.entries(stations)) {
+  for (const id of Object.keys(stations)) {
     for (const size of STATION_SIZES) {
-      for (let seed = 1; seed <= (size === 'hub' ? 1 : 4); seed++) out.push({ name: `${id} ${size} ${seed}`, g: buildStation(def as StationDef, id, size, seed, defs) });
+      for (let seed = 1; seed <= (size === 'hub' ? 1 : 4); seed++) out.push({ name: `${id} ${size} ${seed}`, g: gen(id as StationId, size, seed) });
     }
   }
   return out;
