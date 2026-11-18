@@ -3,7 +3,7 @@ import { Rng } from '../../rng';
 import { drawSilhouette, type Silhouette } from '../hull/silhouette';
 import { NAVY_PROFILES } from '../hull/navyProfiles';
 import { enginesShort, fitShell, seedOf } from '../generate';
-import { dockSpec, engineSpec, planShip, reactorSpec, type RoomSpec, type ShipPlan } from '../plan';
+import { cargoSpec, dockSpec, engineSpec, planShip, reactorSpec, type RoomSpec, type ShipPlan } from '../plan';
 import { pairUp } from '../topoNavy';
 import type { FactionDef, GenResult } from '../types';
 import { NAVY_TYPES, navyRole, type NavyType } from './navyShip';
@@ -48,7 +48,14 @@ function layout(plan: ShipPlan, sil: Silhouette, sx: number, sy: number, type: N
   const items: RoomSpec[] = [];
   let eLeft = plan.engines, rLeft = plan.reactors;
   let mid: RoomSpec;
-  if (eLeft % 2 === 1) { mid = engineSpec(1, 'w', plan.kit); eLeft--; } else { const k = Math.min(rLeft % 2 === 1 ? 1 : 2, rLeft); mid = reactorSpec(k, plan.kit); rLeft -= k; }
+  // The stern's flat edge on the axis: an engine there needs it as tall as the engine (a notched stern has none).
+  let xEnd = W - 1;
+  while (xEnd > 0 && !inside(xEnd, 0)) xEnd--;
+  let run = 0;
+  while (inside(xEnd, run + 1) && !inside(xEnd + 1, run + 1)) run++;
+  const midEngine = 2 * run + 1 >= engineSpec(1, 'w', plan.kit).h + 2;
+  if (eLeft % 2 === 1 && !midEngine) eLeft++; // a pair either side instead
+  if (eLeft % 2 === 1) { mid = engineSpec(1, 'w', plan.kit); eLeft--; } else if (rLeft === 0) mid = { role: 'cargo', mods: [], w: 3, h: 3 }; else { const k = Math.min(rLeft % 2 === 1 ? 1 : 2, rLeft); mid = reactorSpec(k, plan.kit); rLeft -= k; }
   while (eLeft > 0 || rLeft > 0) {
     if (rLeft > 0) { const k = Math.min(2, Math.ceil(rLeft / 2)); items.push(reactorSpec(k, plan.kit)); rLeft -= Math.min(rLeft, 2 * k); }
     if (eLeft > 0) { items.push(engineSpec(1, 'w', plan.kit)); eLeft -= 2; }
@@ -56,22 +63,28 @@ function layout(plan: ShipPlan, sil: Silhouette, sx: number, sy: number, type: N
   items.sort((p, q) => (p.role === 'engine' ? 1 : 0) - (q.role === 'engine' ? 1 : 0));
   const sternW = Math.max(mid.w, ...items.map((r) => r.w));
   // The bank's floor runs to the last column that holds the centre row; its rooms take every outline tile aft of the cross hall.
-  let xEnd = W - 1;
-  while (xEnd > 0 && !inside(xEnd, 0)) xEnd--;
   let xBank = xEnd - sternW - 1; // the bank's first column is wall (the hall outranks it), floor from xBank + 1
   // A stern that stands out past the body (a flare, quarters, swept wings) is the drive bank's: the cross hall moves
   // forward to where it starts, so the bank fills it rather than the last side room.
   const body = top(Math.floor(xEnd / 2));
-  while (xBank > xEnd / 2 && top(xBank - 4) > body) xBank--;
+  // It reaches at most a few columns past its rooms: a longer flare is the side rooms', their depth capped (below).
+  while (xBank > xEnd - sternW - 3 && top(xBank - 4) > body) xBank--;
   const xCross = xBank - 3; // the cross hall, three wide
   const need = (mid.h + (mid.h % 2 === 0 ? 1 : 0)) / 2 + items.reduce((t, r) => t + r.h + 1, 0);
   if (Math.min(...[xBank + 1, xEnd - 1].map(top)) - 1 < need) return null;
 
-  // The bow: the bridge takes the nose back to where its floor area is met and the side bands are deep enough for rooms.
+  // The bow: the bridge sits at the back of the nose, where the side bands begin, sized to its plan; the nose ahead of
+  // it is the prow, solid plating.
   const bridge = plan.command;
-  let xBr = 0, area = 0;
-  while (xBr < xCross && (area < bridge.w * bridge.h || depth(xBr) < MIN_DEPTH + 1)) { area += Math.max(0, 2 * top(xBr) - 1); xBr++; }
+  let xBr = 0;
+  while (xBr < xCross && depth(xBr) < MIN_DEPTH + 1) xBr++;
   if (xBr >= xCross - 4) return null;
+  let xProw = xBr, area = 0;
+  while (xProw > 0 && (area < bridge.w * bridge.h || xBr - xProw < 3)) { xProw--; area += Math.max(0, 2 * top(xProw) - 3); }
+  // What is left of a long nose is a store when it holds one (a wall column between), else the bridge's.
+  let prowArea = 0;
+  for (let tx = 0; tx < xProw - 1; tx++) prowArea += Math.max(0, 2 * top(tx) - 3);
+  if (prowArea < 8) xProw = 0;
 
   // Side rooms, paired to mirror, bow to stern by zone (guns forward).
   const guns = plan.weapons;
@@ -122,11 +135,21 @@ function layout(plan: ShipPlan, sil: Silhouette, sx: number, sy: number, type: N
   const paint = (id: number, x0: number, x1: number, yIn: (y: number) => boolean): void => {
     for (let tx = x0; tx < x1; tx++) for (let ty = -H; ty <= H; ty++) if (inside(tx, ty) && yIn(ty)) g.set(ox + tx, ty, id);
   };
-  paint(g.room(bridge.role, { spec: bridge }), 0, xBr + 1, () => true);
+  const bridgeId = g.room(bridge.role, { spec: bridge });
+  paint(bridgeId, xProw, xBr + 1, () => true);
+  // The prow store opens off the bridge (it touches no hall).
+  if (xProw > 0) paint(g.room('cargo', { spec: { ...cargoSpec(2), w: xProw - 1 }, access: [bridgeId] }), 0, xProw - 1, () => true);
+  // A room reaches out to the outline, but no further than a little past the body's depth (a gun room into its wing,
+  // further); past that the outline is plating, so no room swells into a flare or a tapered stern.
+  const bodyD = depth(Math.floor((xBr + xCross) / 2));
   order.forEach(([r, sr], i) => {
     const [x0, x1] = cuts[i] as [number, number];
-    paint(g.room(r.role, { spec: r }), x0, x1, (y) => y < -BAND);
-    paint(g.room(sr.role, { spec: sr }), x0, x1, (y) => y > BAND);
+    const reach = BAND + 1 + bodyD + (r.role === 'weapons' ? 5 : 2);
+    // An airlock bay is open to the corridor: a hall with its fixture, through the corridor's wall row.
+    const make = (spec: RoomSpec): number => (spec.role === 'dock' ? g.hall('dock', undefined, spec) : g.room(spec.role, { spec }));
+    const from = r.role === 'dock' ? BAND - 1 : BAND;
+    paint(make(r), x0, x1, (y) => y < -from && -y <= reach);
+    paint(make(sr), x0, x1, (y) => y > from && y <= reach);
   });
   // The wall columns between side rooms go to the room ahead (it gives way by rank, so the wall stands there).
   // Bank: the centre room on the axis, pairs out from it, the outermost taking what is left of the outline.
@@ -135,11 +158,19 @@ function layout(plan: ShipPlan, sil: Silhouette, sx: number, sy: number, type: N
   paint(g.room(mid.role, { spec: mid }), xBank, W, (y) => Math.abs(y) <= m2);
   let edge = m2 + 1; // the plating row past the last room
   items.forEach((r, i) => {
-    const y0 = edge + 1, y1 = i === items.length - 1 ? H + 1 : y0 + r.h - 1;
+    const y0 = edge + 1, y1 = y0 + r.h - 1 + (i === items.length - 1 ? 2 : 0);
     paint(g.room(r.role, { spec: r }), xBank, W, (y) => y >= y0 && y <= y1);
     paint(g.room(r.role, { spec: r }), xBank, W, (y) => -y >= y0 && -y <= y1);
     edge = y1 + 1;
   });
+  // What the bank leaves of a wide stern: a store each side when it holds a room, plating otherwise.
+  let room = 0;
+  for (let tx = xBank + 1; tx < xEnd; tx++) room = Math.max(room, top(tx) - edge - 1);
+  if (room >= 3) {
+    const store: RoomSpec = { ...cargoSpec(2), w: sternW, h: room };
+    paint(g.room('cargo', { spec: store }), xBank, W, (y) => y > edge);
+    paint(g.room('cargo', { spec: store }), xBank, W, (y) => -y > edge);
+  }
   const hall = g.hall('hall');
   for (let tx = xBr; tx < xCross; tx++) for (let ty = -1; ty <= 1; ty++) g.set(ox + tx, ty, hall);
   for (let tx = xCross; tx < xBank; tx++) for (let ty = -H; ty <= H; ty++) if (inside(tx, ty) && Math.abs(ty) < top(tx)) g.set(ox + tx, ty, hall);
