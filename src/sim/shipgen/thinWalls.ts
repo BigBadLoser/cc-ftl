@@ -191,22 +191,8 @@ export function thinWalls(cv: Canvas, o: ThinOpts): ThinStats {
         }
       }
     }
-    // A room grows across a whole side or not at all: a fold along part of a side (a tab) stays wall.
-    const box = new Map<number, [number, number, number, number]>();
-    for (const [, A] of fold) box.set(A, [S, S, -1, -1]);
-    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
-      const b = box.get(lab[y * S + x] as number);
-      if (!b || c[y * S + x] === '#') continue;
-      b[0] = Math.min(b[0], x); b[1] = Math.min(b[1], y); b[2] = Math.max(b[2], x); b[3] = Math.max(b[3], y);
-    }
-    const side = new Map<string, number>();
-    for (const [, A, d] of fold) side.set(`${A} ${d}`, (side.get(`${A} ${d}`) ?? 0) + 1);
-    const whole = ([, A, d]: [number, number, number]): boolean => {
-      const [bx0, by0, bx1, by1] = box.get(A) as [number, number, number, number];
-      return (side.get(`${A} ${d}`) ?? 0) >= ((N4[d] as readonly number[])[0] !== 0 ? by1 - by0 + 1 : bx1 - bx0 + 1);
-    };
     let n = 0;
-    for (const [kk, A, d] of fold.filter(whole)) {
+    for (const [kk, A, d] of fold) {
       const kx = kk % S;
       const ky = (kk - kx) / S;
       let ok = c[kk] === '#' || c[kk] === 'D';
