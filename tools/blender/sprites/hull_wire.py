@@ -99,6 +99,7 @@ def wire(m, sp):
     d = [[sp._inner(x, y) for y in xs] for x in xs]
     # the crest: a level set, at its height
     for a, b in _level(d, CD):
+        a, b = _to_wall(sp, a, b)
         strip(m, (*a, zof(CD)), (*b, zof(CD)))
     # the foot's top: along the tile's edges where the room side is (distance 0 there)
     for edge in range(4):
@@ -146,6 +147,16 @@ def _stem_crease(sp, cl):
     if sp.mask & 14 == 14 and not sp.corners & 4 and x < -0.5 + CD and y > 0.5 - CD:
         return True
     return sp.mask & 7 == 7 and not sp.corners & 1 and x > 0.5 - CD and y < -0.5 + CD
+
+
+def _to_wall(sp, a, b):
+    """A T's far-side stem crest runs on a pixel past the tile edge, under the wall, so it meets the wall's top edge."""
+    t, e = 1.0 / N, 1.0 / 32
+    if sp.mask & 14 == 14 and abs(a[0] - b[0]) < t and abs(a[0] + 0.5 - CD) < t:
+        return (a, (b[0], b[1] + e)) if b[1] > a[1] else ((a[0], a[1] + e), b)
+    if sp.mask & 7 == 7 and abs(a[1] - b[1]) < t and abs(a[1] + 0.5 - CD) < t:
+        return (a, (b[0] + e, b[1])) if b[0] > a[0] else ((a[0] + e, a[1]), b)
+    return a, b
 
 
 def behind_stem(sp, x, y):

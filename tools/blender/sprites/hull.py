@@ -250,6 +250,18 @@ FILL = "gFill"                              # the rear ghost's surfaces: almost 
 FADE = ("gW2", "hsK", "hsXK", "hbXhsXK")   # the rising lines' tones, bottom up: their alpha fades with height
 
 
+def _back_edges(mask):
+    """The cut hull's back edges on the deck (a px in from the tile's unconnected -x / -y edges), each run on to the
+    tile's edge where the next tile along carries it, so a run has no gap at the seams."""
+    e = -0.5 + C
+    out = []
+    if not mask & 1:
+        out.append(((-0.5 if mask & 8 else e, e), (0.5, e)))
+    if not mask & 8:
+        out.append(((e, 0.5), (e, -0.5 if mask & 1 else e)))
+    return out
+
+
 def _rise(m, mask, room, corners):
     """The rear ghost's faint lines rising from the cut hull's back edge on the deck, where the ship's outer hull face stands, at each tile
     seam (each tile draws its back corner), fading as they go: the hull it stands for, hinted (Space Haven's far-side
@@ -258,7 +270,7 @@ def _rise(m, mask, room, corners):
     e = -0.5 + C                            # (a px in from the tile's back edges: on the cut hull's edge, not past it)
     pts = [(e, e)]
     z0 = 0.02; z1 = hull_top() / 6          # (from the cut hull's back edge on the deck: short, as in the reference)
-    for a, b in ([((e, e), (0.5, e))] if not mask & 1 else []) + ([((e, 0.5), (e, e))] if not mask & 8 else []):
+    for a, b in _back_edges(mask):
         m.poly([core.G(*a, z0), core.G(*b, z0), core.G(*b, z0 + DZ), core.G(*a, z0 + DZ)], "gW2")   # (that edge's line)
     for px, py in pts:
         a, b = (px, py), (px + C / 2, py - C / 2)      # (1 px wide on screen, on one side of the seam)
@@ -285,7 +297,7 @@ def _back_fill(f, mask):
     z0, z1 = 0.02, hull_top() / 6
     step = (z1 - z0) / len(BACK)
     cuts = [z0] + [z0 + step * (k + 2) for k in range(len(BACK))]      # (the bottom band twice the others' height)
-    for a, b in ([((e, e), (0.5, e))] if not mask & 1 else []) + ([((e, 0.5), (e, e))] if not mask & 8 else []):
+    for a, b in _back_edges(mask):
         for k, tone in enumerate(BACK):
             za, zb = cuts[k], cuts[k + 1]
             f.poly([core.G(*a, za), core.G(*b, za), core.G(*b, zb), core.G(*a, zb)], tone)
