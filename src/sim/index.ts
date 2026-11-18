@@ -12,7 +12,7 @@ export type { DroneDef, DroneJobDef, DroneBayDef } from './drones/types';
 export { gridFromTemplate, spawnTemplateModules, placeTemplateModules } from './ship';
 export { ModuleC, DeployC, type Module, type Deploy } from './modules/components';
 export { isDeployed } from './modules/deploy';
-export { isKnown as isBlueprintKnown, blueprintVenue } from './modules/blueprints';
+export { isKnown as isBlueprintKnown, isBuildable, blueprintVenue } from './modules/blueprints';
 export { ResearchC, type Research } from './research/components';
 export { labsOf, projectOf, stockOn, queueBlocker, isDone as isResearchDone } from './research/research';
 export { portBlueprints, gatedBlueprints, OFF_SPECIALITY_STOCK, type BlueprintOffer } from './galaxy/blueprintShop';

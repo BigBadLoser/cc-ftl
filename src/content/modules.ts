@@ -373,6 +373,7 @@ export const modules = {
   // Sealed cargo containers (sim/containers): solid boxes on Beam tiles clamped to a freighter's frame, no interior.
   // Footprint W x H at rotation 0 (art `container.<W>x<H>`); a storage slot per tile and a bit (capacity, hp and cost scale with the area: 8 and 18 tiles).
   'container.2x4': {
+    buildable: false,
     scrap: 'comfort',
     name: 'Small container',
     category: 'storage',
@@ -381,6 +382,7 @@ export const modules = {
     flammability: 0.1, maxHp: 120, buildWork: 320, cost: [{ item: 'item.metal', count: 16 }], storage: { capacity: 9 }, container: true,
   },
   'container.3x6': {
+    buildable: false,
     scrap: 'comfort',
     name: 'Large container',
     category: 'storage',
@@ -562,6 +564,7 @@ export const modules = {
   // Robot fabricator (rogue AI shipyards): builds hostile robots while powered and run by a live AI core. Placeholder
   // art: the crafting fabricator's sprite.
   'module.robotFabricator': {
+    buildable: false,
     name: 'Robot fabricator',
     category: 'production',
     description: "Builds robots for the ship, a few at a time. Needs an AI core.",
@@ -573,6 +576,7 @@ export const modules = {
   // Robot bay 1x2: a charging cradle on the anchor tile (the robot stands in it, like a bed), the charger behind it.
   // Home to one robot: recharges and repairs it, and assembles new ones. The tower (local row 1) is solid; the cradle (row 0) is walkable.
   'module.robotBay': {
+    buildable: false,
     name: 'Robot bay',
     category: 'utility',
     description: "A charging cradle that recharges and repairs one robot.",

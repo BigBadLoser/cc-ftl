@@ -14,7 +14,7 @@ import type { Atlas, StaticSprite } from './assets/loader';
 import { Z_PX } from './heights';
 import type { Pt } from './iso';
 import { UNDOCK_DONE_MS, UNDOCK_SLIDE_AT_MS, dockProgress, undockProgress, type DockProgress } from './dockSequence';
-import { BAY_FRAME_MS, LAUNCH_LIFT, RETURN_LAND } from './vehicleBayArt';
+import { BAY_FRAME_MS, CATCH_MS, LAUNCH_LIFT, createBayTrack, ease, type BayTrack } from './vehicleBayArt';
 
 /** Altitude (tiles over the deck) of a shuttle in flight and at a dock, and of its belly on the pit floor. */
 const CRUISE_Z = 0.4;
@@ -46,8 +46,6 @@ const HALF_LEN = 2.4;
 const HALF_W = 1.0;
 /** The shuttle holds off this much further from the hull than flush; its docking tube (one fixed length) bridges the gap to the collar. */
 const HOLD_OFF = 1.1;
-/** After taking off, a shuttle waits LAG ms on the spot (the doors open under it), then catches up with the sim over CATCH ms. */
-const CATCH_MS = 1500;
 const EIGHTH = Math.PI / 4;
 
 /** What the host is told about a vehicle: its state, its dock airlock and its home ship's grid (the camera ship's bay filter). */
@@ -91,11 +89,6 @@ export const headingIndex = (h: number): number => (((Math.round(h / EIGHTH) % 8
 /** Heading index of the cardinal a shuttle parks with in a bay of rotation `rot` (nose +y at r0, a quarter turn per rotation). */
 export const parkedIndex = (rot: number): number => (2 + 2 * rot) % 8;
 
-interface Sample {
-  t: number;
-  x: number;
-  y: number;
-}
 interface Track {
   root: Container;
   body: Sprite;
@@ -118,11 +111,8 @@ interface Track {
   tubeBody: Sprite;
   tubeGlow: Sprite;
   tubeBehind: boolean;
-  /** performance.now() of the last launch (stowed to out) and landing (out to stowed); -Infinity if none. */
-  launched: number;
-  landed: number;
-  /** Recent sim positions, for the launch delay. */
-  trail: Sample[];
+  /** The launch / landing clock and position trail of the bay handoff (vehicleBayArt). */
+  bay: BayTrack;
   /** Last seen sitting on a landing pad: its take-off has no bay doors to wait for. */
   padded: boolean;
   /** The rotation of the pad it last stood on (its take-off turns from it). */
@@ -143,12 +133,6 @@ export function frontDepth(sx: number, sy: number, heading: number): number {
   const s = Math.sin(heading);
   return sx + sy - 1 + HALF_LEN * Math.abs(c + s) + HALF_W * Math.abs(c - s);
 }
-
-/** Smoothstep 0..1. */
-const ease = (k: number): number => {
-  const c = Math.max(0, Math.min(1, k));
-  return c * c * (3 - 2 * c);
-};
 
 /**
  * Draws shuttles (VehicleC entities, placed by their BodyC) with the pipeline sprites in the sector layer: `vehicle.shuttle.fly.d<0..7>` in flight
@@ -244,31 +228,32 @@ export function createShuttleView(world: World, atlas: Atlas, modules: Readonly<
           tube.visible = false;
           root.addChild(body, glow, tube);
           host.layer.addChild(root);
-          t = { root, body, glow, key: '', x: b.x, y: b.y, heading: b.heading, state: v.state, z: CRUISE_Z, pose: null, low: false, dockedAt: -Infinity, undockedAt: -Infinity, tube, tubeBody, tubeGlow, tubeBehind: false, launched: -Infinity, landed: -Infinity, trail: [], padded: false, padRot: 0, ramp: 0, rampBusy: -Infinity };
+          t = { root, body, glow, key: '', x: b.x, y: b.y, heading: b.heading, state: v.state, z: CRUISE_Z, pose: null, low: false, dockedAt: -Infinity, undockedAt: -Infinity, tube, tubeBody, tubeGlow, tubeBehind: false, bay: createBayTrack(v.state), padded: false, padRot: 0, ramp: 0, rampBusy: -Infinity };
           tracks.set(id, t);
         }
         if (t.state !== v.state) {
           if (t.state === 'stowed') {
-            t.launched = now;
             t.heading = (parkedIndex(bayRot(v)) * EIGHTH);
-            t.trail = [];
-          } else if (v.state === 'stowed') t.landed = now;
+          }
+          t.bay.update(v.state, now);
           if (v.state === 'docked') [t.dockedAt, t.undockedAt] = [now, -Infinity];
           else if (t.state === 'docked' && t.padded) {
             // Off a landing pad (#509): the pad take-off (gear up, lift), never the collar's undock.
-            [t.launched, t.heading, t.trail, t.pose] = [now, parkedIndex(t.padRot) * EIGHTH, [], null];
-          } else if (t.state === 'docked') [t.undockedAt, t.trail] = [now, []];
+            [t.heading, t.pose] = [parkedIndex(t.padRot) * EIGHTH, null];
+            t.bay.restart(now);
+          } else if (t.state === 'docked') {
+            t.undockedAt = now;
+            t.bay.clearTrail();
+          }
           t.state = v.state;
         }
-        const sinceLaunch = now - t.launched;
-        const sinceLand = now - t.landed;
         const sinceUndock = now - t.undockedAt;
         const undocking = v.state !== 'docked' && v.state !== 'stowed' && !!t.pose && sinceUndock < UNDOCK_DONE_MS + CATCH_MS;
-        const launching = v.state !== 'stowed' && sinceLaunch < LAUNCH_LIFT.end * BAY_FRAME_MS + CATCH_MS;
-        const landing = v.state === 'stowed' && sinceLand < RETURN_LAND.end * BAY_FRAME_MS;
         const padOn = padUnder(v, b), pad = !!padOn;
         if (v.state !== 'flying') t.padded = pad;
         if (padOn) t.padRot = padOn.rot;
+        const hand = t.bay.pose(v.state, now, t.padded);
+        const { launching, landing, sinceLaunch } = hand;
         // Gear phase of a pad take-off or landing: the sprite frame (0 up to 4 down) and the height.
         let gear: { frame: number; z: number; rot: number } | null = null;
         if (v.state === 'flying') {
@@ -279,7 +264,7 @@ export function createShuttleView(world: World, atlas: Atlas, modules: Readonly<
             gear = { frame: Math.round(4 * ease(Math.min(1, (1 - d) * 1.6))), z: CRUISE_Z * ease(d), rot: to.rot };
           }
         }
-        const visible = (pad || !!gear || host.include(ref)) && (pad ? true : v.state !== 'stowed' ? !(!t.padded && sinceLaunch < LAUNCH_LIFT.start * BAY_FRAME_MS) : landing);
+        const visible = (pad || !!gear || host.include(ref)) && (pad || hand.drawn);
         if (!visible) {
           t.root.visible = false;
           seen.add(id);
@@ -295,17 +280,8 @@ export function createShuttleView(world: World, atlas: Atlas, modules: Readonly<
         if (launching || undocking) {
           // Held on the spot (over the open pit / alongside the hull) while the bay doors open or the tube retracts, then it
           // catches up with the sim, which has already sent it on its way.
-          t.trail.push({ t: now, x: b.x, y: b.y });
           const lag = launching ? (t.padded ? 0 : LAUNCH_LIFT.start * BAY_FRAME_MS) : UNDOCK_SLIDE_AT_MS;
-          const since = launching ? sinceLaunch : sinceUndock;
-          const delay = lag * (1 - ease((since - lag) / CATCH_MS));
-          const at = now - delay;
-          while (t.trail.length > 2 && (t.trail[1] as Sample).t <= at) t.trail.shift();
-          const a = t.trail[0] as Sample;
-          const n = t.trail[1] ?? a;
-          const f = n.t > a.t ? Math.max(0, Math.min(1, (at - a.t) / (n.t - a.t))) : 0;
-          px = a.x + (n.x - a.x) * f;
-          py = a.y + (n.y - a.y) * f;
+          ({ x: px, y: py } = t.bay.delayed(now, b.x, b.y, lag, launching ? sinceLaunch : sinceUndock));
           [t.x, t.y] = [px, py];
         } else if (Math.hypot(b.x - t.x, b.y - t.y) > 3) [t.x, t.y] = [b.x, b.y];
         else [t.x, t.y] = [t.x + (b.x - t.x) * k, t.y + (b.y - t.y) * k];
@@ -356,14 +332,13 @@ export function createShuttleView(world: World, atlas: Atlas, modules: Readonly<
           z = CRUISE_Z + (DOCK_Z - CRUISE_Z) * e;
           thrust = e >= 0.5 ? 0 : v.state === 'docked' ? 0.45 : 1;
           tubeFrame = e >= 0.999 ? prog.tube : 0;
-        } else if (launching && !t.padded && sinceLaunch < (LAUNCH_LIFT.end * BAY_FRAME_MS)) {
+        } else if (v.state !== 'stowed' && hand.lift !== null) {
           // Lifting off the pit floor in the parked pose (legs up, wings folded), then spreading the wings at altitude.
-          const f = ease((sinceLaunch - LAUNCH_LIFT.start * BAY_FRAME_MS) / ((LAUNCH_LIFT.end - LAUNCH_LIFT.start) * BAY_FRAME_MS));
-          z = PIT_Z + (CRUISE_Z - PIT_Z) * f;
+          z = PIT_Z + (CRUISE_Z - PIT_Z) * hand.lift;
           sprite = atlas.stat(`vehicle.shuttle.docked.d${parkedIndex(bayRot(v))}`);
           thrust = 0;
-        } else if (landing && !pad) {
-          const f = ease((sinceLand - RETURN_LAND.start * BAY_FRAME_MS) / ((RETURN_LAND.end - RETURN_LAND.start - 2) * BAY_FRAME_MS));
+        } else if (landing && !pad && hand.lift !== null) {
+          const f = 1 - hand.lift;
           z = CRUISE_Z + (PIT_Z - CRUISE_Z) * f;
           sprite = f > 0 ? atlas.stat(`vehicle.shuttle.docked.d${parkedIndex(bayRot(v))}`) : atlas.stat(`vehicle.shuttle.fly.d${headingIndex(t.heading)}`);
           thrust = f > 0 ? 0 : 0.45;
