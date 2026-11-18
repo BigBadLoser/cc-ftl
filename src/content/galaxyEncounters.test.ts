@@ -15,15 +15,8 @@ import type { Fleet } from '../sim/galaxy/types';
 import { giveItems } from '../sim/story/effects';
 import { noteHelp } from '../sim/galaxy/eventGrid';
 import { content } from '.';
+import { run as step } from '../../test/support/sim';
 
-const step = (sim: Sim, n = 1) => {
-  const out = [];
-  for (let i = 0; i < n; i++) {
-    sim.step();
-    out.push(...sim.events.drain());
-  }
-  return out;
-};
 const deploy = (sim: Sim) => {
   for (const [x, y] of [[100, 60], [20, 50], [300, 200], [40, 150], [200, 20], [350, 100]] as const) {
     sim.enqueue({ type: 'sector.deploy', x, y });

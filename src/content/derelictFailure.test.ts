@@ -7,6 +7,7 @@ import { spawnDerelict } from '../sim/combat/derelict';
 import { placementGapError } from '../sim/regions';
 import { ensureAround, nodeState } from '../sim/galaxy/state';
 import { content } from '.';
+import { step } from '../../test/support/sim';
 
 // A generator faction that cannot make a layout: generateShip throws its "no layout" error for every `faction.*` hull.
 const broken = vi.hoisted(() => ({ on: false }));
@@ -21,7 +22,6 @@ vi.mock('../sim/shipgen/generate', async (orig) => {
   };
 });
 
-const step = (sim: Sim, n = 1): void => { for (let i = 0; i < n; i++) sim.step(); };
 function visit(sim: Sim, node: string): void {
   sim.enqueue({ type: 'debug.galaxyTeleport', node });
   step(sim);

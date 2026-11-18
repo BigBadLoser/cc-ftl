@@ -8,6 +8,7 @@ import { VehicleC } from '../../../src/sim/vehicles/components';
 import { isLive } from '../../../src/sim/trade/deals';
 import { holding } from '../../../src/sim/trade/player';
 import { content } from '../../../src/content/index';
+import { step as run } from '../sim';
 
 /** A started game with a hailed trading outpost, and a bought order of 10 metal accepted. */
 export function buying(): { sim: Sim; station: number; start: number } {
@@ -33,7 +34,6 @@ export function until(sim: Sim, phase: string): void {
   for (let i = 0; i < 6000 && sim.trade.deals[0]?.phase !== phase; i++) sim.step();
   expect(sim.trade.deals[0]?.phase).toBe(phase);
 }
-export const run = (sim: Sim, ticks: number): void => { for (let i = 0; i < ticks; i++) sim.step(); };
 /** Run until no deal is live (or `max` ticks pass: the failure case), then a settling tail so refunds, jobs and the like finish. */
 export function runOut(sim: Sim, max: number, tail = 150): void {
   let i = 0;
@@ -76,3 +76,5 @@ export function order() {
   return { sim, ship, before, stock };
 }
 
+
+export { run };

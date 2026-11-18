@@ -31,17 +31,10 @@ import { RESERVE_TICKS, SLAB_ITEM, STOW_WORK, TURN_STEP_WORK } from '../sim/stas
 import { playerCrew } from '../sim/story/world';
 import { heldItems } from '../sim/items/held';
 import { content } from '.';
+import { run } from '../../test/support/sim';
 
 /** Prisoner holding (#116): seal on the spot, cart to the stasis wheel, reserve and thaw. */
 
-const run = (sim: Sim, n: number): SimEvent[] => {
-  const out: SimEvent[] = [];
-  for (let i = 0; i < n; i++) {
-    sim.step();
-    out.push(...sim.events.drain());
-  }
-  return out;
-};
 /** Step until `done` holds (at most `max` ticks); the events seen. */
 const until = (sim: Sim, done: () => boolean, max = 3000): SimEvent[] => {
   const out: SimEvent[] = [];

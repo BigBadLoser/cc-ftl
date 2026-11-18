@@ -6,15 +6,8 @@ import { CrewC } from '../../../src/sim/crew/components';
 import { AllegianceC, EquipC, FighterC } from '../../../src/sim/fight/components';
 import { StationAlarmC, StationC, StationCrewC, WantedC } from '../../../src/sim/stations/components';
 import { content } from '../../../src/content/index';
+import { run } from '../sim';
 
-export const run = (sim: Sim, n: number): SimEvent[] => {
-  const out: SimEvent[] = [];
-  for (let i = 0; i < n; i++) {
-    sim.step();
-    out.push(...sim.events.drain());
-  }
-  return out;
-};
 export const types = (ev: SimEvent[]): string[] => ev.map((e) => e.type);
 
 export function station(kind = 'station.trading', size: 'outpost' | 'station' | 'hub' = 'outpost', seed = 6): { sim: Sim; st: number } {
@@ -67,3 +60,5 @@ export function intruderRuns(seeds: number[]): IntruderRun[] {
     return { seed, alarmed, wanted, engaged, fled, downed, forgotten, again };
   });
 }
+
+export { run };

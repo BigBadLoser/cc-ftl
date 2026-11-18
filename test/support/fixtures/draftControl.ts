@@ -174,7 +174,7 @@ export function defineDraftControl(seeds: number[], unseeded: boolean): void {
     });
   });
 
-  describe('side effects of the draft rules', () => {
+  if (unseeded) describe('side effects of the draft rules', () => {
     plain('player crew stay on the player faction when drafted', () => {
       const sim = newGame(1, content);
       const [a] = crewOn(sim, 1);

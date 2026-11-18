@@ -4,15 +4,14 @@ import { CrewC } from '../../../src/sim/crew/components';
 import { ModuleC } from '../../../src/sim/modules/components';
 import { newGame } from '../../../src/sim/newGame';
 import { shipGrid } from '../../../src/sim/regions';
-import type { Sim } from '../../../src/sim/sim';
 import { isIdle } from '../../../src/sim/modules/draw';
 import { SHIPS, withShip } from './kits';
+import { step as run } from '../../../test/support/sim';
 
 /**
  * The starter ships' minute-long run (src/content/ships/starterShips.test.ts) for every hand-drawn variant: all crew alive,
  * every module powered, every room lit and breathable.
  */
-const run = (sim: Sim, n: number): void => { for (let i = 0; i < n; i++) sim.step(); };
 
 for (const { ship, variants } of SHIPS) {
   describe.each(variants)(`${ship} variant $name`, (v) => {

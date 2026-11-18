@@ -14,10 +14,8 @@ import { liveTrader } from '../sim/galaxy/market';
 import { ensureChunk, ensureAround, nodeState } from '../sim/galaxy/state';
 import { WEST_MARGIN } from '../sim/galaxy/populate';
 import { content } from '.';
+import { step } from '../../test/support/sim';
 
-const step = (sim: Sim, n = 1): void => {
-  for (let i = 0; i < n; i++) sim.step();
-};
 /** Deploy at the first free spot (a node's structures stand east of WEST_MARGIN). */
 function deploy(sim: Sim): void {
   const p = sim.sector.packet!;

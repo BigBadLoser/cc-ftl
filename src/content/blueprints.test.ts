@@ -19,6 +19,7 @@ import { ensureAround } from '../sim/galaxy/state';
 import { placementGapError } from '../sim/regions';
 import { content } from '.';
 import { contentEdited } from '../../test/support/content';
+import { step } from '../../test/support/sim';
 
 /** Deploy at the first free spot (a node's structures stand east of the west margin). */
 function deploy(sim: Sim): void {
@@ -33,9 +34,6 @@ function deploy(sim: Sim): void {
   throw new Error('no room to deploy');
 }
 
-const step = (sim: Sim, n = 1): void => {
-  for (let i = 0; i < n; i++) sim.step();
-};
 const rejected = (sim: Sim, command: string): string[] => sim.events.drain().flatMap((e) => (e.type === 'command.rejected' && e.command === command ? [e.reason] : []));
 
 /** The structure def a port stands for. */

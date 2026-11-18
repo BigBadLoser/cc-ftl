@@ -11,15 +11,8 @@ import { FTL_CHARGE_SEC } from '../sim/tuning';
 import { ensureAround } from '../sim/galaxy/state';
 import { giveItems, takeItems } from '../sim/story/effects';
 import { content } from '.';
+import { run as step } from '../../test/support/sim';
 
-const step = (sim: Sim, n = 1) => {
-  const out = [];
-  for (let i = 0; i < n; i++) {
-    sim.step();
-    out.push(...sim.events.drain());
-  }
-  return out;
-};
 /** Deploy at the first of a few spots the gap rule accepts (a node's own ships may be in the way of some). */
 const deploy = (sim: Sim) => {
   const out = [];

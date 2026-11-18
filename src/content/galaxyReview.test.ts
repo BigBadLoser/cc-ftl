@@ -17,15 +17,8 @@ import { MAX_HOSTILE_CONTACTS } from '../sim/galaxy/tuning';
 import { giveItems, takeItems } from '../sim/story/effects';
 import { playerStock } from '../sim/story/world';
 import { content } from '.';
+import { run as step } from '../../test/support/sim';
 
-const step = (sim: Sim, n = 1) => {
-  const out = [];
-  for (let i = 0; i < n; i++) {
-    sim.step();
-    out.push(...sim.events.drain());
-  }
-  return out;
-};
 const deploy = (sim: Sim) => {
   for (const [x, y] of [[100, 60], [20, 50], [150, 8], [40, 90], [150, 80], [10, 5]] as const) {
     sim.enqueue({ type: 'sector.deploy', x, y });

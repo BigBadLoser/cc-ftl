@@ -10,8 +10,8 @@ import { content } from '../content';
 import { buildFood } from './foodSnapshot';
 import { buildStock } from './logisticsSnapshot';
 import { buildPlot } from './plotSnapshot';
+import { step as run } from '../../test/support/sim';
 
-const run = (sim: Sim, n: number): void => { for (let i = 0; i < n; i++) sim.step(); };
 
 function bed(sim: Sim): number {
   const ship = playerShip(sim) as number;

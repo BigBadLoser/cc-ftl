@@ -15,17 +15,10 @@ import { checkOdds, unmetReasons } from '../sim/story/requirements';
 import { playerStock } from '../sim/story/world';
 import type { EventDef } from '../sim/story/defs';
 import { content } from '.';
+import { run as step } from '../../test/support/sim';
 
 /** Story events belong to hyperspace hops (storyHop.ts): none while the ship idles, one at most per hop, never on an interdicted hop. */
 
-const step = (sim: Sim, n = 1) => {
-  const out = [];
-  for (let i = 0; i < n; i++) {
-    sim.step();
-    out.push(...sim.events.drain());
-  }
-  return out;
-};
 const adjacent = (sim: Sim, id: string): string[] => (galaxyIndex(sim.galaxy).adjacent.get(id) ?? []).map((e) => (e.a === id ? e.b : e.a)).sort();
 /** A route of `hops` nodes from the start that never doubles back. */
 function routeOf(sim: Sim, hops: number): string[] {
