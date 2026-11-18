@@ -3,7 +3,7 @@ import { Rng } from '../../rng';
 import { drawSilhouette, type Silhouette } from '../hull/silhouette';
 import { NAVY_PROFILES } from '../hull/navyProfiles';
 import { enginesShort, fitShell, seedOf } from '../generate';
-import { dockSpec, engineSpec, planShip, reactorSpec, weaponSpec, type RoomSpec, type ShipPlan } from '../plan';
+import { cargoSpec, dockSpec, engineSpec, planShip, reactorSpec, weaponSpec, type RoomSpec, type ShipPlan } from '../plan';
 import { pairUp } from '../topoNavy';
 import type { FactionDef, GenResult } from '../types';
 import { NAVY_TYPES, navyRole, type NavyType } from './navyShip';
@@ -44,12 +44,9 @@ interface Layout { g: RegionGrid }
 /** A mess: a galley and tables down a long narrow room (rules.ts M4), the crew's commons. */
 const MESS: RoomSpec = { role: 'support', dept: 'commons', mods: ['module.galley', 'module.mess_table'], w: 6, h: 3 };
 
-/** A lounge: a game table and chairs. */
-const LOUNGE: RoomSpec = { role: 'support', dept: 'commons', mods: ['module.gametable'], w: 4, h: 3 };
-
 /**
  * Rooms paired across the axis: the same role where there are two, then unlike rooms of a size together (the shape
- * mirrors, the use need not), and the one left over gets a mess opposite it (a lounge when there is one).
+ * mirrors, the use need not), and the one left over gets a mess opposite it (a store when there is one).
  */
 function mirrorPairs(specs: RoomSpec[]): [RoomSpec[], RoomSpec[]] {
   const rest = [...specs];
@@ -61,7 +58,7 @@ function mirrorPairs(specs: RoomSpec[]): [RoomSpec[], RoomSpec[]] {
   }
   rest.sort((a, b) => b.w * b.h - a.w * a.h);
   while (rest.length > 1) push(rest.shift() as RoomSpec, rest.shift() as RoomSpec);
-  if (rest.length === 1) push(rest[0] as RoomSpec, specs.includes(MESS) ? LOUNGE : MESS);
+  if (rest.length === 1) push(rest[0] as RoomSpec, specs.includes(MESS) ? cargoSpec(2) : MESS);
   return [n, s];
 }
 
