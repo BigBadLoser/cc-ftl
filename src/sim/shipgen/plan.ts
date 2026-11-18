@@ -207,10 +207,10 @@ export function planShip(rng: Rng, f: FactionDef, role: ShipRoleDef, depth: numb
   const shields: RoomSpec[] = [];
   for (let i = 0; i < b.shields; i++) {
     const g = pickWeighted(rng, f.shields);
-    // Crewed: 4x4 whatever the generator, as on a tight station, room for a Mk III (3x3) and the walkway to it. A sealed
-    // pod (no crew) needs no walkway: the generator and a tile.
-    const big = (defs[g]?.footprint[1] ?? 2) > 2;
-    shields.push({ role: 'shields', mods: [g], w: f.living || big ? 4 : 3, h: f.living || big ? 4 : 3 });
+    // Sized from the generator: a tile to walk before it, and on a crewed ship a tile beside it for the door's approach,
+    // so the room grows along its strip, not out of it (a section strip is three deep). A sealed pod has no walkway.
+    const [gw, gh] = defs[g]?.footprint ?? [2, 2];
+    shields.push({ role: 'shields', mods: [g], w: gw + (f.living ? 2 : 1), h: gh + 1 });
   }
   // Crewed ships fly from a helm; AI-run ships have no helm, the AI core is their bridge (one weapons console stays:
   // weapons charge only with a manned console).
