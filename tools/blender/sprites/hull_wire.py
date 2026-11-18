@@ -25,9 +25,9 @@ def _screen(p):
     return (x - y) * 32, (x + y) * 16 - z * ZART
 
 
-def strip(m, p, q, tone=TONE):
-    """Segment p -> q (x, y, z) as a strip 1 px wide on screen, one-sided (up, or right for an upright line): its pixels
-    line up with the grid instead of splitting over two."""
+def strip(m, p, q, tone=TONE, left=False):
+    """Segment p -> q (x, y, z) as a strip 1 px wide on screen, one-sided (up, or right for an upright line, left with
+    `left`): its pixels line up with the grid instead of splitting over two."""
     (ax, ay), (bx, by) = _screen(p), _screen(q)
     dx, dy = bx - ax, by - ay
     ln = math.hypot(dx, dy)
@@ -37,7 +37,7 @@ def strip(m, p, q, tone=TONE):
         k = ln / (ZART * abs(dx))
         o = (0.0, 0.0, k)
     else:                                       # (upright on screen: widen it right, along +x -y)
-        h = ln / (32 * abs(dy))                 # (screen x of (h/2, -h/2): 32 h)
+        h = ln / (32 * abs(dy)) * (-1 if left else 1)     # (screen x of (h/2, -h/2): 32 h)
         o = (h / 2, -h / 2, 0.0)
     pts = [p, q, tuple(a + b for a, b in zip(q, o)), tuple(a + b for a, b in zip(p, o))]
     m.poly([core.G(x, y, z + LIFT) for x, y, z in pts], tone)
@@ -118,6 +118,8 @@ def wire(m, sp):
             a = (a[0], a[1] + 0.5 / N) if edge == "x" else (a[0] + 0.5 / N, a[1])
             strip(m, (*a, zof(0.0)), (*b, zof(sp._inner(*b))), SEAM)
             strip(m, (*a, 0.0), (*a, zof(0.0)), SEAM)                  # (and down the foot's front to the deck)
+    if sp.mask & 6 == 6 and not sp.corners & 2:        # an inside corner: the foot's front corner, the px left of the
+        strip(m, (0.5, 0.5, 0.0), (0.5, 0.5, zof(0.0)), SEAM, left=True)   # next tiles' seam line: 2 px, centred
 
 
 def _to_wall(sp, a, b):

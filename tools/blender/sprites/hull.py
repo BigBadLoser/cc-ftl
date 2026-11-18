@@ -274,6 +274,8 @@ def _rise(m, mask, room, corners):
         m.poly([core.G(*a, z0), core.G(*b, z0), core.G(*b, z0 + DZ), core.G(*a, z0 + DZ)], "gW2")   # (that edge's line)
     for px, py in pts:
         a, b = (px, py), (px + C / 2, py - C / 2)      # (1 px wide on screen, on one side of the seam)
+        if not mask & 9:                                # (a back corner: 2 px, centred on it)
+            a = (px - C / 2, py + C / 2)
         for k, tone in enumerate(FADE):
             za, zb = z0 + (z1 - z0) * k / len(FADE), z0 + (z1 - z0) * (k + 1) / len(FADE)
             m.poly([core.G(*a, za), core.G(*b, za), core.G(*b, zb), core.G(*a, zb)], tone)
