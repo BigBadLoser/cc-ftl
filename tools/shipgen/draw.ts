@@ -2,6 +2,7 @@
  * Ship layout viewer core (dev tool, not shipped): renders generated layouts top-down into an RGBA buffer, plus an
  * ASCII dump and a validation summary. Used by the node CLI (PNG contact sheets) and the live page.
  */
+import { generateNavy } from '../../src/sim/shipgen/assembly/navyShip';
 import { content } from '../../src/content';
 import { stationRecipes } from '../../src/content/stationRecipes';
 import {
@@ -122,6 +123,7 @@ export const factionIds = (): string[] => Object.keys(content.factions);
 /** `faction.drones:picket` keeps only that hull family (one family's sheet). */
 export function gen(factionSpec: string, seed: number, depth: number): GenResult {
   if (factionSpec.startsWith('station.')) return genStation(factionSpec, seed);
+  if (factionSpec === 'faction.navy@v4') return generateNavy(content.factions['faction.navy' as keyof typeof content.factions] as never, 'faction.navy', seed, depth, defs);
   const [faction, family] = factionSpec.split(':') as [string, string | undefined];
   const f0 = (content.factions as Record<string, (typeof content.factions)[keyof typeof content.factions]>)[faction];
   if (!f0) throw new Error(`unknown faction ${faction}; try ${factionIds().join(', ')}`);

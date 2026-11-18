@@ -65,7 +65,7 @@ const CAPACITY_PROBLEM = 'engines carry';
 const ENGINE_TOP_UPS = 3;
 
 /** Engines a hull lacks to carry itself (`templateHullLoad`), at the capacity of the engines it has; 0 when it fits. */
-function enginesShort(defs: Record<string, ModuleDef>, t: Pick<ShipTemplate, 'rows' | 'modules'>): number {
+export function enginesShort(defs: Record<string, ModuleDef>, t: Pick<ShipTemplate, 'rows' | 'modules'>): number {
   const load = templateHullLoad(defs, t);
   return load.over > 0 && load.engines > 0 ? Math.ceil(load.over / (load.capacity / load.engines)) : 0;
 }
