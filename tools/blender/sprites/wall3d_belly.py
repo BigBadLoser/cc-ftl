@@ -30,8 +30,8 @@ from .wall3d_ext_t3 import CORNER_C
 
 ZG = W.ZG
 FAR_LOW = 0.5 / W.ZART              # walls down: the far sides' cut flush with the deck (half an art px over it)
-FAR_SEAM = (4 * TOP_PX, 4.75 * TOP_PX, "farSeam")   # a far side's top seam (the cut hull, walls down): 4 art px in from
-#   its inside, where the rear ghost's step top would be (Space Haven's far-side hull ghosts), bluer than the exterior's
+FAR_SEAM = (2 * TOP_PX, 2.75 * TOP_PX, "farSeam")   # a far side's top seam (the cut hull, walls down): 2 art px in from
+#   its inside (on screen where the rear ghost's step top would be: Space Haven's far-side hull ghosts), bluer
 ARMOUR = 0.77                       # tiles: the near armour's upright drop under the cut (hull 46 D3's: 31 px at 64
 SLOPE = (0.375, 0.638)              # px tiles; its Bottom draws 33, but the two meet), then its slope in (square to its
                                     # front) and down under the ship: a px column shows 13 px of it on a run (39.2 h
