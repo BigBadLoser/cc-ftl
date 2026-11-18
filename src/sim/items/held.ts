@@ -6,7 +6,7 @@ import { playerShips, playerStorages, withPlayerAboard } from '../story/world';
 import { AssignmentC, JobC } from '../crew/components';
 import { releaseHold } from '../modules/hold';
 import { CarryingC, ItemStackC, StorageC } from './components';
-import { destroyJob } from './stacks';
+import { destroyJob } from '../crew/jobEnd';
 import { storageTake } from './storage';
 import { takeFromStack } from './stacks';
 import { StasisWheelC } from '../stasis/components';
@@ -116,3 +116,10 @@ export function heldItems(sim: Sim, opts: HeldOptions = {}): Held[] {
 
 /** Run `fn` over the held list with the packet (if any) in the world, so `remove` reaches packet entities too. */
 export const withHeld = <T>(sim: Sim, fn: (held: Held[]) => T, opts: HeldOptions = {}): T => withPlayerAboard(sim, () => fn(heldItems(sim, opts)));
+
+/** Units of an item on player ships only: their storage modules plus loose stacks (delivery crates too). Other ships' stock never counts, nor do carried, wielded or fitted items. */
+export function playerStock(sim: Sim, item: string): number {
+  let n = 0;
+  for (const h of heldItems(sim, { reserved: true })) if (h.item === item && (h.where === 'storage' || h.where === 'stack')) n += h.count;
+  return n;
+}

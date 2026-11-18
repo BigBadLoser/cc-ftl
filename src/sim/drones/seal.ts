@@ -1,11 +1,12 @@
 import { BodyC } from '../body';
-import { shipById } from '../combat/ships';
+import { shipById } from '../combat/shipQuery';
 import { breachesOf } from '../crew/breach';
 import type { Job } from '../crew/components';
 import { BUILD_TICKS } from '../crew/handlers';
 import { findJobAt } from '../crew/helpers';
 import { finishStruct } from '../crew/jobWork';
-import { destroyJob, structCostKey } from '../items/stacks';
+import { structCostKey } from '../items/stacks';
+import { destroyJob } from '../crew/jobEnd';
 import { shipGrid } from '../regions';
 import type { Sim } from '../sim';
 import { Struct } from '../structure';

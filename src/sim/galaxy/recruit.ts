@@ -19,7 +19,8 @@ import { portsAt } from './portIndex';
 import type { Port } from './ports';
 import { isHostileFaction, tierOf } from './standing';
 import { nodeOf } from './state';
-import { RECRUIT_BASE, RECRUIT_JITTER, RECRUIT_LOG_MAX, RECRUIT_PER_WORTH, RECRUIT_ROLES, RECRUIT_SLOTS, RECRUIT_TURNS } from './tuningRecruit';
+import { RECRUIT_BASE, RECRUIT_JITTER, RECRUIT_PER_WORTH, RECRUIT_ROLES, RECRUIT_SLOTS, RECRUIT_TURNS } from './tuningRecruit';
+import { logRecruit } from './recruitLog';
 
 /**
  * Crew for hire. A port whose structure lists the `recruit` service (trade stations) posts candidates, derived from hashes of (seed, port, window, slot) the way
@@ -120,13 +121,6 @@ export function candidateEntity(sim: Sim, key: string): number {
 export const fetching = (sim: Sim, crew: number): Deal | undefined => sim.trade.deals.find((d) => isLive(d) && !!d.crew?.includes(crew));
 
 /** Keep the people aboard the node's stations in step with the ports' candidates: spawn the missing, remove the unhired whose window passed. */
-/** Note a candidate key as taken (hired, or dead): it is not offered again in its window. The log is capped. */
-export function logRecruit(sim: Sim, key: string): void {
-  const log = sim.galaxy.recruitLog;
-  log.push(key);
-  if (log.length > RECRUIT_LOG_MAX) log.splice(0, log.length - RECRUIT_LOG_MAX);
-}
-
 export function syncRecruits(sim: Sim): void {
   const g = sim.galaxy;
   if (!sim.content.galaxy || sim.sector.state !== 'active' || g.event || sim.sector.node !== g.current) return;

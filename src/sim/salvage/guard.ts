@@ -1,4 +1,4 @@
-import { shipById } from '../combat/ships';
+import { shipById } from '../combat/shipQuery';
 import type { Sim } from '../sim';
 
 /** True for a derelict wreck: the build tools never work on one (salvage is the only way to take it apart). */

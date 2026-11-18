@@ -1,6 +1,6 @@
 import { asteroidAt, inShip, shipIdAt } from '../sim/regions';
 import { ShipC, Struct, VehicleC, footprintTiles, isBlueprintKnown, isOreTile, isSolidRock, placementError, type Sim } from '../sim';
-import { shipById } from '../sim/combat/ships';
+import { shipById } from '../sim/combat/shipQuery';
 import type { Renderer } from '../render/scene';
 import { ROCK_MASS_Z } from '../render/asteroidView';
 import type { UiBuildKind, UiToolState } from '../ui/api';

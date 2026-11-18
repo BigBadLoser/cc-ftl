@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CombatC, ShipC } from '../../sim/combat/components';
-import { homeShip } from '../../sim/combat/ships';
+import { homeShip } from '../../sim/combat/shipQuery';
 import { CrewC, DraftedC, JobC, NeedsC, PathC, PositionC, PrioritiesC } from '../../sim/crew/components';
 import { ModuleC } from '../../sim/modules/components';
 import { placementError, spawnModule } from '../../sim/modules/spawn';
@@ -18,7 +18,7 @@ import { AwayC, AwaySiteC, SiteRunC } from '../../sim/away/components';
 import { departCheck, unsafeMembers } from '../../sim/away/depart';
 import { awayLeaks } from '../../sim/away/owned';
 import { drawAir, setAirHolds, sourceSupply } from '../../sim/eva/airLedger';
-import { passagesOf } from '../../sim/away/passage';
+import { passagesOf } from '../../sim/away/boarding';
 import { AirHoldsC, EvaFloatC, SuitC } from '../../sim/eva/components';
 import { ferryFree } from '../../sim/ferry/pick';
 import { shipIdOf } from '../../sim/regions';

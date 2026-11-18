@@ -10,7 +10,7 @@ import { ModuleC } from '../modules/components';
 import { footprintTiles } from '../modules/footprint';
 import type { Sim } from '../sim';
 import { AllegianceC, EquipC, EquipOrderC } from './components';
-import { shipById } from '../combat/ships';
+import { shipById } from '../combat/shipQuery';
 import { armsFor, isPlayerPerson } from './arms';
 import { wontDo } from '../crew/wontDo';
 import { stat } from '../stats';

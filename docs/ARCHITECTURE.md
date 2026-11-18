@@ -1005,14 +1005,19 @@ Phase 1 (the executor, no behaviour change) lives in `src/sim/ai/`: `scheduleSys
 **Schedules (#412).** Design: DESIGN.md "Schedules".
 - `sim/clock.ts`: the ship clock, read from `sim.tick` (`HOUR_TICKS` from `GAME_HOUR_SEC`, start at `CLOCK_START_HOUR`); nothing extra is saved.
 - `content/schedules.ts`: presets (`ScheduleDef`, `satisfies`), `ContentRegistry.schedules`; the `rotation` presets (Default, Late) are what crew without a row follow, in turn by person id.
-- `sim/crew/schedule.ts` owns every schedule question: `ScheduleC` (24 block ids, saved), `hoursOf` (own row, else a rotation preset for colonists,
-  else none), `blockAt` / `blockNow` (the block in force: `work` while `onCall`, a fight, Battle Stations or an open emergency on their ship they would
-  take; an empty console only for crew `admitLevel` would seat), `secToSleep` (for away planning: Sleep only), `holdsSleep` (the needs system keeps a sleeper in bed) and `wakesFromSleep` (the scheduler's turn gets
-  a scheduled sleeper up). `crew/scheduleHandlers.ts`: `crew.schedule.set`, `crew.schedule.preset`, `crew.schedule.copy`.
+- Schedule questions, in three files (split for #553 so the plan doesn't import the job scheduler):
+  - `sim/crew/schedule.ts`, the plan: `ScheduleC` (24 block ids, saved), `hoursOf` (own row, else a rotation preset for colonists, else none),
+    `blockAt` (the plan's block), `offDuty`, and `secToSleep` (for away planning: Sleep only, read from the plan, so a crew member on call in a
+    planned Sleep hour still counts as in Sleep: no trip; #553 decision).
+  - `sim/crew/onCall.ts`: `onCall` (a fight, Battle Stations, or an open emergency on their ship they would take; an empty console only for crew
+    `admitLevel` would seat), `blockNow` (the block in force: `work` while on call) and `holdsSleep` (the needs system keeps a sleeper in bed).
+  - `sim/crew/wake.ts`: `wakesFromSleep` (the scheduler's turn gets a scheduled sleeper up). `ai/crewKind.ts` answers which kind of crew member
+    this is, for the rotation presets and the policy.
+  - `crew/scheduleHandlers.ts`: `crew.schedule.set`, `crew.schedule.preset`, `crew.schedule.copy`.
 - The engine reads the block once per evaluation: `DriveDef.blocks` (policy data) closes a drive in a block (`'off'`), forces it on with a score
   floor (`on`) or moves its entry line (`enter`). With the work drive closed the scheduler's turn hands nobody a job and idles them (a carried
   patient is still set down first).
-- Away (away/crew.ts): `tripWorthIt` (time on site before `secToSleep` longer than the round-trip flight) gates `passageFits` and `siteWantsThem`; `staySec` is needs only. `scheduleHome` (Sleep or Free, read with `blockNow(sim, id, false)`) makes `awayReturn` due (Free only while the shuttle is beside the site), `passengerUrgent` (Sleep) and `tripDue` 'batch' (Free). `blockNow` reads Free as Work for a party member (`AwayC`), so they work on there.
+- Away: `away/tripFit.ts` holds what the job scheduler asks (`tripWorthIt`: time on site before `secToSleep` longer than the round-trip flight; it gates `passageFits` and `siteWantsThem`; `staySec` is needs only; `ofSide`, `passageTiles`). In away/crew.ts: `scheduleHome` (Sleep or Free, read with `blockNow(sim, id, false)`) makes `awayReturn` due (Free only while the shuttle is beside the site), `passengerUrgent` (Sleep) and `tripDue` 'batch' (Free). `blockNow` reads Free as Work for a party member (`AwayC`), so they work on there.
 - Snapshot: `Snapshot.clock` (day, hour, minute) and `UiCrew.schedule` / `block`.
 ## UI
 

@@ -7,7 +7,8 @@ import type { ContentRegistry } from '../../sim/registry';
 import type { Sim } from '../../sim/sim';
 import { IntentC } from '../../sim/ai/components';
 import type { DriveDef, PolicyDef } from '../../sim/ai/types';
-import { crewKind, curveAt, evaluateIntent, policyOf, serveDrive, type TaskView } from '../../sim/ai/utility';
+import { curveAt, evaluateIntent, policyOf, serveDrive, type TaskView } from '../../sim/ai/utility';
+import { crewKind } from '../../sim/ai/crewKind';
 
 const work = { id: 'work', curve: [[0, 100]], task: 'job' } satisfies DriveDef;
 const idle: TaskView = { atPost: false, underway: () => false, finishing: () => false };

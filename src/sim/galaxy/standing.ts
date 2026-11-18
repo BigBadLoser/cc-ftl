@@ -8,6 +8,12 @@ import { LAW_KINDS, WANTED_AT } from './tuningHeat';
 /** The `sim.story.reputation` key of a galaxy faction (one per faction); an id without a def is its own key. */
 export const repKey = (sim: Sim, faction: string): string => sim.content.galaxy?.factions[faction]?.reputation ?? faction;
 
+/** Lower the player's standing with `faction` (its reputation key) by `n`. The one standing hit for inspections and patrols. */
+export function standingHit(sim: Sim, faction: string, n: number): void {
+  const key = repKey(sim, faction);
+  sim.story.reputation[key] = reputationOf(sim.story, key) - n;
+}
+
 /** The display name of the faction a reputation key belongs to ("traders" is the Free Traders); a key no faction has is its own name. */
 export function repName(sim: Sim, key: string): string {
   const fs = sim.content.galaxy?.factions ?? {};

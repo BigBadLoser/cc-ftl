@@ -12,7 +12,7 @@ import { SKILL_STEP, XP_PER_WORK_SEC } from '../tuning';
 import { weaponDefOf } from '../upgrades/stats';
 import { grantXp } from '../crew/xp';
 import { shipIdOf } from '../regions';
-import { shipById, shipCanAct } from '../combat/ships';
+import { shipById, shipCanAct } from '../combat/shipQuery';
 
 /**
  * Weapons charge only while powered, intact, not ion-disabled, with ammo (if they use any) and with the weapons

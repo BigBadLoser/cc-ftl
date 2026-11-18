@@ -1,7 +1,7 @@
 import { ALT, BodyC } from '../body';
 import { AwayC } from '../away/components';
 import { abortTask } from '../ai/task';
-import { shipById } from '../combat/ships';
+import { shipById } from '../combat/shipQuery';
 import {
   CarriedC, CrewC, DeadC, DownedC, DraftedC, HealthC, PathC, PositionC, type Crew,
 } from '../crew/components';

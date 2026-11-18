@@ -1,4 +1,4 @@
-import { shipById } from '../combat/ships';
+import { shipById } from '../combat/shipQuery';
 import { BUILD_TICKS, createJob } from '../crew/handlers';
 import { CrewC, DraftedC, JobC, PositionC } from '../crew/components';
 import { isSettled } from '../crew/helpers';

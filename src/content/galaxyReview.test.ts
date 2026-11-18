@@ -15,7 +15,7 @@ import { rollArrival } from '../sim/galaxy/arrivals';
 import { ensureAround } from '../sim/galaxy/state';
 import { MAX_HOSTILE_CONTACTS } from '../sim/galaxy/tuning';
 import { giveItems, takeItems } from '../sim/story/effects';
-import { playerStock } from '../sim/story/world';
+import { playerStock } from '../sim/items/held';
 import { content } from '.';
 import { run as step } from '../../test/support/sim';
 

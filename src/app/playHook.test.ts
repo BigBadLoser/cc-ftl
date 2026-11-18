@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { content } from '../content';
-import { homeShip } from '../sim/combat/ships';
+import { homeShip } from '../sim/combat/shipQuery';
 import { newGame } from '../sim/newGame';
 import { TICK_HZ } from '../sim/time';
 import { ensureAround } from '../sim/galaxy/state';

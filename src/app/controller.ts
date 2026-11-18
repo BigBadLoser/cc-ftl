@@ -18,7 +18,7 @@ import { EggSacC } from '../sim/aliens/components';
 import { draftedOf, moduleUnder, planOrders, type OrderPlan } from './crewOrders';
 import { boxSelection, clickSelection, idsInRect, normRect, type Rect } from './selection';
 import { needsMenu, type OrderChoice, type OrderId } from './orders';
-import { shipById } from '../sim/combat/ships';
+import { shipById } from '../sim/combat/shipQuery';
 import { buildFoeModule } from './foeModule';
 import { createAiming, type Aiming } from './aiming';
 

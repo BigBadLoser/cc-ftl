@@ -11,7 +11,7 @@ import { Struct } from '../../sim/structure';
 import { content } from '../index';
 import { factions } from './index';
 import { shipIdOf, shipGrid, shipIds } from '../../sim/regions';
-import { homeShip } from '../../sim/combat/ships';
+import { homeShip } from '../../sim/combat/shipQuery';
 
 const defs = content.modules as Record<string, ModuleDef>;
 const ids = Object.keys(factions) as (keyof typeof factions)[];

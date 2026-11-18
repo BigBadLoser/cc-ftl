@@ -6,7 +6,7 @@ import { AllegianceC } from '../../sim/fight/components';
 import { AwayC } from '../../sim/away/components';
 import { hostileAct } from '../../sim/combat/provoke';
 import { abortInspections } from '../../sim/inspect/flow';
-import { onInspectedShip } from '../../sim/inspect/fight';
+import { onInspectedShip } from '../../sim/inspect/aboard';
 import { EvaFloatC } from '../../sim/eva/components';
 import { InspectionC, type Inspection } from '../../sim/inspect/types';
 import { repKey } from '../../sim/galaxy/standing';

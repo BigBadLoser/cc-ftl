@@ -13,7 +13,7 @@ import { fleetStrength } from '../sim/galaxy/encounterOdds';
 import { eventNodeId } from '../sim/galaxy/eventGrid';
 import type { Fleet } from '../sim/galaxy/types';
 import { giveItems } from '../sim/story/effects';
-import { noteHelp } from '../sim/galaxy/eventGrid';
+import { noteHelp } from '../sim/galaxy/help';
 import { content } from '.';
 import { run as step } from '../../test/support/sim';
 

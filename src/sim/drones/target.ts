@@ -1,7 +1,7 @@
 import { ALT, BodyC } from '../body';
 import type { Faction } from '../combat/components';
 import { factionsHostile } from '../combat/factions';
-import { shipById } from '../combat/ships';
+import { shipById } from '../combat/shipQuery';
 import type { Position } from '../crew/components';
 import { sightLine } from '../fight/los';
 import type { Grid } from '../grid';

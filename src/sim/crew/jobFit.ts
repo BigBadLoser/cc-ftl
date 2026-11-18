@@ -3,7 +3,7 @@ import { ModuleC } from '../modules/components';
 import { YardCrewC } from '../yard/types';
 import { AwayC } from '../away/components';
 import { InspectionC } from '../inspect/types';
-import { passageFits } from '../away/crew';
+import { passageFits } from '../away/tripFit';
 import { isErrand, findSuitSource } from '../eva/errands';
 import { planSiteWalk } from '../eva/route';
 import { needsMaterials } from '../items/materials';

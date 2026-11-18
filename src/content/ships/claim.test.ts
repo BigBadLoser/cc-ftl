@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { AsteroidC } from '../../sim/asteroids/components';
 import { ShipC } from '../../sim/combat/components';
-import { homeShip } from '../../sim/combat/ships';
+import { homeShip } from '../../sim/combat/shipQuery';
 import { CrewC, PositionC } from '../../sim/crew/components';
 import { SuitC } from '../../sim/eva/components';
 import { regionItems } from '../../sim/ferry/pick';

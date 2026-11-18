@@ -9,7 +9,7 @@ import { Struct } from '../../sim/structure';
 import { content } from '../index';
 import { factions } from './index';
 import { shipGrid, shipIds } from '../../sim/regions';
-import { homeShip } from '../../sim/combat/ships';
+import { homeShip } from '../../sim/combat/shipQuery';
 
 const defs = content.modules as Record<string, ModuleDef>;
 const gen = (id: keyof typeof factions, seed: number, depth: number): GenResult =>

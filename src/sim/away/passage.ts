@@ -4,17 +4,16 @@ import { wakeUp } from '../ai/machines/sleep';
 import { planWalk } from '../eva/route';
 import { isEmergency } from '../ai/emergency';
 import { isIncapacitated, isSettled, origin } from '../crew/helpers';
-import { destroyJob } from '../items/stacks';
+import { destroyJob } from '../crew/jobEnd';
 import { FighterC } from '../fight/components';
-import { isTileWalkable } from '../modules/walk';
-import { shipGrid } from '../regions';
 import type { Sim } from '../sim';
 import { VehicleC, type Vehicle } from '../vehicles/components';
 import { boardingTile } from '../vehicles/geometry';
-import { boardCrew, occupants, unboardCrew, vehicleDefOf } from '../vehicles/lifecycle';
+import { boardCrew, occupants, vehicleDefOf } from '../vehicles/lifecycle';
 import { shipIdOf } from '../regions';
 import { AwayC, AwaySiteC } from './components';
 import { allocateSeats, siteDemand } from './seats';
+import { passagesOf } from './boarding';
 
 /**
  * Passages (docs/DESIGN.md "Who goes: passage jobs", #286 slice 2a): while the shuttle serving a site is at home it offers one `passage`
@@ -23,22 +22,9 @@ import { allocateSeats, siteDemand } from './seats';
  * boards them (`boardPassengers`), and they are of the party (`AwayC`) from then on.
  */
 
-/** The passage jobs a shuttle offers, ascending id. */
-export function passagesOf(sim: Sim, vehicle: number): number[] {
-  return sim.world.query(JobC).filter((j) => {
-    const job = sim.world.get(j, JobC);
-    return job?.kind === 'passage' && job.target === vehicle;
-  }).sort((a, b) => a - b);
-}
-
 /** Seats a passenger can still take (the pilot's seat counts: the shuttle flies itself). */
 export function freeSeats(sim: Sim, v: Vehicle): number {
   return Math.max(0, (vehicleDefOf(sim, v)?.capacity ?? 0) + 1 - occupants(v).length);
-}
-
-/** Withdraw every passage of the shuttle (a walker on the way is called off). */
-export function dropPassages(sim: Sim, vehicle: number): void {
-  for (const j of passagesOf(sim, vehicle)) destroyJob(sim, j);
 }
 
 /**
@@ -140,23 +126,6 @@ export function boardPassengers(sim: Sim, vehicle: number, site: number): void {
     boardCrew(sim, c, vehicle);
     sim.world.add(c, AwayC, { site, vehicle, cat });
   }
-}
-
-/**
- * Let everyone aboard out at the boarding tile (back from the site, or a passenger stepping out again). `who` picks them; they leave the
- * party. False when the tile cannot be stood on (nobody gets out).
- */
-export function letOut(sim: Sim, vehicle: number, who: (c: number) => boolean = () => true): boolean {
-  const v = sim.world.get(vehicle, VehicleC);
-  const at = boardingTile(sim, vehicle);
-  const grid = at && shipGrid(sim, at.shipId);
-  if (!v || !at || !grid || !isTileWalkable(sim, grid, at.x, at.y)) return false;
-  for (const c of occupants(v)) {
-    if (!who(c)) continue;
-    unboardCrew(sim, c, vehicle, at);
-    sim.world.remove(c, AwayC);
-  }
-  return true;
 }
 
 /**

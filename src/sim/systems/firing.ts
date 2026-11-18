@@ -17,7 +17,7 @@ import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { MIN_SPREAD_FACTOR, SPREAD_PER_GUNNERY } from '../tuning';
 import { shipIdOf } from '../regions';
-import { shipById, shipCanAct } from '../combat/ships';
+import { shipById, shipCanAct } from '../combat/shipQuery';
 import { weaponDefOf } from '../upgrades/stats';
 
 /**

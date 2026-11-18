@@ -9,7 +9,8 @@ import { CarryingC } from '../sim/items/components';
 import { spillItems } from '../sim/items/stacks';
 import { storageAdd } from '../sim/items/storage';
 import { takeItems } from '../sim/story/effects';
-import { playerStock, playerStorages } from '../sim/story/world';
+import { playerStorages } from '../sim/story/world';
+import { playerStock } from '../sim/items/held';
 import { content } from './index';
 
 const ITEM = 'item.metal';

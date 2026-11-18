@@ -1,6 +1,6 @@
 import type { Command } from '../commands';
-import { shipById } from '../combat/ships';
-import { destroyJob } from '../items/stacks';
+import { shipById } from '../combat/shipQuery';
+import { destroyJob } from '../crew/jobEnd';
 import type { ScrapType } from '../registry';
 import type { Sim } from '../sim';
 import { SalvageOrderC, SCRAP_TYPES } from './components';

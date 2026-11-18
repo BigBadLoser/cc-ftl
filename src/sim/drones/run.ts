@@ -1,7 +1,7 @@
 import { ALT, BodyC, type Body } from '../body';
 import { takeStock } from '../combat/ammo';
 import { IonC } from '../combat/components';
-import { shipById } from '../combat/ships';
+import { shipById } from '../combat/shipQuery';
 import { mustWaitAtAirlockDoor } from '../modules/airlock';
 import { ModuleC } from '../modules/components';
 import { isTileWalkable } from '../modules/walk';

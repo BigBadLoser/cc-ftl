@@ -1,13 +1,13 @@
 import { abortTask, attachJob } from '../ai/task';
 import { damageModule } from '../combat/effects';
 import { factionsHostile } from '../combat/factions';
-import { shipById } from '../combat/ships';
+import { shipById } from '../combat/shipQuery';
 import { AssignmentC, CrewC, DeadC, DownedC, DraftedC, JobC, PathC, PositionC, type Job, type Path } from '../crew/components';
 import type { WorkResult } from '../crew/jobWork';
 import { isFighting, isIncapacitated, origin } from '../crew/helpers';
 import { planWalk } from '../eva/route';
 import { AllegianceC, FighterC } from '../fight/components';
-import { destroyJob } from '../items/stacks';
+import { destroyJob } from '../crew/jobEnd';
 import { ModuleC } from '../modules/components';
 import { footprintTiles } from '../modules/footprint';
 import { shipIdOf } from '../regions';

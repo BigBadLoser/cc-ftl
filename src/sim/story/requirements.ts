@@ -4,7 +4,8 @@ import type { ItemQty } from '../registry';
 import type { Sim } from '../sim';
 import type { ChoiceDef, EventDef, Requirement, SkillCheck } from './defs';
 import { flagValue, reputationOf } from './state';
-import { bestAt, hasImplant, playerCrew, playerModules, playerStock, stowedShuttles, withPlayerAboard } from './world';
+import { bestAt, hasImplant, playerCrew, playerModules, stowedShuttles, withPlayerAboard } from './world';
+import { playerStock } from '../items/held';
 
 const SKILL_LABEL: Readonly<Record<string, string>> = SKILL_NAMES;
 

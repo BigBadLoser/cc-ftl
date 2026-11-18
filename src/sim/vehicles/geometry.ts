@@ -1,4 +1,4 @@
-import { shipById } from '../combat/ships';
+import { shipById } from '../combat/shipQuery';
 import { ModuleC } from '../modules/components';
 import { accessTile, hullOutward, hullSide, rotatedSize } from '../modules/footprint';
 import { airlockTiles } from '../modules/airlock';

@@ -139,12 +139,6 @@ function settleFleet(sim: Sim, ev: EventGrid, f: Fleet): Fleet {
   return f;
 }
 
-/** A deal with `ship` settled: in a rescue grid that is the help the damaged fleet was waiting for (`EventGrid.helped`). */
-export function noteHelp(sim: Sim, ship: number): void {
-  const ev = sim.galaxy.event;
-  if (ev?.kind === 'rescue' && ev.fleet?.ships.some((c) => c.ship === ship)) ev.helped = true;
-}
-
 /**
  * Leave the event grid: the player's ship is lifted back into a packet (hostiles about need a charged drive, which is spent: that is a flee),
  * the sector is wiped (every entity gone, a fresh grid; nothing archived), the fleet's survivors return to the map and the trip carries

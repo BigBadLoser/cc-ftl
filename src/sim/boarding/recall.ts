@@ -1,8 +1,8 @@
 import { AwayC, AwaySiteC, SiteRunC } from '../away/components';
-import { ofSide } from '../away/crew';
+import { ofSide } from '../away/tripFit';
 import { openSite } from '../away/handlers';
 import { notRecallable, recallCrew } from '../away/recall';
-import { shipById } from '../combat/ships';
+import { shipById } from '../combat/shipQuery';
 import { PositionC } from '../crew/components';
 import { FerryC } from '../ferry/components';
 import { ModuleC } from '../modules/components';

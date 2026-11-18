@@ -1,7 +1,7 @@
 import { CombatC, ShipC } from '../combat/components';
 import { abortTask, claimedBed, mealOf, reserveJob } from '../ai/task';
 import { skillOf } from '../combat/operators';
-import { shipById } from '../combat/ships';
+import { shipById } from '../combat/shipQuery';
 import {
   AssignmentC, CrewC, DeadC, DraftedC, JobC, PathC, PositionC, type Position,
 } from '../crew/components';

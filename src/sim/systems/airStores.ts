@@ -4,7 +4,7 @@ import { shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { AIRLOCK_AIR_REFILL_SEC, VEHICLE_AIR_DOCK_FILL_SEC } from '../tuning';
-import { shipById } from '../combat/ships';
+import { shipById } from '../combat/shipQuery';
 import { VehicleC } from '../vehicles/components';
 import { vehicleFaction } from '../vehicles/lifecycle';
 import { airlockAir, airlockAirCap, shipHasLifeSupport, vehicleAir, vehicleAirCap } from '../eva/air';

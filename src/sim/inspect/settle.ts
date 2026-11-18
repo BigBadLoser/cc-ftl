@@ -1,6 +1,6 @@
 import { INSPECT_BAN_TURNS, INSPECT_BRIBE_CHANCE, INSPECT_PATROL_REFUSE_HIT, INSPECT_REFUSE_HIT, SCAN_STANDING_HIT } from '../blackmarket/tuning';
 import type { Command } from '../commands';
-import { repKey } from '../galaxy/standing';
+import { standingHit } from '../galaxy/standing';
 import { CrewC, PositionC } from '../crew/components';
 import { AllegianceC } from '../fight/components';
 import { ItemStackC } from '../items/components';
@@ -8,7 +8,6 @@ import { holdsGoods, spillItems, stackSizeOf } from '../items/stacks';
 import type { ItemQty } from '../registry';
 import { shipGrid, shipIdOf } from '../regions';
 import type { Sim } from '../sim';
-import { reputationOf } from '../story/state';
 import { TraderC } from '../trade/types';
 import { VehicleC } from '../vehicles/components';
 import { cargoTile } from '../vehicles/geometry';
@@ -24,17 +23,12 @@ import { leave } from './start';
  *   (Fighting them is a later step: #138 step 3.)
  */
 
-export const hit = (sim: Sim, faction: string, n: number): void => {
-  const key = repKey(sim, faction);
-  sim.story.reputation[key] = reputationOf(sim.story, key) - n;
-};
-
 /**
  * What refusing (or leaving during) an inspection costs: a standing hit (INSPECT_PATROL_REFUSE_HIT at a patrol, which has no service to bar), and a
  * station's service. Nobody turns hostile: they keep what they seized (user ruling, #138 step 3).
  */
 export function refuseConsequences(sim: Sim, insp: Inspection): void {
-  hit(sim, insp.faction, insp.patrol !== undefined ? INSPECT_PATROL_REFUSE_HIT : INSPECT_REFUSE_HIT);
+  standingHit(sim, insp.faction, insp.patrol !== undefined ? INSPECT_PATROL_REFUSE_HIT : INSPECT_REFUSE_HIT);
   const t = sim.world.get(insp.station, TraderC);
   if (t) t.barredUntil = sim.galaxy.turn + INSPECT_BAN_TURNS;
 }
@@ -120,7 +114,7 @@ export const inspectHandlers: { 'inspect.settle': (sim: Sim, cmd: Extract<Comman
     if (cmd.choice === 'fine') {
       const paid = Math.min(insp.fine ?? 0, sim.trade.credits);
       sim.trade.credits -= paid;
-      hit(sim, insp.faction, SCAN_STANDING_HIT);
+      standingHit(sim, insp.faction, SCAN_STANDING_HIT);
       return done('fined', paid);
     }
     if (cmd.choice === 'refuse') {
@@ -133,7 +127,7 @@ export const inspectHandlers: { 'inspect.settle': (sim: Sim, cmd: Extract<Comman
     if (!roomAboard(sim, cmd.inspection, insp)) return reject(sim, cmd.type, 'noRoom'); // nowhere to set the goods down: no bribe
     if (!sim.rng.chance(INSPECT_BRIBE_CHANCE)) {
       insp.bribeFailed = true;
-      hit(sim, insp.faction, SCAN_STANDING_HIT);
+      standingHit(sim, insp.faction, SCAN_STANDING_HIT);
       sim.events.emit({ type: 'inspect.bribeRefused', inspection: cmd.inspection, faction: insp.faction });
       return;
     }

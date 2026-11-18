@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { content } from '../content';
 import { ProjectileC, ShipC } from '../sim/combat/components';
-import { homeShip } from '../sim/combat/ships';
+import { homeShip } from '../sim/combat/shipQuery';
 import type { SimEvent } from '../sim/events';
 import { ModuleC } from '../sim/modules/components';
 import { newGame } from '../sim/newGame';

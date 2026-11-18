@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { TaskC } from '../../sim/ai/components';
 import { ShipC } from '../../sim/combat/components';
-import { homeShip } from '../../sim/combat/ships';
+import { homeShip } from '../../sim/combat/shipQuery';
 import { AssignmentC, CarriedC, CrewC, DraftedC, HealthC, JobC, NeedsC, PositionC, PrioritiesC } from '../../sim/crew/components';
 import { findPath } from '../../sim/crew/pathfind';
 import { SuitC } from '../../sim/eva/components';
@@ -20,7 +20,7 @@ import { auditReservations } from '../../sim/ai/audit';
 import { machineStates } from '../../sim/ai/classes';
 import { killCrew } from '../../sim/crew/death';
 import { findJobAt, isIncapacitated } from '../../sim/crew/helpers';
-import { destroyJob } from '../../sim/items/stacks';
+import { destroyJob } from '../../sim/crew/jobEnd';
 import { shipIdOf } from '../../sim/regions';
 import { content } from '../index';
 import { landed, siteWork } from '../../../test/support/fixtures/away';

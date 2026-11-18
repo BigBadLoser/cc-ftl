@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { homeShip } from '../../../src/sim/combat/ships';
+import { homeShip } from '../../../src/sim/combat/shipQuery';
 import { hullLoad } from '../../../src/sim/ftl/capacity';
 import { newGame } from '../../../src/sim/newGame';
 import { validateTemplate } from '../../../src/sim/shipgen';
