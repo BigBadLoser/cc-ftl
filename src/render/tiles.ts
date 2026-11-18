@@ -114,8 +114,16 @@ export function outward(kindAt: KindAt, x: number, y: number): number {
 /** The fewest connected tiles of the back edge that stand full height in cutaway (`backEdge`). */
 const BACK_MIN = 3;
 
-/** How far `clearTo` and `hidesShip` look (tiles). */
+/** How far `clearTo` looks (tiles). */
 export const HULL_RAY = 16;
+
+/**
+ * How far behind a full far wall `hidesShip` looks (tiles diagonally up the screen): as far as the wall's top reaches. A
+ * diagonal step back rises one tile height (TILE_H, 64 px) on screen and the hull top stands ROOF_Z * Z_PX (about 161 px)
+ * over the floor, so a full wall covers what lies up to 3 steps behind it; anything further back shows over its top (a
+ * base's other rooms across the ground).
+ */
+const HIDE_RAY = 3;
 
 /**
  * How far a tile's `hullSide` can depend on the struct (tiles): the rays (HULL_RAY) of tiles up to BACK_MIN away (the
@@ -209,12 +217,12 @@ function backEdge(kindAt: KindAt, x: number, y: number): boolean {
 
 /**
  * Whether a far hull wall at (x, y) stands in front of the ship on screen: some ship tile lies straight behind it (up the
- * screen, toward -x -y). Only the ship's top and back edges, with nothing of it behind them, stand full height in
+ * screen, toward -x -y) within the wall's reach (HIDE_RAY). Only the ship's top and back edges, with nothing of it behind them, stand full height in
  * cutaway; a far wall that would hide part of the ship (a step in a side, the back wall across a notch) is cut with
  * the near hull instead.
  */
 function hidesShip(kindAt: KindAt, x: number, y: number): boolean {
-  for (let k = 1; k <= HULL_RAY; k++) if (kindAt(x - k, y - k) !== Struct.Space) return true;
+  for (let k = 1; k <= HIDE_RAY; k++) if (kindAt(x - k, y - k) !== Struct.Space) return true;
   return false;
 }
 
