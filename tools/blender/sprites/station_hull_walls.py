@@ -99,24 +99,24 @@ def _seam_band():
 
 
 def _seam(rel, planes, fronts):
-    """The seam on the cut's top, per front where it is the nearest (wall3d_ext_diag._seam's), at true distances."""
+    """The seam on the cut's top, per front where it is the nearest (wall3d_ext_diag._seam's: depths in s . p terms)."""
     from .wall3d_ext_diag import _solid
     a, b = _seam_band()
     up = T.Vector((0, 0, 1))
     side = [q for q in planes if abs(q[0].z) < 1e-9]
-    for s, c, _w in fronts:
-        band = [(s, c - a * s.length), (-s, -(c - b * s.length))]
-        band += [(t, d - b * t.length) for t, d, _ in fronts if t is not s]
+    for s, c, w in fronts:
+        band = [(s, c - w * a), (-s, -(c - w * b))]
+        band += [(t, d - g * b) for t, d, g in fronts if t is not s]
         for pts, m, _ in _solid(side + band + [(-up, -FOOT_Z), (up, FOOT_Z + T.PAINT)]):
             if m.z > 0.85:
                 rel.poly(pts, "steel", 3, m, fixed=SEAM)
 
 
 def _back(s, c, w):
-    """The cut where the hull ends behind front (s, c, w): the ship's depth (hull_outline.LIP, to the tile's back edge)
-    as a true distance, so a diagonal's band is as thick as a run's (hull_outline.back measures it along s . p)."""
+    """The cut where the hull ends behind front (s, c, w) (wall3d_belly's: hull_outline.back, d(f) <= back: in s . p
+    terms, so a diagonal's and a run's meet on the tile's edge)."""
     from . import hull_outline as HO
-    return (-s, -(c - HO.LIP * s.length))
+    return (-s, -(c - w * HO.back((round(s.x), round(s.y)))))
 
 
 def low(n):
