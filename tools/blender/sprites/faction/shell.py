@@ -285,7 +285,7 @@ class LookShell(T.Shell):
             R = T.RAMPS[fam][1 if ax == "x" else 0]
             mt = {"cont": 0.0, "end": 0.0, "out": -1.0, "in": 1.0}
             lo, hi = self._back_end(ax, plane, a, -1), self._back_end(ax, plane, b, 1)
-            front = hi == "out"                         # (its high end round an outer corner onto a face the camera
+            front = hi == "out" or self.level == "low"  # (walls down it shows: the step as the front's; its high end round an outer corner onto a face the camera
             pts, parts = self._prof(0.0, self.run, None, shelf=front)  # sees: that face's shelf carried round to
                                                                         # it, in its tones, not the bare slope's top)
             pts = [(-d, z) for d, z in pts]             # (out from the face is -d here)

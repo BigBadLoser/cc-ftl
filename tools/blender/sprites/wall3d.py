@@ -690,7 +690,7 @@ def block(mask, fam, deco=None, name=None, level="cut", corners=0, shell=None, d
         if not getattr(sp, "no_skirt", False):
             skirt(k, sp, ax, plane, a, b, "blue" if hull else "wall", ends)
         if top <= sp.zs + 0.05:
-            if style().shelf and not hull:              # a stub over a shelf: the face's art from the shelf up to
+            if style().shelf and not hull and top > W.shelf_top() + 0.01:   # a stub over a shelf: the face's art from the shelf up to
                 from .faction.shell import _ends        # the cut (its lip and seams), cut off there, over a backing
                 from .wall3d_v2 import lip_heights      # (a wall's end face: the backing only)
                 k.top = top

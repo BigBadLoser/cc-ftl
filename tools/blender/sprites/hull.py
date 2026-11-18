@@ -14,7 +14,7 @@ import math
 
 from . import core
 from . import wallart as A
-from .walls import BEV, CURVE, DROP, DZ, FOOT_PX, GN, RAMP_CELLS, RAMP_PX, ZART, ZG, Spec, emit, half_cell
+from .walls import SHELF_CELLS, BEV, CURVE, DROP, DZ, FOOT_PX, GN, RAMP_CELLS, RAMP_PX, ZART, ZG, Spec, emit, half_cell
 
 C = 1 / GN
 ZB = DROP - CURVE          # straight part of the belly below the deck
@@ -82,7 +82,7 @@ class Out(Spec):
     def topz(self, x, y):
         if not self.o:
             d = self._inner(x, y)
-            return 0.0 if d <= 0 else (FOOT_PX + RAMP_PX * min(RAMP_CELLS, d * GN)) / ZART
+            return 0.0 if d <= 0 else (FOOT_PX + RAMP_PX * min(RAMP_CELLS - SHELF_CELLS, d * GN)) / ZART
         return ZG - max(0.0, BEV - self.dist(x, y))
 
     def _s(self, x, y):
@@ -231,7 +231,7 @@ FADE = ("gW2", "hsK", "hsXK", "hbXhsXK")   # the rising lines' tones, bottom up:
 def _rise(m, mask, room, corners):
     """The rear ghost's faint lines rising from its crest at the tile's seams (and its corner) to the hull's full height,
     fading as they go: the wall it stands for, hinted (Space Haven's far-side hull ghosts, walls fully collapsed)."""
-    from .walls import hull_top, skirt_top
+    from .walls import hull_top, shelf_top
     r = RAMP_CELLS / GN
     pts = []
     if not mask & 4:
@@ -241,7 +241,7 @@ def _rise(m, mask, room, corners):
     if mask & 6 == 6 and not corners & 2:
         pts.append((0.5 - r, 0.5 - r))                          # the inner corner
     w = 0.36 * C
-    z0, z1 = skirt_top(), hull_top()
+    z0 = shelf_top(); z1 = z0 + (hull_top() - z0) / 3   # (short, as in the reference)
     for px, py in pts:
         a, b = (px - w, py + w), (px + w, py - w)
         for k, tone in enumerate(FADE):

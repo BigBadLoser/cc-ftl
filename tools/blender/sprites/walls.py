@@ -82,7 +82,15 @@ def wall_top(fam, level):
     skirt-high stubs (the hull is a ghost there, see hull.py)."""
     if fam == "hull":
         return hull_top() if level != "low" else ZG
-    return {"up": HF, "cut": skirt_top() + CUT, "low": skirt_top()}[level]
+    return {"up": HF, "cut": skirt_top() + CUT, "low": shelf_top()}[level]
+
+
+SHELF_CELLS = 4    # the ramp's top: a flat step this many cells deep against the wall (wall3d_v2.SHELF)
+
+
+def shelf_top():
+    """The step at the ramp's top, against the wall: walls down cut the walls here."""
+    return skirt_top() - SHELF_CELLS * RAMP_PX / ZART
 
 
 # Corner fills (the 47-tile blob set): bit NE 1, SE 2, SW 4, NW 8 is set when both adjacent arms are connected and the
