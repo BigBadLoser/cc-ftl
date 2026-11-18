@@ -56,9 +56,13 @@ def near(s):
     return s[0] + s[1] > 0
 
 
+NEAR_TOP = [ZG]                     # the near sides' cut (piece's `top`): ZG, or flush with the deck (walls down: the
+#   near hull gets its own ghost over it)
+
+
 def span(s, far):
     """A front's part's heights: (bottom, top)."""
-    return (ZG - ARMOUR - SLOPE[1], ZG) if near(s) else (0.0, far)
+    return (ZG - ARMOUR - SLOPE[1], NEAR_TOP[0]) if near(s) else (0.0, far)
 
 
 def _slope(s, c):
@@ -157,18 +161,19 @@ def _tone(m, i, n, s):
 LAYERS = {"under": (UP, 0.0), "over": (-UP, 0.0)}   # (a layer's cut: under the deck, over it)
 
 
-def piece(key, far=ZG, layer="over", margin=0.0, look=20):
+def piece(key, far=ZG, layer="over", margin=0.0, look=20, top=ZG):
     """A layer (LAYERS) of the belly piece of a tile with this key: a near run's part the run's own art (wall3d_belly
     _run, as the exterior's pieces take the run set's), cut to it; each other part a solid, its faces toned by facing
     (a face shared with a neighbour part drawn only where it rises over or hangs under that part, else it is inside
     the hull), the top's seam on its cut (the exterior's). `margin`: its sides that far out (WIDE: the solid its
-    colours come from, env_build "wide"); look: its runs' (wall3d_belly_run.build)."""
+    colours come from, env_build "wide"); look: its runs' (wall3d_belly_run.build); top: the near sides' cut (below
+    ZG: over the deck, a plain cut top, no run art or frame)."""
     from . import core
-    was, core.REMAP = core.REMAP, REMAP
+    was, core.REMAP, NEAR_TOP[0] = core.REMAP, REMAP, top
     try:
         return _piece(key, far, layer, margin, look)
     finally:
-        core.REMAP = was
+        core.REMAP, NEAR_TOP[0] = was, ZG
 
 
 def _piece(key, far, layer, margin, look):
@@ -179,11 +184,12 @@ def _piece(key, far, layer, margin, look):
         lo, hi = span(f[0], far)
         if (-lo if layer == "under" else hi) <= 0.0:
             continue                                    # (none of it in this layer)
-        if f[0] in BR.RUNS:
+        plain = layer == "over" and near(f[0]) and NEAR_TOP[0] < ZG    # (a near side cut at the deck: its top only)
+        if f[0] in BR.RUNS and not plain:
             art += BR.art(f, cuts + [LAYERS[layer]], wide=margin > 0, look=look)
             continue
         planes = planes + [LAYERS[layer]]
-        if f[0] == (1, 1) and f in given:               # (a near diagonal: the runs' bays laid on it, its frame
+        if f[0] == (1, 1) and f in given and not plain:     # (a near diagonal: the runs' bays laid on it, its frame
             art += BR.diag_art(f, cuts + [LAYERS[layer]], look)    # painted as a chamfer's, the top's seam)
             _frame(rel, f, planes)
             if layer == "over":
@@ -204,7 +210,7 @@ def _piece(key, far, layer, margin, look):
                 for p2, m2, j in _solid(planes + [cut]):
                     if j == i:
                         rel.poly(p2, "steel", 3, m2, fixed=END)
-        if near(f[0]):                                  # (the bay looks' frame, as the runs carry it)
+        if near(f[0]) and not plain:                    # (the bay looks' frame, as the runs carry it)
             _frame(rel, f, planes)
         if layer == "over" and near(f[0]):              # (a far side's cut top is plain: the rear ghost's lines
             _seam(rel, ([], [q for q in planes if abs(q[0].z) < 1e-9]), [f], span(f[0], far)[1])   # trace its edge)
@@ -222,11 +228,11 @@ def _frame(rel, f, planes):
     BF.dress(rel, _solid, planes, find((v, c)), find(_slope(v, c)[0]), ZG, foot, foot - SLOPE[1])
 
 
-def wide(key, far=ZG, layer="over", look=20):
+def wide(key, far=ZG, layer="over", look=20, top=ZG):
     """A piece as env_build's "wide" kind: (its own, the same run on past the tile's edges); none if it is empty. A
     piece of more than one front (a corner) takes its colours from itself: pushed out past the tile it is another
     shape (as the exterior's, whose corners are "block" pieces)."""
-    own = piece(key, far, layer, look=look)
+    own = piece(key, far, layer, look=look, top=top)
     if not own:
         return []
-    return (own, piece(key, far, layer, WIDE, look) if ";" not in key else piece(key, far, layer, look=look))
+    return (own, piece(key, far, layer, WIDE, look, top) if ";" not in key else piece(key, far, layer, look=look, top=top))
