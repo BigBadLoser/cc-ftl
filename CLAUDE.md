@@ -16,7 +16,7 @@ see `docs/STATUS_ARCHIVE.md` and the October handoff snapshot in `docs/HANDOFF.m
 - `npm run typecheck`: `tsc` and `svelte-check`
 - `npm run check:fast`: lint, typecheck, the rule checks (`npm run test:rules`: file size, system imports, isolated mocks, duplication,
   import cycles; about a second, run every time since they read files rather than imports), and the near tests of uncommitted changes (untracked files included): the test
-  files within two imports of what changed, plus edited test files; with nothing uncommitted, the branch against
+  files within two imports of what changed (for a `tuning*.ts` file, of the users of the constants that changed), plus edited test files; with nothing uncommitted, the branch against
   `origin/main`. Run it before every commit. A sim edit reaches most of the suite through three imports, so the rest
   waits for the push.
 - `npm run check:push`: lint, typecheck and every fast test the branch affects (Vitest's import graph, since the merge
