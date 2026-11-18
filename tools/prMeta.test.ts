@@ -1,0 +1,60 @@
+import { describe, expect, it } from 'vitest';
+// @ts-expect-error a plain .mjs tool module without type declarations
+import * as meta from './prMeta.mjs';
+
+const { modelNames, checkBody, checkBranch, checkCommits, checkAll } = meta as {
+  modelNames: (t: string) => string[];
+  checkBody: (b: string) => string[];
+  checkBranch: (b: string) => string[];
+  checkCommits: (m: string[], s?: string[]) => string[];
+  checkAll: (a: { body: string; branch: string; messages: string[]; shas?: string[] }) => string[];
+};
+
+describe('model names', () => {
+  it('flags whole words, any case', () => {
+    expect(modelNames('Written by Claude, then GPT-4 and gemini')).toEqual(['claude', 'gpt', 'gemini']);
+    expect(modelNames('Co-Authored-By: Claude Sonnet 5.5 <noreply@x>')).toEqual(['claude', 'sonnet']);
+  });
+  it('ignores paths, hosts and longer words', () => {
+    expect(modelNames('edit .claude/agents/x.md and tools/.claude/y')).toEqual([]);
+    expect(modelNames('https://claude.ai/code/session_1')).toEqual([]);
+    expect(modelNames('a haikus poem, mimosa, llamas')).toEqual([]);
+  });
+  it('leaves the review bot alone', () => {
+    expect(modelNames('comment @codex review; Codex review passed')).toEqual([]);
+  });
+});
+
+describe('body', () => {
+  it('needs an issue link', () => {
+    expect(checkBody('Closes #12')).toEqual([]);
+    expect(checkBody('part of #3')).toEqual([]);
+    expect(checkBody('Refs bigbadloser/cc-ftl#3')).toEqual([]);
+    expect(checkBody('no link here')).toHaveLength(1);
+    expect(checkBody('')).toHaveLength(1);
+  });
+  it('rejects model names', () => {
+    expect(checkBody('Closes #1\n\nGenerated with Claude Code')).toHaveLength(1);
+  });
+});
+
+describe('branch', () => {
+  it('needs a prefix', () => {
+    expect(checkBranch('tools/guardrails-557')).toEqual([]);
+    expect(checkBranch('dependabot/npm/x')).toEqual([]);
+    expect(checkBranch('claude/random-words')).toHaveLength(1);
+    expect(checkBranch('main')).toHaveLength(1);
+  });
+});
+
+describe('commits and the whole check', () => {
+  it('flags a commit that names a model', () => {
+    const out = checkCommits(['Fix a thing (Refs #1)', 'Add x\n\nCo-Authored-By: Claude <a@b>'], ['aaaaaaaaaa', 'bbbbbbbbbbbb']);
+    expect(out).toHaveLength(1);
+    expect(out[0]).toContain('bbbbbbbbb');
+  });
+  it('passes a clean PR and skips dependabot', () => {
+    expect(checkAll({ body: 'Closes #1', branch: 'fix/x-1', messages: ['Fix x (Refs #1)'] })).toEqual([]);
+    expect(checkAll({ body: '', branch: 'dependabot/npm/y', messages: ['Bump y'] })).toEqual([]);
+  });
+});
