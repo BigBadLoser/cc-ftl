@@ -227,8 +227,9 @@ def out_block(mask, o, variant=0, part="rim", room=0, corners=0):
         from .hull_wire import wire                   #   drew nothing and hid lines behind them)
         wire(m, sp)
         _rise(m, mask, room, corners)
-        f = core.Mesh(f"hull_ghost_fill_{mask}_{room}_{corners}", flat=True)
-        sp.col_top = sp.col_skirt = lambda *a: FILL                         # noqa: E731 (its surfaces: a faint
+        from .hull_wire import behind_stem
+        f = _Fill(f"hull_ghost_fill_{mask}_{room}_{corners}", flat=True)
+        sp.col_top = sp.col_skirt = lambda *a: None if behind_stem(sp, a[-2], a[-1]) else FILL   # noqa: E731 (a faint
         sp.col_face = lambda face, x, y, z: FILL if sp._inner(x, y) < 0.5 / GN else None   # noqa: E731 (fill,
         emit(f, sp)                                                         #   rendered on their own; of the faces
                                                                             #   only the foot's on the room side: the
@@ -264,6 +265,13 @@ def _rise(m, mask, room, corners):
         for k, tone in enumerate(FADE):
             za, zb = z0 + (z1 - z0) * k / len(FADE), z0 + (z1 - z0) * (k + 1) / len(FADE)
             m.poly([core.G(*a, za), core.G(*b, za), core.G(*b, zb), core.G(*a, zb)], tone)
+
+
+class _Fill(core.Mesh):
+    """The rear ghost's fill mesh: a polygon given no colour is left out."""
+    def poly(self, pts, color, flip=False):
+        if color is not None:
+            super().poly(pts, color, flip)
 
 
 BACK = ("gFillB0", "gFillB1", "gFillB2", "gFillB3", "gFillB4", "gFillB5")   # the back face's fill, bottom up

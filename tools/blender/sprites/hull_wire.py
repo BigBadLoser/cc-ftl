@@ -99,8 +99,7 @@ def wire(m, sp):
     d = [[sp._inner(x, y) for y in xs] for x in xs]
     # the crest: a level set, at its height
     for a, b in _level(d, CD):
-        if not _stem_back(sp, a, b):
-            strip(m, (*a, zof(CD)), (*b, zof(CD)))
+        strip(m, (*a, zof(CD)), (*b, zof(CD)))
     # the foot's top: along the tile's edges where the room side is (distance 0 there)
     for edge in range(4):
         ts = [i / N - 0.5 for i in range(N + 1)]
@@ -138,26 +137,31 @@ def wire(m, sp):
             strip(m, (*a, zof(0.0)), (*b, zof(sp._inner(*b))), SEAM)
 
 
-def _stem_back(sp, a, b):
-    """A T's stem crest on its far side (the slope falling away from the camera, toward -x or -y): seen through the
-    arm's slope in front of it, so left unlined (the fill there runs to the arm's own outline)."""
-    (ax, ay), (bx, by) = a, b
-    t = 1.0 / N
-    if sp.mask & 14 == 14 and not sp.corners & 4 and abs(ax - bx) < t and abs(ax + 0.5 - CD) < t:
-        return min(ay, by) >= 0.5 - CD - t
-    if sp.mask & 7 == 7 and not sp.corners & 1 and abs(ay - by) < t and abs(ay + 0.5 - CD) < t:
-        return min(ax, bx) >= 0.5 - CD - t
-    return False
-
-
 def _stem_crease(sp, cl):
-    """A T's crease on its far side, where the arm's slope meets the stem's back slope: a 45 degree line on screen, all
-    but its ends behind the wall, so left out with that slope's crest (_stem_back)."""
+    """A T's crease on its far side, where the arm's slope meets the stem's back slope: a 45 degree line on screen. Left
+    out: that side's outline is the stem's crest, straight on from the wall's own top edge (the fill stops there too:
+    behind_stem)."""
     x = sum(p[0] for p in cl) / len(cl)
     y = sum(p[1] for p in cl) / len(cl)
     if sp.mask & 14 == 14 and not sp.corners & 4 and x < -0.5 + CD and y > 0.5 - CD:
         return True
     return sp.mask & 7 == 7 and not sp.corners & 1 and x > 0.5 - CD and y < -0.5 + CD
+
+
+def behind_stem(sp, x, y):
+    """True where a T's far-side slopes show on screen beyond the stem's crest (between it and the crease _stem_crease
+    leaves out): the fill stops at the crest, as the lines do."""
+    zc = zof(CD)
+    if sp.mask & 14 == 14 and not sp.corners & 4 and x < -0.5 + CD and y > 0.5 - CD:
+        c = (-0.5 + CD, 0.5 - CD)
+        slope = -0.5                                    # (the crest runs along +y: screen (-32, 16))
+    elif sp.mask & 7 == 7 and not sp.corners & 1 and x > 0.5 - CD and y < -0.5 + CD:
+        c = (0.5 - CD, -0.5 + CD)
+        slope = 0.5                                     # (... along +x: screen (32, 16))
+    else:
+        return False
+    (cx, cy), (px, py) = _screen((*c, zc)), _screen((x, y, zof(sp._inner(x, y))))
+    return py > cy + slope * (px - cx) + 1e-6
 
 
 def _clusters(pts, gap=4 / N):
