@@ -23,6 +23,7 @@ import type { UiAlert, UiAlertKind, UiSubject } from '../ui/api';
 import { breakWhat } from './breakText';
 import { crewSubject, enemyShip, roomOf, shipSubject, tileAt } from './subjects';
 import { stasisFailing } from './stasisAlert';
+import { huntersHere } from '../sim/galaxy/hunters';
 
 /** An alert whose condition holds in the sim right now, keyed as the event-born one is (so the two never double up). */
 export interface Wanted { kind: UiAlertKind; key: string; text: string; subject: UiSubject | null; notice?: UiAlert['notice']; actions?: UiAlert['actions']; sticky?: true }
@@ -31,7 +32,7 @@ export interface Wanted { kind: UiAlertKind; key: string; text: string; subject:
 export const DERIVED_KINDS: ReadonlySet<UiAlertKind> = new Set<UiAlertKind>([
   'fire.started', 'hull.breach', 'o2.low', 'power.shortage', 'crew.downed', 'suit.airLow', 'suit.airOut', 'crew.airUnreachable',
   'away.stranded', 'crew.break', 'crew.starving', 'combat.started', 'story.lead', 'inspect.waiting', 'inspect.blocked', 'ship.yielded',
-  'ship.disabled', 'fuel.low', 'fuel.out', 'core.lost', 'creatures.aboard', 'boarders.stranded', 'stasis.failing',
+  'ship.disabled', 'fuel.low', 'fuel.out', 'core.lost', 'creatures.aboard', 'boarders.stranded', 'stasis.failing', 'hunters.here',
 ]);
 
 /**
@@ -250,6 +251,11 @@ export function deriveAlerts(sim: Sim, held: (key: string) => boolean): Map<stri
   }
   for (const [ship, aliens] of aliensAboard(sim)) {
     add({ kind: 'creatures.aboard', key: `ca${ship}`, text: `Creatures aboard: ${sim.world.get(ship, ShipC)?.name ?? 'wreck'}`, subject: crewSubject(sim, aliens[0] as number) });
+  }
+  // Hunters sent after the player for their standing or notoriety: urgent even mid-fight, where `combat.started` already holds (#542).
+  for (const h of huntersHere(sim)) {
+    const who = sim.content.galaxy?.factions[h.faction]?.name ?? h.faction;
+    add({ kind: 'hunters.here', key: `hu${h.fleet}`, text: `Hunters: ${who} (${h.ships.length} ship${h.ships.length === 1 ? '' : 's'})`, subject: shipSubject(sim, h.ships[0] as number) });
   }
   for (const [ship, left] of boardersLeft(sim)) {
     add({ kind: 'boarders.stranded', key: `rl${ship}`, text: `Left behind: ${left.map(name).join(', ')}`, subject: crewSubject(sim, left[0] as number) });
