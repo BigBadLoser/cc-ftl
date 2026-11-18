@@ -31,9 +31,13 @@ function choose(c: Ctx): DonorKind[] {
     if (need === 'hangar' && c.plan.hangars.length === 0) continue;
     if (out.some((k) => DONORS[k].serves.includes(need))) continue;
     const opts = kinds.filter((k) => DONORS[k].serves.includes(need) && (w[k] ?? 0) > 0);
-    if (opts.length > 0) out.push(pickWeighted(c.rng, opts.map((k) => ({ value: k, weight: w[k] ?? 0 }))));
+    // A small ship (low budget size) leans hard on donors that carry several of the jobs still open: fewer, so smaller.
+    const open = (k: DonorKind): number => DONORS[k].serves.filter((n) => !out.some((o) => DONORS[o].serves.includes(n))).length;
+    const lean = Math.max(0, 2 - c.plan.size) * 2;
+    if (opts.length > 0) out.push(pickWeighted(c.rng, opts.map((k) => ({ value: k, weight: (w[k] ?? 0) * (1 + lean * (open(k) - 1)) }))));
   }
-  for (let n = c.rng.int(0, 1 + Math.floor(c.plan.size / 2)); n > 0; n--) {
+  // Extras the role likes: none on the smallest ships, up to three on the biggest.
+  for (let n = c.rng.int(0, c.plan.size < 1 ? 0 : 1 + Math.floor(c.plan.size / 2)); n > 0; n--) {
     const opts = kinds.filter((k) => (w[k] ?? 0) > 0 && out.filter((x) => x === k).length < 2 && !['navyBow', 'tug', 'navyDrive'].includes(k));
     if (opts.length > 0) out.push(pickWeighted(c.rng, opts.map((k) => ({ value: k, weight: w[k] ?? 0 }))));
   }

@@ -111,8 +111,8 @@ function twinHull(c: Ctx, f: FactionDef): boolean {
   return twinDrives(c, hulls, pick(c, c.fam.propulsion), 'start');
 }
 
-/** Carrier: a hangar block with hull decks along it (real volume), an offset island, nacelles aft. */
-function carrierIsland(c: Ctx): boolean {
+/** Carrier: a nose and bow battery ahead of a hangar block with hull decks along it (real volume), an offset island, nacelles aft. */
+function carrierIsland(c: Ctx, f: FactionDef): boolean {
   const j = jobs(c.plan);
   const hb = section(c, { kind: 'hangar', top: [], bottom: [], sponson: false, centre: c.plan.hangars, extra: [[], []] });
   if (!hb) return no(c, 'hangar');
@@ -120,7 +120,11 @@ function carrierIsland(c: Ctx): boolean {
   c.parts.push('hangar');
   const [bowGuns, ...more] = bands('battery', j.guns, 2);
   const bow = bowGuns ? section(c, bowGuns) : null;
-  if (bow && c.A.attach(root, bow, { side: 'w' }) === null) return no(c, 'bow');
+  const bowId = bow ? c.A.attach(root, bow, { side: 'w' }) : root;
+  if (bowId === null) return no(c, 'bow');
+  // A nose ahead of it: the carrier's length (aspect 2.8 to 3.6) and the navy's pointed bow.
+  const front = noseBlock(c.rng, pickNose(new Builder(c.rng), f, c.plan));
+  if (!front || c.A.attach(bowId, front, { side: 'w' }) === null) return no(c, 'nose');
   // Crew, core, stores and the remaining guns in hull decks along the hangar: they give it real volume.
   const decks = deckPair(c, root, root, 'hull', [...j.crew, ...j.core, ...j.stores, ...more.flatMap((s: SectionPlan) => [...s.top, ...s.bottom])], 'start', { xMin: spanOf(c, [root]).xMin });
   if (!decks) return no(c, 'hull decks');
@@ -165,5 +169,5 @@ function flightDeck(c: Ctx, f: FactionDef): boolean {
 }
 
 export const GRAMMARS: Record<NavyGrammar, (c: Ctx, f: FactionDef) => boolean> = {
-  linear: linearHull, deckPair: deckPairGrammar, spineWings, citadelFlanked, twinHull, componentFrigate, componentBattleship, carrierIsland: (c) => carrierIsland(c), flightDeck,
+  linear: linearHull, deckPair: deckPairGrammar, spineWings, citadelFlanked, twinHull, componentFrigate, componentBattleship, carrierIsland, flightDeck,
 };
