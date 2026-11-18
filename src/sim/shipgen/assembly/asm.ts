@@ -58,9 +58,8 @@ export class Asm {
     const { g } = this.ctx;
     const undo = this.checkpoint(), was = undo.was;
     const W = 72, px = port.frame.x, py = port.frame.y;
-    const before = g.blocks(px - W, py - W, px + W, py + W);
     const b = make();
-    if (!b || g.blocks(px - W, py - W, px + W, py + W) > before) { undo(); return null; }
+    if (!b || g.moreBlocks(was, px - W, py - W, px + W, py + W)) { undo(); return null; }
     // Clear ground between it and whatever it is not joined to: `spacing` tiles of it, two round anything gated; and
     // where sections may stand wall to wall, never a single tile of space between two of them.
     const mine = new Set(b.regions), S = this.spacing;

@@ -1,6 +1,7 @@
 import { get } from 'svelte/store';
 import { describe, expect, it } from 'vitest';
-import { ModuleC, newGame } from '../sim';
+import { ModuleC } from '../sim/modules/components';
+import { newGame } from '../sim/newGame';
 import { ensureAround } from '../sim/galaxy/state';
 import { content } from '../content';
 import { createBridge } from './bridge';

@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { content } from '../content';
-import { CrewC, PositionC, SuitC, RolledSkillsC, SkillXpC, TraitsC, newGame, stat } from '../sim';
+import { CrewC, PositionC } from '../sim/crew/components';
+import { RolledSkillsC, TraitsC } from '../sim/crew/traits';
+import { SuitC } from '../sim/eva/components';
+import { newGame } from '../sim/newGame';
+import { stat } from '../sim/stats';
+import { SkillXpC } from '../sim/story/components';
 import { shipGrid, shipIdOf } from '../sim/regions';
 import { buildCrewDetail } from './crewDetail';
 

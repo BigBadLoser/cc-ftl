@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { CombatC, FTL_CHARGE_SEC, START_NODE, TICK_HZ, galaxyIndex, newGame, playerShip, type Sim } from '../sim';
+import { CombatC } from '../sim/combat/components';
+import { galaxyIndex, START_NODE } from '../sim/galaxy/state';
+import { newGame } from '../sim/newGame';
+import type { Sim } from '../sim/sim';
+import { TICK_HZ } from '../sim/time';
+import { playerShip } from '../sim/trade/player';
+import { FTL_CHARGE_SEC } from '../sim/tuning';
 import { CrewC, DeadC, DownedC, HealthC, NeedsC, PositionC } from '../sim/crew/components';
 import { boardCrew } from '../sim/vehicles/lifecycle';
 import { POD_HOLD_SEC } from '../sim/vehicles/escape';

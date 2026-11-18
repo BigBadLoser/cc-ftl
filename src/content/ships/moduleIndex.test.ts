@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { ModuleC, newGame, ShipC, shipIdOf, type Module, type Sim } from '../../sim';
+import { ShipC } from '../../sim/combat/components';
+import { type Module, ModuleC } from '../../sim/modules/components';
+import { newGame } from '../../sim/newGame';
+import { shipIdOf } from '../../sim/regions';
+import type { Sim } from '../../sim/sim';
 import { modulesOn, modulesWhere, moduleShip, type DefTest } from '../../sim/modules/byShip';
 import { removeModule, spawnModule } from '../../sim/modules/spawn';
 import { spawnStation } from '../../sim/stations/spawn';

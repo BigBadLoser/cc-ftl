@@ -1,15 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import { CrewC, ModuleC, PLAYER_START, Struct, deserialize, newGame, serialize, type Sim } from '../../sim';
+import { CrewC } from '../../sim/crew/components';
+import { ModuleC } from '../../sim/modules/components';
+import { newGame } from '../../sim/newGame';
+import type { Sim } from '../../sim/sim';
+import { Struct } from '../../sim/structure';
+import { PLAYER_START } from '../../sim/tuning';
 import { content } from '../index';
 import { shipGrid } from '../../sim/regions';
 import { shipIds } from '../../sim/regions';
+import { nth, step } from '../../../test/support/sim';
+import { expectReplayable } from '../../../test/support/world';
 
-/** The ship with ordinal `n` (1 = the player's, 2 = the first enemy). */
-const nth = (sim: Sim, n: number): number => shipIds(sim)[n - 1] as number;
 
 /** Sector tile of a starter-ship tile (the player ship is stamped at PLAYER_START). */
 const at = (x: number, y: number) => ({ x: PLAYER_START.x + x, y: PLAYER_START.y + y });
-const run = (sim: Sim, n: number) => { for (let i = 0; i < n; i++) sim.step(); };
 const ROOM_TILES = (sim: Sim, room: number): number[] => {
   const g = shipGrid(sim, shipIds(sim)[0] as number)!;
   const out: number[] = [];
@@ -34,7 +38,7 @@ describe('starter ship', () => {
 
   it('has its modules placed, powered, and every room lit and breathable', () => {
     const sim = newGame(1, content);
-    run(sim, 20 * 30);
+    step(sim, 20 * 30);
     const mods = sim.world.query(ModuleC).map((i) => sim.world.get(i, ModuleC)!);
     expect(mods.filter((m) => m.def === 'module.bed')).toHaveLength(4);
     expect(mods.every((m) => m.powered)).toBe(true);
@@ -53,47 +57,42 @@ describe('starter ship', () => {
 
   it('vents the quarters through a hull breach while the sealed room next door holds air', () => {
     const sim = newGame(1, content);
-    run(sim, 20);
+    step(sim, 20);
     const g = shipGrid(sim, shipIds(sim)[0] as number)!;
     const quarters = ROOM_TILES(sim, g.get('room', at(10, 6).x, at(10, 6).y));
     const neighbour = ROOM_TILES(sim, g.get('room', at(19, 6).x, at(19, 6).y));
     // The crew seal a breach by themselves now (damage control, #181): this test is about the air, so they stay out of it.
     for (const id of sim.world.query(CrewC)) sim.enqueue({ type: 'crew.setPriority', id, category: 'firefighting', value: 0 });
     sim.enqueue({ type: 'debug.setStruct', ship: nth(sim, 1), ...at(11, 1), kind: Struct.Floor }); // north hull, space beyond
-    run(sim, 20 * 90);
+    step(sim, 20 * 90);
     expect(meanO2(sim, quarters)).toBeLessThan(5);
     expect(meanO2(sim, neighbour)).toBeGreaterThan(18);
   });
 
   it('is deterministic: same seed and commands give the same save', () => {
-    const go = (): string => {
+    expectReplayable(() => {
       const sim = newGame(42, content);
       sim.enqueue({ type: 'debug.ignite', ship: nth(sim, 1), ...at(10, 6) });
-      run(sim, 400);
+      step(sim, 400);
       sim.enqueue({ type: 'debug.setStruct', ship: nth(sim, 1), ...at(11, 1), kind: Struct.Floor });
-      run(sim, 800);
-      return serialize(sim);
-    };
-    expect(go()).toBe(go());
+      return sim;
+    }, 800, { every: 100 });
   });
 
   it('round-trips a save taken mid-fire and keeps simulating identically', () => {
-    const sim = newGame(7, content);
-    sim.enqueue({ type: 'debug.ignite', ship: nth(sim, 1), ...at(10, 6) });
-    run(sim, 160);
-    const json = serialize(sim);
-    const loaded = deserialize(json, content);
-    expect(serialize(loaded)).toBe(json);
-    run(sim, 300);
-    run(loaded, 300);
-    expect(serialize(loaded)).toBe(serialize(sim));
+    expectReplayable(() => {
+      const sim = newGame(7, content);
+      sim.enqueue({ type: 'debug.ignite', ship: nth(sim, 1), ...at(10, 6) });
+      step(sim, 160);
+      return sim;
+    }, 300, { every: 50, saveAt: 50 }); // saved and reloaded at tick 50 of the replay, compared right after the load and every 50 ticks on
   });
 
   it('steps 1000 ticks of a burning ship without stalling (speed itself is the profiler\'s job)', () => {
     const sim = newGame(1, content);
     sim.enqueue({ type: 'debug.ignite', ship: nth(sim, 1), ...at(10, 6) });
     const before = sim.tick;
-    run(sim, 1000);
+    step(sim, 1000);
     expect(sim.tick - before).toBe(1000);
   });
 });

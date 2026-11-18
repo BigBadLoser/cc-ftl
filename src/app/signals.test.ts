@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CommandQueue, type Command } from '../sim';
+import { type Command, CommandQueue } from '../sim/commands';
 import type { UiSignal } from '../ui/api';
 import { createSignalFeed } from './signals';
 

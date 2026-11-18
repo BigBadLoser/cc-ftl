@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { START_NODE, FUEL_ITEM, TraderC, econOf, fuelStock, galaxyIndex, newGame, portsAt, type Sim } from '../sim';
+import { FUEL_ITEM, fuelStock } from '../sim/galaxy/fuel';
+import { econOf } from '../sim/galaxy/market';
+import { portsAt } from '../sim/galaxy/portIndex';
+import { galaxyIndex, START_NODE } from '../sim/galaxy/state';
+import { newGame } from '../sim/newGame';
+import type { Sim } from '../sim/sim';
+import { TraderC } from '../sim/trade/types';
 import { bumpStat, currentAct } from '../sim/story/goals';
 import { content } from '.';
 

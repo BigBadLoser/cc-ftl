@@ -24,7 +24,7 @@ export function provokable(sim: Sim, ship: number): boolean {
 }
 
 /**
- * A hostile act on a ship. Any act breaks a truce; a dormant den or outpost wakes; a ship that is not hostile is provoked, except that boarding leaves
+ * A hostile act on a ship. Any act breaks a truce; a dormant den or outpost wakes and is then provoked if it is not hostile; a ship that is not hostile is provoked, except that boarding leaves
  * stations to their alarm (stations/alarm). `inspection`: the player attacked the inspectors it sent, or refused a patrol's (inspect/fight.ts). `ambush` is a ship's own act (scene/visit.ts: a boarding party it was let aboard turns on the player); it goes
  * the same way, so it and its group are on their owner's side from then on.
  */
@@ -33,8 +33,9 @@ export function hostileAct(sim: Sim, ship: number, why: 'fired' | 'boarded' | 'a
   if (!s || s.faction === 'player' || (s.state !== 'active' && s.state !== 'disabled')) return;
   if (truceHolds(sim)) return breachTruce(sim);
   if (banned(sim)) return; // the ban has every ship there for its length, and gives them back after
-  if (s.dormant !== undefined && why !== 'ambush') return wake(sim, ship, why === 'inspection' ? 'fired' : why); // a den or outpost (hostile already): it wakes and fights
-  if (why === 'boarded' && s.immobile) return;
+  // A den or outpost wakes, and is then provoked like any ship (a no-op for a den, hostile already): one act turns a neutral outpost.
+  if (s.dormant !== undefined && why !== 'ambush') wake(sim, ship, why === 'inspection' ? 'fired' : why);
+  if (why === 'boarded' && s.immobile) return; // boarding leaves stations to their alarm, a woken outpost too
   provoke(sim, ship, why);
 }
 

@@ -4,16 +4,16 @@ A static SveltePress/SvelteKit 3 wiki bundled with the CC-FTL game deployment.
 
 ## Development
 
-Requires Node.js >=22.17.
+Use the [root development setup](../README.md#development). Install dependencies for both packages from
+the repository root because the wiki generators import code from the game.
 
 ```sh
-cd wiki
-npm install
-npm run dev
-npm run check
-npm run build
+npm ci
+npm --prefix wiki install
+npm --prefix wiki run dev
 ```
 
+Run `npm --prefix wiki run check` for validation or `npm --prefix wiki run build` for the static site.
 The default base path is `/cc-ftl/wiki`, including in local development.
 Browse to the URL printed by Vite with that prefix.
 

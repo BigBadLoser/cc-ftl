@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { newGame } from '../sim';
+import { newGame } from '../sim/newGame';
 import { content } from '../content';
 import { buildTrade } from './tradeSnapshot';
 

@@ -29,6 +29,8 @@ try {
   const scen = await server.ssrLoadModule('/tools/profile/scenarios.ts');
   if (scenario === 'list') {
     for (const s of scen.allScenarios()) console.log(`${s.name.padEnd(10)} ${s.ticks} ticks  ${s.description}`);
+    const reg = await server.ssrLoadModule('/src/content/scenario/index.ts');
+    for (const [n, p] of reg.presets) console.log(`preset:${n}`.padEnd(18) + ' ' + p.doc);
     process.exit(0);
   }
   const ticks = Number(opt('ticks', scenario ? scen.getScenario(scenario).ticks : 5000));

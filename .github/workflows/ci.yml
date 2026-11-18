@@ -11,7 +11,7 @@ name: CI
 # - Pushes to main don't run CI: everything reaching main is a PR merge CI already checked, or a markdown-only change.
 # - Daily on main (only if main changed in the last day) and on a manual run (workflow_dispatch): every test, slow
 #   tier (*.slow.test.ts) included. This catches what slips through, such as two PRs that only break together.
-#   A manual run can pick `affected` too (it then compares the branch's last commit with its parent) and the shard count.
+#   A manual run can pick `affected` too (on a branch it then compares the whole branch with its merge base with main) and the shard count.
 # - Soak tier (*.soak.test.ts, design-number runs over game hours or many seeds; `npm run test:soak`): the daily run on main, a manual
 #   run, and a PR carrying the `soak` label (add the label, then push or re-run; the label adds the job to the PR's checks). Never
 #   on an unlabelled PR. The `soak` job below shards it (3 shards) and fails the run when a soak test fails.
@@ -120,14 +120,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          # A manual `affected` run on a branch needs the history back to its merge base with main.
+          fetch-depth: ${{ (github.event_name == 'workflow_dispatch' && needs.gate.outputs.mode == 'affected' && github.ref_name != 'main') && '0' || '2' }}
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: npm }
       - run: npm ci
-      # `affected`: --changed compares against the first parent; the shards split whatever it selects. VITEST_FAST skips *.slow.test.ts (vite.config.ts).
+      # `affected`: on a PR, --changed compares the merge commit with its first parent (the base branch); a manual run on a
+      # branch compares it with its merge base with main (the whole branch, not only its last commit); on main, with the
+      # previous commit. The shards split whatever it selects. VITEST_FAST skips *.slow.test.ts (vite.config.ts).
       - name: Test (shard ${{ matrix.shard }}/${{ needs.gate.outputs.count }}, ${{ needs.gate.outputs.mode }})
         run: |
-          if [ "${{ needs.gate.outputs.mode }}" = affected ]; then export VITEST_FAST=1; args="--changed HEAD~1"; fi
+          if [ "${{ needs.gate.outputs.mode }}" = affected ]; then
+            export VITEST_FAST=1; base=HEAD~1
+            if [ "${{ github.event_name }}" = workflow_dispatch ] && [ "${{ github.ref_name }}" != main ]; then base=origin/main; fi
+            echo "affected: tests changed since $base"; args="--changed $base"
+          fi
           npx vitest run --shard=${{ matrix.shard }}/${{ needs.gate.outputs.count }} --passWithNoTests --reporter=default --reporter=json --outputFile.json=vitest-times.json ${args:-}
       # Per-file times, the source of tools/testWeights.ts (`npm run test:weights:ci`).
       - uses: actions/upload-artifact@v4

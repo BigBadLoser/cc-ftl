@@ -1,13 +1,22 @@
 import { describe, expect, it } from 'vitest';
-import {
-  AboardC, DraftedC, StorageC, ShipC, TransferC, VehicleC, deserialize, homeShip, newGame, regionItems, serialize, shipGrid, spawnCrew, storageAdd, storageTake, CrewC, PositionC,
-  type Sim, type SimEvent,
-} from '../../sim';
+import { ShipC } from '../../sim/combat/components';
+import { homeShip, spawnCrew } from '../../sim/combat/ships';
+import { CrewC, DraftedC, PositionC } from '../../sim/crew/components';
+import type { SimEvent } from '../../sim/events';
+import { regionItems } from '../../sim/ferry/pick';
+import { StorageC } from '../../sim/items/components';
+import { storageAdd, storageTake } from '../../sim/items/storage';
+import { TransferC } from '../../sim/logistics/components';
+import { newGame } from '../../sim/newGame';
+import { shipGrid } from '../../sim/regions';
+import { deserialize, serialize } from '../../sim/save';
+import type { Sim } from '../../sim/sim';
+import { AboardC, VehicleC } from '../../sim/vehicles/components';
 import { shipIdOf } from '../../sim/regions';
 import { openSite } from '../../sim/away/handlers';
 import { spillItems } from '../../sim/items/stacks';
 import { content } from '../index';
-import { outpostRegion, shuttleOf, stockOn, storages } from './ferryFixture';
+import { outpostRegion, shuttleOf, stockOn, storages } from '../../../test/support/fixtures/ferry';
 
 type Ev = SimEvent['type'];
 /** Step until `until` says stop; returns every event seen (rejections included). */

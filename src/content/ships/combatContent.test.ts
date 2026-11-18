@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import {
-  ModuleC, Struct, footprintTiles, hullRow, isTileWalkable, newGame, openTilesOf, accessTile, findPath, type Sim,
-} from '../../sim';
+import { findPath } from '../../sim/crew/pathfind';
+import { ModuleC } from '../../sim/modules/components';
+import { accessTile, footprintTiles, hullRow, openTilesOf } from '../../sim/modules/footprint';
+import { isTileWalkable } from '../../sim/modules/walk';
+import { newGame } from '../../sim/newGame';
+import type { Sim } from '../../sim/sim';
+import { Struct } from '../../sim/structure';
 import { content } from '../index';
 import { shipIdOf, shipGrid, shipIds } from '../../sim/regions';
 

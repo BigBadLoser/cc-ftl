@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { content } from '../content';
-import { CrewC, RolledSkillsC, TraitsC, newGame } from '../sim';
+import { CrewC } from '../sim/crew/components';
+import { RolledSkillsC, TraitsC } from '../sim/crew/traits';
+import { newGame } from '../sim/newGame';
 import { buildCrewLists } from './crewSnapshot';
 
 describe('the crew card', () => {

@@ -74,5 +74,6 @@ export function buildLayout(s: Source): { layout: Layout; label: string } {
   const origin = s.kind === 'station'
     ? { faction: s.id, seed: s.seed >>> 0, depth: 0, role: s.size }
     : { faction: s.id, seed: s.seed, depth: s.depth, ...(made.role ? { role: made.role } : {}) };
-  return { layout: { ...layout, origin: { gen: origin, side: sideOf(s.id) } }, label };
+  // a prefab base (its result has a site: pads on open ground) stands on asteroid ground, as the game's outpost stamp puts it
+  return { layout: { ...layout, origin: { gen: origin, side: sideOf(s.id) }, ...('site' in made ? { ground: true as const } : {}) }, label };
 }

@@ -1,9 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import {
-  TraderC, advance, bindMarkets, capOf, deserialize, econOf, factorAt, galaxyIndex, moveStock, newGame, portOf, serialize, stockAt, unbindMarkets, unitPrice,
-  type Econ, type Sim,
-} from '../sim';
-import type { Port } from '../sim';
+import { advance, capOf, type Econ, econOf, factorAt, moveStock, stockAt } from '../sim/galaxy/market';
+import { bindMarkets, unbindMarkets } from '../sim/galaxy/marketLive';
+import { portOf } from '../sim/galaxy/portIndex';
+import type { Port } from '../sim/galaxy/ports';
+import { galaxyIndex } from '../sim/galaxy/state';
+import { newGame } from '../sim/newGame';
+import { deserialize, serialize } from '../sim/save';
+import type { Sim } from '../sim/sim';
+import { unitPrice } from '../sim/trade/pricing';
+import { TraderC } from '../sim/trade/types';
 import { onDock, onWork } from '../sim/galaxy/dock';
 import { liveTrader } from '../sim/galaxy/market';
 import { MARKET_DRIFT, MARKET_START_SPREAD, MINER_ORE } from '../sim/galaxy/tuning';

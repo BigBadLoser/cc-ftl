@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { CrewC, PositionC, ShipC, footprintTiles, generateShip, newGame, openTilesOf, structureParts, type FactionDef, type ModuleDef } from '../../sim';
+import { ShipC } from '../../sim/combat/components';
+import { CrewC, PositionC } from '../../sim/crew/components';
+import { footprintTiles, openTilesOf } from '../../sim/modules/footprint';
+import { newGame } from '../../sim/newGame';
+import type { ModuleDef } from '../../sim/registry';
+import { generateShip } from '../../sim/shipgen/generate';
+import type { FactionDef } from '../../sim/shipgen/types';
+import { structureParts } from '../../sim/shipgen/validate';
 import { footprintFromTiles, widthViolations } from '../../sim/footprint';
 import { shipGrid, shipIdOf } from '../../sim/regions';
 import { ruin } from '../../sim/shipgen/ruin';

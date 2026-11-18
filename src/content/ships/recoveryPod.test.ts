@@ -1,23 +1,22 @@
 import { describe, expect, it } from 'vitest';
-import {
-  AssignmentC, CarryingC, CrewC, DownedC, HealthC, ModuleC, NeedsC, PositionC, RecoveringC, ShipC, TICK_HZ, homeShip, newGame, placementError, playerShip, spawnModule,
-  type Sim, type SimEvent,
-} from '../../sim';
+import { ShipC } from '../../sim/combat/components';
+import { homeShip } from '../../sim/combat/ships';
+import { AssignmentC, CrewC, DownedC, HealthC, NeedsC, PositionC, RecoveringC } from '../../sim/crew/components';
+import { CarryingC } from '../../sim/items/components';
+import { ModuleC } from '../../sim/modules/components';
+import { placementError, spawnModule } from '../../sim/modules/spawn';
+import { newGame } from '../../sim/newGame';
+import type { Sim } from '../../sim/sim';
+import { TICK_HZ } from '../../sim/time';
+import { playerShip } from '../../sim/trade/player';
 import { bedUseOf, findFreeBed } from '../../sim/crew/beds';
 import { isIncapacitated } from '../../sim/crew/helpers';
 import { recoverTurn } from '../../sim/ai/machines/sleep';
 import { isCombatReady } from '../../sim/fight/relations';
 import { content } from '../index';
 import { accessTile, footprintTiles } from '../../sim/modules/footprint';
+import { run } from '../../../test/support/sim';
 
-const run = (sim: Sim, n: number): SimEvent[] => {
-  const out: SimEvent[] = [];
-  for (let i = 0; i < n; i++) {
-    sim.step();
-    out.push(...sim.events.drain());
-  }
-  return out;
-};
 const secs = (n: number): number => Math.round(n * TICK_HZ);
 const humans = (sim: Sim): number[] => sim.world.query(CrewC).filter((id) => sim.world.get(id, CrewC)?.species === 'species.human');
 
@@ -154,7 +153,7 @@ describe('recovery pod', () => {
     const ship = homeShip(sim);
     const pos = sim.world.get(crew[0] as number, PositionC)!;
     const from = { x: pos.x, y: pos.y };
-    const pick = (use: 'sleep' | 'walking' | 'critical'): number | null => findFreeBed(sim, ship, from, false, undefined, use)?.bed ?? null;
+    const pick = (use: 'sleep' | 'walking' | 'critical'): number | null => findFreeBed(sim, ship, crew[0] as number, from, false, undefined, use)?.bed ?? null;
     expect(pick('critical')).toBe(pod);
     expect(pick('walking')).toBe(med);
     sim.world.get(med, ModuleC)!.reservedBy = 99; // no medical bed free

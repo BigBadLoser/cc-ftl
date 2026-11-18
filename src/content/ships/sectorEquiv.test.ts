@@ -1,348 +1,66 @@
 import { describe, expect, it } from 'vitest';
-import {
-  deserialize, homeShip as homeShipOf, newGame, serialize, shipGrid, shipIdAt, shipIds, Struct, type Body, type Drafted, type Module, type Sim, type Vehicle,
-  type RoleDef, type Task,
-} from '../../sim';
+import { homeShip } from '../../sim/combat/ships';
+import { newGame } from '../../sim/newGame';
+import { shipGrid } from '../../sim/regions';
+import type { Sim } from '../../sim/sim';
+import { NORMAL_O2 } from '../../sim/tuning';
+import { Struct } from '../../sim/structure';
 import { content } from '../index';
+import { run } from '../../../test/support/sim';
+import { expectReplayable } from '../../../test/support/world';
 
 /**
- * The pre-refactor grid id of a ship id: grids and ships were created together with ascending ids, so a ship's grid id was its
- * 1-based place in ship-id order. 0 for no ship. (Step 7d removed grid ids; the hashes were recorded with them.)
+ * The two scripted runs that once pinned the sector refactor with state hashes recorded on the pre-refactor code (the hashes were
+ * repinned for almost every sim change since and no longer said anything but "the sim changed"). What they protect now: a run is
+ * replayable (two builds step to byte-identical saves, a mid-run save and reload changes nothing: every grid field, component and the
+ * rng, tick by tick) and it does what the scenario is about (a fight is fought, a fire is put out and a breach sealed).
  */
-const ordinal = (sim: Sim, ship: number): number => shipIds(sim).indexOf(ship) + 1;
-const gridIdAt = (sim: Sim, x: number, y: number): number => ordinal(sim, shipIdAt(sim, x, y));
-const gridOfShip = (sim: Sim, ship: number): number => ordinal(sim, ship);
-
-/** Grid fields that existed before the sector refactor (the `ship` owner layer is new and left out). */
-const FIELDS = ['struct', 'room', 'o2', 'co2', 'temp', 'fire', 'smoke', 'light', 'door', 'module', 'item', 'hp'];
-
-/** FNV-1a over a string, as 8 hex digits. */
-function fnv(s: string, h = 0x811c9dc5): number {
-  for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 0x01000193) >>> 0;
-  return h;
-}
-
-/**
- * The world as the pre-refactor code stored it. Step 8 moved vehicle position and heading onto `BodyC` and `homeGrid` to
- * `homeShip`: fold them back into the old `vehicle` component, in its old key order, and drop the `body` store (altitude is
- * new and derived from the state). Anything else that changed would still change the hash.
- */
-function legacyWorld(sim: Sim): unknown {
-  const data = sim.world.serialize();
-  // Crew AI Phase 3 folded the meal (`EatC`) and the sleep's bed claim (`BedClaimC`) into the task (SAVE_VERSION 81): rebuild those
-  // stores from it, in their old key order, and put them back in the stores' sorted order. Both hashes are unchanged by the fold.
-  const tasks = (data.stores.task ?? []) as [number, Task][];
-  const folded: Record<string, [number, unknown][]> = {
-    bedClaim: tasks.flatMap(([id, t]) => {
-      const bed = t.machine === 'sleep' ? t.holds.find((h) => h.kind === 'bed')?.id : undefined;
-      return bed ? [[id, { bed }] as [number, unknown]] : [];
-    }),
-    eat: tasks.flatMap(([id, t]) => (t.machine === 'eat' && t.job === 0
-      ? [[id, { x: t.bb.tile?.x, y: t.bb.tile?.y, galley: !!t.bb.hot, item: t.bb.item, left: t.bb.n }] as [number, unknown]] : [])),
-  };
-  const merged: Record<string, unknown[]> = { ...data.stores };
-  // Drones (#318) came later: the drone system and the doors query the `drone` store every tick, which makes it exist empty. A run with no
-  // drones in it is unchanged, so an empty one is left out (as it was absent in the pinned runs).
-  if (merged.drone?.length === 0) delete merged.drone;
-  // Prisoner holding (#116) came later too: the stasis system queries its stores every tick, which makes them exist empty; a run with no prisoners is unchanged.
-  for (const k of ['stasis', 'stasisWheel', 'prisoner', 'cartRest']) if (merged[k]?.length === 0) delete merged[k];
-  for (const [k, rows] of Object.entries(folded)) if (rows.length > 0) merged[k] = rows; // in the pinned runs an empty one was absent
-  const stores = Object.fromEntries(Object.keys(merged).sort().map((k) => [k, merged[k]])) as typeof data.stores;
-  const bodies = new Map((stores.body ?? []) as [number, Body][]);
-  delete stores.body;
-  // Bed ownership came later too: a derived assignment (nearest unowned bed), not part of the legacy shape.
-  delete stores.bedOwner;
-  // The crew-AI components (Phase 1 of docs/CREW_AI.md) mirror the legacy ones: not part of the legacy shape.
-  for (const k of ['task', 'intent', 'interrupt']) delete stores[k];
-  // Mental breaks came after (docs/TRAITS.md section 5): a crew member who breaks has these stores.
-  delete stores.breakdown;
-  delete stores.breakMemory;
-  // Relationships (docs/TRAITS.md section 6, #239): a crew member's person id and a chat in progress are identity and presentation, not part of the legacy shape.
-  delete stores.person;
-  delete stores.interaction;
-  // Skill XP from routine work came after the refactor: crew earn it as they work, so the store is not part of the legacy shape.
-  delete stores.skillXp;
-  // Cargo containers came after the refactor: their (empty) store is not part of the legacy shape.
-  if ((stores.container ?? []).length === 0) delete stores.container;
-  // So did aliens (egg sacs, nests, creatures): their empty stores are not part of it either.
-  // And asteroids, mining pods and base-logistics runs and transfer orders (and later away sites): their empty stores are not part of it.
-  for (const k of ['eggSac', 'nest', 'alien', 'asteroid', 'miningPod', 'ferry', 'transfer', 'salvageWatch', 'salvageOrder', 'salvageTrip', 'salvageCrew', 'forHire', 'trader', 'background', 'interests', 'wontDo', 'research', 'coreRaider', 'coreRaid', 'recall', 'boardLaunch', 'boardHold', 'sabotageOrder', 'surrendered', 'away', 'awaySite', 'siteRun', 'pickup', 'airHolds', 'staging']) if ((stores[k] ?? []).length === 0) delete stores[k];
-  // The helm's `pilot` skill on the combat component came with the evade odds: not part of the legacy shape.
-  stores.combat = (stores.combat ?? []).map(([id, raw]) => {
-    // `heat` (combat heat, #185) is a new empty field in the same way.
-    const { pilot, cruisePilot, cruiseEvasion, heat, ...rest } = raw as Record<string, unknown>;
-    void heat;
-    void pilot;
-    void cruisePilot;
-    void cruiseEvasion;
-    return [id, rest];
-  });
-  // The telegraph's `commit` on weapons came with the incoming-fire marker (#180): not part of the legacy shape.
-  stores.weapon = (stores.weapon ?? []).map(([id, raw]) => {
-    // `mode`, `restore` and `once` (per-weapon fire modes, #169) are new fields too.
-    const { commit, mode, restore, once, ...rest } = raw as Record<string, unknown>;
-    void commit;
-    void mode;
-    void restore;
-    void once;
-    return [id, rest];
-  });
-  // `freeSince` on operate jobs came with station relief: not part of the legacy shape.
-  stores.job = (stores.job ?? []).map(([id, raw]) => {
-    const { freeSince, ...rest } = raw as Record<string, unknown>;
-    void freeSince;
-    return [id, rest];
-  });
-  // The `patrol` work category came after it too (station directors post patrol jobs; no ship here has any).
-  stores.priorities = (stores.priorities ?? []).map(([id, raw]) => {
-    const rest = { ...(raw as Record<string, unknown>) };
-    delete rest.patrol;
-    // `refining` was split from `crafting` later still.
-    delete rest.refining;
-    // And `research` (the research module's work category).
-    delete rest.research;
-    return [id, rest];
-  });
-  // Airlocks counted their suits (3, put back in the old key order) until #416 lifted the limit; nobody in these runs takes one.
-  stores.airlock = (stores.airlock ?? []).map(([id, raw]) => {
-    const { state, timer, request, ...rest } = raw as Record<string, unknown>;
-    return [id, { state, timer, request, suits: 3, ...rest }];
-  });
-  // `priority` on modules was renamed `powerPriority` (same place in the key order).
-  stores.module = (stores.module ?? []).map(([id, raw]) => [id, Object.fromEntries(Object.entries(raw as object).map(([k, v]) => [k === 'powerPriority' ? 'priority' : k, v]))]);
-  stores.vehicle = (stores.vehicle ?? []).map(([id, raw]) => {
-    const { def, homeShip, home, state, hp, ...rest } = raw as Vehicle;
-    const b = bodies.get(id) as Body;
-    return [id, { def, homeGrid: gridOfShip(sim, homeShip), home, state, x: b.x, y: b.y, heading: b.heading, hp, ...rest }];
-  });
-  // Step 7d drops `gridId` from ShipC: it was the first key.
-  stores.ship = (stores.ship ?? []).map(([id, raw]) => [id, { gridId: ordinal(sim, id), ...(raw as object) }]);
-  // Step 7b drops `gridId` from the module component (the ship under its tile says it): put it back after `def`.
-  stores.module = (stores.module ?? []).map(([id, raw]) => {
-    const { def, ...rest } = raw as Module;
-    return [id, { def, gridId: gridIdAt(sim, rest.x, rest.y), ...rest }];
-  });
-  // Step 7b2 drops `gridId` from Position (the tile says it): it was the first key.
-  stores.position = (stores.position ?? []).map(([id, raw]) => {
-    const pos = raw as Record<string, unknown>;
-    return [id, { gridId: gridIdAt(sim, pos.x as number, pos.y as number), ...pos }];
-  });
-  // Jobs: `gridId` sat just before `x` in the key order.
-  stores.job = (stores.job ?? []).map(([id, raw]) => {
-    const j = raw as Record<string, unknown>;
-    const gridId = gridIdAt(sim, j.x as number, j.y as number);
-    return [id, Object.fromEntries(Object.entries(j).flatMap(([k, v]) => (k === 'x' ? [['gridId', gridId], [k, v]] : [[k, v]])))];
-  });
-  // Drafted: `planned` always carried its grid; `target` only when it was not the crew member's own grid.
-  const crewGrid = new Map(((stores.position ?? []) as [number, { gridId: number }][]).map(([id, p]) => [id, p.gridId]));
-  stores.drafted = (stores.drafted ?? []).map(([id, raw]) => {
-    const d = raw as Drafted;
-    const own = crewGrid.get(id) ?? 0;
-    const grid = (t: { x: number; y: number }): number => gridIdAt(sim, t.x, t.y) || own;
-    const out: Record<string, unknown> = { ...d };
-    if (d.target) out.target = grid(d.target) === own ? d.target : { ...d.target, gridId: grid(d.target) };
-    if (d.planned) out.planned = { ...d.planned, gridId: grid(d.planned) };
-    return [id, out];
-  });
-  // Step 7c: targets, projectile origins and robot home links hold ship ids; the old code held grid ids, under the old key
-  // names (`gridId`, `fromGridId`), in the same key positions.
-  const gridKeyed = (o: Record<string, unknown>, from: string, to: string): Record<string, unknown> =>
-    Object.fromEntries(Object.entries(o).map(([k, v]) => (k === from ? [to, gridOfShip(sim, v as number)] : [k, v])));
-  const target = (t: unknown): unknown => (t ? gridKeyed(t as Record<string, unknown>, 'ship', 'gridId') : t);
-  stores.combat = (stores.combat ?? []).map(([id, raw]) => {
-    const c = raw as Record<string, unknown>;
-    return [id, { ...c, target: target(c.target) }];
-  });
-  stores.weapon = (stores.weapon ?? []).map(([id, raw]) => {
-    const w = raw as Record<string, unknown>;
-    return [id, { ...w, target: target(w.target), volleyTarget: target(w.volleyTarget) }];
-  });
-  stores.projectile = (stores.projectile ?? []).map(([id, raw]) => {
-    const p = gridKeyed(raw as Record<string, unknown>, 'fromShip', 'fromGridId');
-    return [id, { ...p, target: target(p.target) }];
-  });
-  stores.coreLink = (stores.coreLink ?? []).map(([id, raw]) => [id, gridKeyed(raw as Record<string, unknown>, 'ship', 'gridId')]);
-  // Step 6 stores sector tiles in every component; the old code stored grid-local ones. Subtract each grid's origin.
-  const origin = (gridId: number): [number, number] => {
-    const g = shipGrid(sim, shipIds(sim)[gridId - 1] ?? 0);
-    return g ? [g.x0, g.y0] : [0, 0];
-  };
-  const posGrid = new Map(((stores.position ?? []) as [number, { gridId: number }][]).map(([id, p]) => [id, p.gridId]));
-  for (const [name, rows] of Object.entries(stores)) {
-    stores[name] = (rows as [number, Record<string, unknown>][]).map(([id, c]) => {
-      if (name === 'path') {
-        const [ox, oy] = origin(posGrid.get(id) ?? 0);
-        const steps = (c.steps as { x: number; y: number }[]).map((t) => ({ ...t, x: t.x - ox, y: t.y - oy }));
-        return [id, { ...c, steps }];
-      }
-      if (name === 'ship' || typeof c.gridId !== 'number' || typeof c.x !== 'number') return [id, c]; // ShipC x, y were sector already
-      const [ox, oy] = origin(c.gridId);
-      const out: Record<string, unknown> = { ...c, x: (c.x as number) - ox, y: (c.y as number) - oy };
-      if (typeof c.toX === 'number') Object.assign(out, { toX: c.toX - ox, toY: (c.toY as number) - oy });
-      return [id, out];
-    });
-  }
-  return { ...data, stores };
-}
-
-/**
- * A save-format-independent hash of the sim: tick, rng, every entity and component (in their pre-refactor shape, see
- * `legacyWorld`, with positions back in grid-local tiles), and each grid's legacy fields read tile by tile in local order
- * from its top-left (grids in id order). Recorded on the
- * pre-refactor code; must never change.
- */
-function stateHash(sim: Sim, events: string): string {
-  let h = fnv(`${sim.tick}|${sim.rng.getState()}|${JSON.stringify(legacyWorld(sim))}|${events}`);
-  for (const [i, ship] of shipIds(sim).entries()) {
-    const g = shipGrid(sim, ship)!;
-    const vals: number[] = [i + 1, g.width, g.height];
-    for (const f of FIELDS) {
-      for (let y = 0; y < g.height; y++) for (let x = 0; x < g.width; x++) vals.push(g.get(f, g.x0 + x, g.y0 + y));
-    }
-    h = fnv(vals.join(','), h);
-  }
-  return h.toString(16).padStart(8, '0');
-}
-
-function run(sim: Sim, n: number, log: string[]): void {
-  for (let i = 0; i < n; i++) {
-    sim.step();
-    // The starmap's own events (`galaxy.*`) did not exist before the refactor either.
-    for (const e of sim.events.drain()) if (!e.type.startsWith('galaxy.')) log.push(e.type);
-  }
-}
-
-/**
- * Content as the pre-refactor code had it: the starter's crate held no fuel (the starmap added 16 units, which would change
- * the recorded world), the starter had two engineers, the medic had no medicine skill (it speeds up bed healing), and no NPC kind relieved an empty console. Everything else is the live content,
- * so the recorded hashes still pin the refactor.
- */
-const noRelief: Record<string, RoleDef> = Object.fromEntries(Object.entries(content.roles).map(([id, r]) => [id, { ...(r as RoleDef) }]));
-for (const r of Object.values(noRelief)) delete r.relievesStations;
-const medic: RoleDef = noRelief['role.medic'] as RoleDef;
-delete medic.skills;
-const legacy: typeof content = {
-  ...content,
-  schedules: {} as typeof content.schedules, // crew schedules (#412) came later: with no Default every hour is Any, the needs-only rule
-  roles: noRelief as typeof content.roles,
-  ships: {
-    ...content.ships,
-    'ship.starter': {
-      ...content.ships['ship.starter'],
-      crew: ['role.engineer', 'role.engineer', 'role.gunner', 'role.pilot', 'role.medic'], // the second engineer came off later
-      modules: content.ships['ship.starter'].modules.map((m) => ('stock' in m && m.stock ? { ...m, stock: m.stock.filter((q) => q.item !== 'item.fuel') } : m)),
-    },
-  },
-};
 
 /** Starter ship against a raider: weapons, shields, breaches, fire and boarding. */
 function combat(seed: number): Sim {
-  const sim = newGame(seed, legacy);
+  const sim = newGame(seed, content);
   sim.enqueue({ type: 'debug.spawnEnemy', template: 'ship.raider', x: 100, y: 50 });
   return sim;
 }
 
+type At = { x: number; y: number };
+
 /** Starter ship with a fire in the first floor tile from the centre and a hull breach on the first outer wall. */
-function disaster(seed: number): Sim {
-  const sim = newGame(seed, legacy);
-  const g = shipGrid(sim, homeShipOf(sim))!;
-  let fire: { x: number; y: number } | null = null;
-  let breach: { x: number; y: number } | null = null;
+function disaster(seed: number): { sim: Sim; fire: At; breach: At } {
+  const sim = newGame(seed, content);
+  const g = shipGrid(sim, homeShip(sim))!;
+  let fire: At | null = null;
+  let breach: At | null = null;
   const at = (x: number, y: number) => g.get('struct', g.x0 + x, g.y0 + y);
   for (let y = 0; y < g.height; y++) {
     for (let x = 0; x < g.width; x++) {
       const k = at(x, y);
       if (!fire && k === Struct.Floor && y >= g.height / 2 && x >= g.width / 2) fire = { x: g.x0 + x, y: g.y0 + y };
-      if (!breach && k === Struct.Wall && x > 0 && at(x - 1, y) === Struct.Space && at(x + 1, y) === Struct.Floor) {
-        breach = { x: g.x0 + x, y: g.y0 + y };
-      }
+      if (!breach && k === Struct.Wall && x > 0 && at(x - 1, y) === Struct.Space && at(x + 1, y) === Struct.Floor) breach = { x: g.x0 + x, y: g.y0 + y };
     }
   }
-  sim.enqueue({ type: 'debug.ignite', ship: homeShipOf(sim), ...fire! });
-  sim.enqueue({ type: 'debug.setStruct', ship: homeShipOf(sim), ...breach!, kind: Struct.Space });
-  return sim;
+  sim.enqueue({ type: 'debug.ignite', ship: homeShip(sim), ...fire! });
+  sim.enqueue({ type: 'debug.setStruct', ship: homeShip(sim), ...breach!, kind: Struct.Space });
+  return { sim, fire: fire!, breach: breach! };
 }
 
-describe('sector refactor equivalence', () => {
-  it('a combat run hashes the same as before the refactor', () => {
-    const sim = combat(3);
-    const log: string[] = [];
-    run(sim, 2400, log);
-    expect(stateHash(sim, log.join(','))).toBe(EXPECTED.combat);
+describe('scripted runs of the starter ship', () => {
+  it('a combat run is fought: weapons fire, shots land, modules are lost', () => {
+    const types = new Set(run(combat(3), 2400).map((e) => e.type));
+    for (const t of ['combat.started', 'weapon.fired', 'projectile.hit', 'module.destroyed', 'crew.jobDone']) expect(types.has(t as never), t).toBe(true);
   });
 
-  it('a fire and breach run hashes the same as before the refactor', () => {
-    const sim = disaster(9);
-    const log: string[] = [];
-    run(sim, 1200, log);
-    expect(stateHash(sim, log.join(','))).toBe(EXPECTED.disaster);
+  it('a fire and breach run: the crew put out the fire and seal the breach, and the run replays identically across a save', () => {
+    const { sim, fire, breach } = disaster(9);
+    const g = shipGrid(sim, homeShip(sim))!;
+    run(sim, 1200);
+    for (let y = 0; y < g.height; y++) for (let x = 0; x < g.width; x++) expect(g.get('fire', g.x0 + x, g.y0 + y), `fire at ${x},${y}`).toBe(0);
+    expect(g.get('struct', breach.x, breach.y)).toBe(Struct.Wall);
+    expect(g.get('o2', fire.x, fire.y)).toBeGreaterThan(NORMAL_O2 * 0.9);
+    expectReplayable(() => disaster(9).sim, 1200, { saveAt: 600 });
   });
 
   it('a save round trip midway gives the identical state', () => {
-    const a = combat(5);
-    const b = combat(5);
-    const la: string[] = [], lb: string[] = [];
-    run(a, 1200, la);
-    run(b, 600, lb);
-    const c = deserialize(serialize(b), legacy);
-    run(c, 600, lb);
-    expect(stateHash(c, lb.join(','))).toBe(stateHash(a, la.join(',')));
-    expect(serialize(c)).toBe(serialize(a));
+    expectReplayable(() => combat(5), 1200, { saveAt: 600 });
   });
 });
-
-// Repinned for the shield tiers (#105): the starter's generator is now the 2x2 Mk I (6 power, 2 layers) and the raider's gains a layer (1 to 2), so every starter-vs-raider run changed.
-// Round 1 merge: combat 7dbce8c4 is the combination of the two repins below and nothing else (with the #168 weapon values reverted it gives a01f1f5a; the disaster hash is #181's).
-// Repinned for the charge-time rebalance (#168): the burst laser (5 s from 8), mass driver (8 s from 12) and missile (7 s from 10) charge faster and the laser's crew damage is 5 (from 8), so the starter-vs-raider run's volleys land at other ticks.
-// Repinned for automatic damage control (#181): every working role now does damage control at priority 1 (was 2; the hashed world holds crew priorities, so
-// the combat hash changes by that alone: with the old role table it still gives c28a5816), and crew seal hull breaches by themselves (a wall build in the
-// firefighting category), which changes the fire and breach run.
-// Repinned for combat heat (#185): shields regenerate 1.4x faster for every ship (SHIELD_REGEN_MULT, so layers come back at other ticks), and the raider overcharges
-// its weapons and vents its heat (the player ship does neither without a command). The new `heat` field on the combat component is dropped in legacyWorld, so the
-// disaster hash (no fight) is unchanged.
-// Repinned `combat` for bed owners (#195): crew sleep in the bed they own and tired crew act on staggered ticks; on main alone it pinned b0b4e040.
-// Merged with combat round 1 it is e65e90fe; the disaster hash is unchanged by the bed owners.
-// Boarding (#205): the new, empty `recall` store is dropped like the other new empty stores; both hashes are unchanged by it (and by the empty `boardHold` store).
-// Crew traits (#242): the surrender rally reads the `surrendered` store every tick, which leaves it present but empty in runs
-// where nobody surrendered; dropped like the other new empty stores, so both hashes are unchanged.
-// Repinned for mining as income (#222): the starter crate now carries water and oxygen (the hashed world holds storage, so both hashes change by that
-// alone), the galley's rations take water, and life support burns bottled oxygen to refill a room short of air (the breach run).
-// Repinned `combat` for stuck fights (#225): ship-wide fire now aims at a standing module or wall weighted by its share of the integrity (one rng
-// draw over every part, not a uniform pick among intact modules), so shots land elsewhere; the hopeless surrender does not fire in this run. On the
-// pre-mining main it pinned d2b2f525; this is the combination of the two and nothing else. The disaster run has no fight and is unchanged by it.
-// Repinned `combat` for work XP (#250): the crew earn gunnery, piloting and shielding XP in the fight and a level gained inside the run changes who hits
-// (only the player's side earns XP; the `skillXp` store itself is dropped above; with the level cost raised out of reach this run hashes 694a0569 again). The disaster run is unchanged.
-// Repinned `combat` for doorway stops (#248): an adjacency path (build, repair, fetch) no longer ends on a Door tile when another tile beside the goal is
-// reachable, so a few crew in the fight stand (and path) one tile differently. Confirmed to come from findPath alone (reverting it restores ba8f9e66). The disaster run is unchanged.
-// Repinned `disaster` for the job scheduler (#194 Phase 2): free crew are matched to jobs together, the nearest crew member first (was: each in id order
-// takes their own best job), and a pass is skipped while its inputs are unchanged (at most SCHED_CADENCE ticks), so other crew put out the fire and seal
-// the breach. On the legacy picker it still gives 2cf7530b. The combat run makes the same assignments and is unchanged.
-// Repinned for salvage items (#268): the starter crate holds metal, electronics and polymer where it held scrap (the hashed world holds storage), and the
-// galley prints rations from polymer and water. Both hashes change by that alone.
-// Repinned `disaster` for crew AI Phase 3 (#194): crew walk off burning and airless tiles (the hazard interrupt; with only that the run
-// gives 5369b5f9) and a crew member whose mood the fire and smoke sour takes a break in the mess when idle (the leisure drive; alone,
-// cb93b66e). With both switched off in the policies it still gives fe8751b2. The combat run has neither and is unchanged.
-// Repinned for the rest retune (#278): rest is part of the hashed world and now drains at a tenth of the rate (both hashes change by that alone).
-// Repinned for relationships (#239): idle crew chat, which gives a good talk or a row a mood factor, and mood is part of the hashed world (with the
-// relationship system off, both hashes are as above).
-// Repinned `combat` for the distress freighter (#173): a repair job is worked from beside any tile of its module, not only its anchor corner, so the
-// crew reach and mend modules they could not (with repair jobs back on the anchor alone, the run gives a0cbadda again). The disaster run is unchanged.
-// Repinned `combat` for enemy target choice (#173): a ship fired on records who fired (`Combat.threat`, part of the hashed world). With that record
-// switched off the run gives 064a6939 again, so the AI's choices are the same here (the player is both the threat and the first foe).
-// Module job sites (#338): fit, decon, craft and research jobs carry the rotated footprint too (`moduleSite`); both hashes are unchanged by it (the
-// repair job keeps its key order, which the hash sees).
-// Repinned for food (#59). The only differences in the hashed world are the empty `plot` component store and the new `farming` key in every crew member's priorities;
-// with those two stripped from the dump, the world and the event log equal main's byte for byte (the old hashes c50ed4d7 / 62484cd5).
-// Repinned for the 0-10 skill scale (#415): skill keys renamed (repair -> construction), a finer XP curve (crew level mid-run), and Construction speeding
-// repair and firefighting by 5% a level. The starter-vs-raider probe with the old XP curve emulated matched main exactly, so the rescale itself is exact.
-// Repinned for backgrounds and always-armed crew (#415): every person of the player's crew starts with a sidearm and the better shots trade up from
-// the locker (no emergency arming), every one of them may relieve an empty console in a fight (the legacy content's `relievesStations` strip no
-// longer reaches the player's side), and the new background, interests and won't-do stores are empty in the dump.
-// Repinned for reactor fuel (#421): the player ship carries crystals (a stack in its stores), its reactors burn them (`Module.fuel` appears in the dump as soon as one burns)
-// and the ship's power draws on the same loads as before; nothing else in the world or the event log moved.
-// Repinned again for the starter's battery bank (#421): one more module (80 hp, a charge field) and its power bookkeeping; the ids after it shift by one.
-// Repinned for NPC fuel (#425): the raider's reactors burn too, so `Module.fuel` appears on them; with that field left out the run hashes as before (event log and every other field unchanged).
-// Repinned for medic tending (#319): a patient in a medical bed gets a `tend` job (a medic stands beside it and speeds the healing) instead of the old ambient medic bonus; a job entity shifts the ids after it.
-// Repinned for the battery bank's 1x2 footprint (#488): the starter's battery moved (27,6 -> 26,6, laid east-west) to fit and covers two tiles, which moves crew
-// routes and the fire's spread. Hauls that stop beside any side of a storage module (`storageStop`, same PR) leave both hashes as they were.
-const EXPECTED = { combat: '53a6a81d', disaster: '09807dc0' };

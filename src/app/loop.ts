@@ -38,6 +38,8 @@ export interface LoopOptions {
   sim: Sim;
   /** Called every frame with the interpolation fraction in [0,1). */
   render: (alpha: number) => void;
+  /** Called after every sim tick (scenario hooks). */
+  onTick?: () => void;
   /** Called each frame with the events emitted by that frame's ticks (output only). */
   onEvents?: (events: SimEvent[]) => void;
   /** Called every frame after steps and event draining. */
@@ -93,6 +95,7 @@ export function createLoop(opts: LoopOptions): Loop {
     for (let i = 0; i < r.steps; i++) {
       const t0 = performance.now();
       sim.step(probe);
+      opts.onTick?.();
       push(tickTimes, performance.now() - t0);
     }
     // Paused by the player: whatever was queued (a build plan, a crew order, any command from any tool) applies now, without a tick, so

@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { deserialize, newGame, serialize, type Sim } from '../sim';
+import { newGame } from '../sim/newGame';
+import { deserialize, serialize } from '../sim/save';
+import type { Sim } from '../sim/sim';
 import { GENERATED_CAP, isGenerated, peekGenerated, spawnContact, warmContact } from '../sim/galaxy/arrivals';
 import { warmFleets, tendFleets } from '../sim/galaxy/fleetShips';
 import { nodesWithin } from '../sim/galaxy/graph';

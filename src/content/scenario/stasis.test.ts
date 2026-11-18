@@ -1,0 +1,112 @@
+import { describe, expect, it } from 'vitest';
+import { CrewC, ModuleC, PositionC, ShipC, playerShip } from '../../sim';
+import { findPath } from '../../sim/crew/pathfind';
+import { playerCrew } from '../../sim/story/world';
+import { fullSlabs, slabPlace } from '../../sim/stasis/query';
+import { heldItems } from '../../sim/items/held';
+import { SLAB_ITEM } from '../../sim/stasis/tuning';
+import { newHostiles, prisonerCommands, sealPrizeCommands } from './lib/stasis';
+import { cachedScenario } from '../../../test/support/scenario';
+
+/** The app's start: the Wayfarer, its node populated, the crew rolled. */
+const WAYFARER = { template: 'ship.wayfarer', populate: true, rolled: true } as const;
+
+describe('?scenario=stasis', () => {
+  it('sets a wheel and two prisoners, and the crew hold both in the wheel', () => {
+    const sim = cachedScenario('start', { seed: 3 }).sim;
+    sim.step();
+    const before = new Set(sim.world.query(CrewC));
+    const cmds = prisonerCommands(sim);
+    expect(cmds.map((c) => c.type)).toEqual(['debug.spawnModule', 'debug.spawnCrew', 'debug.spawnCrew', 'debug.spawnItems']);
+    for (const cmd of cmds) sim.enqueue(cmd);
+    sim.step();
+    const caught = newHostiles(sim, before);
+    expect(caught).toHaveLength(2);
+    for (const id of caught) { sim.enqueue({ type: 'debug.imprison', crew: id }); sim.enqueue({ type: 'prisoner.seal', crew: id, on: true }); }
+    for (let i = 0; i < 4000 && !caught.every((id) => slabPlace(sim, id)?.kind === 'wheel'); i++) sim.step();
+    expect(caught.map((id) => slabPlace(sim, id)?.kind)).toEqual(['wheel', 'wheel']);
+  });
+
+  it('in the app\'s start (the Wayfarer, seed 1, prisoners taken a few ticks in) every slab is accounted for and both prisoners end in the wheel', () => {
+    const sim = cachedScenario('start', { seed: 1, params: WAYFARER }).sim;
+    const before = new Set(sim.world.query(CrewC));
+    for (const cmd of prisonerCommands(sim)) sim.enqueue(cmd);
+    for (let i = 0; i < 9; i++) sim.step();
+    const caught = newHostiles(sim, before);
+    for (const id of caught) { sim.enqueue({ type: 'debug.imprison', crew: id }); sim.enqueue({ type: 'prisoner.seal', crew: id, on: true }); }
+    // Empty slabs anywhere (slots, storage, floor, in hand) plus full ones: the ten the wheel came with and the two spares, at every tick.
+    const slabs = (): number => heldItems(sim).filter((h) => h.item === SLAB_ITEM).reduce((n, h) => n + h.count, 0) + fullSlabs(sim).length;
+    for (let i = 0; i < 4000 && !caught.every((id) => slabPlace(sim, id)?.kind === 'wheel'); i++) {
+      sim.step();
+      expect(slabs()).toBe(12);
+    }
+    expect(caught.map((id) => slabPlace(sim, id)?.kind)).toEqual(['wheel', 'wheel']);
+  });
+
+  it('in the app\'s start (the Wayfarer, seed 1) sets the wheel where it walls no rack off (a packed hull may have no such spot on other seeds)', () => {
+    for (const seed of [1]) {
+      const sim = cachedScenario('start', { seed, params: WAYFARER }).sim;
+      const ship = playerShip(sim)!;
+      const from = sim.world.get(playerCrew(sim)[0]!, PositionC)!;
+      const racks = sim.world.query(ModuleC).filter((id) => sim.world.get(id, ModuleC)!.def === 'module.storage_rack');
+      const reach = (): boolean[] => racks.map((id) => {
+        const m = sim.world.get(id, ModuleC)!;
+        const [w, h] = sim.content.modules[m.def]!.footprint;
+        return findPath(sim, ship, { x: from.x, y: from.y }, { x: m.x, y: m.y, adjacent: true, w, h }) !== null;
+      });
+      const before = reach();
+      for (const cmd of prisonerCommands(sim).filter((c) => c.type === 'debug.spawnModule')) sim.enqueue(cmd);
+      sim.step();
+      expect(reach(), `seed ${seed}`).toEqual(before);
+    }
+  });
+
+  it.each([1, 2, 3, 4, 5, 6])('on the debug hull (seed %i) the wheel walls no rack off and both prisoners end in the wheel', (seed) => {
+    {
+      const sim = cachedScenario('start', { seed, params: { template: 'ship.debug', populate: true, rolled: true } }).sim;
+      const ship = playerShip(sim)!;
+      const from = sim.world.get(playerCrew(sim)[0]!, PositionC)!;
+      const at = sim.world.get(ship, ShipC)!;
+      const racks = sim.world.query(ModuleC).filter((id) => { const m = sim.world.get(id, ModuleC)!; return m.def === 'module.storage_rack' && m.x >= at.x && m.x < at.x + at.width && m.y >= at.y && m.y < at.y + at.height; });
+      expect(racks, `seed ${seed}`).toHaveLength(3);
+      const reach = (): boolean[] => racks.map((id) => {
+        const m = sim.world.get(id, ModuleC)!;
+        const [w, h] = sim.content.modules[m.def]!.footprint;
+        return findPath(sim, ship, { x: from.x, y: from.y }, { x: m.x, y: m.y, adjacent: true, w, h }) !== null;
+      });
+      const before = reach();
+      expect(before, `seed ${seed} before`).toEqual([true, true, true]);
+      const crewBefore = new Set(sim.world.query(CrewC));
+      const cmds = prisonerCommands(sim);
+      expect(cmds[0]?.type, `seed ${seed}`).toBe('debug.spawnModule');
+      for (const cmd of cmds) sim.enqueue(cmd);
+      sim.step();
+      expect(reach(), `seed ${seed}`).toEqual(before);
+      const caught = newHostiles(sim, crewBefore);
+      expect(caught, `seed ${seed}`).toHaveLength(2);
+      for (const id of caught) { sim.enqueue({ type: 'debug.imprison', crew: id }); sim.enqueue({ type: 'prisoner.seal', crew: id, on: true }); }
+      for (let i = 0; i < 4000 && !caught.every((id) => slabPlace(sim, id)?.kind === 'wheel'); i++) sim.step();
+      expect(caught.map((id) => slabPlace(sim, id)?.kind), `seed ${seed}`).toEqual(['wheel', 'wheel']);
+    }
+  });
+
+  it('?scenario=prisoners&taken&seal: the raider\'s crew, taken as prisoners and marked, are fetched by shuttle and end in the home wheel', () => {
+    const sim = cachedScenario('start', { seed: 3 }).sim;
+    sim.step();
+    const home = playerShip(sim)!;
+    sim.enqueue({ type: 'debug.spawnEnemy', template: 'ship.raider', x: 100, y: 50 });
+    for (let i = 0; i < 3; i++) sim.step();
+    const raider = sim.world.query(ShipC).find((id) => id !== home && sim.world.get(id, ShipC)?.faction === 'hostile')!;
+    expect(raider).toBeDefined();
+    sim.enqueue({ type: 'debug.capture', ship: raider });
+    sim.step();
+    expect(sim.world.get(raider, ShipC)?.state).toBe('prize');
+    const cmds = sealPrizeCommands(sim, raider);
+    const marked = cmds.flatMap((c) => (c.type === 'prisoner.seal' ? [c.crew] : []));
+    expect(cmds[0]?.type).toBe('debug.spawnModule');
+    expect(marked.length).toBeGreaterThan(0);
+    for (const cmd of cmds) sim.enqueue(cmd);
+    for (let i = 0; i < 20 * 600 && !marked.every((id) => slabPlace(sim, id)?.kind === 'wheel'); i++) sim.step();
+    expect(marked.map((id) => slabPlace(sim, id)?.kind)).toEqual(marked.map(() => 'wheel'));
+  });
+});

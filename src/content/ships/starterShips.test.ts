@@ -1,14 +1,20 @@
 import { describe, expect, it } from 'vitest';
-import type { ModuleDef, ShipTemplate } from '../../sim';
-import { CrewC, ModuleC, PositionC, homeShip, hullLoad, newGame, shipGrid, type Sim } from '../../sim';
+import { homeShip } from '../../sim/combat/ships';
+import { CrewC, PositionC } from '../../sim/crew/components';
+import { hullLoad } from '../../sim/ftl/capacity';
+import { ModuleC } from '../../sim/modules/components';
+import { newGame } from '../../sim/newGame';
+import { shipGrid } from '../../sim/regions';
+import type { ModuleDef, ShipTemplate } from '../../sim/registry';
+import type { Sim } from '../../sim/sim';
 import { validateTemplate } from '../../sim/shipgen';
 import { content } from '../index';
 import { debugShip } from './debugShip';
 import { starterShips } from './starterShips';
+import { step } from '../../../test/support/sim';
 
 const mods: Record<string, ModuleDef> = content.modules;
 const ships: Record<string, ShipTemplate> = content.ships;
-const run = (sim: Sim, n: number): void => { for (let i = 0; i < n; i++) sim.step(); };
 const defsOf = (sim: Sim, f: (d: ModuleDef) => boolean): number =>
   sim.world.query(ModuleC).filter((id) => f(mods[sim.world.get(id, ModuleC)!.def]!)).length;
 
@@ -20,7 +26,7 @@ describe.each(starterShips)('starter ship $name', (s) => {
 
   it('builds with its crew, every module powered, every room lit and breathable, and survives a minute without losses', () => {
     const sim = newGame(1, content, s.id);
-    run(sim, 20 * 60);
+    step(sim, 20 * 60);
     expect(sim.world.query(CrewC)).toHaveLength(s.template.crew!.length);
     const mods = sim.world.query(ModuleC).map((i) => sim.world.get(i, ModuleC)!);
     expect(mods.filter((m) => !m.powered).map((m) => m.def)).toEqual([]);
@@ -52,7 +58,7 @@ describe.each(starterShips)('starter ship $name', (s) => {
 
   it('keeps its crew aboard and moving: each stands on the ship after a short run', () => {
     const sim = newGame(1, content, s.id);
-    run(sim, 20 * 20);
+    step(sim, 20 * 20);
     const g = shipGrid(sim, homeShip(sim))!;
     for (const id of sim.world.query(CrewC)) {
       const p = sim.world.get(id, PositionC)!;
@@ -114,7 +120,7 @@ describe('debug hull (#475)', () => {
     expect(starterShips.map((s) => s.template)).not.toContain(debugShip);
     expect(ships['ship.debug']).toBe(debugShip);
     const sim = newGame(1, content, 'ship.debug');
-    run(sim, 20 * 60);
+    step(sim, 20 * 60);
     expect(sim.world.query(CrewC)).toHaveLength(4);
     expect(defsOf(sim, (d) => !!d.engine)).toBe(2);
     expect(sim.world.query(ModuleC).map((i) => sim.world.get(i, ModuleC)!).filter((m) => !m.powered).map((m) => m.def)).toEqual([]);

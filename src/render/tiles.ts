@@ -7,6 +7,9 @@ export type Chain = string[];
 /** Wall view mode: up = walls up, auto = cutaway (partitions cut, far hull full), down = shortest (whole hull a ghost rim). */
 export type CutawayMode = "auto" | "up" | "down";
 
+/** Whether a door draws open, by its `door` field (0 shut .. 255 open): past halfway. */
+export const doorShownOpen = (door: number): boolean => door > 128;
+
 /** Wall art treats a finished rock wall as a wall (same pieces, runs and cut views); its sprites are `tile.rockwall.*`. */
 export const artKind = (k: number): number => (k === Struct.RockWall ? Struct.Wall : k);
 

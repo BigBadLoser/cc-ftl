@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { Sim, serialize } from '../sim';
+import { serialize } from '../sim/save';
+import { Sim } from '../sim/sim';
 import { buildRepro, loadRepro } from './repro';
 
 describe('repro', () => {

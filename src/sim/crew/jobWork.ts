@@ -207,7 +207,7 @@ function rescue(sim: Sim, crew: number, job: Job): WorkResult {
     const held = sim.world.get(job.bed ?? 0, ModuleC);
     let bed = held && berthOf(sim.content.modules[held.def], held, patient) >= 0 ? (job.bed as number) : 0;
     if (!bed) {
-      const plan = findFreeBed(sim, shipIdOf(sim, me), origin(me), false, undefined, bedUseOf(sim, patient));
+      const plan = findFreeBed(sim, shipIdOf(sim, me), crew, origin(me), false, undefined, bedUseOf(sim, patient));
       const spot = plan ? null : rescueSpot(sim, patient);
       if (spot) {
         // An away site with no bed: carried to the shuttle (away/rescue.ts).

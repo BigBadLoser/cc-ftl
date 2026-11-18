@@ -1,8 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import {
-  AboardC, AsteroidC, CrewC, ItemStackC, regionItems, PositionC, ShipC, Struct, SuitC, VehicleC, deserialize, homeShip, newGame, serialize,
-  shipGrid, type Sim,
-} from '../../sim';
+import { AsteroidC } from '../../sim/asteroids/components';
+import { ShipC } from '../../sim/combat/components';
+import { homeShip } from '../../sim/combat/ships';
+import { CrewC, PositionC } from '../../sim/crew/components';
+import { SuitC } from '../../sim/eva/components';
+import { regionItems } from '../../sim/ferry/pick';
+import { ItemStackC } from '../../sim/items/components';
+import { newGame } from '../../sim/newGame';
+import { shipGrid } from '../../sim/regions';
+import { deserialize, serialize } from '../../sim/save';
+import type { Sim } from '../../sim/sim';
+import { Struct } from '../../sim/structure';
+import { AboardC, VehicleC } from '../../sim/vehicles/components';
 import { shipIdAt } from '../../sim/regions';
 import { content } from '../index';
 

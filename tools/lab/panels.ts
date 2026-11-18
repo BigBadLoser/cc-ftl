@@ -21,6 +21,7 @@ import { slabUvPanel } from './slabUv';
 import { floorFinishesPanel } from './floorFinishes';
 import { deckMarksPanel } from './deckMarks';
 import { cablePanel } from './cable';
+import { tubePanel } from './tube';
 
 /** Every lab page. A new visual gets a panel here (a file of its own in tools/lab/), so it can be seen and shot on its own. */
-export const PANELS: readonly LabPanel[] = [spritesPanel, shieldPanel, dronesPanel, droneLaunchPanel, marksPanel, shotsPanel, upgradesPanel, podsPanel, hydroponicsPanel, orePanel, recoveryPanel, leisurePanel, benchPanel, barPanel, bunkPanel, stasisPanel, stasisFacePanel, slabUvPanel, stasisLoadPanel, floorFinishesPanel, deckMarksPanel, cablePanel];
+export const PANELS: readonly LabPanel[] = [spritesPanel, shieldPanel, dronesPanel, droneLaunchPanel, marksPanel, shotsPanel, upgradesPanel, podsPanel, hydroponicsPanel, orePanel, recoveryPanel, leisurePanel, benchPanel, barPanel, bunkPanel, stasisPanel, stasisFacePanel, slabUvPanel, stasisLoadPanel, floorFinishesPanel, deckMarksPanel, cablePanel, tubePanel];

@@ -4,7 +4,9 @@ Living document: update it whenever a milestone lands, a decision is made, or a 
 Last updated: 2026-11-17.
 
 **History:** completed-work logs, past PR notes and superseded decisions are in [STATUS_ARCHIVE.md](STATUS_ARCHIVE.md). Standing decisions that live there:
-- Sector grid (user, 2026-10-19): each sector becomes one large chunked grid; ships never move or dock with each other; a jump takes the player's ship plus anything docked to it. Plan: "Sector grid (planned)" in ARCHITECTURE.md; user answers in the archive section "Sector grid decision".
+- Sector grid (user, 2026-10-19). Each node uses one chunked grid. Ships keep their positions within a node, while
+  vehicles handle docking and boarding. A jump takes the player's ship and docked vehicles to the destination.
+  See the [live sector grid](ARCHITECTURE.md#sector-grid) and the archive's "Sector grid decision".
 - Art pipeline and look decisions from the M4 art rework (session 2026-10-17): archive section "M4 art rework".
 
 
@@ -22,7 +24,7 @@ upgrades) plugs into `UpgradeMods.weapon` (a patch over the fitted weapon's def)
 Flak is an ordinary ammo weapon (starts on HOLD); HOLD, or hold all, stops all fire. Its art (#357): turret `turret_flak.py`,
 bay `turret_bay_flak.py`, no `artTint` (turrets never take it). Drones are covered by point defence and defence drones, not flak.
 Combat: a left click on a foe weapon (not aiming) opens a read-only inspector (`app/foeModule.ts` is the place for a future
-scanner gate). Debug starts live in `app/scenarios/`. Save version 97.
+scanner gate). Debug starts are presets in `content/scenario/` (see ARCHITECTURE "Scenario builder"). Save version 97.
 Rules from its review: read a weapon module's def through `weaponDefOf` (or a shot's through `firedWeapon`), never `sim.content.weapons`
 directly; every job aimed at a placed module posts `moduleSite` (`modules/footprint.ts`, the rotated footprint) so crew work it from any side.
 Slice 2 (merged in #351): the seven behaviour upgrades in `content/upgradesBehaviour.ts`, all data over general fields: `WeaponDef.ammoPerShot`
@@ -71,36 +73,29 @@ under `tools/shipgen/starters` are stale against them (they were already behind 
 
 **Priority (user, 2026-11-15): the core loop.** "Make it playable first" (2026-11-08) is met: the playtest batch #384-#390 shipped
 in #392. Next is more to find per node (#171; danger bands #382 folded in: no visible bands, physical finds, plan in the #171 comment of 2026-11-15). #380 research,
-#383 story arcs and #172/#52 goals queue behind them. The test harness (#371) may run alongside.
+#383 story arcs and #172/#52 goals queue behind them. The test overhaul (#371) landed in #555 (harness, scenario builder, near-test
+`check:fast`, import-cycle ratchet); follow-ups: break the sim import cycle (#553), test-worker heap growth (#556), cheaper ticks (#65).
 
-- **Station generation (next session: a fresh-eyes review).** Merged 2026-11-17, all from one orchestrator session:
-  - #501 station assembly (#460): one builder (`buildStation`, `src/sim/shipgen/assembly/`) lays out every station and
-    outpost; the old station grammars are gone. Design and file map: [STATION_ASSEMBLY.md](STATION_ASSEMBLY.md). Military
-    depots' drone bays are a weapons-role room standing with the guns (`StationRoomDef.drones`, carried through
-    `battery.ts`/`fort.ts` merges and `rooms/rules/bastion.ts`); stations have an AI core tier 1, so 2 drones.
-  - #527 ground turrets (#514): asteroid bases stand guns on the rock, each cabled to the hull (`cable` grid field,
-    `src/sim/cable.ts`, `src/sim/shipgen/groundTurrets.ts`, owners in `src/sim/modules/groundMount.ts`). SAVE_VERSION 127.
-  - #528 prefab kinds (#508): farm (`farmRows`, `farmCluster`) and mine (`mineWing`) bases in `assembly/prefab.ts`
-    (402 lines, over the soft limit), detached greenhouses entered by EVA (`ShipTemplate.apart`, validated per structure);
-    `walkOpts` (`src/sim/eva/route.ts`) keeps unsuited crew out of thin air; `findSuitStow` (`src/sim/eva/errands.ts`) only
-    stows at an airlock on the grid's biggest air space; stores are stocked only with items they accept (`accepts()` in
-    the stocking step of `generate.ts`); farm pantries stock via `StationDef.pantry`.
-  - #529 landing pads (#509): 9x9 cabled pad module (`src/content/landingPads.ts`, owner `src/sim/modules/landingPad.ts`),
-    home shuttle parked on pad 0, visiting shuttles land on a free pad (`dockSpot` is the one answer to "is this airlock a
-    dock"), suited walk to the ramp foot; gear and ramp animation in `src/render/shuttleView.ts` (`PAD_GEAR`).
-  - **Known gaps to start the review from:** #530 (a farm station's water-only warehouse half leaves its cold stores empty;
-    `warehoused()` split in `assembly/program.ts`); #520 (floor lip where a room meets a corridor margin); #444 (one of four
-    black markets spawns) and #445 (agri station without hydroponics), both filed before #501 and maybe fixed by it: check
-    first; #526 (a neutral outpost needs two hostile acts to fight back); #103 (hull glitches). Ground turrets have no
-    stow/deploy art, and their charged heads and damaged or destroyed mounts are untested in game. Unchecked: whether
-    `crew/beds.ts` and `crew/site.ts` reachability can count a vacuum path for unsuited crew. A zoomed-out outpost frame
-    showed holes where modules are (seen on the turret branch, cause not found). Asked of review bots and left as is: the
-    reviewer's "keep `suited` on avoid-thin walks" (user: fine as is).
-  - User's steer for fixes: no special cases; extend the one owning function (CLAUDE.md "One answer per question").
-  - Debug: `?hook&seed=2`, then `__cc.dispatch({ type: 'debug.spawnOutpost', style: 'surface', kind: 'trading'|'farming'|…, seed, x: 150, y: 150 })`;
-    `__cc.stepTicks(n)` steps the sim. Render animations run on the real clock (`animNow`), so timed screenshots must
-    not wait between steps. Layout lab: `npm run lab`.
-- **Open bugs:** #444 (only one of four black markets spawns), #445 (agri station has no hydroponics), #103 (hull glitches).
+- **Station generation: reviewed 2026-11-17** (stack #501, #527, #528, #529; design and file map in
+  [STATION_ASSEMBLY.md](STATION_ASSEMBLY.md)).
+  - Fixes from the review, in PRs: #533 (#530, every warehouse carries every item), #535 (#526, one hostile act wakes and
+    provokes an outpost), #536 (#534, bed and work-site choice and fight/robot paths use `walkOpts`, so nobody is sent
+    through thin air). Tooling: the sheets tool covers every family; a station that fails to build reports why.
+  - Checked: #445 is fixed (farm stations have hydroponics). #444 stands: nothing attaches `bm.cartel`, `bm.zealot`,
+    `bm.mercenary`; needs a decision on where each spawns.
+  - Open from the review, not started:
+    - Build time: 0.2 to 3.7 s per station, paid synchronously on spawn, no cache. A node with several stations stalls.
+    - Special cases to turn into recipe data: `prefab.ts` branches on plan names, `station.ts` reads `root.kind ===
+      'prefab'` as "asteroid base", the candidate count (8 for `core`) is hardcoded in `assemble.ts`, `program.ts`
+      names `module.vehicle_bay`/`module.pod_bay`.
+    - Over the soft limit: `regions.ts` 469, `groundTurrets.ts` 443, `generate.ts` 439, `prefab.ts` 402.
+    - No direct tests of the assembler (hard checks, spacing, braces, retries), of `walkOpts`, or of a destroyed ground
+      turret. Ground turrets have no stow/deploy art. #520 floor lip, #103 hull glitches.
+  - User (2026-11-17): outposts share one skeleton; a layout per kind would be ideal but station layout matters little
+    to play, so it is parked.
+  - Debug: `?hook&seed=2`, then `__cc.dispatch({ type: 'debug.spawnOutpost', style: 'surface', kind: 'trading'|'farming'|…, seed, x: 150, y: 150 })`.
+    Look at layouts in the layout lab (`/tools/layout/?station=station.<kind>&size=<size>&seed=N`), not in game.
+- **Open bugs:** #444 (only one of four black markets spawns), #103 (hull glitches).
 - **Open:** recruiting prisoners (#492); #300 in-node events; #303 augments as stat modifiers; #305 shuttle landing in a bay that breaks on approach.
 - **Designed, not started:** new modules (DESIGN.md "New modules"); crew implants (#311) needs its design pass. Addictions are parked.
 - **Waiting on the user:** shield art; a feature-completeness review of #205, #238 and #203.

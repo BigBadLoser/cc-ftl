@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { content } from './index';
-import { SKILLS, crewRollRng, jobLevel, rollCrewWith, rollStartingCrew, shipJobs, startingRoles } from '../sim';
+import { jobLevel, shipJobs } from '../sim/crew/profile';
+import { crewRollRng, rollCrewWith, rollStartingCrew } from '../sim/crew/roll';
+import { SKILLS } from '../sim/crew/skillList';
+import { startingRoles } from '../sim/newGame';
 import { starterShips } from './ships/starterShips';
 
 /** The background roll's distribution over many seeds (docs/TRAITS.md 10.6, 10.13 step 3). */

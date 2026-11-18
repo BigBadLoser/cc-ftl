@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { ShipC, Struct, newGame, type Sim } from '../sim';
+import { ShipC } from '../sim/combat/components';
+import { newGame } from '../sim/newGame';
+import type { Sim } from '../sim/sim';
+import { Struct } from '../sim/structure';
 import { materialiseFleet } from '../sim/galaxy/fleetShips';
 import { isHostileFaction } from '../sim/galaxy/standing';
 import { hostileAct } from '../sim/combat/provoke';

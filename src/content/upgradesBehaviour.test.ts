@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { ModuleDef } from '../sim/registry';
-import { CombatC, CrewC, HealthC, ModuleC, PositionC, ProjectileC, ShipC, StorageC, WeaponC, newGame, playerShip, type Sim } from '../sim';
+import { CombatC, ProjectileC, ShipC, WeaponC } from '../sim/combat/components';
+import { CrewC, HealthC, PositionC } from '../sim/crew/components';
+import { StorageC } from '../sim/items/components';
+import { ModuleC } from '../sim/modules/components';
+import { newGame } from '../sim/newGame';
+import type { Sim } from '../sim/sim';
+import { playerShip } from '../sim/trade/player';
 import { applyEffects, type Impact } from '../sim/combat/effects';
 import { fitError } from '../sim/upgrades/fit';
 import { moduleNameOf, weaponDefOf, weaponShortOf } from '../sim/upgrades/stats';
