@@ -66,19 +66,19 @@ export const navy = {
   transition: { slope: 2, max: 4, jitter: 0, label: 'taper' },
   hullFamilies: [
     {
-      id: 'corvette', weight: { base: 5, perDepth: -0.5, max: 5 }, bonus: { weapons: -1, crew: -3, crates: -3, shields: -1, engines: -1 },
+      id: 'corvette', hullPerRoomTile: 4.6, weight: { base: 5, perDepth: -0.5, max: 5 }, bonus: { weapons: -1, crew: -3, crates: -3, shields: -1, engines: -1 },
       depth: { battery: [3, 4], core: [3, 3], habitat: [3, 3], cargo: [3, 3] }, batteryCols: [1, 2], sponsonChance: 0.25, sectionRooms: 4, merge: true, grammars: [{ value: 'linear', weight: 2 }, { value: 'componentFrigate', weight: 3 }, { value: 'deckPair', weight: 0.5 }], aspect: [3, 4], propulsion: ['bank', 'cluster', 'sideDrives'],
     },
     {
-      id: 'frigate', weight: { base: 3, perDepth: 0, max: 3 },
+      id: 'frigate', hullPerRoomTile: 3.7, weight: { base: 3, perDepth: 0, max: 3 },
       depth: { battery: [3, 5], core: [3, 4], habitat: [3, 3], cargo: [3, 4] }, batteryCols: [1, 2], sponsonChance: 0.5, sectionRooms: 3, grammars: [{ value: 'componentFrigate', weight: 5 }, { value: 'spineWings', weight: 1 }], aspect: [3, 4], propulsion: ['wingPods', 'nacelles', 'cluster'],
     },
     {
-      id: 'cruiser', weight: { base: -1, perDepth: 0.5, max: 4 }, bonus: { weapons: 2, shields: 1, crew: 2 },
+      id: 'cruiser', hullPerRoomTile: 3.8, weight: { base: -1, perDepth: 0.5, max: 4 }, bonus: { weapons: 2, shields: 1, crew: 2 },
       depth: { battery: [4, 5], core: [4, 5], habitat: [3, 3], cargo: [3, 4] }, batteryCols: [1, 2], sponsonChance: 0.5, sectionRooms: 3, citadel: true, grammars: [{ value: 'citadelFlanked', weight: 0.5 }, { value: 'twinHull', weight: 3 }, { value: 'componentBattleship', weight: 1.5 }], aspect: [2.5, 3.5], propulsion: ['bank', 'cluster'],
     },
     {
-      id: 'carrier', weight: { base: -2, perDepth: 0.6, max: 4 }, bonus: { pointDefense: 1, engines: 1 }, bays: 3,
+      id: 'carrier', hullPerRoomTile: 3.8, weight: { base: -2, perDepth: 0.6, max: 4 }, bonus: { pointDefense: 1, engines: 1 }, bays: 3,
       depth: { battery: [3, 4], core: [3, 4], habitat: [3, 4], cargo: [3, 5] }, batteryCols: [1, 2], sponsonChance: 0.3, sectionRooms: 3, grammars: [{ value: 'carrierIsland', weight: 1 }, { value: 'flightDeck', weight: 1 }], aspect: [2.8, 3.6], propulsion: ['bank', 'cluster'],
     },
   ],

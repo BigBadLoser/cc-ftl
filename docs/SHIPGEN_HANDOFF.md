@@ -43,9 +43,12 @@ design and iteration history and [STATION_ASSEMBLY.md](STATION_ASSEMBLY.md) for 
    hull; `fitShell` also checks for engines enough for the hull's size (`templateHullLoad`, the player's engine capacity rule). Then **metrics**
    (`metrics.ts`) and the faction's metric bands. Any problem triggers a reseed.
 
-**Engine top-up** (`generateAttempt`, #129): after the arrangement, and again after the fit-out, a hull bigger than its
-engines carry is built again from the same attempt seed with the engines it lacks added to the plan (`planShip`'s
-`extraEngines`; the reactor cap grows with them, so they cost no guns), up to 3 times, before that check reseeds it.
+**Engine top-up** (`generateAttempt`, #129, #571): `planShip` first books the engines a hull will need from its rooms: the family's
+`hullPerRoomTile` (hull tiles per room tile, measured over generated ships) times the planned room area, against `hullCapacity`; the
+reactor cap grows with them, so they cost no guns. A family without the field books none. The safety net: a ship that fails only on
+its engines after the fit-out is built again from the same attempt seed with the engines it lacks added (`extraEngines`), up to 3 times,
+before that check reseeds it. Re-measure a family's number when its grammars or budgets change a lot: too low costs rebuilds, too high
+costs an unneeded engine.
 
 ## File map
 
