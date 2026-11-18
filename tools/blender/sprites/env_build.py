@@ -40,19 +40,23 @@ def _alpha_cnt(a):
 
 
 def render_ghost(objs, W, H):
-    """objs = [plate, glass]. Plate: opaque palette-quantized floor plate. Glass: separate pass, never quantized or
-    outlined; its brightness becomes alpha over a pale tint. Returns (rgb, alpha uint8, padded)."""
-    plate, glass = objs
-    glass.hide_render = True
+    """objs = [plate, glass(, fill)]. Plate: opaque palette-quantized floor plate. Glass: separate pass, never quantized
+    or outlined; its brightness becomes alpha over a pale tint. Fill: faint surfaces, a pass of their own (so they never
+    hide the glass's lines), their alpha combined with the lines'. Returns (rgb, alpha uint8, padded)."""
+    plate, glass, *fill = objs
+    _show([glass] + fill, False)
     rgb, a = core.render(W, H, "color")
     c, op = post.downsample(rgb, a > 0.5, SS, 8, True)
-    glass.hide_render, plate.hide_render = False, True
-    rgb2, a2 = core.render(W, H, "color")
-    plate.hide_render = False
-    cov = post.blocks(a2 > 0.5, SS)
-    cnt = cov.sum(-1)
-    lum = (post.blocks(rgb2.mean(-1), SS) * cov).sum(-1) / cov.shape[-1]      # (weighted by coverage: antialiased)
-    ga = np.clip(lum / 255.0 * 0.65, 0, 0.9)
+    plate.hide_render = True
+    ga = 0.0
+    for ob in [glass] + fill:
+        ob.hide_render = False
+        rgb2, a2 = core.render(W, H, "color")
+        ob.hide_render = True
+        cov = post.blocks(a2 > 0.5, SS)
+        lum = (post.blocks(rgb2.mean(-1), SS) * cov).sum(-1) / cov.shape[-1]      # (weighted by coverage: antialiased)
+        ga = 1 - (1 - ga) * (1 - np.clip(lum / 255.0 * 0.65, 0, 0.9))
+    _show([plate, glass] + fill, True)
     tint = np.array([200.0, 214.0, 232.0])
     out = np.where(op[..., None], c.astype(float), tint)
     mixed = np.where(op[..., None], c * (1 - ga[..., None]) + tint * ga[..., None], tint)

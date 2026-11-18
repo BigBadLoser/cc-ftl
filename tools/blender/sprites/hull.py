@@ -52,9 +52,8 @@ class Out(Spec):
         self.foot = ZG - BEV
 
     def cover(self, i, j):
-        if not self.o and self._inner((i + 0.5) / GN - 0.5, (j + 0.5) / GN - 0.5) * GN > RAMP_CELLS - SHELF_CELLS + 1:
-            return None                     # the rear ghost ends at its ramp's top (one flat cell for the crest's line):
-            #   nothing behind it, so the hull's lines rise from the cut hull's back edge in sight
+        if not self.o and self._inner((i + 0.5) / GN - 0.5, (j + 0.5) / GN - 0.5) * GN > RAMP_CELLS - SHELF_CELLS:
+            return None                     # the rear ghost ends at its ramp's top: nothing behind it
         return half_cell(self.keep, i, j)
 
     def dist(self, x, y):
@@ -228,15 +227,21 @@ def out_block(mask, o, variant=0, part="rim", room=0, corners=0):
         from .hull_wire import wire                   #   drew nothing and hid lines behind them)
         wire(m, sp)
         _rise(m, mask, room, corners)
+        f = core.Mesh(f"hull_ghost_fill_{mask}_{room}_{corners}", flat=True)
+        sp.col_top = sp.col_skirt = sp.col_face = lambda *a: FILL           # noqa: E731 (its surfaces: a faint
+        emit(f, sp)                                                         #   fill, rendered on their own)
+        fill = [f.build()] if f.f else []
     else:
         emit(m, sp)
+        fill = []
     if not m.f:                                       # a corner piece with no camera-facing outer edge
         m.poly([core.G(0, 0, 0), core.G(0.001, 0, 0), core.G(0, 0.001, 0)], "dark")
     if part == "rim":
-        return [_dummy(f"ghost_plate_{o}_{mask}_{room}_{corners}"), m.build()]
+        return [_dummy(f"ghost_plate_{o}_{mask}_{room}_{corners}"), m.build()] + fill
     return [m.build()]
 
 
+FILL = "gFill"                              # the rear ghost's surfaces: almost transparent
 FADE = ("gW2", "hsK", "hsXK", "hbXhsXK")   # the rising lines' tones, bottom up: their alpha fades with height
 
 
