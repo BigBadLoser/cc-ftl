@@ -9,7 +9,7 @@ import { damageVehicle, vehicleDefOf } from '../vehicles/lifecycle';
 import { ProjectileC, ShipC, type Faction, type Target } from './components';
 import { isDormant } from './dormant';
 import { factionsHostile, rogueAlly } from './factions';
-import { shipById } from './ships';
+import { shipById } from './shipQuery';
 
 /**
  * Who a ship's defences may shoot (point defence, defence drones): only what is already hostile, so defending never provokes anyone

@@ -1,6 +1,6 @@
 /** Shared setup of the salvage playtest regressions (#404). */
 import type { Sim } from '../../../src/sim/sim';
-import { passagesOf } from '../../../src/sim/away/passage';
+import { passagesOf } from '../../../src/sim/away/boarding';
 import { shuttleOf } from './ferry';
 import { setup } from './salvageEva';
 import { crewOn, play, siteWork } from './away';

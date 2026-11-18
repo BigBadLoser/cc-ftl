@@ -7,7 +7,7 @@ import { operateAffinity } from '../combat/operators';
 import { ModuleC } from '../modules/components';
 import { AllegianceC } from '../fight/components';
 import { shipIdOf } from '../regions';
-import { passageTiles } from '../away/crew';
+import { passageTiles } from '../away/tripFit';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { EVA_JOB_PENALTY, OPERATE_MAX_LEVEL, PHOBIA_BATTLE_RADIUS, PHOBIA_JOB_PENALTY, RELIEF_AFTER_SEC, RELIEF_PENALTY } from '../tuning';

@@ -1,7 +1,7 @@
 import { BodyC, type Body } from '../body';
 import { ProjectileC, ShipC } from '../combat/components';
 import { chipShuttle, droneThreats, incomingShots, shipCentre, shuttleThreat, underThreat } from '../combat/intercept';
-import { shipById, shipCanAct } from '../combat/ships';
+import { shipById, shipCanAct } from '../combat/shipQuery';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { VehicleC } from '../vehicles/components';

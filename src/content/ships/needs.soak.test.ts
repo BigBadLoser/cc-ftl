@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { TaskC } from '../../sim/ai/components';
 import { ShipC } from '../../sim/combat/components';
-import { homeShip } from '../../sim/combat/ships';
+import { homeShip } from '../../sim/combat/shipQuery';
 import { CrewC } from '../../sim/crew/components';
 import { removeModule } from '../../sim/modules/spawn';
 import { liftShip, stampPacket } from '../../sim/sector/packet';

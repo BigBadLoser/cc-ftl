@@ -2,17 +2,16 @@ import { INSPECT_FIGHT_BAN_TURNS, INSPECT_FIGHT_HIT } from '../blackmarket/tunin
 import { AwayC } from '../away/components';
 import { hostileAct } from '../combat/provoke';
 import { revoke } from '../consent/guests';
-import { CrewC, DeadC, PositionC } from '../crew/components';
-import { EvaFloatC } from '../eva/components';
-import { shipIdOf } from '../regions';
+import { DeadC } from '../crew/components';
 import { AllegianceC } from '../fight/components';
-import { destroyJob } from '../items/stacks';
+import { destroyJob } from '../crew/jobEnd';
 import type { Sim } from '../sim';
 import { TraderC } from '../trade/types';
 import { partyJobs } from './search';
-import { hit } from './settle';
+import { standingHit } from '../galaxy/standing';
 import { go } from './start';
-import { InspectionC, inspections, type Inspection } from './types';
+import { InspectionC, type Inspection } from './types';
+import { onInspectedShip } from './aboard';
 
 /**
  * Fighting the inspectors (#138 step 3, docs/DESIGN.md "Contraband inspections in the world").
@@ -36,33 +35,12 @@ export function attackableInspector(sim: Sim, crew: number): boolean {
   return phase !== undefined && phase !== 'fight' && !sim.world.has(crew, DeadC);
 }
 
-/**
- * Is the inspector on the inspected ship: alive, with their position on its grid, and not drifting back to the shuttle in a suit (an EVA 'back' drift
- * keeps the hull tile as its position, but they are leaving: they board the shuttle when it ends).
- */
-export function onInspectedShip(sim: Sim, id: number, insp: Inspection): boolean {
-  if (!sim.world.has(id, CrewC) || sim.world.has(id, DeadC) || sim.world.get(id, EvaFloatC)?.mode === 'back') return false;
-  const pos = sim.world.get(id, PositionC);
-  return !!pos && shipIdOf(sim, pos) === insp.ship;
-}
-
-/**
- * The inspectors on `ship` that leaving the node now would carry off (`abortInspections`: that counts as fighting them): those of every inspection of the
- * ship not already a fight, standing on it. The one answer for "are inspectors aboard" (the jump warning, the queued jump, the abort itself).
- */
-export function inspectorsAboard(sim: Sim, ship: number): number[] {
-  return inspections(sim).flatMap((v) => {
-    const insp = sim.world.get(v, InspectionC)!;
-    return insp.ship === ship && insp.phase !== 'fight' ? insp.crew.filter((id) => onInspectedShip(sim, id, insp)) : [];
-  });
-}
-
 const sideOf = (sim: Sim, faction: string): 'hostile' | 'rogue' => sim.content.galaxy?.factions[faction]?.combatFaction ?? 'hostile';
 
 /** The inspection becomes a fight (see the file's note). No-op once it is one. */
 export function fightInspection(sim: Sim, vehicle: number, insp: Inspection): void {
   if (insp.phase === 'fight') return;
-  hit(sim, insp.faction, INSPECT_FIGHT_HIT);
+  standingHit(sim, insp.faction, INSPECT_FIGHT_HIT);
   for (const id of partyJobs(sim, vehicle)) destroyJob(sim, id);
   insp.jobs = [];
   const side = sideOf(sim, insp.faction);

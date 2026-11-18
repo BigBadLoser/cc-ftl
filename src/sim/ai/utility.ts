@@ -1,4 +1,3 @@
-import { isLodger, onStationRoll, roleOf } from '../consent/roles';
 import { CrewC, HealthC, MoodC, NeedsC, PositionC } from '../crew/components';
 import { refusesWork } from '../crew/helpers';
 import { careAvailable } from '../crew/recovery';
@@ -7,7 +6,6 @@ import { airLeft } from '../eva/airLedger';
 import { traitEffect, traitFlag } from '../crew/traits';
 import { SuitC } from '../eva/components';
 import { suitDef } from '../eva/suit';
-import { AllegianceC } from '../fight/components';
 import { shipIdOf } from '../regions';
 import { wantsBay } from '../robots/bay';
 import { speciesOf } from '../robots/core';
@@ -15,7 +13,8 @@ import type { Sim } from '../sim';
 import { airMargin, airSourceInput } from './airNeed';
 import { awayReturn } from '../away/crew';
 import { IntentC } from './components';
-import { blockNow } from '../crew/schedule';
+import { blockNow } from '../crew/onCall';
+import { crewKind } from './crewKind';
 import type { CrewKind, DriveDef, DriveId, DriveInput, Intent, MachineId, PolicyDef, ScheduleBlock } from './types';
 
 /**
@@ -92,15 +91,6 @@ export function curveAt(curve: readonly (readonly [number, number])[], x: number
     return x1 === x0 ? y1 : y0 + Math.trunc(((y1 - y0) * (x - x0)) / (x1 - x0));
   }
   return (curve[curve.length - 1] as [number, number])[1];
-}
-
-/** Which kind of crew member this is, for picking a policy. */
-export function crewKind(sim: Sim, id: number): CrewKind {
-  if (speciesOf(sim, id)?.charge) return 'robot';
-  const role = roleOf(sim, id);
-  if (onStationRoll(role)) return 'station';
-  if (isLodger(role)) return 'guest';
-  return sim.world.get(id, AllegianceC)?.faction === 'player' ? 'colonist' : 'npc';
 }
 
 const byKind = new WeakMap<object, Map<CrewKind, PolicyDef>>();

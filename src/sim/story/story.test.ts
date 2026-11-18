@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { CrewC, DeadC, HealthC } from '../crew/components';
 import { AllegianceC } from '../fight/components';
 import type { SimEvent } from '../events';
-import { playerStock } from './world';
+import { playerStock } from '../items/held';
 import { deserialize, serialize } from '../save';
 import { TICK_HZ } from '../time';
 import type { EventDef } from './defs';

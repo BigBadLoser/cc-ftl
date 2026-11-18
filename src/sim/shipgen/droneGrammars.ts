@@ -190,9 +190,10 @@ function frame(c: Ctx, core: number, topo: Topology, run: number, thick: number,
     for (const a of ['start', 'end'] as const) {
       const pr = beamOn(c, cross, 'w', run, thick, a);
       if (pr === null) return false;
-      // Outer faces always; the inner ones too when the prongs stand far enough apart for pods on both.
+      // Outer faces always; one prong's inner face too when the prongs stand far enough apart (pods on both inner faces
+      // would face each other across the gap and crowd back against the stem).
       const outer: Side = a === 'start' ? 'n' : 's';
-      out.push({ id: pr, len: run, faces: sep >= 6 ? [outer, outer === 'n' ? 's' : 'n'] : [outer] });
+      out.push({ id: pr, len: run, faces: sep >= 6 && a === 'start' ? [outer, 's'] : [outer] });
     }
     tips.push(cross);
     return true;
@@ -363,12 +364,14 @@ function cluster(c: Ctx): boolean {
   const p = rollProfile(() => c.rng.next(), 0, c.rng.int(1, 2), [0.3, 0.7]);
   const per = c.rng.int(1, 2);
   const nodes: number[] = [core];
+  // Nodes grown off a node's east or west face: they take no further node in line (east or west), so no row of three.
+  const inRow = new Set<number>();
   let placed = 0;
   for (let guard = 0; placed < all.length && guard < 40; guard++) {
     const list = all.slice(placed, placed + per);
     // Any earlier node, any face but the core's bow: the lattice grows in two dimensions, never a spine.
     const from = c.rng.pick(nodes);
-    const side = c.rng.pick(from === core ? (['n', 's', 'e'] as const) : (['n', 's', 'e', 'w'] as const));
+    const side = c.rng.pick(from === core ? (['n', 's', 'e'] as const) : inRow.has(from) ? (['n', 's'] as const) : (['n', 's', 'e', 'w'] as const));
     const vertical = side === 'n' || side === 's';
     const link = c.A.attach(from, crawl(c.rng, c.rng.int(1, 2), !vertical), { side, align: 'any', doors: 1 });
     if (link === null) continue;
@@ -377,6 +380,7 @@ function cluster(c: Ctx): boolean {
     if (node === null) { c.A.undoLast(); continue; }
     if (!bothSides(c, node, len, list, p)) return no(c, 'node');
     nodes.push(node);
+    if (!vertical) inRow.add(node);
     placed += list.length;
   }
   if (placed < all.length) return no(c, 'lattice');

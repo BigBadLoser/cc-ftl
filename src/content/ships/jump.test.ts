@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { BodyC } from '../../sim/body';
 import { CombatC, ShipC } from '../../sim/combat/components';
-import { homeShip, stampShip } from '../../sim/combat/ships';
+import { stampShip } from '../../sim/combat/ships';
+import { homeShip } from '../../sim/combat/shipQuery';
 import { CrewC, PositionC } from '../../sim/crew/components';
 import { galaxyIndex, START_NODE } from '../../sim/galaxy/state';
 import { ModuleC } from '../../sim/modules/components';

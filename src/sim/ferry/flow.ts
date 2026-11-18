@@ -10,7 +10,7 @@ import { storageAdd, storageTake } from '../items/storage';
 import { ItemStackC, StorageC } from '../items/components';
 import { ModuleC } from '../modules/components';
 import { isTileWalkable } from '../modules/walk';
-import { shipById } from '../combat/ships';
+import { shipById } from '../combat/shipQuery';
 import { shipGrid, shipIdAt, shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';

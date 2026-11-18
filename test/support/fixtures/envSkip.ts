@@ -1,5 +1,5 @@
 import { expect, vi } from 'vitest';
-import { homeShip } from '../../../src/sim/combat/ships';
+import { homeShip } from '../../../src/sim/combat/shipQuery';
 import { type Module, ModuleC } from '../../../src/sim/modules/components';
 import { removeModule } from '../../../src/sim/modules/spawn';
 import { newGame } from '../../../src/sim/newGame';

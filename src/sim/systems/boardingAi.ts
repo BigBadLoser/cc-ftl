@@ -1,5 +1,5 @@
 
-import { shipCanAct } from '../combat/ships';
+import { shipCanAct } from '../combat/shipQuery';
 import { pickAirlock, startParty } from '../boarding/party';
 import { ShipC } from '../combat/components';
 import { isAiFaction } from '../combat/factions';

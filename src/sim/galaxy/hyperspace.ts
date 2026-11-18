@@ -2,7 +2,7 @@ import { hullLoad } from '../ftl/capacity';
 import { applyOvercharge } from '../ftl/overcharge';
 import { abortYards } from '../yard/flow';
 import { abortInspections } from '../inspect/flow';
-import { inspectorsAboard } from '../inspect/fight';
+import { inspectorsAboard } from '../inspect/aboard';
 import { abortPatrolStop } from '../inspect/patrol';
 import { settleLosses } from './jobs';
 import { dropOut, enterHyperspace } from '../sector/jump';

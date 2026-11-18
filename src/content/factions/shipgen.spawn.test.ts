@@ -11,7 +11,7 @@ import { Struct } from '../../sim/structure';
 import { content } from '../index';
 import { factions } from './index';
 import { shipIdOf, shipGrid, shipIds } from '../../sim/regions';
-import { homeShip } from '../../sim/combat/ships';
+import { homeShip } from '../../sim/combat/shipQuery';
 import { hullLoad, templateHullLoad } from '../../sim/ftl/capacity';
 import { generateShip } from '../../sim/shipgen/generate';
 import type { FactionDef } from '../../sim/shipgen/types';

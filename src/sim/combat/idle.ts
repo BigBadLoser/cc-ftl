@@ -5,7 +5,7 @@ import { weaponDefOf } from '../upgrades/stats';
 import { hasAmmo } from './ammo';
 import { CombatC, IonC, WeaponC, type Target } from './components';
 import { operatorOf } from './operators';
-import { shipById } from './ships';
+import { shipById } from './shipQuery';
 import { targetableShip, targetableVehicle, weaponAntiVehicle } from './targets';
 
 /** Does the target still name something to shoot at (a live ship, or a shuttle in the open)? Read-only. */

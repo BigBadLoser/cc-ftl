@@ -2,7 +2,7 @@ import { JobC } from '../crew/components';
 import { ModuleC } from '../modules/components';
 import { CarryingC, ItemStackC } from '../items/components';
 import { destinationTile } from '../items/haul';
-import { destroyJob } from '../items/stacks';
+import { destroyJob } from '../crew/jobEnd';
 import type { HaulRef } from '../items/components';
 import type { Sim } from '../sim';
 import { VehicleC } from '../vehicles/components';

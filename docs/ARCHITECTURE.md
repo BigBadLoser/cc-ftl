@@ -656,6 +656,17 @@ palette.json    the single palette, read by Blender scripts and the game
   - Paint: the ship's armour colour multiplies each piece. Its deco colour multiplies the piece's deco layer `<id>.tint`
     (the piece's own px in its tint mask), drawn over it. Ships are plain for now. `?hullPaint=<armour>,<deco>` (hex)
     paints them all.
+  - Station look (#524): a base standing on asteroid ground (`standsOnGround`, sim/outposts/state.ts, the one owner flag)
+    draws `HullLook` "station" in place of the ship's, from the `station_hull` family (`sprites/station_hull*.py`, palette
+    set `station`): roofed, `tile.hull.station.ext.*` (the run set, designs `.a1` .. `.a6`, windows), generic pieces
+    `tile.hull.station.ext.g.<key>` and `tile.roof.station.g.<key>`, and no belly; against the foot a rock berm
+    `tile.hull.station.berm.<key>.v<n>[.e<a><b>]` (`stationHull.ts` `bermId`, `sprites/station_berm.py`, set `berm`).
+    The pieces stay unpainted grey, lit only; just each `.tint` livery mask takes the deco paint. Where the station has
+    no art for a tile (diagonal far walls, #561; six eight-front keys) the ship's piece is drawn. Walls up: the far hull's
+    cap `tile.hull.station.cap.m<mask>[c<c>]` goes over the partition piece (`tiles.ts` `wallPieces` `look`), and the near
+    hull draws `tile.hull.station.low.<key>` (`lowId`), cut at the ship's rim height with the ship's cut black, a seam and
+    a lit lip. Cache: `station_hull_walls.py` is its own module with its own palette set (`station_cut`), so changing it
+    does not invalidate the family's cache. Render lab panel `station-hull`.
 - **Beams (`struct`, `sprites/struct.py`, wired in `src/render/beamArt.ts` and `gridView.ts`):**
   - `struct.beam.<look>.m<mask>` is chosen by a 4-neighbour mask over beam tiles (N1 E2 S4 W8), anchored
     at the tile centre. The looks are `navy`, `drone`, `civil` and `scrap`, picked by faction.
@@ -1005,14 +1016,19 @@ Phase 1 (the executor, no behaviour change) lives in `src/sim/ai/`: `scheduleSys
 **Schedules (#412).** Design: DESIGN.md "Schedules".
 - `sim/clock.ts`: the ship clock, read from `sim.tick` (`HOUR_TICKS` from `GAME_HOUR_SEC`, start at `CLOCK_START_HOUR`); nothing extra is saved.
 - `content/schedules.ts`: presets (`ScheduleDef`, `satisfies`), `ContentRegistry.schedules`; the `rotation` presets (Default, Late) are what crew without a row follow, in turn by person id.
-- `sim/crew/schedule.ts` owns every schedule question: `ScheduleC` (24 block ids, saved), `hoursOf` (own row, else a rotation preset for colonists,
-  else none), `blockAt` / `blockNow` (the block in force: `work` while `onCall`, a fight, Battle Stations or an open emergency on their ship they would
-  take; an empty console only for crew `admitLevel` would seat), `secToSleep` (for away planning: Sleep only), `holdsSleep` (the needs system keeps a sleeper in bed) and `wakesFromSleep` (the scheduler's turn gets
-  a scheduled sleeper up). `crew/scheduleHandlers.ts`: `crew.schedule.set`, `crew.schedule.preset`, `crew.schedule.copy`.
+- Schedule questions, in three files (split for #553 so the plan doesn't import the job scheduler):
+  - `sim/crew/schedule.ts`, the plan: `ScheduleC` (24 block ids, saved), `hoursOf` (own row, else a rotation preset for colonists, else none),
+    `blockAt` (the plan's block), `offDuty`, and `secToSleep` (for away planning: Sleep only, read from the plan, so a crew member on call in a
+    planned Sleep hour still counts as in Sleep: no trip; #553 decision).
+  - `sim/crew/onCall.ts`: `onCall` (a fight, Battle Stations, or an open emergency on their ship they would take; an empty console only for crew
+    `admitLevel` would seat), `blockNow` (the block in force: `work` while on call) and `holdsSleep` (the needs system keeps a sleeper in bed).
+  - `sim/crew/wake.ts`: `wakesFromSleep` (the scheduler's turn gets a scheduled sleeper up). `ai/crewKind.ts` answers which kind of crew member
+    this is, for the rotation presets and the policy.
+  - `crew/scheduleHandlers.ts`: `crew.schedule.set`, `crew.schedule.preset`, `crew.schedule.copy`.
 - The engine reads the block once per evaluation: `DriveDef.blocks` (policy data) closes a drive in a block (`'off'`), forces it on with a score
   floor (`on`) or moves its entry line (`enter`). With the work drive closed the scheduler's turn hands nobody a job and idles them (a carried
   patient is still set down first).
-- Away (away/crew.ts): `tripWorthIt` (time on site before `secToSleep` longer than the round-trip flight) gates `passageFits` and `siteWantsThem`; `staySec` is needs only. `scheduleHome` (Sleep or Free, read with `blockNow(sim, id, false)`) makes `awayReturn` due (Free only while the shuttle is beside the site), `passengerUrgent` (Sleep) and `tripDue` 'batch' (Free). `blockNow` reads Free as Work for a party member (`AwayC`), so they work on there.
+- Away: `away/tripFit.ts` holds what the job scheduler asks (`tripWorthIt`: time on site before `secToSleep` longer than the round-trip flight; it gates `passageFits` and `siteWantsThem`; `staySec` is needs only; `ofSide`, `passageTiles`). In away/crew.ts: `scheduleHome` (Sleep or Free, read with `blockNow(sim, id, false)`) makes `awayReturn` due (Free only while the shuttle is beside the site), `passengerUrgent` (Sleep) and `tripDue` 'batch' (Free). `blockNow` reads Free as Work for a party member (`AwayC`), so they work on there.
 - Snapshot: `Snapshot.clock` (day, hour, minute) and `UiCrew.schedule` / `block`.
 ## UI
 

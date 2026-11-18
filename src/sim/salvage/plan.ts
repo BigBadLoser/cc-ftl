@@ -1,6 +1,7 @@
 import { createJob, DECONSTRUCT_TICKS } from '../crew/handlers';
 import { CrewC, DeadC, JobC, PositionC } from '../crew/components';
-import { destroyJob, stackAt } from '../items/stacks';
+import { stackAt } from '../items/stacks';
+import { destroyJob } from '../crew/jobEnd';
 import { StagingC } from '../items/components';
 import { stagedStacks } from '../items/staging';
 import { AwaySiteC } from '../away/components';

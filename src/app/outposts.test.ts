@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { CombatC, ShipC } from '../sim/combat/components';
 import { isDormant } from '../sim/combat/dormant';
-import { homeShip } from '../sim/combat/ships';
+import { homeShip } from '../sim/combat/shipQuery';
 import { CrewC, PositionC } from '../sim/crew/components';
 import { newGame } from '../sim/newGame';
 import { shipGrid } from '../sim/regions';

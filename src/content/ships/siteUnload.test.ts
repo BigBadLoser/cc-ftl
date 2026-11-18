@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { content } from '../index';
-import { homeShip } from '../../sim/combat/ships';
+import { homeShip } from '../../sim/combat/shipQuery';
 import { ItemStackC, StorageC } from '../../sim/items/components';
 import { storageAdd, storageSpace } from '../../sim/items/storage';
 import { ModuleC } from '../../sim/modules/components';

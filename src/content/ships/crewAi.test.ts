@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { IntentC, InterruptC, TaskC } from '../../sim/ai/components';
 import { ShipC } from '../../sim/combat/components';
-import { homeShip } from '../../sim/combat/ships';
+import { homeShip } from '../../sim/combat/shipQuery';
 import { AssignmentC, CarriedC, CrewC, DownedC, DraftedC, HealthC, JobC, NeedsC, PositionC } from '../../sim/crew/components';
 import { findPath } from '../../sim/crew/pathfind';
 import type { SimEvent } from '../../sim/events';
@@ -18,7 +18,7 @@ import { auditReservations } from '../../sim/ai/audit';
 import { deriveTask, mealOf } from '../../sim/ai/task';
 import { killCrew } from '../../sim/crew/death';
 import { explainCrew } from '../../sim/ai/explain';
-import { destroyJob } from '../../sim/items/stacks';
+import { destroyJob } from '../../sim/crew/jobEnd';
 import { policyOf } from '../../sim/ai/utility';
 import { content } from '../index';
 import { expectScriptedReplay, haulBoard, lcg } from '../../../test/support/fixtures/crewAi';

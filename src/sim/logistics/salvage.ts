@@ -1,5 +1,5 @@
 import { ShipC } from '../combat/components';
-import { homeShip } from '../combat/ships';
+import { homeShip } from '../combat/shipQuery';
 import { JobC } from '../crew/components';
 import { playerCrewOn } from '../away/crew';
 import { ferryFree, isFerryRegion, isPickupRegion, regionStock } from '../ferry/pick';

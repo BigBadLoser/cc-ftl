@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { homeShip } from '../sim/combat/ships';
+import { homeShip } from '../sim/combat/shipQuery';
 import { AssignmentC, CrewC, type Job, JobC, NeedsC, PositionC } from '../sim/crew/components';
 import { storageAdd } from '../sim/items/storage';
 import { ModuleC } from '../sim/modules/components';
@@ -7,7 +7,8 @@ import { newGame } from '../sim/newGame';
 import type { Sim } from '../sim/sim';
 import { DAY_TICKS } from '../sim/clock';
 import { jobTakeable } from '../sim/crew/jobFit';
-import { blockNow, hoursOf } from '../sim/crew/schedule';
+import { hoursOf } from '../sim/crew/schedule';
+import { blockNow } from '../sim/crew/onCall';
 import { pipeline } from '../sim/pipeline';
 import { shipIdOf } from '../sim/regions';
 import { galaxySystem } from '../sim/systems/galaxy';

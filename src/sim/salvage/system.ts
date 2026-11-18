@@ -1,4 +1,4 @@
-import { destroyJob } from '../items/stacks';
+import { destroyJob } from '../crew/jobEnd';
 import { FerryC } from '../ferry/components';
 import { TransferC } from '../logistics/components';
 import type { Sim } from '../sim';

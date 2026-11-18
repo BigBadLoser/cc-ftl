@@ -3,7 +3,7 @@ import { rotatedSize } from '../modules/footprint';
 import type { Sim } from '../sim';
 
 import { shipIdOf } from '../regions';
-import { shipById } from './ships';
+import { shipById } from './shipQuery';
 
 /** Centre of a module in sector coordinates (tiles), or null if the module or its ship is gone. */
 export function moduleCenter(sim: Sim, moduleId: number): { x: number; y: number } | null {

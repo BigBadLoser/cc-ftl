@@ -3,7 +3,7 @@ import { AwayC, AwaySiteC, SiteRunC } from '../away/components';
 import { endRun } from '../away/end';
 import { openSite } from '../away/handlers';
 import { ShipC } from '../combat/components';
-import { homeShip } from '../combat/ships';
+import { homeShip } from '../combat/shipQuery';
 import { grant, revoke } from '../consent/guests';
 import { CrewC, PrioritiesC, WORK_CATEGORIES, type Priorities } from '../crew/components';
 import { createCrew } from '../crew/spawn';
@@ -16,7 +16,7 @@ import { boardCrew, vehicleDefOf } from '../vehicles/lifecycle';
 import { reportLaunched } from '../vehicles/transitions';
 import { ALT, BodyC } from '../body';
 import { INSPECTOR_ROLE, INSPECTORS } from '../blackmarket/tuning';
-import { destroyJob } from '../items/stacks';
+import { destroyJob } from '../crew/jobEnd';
 import { partyJobs } from './search';
 import { InspectionC, inspections, type Inspection } from './types';
 

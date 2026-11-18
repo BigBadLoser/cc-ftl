@@ -18,7 +18,8 @@ import type { RegionLayers } from './worldLayers';
 import { ModuleC } from '../sim/modules/components';
 import { createModuleView, shipHasPower, type ModuleDefs } from './moduleView';
 import { wallLevel } from './tiles';
-import { PLAIN_PAINT, type HullPaint } from './hullArt';
+import { PLAIN_PAINT, type HullLook, type HullPaint } from './hullArt';
+import { standsOnGround } from '../sim/outposts/state';
 import { createRoofView } from './roofView';
 import type { PaintAtlas } from './paintAtlas';
 import { createRockRoofView } from './rockRoofView';
@@ -113,7 +114,9 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
   const inside = () => (roofed ? null : { grid });
   const gate = o.gate ?? OPEN_GATE;
   let whole = false;
-  const view = createGridView(grid, atlas, L, { emergency: () => emergency, overlayWorld: { world, modules, roomTiers: o.roomTiers }, beamLook: () => o.beamLook ?? DEFAULT_BEAM_LOOK, hullPaint: () => o.hullPaint ?? PLAIN_PAINT, gate, bare: () => !!o.bare });
+  // A base standing on asteroid ground draws the station hull (hullArt `HullLook`).
+  const hullLook = (): HullLook => (standsOnGround(world.get(grid.id, ShipC)) ? 'station' : 'ship');
+  const view = createGridView(grid, atlas, L, { emergency: () => emergency, overlayWorld: { world, modules, roomTiers: o.roomTiers }, beamLook: () => o.beamLook ?? DEFAULT_BEAM_LOOK, hullPaint: () => o.hullPaint ?? PLAIN_PAINT, hullLook, gate, bare: () => !!o.bare });
   const crewView = createCrewView(world, atlas, L, {
     target: () => ({ shipId: grid.id, ox: grid.x0, oy: grid.y0 }),
     hidden: (x, y) => crewHidden(grid, roofed, x, y),

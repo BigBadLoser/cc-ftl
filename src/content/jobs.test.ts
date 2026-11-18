@@ -20,7 +20,7 @@ import { planStarRoute } from '../sim/galaxy/route';
 import { portsAt } from '../sim/galaxy/portIndex';
 import { BREACH_NOTORIETY, MAX_JOBS } from '../sim/galaxy/tuningJobs';
 import type { StationJob } from '../sim/galaxy/types';
-import { playerStock } from '../sim/story/world';
+import { playerStock } from '../sim/items/held';
 import { giveItems } from '../sim/story/effects';
 import { accept, aroundGame, arrivedDelivery, atBoard, boards, goTo, rep, shuttleOut, takeOffer, until } from '../../test/support/fixtures/jobs';
 import { content } from '.';

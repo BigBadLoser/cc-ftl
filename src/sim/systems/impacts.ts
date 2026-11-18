@@ -4,7 +4,7 @@ import { HEAT_PER_LAYER } from '../combat/heatTuning';
 import { applyEffects } from '../combat/effects';
 import { gauss } from '../combat/geometry';
 import { firedWeapon } from '../upgrades/stats';
-import { shipById } from '../combat/ships';
+import { shipById } from '../combat/shipQuery';
 import { ModuleC } from '../modules/components';
 import { footprintTiles } from '../modules/footprint';
 import type { Effect } from '../registry';

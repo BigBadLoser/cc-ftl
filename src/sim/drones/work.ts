@@ -1,4 +1,4 @@
-import { shipById } from '../combat/ships';
+import { shipById } from '../combat/shipQuery';
 import { CarriedC, CrewC, DeadC, DownedC, HealthC, PositionC } from '../crew/components';
 import { douseTile, repairModule, type WorkResult } from '../crew/jobWork';
 import { AllegianceC } from '../fight/components';

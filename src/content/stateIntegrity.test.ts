@@ -12,7 +12,7 @@ import { stepDistress } from '../sim/galaxy/stranded';
 import { yardSystem } from '../sim/yard/flow';
 import { payStation, refund, retryRefund } from '../sim/yard/money';
 import type { YardOrder } from '../sim/yard/types';
-import { playerStock } from '../sim/story/world';
+import { playerStock } from '../sim/items/held';
 import { withHeld } from '../sim/items/held';
 import { spillItems } from '../sim/items/stacks';
 import { shipIdOf } from '../sim/regions';

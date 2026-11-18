@@ -2,7 +2,7 @@ import logSrc from './logText.ts?raw';
 import boardingSrc from './boardingText.ts?raw';
 import { describe, expect, it } from 'vitest';
 import { ShipC } from '../sim/combat/components';
-import { homeShip } from '../sim/combat/ships';
+import { homeShip } from '../sim/combat/shipQuery';
 import { CrewC, DeadC, DownedC, PositionC } from '../sim/crew/components';
 import { AllegianceC } from '../sim/fight/components';
 import { isOnOurSide } from '../sim/fight/relations';

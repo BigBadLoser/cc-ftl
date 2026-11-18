@@ -7,7 +7,7 @@ import { isTileWalkable } from '../modules/walk';
 import { airlockWorking } from '../modules/airlock';
 import { airlockPad } from '../modules/landingPad';
 import { AirlockC } from '../modules/airlock';
-import { shipById } from '../combat/ships';
+import { shipById } from '../combat/shipQuery';
 import { outsideCrew } from '../eva/shuttle';
 import type { Sim } from '../sim';
 import { VehicleBayC, VehicleC, type Vehicle } from './components';

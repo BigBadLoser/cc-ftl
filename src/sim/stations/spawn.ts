@@ -1,5 +1,6 @@
 import { ShipC, type Faction } from '../combat/components';
-import { shipById, spawnShip } from '../combat/ships';
+import { spawnShip } from '../combat/ships';
+import { shipById } from '../combat/shipQuery';
 import { placeAt, placementGapError, regions, shipGrid, shipIdOf, type Place } from '../regions';
 import { isTileWalkable } from '../modules/walk';
 import type { StationResult } from '../shipgen/assembly/station';

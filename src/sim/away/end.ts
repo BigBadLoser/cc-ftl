@@ -2,7 +2,7 @@ import type { Sim } from '../sim';
 import { VehicleC } from '../vehicles/components';
 import { AwayC, AwaySiteC, SiteRunC, type SiteRun } from './components';
 import { releaseOwned } from './owned';
-import { dropPassages, letOut } from './passage';
+import { dropPassages, letOut } from './boarding';
 
 /**
  * End a site's run: its passages are withdrawn, the shuttle no longer flies itself, and the site closes with it. The
