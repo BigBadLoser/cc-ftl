@@ -10,6 +10,7 @@ from .walls import FOOT_PX, GN, RAMP_CELLS, RAMP_PX, SHELF_CELLS, ZART
 
 N = 128                     # samples a tile side, to trace the lines
 TONE = "gW2"
+SEAM = "gW2s"                # the fall lines at the tile seams: a little fainter than the outline
 LIFT = 0.005                # (over the stub's own surfaces where another piece has them)
 CD = (RAMP_CELLS - SHELF_CELLS) / GN    # the crest's distance from the room side
 
@@ -120,6 +121,8 @@ def wire(m, sp):
                     groups.setdefault(key, []).append(((xs[i] + xs[i + di]) / 2, (xs[j] + xs[j + dj]) / 2))
     for pts in groups.values():
         for cl in _clusters(pts):
+            if _stem_crease(sp, cl):
+                continue
             lo = min(cl, key=lambda p: sp._inner(*p))
             hi = max(cl, key=lambda p: sp._inner(*p))
             a, b = _extend(sp, lo, hi)
@@ -132,7 +135,7 @@ def wire(m, sp):
             a = min(on, key=lambda p: sp._inner(*p))
             b = max(on, key=lambda p: sp._inner(*p))
             a = (a[0], a[1] + 0.5 / N) if edge == "x" else (a[0] + 0.5 / N, a[1])
-            strip(m, (*a, zof(0.0)), (*b, zof(sp._inner(*b))))
+            strip(m, (*a, zof(0.0)), (*b, zof(sp._inner(*b))), SEAM)
 
 
 def _stem_back(sp, a, b):
@@ -145,6 +148,16 @@ def _stem_back(sp, a, b):
     if sp.mask & 7 == 7 and not sp.corners & 1 and abs(ay - by) < t and abs(ay + 0.5 - CD) < t:
         return min(ax, bx) >= 0.5 - CD - t
     return False
+
+
+def _stem_crease(sp, cl):
+    """A T's crease on its far side, where the arm's slope meets the stem's back slope: a 45 degree line on screen, all
+    but its ends behind the wall, so left out with that slope's crest (_stem_back)."""
+    x = sum(p[0] for p in cl) / len(cl)
+    y = sum(p[1] for p in cl) / len(cl)
+    if sp.mask & 14 == 14 and not sp.corners & 4 and x < -0.5 + CD and y > 0.5 - CD:
+        return True
+    return sp.mask & 7 == 7 and not sp.corners & 1 and x > 0.5 - CD and y < -0.5 + CD
 
 
 def _clusters(pts, gap=4 / N):

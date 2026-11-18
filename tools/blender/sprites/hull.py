@@ -275,9 +275,11 @@ def _back_fill(f, mask):
     from .walls import hull_top
     e = -0.5 + C
     z0, z1 = 0.02, hull_top() / 6
+    step = (z1 - z0) / len(BACK)
+    cuts = [z0] + [z0 + step * (k + 2) for k in range(len(BACK))]      # (the bottom band twice the others' height)
     for a, b in ([((e, e), (0.5, e))] if not mask & 1 else []) + ([((e, 0.5), (e, e))] if not mask & 8 else []):
         for k, tone in enumerate(BACK):
-            za, zb = z0 + (z1 - z0) * k / len(BACK), z0 + (z1 - z0) * (k + 1) / len(BACK)
+            za, zb = cuts[k], cuts[k + 1]
             f.poly([core.G(*a, za), core.G(*b, za), core.G(*b, zb), core.G(*a, zb)], tone)
 
 
