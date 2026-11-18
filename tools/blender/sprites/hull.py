@@ -51,6 +51,9 @@ class Out(Spec):
         self.foot = ZG - BEV
 
     def cover(self, i, j):
+        if not self.o and self._inner((i + 0.5) / GN - 0.5, (j + 0.5) / GN - 0.5) * GN > RAMP_CELLS - SHELF_CELLS + 1:
+            return None                     # the rear ghost ends at its ramp's top (one flat cell for the crest's line):
+            #   nothing behind it, so the hull's lines rise from the cut hull's back edge in sight
         return half_cell(self.keep, i, j)
 
     def dist(self, x, y):
@@ -243,19 +246,13 @@ def _toe(m, mask, corners):
 
 
 def _rise(m, mask, room, corners):
-    """The rear ghost's faint lines rising from its crest at the tile's seams (and its corner) to the hull's full height,
-    fading as they go: the wall it stands for, hinted (Space Haven's far-side hull ghosts, walls fully collapsed)."""
-    from .walls import hull_top, shelf_top
-    r = (RAMP_CELLS - SHELF_CELLS) / GN                         # (the crest: the ramp's top, at its step)
-    pts = []
-    if not mask & 4:
-        pts.append((-0.5, 0.5 - r))                             # a run along x, the room at +y: its left seam
-    if not mask & 2:
-        pts.append((0.5 - r, -0.5))                             # a run along y, the room at +x: its top seam
-    if mask & 6 == 6 and not corners & 2:
-        pts.append((0.5 - r, 0.5 - r))                          # the inner corner
+    """The rear ghost's faint lines rising from the cut hull's back edge on the deck, where the ship's outer hull face stands, at each tile
+    seam (each tile draws its back corner), fading as they go: the hull it stands for, hinted (Space Haven's far-side
+    hull ghosts, walls fully collapsed)."""
+    from .walls import hull_top
+    pts = [(-0.5, -0.5)]
     w = 0.36 * C
-    z0 = shelf_top(); z1 = z0 + (hull_top() - z0) / 3   # (short, as in the reference)
+    z0 = 0.0; z1 = hull_top() / 3          # (from the cut hull's back edge on the deck: short, as in the reference)
     for px, py in pts:
         a, b = (px - w, py + w), (px + w, py - w)
         for k, tone in enumerate(FADE):
