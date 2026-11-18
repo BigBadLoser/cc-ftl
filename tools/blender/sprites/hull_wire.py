@@ -117,9 +117,8 @@ def wire(m, sp):
             b = max(on, key=lambda p: sp._inner(*p))
             a = (a[0], a[1] + 0.5 / N) if edge == "x" else (a[0] + 0.5 / N, a[1])
             strip(m, (*a, zof(0.0)), (*b, zof(sp._inner(*b))), SEAM)
-            strip(m, (*a, 0.0), (*a, zof(0.0)), SEAM)                  # (and down the foot's front to the deck)
-    if sp.mask & 6 == 6 and not sp.corners & 2:        # an inside corner: the foot's front corner, the px left of the
-        strip(m, (0.5, 0.5, 0.0), (0.5, 0.5, zof(0.0)), SEAM, left=True)   # next tiles' seam line: 2 px, centred
+            strip(m, (*a, 0.0), (*a, zof(0.0)), SEAM, left=edge == "y")   # (and down the foot's front to the deck,
+            #   on the side its fall line leans: so at an inside corner the two runs' lines sit side by side, 2 px)
 
 
 def _to_wall(sp, a, b):

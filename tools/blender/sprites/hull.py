@@ -247,7 +247,7 @@ def out_block(mask, o, variant=0, part="rim", room=0, corners=0):
 
 
 FILL = "gFill"                              # the rear ghost's surfaces: almost transparent
-FADE = ("gW2", "hsK", "hsXK", "hbXhsXK")   # the rising lines' tones, bottom up: their alpha fades with height
+FADE = ("hsK", "hsK", "hsXK", "hbXhsXK")   # the rising lines' tones, bottom up: their alpha fades with height
 
 
 def _back_edges(mask):
