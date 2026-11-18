@@ -155,7 +155,8 @@ class Out(Spec):
         return self._lines[i][j]
 
     def col_top(self, i, j, kind, x, y):
-        return A.ghost_line(self._line(i, j))
+        v = self._line(i, j)
+        return A.ghost_line(min(v, 1) if not self.o else v)      # (the rear ghost's lines all one tone)
 
     def _fs(self, face, x, y):
         if face == "d":
@@ -251,10 +252,11 @@ def _rise(m, mask, room, corners):
     hull ghosts, walls fully collapsed)."""
     from .walls import hull_top
     pts = [(-0.5, -0.5)]
-    w = 0.36 * C
-    z0 = 0.0; z1 = hull_top() / 3          # (from the cut hull's back edge on the deck: short, as in the reference)
+    z0 = 0.02; z1 = hull_top() / 3          # (from the cut hull's back edge on the deck: short, as in the reference)
+    for a, b in ([((-0.5, -0.5), (0.5, -0.5))] if not mask & 1 else []) + ([((-0.5, 0.5), (-0.5, -0.5))] if not mask & 8 else []):
+        m.poly([core.G(*a, z0), core.G(*b, z0), core.G(*b, z0 + DZ), core.G(*a, z0 + DZ)], "gW2")   # (that edge's line)
     for px, py in pts:
-        a, b = (px - w, py + w), (px + w, py - w)
+        a, b = (px, py), (px + C / 2, py - C / 2)      # (1 px wide on screen, on one side of the seam)
         for k, tone in enumerate(FADE):
             za, zb = z0 + (z1 - z0) * k / len(FADE), z0 + (z1 - z0) * (k + 1) / len(FADE)
             m.poly([core.G(*a, za), core.G(*b, za), core.G(*b, zb), core.G(*a, zb)], tone)
