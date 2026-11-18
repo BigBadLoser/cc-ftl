@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { ModuleC, ShipC, Struct, accessTile, deserialize, footprintTiles, hullRow, isTileWalkable, newGame, openTilesOf, serialize, type ModuleDef, type Sim } from '../../sim';
+import { ShipC } from '../../sim/combat/components';
+import { ModuleC } from '../../sim/modules/components';
+import { accessTile, footprintTiles, hullRow, openTilesOf } from '../../sim/modules/footprint';
+import { isTileWalkable } from '../../sim/modules/walk';
+import { newGame } from '../../sim/newGame';
+import type { ModuleDef } from '../../sim/registry';
+import { deserialize, serialize } from '../../sim/save';
+import type { Sim } from '../../sim/sim';
+import { Struct } from '../../sim/structure';
 import { content } from '../index';
 import { factions } from './index';
 import { shipIdOf, shipGrid, shipIds } from '../../sim/regions';

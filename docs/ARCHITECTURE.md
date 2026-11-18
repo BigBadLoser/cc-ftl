@@ -13,7 +13,9 @@ One line per section; read the index, then only the sections your task touches.
 - [Cross-cutting mechanisms](#cross-cutting-mechanisms): Stat resolver; effects; materials; hauling; one answer per question.
 - [Content](#content): Content is TypeScript files exporting objects checked with satisfies WeaponDef (and so on): the
 - [Rendering](#rendering): Two-way contract.
-- [Test tiers](#test-tiers): Fast tier (npm run check:fast, before every commit): lint, typecheck, then VITESTFAST=1 vitest run...
+- [Test tiers](#test-tiers): fast (`check:fast`: near tests of the change), branch (`check:push`), slow, soak, full CI; `test:why` and `TICK_STATS` to see what a change selects and where time goes.
+- [Test harness](#test-harness): `test/support/`: `run`, `nth`, `fixtureShip`, `expectReplayable`, `cachedWorld`, fixtures; who may import it; [writing a test](#writing-a-test) (start near the moment, no weakening, cost rules).
+- [Scenario builder](#scenario-builder): `src/content/scenario/`: parts, presets and hooks found by glob; one builder for tests, `?scenario=` and the profiler.
 - [Asset pipeline](#asset-pipeline): Asset creation is decoupled from asset rendering. Models are built as 3D in Blender, then
 - [Crew AI](#crew-ai): The planned crew AI architecture (interrupts, utility AI, job scheduler, HFSM executor) is in...
 - [UI](#ui): Svelte components read snapshots published by app after each tick, or on demand for
@@ -88,6 +90,9 @@ src/
 - `render` and `ui` read sim state and never mutate it.
 - `app` is the only place that knows about everything.
 - Enforced by ESLint `no-restricted-imports`; a violation fails the build.
+- No new import cycles in `src`: `tools/importCycles.test.ts` is a ratchet on the largest cycle, the files in cycles and the number of
+  groups. It fails when a cycle appears or grows, and when one shrinks without its baseline being lowered in the same change. The plan to
+  break the large feature-module cycle is #553.
 
 ## Simulation core
 
@@ -371,10 +376,17 @@ and the draw-call count is the number of times the batch has to break. Keep that
 
 ## Test tiers
 
-- **Fast tier** (`npm run check:fast`, before every commit): lint, typecheck, then `VITEST_FAST=1 vitest run --changed`, which runs only the
-  test files that import an uncommitted file, directly or transitively. A render or UI change runs its own tests in seconds.
-  A `src/sim` change still selects most content tests, because they build a full game through `newGame` and so depend on every
-  system. That is correct, not noise.
+- **Fast tier, commit check** (`npm run check:fast`, before every commit): lint, typecheck, then the *near tests* of uncommitted changes
+  (`tools/testFast.mjs`): test files within two imports of a changed file, plus edited test files, slow ones included only when edited. A
+  `power.ts` edit runs about 6 files instead of about 300. With nothing uncommitted it checks the branch against `origin/main`, never zero
+  tests. A change to `vite.config.ts`, `src/sim/testSetup.ts` or the lockfile runs the whole fast tier.
+- **Branch check** (`npm run check:push` = lint, typecheck, `test:branch`, before pushing a work branch): every fast test Vitest's import graph
+  links to a change since the merge base with `origin/main`. Most sim edits select about two thirds of the fast tier, because most tests step a
+  game through `newGame` and the pipeline (#553). `git add` new files first.
+- **What a change selects:** `npm run test:why -- <file>` lists the selected test files by import chain (`--top` lists the files most tests
+  reach). `tools/importGraph.mjs` is the shared graph (value imports, dynamic `import()`, `import.meta.glob`, the `$lib` alias).
+- **Where time goes:** 73% of fast-tier time is `Sim.step` (#371 measurement), so a test's cost is mostly its ticks. `TICK_STATS=1` with
+  `node tools/tickStats.mjs` lists ticks, step time and ms per tick per file (instructions at the top of that file).
 - **Slow tier** (`*.slow.test.ts`): sweeps and long runs. The fast tier skips them; `npm run check` and CI
   always run them. Today: the shipgen seed and depth sweeps, the end-to-end trade runs (`content/trade`, `ships/trade`), and the cheap
   guards of the soak tests (one seed or a short horizon asserting the same claim, e.g. `ships/pace`, `ships/balance`, `galaxyGrace`).
@@ -388,6 +400,93 @@ and the draw-call count is the number of times the batch has to break. Keep that
   Files run longest first (`vitest.sequencer.ts`, weights in `tools/testWeights.ts`, refreshed by `npm run test:weights:ci` from CI timings).
 - Vitest runs files in parallel, so one huge file sets the wall time. Split sweeps across files rather than growing one.
 - Test files never import other test files: an imported `*.test.ts` runs its tests again in the importer.
+
+## Test harness
+
+Shared test helpers live in `test/support/` (repo root); use them instead of a local copy of `run`, `nth` or `fixtureShip`.
+
+- `sim.ts` (sim-only; imports only `src/sim`, narrowly, so a test that uses it does not pull the whole pipeline into its import graph):
+  - `run(sim, ticks = 1, { until?, stopBefore? })` (from `run.ts`) steps and drains events, returns the events; `step` steps without collecting. `until` is checked after each step,
+    `stopBefore` before it (the first too). `runLog` returns them as strings (`command.rejected:<command>:<reason>` for a rejection),
+    `runSim` returns `{ ticks, events, log }` when the tick count matters.
+  - `nth(sim, n)` (ship by creation order, 1-based), `crewOn(sim, n)`, `eventsOf(events, type)`,
+    `fixtureShip(sim, template)` (an inert prize ship at the origin).
+- `world.ts` (sim-only):
+  - `expectReplayable(build, ticks, { every = 10, saveAt? })` builds twice, steps both and compares `serialize` every `every` ticks;
+    with `saveAt` one copy is saved and reloaded on the way; `events: []` collects the first copy's events for a test that also asserts something happened. A failure names the first tick that differs (it re-runs per tick to find it).
+  - `cachedWorld(key, build)` builds once per test file (a `fileCache` from `test/support/cache.ts`, emptied after each file so a shared worker's heap does not grow) and returns a fresh `deserialize(serialize(world))` clone per call. Use it when many
+    tests start from the same expensive state (a game run to a scene); build fresh when a test is about the build itself, or about
+    state a save does not hold. Clones are independent: never share a mutable node or world between tests.
+- `content.ts` (the only module that may import `content`): `content`, `cachedNewGame(seed)`.
+- Import rule (lint): only `*.test.ts`, `*.slow.test.ts`, `*.soak.test.ts` and `test/support` may import `test/support`; the sim-only
+  modules follow the sim's boundary (no `content`, `render`, `ui`, `app`), so `src/sim` tests can use them.
+- `fixtures/` (`test/support/fixtures/*.ts`): scenario setups shared by test files (yard, shuttle, farm, stations, outposts, freighter,
+  boarding, away, ferry, ...). They may reach content; none lives in `src/` any more. A fixture that builds an expensive start uses
+  `cachedWorld` (the yard game, the shuttle scene, the farm game); building a game is cheap (`newGame` is about 9 ms), so cache only
+  what steps or spawns.
+- Tests import the module that owns what they use, never the sim barrel `src/sim/index.ts` (lint, `tools/lint/simBarrelBaseline.js`
+  lists the few files not migrated yet; do not add to it). Through the barrel every test depends on the whole sim.
+- Generated galaxy chunks are cached per (content, seed) and shared by every test in a worker, so `src/sim/testSetup.ts` deep-freezes
+  them: a test that assigns `node.danger`, `node.faction` or `edge.fuel` fails with "read only". Play on `contentEdited(seed, key, edit)`
+  or `contentAtDanger(seed, tier)` (`test/support/content.ts`): a copy of the content with its own generator whose chunks carry the edit.
+- Where a sweep over seeds or sizes is too long for the fast tier, the fast test keeps one seed and the rest moves to the `.slow` file
+  (`stations`, `outposts`); a long natural wait keeps a short version in the fast file that starts near the moment tested and the full
+  wait in the `.slow` file (`food`, `shuttleDefence`).
+- Turn systems off only in a focused unit test with an explicit list; never in a gameplay-outcome test.
+- Where a branch case only needs the moment it tests (party aboard, reactor near its deadline), start there (set the timer, deploy
+  from a cached scene) and keep one natural signal-to-rescue test on the production pipeline (`content/freighter.test.ts`).
+
+### Writing a test
+
+The rules the #371 migration followed; new tests follow them too.
+
+- **Start near the moment tested.** Set the timer, crop or deadline just short of its end (`debug.*` commands, a scenario preset), stop at
+  the first event the test checks (`run(..., { until })`), and build expensive starts once with `cachedWorld` / `cachedScenario`. Keep one
+  natural end-to-end run of a flow on the production pipeline; branch cases start near their moment.
+- **Never weaken to save time.** A shortened fast test keeps its claim; the original (natural wait, every seed, every-tick comparison) moves
+  verbatim to a `*.slow.test.ts` beside it, never away. Count `expect(` and cases across the fast file, its slow file and its fixture: they
+  may not drop, except for an exact duplicate folded into `expectReplayable`. Typical splits: one seed fast, the rest slow; saved states
+  compared every 5–10 ticks fast, every tick slow.
+- **Determinism and save round trips** go through `expectReplayable`, not a hand-written pair of runs, unless the test asserts more than
+  it checks (several reload points, the saved JSON's shape); say why in the test.
+- **Keep rule tests small.** Test a rule on a `World` or `Grid` by calling its owning function where practical; reach for `newGame` and
+  `Sim.step` only for behaviour that needs the pipeline. Import the owning module, not `src/sim/index.ts`.
+- **Fresh state per test.** Each test gets its own world (a `cachedWorld` clone or a fresh build); one that edits a generated node uses
+  `contentEdited` / `contentAtDanger`. A new module-level cache in a test or fixture is a `fileCache()`.
+- **Shared setup** goes in `test/support/fixtures/<name>.ts`, a run loop is the shared `run` (a local copy only when it returns or stops
+  differently, and then as a thin wrapper), a scene a preset is likely to want is a scenario preset.
+- **Isolation:** a test that mocks or spies, or changes shared or cached data, goes on `ISOLATED` in `vite.config.ts`. So does one that
+  needs a lot of heap by itself (`researchReach`, about 1.4 GB).
+- **New or reshaped heavy files** get an estimate in `tools/testWeights.ts` (about 2.5 × the local time) until the next
+  `npm run test:weights:ci`.
+
+## Scenario builder
+
+One builder (`src/content/scenario/`) makes a scene for tests, `?scenario=` and the profiler. A scene is a **spec** of independent parts; **presets** combine parts;
+**hooks** are code that runs on a built scene. Nothing is listed centrally: parts, presets and hooks are found by `import.meta.glob`, so adding one is adding a
+file (Vite resolves it in the browser build, Vitest and the profiler, which all run under Vite).
+
+- `ScenarioSpec` (`types.ts`) is an interface with no keys of its own: each part adds its key by declaration merging. A part is `parts/<key>.ts`, default export
+  `definePart({ key, after?, apply(ctx, slice) })`; parts apply in topological order of `after`. Parts: `ship` (the only one that makes the sim; hull, seed, crew,
+  skip goals), `node` (warm-up ticks, hop to an empty neighbour, stations), `items`, `prep` and `steps` (scripts of commands and waits before / after the other
+  parts), `events` (story flags, queued event, a trip to its signal, answers, deploy), `crew` (traits, xp, breaks, bonds, fire, drops), `modules` (beds near a module,
+  plots, production orders), `ships` (enemy, generated, derelict, raider), `hooks`, `ui` (speed, selection, tool, camera: data the app applies; tests ignore it).
+  A part changes the sim through commands (the `debug.*` ones, or a new one where none exists); a direct write is allowed only for pre-start setup tests already did
+  (skip goals, a story flag, the queued event) and only inside the owning part.
+- A preset is `presets/<name>.ts` (`presets/inspect/station.ts` is `inspect.station`), default export `definePreset({ doc, params?, starter?, spec(params) })`. `params`
+  are its URL knobs by kind (`flag`, `num`, `str`, `oneOf`). `buildScenario(name | spec, { seed, params, overrides, sim?, extraHooks? })` returns `Built`:
+  the finished scene (the build steps the sim itself), `requests` (UI), `rejected` (command rejections by `command:reason`) and the hooks. `overrides` is a partial spec
+  merged over the preset's (objects merge, arrays replace, `null` deletes); a key no part owns is an error.
+- A hook is `hooks/<name>.ts`, `defineHook({ afterBuild?, tick?, event? })` with `ctx.after(ticks, fn)` / `ctx.when(pred, fn)` (tick-based, so deterministic). They read
+  the sim and send commands. They are not `?hook` (the `__cc` debug API). The app loop calls `built.afterTick()` / `built.onEvents()`; tests and the profiler use `play(built, ticks)`
+  or the same calls. Hooks: `inspect.fight`, `inspect.select`, `boarding`, `log`, `busy.arrive`, `medpod.deliver`, `stasis.unpowered`.
+- Tests (`test/support/scenario.ts`): `scenario(name, opts)` builds fresh; `cachedScenario(name, opts)` builds once per test file and returns a clone (`cachedWorld`'s rules), keyed
+  by name + canonical JSON of seed, params and overrides, so two worlds never share a key. Turning sim systems off is not available; add it for a focused unit test when one needs it.
+- `?scenario=<name>&<flag>...&seed=&starter=&credits=&items=&speed=&ticks=&hooks=` (`url.ts`); `src/app/scenarioStart.ts` builds it on the running game before the first frame and
+  applies the UI requests. Profiler: `--scenario preset:<name>`.
+- Adding things: a file in `presets/`, `parts/` or `hooks/`. Keep `import.meta.glob(` written exactly so in `registry.ts` (no type argument): Vitest's on-disk module cache
+  skips a file only when it contains that text, and a cached registry would not see a file added later. `registry.test.ts` (fast) checks unique names, resolvable `after` and a part for
+  every spec key; `presets.slow.test.ts` builds every preset on the app start and plays 100 ticks.
 
 ## Asset pipeline
 
@@ -1604,7 +1703,7 @@ DESIGN.md "Physical encounters". Three parts kept apart: triggers (the transit d
   its crew `vehicle.embark`, the shuttle `undock`s and `return`s, `home` is set and the skiff is dismissed (`leaveAt` now, so `departScene` jumps it
   out). Refused, an honest skiff is dismissed at once (fact `declined`, rule `honestRefused`). A player shot first (`provoked` set) makes it `sprung` already. Observer facts `ambushed` (`provoked === 'ambush'`) and
   `boardersDown` (party all dead or down), rule filter `trap: true|false`. Scan rows are skill-sharpened (`app/ambushIntel.ts`: gunnery, piloting,
-  hacking). Debug: `?scenario=ambush[&trap|&honest][&signal]` (`app/ambushScenario.ts`, `debug.ambush`).
+  hacking). Debug: `?scenario=ambush[&trap|&honest][&signal]` (`content/scenario/presets/ambush.ts`, `debug.ambush`).
 
 ## Food and farming, `src/sim/farm/`
 

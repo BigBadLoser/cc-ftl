@@ -3,32 +3,35 @@
 Everything that exists for development and playtesting: URL debug starts, `debug.*` commands, the debug panel, render lab, layout lab, ship generator viewer, profilers, the Blender sprite pipeline.
 Nothing here is part of the shipped game loop; "Debug only" is the status for all of it. Other URL parameters: `?seed=`, `?starter=<ship>` (skips the title), `?perf` (F3 profiler panel).
 
-## URL scenarios (`?scenario=<name>`, `src/app/scenarios/`)
+## URL scenarios (`?scenario=<name>`, `src/content/scenario/`)
+
+Presets are files in `presets/`; `?scenario=<name>` takes the preset's own flags plus `&seed= &starter= &credits= &items=id:n,id:n &speed= &ticks= &hooks=a,b`. A start builds before the first frame and opens on the finished scene (`?scenario=ambush&signal` stops at the signal). Also here, not listed below: `stasis`, `vents`, `bar`, `lostcargo` and `start` (a plain new game: `&template= &populate &rolled`). `npm run profile:sim -- --scenario preset:<name>` runs any of them in the profiler. See ARCHITECTURE "Scenario builder".
+
 | Name | id | What it does | Status | Where |
 |---|---|---|---|---|
-| log | `?scenario=log` | `?scenario=log`: a raider arrives, fire breaks out, speed 3 | Debug only | src/app/scenarios/ambush.ts; registry in src/app/scenarios/index.ts |
-| ambush | `?scenario=ambush` | Pirate ambush from its signal or dropped on top; `&trap|&honest|&signal|&tell=|&event=` | Debug only | src/app/scenarios/ambush.ts; registry in src/app/scenarios/index.ts |
-| freighter | `?scenario=freighter` | Distress freighter scene; `&signal&help&raiders=none|here|coming` | Debug only | src/app/scenarios/ambush.ts; registry in src/app/scenarios/index.ts |
-| handover | `?scenario=handover` | Delivery job set-up | Debug only | src/app/scenarios/jobs.ts; registry in src/app/scenarios/index.ts |
-| bounty | `?scenario=bounty` | Bounty job set-up | Debug only | src/app/scenarios/jobs.ts; registry in src/app/scenarios/index.ts |
-| survey | `?scenario=survey` | Survey job set-up | Debug only | src/app/scenarios/jobs.ts; registry in src/app/scenarios/index.ts |
-| tracker | `?scenario=tracker` | Jobs tracker full of cards | Debug only | src/app/scenarios/jobs.ts; registry in src/app/scenarios/index.ts |
-| fight | `?scenario=fight` | A raider beside the ship, game running; `far` | Debug only | src/app/scenarios/fight.ts; registry in src/app/scenarios/index.ts |
-| boarding | `?scenario=boarding` | Boarding fight set-up | Debug only | src/app/scenarios/fight.ts; registry in src/app/scenarios/index.ts |
-| inspector | `?scenario=inspector` | Crew inspector with traits, XP, gear, mixed mood | Debug only | src/app/scenarios/crew.ts; registry in src/app/scenarios/index.ts |
-| breaks | `?scenario=breaks` | Four crew mental-break at once | Debug only | src/app/scenarios/crew.ts; registry in src/app/scenarios/index.ts |
-| bonds | `?scenario=bonds` | Friends and a rival around one crew member | Debug only | src/app/scenarios/crew.ts; registry in src/app/scenarios/index.ts |
-| drones | `?scenario=drones` | Drone bays, three drones, a fire, hurt crew; `&fight` | Debug only | src/app/scenarios/drones.ts; registry in src/app/scenarios/index.ts |
-| upgrades | `?scenario=upgrades` | Weapon upgrades and flak; `&enemy=navy&depth=` | Debug only | src/app/scenarios/upgrades.ts; registry in src/app/scenarios/index.ts |
-| damage | `?scenario=damage` | Fire, breach, damaged reactor | Debug only | src/app/scenarios/damage.ts; registry in src/app/scenarios/index.ts |
-| hullplan | `?scenario=hullplan` | Hull plan brushes next to a trading hub with credits | Debug only | src/app/scenarios/hullplan.ts; registry in src/app/scenarios/index.ts |
-| medpod | `?scenario=medpod` | Medical pod and passenger; `&passage` | Debug only | src/app/scenarios/medpod.ts; registry in src/app/scenarios/index.ts |
-| inspect | `?scenario=inspect` | Station inspectors board and search; `&clean` | Debug only | src/app/scenarios/inspect.ts; registry in src/app/scenarios/index.ts |
-| patrol | `?scenario=patrol` | Navy patrol hails you to stop | Debug only | src/app/scenarios/patrol.ts; registry in src/app/scenarios/index.ts |
-| pirates | `?scenario=pirates` | Pirate fleet waits at the next node; `&hunt` | Debug only | src/app/scenarios/pirates.ts; registry in src/app/scenarios/index.ts |
-| farm | `?scenario=farm` | Three hydroponics beds near a galley (#59) | Debug only | src/app/scenarios/farm.ts; registry in src/app/scenarios/index.ts |
-| prisoners | `?scenario=prisoners` | A stasis wheel, two hostile prisoners and two spare empty slabs (#116); `&unpowered` switches the wheel off once both are in | Debug only | src/app/scenarios/prisoners.ts; registry in src/app/scenarios/index.ts |
-| busy | `?scenario=busy` | Civilian ship, derelict and station: the profiling scene | Debug only | src/app/scenarios/busy.ts; registry in src/app/scenarios/index.ts |
+| log | `?scenario=log` | `?scenario=log`: a raider arrives, fire breaks out, speed 3 | Debug only | src/content/scenario/presets/ (the preset file of that name) |
+| ambush | `?scenario=ambush` | Pirate ambush from its signal or dropped on top; `&trap|&honest|&signal|&tell=|&event=` | Debug only | src/content/scenario/presets/ (the preset file of that name) |
+| freighter | `?scenario=freighter` | Distress freighter scene; `&signal&help&raiders=none|here|coming` | Debug only | src/content/scenario/presets/ (the preset file of that name) |
+| handover | `?scenario=handover` | Delivery job set-up | Debug only | src/content/scenario/presets/ (the preset file of that name) |
+| bounty | `?scenario=bounty` | Bounty job set-up | Debug only | src/content/scenario/presets/ (the preset file of that name) |
+| survey | `?scenario=survey` | Survey job set-up | Debug only | src/content/scenario/presets/ (the preset file of that name) |
+| tracker | `?scenario=tracker` | Jobs tracker full of cards | Debug only | src/content/scenario/presets/ (the preset file of that name) |
+| fight | `?scenario=fight` | A raider beside the ship, game running; `far` | Debug only | src/content/scenario/presets/ (the preset file of that name) |
+| boarding | `?scenario=boarding` | Boarding fight set-up | Debug only | src/content/scenario/presets/ (the preset file of that name) |
+| inspector | `?scenario=inspector` | Crew inspector with traits, XP, gear, mixed mood | Debug only | src/content/scenario/presets/ (the preset file of that name) |
+| breaks | `?scenario=breaks` | Four crew mental-break at once | Debug only | src/content/scenario/presets/ (the preset file of that name) |
+| bonds | `?scenario=bonds` | Friends and a rival around one crew member | Debug only | src/content/scenario/presets/ (the preset file of that name) |
+| drones | `?scenario=drones` | Drone bays, three drones, a fire, hurt crew; `&fight` | Debug only | src/content/scenario/presets/ (the preset file of that name) |
+| upgrades | `?scenario=upgrades` | Weapon upgrades and flak; `&enemy=navy&depth=` | Debug only | src/content/scenario/presets/ (the preset file of that name) |
+| damage | `?scenario=damage` | Fire, breach, damaged reactor | Debug only | src/content/scenario/presets/ (the preset file of that name) |
+| hullplan | `?scenario=hullplan` | Hull plan brushes next to a trading hub with credits | Debug only | src/content/scenario/presets/ (the preset file of that name) |
+| medpod | `?scenario=medpod` | Medical pod and passenger; `&passage` | Debug only | src/content/scenario/presets/ (the preset file of that name) |
+| inspect | `?scenario=inspect` | Station inspectors board and search; `&clean` | Debug only | src/content/scenario/presets/ (the preset file of that name) |
+| patrol | `?scenario=patrol` | Navy patrol hails you to stop | Debug only | src/content/scenario/presets/ (the preset file of that name) |
+| pirates | `?scenario=pirates` | Pirate fleet waits at the next node; `&hunt` | Debug only | src/content/scenario/presets/ (the preset file of that name) |
+| farm | `?scenario=farm` | Three hydroponics beds near a galley (#59) | Debug only | src/content/scenario/presets/ (the preset file of that name) |
+| prisoners | `?scenario=prisoners` | A stasis wheel, two hostile prisoners and two spare empty slabs (#116); `&unpowered` switches the wheel off once both are in | Debug only | src/content/scenario/presets/ (the preset file of that name) |
+| busy | `?scenario=busy` | Civilian ship, derelict and station: the profiling scene | Debug only | src/content/scenario/presets/ (the preset file of that name) |
 
 ## Debug commands (`debug.*` in `src/sim/commands.ts`)
 

@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { ShipC, TraderC, newGame, type SimEvent } from '../sim';
+import { ShipC } from '../sim/combat/components';
+import type { SimEvent } from '../sim/events';
+import { newGame } from '../sim/newGame';
+import { TraderC } from '../sim/trade/types';
 import { isLive } from '../sim/trade/deals';
 import { content } from '../content';
 import { StationLog, clockAt } from './stationLog';

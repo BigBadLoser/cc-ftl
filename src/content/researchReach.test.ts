@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { galaxyIndex, newGame, nodeOf, type Sim } from '../sim';
+import { galaxyIndex, nodeOf } from '../sim/galaxy/state';
+import { newGame } from '../sim/newGame';
+import type { Sim } from '../sim/sim';
 import { content } from '.';
 
 /** Jumps from the start node to the nearest node holding a structure of `def` (null when none is revealed). */

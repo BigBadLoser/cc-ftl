@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { ModuleC, CrewC, NeedsC, PositionC, PrioritiesC, homeShip, newGame, placementError, removeModule, shipGrid, spawnModule, type Sim } from '../../sim';
+import { homeShip } from '../../sim/combat/ships';
+import { CrewC, NeedsC, PositionC, PrioritiesC } from '../../sim/crew/components';
+import { ModuleC } from '../../sim/modules/components';
+import { placementError, removeModule, spawnModule } from '../../sim/modules/spawn';
+import { newGame } from '../../sim/newGame';
+import { shipGrid } from '../../sim/regions';
+import type { Sim } from '../../sim/sim';
 import { berthHolders, berthOf } from '../../sim/crew/berths';
 import { auditReservations } from '../../sim/ai/audit';
 import { accessTiles, footprintTiles } from '../../sim/modules/footprint';

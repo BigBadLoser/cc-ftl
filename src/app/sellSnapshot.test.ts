@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { content } from '../content';
-import { newGame, playerItems } from '../sim';
+import { newGame } from '../sim/newGame';
+import { playerItems } from '../sim/trade/player';
 import { whereToSell } from './sellSnapshot';
 
 describe('where to sell', () => {

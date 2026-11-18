@@ -1,36 +1,21 @@
 import { describe, expect, it } from 'vitest';
-import {
-  CombatC, FTL_CHARGE_SEC, START_NODE, ShipC, galaxyIndex, newGame, playerShip, passingMeets, incomingFleets, TICK_HZ, type Sim,
-} from '../sim';
+import { ShipC } from '../sim/combat/components';
+import { passingMeets } from '../sim/galaxy/encounters';
+import { incomingFleets } from '../sim/galaxy/incoming';
+import { START_NODE } from '../sim/galaxy/state';
+import { newGame } from '../sim/newGame';
+import type { Sim } from '../sim/sim';
+import { TICK_HZ } from '../sim/time';
+import { playerShip } from '../sim/trade/player';
 import { crossingOf, encounterKind } from '../sim/galaxy/encounters';
 import { stepFleets } from '../sim/galaxy/fleets';
 import { TIME_TURN_TICKS, takeHopTurn, tickTurnClock } from '../sim/galaxy/turn';
 import { PASSING_ENCOUNTER_CHANCE, TURN_SEC } from '../sim/galaxy/tuning';
 import type { Fleet } from '../sim/galaxy/types';
 import { giveItems } from '../sim/story/effects';
+import { adjacent, charge, clear, deploy, step } from '../../test/support/fixtures/traffic';
 import { content } from '.';
 
-const step = (sim: Sim, n = 1) => {
-  const out = [];
-  for (let i = 0; i < n; i++) {
-    sim.step();
-    out.push(...sim.events.drain());
-  }
-  return out;
-};
-const deploy = (sim: Sim) => {
-  for (const [x, y] of [[100, 60], [20, 50], [300, 200], [40, 150], [200, 20], [350, 100]] as const) {
-    sim.enqueue({ type: 'sector.deploy', x, y });
-    step(sim);
-    if (sim.sector.state === 'active') break;
-  }
-};
-const adjacent = (sim: Sim, id: string): string[] =>
-  (galaxyIndex(sim.galaxy).adjacent.get(id) ?? []).map((e) => (e.a === id ? e.b : e.a)).sort();
-const charge = (sim: Sim) => {
-  const c = sim.world.get(playerShip(sim), CombatC);
-  if (c) c.ftl = FTL_CHARGE_SEC;
-};
 const others = (sim: Sim) => sim.world.query(ShipC).filter((id) => sim.world.get(id, ShipC)?.faction !== 'player');
 /** A hand-made fleet of `faction` with one ship, parked at `node`. */
 function fleet(sim: Sim, node: string, over: Partial<Fleet> = {}): Fleet {
@@ -42,9 +27,6 @@ function fleet(sim: Sim, node: string, over: Partial<Fleet> = {}): Fleet {
   g.fleets.push(f);
   return f;
 }
-const clear = (sim: Sim) => {
-  sim.galaxy.fleets = [];
-};
 
 describe('turn clock', () => {
   it('three minutes of active game time are one turn, and the clock restarts', () => {
@@ -53,12 +35,15 @@ describe('turn clock', () => {
     const sim = newGame(21, content);
     sim.story.goals.skipped = true; // opening grace off: these tests interdict at the danger-0 start
     clear(sim);
-    step(sim, TIME_TURN_TICKS - 1);
+    sim.galaxy.turnClock = TIME_TURN_TICKS - 5; // the full three minutes are in galaxyTraffic.slow.test.ts
+    step(sim, 4);
     expect(sim.galaxy.turn).toBe(0);
     const ev = step(sim);
     expect(sim.galaxy.turn).toBe(1);
     expect(ev).toContainEqual({ type: 'galaxy.turn', turn: 1, cause: 'time' });
-    step(sim, TIME_TURN_TICKS);
+    expect(sim.galaxy.turnClock).toBe(0);
+    sim.galaxy.turnClock = TIME_TURN_TICKS - 1;
+    step(sim);
     expect(sim.galaxy.turn).toBe(2);
   });
 
@@ -66,7 +51,7 @@ describe('turn clock', () => {
     const sim = newGame(21, content);
     sim.story.goals.skipped = true; // opening grace off: these tests interdict at the danger-0 start
     clear(sim);
-    step(sim, TIME_TURN_TICKS - 50);
+    sim.galaxy.turnClock = TIME_TURN_TICKS - 50; // the natural run up to here is in galaxyTraffic.slow.test.ts
     giveItems(sim, 'item.fuel', 50);
     charge(sim);
     sim.enqueue({ type: 'galaxy.jump', ship: playerShip(sim), route: [adjacent(sim, START_NODE)[0] as string] });
@@ -83,9 +68,11 @@ describe('turn clock', () => {
     deploy(sim);
     expect(sim.sector.state).toBe('active');
     expect(sim.galaxy.turnClock).toBeLessThan(5);
-    step(sim, TIME_TURN_TICKS - 10);
+    // Then it runs a whole turn: from just short of one (the full three minutes are in galaxyTraffic.slow.test.ts).
+    sim.galaxy.turnClock = TIME_TURN_TICKS - 10;
+    step(sim, 5);
     expect(sim.galaxy.turn).toBe(1);
-    step(sim, 20);
+    step(sim, 10);
     expect(sim.galaxy.turn).toBe(2);
   }, 60000);
 

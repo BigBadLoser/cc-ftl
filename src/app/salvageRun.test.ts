@@ -1,10 +1,10 @@
 /** The shuttle panel and crew mood lines of the salvage playtest (#404). */
 import { describe, expect, it } from 'vitest';
-import { MoodC } from '../sim';
+import { MoodC } from '../sim/crew/components';
 import { AwaySiteC } from '../sim/away/components';
 import { SalvageOrderC } from '../sim/salvage/components';
-import { boarding } from '../content/ships/salvage404Fixture';
-import { play } from '../content/ships/awayFixture';
+import { boarding } from '../../test/support/fixtures/salvage404';
+import { play } from '../../test/support/fixtures/away';
 import { buildShuttles } from './shuttleSnapshot';
 import { buildCrewLists } from './crewSnapshot';
 

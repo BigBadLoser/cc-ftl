@@ -1,5 +1,21 @@
 import { describe, expect, it } from 'vitest';
-import { CarryingC, boardingTile, newGame, ModuleC, PositionC, Sim, Struct, StorageC, VehicleC, airlockTiles, cargoCount, cargoTile, dockPoint, findPath, footprintTiles, stampShip, hullOutward, hullRow, hullSide, inFootprint, isTileWalkable, keepOutTiles, placementError, spawnModule, storageCount, type ModuleDef } from '../../sim';
+import { stampShip } from '../../sim/combat/ships';
+import { PositionC } from '../../sim/crew/components';
+import { findPath } from '../../sim/crew/pathfind';
+import { CarryingC, StorageC } from '../../sim/items/components';
+import { storageCount } from '../../sim/items/storage';
+import { airlockTiles, keepOutTiles } from '../../sim/modules/airlock';
+import { ModuleC } from '../../sim/modules/components';
+import { footprintTiles, hullOutward, hullRow, hullSide, inFootprint } from '../../sim/modules/footprint';
+import { placementError, spawnModule } from '../../sim/modules/spawn';
+import { isTileWalkable } from '../../sim/modules/walk';
+import { newGame } from '../../sim/newGame';
+import type { ModuleDef } from '../../sim/registry';
+import { Sim } from '../../sim/sim';
+import { Struct } from '../../sim/structure';
+import { cargoCount } from '../../sim/vehicles/cargo';
+import { VehicleC } from '../../sim/vehicles/components';
+import { boardingTile, cargoTile, dockPoint } from '../../sim/vehicles/geometry';
 import { content } from '../index';
 import { PLAYER_START as P0 } from '../../sim/tuning'; // the player ship's sector top-left
 import { shipIdOf, shipGrid } from '../../sim/regions';

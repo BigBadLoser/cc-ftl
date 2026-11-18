@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { content } from '../../src/content';
-import { CrewC, JobC, PositionC, PrioritiesC, ShipC, homeShip, newGame } from '../../src/sim';
+import { ShipC } from '../../src/sim/combat/components';
+import { homeShip } from '../../src/sim/combat/ships';
+import { CrewC, JobC, PositionC, PrioritiesC } from '../../src/sim/crew/components';
+import { newGame } from '../../src/sim/newGame';
 import { abortTask } from '../../src/sim/ai/task';
 import { Struct } from '../../src/sim/structure';
 import { DecisionRecorder, diffDecisions, formatDiff, parseDecisions, serializeDecisions, type Decision } from './decisions';

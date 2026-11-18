@@ -12,7 +12,7 @@ import { dumpBoard, type Board } from './board';
 import { OBSERVE_LABEL, type Excluder } from './excluded';
 import { DecisionRecorder, type Decision } from './decisions';
 import { MetricsRecorder, formatMetrics, type MetricsSummary } from './metrics';
-import { buildScenario, getScenario } from './scenarios';
+import { buildScenario, getScenario, presetRuns } from './scenarios';
 
 export interface ProfileOpts {
   ticks: number;
@@ -47,6 +47,7 @@ export function profileSim(opts: ProfileOpts): ProfileResult {
   const name = opts.scenario ?? 'none';
   const sim = opts.scenario ? buildScenario(opts.scenario, opts.seed) : newGame(opts.seed, content, undefined, opts.populate);
   const startTick = sim.tick;
+  const run = presetRuns.get(sim); // a registry scenario's hooks ride on the profile run
   const profiler = new Profiler(() => performance.now());
   profiler.enabled = true;
   const metrics = opts.metrics === false ? undefined : new MetricsRecorder({ stride: opts.stride ?? 25 });
@@ -68,6 +69,8 @@ export function profileSim(opts: ProfileOpts): ProfileResult {
   // Drain events like the app loop does (outside the timed span), or the buffer keeps the whole run's history in memory.
   const after = (): void => {
     const events = sim.events.drain();
+    run?.afterTick();
+    run?.onEvents(events);
     metrics?.observe(sim, events);
     decisions?.observe(sim);
     maybeDump();

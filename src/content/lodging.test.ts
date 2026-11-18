@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { AssignmentC, BedOwnerC, CrewC, DraftedC, JobC, NeedsC, PositionC, newGame, type Sim } from '../sim';
+import { AssignmentC, BedOwnerC, CrewC, DraftedC, JobC, NeedsC, PositionC } from '../sim/crew/components';
+import { newGame } from '../sim/newGame';
+import type { Sim } from '../sim/sim';
 import { PASSENGER_CHORES } from '../sim/consent/passage';
 import { hasMood } from '../sim/crew/mood';
 import { playerShip } from '../sim/trade/player';

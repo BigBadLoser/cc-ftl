@@ -1,12 +1,25 @@
 import { describe, expect, it } from 'vitest';
-import {
-  ModuleC, burnFuel, cheapestHop, fuelStock, isStranded, jumpBlocker, deserialize, engineFuelFactor, galaxyIndex, isBlueprintKnown, nodeOf, jumpFuel, newGame, playerShip, portBlueprints, SAVE_VERSION, serialize, shieldCapacity, shipGrid, type ModuleDef, type Sim, type StructureDef,
-} from '../sim';
+import { homeShip, shieldCapacity } from '../sim/combat/ships';
+import { portBlueprints } from '../sim/galaxy/blueprintShop';
+import type { StructureDef } from '../sim/galaxy/defs';
+import { burnFuel, engineFuelFactor, fuelStock, jumpFuel } from '../sim/galaxy/fuel';
+import { galaxyIndex, nodeOf } from '../sim/galaxy/state';
+import { cheapestHop, isStranded } from '../sim/galaxy/stranded';
+import { jumpBlocker } from '../sim/galaxy/travel';
+import { isKnown as isBlueprintKnown } from '../sim/modules/blueprints';
+import { ModuleC } from '../sim/modules/components';
+import { newGame } from '../sim/newGame';
+import { shipGrid } from '../sim/regions';
+import type { ModuleDef } from '../sim/registry';
+import { deserialize, SAVE_VERSION, serialize } from '../sim/save';
+import type { Sim } from '../sim/sim';
+import { playerShip } from '../sim/trade/player';
 import { portsAt } from '../sim/galaxy/portIndex';
 import { ensureAround } from '../sim/galaxy/state';
-import { homeShip } from '../sim/index';
 import { placementGapError } from '../sim/regions';
 import { content } from '.';
+import { contentEdited } from '../../test/support/content';
+import { step } from '../../test/support/sim';
 
 /** Deploy at the first free spot (a node's structures stand east of the west margin). */
 function deploy(sim: Sim): void {
@@ -21,9 +34,6 @@ function deploy(sim: Sim): void {
   throw new Error('no room to deploy');
 }
 
-const step = (sim: Sim, n = 1): void => {
-  for (let i = 0; i < n; i++) sim.step();
-};
 const rejected = (sim: Sim, command: string): string[] => sim.events.drain().flatMap((e) => (e.type === 'command.rejected' && e.command === command ? [e.reason] : []));
 
 /** The structure def a port stands for. */
@@ -211,11 +221,10 @@ describe('module tiers', () => {
   });
 
   it('the stranded checks and the jump use the engine-discounted fuel: Mk III, a 4-fuel lane, 3 aboard is not stranded', () => {
-    const sim = newGame(7, content);
+    const sim = newGame(7, contentEdited(7, 'lanes4', (c) => { for (const e of c.edges) e.fuel = 4; })); // every lane costs 4 fuel
     step(sim, 2);
     ensureAround(sim, sim.galaxy.current);
     const edges = galaxyIndex(sim.galaxy).adjacent.get(sim.galaxy.current)!;
-    for (const e of edges) e.fuel = 4;
     sim.enqueue({ type: 'debug.chargeFtl' });
     step(sim);
     burnFuel(sim, fuelStock(sim) - 3);

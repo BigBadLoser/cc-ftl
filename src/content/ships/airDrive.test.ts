@@ -1,29 +1,34 @@
 import { describe, expect, it } from 'vitest';
-import {
-  VehicleC, destroyVehicle,
-  AirlockC, AssignmentC, CarriedC, CrewC, DownedC, HealthC, NeedsC, IntentC, JobC, ModuleC, PickupC, PositionC, ShipC, Struct, SuitC, TICK_HZ, homeShip, newGame, shipGrid,
-  suitAir, suitDef, type Sim, type SimEvent,
-} from '../../sim';
+import { IntentC, PickupC } from '../../sim/ai/components';
+import { ShipC } from '../../sim/combat/components';
+import { homeShip } from '../../sim/combat/ships';
+import { AssignmentC, CarriedC, CrewC, DownedC, HealthC, JobC, NeedsC, PositionC } from '../../sim/crew/components';
+import { SuitC } from '../../sim/eva/components';
+import { suitAir, suitDef } from '../../sim/eva/suit';
+import type { SimEvent } from '../../sim/events';
+import { AirlockC } from '../../sim/modules/airlock';
+import { ModuleC } from '../../sim/modules/components';
+import { newGame } from '../../sim/newGame';
+import { shipGrid } from '../../sim/regions';
+import type { Sim } from '../../sim/sim';
+import { Struct } from '../../sim/structure';
+import { TICK_HZ } from '../../sim/time';
+import { VehicleC } from '../../sim/vehicles/components';
+import { destroyVehicle } from '../../sim/vehicles/lifecycle';
 import { airLines, airMargin } from '../../sim/ai/airNeed';
 import { auditReservations } from '../../sim/ai/audit';
 import { claimedBed } from '../../sim/ai/task';
 import { isThin } from '../../sim/eva/suit';
 import { content } from '../index';
 import { NEST_HOLD_SEC } from '../../sim/tuning';
+import { run as harnessRun } from '../../../test/support/sim';
 
 /**
  * The air drive (#286 slice 1; docs/DESIGN.md "Air as a need"): a suited crew member whose tank drains refills at the nearest source
  * before it runs low, and comes back to the same job; with no source in reach the pickup request goes out.
  */
 
-const run = (sim: Sim, n: number, until?: () => boolean): SimEvent[] => {
-  const out: SimEvent[] = [];
-  for (let i = 0; i < n && !until?.(); i++) {
-    sim.step();
-    out.push(...sim.events.drain());
-  }
-  return out;
-};
+const run = (sim: Sim, n: number, until?: () => boolean): SimEvent[] => harnessRun(sim, n, { stopBefore: until }); // `until` is checked before each step
 
 const thinHere = (sim: Sim, c: number): boolean => {
   const p = sim.world.get(c, PositionC)!;

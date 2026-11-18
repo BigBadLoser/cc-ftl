@@ -1,6 +1,9 @@
 import { shipIdOf, shipGrid } from '../sim/regions';
 import { describe, expect, it } from 'vitest';
-import { CrewC, PositionC, PrisonerC, SurrenderedC, newGame, type Sim } from '../sim';
+import { CrewC, PositionC } from '../sim/crew/components';
+import { PrisonerC, SurrenderedC } from '../sim/fight/components';
+import { newGame } from '../sim/newGame';
+import type { Sim } from '../sim/sim';
 import { content } from '../content';
 import { buildCrewLists } from './crewSnapshot';
 import { shipIds } from '../sim/regions';

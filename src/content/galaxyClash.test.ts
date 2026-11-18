@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { atWar, clash, fleetPower, newGame, wouldFight, type Sim } from '../sim';
+import { atWar, clash, fleetPower, wouldFight } from '../sim/galaxy/clash';
+import { newGame } from '../sim/newGame';
+import type { Sim } from '../sim/sim';
 import { SHIP_POWER } from '../sim/galaxy/tuningWar';
 import type { ShipSize } from '../sim/galaxy/defs';
 import type { Fleet } from '../sim/galaxy/types';

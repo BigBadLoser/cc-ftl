@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { ItemStackC, ShipC, Struct, homeShip, newGame, playerItems, shipGrid } from '../sim';
+import { ShipC } from '../sim/combat/components';
+import { homeShip } from '../sim/combat/ships';
+import { ItemStackC } from '../sim/items/components';
+import { newGame } from '../sim/newGame';
+import { shipGrid } from '../sim/regions';
+import { Struct } from '../sim/structure';
+import { playerItems } from '../sim/trade/player';
 import { content } from './index';
 
 describe('selling loose stacks (issue #222)', () => {

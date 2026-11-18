@@ -1,7 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { AboardC, CombatC, CrewC, DraftedC, FTL_CHARGE_SEC, JobC, NeedsC, PathC, PositionC, PrioritiesC, ShipC, VehicleC, deserialize, homeShip, serialize, type Sim } from '../../sim';
+import { CombatC, ShipC } from '../../sim/combat/components';
+import { homeShip } from '../../sim/combat/ships';
+import { CrewC, DraftedC, JobC, NeedsC, PathC, PositionC, PrioritiesC } from '../../sim/crew/components';
+import { ModuleC } from '../../sim/modules/components';
+import { placementError, spawnModule } from '../../sim/modules/spawn';
+import { shipGrid } from '../../sim/regions';
+import { deserialize, serialize } from '../../sim/save';
+import type { Sim } from '../../sim/sim';
+import { Struct, writeStruct } from '../../sim/structure';
+import { FTL_CHARGE_SEC } from '../../sim/tuning';
+import { AboardC, VehicleC } from '../../sim/vehicles/components';
 import { giveItems } from '../../sim/story/effects';
-import { ModuleC, Struct, placementError, shipGrid, spawnModule, writeStruct } from '../../sim';
 import { AirlockC } from '../../sim/modules/airlock';
 import { SourceReach, airSources } from '../../sim/eva/sources';
 import { content } from '../index';
@@ -15,10 +24,10 @@ import { ferryFree } from '../../sim/ferry/pick';
 import { shipIdOf } from '../../sim/regions';
 import { AWAY_HOME_HUNGER, AWAY_HOME_REST, AWAY_LIFT_SEC } from '../../sim/tuning';
 import { policies } from '../policies';
-import { emptyNeighbour } from './nodeFixture';
-import { shuttleOf } from './ferryFixture';
-import { of, setup } from './salvageEvaFixture';
-import { crewOn, landed, play, siteWork } from './awayFixture';
+import { emptyNeighbour } from '../../../test/support/fixtures/node';
+import { shuttleOf } from '../../../test/support/fixtures/ferry';
+import { of, setup } from '../../../test/support/fixtures/salvageEva';
+import { crewOn, landed, play, siteWork } from '../../../test/support/fixtures/away';
 
 describe('away sites', () => {
   it('sends crew out on passages and hands them to the crew AI on the site, where they do its work', () => {

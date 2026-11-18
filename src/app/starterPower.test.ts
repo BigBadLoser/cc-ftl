@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { newGame, TICK_HZ } from '../sim';
+import { homeShip } from '../sim/combat/ships';
+import { newGame } from '../sim/newGame';
+import { TICK_HZ } from '../sim/time';
 import { content } from '../content';
 import { powerBalance, shortOnPower } from './alertsDerived';
-import { homeShip } from '../sim/index';
 
 describe('starter ships and power', () => {
   // An idle hydroponics bed (nothing planted) draws nothing and is unpowered by design: it is neither a shortage nor demand.

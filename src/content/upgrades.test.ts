@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { CombatC, ItemStackC, JobC, ModuleC, ProjectileC, ShipC, StorageC, WeaponC, newGame, playerShip, type Sim } from '../sim';
+import { CombatC, ProjectileC, ShipC, WeaponC } from '../sim/combat/components';
+import { JobC } from '../sim/crew/components';
+import { ItemStackC, StorageC } from '../sim/items/components';
+import { ModuleC } from '../sim/modules/components';
+import { newGame } from '../sim/newGame';
+import type { Sim } from '../sim/sim';
+import { playerShip } from '../sim/trade/player';
 import { damageModule } from '../sim/combat/effects';
 import { commitEtaSec } from '../sim/combat/eta';
 import { fitJobOf } from '../sim/upgrades/fit';
@@ -247,7 +253,8 @@ describe('hold means hold', () => {
     const enemy = spawn(sim, 'faction.navy', 5, 100, 60, 8);
     (sim.world.get(ship, CombatC) as { target: unknown }).target = { ship: enemy, moduleId: 0 };
     let shots = 0;
-    for (let t = 0; t < 20 * TICK_HZ; t++) {
+    const canFire = o.mode === 'auto' && !o.holdAll; // that case only has to fire once: it stops there; the held cases run the whole 20 s
+    for (let t = 0; t < 20 * TICK_HZ && !(canFire && shots > 0); t++) {
       sim.step();
       for (const e of sim.events.drain()) if (e.type === 'weapon.fired' && e.weapon === 'weapon.flak') shots++;
       (sim.world.get(gun, WeaponC) as { charge: number }).charge = 1;

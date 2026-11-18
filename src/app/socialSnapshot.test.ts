@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { content } from '../content';
-import { CrewC, DeadC, newGame, opinionOf, personOf, type Sim } from '../sim';
+import { opinionOf, personOf } from '../sim/crew/bonds';
+import { CrewC, DeadC } from '../sim/crew/components';
+import { newGame } from '../sim/newGame';
+import type { Sim } from '../sim/sim';
 import { behavioursOf, effectsOf, historyOf, summaryOf } from './socialSnapshot';
 import { buildSocial } from './socialSnapshot';
 import { bondBoth, bondTo } from '../sim/crew/bonds';

@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { TraderC, bindMarkets, newGame } from '../sim';
+import { bindMarkets } from '../sim/galaxy/marketLive';
+import { newGame } from '../sim/newGame';
+import { TraderC } from '../sim/trade/types';
 import { touchMarket } from '../sim/trade/deals';
 import { content } from '../content';
 import { buildStarmap } from './starmapSnapshot';

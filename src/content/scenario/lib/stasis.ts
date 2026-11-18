@@ -1,0 +1,116 @@
+import { AllegianceC, CrewC, ModuleC, PositionC, ShipC, placementError, playerShip, type Command, type Sim } from '../../../sim';
+import { PrisonerC } from '../../../sim/fight/components';
+import { accessTile, footprintTiles } from '../../../sim/modules/footprint';
+import { footprintBlockedByCrew } from '../../../sim/modules/spawn';
+import { isTileWalkable } from '../../../sim/modules/walk';
+import { shipGrid, shipIdOf } from '../../../sim/regions';
+import { TraderC } from '../../../sim/trade/types';
+import { playerCrew } from '../../../sim/story/world';
+
+const WHEEL = 'module.stasis_wheel';
+
+/** True if, with the footprint at (x, y) turned `rot` blocked, a walk from its hatch still reaches every tile in `must` (the wheel does not wall anyone off). */
+function keepsReach(sim: Sim, ship: number, x: number, y: number, rot: number, must: { x: number; y: number }[]): boolean {
+  const def = sim.content.modules[WHEEL];
+  const grid = shipGrid(sim, ship);
+  const hatch = def && accessTile(def, x, y, rot);
+  if (!def || !grid || !hatch) return false;
+  const blocked = new Set(footprintTiles(def, x, y, rot).map((t) => `${t.x},${t.y}`));
+  const seen = new Set<string>([`${hatch.x},${hatch.y}`]);
+  const queue = [hatch];
+  while (queue.length > 0) {
+    const t = queue.pop()!;
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+      const n = { x: t.x + dx, y: t.y + dy }, k = `${n.x},${n.y}`;
+      if (seen.has(k) || blocked.has(k) || !grid.inBounds(n.x, n.y) || !isTileWalkable(sim, grid, n.x, n.y)) continue;
+      seen.add(k);
+      queue.push(n);
+    }
+  }
+  return must.every((t) => seen.has(`${t.x},${t.y}`));
+}
+
+/**
+ * A free spot (and turn) for the stasis wheel nearest the ship's middle: off the crew, its hatch still reaching every crew member and every other
+ * module's access tile (a wheel in front of a room's only door would wall the prisoners or the room off), and off those access tiles where the ship
+ * has room for that.
+ */
+function wheelSpot(sim: Sim, ship: number): { x: number; y: number; rot: number } | null {
+  const s = sim.world.get(ship, ShipC);
+  const def = sim.content.modules[WHEEL];
+  if (!s || !def) return null;
+  const grid = shipGrid(sim, ship);
+  const access = new Set<string>();
+  const doors: { x: number; y: number }[] = [];
+  for (const id of sim.world.query(ModuleC)) {
+    const m = sim.world.get(id, ModuleC)!;
+    const d = sim.content.modules[m.def];
+    const a = d && accessTile(d, m.x, m.y, m.rot);
+    if (!a || access.has(`${a.x},${a.y}`)) continue;
+    access.add(`${a.x},${a.y}`);
+    if (grid && isTileWalkable(sim, grid, a.x, a.y)) doors.push(a);
+  }
+  const crew = playerCrew(sim).map((id) => sim.world.get(id, PositionC)).filter((p) => !!p).map((p) => ({ x: p!.x, y: p!.y }));
+  const cx = s.x + s.width / 2, cy = s.y + s.height / 2;
+  const spots: { x: number; y: number; rot: number; d: number; covers: boolean }[] = [];
+  for (let y = s.y; y < s.y + s.height; y++) for (let x = s.x; x < s.x + s.width; x++) for (let rot = 0; rot < 4; rot++) {
+    if (placementError(sim, ship, WHEEL, x, y, rot) !== null || footprintBlockedByCrew(sim, ship, WHEEL, x, y, rot)) continue;
+    const covers = footprintTiles(def, x, y, rot).some((t) => access.has(`${t.x},${t.y}`));
+    spots.push({ x, y, rot, d: Math.hypot(x - cx, y - cy), covers });
+  }
+  // A packed starter (the Wayfarer) has no 3x3 spot clear of every access tile that leaves its rooms joined: covering a module's access tile is the lesser evil.
+  spots.sort((a, b) => Number(a.covers) - Number(b.covers) || a.d - b.d || a.rot - b.rot);
+  // Its hatch reaches every crew member and every module it leaves an access tile to (a wheel in a storage room's doorway walls the racks off, and the
+  // crew pick slabs up for them and drop them forever); failing that, the crew alone.
+  const open = (p: { x: number; y: number; rot: number }): { x: number; y: number }[] => {
+    const under = new Set(footprintTiles(def, p.x, p.y, p.rot).map((t) => `${t.x},${t.y}`));
+    return doors.filter((t) => !under.has(`${t.x},${t.y}`));
+  };
+  return spots.find((p) => keepsReach(sim, ship, p.x, p.y, p.rot, [...crew, ...open(p)]))
+    ?? spots.find((p) => keepsReach(sim, ship, p.x, p.y, p.rot, crew)) ?? null;
+}
+
+/** The command that sets a stasis wheel on the player's ship (`wheelSpot`), or none when there is no room. */
+export function wheelCommand(sim: Sim): Command[] {
+  const ship = playerShip(sim);
+  const spot = ship ? wheelSpot(sim, ship) : null;
+  return ship && spot ? [{ type: 'debug.spawnModule', ship, x: spot.x, y: spot.y, def: WHEEL, rot: spot.rot }] : [];
+}
+
+/**
+ * `?scenario=prisoners&taken&seal` (#116): a wheel at home and every prisoner on the prize marked for sealing. The prize has no wheel, so a
+ * shuttle flies out with empty slabs, the party seals them there, and the slabs ride home to the wheel.
+ */
+export function sealPrizeCommands(sim: Sim, prize: number): Command[] {
+  const marks: Command[] = sim.world.query(PrisonerC, PositionC).filter((id) => shipIdOf(sim, sim.world.get(id, PositionC)!) === prize).sort((a, b) => a - b)
+    .map((crew) => ({ type: 'prisoner.seal', crew, on: true }));
+  return [...wheelCommand(sim), ...marks];
+}
+
+/** The commands of the start: the wheel, two hostile crew (by the second and third crew members) and two spare empty slabs on the floor. */
+export function prisonerCommands(sim: Sim): Command[] {
+  const ship = playerShip(sim);
+  if (!ship) return [];
+  const out: Command[] = wheelCommand(sim);
+  const crew = playerCrew(sim);
+  for (const c of [crew[1] ?? crew[0], crew[2] ?? crew[0]]) {
+    const at = sim.world.get(c ?? 0, PositionC);
+    if (at) out.push({ type: 'debug.spawnCrew', ship, x: at.x, y: at.y, role: 'role.security', faction: 'hostile' });
+  }
+  const first = sim.world.get(crew[0] ?? 0, PositionC);
+  if (first) out.push({ type: 'debug.spawnItems', ship, x: first.x, y: first.y, item: 'item.stasis_slab', count: 2 });
+  return out;
+}
+
+/** Hostile crew who were not there before: the ones to imprison. */
+export const newHostiles = (sim: Sim, before: ReadonlySet<number>): number[] =>
+  sim.world.query(CrewC).filter((id) => !before.has(id) && sim.world.get(id, AllegianceC)?.faction === 'hostile');
+
+/** `&deals`: the factions the second and third prisoners were taken from (the first is of the node's first station's owner, who ransoms them). */
+export const DEAL_FROM = ['', 'raiders', 'meridian'];
+
+/** The galaxy faction that owns the node's first station (lowest id) with an owner, or null. */
+export function nearestOwner(sim: Sim): string | null {
+  const id = [...sim.world.query(TraderC)].sort((a, b) => a - b).find((t) => sim.world.get(t, TraderC)?.station && sim.world.get(t, TraderC)?.owner);
+  return id === undefined ? null : sim.world.get(id, TraderC)!.owner ?? null;
+}

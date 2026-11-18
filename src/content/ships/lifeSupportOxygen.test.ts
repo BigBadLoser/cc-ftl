@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { ModuleC, StorageC, homeShip, newGame, shipGrid, storageCount, type Sim } from '../../sim';
+import { homeShip } from '../../sim/combat/ships';
+import { StorageC } from '../../sim/items/components';
+import { storageCount } from '../../sim/items/storage';
+import { ModuleC } from '../../sim/modules/components';
+import { newGame } from '../../sim/newGame';
+import { shipGrid } from '../../sim/regions';
+import type { Sim } from '../../sim/sim';
 import { storageTake } from '../../sim/items/storage';
 import { content } from '../index';
 

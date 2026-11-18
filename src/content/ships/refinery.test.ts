@@ -1,5 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { JobC, ModuleC, Struct, footprintTiles, ProductionC, StorageC, homeShip, newGame, placementError, shipGrid, spawnModule, storageAdd, totalStock, type Sim } from '../../sim';
+import { homeShip } from '../../sim/combat/ships';
+import { JobC } from '../../sim/crew/components';
+import { ProductionC, StorageC } from '../../sim/items/components';
+import { totalStock } from '../../sim/items/stock';
+import { storageAdd } from '../../sim/items/storage';
+import { ModuleC } from '../../sim/modules/components';
+import { footprintTiles } from '../../sim/modules/footprint';
+import { placementError, spawnModule } from '../../sim/modules/spawn';
+import { newGame } from '../../sim/newGame';
+import { shipGrid } from '../../sim/regions';
+import type { Sim } from '../../sim/sim';
+import { Struct } from '../../sim/structure';
 import { content } from '../index';
 
 /** True if the refinery would stand against a door tile (it could seal the room, and its access tile with it). */
