@@ -541,6 +541,17 @@ palette.json    the single palette, read by Blender scripts and the game
   - Paint: the ship's armour colour multiplies each piece. Its deco colour multiplies the piece's deco layer `<id>.tint`
     (the piece's own px in its tint mask), drawn over it. Ships are plain for now. `?hullPaint=<armour>,<deco>` (hex)
     paints them all.
+  - Station look (#524): a base standing on asteroid ground (`standsOnGround`, sim/outposts/state.ts, the one owner flag)
+    draws `HullLook` "station" in place of the ship's, from the `station_hull` family (`sprites/station_hull*.py`, palette
+    set `station`): roofed, `tile.hull.station.ext.*` (the run set, designs `.a1` .. `.a6`, windows), generic pieces
+    `tile.hull.station.ext.g.<key>` and `tile.roof.station.g.<key>`, and no belly; against the foot a rock berm
+    `tile.hull.station.berm.<key>.v<n>[.e<a><b>]` (`stationHull.ts` `bermId`, `sprites/station_berm.py`, set `berm`).
+    The pieces stay unpainted grey, lit only; just each `.tint` livery mask takes the deco paint. Where the station has
+    no art for a tile (diagonal far walls, #561; six eight-front keys) the ship's piece is drawn. Walls up: the far hull's
+    cap `tile.hull.station.cap.m<mask>[c<c>]` goes over the partition piece (`tiles.ts` `wallPieces` `look`), and the near
+    hull draws `tile.hull.station.low.<key>` (`lowId`), cut at the ship's rim height with the ship's cut black, a seam and
+    a lit lip. Cache: `station_hull_walls.py` is its own module with its own palette set (`station_cut`), so changing it
+    does not invalidate the family's cache. Render lab panel `station-hull`.
 - **Beams (`struct`, `sprites/struct.py`, wired in `src/render/beamArt.ts` and `gridView.ts`):**
   - `struct.beam.<look>.m<mask>` is chosen by a 4-neighbour mask over beam tiles (N1 E2 S4 W8), anchored
     at the tile centre. The looks are `navy`, `drone`, `civil` and `scrap`, picked by faction.
