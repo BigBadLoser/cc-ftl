@@ -1,7 +1,7 @@
 import { abortTask, attachJob } from '../ai/task';
 import { damageModule } from '../combat/effects';
 import { factionsHostile } from '../combat/factions';
-import { shipById } from '../combat/ships';
+import { shipById } from '../combat/shipQuery';
 import { AssignmentC, CrewC, DeadC, DownedC, DraftedC, JobC, PathC, PositionC, type Job, type Path } from '../crew/components';
 import type { WorkResult } from '../crew/jobWork';
 import { isFighting, isIncapacitated, origin } from '../crew/helpers';

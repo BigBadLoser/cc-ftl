@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { content } from './index';
-import { homeShip } from '../sim/combat/ships';
+import { homeShip } from '../sim/combat/shipQuery';
 import { AirlockC, airlockTiles } from '../sim/modules/airlock';
 import { ModuleC } from '../sim/modules/components';
 import { newGame } from '../sim/newGame';

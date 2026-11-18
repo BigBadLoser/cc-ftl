@@ -1,5 +1,5 @@
 import { BodyC } from '../body';
-import { shipById } from '../combat/ships';
+import { shipById } from '../combat/shipQuery';
 import { CarriedC, CrewC, DraftedC, type Crew } from '../crew/components';
 import { isIncapacitated } from '../crew/helpers';
 import { abortTask, isCarrying } from '../ai/task';

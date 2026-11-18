@@ -4,7 +4,7 @@ import { AssignmentC, type Job, JobC, NeedsC } from '../../sim/crew/components';
 import type { Sim } from '../../sim/sim';
 import { AwayC, SiteRunC } from '../../sim/away/components';
 import { passageFits } from '../../sim/away/crew';
-import { passagesOf } from '../../sim/away/passage';
+import { passagesOf } from '../../sim/away/boarding';
 import { hourAt } from '../../sim/clock';
 import { blockNow, secToSleep } from '../../sim/crew/schedule';
 import { TICK_HZ } from '../../sim/time';

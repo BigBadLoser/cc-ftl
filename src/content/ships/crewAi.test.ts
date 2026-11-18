@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { IntentC, InterruptC, TaskC } from '../../sim/ai/components';
 import { ShipC } from '../../sim/combat/components';
-import { homeShip } from '../../sim/combat/ships';
+import { homeShip } from '../../sim/combat/shipQuery';
 import { AssignmentC, CarriedC, CrewC, DownedC, DraftedC, HealthC, JobC, NeedsC, PositionC } from '../../sim/crew/components';
 import { findPath } from '../../sim/crew/pathfind';
 import type { SimEvent } from '../../sim/events';

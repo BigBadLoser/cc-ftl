@@ -24,7 +24,7 @@ import { HackedC, StunC } from './components';
 import { assemblyAt, bayFree, cradleOf, isBay } from './bay';
 import { destroyJob } from '../items/stacks';
 import { shipIdOf, shipGrid } from '../regions';
-import { shipById } from '../combat/ships';
+import { shipById } from '../combat/shipQuery';
 
 type RobotCommand = 'crew.hack' | 'debug.spawnCrew' | 'module.assembleRobot' | 'module.cancelAssembly' | 'debug.setCharge' | 'debug.setCrew';
 type Handler<T extends RobotCommand> = (sim: Sim, cmd: Extract<Command, { type: T }>) => void;

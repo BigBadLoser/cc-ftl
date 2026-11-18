@@ -1,5 +1,5 @@
 import { BodyC } from '../body';
-import { shipById } from '../combat/ships';
+import { shipById } from '../combat/shipQuery';
 import { breachesOf } from '../crew/breach';
 import type { Job } from '../crew/components';
 import { BUILD_TICKS } from '../crew/handlers';

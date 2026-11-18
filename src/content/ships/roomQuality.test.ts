@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { TaskC } from '../../sim/ai/components';
-import { homeShip } from '../../sim/combat/ships';
+import { homeShip } from '../../sim/combat/shipQuery';
 import { CrewC, PathC, PositionC, PrioritiesC } from '../../sim/crew/components';
 import { ModuleC } from '../../sim/modules/components';
 import { placementError, removeModule, spawnModule } from '../../sim/modules/spawn';

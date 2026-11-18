@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { IonC, ProjectileC, ShipC, WeaponC } from '../../sim/combat/components';
 import { aimDirection, turretPosition } from '../../sim/combat/geometry';
-import { shipById } from '../../sim/combat/ships';
+import { shipById } from '../../sim/combat/shipQuery';
 import { CrewC, JobC, PositionC } from '../../sim/crew/components';
 import type { SimEvent } from '../../sim/events';
 import { ModuleC } from '../../sim/modules/components';

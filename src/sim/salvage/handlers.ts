@@ -1,5 +1,5 @@
 import type { Command } from '../commands';
-import { shipById } from '../combat/ships';
+import { shipById } from '../combat/shipQuery';
 import { destroyJob } from '../items/stacks';
 import type { ScrapType } from '../registry';
 import type { Sim } from '../sim';

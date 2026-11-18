@@ -2,7 +2,7 @@ import { AllegianceC } from '../fight/components';
 import { AboardC, EmbarkOrderC, VehicleC, type Vehicle } from '../vehicles/components';
 import { AssignmentC, CrewC, DeadC, DraftedC, JobC, PositionC } from '../crew/components';
 import { isIncapacitated } from '../crew/helpers';
-import { shipById } from '../combat/ships';
+import { shipById } from '../combat/shipQuery';
 import { shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { stat } from '../stats';

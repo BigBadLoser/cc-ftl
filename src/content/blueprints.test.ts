@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { homeShip, shieldCapacity } from '../sim/combat/ships';
+import { shieldCapacity } from '../sim/combat/ships';
+import { homeShip } from '../sim/combat/shipQuery';
 import { portBlueprints } from '../sim/galaxy/blueprintShop';
 import type { StructureDef } from '../sim/galaxy/defs';
 import { burnFuel, engineFuelFactor, fuelStock, jumpFuel } from '../sim/galaxy/fuel';

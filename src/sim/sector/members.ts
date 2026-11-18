@@ -8,7 +8,7 @@ import type { ComponentKey } from '../ecs';
 import { AlienC, EggSacC, NestC } from '../aliens/components';
 import { DroneC } from '../drones/components';
 import { droneAboard } from '../drones/recall';
-import { inspectorsAboard } from '../inspect/fight';
+import { inspectorsAboard } from '../inspect/aboard';
 import { shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { AboardC, VehicleC } from '../vehicles/components';

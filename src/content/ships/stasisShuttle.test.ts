@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ShipC } from '../../sim/combat/components';
-import { homeShip, stampShip } from '../../sim/combat/ships';
+import { stampShip } from '../../sim/combat/ships';
+import { homeShip } from '../../sim/combat/shipQuery';
 import { CrewC, NeedsC } from '../../sim/crew/components';
 import type { SimEvent } from '../../sim/events';
 import { ModuleC } from '../../sim/modules/components';

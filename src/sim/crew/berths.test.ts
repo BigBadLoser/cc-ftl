@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { homeShip, stampShip } from '../combat/ships';
+import { stampShip } from '../combat/ships';
+import { homeShip } from '../combat/shipQuery';
 import { ModuleC } from '../modules/components';
 import type { ContentRegistry, ModuleDef } from '../registry';
 import { Sim } from '../sim';

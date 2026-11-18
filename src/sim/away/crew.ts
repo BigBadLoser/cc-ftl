@@ -1,5 +1,5 @@
 import { BodyC } from '../body';
-import { shipById } from '../combat/ships';
+import { shipById } from '../combat/shipQuery';
 import { flightTicks, walkSpeed } from '../ai/travel';
 import { CrewC, DeadC, HealthC, NeedsC, PositionC, PrioritiesC, type Job } from '../crew/components';
 import { TICK_HZ } from '../time';

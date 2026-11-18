@@ -1,4 +1,4 @@
-import { shipById } from '../combat/ships';
+import { shipById } from '../combat/shipQuery';
 import { CrewC, DeadC, JobC, PositionC } from '../crew/components';
 import { isIncapacitated } from '../crew/helpers';
 import { shipIdOf } from '../regions';
@@ -17,7 +17,8 @@ import { stagedStacks } from '../items/staging';
 import { stocking } from '../stasis/shuttle';
 import { releaseOwned } from './owned';
 import { partyOut } from './depart';
-import { boardPassengers, calledBack, dropPassages, endInvites, freeSeats, letOut, passagesOf, postPassages } from './passage';
+import { boardPassengers, calledBack, endInvites, freeSeats, postPassages } from './passage';
+import { dropPassages, letOut, passagesOf } from './boarding';
 import { atHome, atSite, due, go, hovering, sec, wanted, wayHome } from './phase';
 import { boxAround, replaceLostShuttles, startPickupRuns } from './pickup';
 import { depart, lift, recall, stay } from './site';

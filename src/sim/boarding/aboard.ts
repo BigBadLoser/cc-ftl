@@ -1,4 +1,4 @@
-import { shipById } from '../combat/ships';
+import { shipById } from '../combat/shipQuery';
 import { CrewC, DeadC, PositionC } from '../crew/components';
 import { origin } from '../crew/helpers';
 import { AllegianceC } from '../fight/components';

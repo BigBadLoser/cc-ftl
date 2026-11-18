@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { homeShip } from '../../sim/combat/ships';
+import { homeShip } from '../../sim/combat/shipQuery';
 import { AssignmentC, CrewC, type Job, JobC, PathC, PositionC, type Priorities, PrioritiesC, WORK_CATEGORIES } from '../../sim/crew/components';
 import { findPath } from '../../sim/crew/pathfind';
 import { ModuleC } from '../../sim/modules/components';

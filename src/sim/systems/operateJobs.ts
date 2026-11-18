@@ -9,7 +9,7 @@ import { ModuleC } from '../modules/components';
 import { accessTile } from '../modules/footprint';
 import type { Sim } from '../sim';
 import { shipIdOf } from '../regions';
-import { shipById } from '../combat/ships';
+import { shipById } from '../combat/shipQuery';
 import { freeOperatorFor, jobTakeable } from '../crew/jobFit';
 import { consoleSkill, skillOf } from '../combat/operators';
 import { chargeOrdered, seatHelms } from '../ftl/order';

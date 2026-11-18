@@ -3,7 +3,7 @@ import { factionsHostile, isAiFaction } from '../combat/factions';
 import { hasAmmo } from '../combat/ammo';
 import { heatCeilingBlocks, overchargeError, ventError } from '../combat/heat';
 import { AI_OVERCHARGE_BELOW, AUTO_SHOT_SOON_CHARGE, AUTO_VENT_AT, AUTO_VENT_FORCE_AT, HEAT_MAX } from '../combat/heatTuning';
-import { shipById } from '../combat/ships';
+import { shipById } from '../combat/shipQuery';
 import { ModuleC } from '../modules/components';
 import { isDeployed } from '../modules/deploy';
 import { shipIdOf } from '../regions';

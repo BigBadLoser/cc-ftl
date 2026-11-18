@@ -7,7 +7,7 @@ import { ModuleC } from '../../sim/modules/components';
 import { StunC } from '../../sim/robots/components';
 import { AboardC, VehicleC } from '../../sim/vehicles/components';
 import { AwayC, AwaySiteC, SiteRunC } from '../../sim/away/components';
-import { passagesOf } from '../../sim/away/passage';
+import { passagesOf } from '../../sim/away/boarding';
 import { destroyVehicle } from '../../sim/vehicles/lifecycle';
 import { launchOf, orderLaunch } from '../../sim/boarding/launch';
 import { pickPilot } from '../../sim/mining/pilot';

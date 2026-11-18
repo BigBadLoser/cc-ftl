@@ -1,4 +1,4 @@
-import { shipById } from '../combat/ships';
+import { shipById } from '../combat/shipQuery';
 import { CrewC, DeadC, PositionC } from '../crew/components';
 import { PickupC } from '../ai/components';
 import { hasTank, vehicleAir } from '../eva/air';

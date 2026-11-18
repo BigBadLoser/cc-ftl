@@ -1,4 +1,4 @@
-import { shipById, shipCanAct } from '../sim/combat/ships';
+import { shipById, shipCanAct } from '../sim/combat/shipQuery';
 import {
   CombatC, CrewC, IonC, ModuleC, JobC, ProjectileC, ShipC, WeaponC, commitEtaSec, projectileEtaSec, shotSlot, shotColor, ammoCount, isDormant, operatorOf, shieldRechargeSec, weaponsIdleReason, FTL_CHARGE_SEC,
   type Combat, type Sim, type Target,

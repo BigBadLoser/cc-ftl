@@ -1,5 +1,5 @@
 import { BodyC } from '../body';
-import { shipById } from '../combat/ships';
+import { shipById } from '../combat/shipQuery';
 import type { Sim } from '../sim';
 import { VehicleC, type VehicleState } from './components';
 import { vehicleDefOf } from './lifecycle';

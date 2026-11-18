@@ -14,7 +14,7 @@ import { HACK_MIN_SKILL, MEND_MIN_SKILL, MEND_PER_SEC, SALVAGE_SEC, SKILL_STEP }
 import { HackedC, WreckC } from './components';
 import { speciesOf } from './core';
 import { shipIdOf } from '../regions';
-import { shipById } from '../combat/ships';
+import { shipById } from '../combat/shipQuery';
 
 type NewJob = Partial<Job> & Pick<Job, 'category' | 'kind' | 'x' | 'y'>;
 

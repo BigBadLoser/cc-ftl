@@ -10,7 +10,7 @@ import type { Sim } from '../sim';
 import { BAY_REPAIR_BELOW } from '../tuning';
 import { speciesOf } from './core';
 import { shipIdOf } from '../regions';
-import { shipById } from '../combat/ships';
+import { shipById } from '../combat/shipQuery';
 
 /** True if the module is a robot bay. */
 export function isBay(sim: Sim, id: number): boolean {

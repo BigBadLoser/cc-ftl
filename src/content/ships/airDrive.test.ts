@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { IntentC, PickupC } from '../../sim/ai/components';
 import { ShipC } from '../../sim/combat/components';
-import { homeShip } from '../../sim/combat/ships';
+import { homeShip } from '../../sim/combat/shipQuery';
 import { AssignmentC, CarriedC, CrewC, DownedC, HealthC, JobC, NeedsC, PositionC } from '../../sim/crew/components';
 import { SuitC } from '../../sim/eva/components';
 import { suitAir, suitDef } from '../../sim/eva/suit';

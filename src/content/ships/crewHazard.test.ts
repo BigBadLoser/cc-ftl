@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { IntentC, InterruptC, TaskC } from '../../sim/ai/components';
-import { homeShip } from '../../sim/combat/ships';
+import { homeShip } from '../../sim/combat/shipQuery';
 import { AssignmentC, CrewC, DraftedC, HealthC, JobC, NeedsC, PathC, PositionC, PrioritiesC } from '../../sim/crew/components';
 import { ModuleC } from '../../sim/modules/components';
 import { newGame } from '../../sim/newGame';

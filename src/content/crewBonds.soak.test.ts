@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { homeShip } from '../sim/combat/ships';
+import { homeShip } from '../sim/combat/shipQuery';
 import { storageAdd } from '../sim/items/storage';
 import { ModuleC } from '../sim/modules/components';
 import { newGame } from '../sim/newGame';

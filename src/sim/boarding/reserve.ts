@@ -1,4 +1,4 @@
-import { shipById } from '../combat/ships';
+import { shipById } from '../combat/shipQuery';
 import { factionsHostile } from '../combat/factions';
 import { ModuleC } from '../modules/components';
 import { shipIdOf } from '../regions';

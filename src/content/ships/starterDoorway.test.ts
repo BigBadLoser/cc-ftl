@@ -1,6 +1,6 @@
 // #248: a gunner fetching a weapon must not park on a doorway (the Dart magazine door moved one tile, diagonal to the crate).
 import { expect, it } from 'vitest';
-import { homeShip } from '../../sim/combat/ships';
+import { homeShip } from '../../sim/combat/shipQuery';
 import { CrewC, PositionC } from '../../sim/crew/components';
 import { newGame } from '../../sim/newGame';
 import { shipGrid } from '../../sim/regions';

@@ -1,7 +1,7 @@
 import { DraftedC, JobC, PositionC } from '../crew/components';
 import { abortTask, reserveJob } from '../ai/task';
 import { refusesConsole } from '../crew/jobFit';
-import { shipById } from '../combat/ships';
+import { shipById } from '../combat/shipQuery';
 import { ModuleC } from '../modules/components';
 import { accessTile } from '../modules/footprint';
 import { shipIdOf } from '../regions';

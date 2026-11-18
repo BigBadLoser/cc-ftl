@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CombatC, ShipC } from '../sim/combat/components';
-import { homeShip } from '../sim/combat/ships';
+import { homeShip } from '../sim/combat/shipQuery';
 import { CrewC, PositionC } from '../sim/crew/components';
 import { galaxyIndex } from '../sim/galaxy/state';
 import { newGame } from '../sim/newGame';

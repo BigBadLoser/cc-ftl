@@ -1,4 +1,4 @@
-import { shipById } from '../combat/ships';
+import { shipById } from '../combat/shipQuery';
 import { regionAirlock } from '../ferry/pick';
 import { ModuleC } from '../modules/components';
 import { shipIdOf } from '../regions';

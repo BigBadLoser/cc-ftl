@@ -3,7 +3,7 @@ import { AwayC, AwaySiteC, SiteRunC } from '../away/components';
 import { endRun } from '../away/end';
 import { openSite } from '../away/handlers';
 import { ShipC } from '../combat/components';
-import { homeShip } from '../combat/ships';
+import { homeShip } from '../combat/shipQuery';
 import { grant, revoke } from '../consent/guests';
 import { CrewC, PrioritiesC, WORK_CATEGORIES, type Priorities } from '../crew/components';
 import { createCrew } from '../crew/spawn';

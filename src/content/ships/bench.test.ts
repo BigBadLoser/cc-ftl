@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { homeShip } from '../../sim/combat/ships';
+import { homeShip } from '../../sim/combat/shipQuery';
 import { CrewC, NeedsC, PositionC, PrioritiesC } from '../../sim/crew/components';
 import { ModuleC } from '../../sim/modules/components';
 import { placementError, removeModule, spawnModule } from '../../sim/modules/spawn';

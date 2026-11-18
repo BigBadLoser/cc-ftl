@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { CombatC } from '../../sim/combat/components';
 import { operatorOf } from '../../sim/combat/operators';
-import { homeShip } from '../../sim/combat/ships';
+import { homeShip } from '../../sim/combat/shipQuery';
 import { AssignmentC, CrewC, DraftedC, JobC } from '../../sim/crew/components';
 import { ftlStatus } from '../../sim/ftl/status';
 import { galaxyIndex, START_NODE } from '../../sim/galaxy/state';

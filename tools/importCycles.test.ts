@@ -9,7 +9,8 @@ import { importGraph } from './importGraph.mjs';
  * breaks one fails too, so the numbers come down with it (lower them in the same change). `npm run test:why` and
  * tools/importGraph.mjs `cycles()` show the groups.
  */
-const BASELINE = { largest: 142, inCycles: 147, groups: 3 };
+// #553 PR 1 broke the 142-file cycle apart into smaller groups (more groups, far fewer files), hence groups went up from 3.
+const BASELINE = { largest: 12, inCycles: 34, groups: 6 };
 
 type Graph = { cycles: (keep?: (f: string) => boolean) => string[][] };
 
