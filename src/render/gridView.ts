@@ -26,7 +26,7 @@ import { HullSprite } from "./hullPaint";
 import { keepsOldPiece } from "./jobHull";
 import type { BuildGate } from "./buildBudget";
 import { iso } from "./iso";
-import { bellyIds, engineHullTiles, exteriorIds, gridHullKeys, isStationPiece, PLAIN_PAINT, type HullKeys, type HullLook, type HullPaint } from "./hullArt";
+import { bellyIds, engineHullTiles, nearGhostId, exteriorIds, gridHullKeys, isStationPiece, PLAIN_PAINT, type HullKeys, type HullLook, type HullPaint } from "./hullArt";
 import { bermId, lowId } from "./stationHull";
 
 export type { CutawayMode };
@@ -463,7 +463,13 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
     // Behind the thruster block the engine's hull sprite carries the wall's lower section: the belly's cut top would cover it.
     // Beside a camera-facing airlock's door its hull sprite carries the outer half of the cut hull (the inner half is
     // inside its full-height row and would show through the row's end cut).
-    if (b.low && !blockHull.has(y * width + x) && !lockRow.has(y * width + x) && !tube.row.has(y * width + x)) put(b.low, z + 0.001, L.sorted, solid);
+    if (b.low && !blockHull.has(y * width + x) && !lockRow.has(y * width + x) && !tube.row.has(y * width + x)) {
+      put(b.low, z + 0.001, L.sorted, solid);
+      // The near hull's ghost over its cut top: an upright on its outer edge (unpainted, unlit).
+      const g = nearGhostId(h, x, y, has, k !== Struct.Floor, look);
+      const gs = g ? atlas.stat(g) : undefined;
+      if (gs) v.owned.push(...addStatic(L, gs, x, y, z + 0.002, L.sorted));
+    }
     return true;
   }
 
