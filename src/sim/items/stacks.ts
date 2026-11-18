@@ -1,7 +1,6 @@
 import { loadDropped } from '../trade/dockCount';
 import { shipIdAt, shipGrid } from '../regions';
-import { abortTask } from '../ai/task';
-import { CrewC, JobC, PositionC } from '../crew/components';
+import { CrewC, PositionC } from '../crew/components';
 import type { ItemQty } from '../registry';
 import type { Sim } from '../sim';
 import { Struct } from '../structure';
@@ -133,16 +132,6 @@ export function refundCost(sim: Sim, shipId: number, x: number, y: number, cost:
     const n = Math.floor(q.count * DECON_REFUND);
     if (n > 0) spillItems(sim, shipId, x, y, q.item, n);
   }
-}
-
-/** Remove a job for good: delivered materials fall to the floor, its crew member is released. */
-export function destroyJob(sim: Sim, jobId: number): void {
-  const job = sim.world.get(jobId, JobC);
-  if (!job) return;
-  for (const q of job.delivered ?? []) spillItems(sim, shipIdOf(sim, job), job.x, job.y, q.item, q.count);
-  job.delivered = [];
-  if (job.reservedBy) abortTask(sim, job.reservedBy, 'cancelled');
-  sim.world.destroyEntity(jobId);
 }
 
 /** Cost-table key for a struct kind, or undefined for kinds with no cost (Space). */

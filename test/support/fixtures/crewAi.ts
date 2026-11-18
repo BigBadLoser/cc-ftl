@@ -1,7 +1,7 @@
 /** Shared pieces of the crew AI phase 1 tests (docs/CREW_AI.md section 10) and their slow tiers. */
 import { expect } from 'vitest';
 import { CrewC, HealthC, NeedsC } from '../../../src/sim/crew/components';
-import { homeShip } from '../../../src/sim/combat/ships';
+import { homeShip } from '../../../src/sim/combat/shipQuery';
 import { newGame } from '../../../src/sim/newGame';
 import { shipGrid } from '../../../src/sim/regions';
 import { deserialize, serialize } from '../../../src/sim/save';

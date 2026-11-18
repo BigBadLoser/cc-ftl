@@ -141,6 +141,13 @@ def jobs(name):
                                             sel("CONT_STATES", ("intact", "damaged", "destroyed", "patched"))),
                                variants=tuple(int(v) for v in sel("CONT_VARIANTS", ("0", "1", "2"))))
         return jobs, True
+    if name == "station_hull":      # the station hull look (#524): a ground base's hull, its rock berm and livery mask
+        import os
+        from . import station_hull, station_hull_walls
+        walls = station_hull_walls.jobs()               # (their own module: a change to them keeps the rest cached)
+        if os.environ.get("STATION_JOBS") == "walls":      # (just the walls-up pieces: a quick look)
+            return walls, station_hull.PALETTE
+        return station_hull.jobs() + walls, station_hull.PALETTE  # (callables: each selects it itself)
     if name == "structure":
         from . import structure
         return structure.jobs(), "walls+hull"
@@ -348,6 +355,9 @@ def jobs(name):
     if name == "cable":  # the ground power cable (#514): sheet cable, ids from src/render/groundCable.ts
         from . import cable_duct
         return cable_duct.jobs(), cable_duct.PAL
+    if name == "tube":  # the prefab base tube (#508): sheet tube, ids from src/render/tubeArt.ts
+        from . import tube_study
+        return tube_study.jobs(), tube_study.PAL
     if name == "purifier_g1":  # look study, preview only (not in RENDERED): the picked water purifier, polished (#321)
         from . import purifier_g1
         return purifier_g1.jobs(), purifier_g1.PAL
@@ -636,8 +646,8 @@ RENDERED = ("env", "walls", "consoles", "weapons", "roof", "robot_bay", "drones"
             "fx", "galley", "derelict", "eggsac", "storage_set", "medbay", "battery", "hydroponics", "workbench",
             "ops_consoles", "cryo", "wallprops", "hazards", "clutter", "decay", "corpse", "damage", "rock", "rockwall",
             "pod_bay", "mining_pod", "escape_pod", "fx_mining", "fx_shield", "starmap", "backdrop", "cargo", "items", "salvage", "storage_ore",
-            "hull", "windows", "scrapper", "upgrades", "research_bench", "arcade_cabinet", "gametable_module",
+            "hull", "station_hull", "windows", "scrapper", "upgrades", "research_bench", "arcade_cabinet", "gametable_module",
             "recovery_pod", "bunk_module", "exercise_module", "bench_module", "planter_module", "vending_module", "bar_module",
             "stasis", "stasisload", "decor", "lights", "deck_finishes", "deck_marks", "landmarks", "purifier_module",
-            "cable", "landing_pad")
+            "cable", "tube", "landing_pad")
 ALL = RENDERED + ("sol", "damage_sol", "marks")

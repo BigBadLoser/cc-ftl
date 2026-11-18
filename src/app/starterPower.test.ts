@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { homeShip } from '../sim/combat/ships';
+import { homeShip } from '../sim/combat/shipQuery';
 import { newGame } from '../sim/newGame';
 import { TICK_HZ } from '../sim/time';
 import { content } from '../content';

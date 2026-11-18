@@ -4,7 +4,7 @@ import { shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { COMMIT_MAX_FRACTION, COMMIT_WINDOW_SEC } from '../tuning';
 import { WeaponC, type Commit, type Target } from './components';
-import { shipById } from './ships';
+import { shipById } from './shipQuery';
 import { targetableShip } from './targets';
 
 /** Charge level (0..1) at which a weapon with `chargeSec` commits its aim: the last COMMIT_WINDOW_SEC, but at most COMMIT_MAX_FRACTION of the charge. */

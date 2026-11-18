@@ -21,6 +21,7 @@ import { shipIdAt } from '../../sim/regions';
 import { ItemStackC } from '../../sim/items/components';
 import { cargoAdd, cargoOf, cargoSpace } from '../../sim/vehicles/cargo';
 import { handOf } from '../../sim/trade/dockLedger';
+import { withStation } from '../../../test/support/fixtures/tradeStuck';
 
 const run = (sim: Sim, n: number): SimEvent[] => {
   const out: SimEvent[] = [];
@@ -111,12 +112,12 @@ function accept(sim: Sim, ship: number, give: { item: string; count: number }[],
 }
 
 describe('trade, end to end', () => {
-  it('buy from a freighter: its shuttle docks at the unloaders, crew haul the cargo into storage, then payment settles', () => {
-    const { sim, ship } = withCivilian('freighter');
+  it("buy with no shuttle of the player's: the station's own shuttle docks at the unloaders, crew haul the cargo into storage, then payment settles", () => {
+    const { sim, ship } = withStation();
+    const vehicles = new Set(sim.world.query(VehicleC));
     sim.enqueue({ type: 'trade.hail', ship });
     expect(ofType(run(sim, 2), 'trade.hailAnswered')).toHaveLength(1);
     const t = sim.world.get(ship, TraderC)!;
-    expect(t.profile).toBe('trader.freighter');
     const before = { credits: sim.trade.credits, metal: stored(sim, 'item.metal'), theirs: t.credits, stock: t.stock.find((s) => s.item === 'item.metal')!.count };
     sim.enqueue({ type: 'trade.offer', ship, give: [], get: [{ item: 'item.metal', count: 12 }] });
     const ev = run(sim, 2);
@@ -125,21 +126,23 @@ describe('trade, end to end', () => {
     sim.enqueue({ type: 'trade.accept', offer: offered.offer });
     const made = ofType(run(sim, 2), 'trade.dealMade')[0]!;
     expect(made.courier).toBe('them');
+    const courier = sim.trade.deals.find((d) => d.id === made.deal)!.vehicle;
     // Escrow: the player's credits are held, the trader is not paid yet.
     expect(sim.trade.credits).toBe(before.credits - offered.balance);
     expect(t.credits).toBe(before.theirs);
     expect(t.stock.find((s) => s.item === 'item.metal')!.count).toBe(before.stock - 12);
 
-    const events = runSettled(sim, 4000);
-    const docked = ofType(events, 'vehicle.docked');
+    const events = runSettled(sim, 12000);
+    const docked = ofType(events, 'vehicle.docked').filter((e) => e.vehicle === courier);
     expect(docked).toHaveLength(1);
     expect(ofType(events, 'trade.delivered')).toEqual([{ type: 'trade.delivered', deal: made.deal, ship, to: 'player' }]);
     expect(ofType(events, 'trade.settled')[0]).toMatchObject({ deal: made.deal, credits: offered.balance });
     expect(ofType(events, 'item.hauled').some((e) => e.to === 'storage' && e.item === 'item.metal')).toBe(true);
     expect(stored(sim, 'item.metal')).toBe(before.metal + 12);
     expect(t.credits).toBe(before.theirs + offered.balance);
-    // The courier flew home and vanished.
-    expect(sim.world.query(VehicleC).filter((v) => sim.world.get(v, VehicleC)!.homeShip === ship)).toHaveLength(0);
+    // The courier flew home to its hangar and stays the station's; nothing was made up for the run.
+    expect(sim.world.get(courier, VehicleC)).toMatchObject({ homeShip: ship, state: 'stowed', cargo: [] });
+    expect(new Set(sim.world.query(VehicleC))).toEqual(vehicles);
   });
 
   it('sell to a mining ship: crew load the player shuttle at the unloaders, it flies over, swaps cargo and the player is paid', () => {
@@ -521,24 +524,30 @@ describe('trade, end to end', () => {
     expect(ofType(run(sim, 2), 'command.rejected').map((e) => e.reason)).toEqual(['inTransit']);
   });
 
-  it('a courier shot down in flight refunds the buyer and the goods are lost', () => {
-    const { sim, ship } = withCivilian('freighter');
+  it("the station's shuttle shot down in flight with the goods refunds the buyer and the goods are lost", () => {
+    const { sim, ship } = withStation();
     sim.enqueue({ type: 'trade.hail', ship });
     run(sim, 2);
     const t = sim.world.get(ship, TraderC)!;
+    const credits = sim.trade.credits;
+    const theirs = t.credits;
+    const stock = t.stock.find((s) => s.item === 'item.metal')!.count;
     sim.enqueue({ type: 'trade.offer', ship, give: [], get: [{ item: 'item.metal', count: 10 }] });
     const offer = ofType(run(sim, 2), 'trade.offered')[0]!;
     sim.enqueue({ type: 'trade.accept', offer: offer.offer });
-    ofType(run(sim, 2), 'trade.dealMade');
-    run(sim, 60);
-    const courier = sim.world.query(VehicleC).find((v) => sim.world.get(v, VehicleC)!.homeShip === ship)!;
+    const made = ofType(run(sim, 2), 'trade.dealMade')[0]!;
+    const d = sim.trade.deals.find((x) => x.id === made.deal)!;
+    expect(d.courier).toBe('them');
+    for (let i = 0; i < 12000 && !(d.phase === 'out' && sim.world.get(d.vehicle, VehicleC)?.state === 'flying'); i++) run(sim, 1);
+    const courier = d.vehicle;
     expect(sim.world.get(courier, VehicleC)!.state).toBe('flying');
     destroyVehicle(sim, courier);
     const ev = run(sim, 3);
     expect(ofType(ev, 'trade.failed')[0]).toMatchObject({ reason: 'lost' });
-    expect(sim.trade.credits).toBe(500);
-    expect(t.credits).toBe(sim.world.get(ship, TraderC)!.credits);
-    expect(sim.trade.deals.every((d) => d.held === 0)).toBe(true);
+    expect(sim.trade.credits).toBe(credits);
+    expect(t.credits).toBe(theirs);
+    expect(t.stock.find((s) => s.item === 'item.metal')?.count ?? 0).toBe(stock - 10); // the goods went down with it
+    expect(sim.trade.deals.every((x) => x.held === 0)).toBe(true);
   });
 
   it('is deterministic: the same game and commands give the same bytes tick for tick', () => {

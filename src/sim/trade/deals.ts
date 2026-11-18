@@ -8,11 +8,10 @@ import { TraderC, type Deal, type DealPhase, type Offer, type Trader, type Trip 
 import type { CourierPlan } from './courier';
 import { releaseRecruits } from './recruitLand';
 import { canStart } from './trips';
-import { undock } from '../vehicles/lifecycle';
-import { destroyJob } from '../items/stacks';
+import { destroyJob } from '../crew/jobEnd';
 import { JobC } from '../crew/components';
 import { addCredits } from './credits';
-import { noteHelp } from '../galaxy/eventGrid';
+import { noteHelp } from '../galaxy/help';
 import { lostInHold, reclaim } from './dockLedger';
 import { grant, revoke } from '../consent/guests';
 
@@ -29,9 +28,9 @@ export function cancelCourierHauls(sim: Sim, d: Deal): void {
 }
 
 /**
- * Tear down a trader's shuttle when its deal ends early, the one place for it: cancel the pending pickups, then empty the hold (what was
- * delivered is already out; the rest goes back to the trader's stock in the caller's accounting, and the shuttle is dismissed next tick).
- * Nothing later in the same tick (the crew work step runs after trade) can take from it. The player's own shuttle keeps its hold.
+ * Empty a trader's shuttle when its deal ends early, the one place for it: cancel the pending pickups, then empty the hold (what was
+ * delivered is already out; the rest goes back to the trader's stock in the caller's accounting, and the shuttle flies home: dealFlow.ts
+ * `parkCourier`). Nothing later in the same tick (the crew work step runs after trade) can take from it. The player's own shuttle keeps its hold.
  */
 export function closeCourier(sim: Sim, d: Deal): void {
   if (d.courier !== 'them' || !d.vehicle) return;
@@ -80,6 +79,17 @@ export function setPhase(sim: Sim, d: Deal, to: DealPhase, from: DealPhase | nul
   });
 }
 
+/**
+ * The deal takes its shuttle: it flies itself (nobody aboard a trader's; the player's crew are not needed to fly a trade run), and the player's
+ * shuttle carrying the player's goods out has its hold sealed so the cargo planner leaves it alone (a trader's is sealed by its run, theirRun.ts).
+ */
+export function takeCourier(sim: Sim, d: Deal): void {
+  const v = d.vehicle ? sim.world.get(d.vehicle, VehicleC) : undefined;
+  if (!v) return;
+  v.autopilot = true;
+  if (d.courier === 'you' && d.give.length > 0) v.outbound = true;
+}
+
 export function openDeal(sim: Sim, offer: Offer, check: OfferCheck, plan: CourierPlan, trips: Trip[] = [], queued = false): Deal {
   const trader = sim.world.get(offer.ship, TraderC);
   const first = trips[0];
@@ -96,9 +106,7 @@ export function openDeal(sim: Sim, offer: Offer, check: OfferCheck, plan: Courie
     return deal;
   }
   holdTrip(sim, deal, trader);
-  const v = plan.vehicle ? sim.world.get(plan.vehicle, VehicleC) : undefined;
-  if (v && deal.courier === 'you') v.autopilot = true;
-  if (v && deal.give.length > 0) v.outbound = true;
+  takeCourier(sim, deal);
   sim.trade.deals.push(deal);
   sim.trade.offers = sim.trade.offers.filter((o) => o.id !== offer.id);
   setPhase(sim, deal, 'dispatch', null);
@@ -119,6 +127,7 @@ function agreedValues(sim: Sim, d: Deal): number[] {
 export function holdTrip(sim: Sim, d: Deal, trader: Trader | undefined): void {
   const pay = settlement(d);
   d.getValue = agreedValues(sim, d);
+  d.giveValue = d.give.map((l) => (unitPrice(sim, d.ship, l.item, 'buy') ?? 0) * l.count);
   if (pay > 0) sim.trade.credits -= pay;
   else if (trader) trader.credits += pay;
   if (trader) for (const l of d.get) takeStock(trader.stock, l.item, l.count);
@@ -174,13 +183,7 @@ function startTrip(sim: Sim, d: Deal, t: Trip): boolean {
   d.get = t.get;
   d.balance = t.balance;
   holdTrip(sim, d, sim.world.get(d.ship, TraderC));
-  const v = sim.world.get(d.vehicle, VehicleC);
-  if (v && d.courier === 'them') {
-    // The trader's shuttle is empty and done: it leaves, and a fresh one comes with the next load.
-    if (v.state === 'docked') undock(sim, d.vehicle, v);
-    sim.world.destroyEntity(d.vehicle);
-    d.vehicle = 0;
-  } else if (v && d.give.length > 0) v.outbound = true;
+  takeCourier(sim, d); // the same shuttle flies the next trip (the trader's is home and empty by now: theirRun.ts)
   delete d.dock;
   delete d.via;
   setPhase(sim, d, 'dispatch');

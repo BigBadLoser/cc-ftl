@@ -1,5 +1,5 @@
 import { BodyC } from '../body';
-import { shipById } from '../combat/ships';
+import { shipById } from '../combat/shipQuery';
 import { AssignmentC, CarriedC, CrewC, DeadC, DraftedC, PositionC, type Crew } from '../crew/components';
 import { isIncapacitated } from '../crew/helpers';
 import { PickupC } from '../ai/components';
@@ -18,7 +18,8 @@ import { VehicleC, type Vehicle } from '../vehicles/components';
 import { occupants, vehicleDefOf } from '../vehicles/lifecycle';
 import { StagingC } from '../items/components';
 import { AwayC, SiteRunC, type SiteRun } from './components';
-import { passageFits, passengerUrgent, scheduleHome, takesSiteWork } from './crew';
+import { passengerUrgent, scheduleHome, takesSiteWork } from './crew';
+import { passageFits } from './tripFit';
 import { departCheck, homePoint, partyOut } from './depart';
 
 /**

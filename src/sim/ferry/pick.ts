@@ -1,5 +1,5 @@
 import { ShipC } from '../combat/components';
-import { shipById } from '../combat/ships';
+import { shipById } from '../combat/shipQuery';
 import { ItemStackC, StorageC } from '../items/components';
 import { AirlockC, airlockWorking } from '../modules/airlock';
 import { ModuleC } from '../modules/components';

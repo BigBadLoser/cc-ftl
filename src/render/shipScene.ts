@@ -18,7 +18,8 @@ import type { RegionLayers } from './worldLayers';
 import { ModuleC } from '../sim/modules/components';
 import { createModuleView, shipHasPower, type ModuleDefs } from './moduleView';
 import { wallLevel } from './tiles';
-import { PLAIN_PAINT, type HullPaint } from './hullArt';
+import { PLAIN_PAINT, type HullLook, type HullPaint } from './hullArt';
+import { standsOnGround } from '../sim/outposts/state';
 import { createRoofView } from './roofView';
 import type { PaintAtlas } from './paintAtlas';
 import { createRockRoofView } from './rockRoofView';
@@ -32,6 +33,7 @@ import { createTargetMarks } from './targetMarks';
 import { crewHidden } from './regionRules';
 import { createTurretView } from './turretView';
 import { createCableView } from './cableView';
+import { createTubeView } from './tubeView';
 import { DEFAULT_BEAM_LOOK, type BeamLook } from './beamArt';
 import { OPEN_GATE, type BuildGate } from './buildBudget';
 
@@ -112,7 +114,9 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
   const inside = () => (roofed ? null : { grid });
   const gate = o.gate ?? OPEN_GATE;
   let whole = false;
-  const view = createGridView(grid, atlas, L, { emergency: () => emergency, overlayWorld: { world, modules, roomTiers: o.roomTiers }, beamLook: () => o.beamLook ?? DEFAULT_BEAM_LOOK, hullPaint: () => o.hullPaint ?? PLAIN_PAINT, gate, bare: () => !!o.bare });
+  // A base standing on asteroid ground draws the station hull (hullArt `HullLook`).
+  const hullLook = (): HullLook => (standsOnGround(world.get(grid.id, ShipC)) ? 'station' : 'ship');
+  const view = createGridView(grid, atlas, L, { emergency: () => emergency, overlayWorld: { world, modules, roomTiers: o.roomTiers }, beamLook: () => o.beamLook ?? DEFAULT_BEAM_LOOK, hullPaint: () => o.hullPaint ?? PLAIN_PAINT, hullLook, gate, bare: () => !!o.bare });
   const crewView = createCrewView(world, atlas, L, {
     target: () => ({ shipId: grid.id, ox: grid.x0, oy: grid.y0 }),
     hidden: (x, y) => crewHidden(grid, roofed, x, y),
@@ -142,6 +146,7 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
   const atmosphere = createAtmosphere(world, particles, modules, { target: () => ({ grid }) });
   const turretView = createTurretView(world, atlas, L, grid, modules);
   const cableView = createCableView(grid, atlas, L, world, modules);
+  const tubeView = createTubeView(grid, atlas, L, { roofed: () => roofed, level: () => wallLevel(roofed ? 'up' : cutaway), hullPaint: () => o.hullPaint ?? PLAIN_PAINT, tintAt: (x, y, wall) => view.tintAt(x, y, wall), tintKey: () => view.tintKey() });
   const roof = createRoofView(grid, atlas, L, world, modules, o.livery ?? null, o.liveries ?? null);
   // A dug outpost is roofed with rock, not plating (PLACEHOLDER, rockRoofView.ts).
   // It sits in the fx layer, and while it is on the region's own tile and entity layers hide: the rock around the base is drawn
@@ -196,6 +201,7 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
       crewView.update();
       roof.update(gate, o.idle, emergency);
       cableView.update();
+      tubeView.update();
       turretView.update();
       damage.update();
       marks.update(marksOn, targeted, roofed ? ROOF_H : 0);
@@ -241,6 +247,7 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
       jamMarks.dispose();
       sacView.dispose();
       cableView.dispose();
+      tubeView.dispose();
       turretView.dispose();
       crewView.dispose();
       moduleView.dispose();

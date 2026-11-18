@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { CombatC, ShipC, WeaponC } from '../../sim/combat/components';
 import { isDormant } from '../../sim/combat/dormant';
-import { homeShip } from '../../sim/combat/ships';
+import { homeShip } from '../../sim/combat/shipQuery';
 import { ModuleC } from '../../sim/modules/components';
 import { discoverOutpost } from '../../sim/outposts/state';
 import { shipIdOf } from '../../sim/regions';

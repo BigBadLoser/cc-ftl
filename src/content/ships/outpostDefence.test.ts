@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { airlockPad } from '../../sim/modules/landingPad';
 import { CombatC, ShipC, WeaponC } from '../../sim/combat/components';
 import { isDormant } from '../../sim/combat/dormant';
-import { homeShip } from '../../sim/combat/ships';
+import { homeShip } from '../../sim/combat/shipQuery';
 import { AirlockC } from '../../sim/modules/airlock';
 import { ModuleC } from '../../sim/modules/components';
 import { discoverOutpost } from '../../sim/outposts/state';

@@ -38,6 +38,7 @@ export const furniture = {
   // Station decor (art: tools/blender/sprites/decor.py and landmarks.py): walkable deck marks and a livery banner post.
   // Dressing only, no mechanic.
   'module.deck_inlay': {
+    buildable: false,
     scrap: 'hull',
     name: 'Deck inlay',
     category: 'structure',
@@ -46,6 +47,7 @@ export const furniture = {
     maxHp: 40, buildWork: 20, cost: [{ item: 'item.metal', count: 2 }],
   },
   'module.deck_hazard': {
+    buildable: false,
     scrap: 'hull',
     name: 'Hazard plate',
     category: 'structure',
@@ -54,6 +56,7 @@ export const furniture = {
     maxHp: 40, buildWork: 20, cost: [{ item: 'item.metal', count: 1 }],
   },
   'module.banner': {
+    buildable: false,
     scrap: 'comfort',
     name: 'Banner post',
     category: 'life',

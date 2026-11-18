@@ -6,6 +6,7 @@ Player-facing changes, newest first. Each dated entry is a deploy of the live ga
 
 ### New
 
+- Glass tubes on asteroid bases: the short passages between a base's modules are now clear glass tubes seated in armoured ports on each module's hull, with a round hatch at each end that opens with its door. Crew show inside as they walk through, and through an open hatch you see into the room beyond. ([#532](https://github.com/BigBadLoser/cc-ftl/pull/532))
 - Landing pads: surface bases now land shuttles on powered landing pads beside the base instead of docking at the hull. A shuttle on a pad lowers its landing gear and opens its rear ramp onto the deck when crew come near, and folds its gear as it lifts off. Your shuttle can land on a base's free visiting pad; crew suit up and walk out to the ramp to board. ([#529](https://github.com/BigBadLoser/cc-ftl/pull/529))
 - Asteroid farms and mines: farm and mining outposts get their own base layouts. Farms grow greens and beans in greenhouses that stand apart from the base, reached on foot in a suit through the base's airlock wing, and their pantries start stocked. Mines have a refinery wing with two large ore pods. Crew without a suit no longer walk across open rock and suffocate on their way to meals or bed, and they only take their suit off where the base's main air is. ([#528](https://github.com/BigBadLoser/cc-ftl/pull/528))
 - Ground turrets: asteroid bases now stand their guns and point defence on the open rock around them, each wired to the hull by a power cable. The turrets fire on the base's power, and its crew suit up and walk out to repair them. ([#527](https://github.com/BigBadLoser/cc-ftl/pull/527))
@@ -60,6 +61,11 @@ Player-facing changes, newest first. Each dated entry is a deploy of the live ga
 
 ### Changed
 
+- Ship shapes: navy warships no longer have a notch beside their drive bank, island carriers get a pointed nose and a longer hull, the smallest scrapper raiders come out smaller, and drone swarms and forked drones hold their pods more neatly. ([#564](https://github.com/BigBadLoser/cc-ftl/pull/564))
+- Smoother play on busy ships: ship temperature and crew mood cost less to simulate each moment, so large ships and stations run lighter. ([#565](https://github.com/BigBadLoser/cc-ftl/pull/565))
+- Crew called out of bed during their Sleep hours (a fire, battle stations) are no longer sent on an away trip: the trip still counts those hours as Sleep. ([#560](https://github.com/BigBadLoser/cc-ftl/pull/560))
+- Trading carriers: with no shuttle of your own free, a station sends its own real shuttle from its hangar or pad to buy and sell with you, and it flies home again afterwards. Your shuttle still goes first when it's free. ([#552](https://github.com/BigBadLoser/cc-ftl/pull/552))
+- Entering a node no longer freezes the game while its stations and outposts are built: they are built ahead in the background during the jump. ([#540](https://github.com/BigBadLoser/cc-ftl/pull/540))
 - Cutaway: only the ship's top and back edges stand full height; far walls in front of the ship on screen now collapse too, so stepped hulls and notches no longer hide the rooms behind them. ([#525](https://github.com/BigBadLoser/cc-ftl/pull/525))
 - Cutaway: 45° staircase hull edges and one-tile hull steps no longer leave full-height wall pillars standing in front of rooms; their corners collapse with the hull around them. ([#497](https://github.com/BigBadLoser/cc-ftl/pull/497))
 - The prize panel no longer shows a prize value: there is no hull sale, as the salvage panel strips a prize, hull included. Saves from before this change don't load. ([#495](https://github.com/BigBadLoser/cc-ftl/pull/495))
@@ -105,6 +111,8 @@ Player-facing changes, newest first. Each dated entry is a deploy of the live ga
 
 ### Fixed
 
+- Inspections: a jump you queued to fire once the drive charges is called off while inspectors are aboard, instead of carrying them away (which counted as attacking them). The "Before you jump" confirm names any inspectors aboard, and an urgent alert shows when hunters arrive in your node. ([#550](https://github.com/BigBadLoser/cc-ftl/pull/550))
+- Pods: mining pods no longer vanish when they land or show twice when they launch. Robot fabricators and bays, freight containers, the banner post, deck inlay and hazard plate are no longer offered in the build menu. Deconstructing a module marks its footprint in red while the order is pending. Drone bays draw their front posts over docked drones and light their charge contacts while charging. ([#549](https://github.com/BigBadLoser/cc-ftl/pull/549))
 - Hull: odd hull outlines (a one-tile step or nub, as damage and wrecks leave) no longer show the old dark hull underside in cutaway; they take the new hull's underside like the rest of the ship. ([#496](https://github.com/BigBadLoser/cc-ftl/pull/496))
 - Goods and credits stay consistent across systems: a lost trade shuttle no longer duplicates or destroys goods (each station deal now tracks its own units), duplicate transfer lines no longer cause a second trip, a jump charges the fuel price it checked, tug and shipyard refunds with no room wait for space instead of vanishing or going to the station, and seized or burned items no longer leave ghost entries. Answering a distress call raises standing only if a deal with the damaged ship goes through. ([#467](https://github.com/BigBadLoser/cc-ftl/pull/467))
 - Shipyard: the see-through build ghosts of new hull tiles show the new hull art instead of the old wall blocks, and hull doors keep their door in the preview. ([#466](https://github.com/BigBadLoser/cc-ftl/pull/466))

@@ -89,7 +89,12 @@ export function createAsteroidView(world: World, atlas: Atlas, L: Layers, ores: 
     b.root.removeChildren().forEach((c) => c.destroy());
     for (const s of b.mass) s.destroy();
     b.mass.length = 0;
-    const kind = (x: number, y: number) => sector.get('struct', x, y);
+    // A built tile on the asteroid (a surface base's floor, walls, doors) stands on levelled ground: the ground runs on under it.
+    const inRect = (x: number, y: number) => x >= a.x && y >= a.y && x < a.x + a.width && y < a.y + a.height;
+    const kind = (x: number, y: number) => {
+      const k = sector.get('struct', x, y);
+      return k !== Struct.Space && k !== Struct.Rock && k !== Struct.RockWall && inRect(x, y) ? Struct.Ground : k;
+    };
     for (let d = 0; d <= a.width + a.height - 2; d++) {
       for (let lx = Math.max(0, d - a.height + 1); lx <= Math.min(a.width - 1, d); lx++) {
         const x = a.x + lx, y = a.y + d - lx;

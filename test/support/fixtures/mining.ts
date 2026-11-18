@@ -1,6 +1,6 @@
 /** Shared setups of the mining-pod tests and their slow tier: the starter ship with one pod bay and a pod, an asteroid field, and readers of its ore and hold. */
 import { AsteroidC } from '../../../src/sim/asteroids/components';
-import { homeShip } from '../../../src/sim/combat/ships';
+import { homeShip } from '../../../src/sim/combat/shipQuery';
 import { totalStock } from '../../../src/sim/items/stock';
 import { placementError, spawnModule } from '../../../src/sim/modules/spawn';
 import { newGame } from '../../../src/sim/newGame';

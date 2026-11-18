@@ -9,7 +9,9 @@ import type { Atlas, StaticSprite } from './assets/loader';
 import { POD_HOVER_Z } from '../sim/mining/geometry';
 import { Z_PX } from './heights';
 import { sectorArt } from './sectorPos';
+import { animNow } from './animClock';
 import { headingIndex } from './shuttleView';
+import { BAY_FRAME_MS, LAUNCH_LIFT, createBayTrack, type BayTrack } from './vehicleBayArt';
 
 /**
  * Pods (VehicleC with a pod def, placed by their BodyC) drawn with the pipeline sprites (`VehicleDef.asset`): `<art>.fly.d<0..7>`
@@ -71,6 +73,8 @@ interface Track {
 
 export function createPodView(world: World, atlas: Atlas, host: PodHost): PodView {
   const tracks = new Map<number, Track>();
+  /** Each pod's bay handoff clock and position trail (vehicleBayArt). */
+  const phases = new Map<number, BayTrack>();
   let clock = 0;
   const drop = (id: number): void => {
     const t = tracks.get(id);
@@ -99,17 +103,26 @@ export function createPodView(world: World, atlas: Atlas, host: PodHost): PodVie
         const out = v.state === 'docked' ? host.dockOut?.(v.dock) : null;
         if (v.state === 'docked' && !out) continue;
         const stowed = v.state === 'stowed';
-        // A stowed pod is the bay layer's `parked` sprite once that art exists.
-        if (stowed && atlas.ids(`${art}.parked`).length > 0) continue;
-        const low = stowed || !!out;
+        // Who draws a pod in or leaving its bay is vehicleBayArt's `bayHandoff` (as for a shuttle): the bay's `parked` sprite while it
+        // sits in the claws and through the first door frames of a launch, this layer while it rises out of the pit and settles back.
+        const now = animNow();
+        let track = phases.get(id);
+        if (!track) phases.set(id, (track = createBayTrack(v.state)));
+        track.update(v.state, now);
+        const baySprite = !out && atlas.ids(`${art}.parked`).length > 0;
+        const hand = baySprite ? track.pose(v.state, now) : null;
+        if (hand && !hand.drawn) continue;
+        const rising = hand?.lift != null;
+        const low = (stowed && !hand) || !!out || rising;
         const d = headingIndex(b.heading);
         const frame = Math.floor((clock * 1000) / MINE_FRAME_MS) % 2;
         const beacon = (clock * 1000) % BEACON_MS < BEACON_ON_MS ? 0 : 1;
         const m = world.get(id, MiningPodC);
+        const parkedPose = stowed || (rising && (hand?.lift ?? 1) < 1);
         const mining = !low && m?.phase === 'mining' && !!m.target;
         const sprite = out
           ? atlas.stat(`${art}.docked.d${(headingIndex(Math.atan2(out.y, out.x)) + 4) % 8}`)
-          : stowed
+          : parkedPose
             ? atlas.firstOf([`${art}.docked.d${d & 6}`, `${art}.fly.d${d}`])
             : mining
               ? atlas.firstOf([`${art}.mine.d${d}.f${frame}`, `${art}.fly.d${d}`])
@@ -134,9 +147,11 @@ export function createPodView(world: World, atlas: Atlas, host: PodHost): PodVie
         }
         show(t, sprite);
         const reach = COLLAR_FACE + POD_HATCH;
-        const [sx, sy] = out ? [b.x + out.x * reach, b.y + out.y * reach] : [b.x, b.y];
+        // After liftoff the sim has already flown it on: hold it over the pit while the doors open and the lift runs, then catch up.
+        const at = baySprite && !stowed && hand?.launching ? track.delayed(now, b.x, b.y, LAUNCH_LIFT.start * BAY_FRAME_MS, hand.sinceLaunch) : b;
+        const [sx, sy] = out ? [b.x + out.x * reach, b.y + out.y * reach] : [at.x, at.y];
         const p = sectorArt(sx, sy);
-        const lift = (out ? COLLAR_Z - POD_AXIS : stowed ? PIT_Z : POD_Z) * Z_PX;
+        const lift = (out ? COLLAR_Z - POD_AXIS : rising ? PIT_Z + (POD_Z - PIT_Z) * (hand?.lift ?? 0) : stowed ? PIT_Z : POD_Z) * Z_PX;
         // The shadow stays on the ground under the hovering pod.
         t.shadow.clear();
         if (!low) t.shadow.ellipse(0, lift, size * 30, size * 15).fill({ color: 0x000000, alpha: 0.3 });
@@ -144,7 +159,7 @@ export function createPodView(world: World, atlas: Atlas, host: PodHost): PodVie
         else t.beam.hide();
         t.root.position.set(Math.round(p.x), Math.round(p.y - lift));
         // (docked: sorted as a docked shuttle is, a tile nearer than its centre, so the hull behind it never covers it)
-        t.root.zIndex = sx + sy + (out ? -1 : stowed ? PIT_DEPTH : 0);
+        t.root.zIndex = sx + sy + (out ? -1 : stowed || rising ? PIT_DEPTH : 0);
       }
       for (const id of [...tracks.keys()]) if (!seen.has(id)) drop(id);
     },

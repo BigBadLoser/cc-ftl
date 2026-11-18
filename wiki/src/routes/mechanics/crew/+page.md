@@ -200,6 +200,8 @@ A scheduled sleeper wakes for that. Someone asleep because they were worn out sl
 air or starving, wakes anyone. A sleeper who isn't rested when Sleep ends sleeps on into Work until rested. Into
 Free they get up once they are at least half rested.
 
+Being on call doesn't send anyone on an away trip in their Sleep hours: the trip still counts those hours as Sleep.
+
 Away parties on a wreck work until their Sleep hours, then take the shuttle home. In Free time they keep working if
 the shuttle is away, and head back aboard when it is beside the site. See [Salvage](../salvage/).
 

@@ -14,6 +14,7 @@ import { lightingSystem } from './lighting';
 import { roomsSystem } from './rooms';
 import { smokeSystem } from './smoke';
 import { temperatureSystem } from './temperature';
+import { TEMP_EVERY } from '../tuning';
 
 /**
  * Change tracking of the environment solvers: once a region has settled, a solve is skipped, and every kind of edit to what
@@ -63,9 +64,21 @@ function loads(field: string, fn: () => void): number {
   return n;
 }
 
-/** Run `system` until a call skips its solve (no solve of `field`); fail if it never settles. */
+/**
+ * One period of `system`: the ticks over which each region solves once. Temperature solves every TEMP_EVERY ticks on a phase per ship
+ * (#65), so its period is that many calls, each on the next tick; the others solve every tick.
+ */
+function period(sim: Sim, system: (sim: Sim) => void): void {
+  const n = system === temperatureSystem ? TEMP_EVERY : 1;
+  for (let k = 0; k < n; k++) {
+    system(sim);
+    if (n > 1) sim.tick++;
+  }
+}
+
+/** Run `system` until a period skips its solve (no solve of `field`); fail if it never settles. */
 function settle(sim: Sim, system: (sim: Sim) => void, field: string): void {
-  for (let i = 0; i < 2000; i++) if (loads(field, () => system(sim)) === 0) return;
+  for (let i = 0; i < 2000; i++) if (loads(field, () => period(sim, system)) === 0) return;
   throw new Error(`${system.name} never settled`);
 }
 
@@ -81,11 +94,11 @@ describe('diffusion solvers skip a settled region and wake on every input', () =
       it(`${system.name} solves again after a ${edit} write`, () => {
         const { sim, grid } = make();
         settle(sim, system, field);
-        expect(loads(field, () => system(sim))).toBe(0);
+        expect(loads(field, () => period(sim, system))).toBe(0);
         if (edit === 'struct') grid.set('struct', 1, 2, Struct.Space); // a breach in the west hull
         else if (edit === 'door') grid.set('door', 5, 2, 255);
         else grid.set(edit, 2, 3, grid.get(edit, 2, 3) + 1);
-        expect(loads(field, () => system(sim))).toBe(1);
+        expect(loads(field, () => period(sim, system))).toBe(1); // one solve in the next period
       });
     }
   }

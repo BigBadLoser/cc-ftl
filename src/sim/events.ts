@@ -346,6 +346,8 @@ export type SimEvent =
   | { type: 'galaxy.eventEntered'; id: number; kind: 'fight' | 'rescue' | 'scene' }
   /** The scene outcome observer saw a rule's fact (scene/observer.ts): its log line (`text`, '' for none) and tone. Output only. */
   /** A scene skiff asks to dock with the player's ship (answer with `galaxy.visit`). */
+  /** A station could not be built (`spawnStation`): the generator's reasons, for the dev console and tests. Output only. */
+  | { type: 'station.unbuilt'; kind: string; size: string; seed: number; reasons: string }
   | { type: 'scene.dockAsked'; ship: number }
   /** Help agreed with a scene ship ('agreed'), finished ('done') or called off because the player turned on it ('broken'). */
   | { type: 'scene.aid'; ship: number; state: 'agreed' | 'done' | 'broken' }

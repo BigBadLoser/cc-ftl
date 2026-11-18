@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { homeShip } from '../../sim/combat/ships';
+import { homeShip } from '../../sim/combat/shipQuery';
 import { CrewC, PositionC } from '../../sim/crew/components';
 import { hullLoad } from '../../sim/ftl/capacity';
 import { ModuleC } from '../../sim/modules/components';

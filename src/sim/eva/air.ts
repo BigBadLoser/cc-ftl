@@ -1,6 +1,6 @@
 import { CrewC } from '../crew/components';
 import { traitMult } from '../crew/traits';
-import { shipById } from '../combat/ships';
+import { shipById } from '../combat/shipQuery';
 import { ModuleC } from '../modules/components';
 import { AirlockC } from '../modules/airlock';
 import { shipIdOf } from '../regions';

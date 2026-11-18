@@ -9,17 +9,21 @@ import { deserialize, serialize } from '../sim/save';
 import type { Sim } from '../sim/sim';
 import { unitPrice } from '../sim/trade/pricing';
 import { TraderC } from '../sim/trade/types';
+import { AirlockC } from '../sim/modules/airlock';
 import { cargoCount, cargoTake } from '../sim/vehicles/cargo';
 import { VehicleC } from '../sim/vehicles/components';
 import { isLive } from '../sim/trade/deals';
 import { playerCrew } from '../sim/story/world';
 import { shipIdOf, shipIds } from '../sim/regions';
 import { content } from './index';
-import { buying, metal, metalLike, order, run, runOut, until, withFreighter } from '../../test/support/fixtures/tradeStuck';
+import { buying, metal, metalLike, order, run, runOut, until, withStation } from '../../test/support/fixtures/tradeStuck';
 
-/** Ticks of the give-up deadlines (BACK_SEC and UNLOAD_SEC in sim/trade/dealFlow.ts): the shuttle's way home, and the crew emptying its hold. */
+/** Ticks of the give-up deadlines (sim/trade/dealTiming.ts): the shuttle's way home, and the crew emptying its hold. */
 const BACK_TICKS = 240 * 20;
 const UNLOAD_TICKS = 300 * 20;
+/** The trader's shuttle: its flight over (FLIGHT_SEC) and the player's crew's work at the airlock (LOAD_SEC). */
+const FLIGHT_TICKS = 240 * 20;
+const FAR_TICKS = 300 * 20;
 
 describe('a delivery that cannot finish', () => {
   it('return flight to a lost airlock is called off, settles escrow once, and travel is free again', () => {
@@ -99,9 +103,9 @@ describe('a delivery that cannot finish', () => {
 describe("a stuck delivery by the trader's own shuttle", () => {
   it('before the exchange (still flying in): the deal fails, the player is refunded and the trader gets its goods back; survives a reload', () => {
     const { sim, ship, before, stock } = order();
-    expect(sim.trade.deals[0]!.phase).toBe('back');
-    sim.world.destroyEntity(sim.trade.deals[0]!.airlock); // the destination airlock is destroyed with the shuttle on its way
-    sim.trade.deals[0]!.timer = BACK_TICKS - 40; // just short of the give-up deadline
+    until(sim, 'out');
+    for (const id of sim.world.query(AirlockC, ModuleC)) sim.world.get(id, ModuleC)!.enabled = false; // no airlock of the player's to dock at
+    sim.trade.deals[0]!.timer = FLIGHT_TICKS - 40; // just short of the give-up deadline
     run(sim, 20);
     const reloaded = deserialize(serialize(sim), content);
     runOut(reloaded, 400);
@@ -117,9 +121,9 @@ describe("a stuck delivery by the trader's own shuttle", () => {
 
   it('docked but never unloaded: the deal fails and refunds, the shuttle leaves with its cargo back to the trader', () => {
     const { sim, ship, before, stock } = order();
-    until(sim, 'unload');
+    until(sim, 'stationWork');
     for (const id of playerCrew(sim)) sim.world.destroyEntity(id);
-    sim.trade.deals[0]!.timer = UNLOAD_TICKS - 40; // just short of the give-up deadline
+    sim.trade.deals[0]!.timer = FAR_TICKS - 40; // just short of the give-up deadline
     run(sim, 20);
     const reloaded = deserialize(serialize(sim), content);
     runOut(reloaded, 400);
@@ -140,12 +144,12 @@ describe("a stuck delivery by the trader's own shuttle", () => {
 
   it('a partly unloaded delivery settles what arrived, refunds the rest and returns only the rest to the trader; survives a reload', () => {
     const { sim, ship, before, stock } = order();
-    until(sim, 'unload');
+    until(sim, 'stationWork');
     for (const id of playerCrew(sim)) sim.world.destroyEntity(id); // hauling stops
     const d = sim.trade.deals[0]!;
     const held = d.held;
     unloadSome(sim, d.vehicle, 5);
-    d.timer = UNLOAD_TICKS - 40; // just short of the give-up deadline
+    d.timer = FAR_TICKS - 40; // just short of the give-up deadline
     run(sim, 20);
     const reloaded = deserialize(serialize(sim), content);
     runOut(reloaded, 400);
@@ -161,14 +165,14 @@ describe("a stuck delivery by the trader's own shuttle", () => {
     expect(metalLike(s, 'item.metal') + stock(s)).toBe(before.metal + before.stock); // nothing duplicated, nothing lost
   });
 
-  it('a fully unloaded delivery settles in full', () => {
+  it('a fully unloaded delivery settles in full once the shuttle is home', () => {
     const { sim, ship, before, stock } = order();
-    until(sim, 'unload');
+    until(sim, 'stationWork');
     for (const id of playerCrew(sim)) sim.world.destroyEntity(id);
     const d = sim.trade.deals[0]!;
     const held = d.held;
     unloadSome(sim, d.vehicle, 12);
-    run(sim, 5);
+    runOut(sim, 3000);
     expect(sim.trade.deals[0]!.phase).toBe('done');
     expect(sim.world.get(ship, TraderC)!.credits).toBe(before.theirs + held);
     expect(sim.trade.credits).toBe(before.credits - held);
@@ -180,7 +184,7 @@ describe("a stuck delivery by the trader's own shuttle", () => {
     // A first run finds the tick a crew member takes the first stack off the shuttle; the second stops one tick before it, with that
     // pickup haul reserved, and times the deal out there.
     const probe = order();
-    until(probe.sim, 'unload');
+    until(probe.sim, 'stationWork');
     const hold = (s: Sim): number => cargoCount(s.world.get(s.trade.deals[0]!.vehicle, VehicleC)!);
     let pickupTick = 0;
     for (let i = 0; i < 3000 && !pickupTick; i++) {
@@ -189,12 +193,12 @@ describe("a stuck delivery by the trader's own shuttle", () => {
     }
     expect(pickupTick).toBeGreaterThan(0);
     const { sim, ship, before, stock } = order();
-    until(sim, 'unload');
+    until(sim, 'stationWork');
     while (sim.tick < pickupTick - 1) sim.step();
     expect(sim.world.query(JobC).some((id) => { const j = sim.world.get(id, JobC)!; return j.haul?.phase === 'pickup' && j.haul.src.kind === 'vehicle' && j.reservedBy > 0; })).toBe(true);
     const d = sim.trade.deals[0]!;
     expect(cargoCount(sim.world.get(d.vehicle, VehicleC)!)).toBe(12); // nothing picked up yet
-    d.timer = 300 * 20; // the next tick's deal step gives up, before the crew's work step
+    d.timer = FAR_TICKS; // the next tick's deal step gives up, before the crew's work step
     sim.step();
     expect(d.phase).toBe('failed');
     const reloaded = deserialize(serialize(sim), content);
@@ -210,7 +214,7 @@ describe("a stuck delivery by the trader's own shuttle", () => {
   });
 
   it('a part-delivered two-item order is charged the agreed value of exactly what arrived; survives a reload', () => {
-    const { sim, ship } = withFreighter();
+    const { sim, ship } = withStation();
     sim.enqueue({ type: 'trade.hail', ship });
     run(sim, 2);
     // Two goods the trader holds in quantity, whose prices differ and move with its stock.
@@ -233,13 +237,13 @@ describe("a stuck delivery by the trader's own shuttle", () => {
     expect(balance).toBe(pa * 8 + pb * 8);
     sim.enqueue({ type: 'trade.accept', offer: sim.trade.offers[0]!.id });
     run(sim, 2);
-    until(sim, 'unload');
+    until(sim, 'stationWork');
     for (const id of playerCrew(sim)) sim.world.destroyEntity(id);
     const d = sim.trade.deals[0]!;
     const crate = sim.world.query(StorageC).find((i) => shipIdOf(sim, sim.world.get(i, ModuleC)) === shipIds(sim)[0])!;
     storageAdd(sim, crate, a, cargoTake(sim, d.vehicle, a, 8)); // all of a and 3 of b arrived
     storageAdd(sim, crate, b, cargoTake(sim, d.vehicle, b, 3));
-    d.timer = UNLOAD_TICKS - 40; // just short of the give-up deadline
+    d.timer = FAR_TICKS - 40; // just short of the give-up deadline
     run(sim, 20);
     const reloaded = deserialize(serialize(sim), content);
     runOut(reloaded, 400);

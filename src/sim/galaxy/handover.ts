@@ -10,35 +10,36 @@ import { TICK_HZ } from '../time';
 import { cargoCount, cargoOf, cargoTake } from '../vehicles/cargo';
 import { VehicleC, type Vehicle } from '../vehicles/components';
 import { PLAN_INTERVAL } from '../tuning';
-import { courierDef, playerCourier, spawnCourier } from '../trade/courier';
+import { freeShuttle, playerCourier } from '../trade/courier';
 import { failDeal, isLive, setPhase } from '../trade/deals';
 import { freeAirlock, playerShip } from '../trade/player';
 import { ensureTrader, hailVerdict } from '../trade/traders';
 import type { Deal, PrisonerHandover } from '../trade/types';
 import { slabBack, slabDelivered, slabGoing, slabLoaded } from '../capture/delivery';
-import { undock } from '../vehicles/lifecycle';
 import { CRATE, crateOf, loadCrate, recoverCrate } from './crate';
 import { HANDOVER_RETRY_SEC } from './tuningJobs';
 import type { StationJob } from './types';
 import { boardRecruits, landRecruits } from '../trade/recruitLand';
-import { passengerOff, postedCards } from './passage';
+import { postedCards } from './passage';
+import { passengerOff } from './passengerOff';
 import { askingToJoin } from './joinOffer';
 
 /**
  * The physical handover of a delivery (issue #178), and of a passenger (a passage job, or a refused card: galaxy/passage.ts; the recruit run reversed,
  * they walk aboard as recruits do, trade/recruitLand.ts `boardRecruits`, and leave with the shuttle). Arriving at the destination with the crate aboard does not pay at once. A shuttle collects it, run as a
- * `Deal` with `Deal.handover` set (no goods, no escrow). Order of preference:
- * 1. The station's own shuttle (`via` 'station'; only a trader kind with `shuttle: true`, trade.ts). The trade courier is spawned at the station, flies to a
- *    working airlock of the player's ship and docks; crew haul the crate from the deck into its hold; when it has the crate (`StationJob.collected` 'shuttle')
- *    the shuttle leaves like any courier (dealFlow.ts `dismissCourier`). Phases reuse `DealPhase`: 'dispatch' -> 'back' -> 'load' -> 'done'.
- * 2. The player's own shuttle (`via` 'own'; most stations have no shuttle of their own). It docks at the airlock like a trade run, crew load the crate, it
- *    flies to hover beside the station and drops it there (`collected` 'own': the delivery pays on the drop-off), then flies home and is stowed
- *    (dealFlow.ts `parkCourier`). Phases: 'dispatch' -> 'load' -> 'out' -> 'exchange' -> 'done'. Starts with no shuttle at all (none in a bay) skip this.
+ * `Deal` with `Deal.handover` set (no goods, no escrow). Order of preference (the trade rule, trade/courier.ts): the player's shuttle, else the station's.
+ * 1. The station's own shuttle (`via` 'station'; every station has one, in its hangar or on its pad: trade/courier.ts `freeShuttle`). It flies
+ *    itself (nobody aboard) to a working airlock of the player's ship and docks; crew haul the crate from the deck into its hold; when it has the
+ *    crate (`StationJob.collected` 'shuttle') it flies home to its bay (dealFlow.ts `parkCourier`). Phases reuse `DealPhase`: 'dispatch' -> 'back'
+ *    -> 'load' -> 'done'.
+ * 2. The player's own shuttle (`via` 'own'; tried first when the player has one free). It docks at the airlock like a trade run, crew load the
+ *    crate, it flies to hover beside the station and drops it there (`collected` 'own': the delivery pays on the drop-off), then flies home and is
+ *    stowed (dealFlow.ts `parkCourier`). Phases: 'dispatch' -> 'load' -> 'out' -> 'exchange' -> 'done'. Starts with no shuttle at all (none in a bay) skip this.
  * 3. By hand, at once (`job.handedOver` `via: 'instant'`): only when neither can run (no station ship at the node, no working airlock on the player's ship,
  *    no shuttle on either side), or each that could has been called off MAX_TRIES times.
  *
  * A prisoner's sealed slab sold at a station (capture/delivery.ts, `Deal.handover.prisoner`) goes the same two ways, never by hand (`slabRoute` says
- * 'noWay' instead), and is paid when the slab reaches the station: the station's shuttle flies it home first (phase 'out', `homeward`). A run called off
+ * 'noWay' instead), and is paid when the slab reaches the station: the station's shuttle flies it home to its bay first (phase 'out', `homeward`). A run called off
  * ends there (the player accepts the deal again); it is not tried again on its own.
  *
  * Combat in the node holds both back the same way: nothing is sent, and a run already out is called off (a crate already in the hold is put back on deck), the
@@ -62,12 +63,6 @@ function stationShip(sim: Sim): number {
   return 0;
 }
 
-/** Whether a station has a shuttle of its own to send (its trader kind) and the content has a shuttle model for it. */
-const sendsShuttle = (sim: Sim, ship: number): boolean => {
-  const t = ensureTrader(sim, ship);
-  return !!t && sim.content.trade?.traders[t.profile]?.shuttle === true && !!courierDef(sim);
-};
-
 /** Whether the player's ship has a working docking airlock at all. */
 function hasAirlock(sim: Sim): boolean {
   const me = playerShip(sim);
@@ -81,20 +76,25 @@ type Run = { go: 'station' | 'own'; ship: number; vehicle: number; airlock: numb
 type Plan = Run | 'running' | 'wait' | 'instant';
 
 /**
- * The shuttle that can come for the goods of station `ship` now: its own (while `station` allows it to be tried), else the player's (while `own` does);
- * 'wait' while the one to send or a free airlock is busy, 'instant' when neither can come.
+ * The shuttle that can come for the goods of station `ship` now, by the trade rule (trade/courier.ts): the player's (while `own` allows it to be
+ * tried), else the station's own (while `station` does); 'wait' while the one to send or a free airlock is busy, 'instant' when neither can come.
  */
 function route(sim: Sim, ship: number, station: boolean, own: boolean): Run | 'wait' | 'instant' {
-  if (sendsShuttle(sim, ship) && station) {
-    const airlock = freeAirlock(sim, 0);
-    return airlock ? { go: 'station', ship, vehicle: 0, airlock } : 'wait';
+  let wait = false;
+  if (own) {
+    const c = playerCourier(sim);
+    if (!('error' in c)) {
+      const v = sim.world.get(c.vehicle, VehicleC) as Vehicle;
+      const airlock = freeAirlock(sim, c.vehicle, v.state === 'docked' ? v.dock : 0);
+      if (airlock) return { go: 'own', ship, vehicle: c.vehicle, airlock };
+      wait = true;
+    } else wait = c.error === 'courierBusy';
   }
-  if (!own) return 'instant';
-  const c = playerCourier(sim);
-  if ('error' in c) return c.error === 'courierBusy' ? 'wait' : 'instant';
-  const v = sim.world.get(c.vehicle, VehicleC) as Vehicle;
-  const airlock = freeAirlock(sim, c.vehicle, v.state === 'docked' ? v.dock : 0);
-  return airlock ? { go: 'own', ship, vehicle: c.vehicle, airlock } : 'wait';
+  if (!station) return wait ? 'wait' : 'instant';
+  const s = freeShuttle(sim, ship);
+  if ('error' in s) return wait || s.error === 'courierBusy' ? 'wait' : 'instant';
+  const airlock = freeAirlock(sim, s.vehicle);
+  return airlock ? { go: 'station', ship, vehicle: s.vehicle, airlock } : 'wait';
 }
 
 /** What to do for a job's handover now: 'running', 'wait' (combat, a retry pause or a busy airlock or shuttle), 'instant', or the run to start. */
@@ -233,12 +233,7 @@ export function stepHandover(sim: Sim, d: Deal): void {
   // No handover moves a person whose ask to join waits for an answer (joinOffer.ts): the run is called off, and tried again after the answer.
   if (job && asking(sim, job)) return call(sim, d, 'asking');
   if (!sim.world.get(d.ship, ShipC)) return call(sim, d, 'stationGone');
-  if (d.handover?.via === 'station' && d.phase === 'dispatch') {
-    d.vehicle = spawnCourier(sim, d);
-    if (!d.vehicle) return call(sim, d, 'noCourier');
-    (sim.world.get(d.vehicle, VehicleC) as Vehicle).outbound = true;
-    setPhase(sim, d, 'back');
-  }
+  if (d.handover?.via === 'station' && d.phase === 'dispatch') setPhase(sim, d, 'back'); // it launches from its bay with the dock order
   const v = sim.world.get(d.vehicle, VehicleC);
   if (!v) return call(sim, d, 'lost');
   if (!airlockWorking(sim, d.airlock) && d.phase !== 'out' && d.phase !== 'exchange') return call(sim, d, 'noDock');
@@ -257,11 +252,10 @@ export function stepHandover(sim: Sim, d: Deal): void {
   else collect(sim, job, d, v, 'shuttle');
 }
 
-/** The station's shuttle takes a prisoner's slab home: it undocks and flies to its station, where the slab is handed over (FLIGHT_SEC at most). */
+/** The station's shuttle takes a prisoner's slab home: it flies back to its bay or pad, where the slab is handed over (FLIGHT_SEC at most). */
 function homeward(sim: Sim, d: Deal, v: Vehicle): void {
-  if (v.state === 'docked') undock(sim, d.vehicle, v);
-  if ((v.state === 'flying' && !v.dest && v.hover === d.ship) || d.timer > FLIGHT_SEC * TICK_HZ) return collect(sim, undefined, d, v, 'shuttle');
-  if (!v.dest) v.dest = { type: 'hover', ship: d.ship };
+  if (v.state === 'stowed' || d.timer > FLIGHT_SEC * TICK_HZ) return collect(sim, undefined, d, v, 'shuttle');
+  if (due(d) && v.dest?.type !== 'bay') sim.enqueue({ type: 'vehicle.return', vehicle: d.vehicle });
 }
 
 /** The player's own shuttle: dock at the airlock, take the crate on, fly to the station, drop it, fly home. */

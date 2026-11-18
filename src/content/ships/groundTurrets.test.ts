@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { content } from '../index';
 import type { OreDef } from '../../sim/asteroids/types';
 import { ShipC } from '../../sim/combat/components';
-import { homeShip } from '../../sim/combat/ships';
+import { homeShip } from '../../sim/combat/shipQuery';
 import { CrewC, PositionC } from '../../sim/crew/components';
 import { generateOutpost } from '../../sim/outposts/gen';
 import { shipGrid } from '../../sim/regions';

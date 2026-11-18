@@ -20,7 +20,7 @@ import { planStarRoute } from '../sim/galaxy/route';
 import { portsAt } from '../sim/galaxy/portIndex';
 import { BREACH_NOTORIETY, MAX_JOBS } from '../sim/galaxy/tuningJobs';
 import type { StationJob } from '../sim/galaxy/types';
-import { playerStock } from '../sim/story/world';
+import { playerStock } from '../sim/items/held';
 import { giveItems } from '../sim/story/effects';
 import { accept, aroundGame, arrivedDelivery, atBoard, boards, goTo, rep, shuttleOut, takeOffer, until } from '../../test/support/fixtures/jobs';
 import { content } from '.';
@@ -169,20 +169,27 @@ describe('station jobs', () => {
     expect(playerStock(sim, CRATE)).toBe(1);
   });
 
-  it('a station with a shuttle of its own sends it first; the player\'s shuttle is the fallback', () => {
+  it('with no shuttle of the player\'s the station sends its own real one: out of its bay, back into it with the crate (#548)', () => {
     const { sim, job } = takeOffer('delivery', 'trade');
-    const kinds = Object.values(content.trade!.traders) as { shuttle: boolean }[];
-    const was = kinds.map((k) => k.shuttle);
-    for (const k of kinds) k.shuttle = true;
-    try {
-      goTo(sim, job.to!);
-      const seen = until(sim, () => sim.galaxy.jobs.length === 0);
-      expect(seen.find((e) => e.type === 'job.handedOver')).toMatchObject({ id: job.id, via: 'shuttle' });
-      expect(playerStock(sim, CRATE)).toBe(0);
-    } finally {
-      kinds.forEach((k, i) => (k.shuttle = was[i]!));
-    }
+    goTo(sim, job.to!);
+    const me = playerShip(sim);
+    for (const vid of [...sim.world.query(VehicleC)]) if (sim.world.get(vid, VehicleC)!.homeShip === me) sim.world.destroyEntity(vid);
+    const before = new Set(sim.world.query(VehicleC));
+    until(sim, () => sim.trade.deals.some((d) => d.handover && d.phase === 'back'));
+    const d = sim.trade.deals.find((x) => x.handover)!;
+    expect(d.courier).toBe('them');
+    expect(before.has(d.vehicle)).toBe(true); // a shuttle that was there all along, not one made for the run
+    const v = sim.world.get(d.vehicle, VehicleC)!;
+    expect(sim.world.get(v.homeShip, ShipC)?.immobile).toBe(true);
+    const vehicle = d.vehicle;
+    const seen = until(sim, () => sim.galaxy.jobs.length === 0);
+    expect(seen.find((e) => e.type === 'job.handedOver')).toMatchObject({ id: job.id, via: 'shuttle' });
+    expect(playerStock(sim, CRATE)).toBe(0);
+    until(sim, () => sim.world.get(vehicle, VehicleC)?.state === 'stowed', 2000);
+    expect(sim.world.get(vehicle, VehicleC)).toMatchObject({ state: 'stowed', cargo: [], autopilot: false });
+    expect([...sim.world.query(VehicleC)].every((id) => before.has(id))).toBe(true);
   });
+
 
   it('with no shuttle at all the crate is handed across by hand', () => {
     const { sim, job } = arrivedDelivery();

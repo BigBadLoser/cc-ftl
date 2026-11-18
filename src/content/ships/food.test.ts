@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { homeShip } from '../../sim/combat/ships';
+import { homeShip } from '../../sim/combat/shipQuery';
 import { DownedC, HealthC, JobC, MoodC, NeedsC, PositionC, PrioritiesC } from '../../sim/crew/components';
 import type { SimEvent } from '../../sim/events';
 import { totalStock } from '../../sim/items/stock';

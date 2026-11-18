@@ -3,7 +3,7 @@ import { AsteroidC } from '../../sim/asteroids/components';
 import { generateAsteroid } from '../../sim/asteroids/gen';
 import type { OreDef } from '../../sim/asteroids/types';
 import { ShipC } from '../../sim/combat/components';
-import { homeShip } from '../../sim/combat/ships';
+import { homeShip } from '../../sim/combat/shipQuery';
 import { newGame } from '../../sim/newGame';
 import { asteroidAt, ownerAt, shipAt, shipIdAt } from '../../sim/regions';
 import { deserialize, serialize } from '../../sim/save';

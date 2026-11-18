@@ -11,6 +11,12 @@ export function isKnown(sim: Sim, def: string): boolean {
   return !d.blueprint || sim.story.blueprints.includes(def);
 }
 
+/** The player may build this def at all (the owner of that question; `ModuleDef.buildable: false` is found/spawned only). */
+export function isBuildable(sim: Sim, def: string): boolean {
+  const d = sim.content.modules[def];
+  return !!d && d.buildable !== false;
+}
+
 /** A recipe can be ordered: it needs no blueprint, or its blueprint is known. */
 export function recipeKnown(sim: Sim, recipe: string): boolean {
   const bp = sim.content.recipes[recipe]?.blueprint;

@@ -12,7 +12,7 @@ import { hasLiveCore } from '../robots/core';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { shipIdOf, shipGrid } from '../regions';
-import { shipById } from '../combat/ships';
+import { shipById } from '../combat/shipQuery';
 
 /**
  * Robot fabricators (ModuleDef.robotFabricator): the seed of rogue AI shipyards. While intact, powered and on a ship

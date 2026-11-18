@@ -1,6 +1,6 @@
 import { WeaponC } from '../combat/components';
 import { aimDirection, turretPosition } from '../combat/geometry';
-import { shipById } from '../combat/ships';
+import { shipById } from '../combat/shipQuery';
 import { CombatC } from '../combat/components';
 import { ModuleC } from '../modules/components';
 import type { Sim } from '../sim';

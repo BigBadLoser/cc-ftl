@@ -1,5 +1,5 @@
 import { BodyC, ALT } from '../body';
-import { shipById } from '../combat/ships';
+import { shipById } from '../combat/shipQuery';
 import { StorageC } from '../items/components';
 import { spillItems } from '../items/stacks';
 import { storageTake } from '../items/storage';

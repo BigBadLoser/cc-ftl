@@ -4,7 +4,7 @@ import { CrewC } from '../../sim/crew/components';
 import type { SimEvent } from '../../sim/events';
 import { newGame } from '../../sim/newGame';
 import { content } from '../index';
-import { shipById } from '../../sim/combat/ships';
+import { shipById } from '../../sim/combat/shipQuery';
 import { shipGrid, shipIds } from '../../sim/regions';
 
 describe('sector and ships', () => {

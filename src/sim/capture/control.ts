@@ -13,7 +13,7 @@ import { CoreLinkC } from '../robots/components';
 import { aiCores, isCoreLive } from '../robots/core';
 import { shipIdOf } from '../regions';
 import { neverSurrenders } from '../combat/factions';
-import { shipById } from '../combat/ships';
+import { shipById } from '../combat/shipQuery';
 import { ShipC } from '../combat/components';
 
 /**

@@ -1,5 +1,5 @@
 import { ShipC } from '../../../src/sim/combat/components';
-import { homeShip } from '../../../src/sim/combat/ships';
+import { homeShip } from '../../../src/sim/combat/shipQuery';
 import { newGame } from '../../../src/sim/newGame';
 import type { Sim } from '../../../src/sim/sim';
 import { content } from '../content';

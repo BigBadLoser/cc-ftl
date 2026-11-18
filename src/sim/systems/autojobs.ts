@@ -53,6 +53,9 @@ function drop(sim: Sim, jobId: number, job: Job): void {
   sim.world.destroyEntity(jobId);
 }
 
+/** Per region grid, the fire-field revision at which a scan found no fire. */
+const fireless = new WeakMap<object, number>();
+
 /**
  * Maintains the jobs the colony creates for itself, so crew react to emergencies without orders:
  *  - extinguish (firefighting): one per burning tile, removed once the fire is out;
@@ -84,15 +87,22 @@ export function autoJobsSystem(sim: Sim): void {
 
   for (const { grid } of regions(sim)) {
     if (!grid.has('fire')) continue;
+    // A grid whose fire field is unwritten since a scan that found no fire has none now: skip the copy (#65). A cache, never saved.
+    const rev = grid.revision('fire');
+    if (fireless.get(grid) === rev) continue;
     const fire = grid.load('fire');
+    let burning = false;
     for (let i = 0; i < fire.length; i++) {
       if (fire[i] === 0) continue;
+      burning = true;
       const x = grid.x0 + (i % grid.width);
       const y = grid.y0 + Math.floor(i / grid.width);
       if (!seen.has(`extinguish:${x}:${y}`)) {
         addJob(sim, { category: 'firefighting', kind: 'extinguish', x, y });
       }
     }
+    if (burning) fireless.delete(grid);
+    else fireless.set(grid, rev);
   }
   // Hull breaches: a wall build (firefighting category, ahead of ordinary construction) on each hole, once the stock can pay for one.
   if (sim.tick % BREACH_SCAN_TICKS === 0 && canAffordWall(sim)) {

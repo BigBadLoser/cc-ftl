@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { content } from '../index';
 import { ShipC } from '../../sim/combat/components';
-import { homeShip } from '../../sim/combat/ships';
+import { homeShip } from '../../sim/combat/shipQuery';
 import { CrewC, DownedC, HealthC } from '../../sim/crew/components';
 import { ModuleC } from '../../sim/modules/components';
 import { placementError, spawnModule } from '../../sim/modules/spawn';

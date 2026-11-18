@@ -89,6 +89,8 @@ export const SHIP_FIELDS = {
   window: 'u8',
   /** A power cable laid over a Ground tile (1, else 0): see sim/cable.ts, the one owner of what it means. */
   cable: 'u8',
+  /** A prefab base tube's floor tile (1, else 0): see sim/tube.ts, the one owner of what it means. Looks only; cleared when the tile stops being floor. */
+  tube: 'u8',
 } as const satisfies FieldSpec;
 
 /**
@@ -120,6 +122,7 @@ export const SHIP_EMPTY = {
   markHazard: 0,
   window: 0,
   cable: 0,
+  tube: 0,
 } as const satisfies Record<keyof typeof SHIP_FIELDS, number>;
 
 /** True for rock mass: solid, airtight and unwalkable like a wall, with no integrity. */
@@ -213,6 +216,7 @@ export function writeStruct(grid: GridLike, x: number, y: number, kind: number):
   if (grid.has('jam') && grid.get('jam', x, y) !== 0) grid.set('jam', x, y, 0);
   if (grid.has('vent') && grid.get('vent', x, y) !== 0) grid.set('vent', x, y, 0);
   if (grid.has('window') && grid.get('window', x, y) !== 0) grid.set('window', x, y, 0);
+  if (kind !== Struct.Floor && grid.has('tube') && grid.get('tube', x, y) !== 0) grid.set('tube', x, y, 0);
   syncOwner(grid, x, y);
 }
 

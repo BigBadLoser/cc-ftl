@@ -11,7 +11,7 @@ import {
 } from '../tuning';
 import { DroneC } from '../drones/components';
 import { VehicleC } from '../vehicles/components';
-import { shipById } from '../combat/ships';
+import { shipById } from '../combat/shipQuery';
 import { modulesWhere, type DefTest } from '../modules/byShip';
 
 /**

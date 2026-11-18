@@ -6,7 +6,7 @@ import { newGame } from '../../sim/newGame';
 import type { Sim } from '../../sim/sim';
 import { content } from '../index';
 import { shipIdOf } from '../../sim/regions';
-import { shipById } from '../../sim/combat/ships';
+import { shipById } from '../../sim/combat/shipQuery';
 import { shipIds } from '../../sim/regions';
 import { nth } from '../../../test/support/sim';
 

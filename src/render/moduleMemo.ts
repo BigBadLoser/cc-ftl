@@ -4,6 +4,7 @@ import { ContainerC } from '../sim/containers/components';
 import { PlotC } from '../sim/farm/components';
 import { ModuleC, type Module } from '../sim/modules/components';
 import type { ModuleDef } from '../sim/registry';
+import { bayCharging } from './droneBayArt';
 import { cropStage } from './cropStage';
 import { stasisInputs } from './stasisArt';
 import { animFrame, FLICKER_DARK_MS, FLICKER_LIT_MS, storageState } from './moduleArt';
@@ -56,6 +57,7 @@ export function worldInputs(world: World, id: number, def: ModuleDef, now = 0): 
   let out = '';
   if (def.storage) out += storageState(world, id, def);
   if (def.stasisWheel) out += `|${stasisInputs(world, id, now)}`;
+  if (def.droneBay) out += `|${bayCharging(world, id) ? 1 : 0}`;
   if (def.container) out += `|${world.get(id, ContainerC)?.clamp ?? ''}`;
   if (def.plot) {
     const p = world.get(id, PlotC);

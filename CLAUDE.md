@@ -1,11 +1,11 @@
 # cc-ftl
 
-Persistent isometric ship-colony game in the browser (Space Haven + FTL depth). Read `docs/HANDOFF.md` and `docs/STATUS.md`
-(current state, branches, decisions) first. `docs/CATALOG.md` lists everything in the game and how far each piece is wired
+Persistent isometric ship-colony game in the browser (Space Haven + FTL depth). Start with `docs/STATUS.md` for current work
+and decisions. `docs/CATALOG.md` lists everything in the game and how far each piece is wired
 (in game, partial, art only, debug only, planned); check it before assuming something exists, and update its line when a PR adds
 or removes content. Before non-trivial work, read the index at the top of `docs/DESIGN.md` and
-`docs/ARCHITECTURE.md`, then only the sections your task touches; don't read those files whole. Older history lives in
-`docs/STATUS_ARCHIVE.md`; open it only when you need the background of a past decision.
+`docs/ARCHITECTURE.md`, then only the sections your task touches; don't read those files whole. For background on past decisions,
+see `docs/STATUS_ARCHIVE.md` and the October handoff snapshot in `docs/HANDOFF.md`.
 
 ## Commands
 

@@ -1,3 +1,5 @@
+import { ShipC } from '../combat/components';
+import { factionsHostile } from '../combat/factions';
 import type { Sim } from '../sim';
 import type { FleetRole } from './defs';
 import { materialiseFleet } from './fleetShips';
@@ -60,4 +62,22 @@ export function dispatchHunters(sim: Sim, turn: number): void {
     report(sim, { kind: 'hunt', node: port.node, who: fleetName(f), faction }, turn);
     sim.events.emit({ type: 'galaxy.hunt', fleet: f.id, faction, node: port.node, ships: f.ships.length });
   }
+}
+
+/**
+ * The hunters in the player's node now: fleets still hunting them (not stood down) with ships in play that are hostile to the player, each with those
+ * ships (lowest id first). They hunt because of the player's own standing or notoriety, so their turning up is an urgent alert (app alertsDerived.ts, #542).
+ */
+export function huntersHere(sim: Sim): { fleet: number; faction: string; ships: number[] }[] {
+  const g = sim.galaxy;
+  const out: { fleet: number; faction: string; ships: number[] }[] = [];
+  for (const f of g.fleets) {
+    if (!f.hunt || f.standDown || f.node !== g.current) continue;
+    const ships = f.ships.map((c) => c.ship).filter((id): id is number => {
+      const s = id === undefined ? undefined : sim.world.get(id, ShipC);
+      return !!s && (s.state === 'active' || s.state === 'disabled') && factionsHostile(s.faction, 'player');
+    }).sort((a, b) => a - b);
+    if (ships.length) out.push({ fleet: f.id, faction: f.faction, ships });
+  }
+  return out;
 }

@@ -11,7 +11,7 @@ import { TICK_HZ } from '../time';
 import { AirlockC, requestAirlock } from './airlock';
 import { ModuleC } from './components';
 import { placementError, spawnModule } from './spawn';
-import { isKnown } from './blueprints';
+import { isBuildable, isKnown } from './blueprints';
 import { needsFrom } from '../items/materials';
 import { shipGrid } from '../regions';
 
@@ -41,7 +41,7 @@ export const moduleHandlers: { [T in ModuleCommandType]: Handler<T> } = {
   },
   'job.buildModule': (sim, cmd) => {
     if (isWreck(sim, cmd.ship)) return reject(sim, cmd.type, 'wreck');
-    if (!sim.content.modules[cmd.def]) return reject(sim, cmd.type, 'badDef');
+    if (!isBuildable(sim, cmd.def)) return reject(sim, cmd.type, 'badDef');
     if (!isKnown(sim, cmd.def)) return reject(sim, cmd.type, 'unknownBlueprint');
     const err = placementError(sim, cmd.ship, cmd.def, cmd.x, cmd.y, cmd.rot);
     if (err) return reject(sim, cmd.type, err);

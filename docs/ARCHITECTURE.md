@@ -7,12 +7,13 @@ One line per section; read the index, then only the sections your task touches.
 - [Stack](#stack): TypeScript (strict), Vite.
 - [Layout and dependency direction](#layout-and-dependency-direction): src/
 - [Simulation core](#simulation-core): Determinism.
-- [Two kinds of state](#two-kinds-of-state): Every ship, station, derelict and wreck is a Grid with:
-  - [1. Grids: tile fields as typed arrays](#1-grids-tile-fields-as-typed-arrays): Every ship, station, derelict and wreck is a Grid with:
+- [Two kinds of state](#two-kinds-of-state): Shared sector tiles and ECS entities.
+  - [1. Grids: tile fields as typed arrays](#1-grids-tile-fields-as-typed-arrays): Region views over the shared tile store.
   - [2. Entities: a small in-house ECS](#2-entities-a-small-in-house-ecs): Crew, modules, doors, items, projectiles, ships and so on. A few hundred to a few thousand entities.
 - [Cross-cutting mechanisms](#cross-cutting-mechanisms): Stat resolver; effects; materials; hauling; one answer per question.
 - [Content](#content): Content is TypeScript files exporting objects checked with satisfies WeaponDef (and so on): the
 - [Rendering](#rendering): Two-way contract.
+  - [Camera passes and layer ownership](#camera-passes-and-layer-ownership)
 - [Test tiers](#test-tiers): fast (`check:fast`: near tests of the change), branch (`check:push`), slow, soak, full CI; `test:why` and `TICK_STATS` to see what a change selects and where time goes.
 - [Test harness](#test-harness): `test/support/`: `run`, `nth`, `fixtureShip`, `expectReplayable`, `cachedWorld`, fixtures; who may import it; [writing a test](#writing-a-test) (start near the moment, no weakening, cost rules).
 - [Scenario builder](#scenario-builder): `src/content/scenario/`: parts, presets and hooks found by glob; one builder for tests, `?scenario=` and the profiler.
@@ -35,18 +36,9 @@ One line per section; read the index, then only the sections your task touches.
 - [Food and farming, `src/sim/farm/`](#food-and-farming-srcsimfarm): `PlotC` on hydroponics beds, `farmSystem`, plant and harvest jobs, meal quality from the cook's skill, herbs in medical beds.
 - [Trade, `src/sim/trade/`](#trade-srcsimtrade): Terminology (user decision, 2026-10-19): a node is one playable grid or location (what older text and code...
 - [Asteroids (slices 1-3 on branch `asteroids`), `src/sim/asteroids/`, `mining/`, `rock/`, `outposts/`](#asteroids-slices-1-3-on-branch-asteroids-srcsimasteroids-mining-rock-outposts): Region model: its own AsteroidC entity plus the owner layer (not a ShipC kind). An asteroid (one big body,...
-- [Starmap (galaxy), `src/sim/galaxy/`](#starmap-galaxy-srcsimgalaxy): Sim only so far (branch galaxy): no UI, no snapshot, no tools. The starmap view, its zoom levels and the...
-- [Sector grid (planned)](#sector-grid-planned): Decision (user, 2026-10-19): a sector is one large grid with everything placed on it. It replaces the...
-  - [Target model in one paragraph](#target-model-in-one-paragraph): sim.sector.grid is a chunked, sparse SectorGrid in sector-tile coordinates. A ship, station, derelict or...
-  - [1. Inventory: what assumes many grids](#1-inventory-what-assumes-many-grids): Size = lines likely touched: S < 30, M 30–150, L > 150. About 780 gridId / sim.grids references in src/...
-  - [2. Data model](#2-data-model): Storage: SectorGrid (sim/sectorGrid.ts, new).
-  - [3. Vehicles as free entities](#3-vehicles-as-free-entities): Position and heading. New BodyC { x, y, heading, alt }: continuous sector tiles, radians, and altitude in...
-  - [4. Placement and jumping](#4-placement-and-jumping): Packets (built in 9a, sim/sector/packet.ts). ShipPacket is the single format for a ship in transit:
-  - [5. Combat on one map](#5-combat-on-one-map): Projectiles. Already sector-space with dt = speed / distance, so travel time is real distance. They launch...
-  - [6. Performance budget (phone target: mid-range Android, 60 fps render, 20 Hz sim)](#6-performance-budget-phone-target-mid-range-android-60-fps-render-20-hz-sim): 
-  - [7. Migration order](#7-migration-order): Amended (user, 2026-10-19). The single shared tile store is confirmed: mining is planned, and building in...
-  - [Step 7 split (planned 2026-10-20)](#step-7-split-planned-2026-10-20): Step 7 is split into four slices. Each keeps npm run check green, changes no behaviour (the sectorEquiv...
-  - [8. Risks (open questions for the user are in `docs/STATUS.md`, "Sector grid decision")](#8-risks-open-questions-for-the-user-are-in-docsstatusmd-sector-grid-decision): Step 6 (the coordinate flip) is the one wide change. It is safe only if step 5 has removed every...
+- [Starmap (galaxy), `src/sim/galaxy/`](#starmap-galaxy-srcsimgalaxy): Galaxy state, the app snapshot, and the Svelte and Pixi starmap.
+- [Sector grid](#sector-grid): Sparse tiles, ship views, and placement in the current node.
+- [Historical sector-grid migration](#historical-sector-grid-migration): The October refactor plan and implementation notes.
 - [Crew AI: one system for every ship (user principle, 2026-10-21)](#crew-ai-one-system-for-every-ship-user-principle-2026-10-21): NPCs use almost exactly the same crew AI as the player's crew. There is no parallel "NPC behaviour" stack:
 - [Stations](#stations): Built by the station assembly, shipgen/stationBuild.ts (kinds and sizes in content/stations.ts; docs/STATION_ASSEMBLY.md) and stamped by
 - [Crew for hire](#crew-for-hire): Trade stations post candidates derived from hashes (galaxy/recruit.ts, tuningRecruit.ts). While the player...
@@ -116,10 +108,8 @@ call each other. The order is the only coupling, and it lives in one file.
 
 ### 1. Grids: tile fields as typed arrays
 
-Every ship, station, derelict and wreck is a `Grid` with:
-- dimensions
-- a world placement
-- per-tile arrays:
+Each playable node has one sparse [sector grid](#sector-grid). A ship, station, derelict or wreck has a bounded
+`ShipGrid` view over it. The shared store holds per-tile arrays for:
   - structure: floor, wall or hull type, door
   - flags: solid, walkable, breach
   - gases (O2, CO2)
@@ -175,11 +165,8 @@ Crew, modules, doors, items, projectiles, ships and so on. A few hundred to a fe
 **Materials.** Flammability, conductivity, hull strength and permeability are content data that the
 field systems read.
 
-**Multi-grid** (being replaced by one grid per sector; see "Sector grid (planned)" below).
-- Positions are `(gridId, x, y)`.
-- Docked or boarded grids connect through airlock and teleporter links in a **portal graph**, and
-  pathfinding spans grids through it.
-- This one mechanism covers boarding, away teams, derelicts, captured ships and future fleets.
+**Tile coordinates.** Runtime positions use sector tiles. Ship templates and generator plans use local tiles until
+they are stamped into the [sector grid](#sector-grid).
 
 **Hauling** (`items/haul.ts`, `items/stock.ts`, `items/plan.ts`).
 - A haul job moves goods from a source (`floor` stack, `storage`, `vehicle` hold) to a destination (`storage`, `vehicle`, a `job`,
@@ -240,8 +227,31 @@ Each placeholder is replaced by pipeline art once that art exists.
 **Depth sorting.** Draw order is by isometric depth (tile `x + y`, then height). Multi-tile objects
 anchor at their front-most footprint tile. Crew sort by their interpolated sub-tile position.
 
-**Batching (#389).** Everything depth-sorted renders through one `RenderLayer`, so its sprites from many sheets interleave
-and the draw-call count is the number of times the batch has to break. Keep that run batchable:
+### Camera passes and layer ownership
+
+[`scene.ts`](../src/render/scene.ts) puts the backdrop, the shared `WorldStack` (`W`), and the sector air stack
+(`SL`) on one Pixi stage. Region views add tiles, roofs, props, crew and local effects through `W.region()`.
+Bodies near the deck use `W.low` so they sort against region art. Airborne bodies and sector combat effects
+draw above that stack through `SL`.
+
+| Stage content | Main view | Combat inset | Minified art bake |
+| --- | --- | --- | --- |
+| Region art and `W.low` | Live art or the baked texture | Live art | Into the texture |
+| Sector air art and effects (`SL.sorted`, `SL.fx`, `SL.fxAdd`) | Live art or the baked texture | Live art | Into the texture |
+| Per-region overlays (`W.ui`) | Drawn directly at the main scale | Hidden | Hidden |
+| Sector overlays (`SL.ui`), including combat indicators and crew marks | Drawn directly at the main scale | Enabled | Hidden |
+| Legacy target marks (`W.marks`) | Hidden | Hidden | Hidden |
+| Space backdrop | Drawn when enabled | Flat inset background | Transparent clear |
+
+`place()` positions both world stacks for each camera and sets overlay visibility. The inset renders the stage
+into its own texture, then the main pass composites the inset sprite. Below camera scale 0.5, `renderMini()`
+can bake the world at 0.5 and downsample it. The main pass then draws the backdrop, baked art, overlays and inset.
+It falls back to drawing live art if the bake would exceed the texture budget. Check which passes need a new
+overlay before choosing its parent. `SL.ui` is enabled in both cameras, and individual views still decide whether
+they have anything to draw.
+
+**Batching (#389).** Depth-sorted region art and low bodies interleave in depth bands. Each band has its own
+Pixi `RenderLayer` and render group. Keep sprites in each band batchable:
 - One batcher (`render/batch.ts`, replacing pixi's default): per-sprite effects are flag bits in the vertex data read by one
   shader, not separate batchers or blend modes. Additive glow (`batchAdditive`) draws under the normal blend with alpha 0, which
   is `add` exactly on an opaque target (only world glows opt in, never art drawn into a transparent texture); hull paint is
@@ -481,8 +491,14 @@ file (Vite resolves it in the browser build, Vitest and the profiler, which all 
 - A hook is `hooks/<name>.ts`, `defineHook({ afterBuild?, tick?, event? })` with `ctx.after(ticks, fn)` / `ctx.when(pred, fn)` (tick-based, so deterministic). They read
   the sim and send commands. They are not `?hook` (the `__cc` debug API). The app loop calls `built.afterTick()` / `built.onEvents()`; tests and the profiler use `play(built, ticks)`
   or the same calls. Hooks: `inspect.fight`, `inspect.select`, `boarding`, `log`, `busy.arrive`, `medpod.deliver`, `stasis.unpowered`.
-- Tests (`test/support/scenario.ts`): `scenario(name, opts)` builds fresh; `cachedScenario(name, opts)` builds once per test file and returns a clone (`cachedWorld`'s rules), keyed
-  by name + canonical JSON of seed, params and overrides, so two worlds never share a key. Turning sim systems off is not available; add it for a focused unit test when one needs it.
+- Test helpers live in `test/support/scenario.ts`.
+  - **Cached checkpoint.** `cachedScenario('inspect', { seed: 3, params: { stage: 'search' } }).sim` gives each test its own copy of
+    the world with inspectors already aboard and searching. Use this when the starting state is fully captured by a save. The
+    cache builds once per test file, keyed by the preset name and canonical JSON of the seed, params, overrides and extra hooks.
+  - **Fresh scripted run.** Use `scenario('log', { seed: 3 })` and advance it with `play(built, ticks)` when the test depends on
+    hook setup or scheduled callbacks. A cached clone restores the save and attaches fresh hooks with `afterBuild` skipped. For
+    example, the callbacks that schedule the raider and credits in `log` live in memory and are lost on restore.
+  - Turning sim systems off is not available; add it for a focused unit test when one needs it.
 - `?scenario=<name>&<flag>...&seed=&starter=&credits=&items=&speed=&ticks=&hooks=` (`url.ts`); `src/app/scenarioStart.ts` builds it on the running game before the first frame and
   applies the UI requests. Profiler: `--scenario preset:<name>`.
 - Adding things: a file in `presets/`, `parts/` or `hooks/`. Keep `import.meta.glob(` written exactly so in `registry.ts` (no type argument): Vitest's on-disk module cache
@@ -641,6 +657,17 @@ palette.json    the single palette, read by Blender scripts and the game
   - Paint: the ship's armour colour multiplies each piece. Its deco colour multiplies the piece's deco layer `<id>.tint`
     (the piece's own px in its tint mask), drawn over it. Ships are plain for now. `?hullPaint=<armour>,<deco>` (hex)
     paints them all.
+  - Station look (#524): a base standing on asteroid ground (`standsOnGround`, sim/outposts/state.ts, the one owner flag)
+    draws `HullLook` "station" in place of the ship's, from the `station_hull` family (`sprites/station_hull*.py`, palette
+    set `station`): roofed, `tile.hull.station.ext.*` (the run set, designs `.a1` .. `.a6`, windows), generic pieces
+    `tile.hull.station.ext.g.<key>` and `tile.roof.station.g.<key>`, and no belly; against the foot a rock berm
+    `tile.hull.station.berm.<key>.v<n>[.e<a><b>]` (`stationHull.ts` `bermId`, `sprites/station_berm.py`, set `berm`).
+    The pieces stay unpainted grey, lit only; just each `.tint` livery mask takes the deco paint. Where the station has
+    no art for a tile (diagonal far walls, #561; six eight-front keys) the ship's piece is drawn. Walls up: the far hull's
+    cap `tile.hull.station.cap.m<mask>[c<c>]` goes over the partition piece (`tiles.ts` `wallPieces` `look`), and the near
+    hull draws `tile.hull.station.low.<key>` (`lowId`), cut at the ship's rim height with the ship's cut black, a seam and
+    a lit lip. Cache: `station_hull_walls.py` is its own module with its own palette set (`station_cut`), so changing it
+    does not invalidate the family's cache. Render lab panel `station-hull`.
 - **Beams (`struct`, `sprites/struct.py`, wired in `src/render/beamArt.ts` and `gridView.ts`):**
   - `struct.beam.<look>.m<mask>` is chosen by a 4-neighbour mask over beam tiles (N1 E2 S4 W8), anchored
     at the tile centre. The looks are `navy`, `drone`, `civil` and `scrap`, picked by faction.
@@ -990,14 +1017,19 @@ Phase 1 (the executor, no behaviour change) lives in `src/sim/ai/`: `scheduleSys
 **Schedules (#412).** Design: DESIGN.md "Schedules".
 - `sim/clock.ts`: the ship clock, read from `sim.tick` (`HOUR_TICKS` from `GAME_HOUR_SEC`, start at `CLOCK_START_HOUR`); nothing extra is saved.
 - `content/schedules.ts`: presets (`ScheduleDef`, `satisfies`), `ContentRegistry.schedules`; the `rotation` presets (Default, Late) are what crew without a row follow, in turn by person id.
-- `sim/crew/schedule.ts` owns every schedule question: `ScheduleC` (24 block ids, saved), `hoursOf` (own row, else a rotation preset for colonists,
-  else none), `blockAt` / `blockNow` (the block in force: `work` while `onCall`, a fight, Battle Stations or an open emergency on their ship they would
-  take; an empty console only for crew `admitLevel` would seat), `secToSleep` (for away planning: Sleep only), `holdsSleep` (the needs system keeps a sleeper in bed) and `wakesFromSleep` (the scheduler's turn gets
-  a scheduled sleeper up). `crew/scheduleHandlers.ts`: `crew.schedule.set`, `crew.schedule.preset`, `crew.schedule.copy`.
+- Schedule questions, in three files (split for #553 so the plan doesn't import the job scheduler):
+  - `sim/crew/schedule.ts`, the plan: `ScheduleC` (24 block ids, saved), `hoursOf` (own row, else a rotation preset for colonists, else none),
+    `blockAt` (the plan's block), `offDuty`, and `secToSleep` (for away planning: Sleep only, read from the plan, so a crew member on call in a
+    planned Sleep hour still counts as in Sleep: no trip; #553 decision).
+  - `sim/crew/onCall.ts`: `onCall` (a fight, Battle Stations, or an open emergency on their ship they would take; an empty console only for crew
+    `admitLevel` would seat), `blockNow` (the block in force: `work` while on call) and `holdsSleep` (the needs system keeps a sleeper in bed).
+  - `sim/crew/wake.ts`: `wakesFromSleep` (the scheduler's turn gets a scheduled sleeper up). `ai/crewKind.ts` answers which kind of crew member
+    this is, for the rotation presets and the policy.
+  - `crew/scheduleHandlers.ts`: `crew.schedule.set`, `crew.schedule.preset`, `crew.schedule.copy`.
 - The engine reads the block once per evaluation: `DriveDef.blocks` (policy data) closes a drive in a block (`'off'`), forces it on with a score
   floor (`on`) or moves its entry line (`enter`). With the work drive closed the scheduler's turn hands nobody a job and idles them (a carried
   patient is still set down first).
-- Away (away/crew.ts): `tripWorthIt` (time on site before `secToSleep` longer than the round-trip flight) gates `passageFits` and `siteWantsThem`; `staySec` is needs only. `scheduleHome` (Sleep or Free, read with `blockNow(sim, id, false)`) makes `awayReturn` due (Free only while the shuttle is beside the site), `passengerUrgent` (Sleep) and `tripDue` 'batch' (Free). `blockNow` reads Free as Work for a party member (`AwayC`), so they work on there.
+- Away: `away/tripFit.ts` holds what the job scheduler asks (`tripWorthIt`: time on site before `secToSleep` longer than the round-trip flight; it gates `passageFits` and `siteWantsThem`; `staySec` is needs only; `ofSide`, `passageTiles`). In away/crew.ts: `scheduleHome` (Sleep or Free, read with `blockNow(sim, id, false)`) makes `awayReturn` due (Free only while the shuttle is beside the site), `passengerUrgent` (Sleep) and `tripDue` 'batch' (Free). `blockNow` reads Free as Work for a party member (`AwayC`), so they work on there.
 - Snapshot: `Snapshot.clock` (day, hour, minute) and `UiCrew.schedule` / `block`.
 ## UI
 
@@ -1791,13 +1823,16 @@ barter?}` (validated and priced, becomes a pending offer, `trade.offered`; one o
 accept adds the courier ones `noCourier noPilot courierBusy noAirlock tooBig dealOpen`. `bridge.dispatch` runs one tick for `trade.*`
 commands while paused so the window answers at once.
 
-**Delivery (who flies, decided and documented).** `planCourier` picks:
-1. Goods the **player hands over** always go on the **player's shuttle** (it flies itself, no pilot or crew needed: `Vehicle.autopilot` lifts the pilot rules for the run only; it needs an empty hold and a free working
-   airlock on the player's ship).
-2. Goods **from the trader** come on the **trader's own shuttle** if its kind has `shuttle: true` (a real `VehicleC` spawned at its ship,
-   no crew, `home: 0`, despawned when it is back); otherwise the **player's shuttle goes over** to fetch them.
-3. Stations are ships (an immobile `ShipC`, see "Stations" below). Station kinds have no shuttle, so the player's shuttle flies every
-   station run, and it **docks** (`trade/stationDock.ts`) instead of hovering: `out` -> `dockStation` (dock at a free working station
+**Delivery (who flies, decided and documented; one flow for every carrier, #548).** `planCourier` (trade/courier.ts) picks one carrier for both
+directions, by `freeShuttle` (the one answer to "which shuttle of this ship can carry now"):
+1. The **player's free shuttle** first (it flies itself, no pilot or crew needed: `Vehicle.autopilot` lifts the pilot rules for the run only; it needs an
+   empty hold and a free working airlock on the player's ship).
+2. Else the **trader's own real shuttle** (courier 'them'): a station's, stowed in its hangar or on its pad, free. Nothing is ever made up for a run. It flies
+   itself, nobody aboard, through the mirrored phases in `trade/theirRun.ts`: `dispatch` (stage the bought goods beside its bay) -> `load` (station crew,
+   suited out onto a pad) -> `out` (dock at the player's airlock) -> `stationWork` (the player's crew unload what was bought, then load what was sold, hold
+   sealed) -> `back` -> `unload` (station crew carry the player's goods in; they become trader stock) -> settle. `theirGiveUp` settles timeouts. Freighters
+   and liners have no shuttle (#551): they trade only through the player's. `sendHome` is the one rule for a station shuttle going home after any job.
+3. Stations are ships (an immobile `ShipC`, see "Stations" below). The player's shuttle **docks** at a station (`trade/stationDock.ts`) instead of hovering: `out` -> `dockStation` (dock at a free working station
    airlock; the dock order reserves it, `dockError` 'occupied' for anyone else) -> `stationWork` (the bought goods are staged from the
    trader's set-aside stock into the station storage nearest the airlock, station crew haul both ways between station storage and the
    shuttle, the player's goods pass from station storage into the trader's stock) -> undock -> `back`. No free station airlock, a
@@ -1949,8 +1984,10 @@ shipgen's `structureParts`):
 
 ## Starmap (galaxy), `src/sim/galaxy/`
 
-Sim only so far (branch `galaxy`): no UI, no snapshot, no tools. The starmap view, its zoom levels and the dev tools live on the
-unmerged `starmap-macro-wip` (PR #16) and are described under "Zoom levels" as the target.
+Galaxy generation, routes, travel and encounters live in `src/sim/galaxy/`. The app builds the UI snapshot in
+`src/app/starmapSnapshot.ts` and publishes it through the bridge. `src/ui/StarmapView.svelte` owns map interaction
+and panels, while `src/render/starmap/` draws the zoom levels in Pixi. The starmap issues commands through the app
+to change sim state.
 
 **Terms (user decisions).**
 - **Node:** one playable location (one sector grid; older text says "sector" for it).
@@ -2166,21 +2203,22 @@ more loops: `ROUTE_EXTRA`, `LOOP_CHANCE`; cluster size and spacing: `CLUSTER_SPA
 `GATE_*`, `NO_GATE`; faster danger ramp: `DANGER_STEP`; bigger faction blobs: `TERRITORY_CELL`, `TERRITORY_SCALE`; jump prices: `*_UNITS_PER_FUEL`,
 `ROUTE_CHARGE`; pressure while staying: `ARRIVAL_*`.
 
-## Sector grid (planned)
+## Sector grid
 
-Decision (user, 2026-10-19): **a sector is one large grid with everything placed on it.** It replaces the many-grids model
-above ("Multi-grid", one `Grid` per ship, cross-grid portals, per-grid scenes). Nothing here is built yet. This section is the
-migration plan; the user's answers are in `docs/STATUS.md` ("Sector grid decision").
+`sim.sector.grid` is the sparse, chunked `SectorGrid` for the playable node. A ship or station's `ShipC` holds its
+bounds. The tile store's `ship` field identifies the owner of each tile, and `shipGrid(sim, shipId)` gives
+field systems a bounded view for region work. Reads and writes on that view use sector coordinates directly.
 
-### Target model in one paragraph
+Templates and generated layouts are stamped from local coordinates into the node. Live crew, modules, jobs,
+projectiles and vehicle bodies use sector coordinates. A jump uses a `ShipPacket` from
+`src/sim/sector/packet.ts` to lift the ship and stamp it into the destination. The renderer shows the node
+through the [main and inset cameras](#camera-passes-and-layer-ownership).
 
-`sim.sector.grid` is a chunked, sparse `SectorGrid` in **sector-tile coordinates**. A ship, station, derelict or wreck is a
-**region** of it: the tiles whose `ship` layer holds its `ShipC` entity id, inside the bounding box stored on `ShipC`.
-Every entity position (crew, modules, items, jobs, vehicles, projectiles) is a sector coordinate; `gridId` disappears.
-Field systems (rooms, air, fire, heat, smoke, light, power) iterate **per region frame**, never the whole sector.
-Vehicles are free bodies with continuous position and heading that attach to an airlock or bay. One render scene draws the
-sector; the combat panel is a second camera on it. Templates and the generator keep ship-local coordinates and are
-**stamped** at a sector offset; jumping **lifts** the player's region (plus docked vehicles) and stamps it into the next sector.
+## Historical sector-grid migration
+
+> October 2026 refactor notes. The plan, work branches and performance estimates below describe the migration
+> from separate ship grids. See [Sector grid](#sector-grid) for the live model and [Profiling](PROFILING.md)
+> for measuring the current desktop build.
 
 ### 1. Inventory: what assumes many grids
 
@@ -2388,7 +2426,7 @@ Space tiles keep owner 0; the EVA ring and hover space belong to the region whos
     hull, floating, or on the EVA ring are always drawn, as are crew of any faction outside a hull.
   - Roof livery, roof parts and cutaway mode stay per region.
 
-### 6. Performance budget (phone target: mid-range Android, 60 fps render, 20 Hz sim)
+### 6. Historical mobile performance estimates
 
 | Item | Today | Sector grid | Bound |
 |---|---|---|---|
@@ -2764,7 +2802,7 @@ no floorless wall stubs. What the cap does not reach stays as truss (open scaffo
 (`yard/jobs.ts`, `YardOrder.stage`). The hull is priced by tile built, outline and floor alike (credits and metal x the tier's multiplier x 1 + `dangerStep` x node
 danger; station cap 40 tiles at 10 credits and 0.75 metal each, hub 100 at x1.4); the quote lists the planning fee on its own line and reports the size after
 against capacity. `yard.order { station }` pays the whole price into escrow (metal from storage), grows the `ShipC` rectangle, posts the truss jobs (`Job.yard`)
-and the station sends its shuttle. `yardSystem` (`yard/flow.ts`, after the trade system) runs it: `launch` (a courier-type shuttle made beside the station with
+and the station sends its shuttle. `yardSystem` (`yard/flow.ts`, after the trade system) runs it: `launch` (the station's own real shuttle, `freeShuttle`; it waits LAUNCH_WAIT_SEC while that is busy, with
 `YardDef.crew` contractors aboard, neutral allegiance, `YardCrewC`; since #287 it is an away site on the player's ship, owner 'yard', the contractors its party from
 the start: `dock` the order's airlock, `outside` (they land suited from the shuttle), `noLoot`, no demand; the site's run flies, lands them, takes the
 tired or hurt home to the station, and brings everyone home when the order closes the site), `fly` (until one has landed), `work` (they take the jobs through the normal crew AI;
@@ -2795,7 +2833,8 @@ Design: DESIGN.md "Pirate factions and the black market". Content: `content/blac
   them scans with the usual PASSING_ENCOUNTER_CHANCE (`galaxy/encounters.ts`). A scan that finds contraband carries `Encounter.scan` (`value`): the patrol hails the
   player to stop (Patrol hails, below); trade offers are refused meanwhile (`scanPending`).
 - **Inspections** (#138 step 1, `src/sim/inspect/`). The station's inspectors come aboard (design: DESIGN.md "Contraband inspections in the world").
-  - `InspectionC` sits on the inspectors' shuttle (the trade courier's type, made beside the station, its hold sealed with `Vehicle.outbound` so the player's
+  - `InspectionC` sits on the inspectors' shuttle (the station's own real one, `freeShuttle`, #548; only a ship with no shuttle at all, a patrol
+    corvette, gets a made-up stand-in, `Inspection.standIn`; its hold sealed with `Vehicle.outbound` so the player's
     airlock unloaders leave it alone). `start.ts` opens an away site on the player's ship (owner `inspect`, `noLoot`) served by it: the site's run docks at a free
     airlock or hovers, and the party goes out of the hatch in suits (EVA boarding). The inspectors (INSPECTORS of INSPECTOR_ROLE, neutral) are the party, aboard
     by an `inspect` consent grant; their only priority is `patrol`.

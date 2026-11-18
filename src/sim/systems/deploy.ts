@@ -3,7 +3,7 @@ import { DeployC, ModuleC } from '../modules/components';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { shipIdOf } from '../regions';
-import { shipById } from '../combat/ships';
+import { shipById } from '../combat/shipQuery';
 
 /**
  * Roof parts (weapon turrets, shield dishes, AI sensor masts, point-defence turrets) move toward a target of 1 (out) or 0 (stowed) at

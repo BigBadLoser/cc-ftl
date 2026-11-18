@@ -1,11 +1,15 @@
 import { Finish, Struct } from "../sim/structure";
 import { windowPiece, type WindowTile } from "../sim/windows";
+import type { HullLook } from "./hullArt";
 
 export type KindAt = (x: number, y: number) => number;
 /** One sprite to draw: the first existing asset id of the chain. */
 export type Chain = string[];
 /** Wall view mode: up = walls up, auto = cutaway (partitions cut, far hull full), down = shortest (whole hull a ghost rim). */
 export type CutawayMode = "auto" | "up" | "down";
+
+/** Whether a door draws open, by its `door` field (0 shut .. 255 open): past halfway. */
+export const doorShownOpen = (door: number): boolean => door > 128;
 
 /** Wall art treats a finished rock wall as a wall (same pieces, runs and cut views); its sprites are `tile.rockwall.*`. */
 export const artKind = (k: number): number => (k === Struct.RockWall ? Struct.Wall : k);
@@ -265,6 +269,7 @@ export function replacesFloor(kindAt: KindAt, x: number, y: number, mode: Cutawa
  * `ghosts` false (blueprints, roofed ships) draws plain blocks instead of ghosts. `gap(x, y)` marks hull tiles that are
  * not drawn at all because a module's own art stands there (an engine's bulkhead with the walls up or roofed): the
  * hull runs beside it get an end face toward the gap, like toward a ghost.
+ * `look` "station" (a ground base, hullArt `HullLook`): the far hull's cap in the station's look where it has the art.
  * `win` (a window tile, sim/windows.ts): a straight far hull piece (full height in every level) or, with the walls up, a
  * straight wall piece draws
  * `tile.wall.full.m10.win.<l|m|r>` (along x) / `m5` (along y) first, the plain piece when that id is missing.
@@ -278,6 +283,7 @@ export function wallPieces(
   ghosts = true,
   gap: (x: number, y: number) => boolean = () => false,
   win: WindowTile | null = null,
+  look: HullLook = "ship",
 ): Piece[] {
   const level = wallLevel(mode);
   const side = hullSide(kindAt, x, y);
@@ -321,7 +327,9 @@ export function wallPieces(
     // cutaway), with the hull over the partitions' height drawn on it (`tile.hull.cap.*`: the black band and the
     // roof plating), and at a run's end the wall's end section with the hull's on it.
     const wall = "tile.wall.full.";
-    const out: Piece[] = [{ chain: [...windowChain(wall, mask, win), ...chainOf(`${wall}m${mask}`)], order: 0 }, { chain: chainOf(`tile.hull.cap.m${mask}`, v), order: 1 }];
+    // A ground base (`look` station) takes the station's cap (station_hull_walls), the ship's where it has none.
+    const cap = [...(look === "station" ? chainOf(`tile.hull.station.cap.m${mask}`) : []), ...chainOf(`tile.hull.cap.m${mask}`, v)];
+    const out: Piece[] = [{ chain: [...windowChain(wall, mask, win), ...chainOf(`${wall}m${mask}`)], order: 0 }, { chain: cap, order: 1 }];
     for (const [on, side, bits] of [[endS, "s", c & 6], [endE, "e", c & 3]] as const) {
       if (!on) continue;
       out.push({ chain: end(wall, side, bits), order: 2 }, { chain: end("tile.hull.cap.", side, bits), order: 3 });

@@ -1,6 +1,6 @@
 import type { Sim } from '../sim';
 import { isLive } from '../trade/deals';
-import { inspectingFleets } from '../inspect/patrol';
+import { inspectingFleets } from '../inspect/holds';
 import { catchUpFleets, stepAgenda } from './agenda';
 import { liftFleet, materialiseFleet, strandIfCrippled } from './fleetShips';
 import { resolveMeetings } from './meetings';

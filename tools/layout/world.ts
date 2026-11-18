@@ -12,7 +12,10 @@ import { roomsSystem } from '../../src/sim/systems/rooms';
 import { lightingSystem } from '../../src/sim/systems/lighting';
 import { powerSystem } from '../../src/sim/systems/power';
 import { ORIGIN } from './camera';
-import { addModule, clampAt, newModule, removeModule, toTemplate, type Layout, type Tile } from './layout';
+import { addModule, clampAt, newModule, PAD, removeModule, toTemplate, type Layout, type Tile } from './layout';
+import { AsteroidC } from '../../src/sim/asteroids/components';
+import { ShipC } from '../../src/sim/combat/components';
+import { layCable, templateCable } from '../../src/sim/cable';
 
 export interface World { sim: Sim; ship: number }
 const cache = new WeakMap<Layout, World | null>();
@@ -25,10 +28,40 @@ export function stampLayout(sim: Sim, l: Layout): number | null {
   const ship = spawnShip(sim, { ...toTemplate(l), crew: [] }, { faction: (l.origin?.side ?? 'player') as NonNullable<ShipTemplate['faction']>, x: ORIGIN, y: ORIGIN, ...(l.origin ? { gen: l.origin.gen } : {}) });
   const grid = shipGrid(sim, ship);
   if (grid) stampWindows(grid, l);
+  if (l.ground) groundUnder(sim, l, ship);
   roomsSystem(sim);
   powerSystem(sim);
   lightingSystem(sim);
   return grid ? ship : null;
+}
+
+/** Open ground round a prefab base's rectangle: the cliff ring the preview leaves past the template's own margin. */
+const RING = 3;
+
+/**
+ * A prefab base's site as the game's outpost stamp leaves it (outposts/stamp.ts): levelled rock ground under every open tile of the
+ * base's rectangle and a ring round it, one flat asteroid of its own (the renderer's asteroid view draws it), and the template's ground
+ * cable laid over it, the base's. The game's asteroid is shaped round the site; a lab preview needs only the ground the base stands on.
+ * Written straight through the grid (the base is already stamped, so the asteroid's gap rule does not apply); a restamp reuses it.
+ */
+function groundUnder(sim: Sim, l: Layout, ship: number): void {
+  const x = ORIGIN + PAD - RING, y = ORIGIN + PAD - RING, w = l.width - 2 * (PAD - RING), h = l.height - 2 * (PAD - RING);
+  const g = sim.sector.grid;
+  let rock = [...sim.world.query(AsteroidC)][0];
+  if (rock === undefined) {
+    rock = sim.world.createEntity();
+    sim.world.add(rock, AsteroidC, { kind: 'big', seed: 3, coverage: 'open', x, y, width: w, height: h, parts: [{ x, y, w, h }] });
+  }
+  for (let ty = y; ty < y + h; ty++)
+    for (let tx = x; tx < x + w; tx++) {
+      if (g.get('struct', tx, ty) !== Struct.Space) continue;
+      g.set('struct', tx, ty, Struct.Ground);
+      g.set('ship', tx, ty, rock);
+    }
+  for (const c of templateCable(toTemplate(l))) if (layCable(g, ORIGIN + c.x, ORIGIN + c.y)) g.set('ship', ORIGIN + c.x, ORIGIN + c.y, ship);
+  // a surface outpost's record (stamp.ts), so the renderer draws it as the game does a base on the ground (outposts/state.ts standsOnGround)
+  const s = sim.world.get(ship, ShipC);
+  if (s) s.outpost = { style: 'surface', kind: l.origin?.gen.faction.replace(/^station\./, '') ?? 'trading', hidden: false };
 }
 
 /** Write each window's per-tile codes (the game's `windowCode`) into the ship's `window` field; a tile that is not a wall in the stamped ship keeps none. */
@@ -56,7 +89,7 @@ export function restamp(sim: Sim, old: number, l: Layout): number | null {
 
 /** Whether two layouts differ only in their modules (the same tiles, rooms and stamp): an edit `swapModules` can apply. */
 export function sameShell(a: Layout, b: Layout): boolean {
-  if (a.width !== b.width || a.height !== b.height || a.immobile !== b.immobile || a.origin !== b.origin || a.rooms.length !== b.rooms.length) return false;
+  if (a.width !== b.width || a.height !== b.height || a.immobile !== b.immobile || a.origin !== b.origin || a.ground !== b.ground || a.rooms.length !== b.rooms.length) return false;
   if (a.cells !== b.cells && a.cells.some((row, y) => row !== b.cells[y])) return false;
   if (a.roomOf !== b.roomOf && a.roomOf.some((r, i) => r !== b.roomOf[i])) return false;
   return a.rooms.every((r, i) => r.role === b.rooms[i]?.role);

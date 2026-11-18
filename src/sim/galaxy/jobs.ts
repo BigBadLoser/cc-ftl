@@ -18,7 +18,8 @@ import { BREACH_NOTORIETY, JOB_FAIL_REPUTATION, JOB_LOG_MAX, JOB_REPUTATION, MAX
 import type { StationJob } from './types';
 import { addCredits } from '../trade/credits';
 import { askAtDelivery } from './joinOffer';
-import { PORT_KINDS, passengerAboard, passengerOff, postedCards, strand, takeCard } from './passage';
+import { PORT_KINDS, passengerAboard, postedCards, strand, takeCard } from './passage';
+import { passengerOff } from './passengerOff';
 
 /**
  * Taking, doing and failing station jobs (tuningJobs.ts, offers in jobOffers.ts). Commands: `jobs.accept` (an offer at the player's node), `jobs.abandon`,

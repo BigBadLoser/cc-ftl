@@ -8,6 +8,7 @@ import type { ComponentKey } from '../ecs';
 import { AlienC, EggSacC, NestC } from '../aliens/components';
 import { DroneC } from '../drones/components';
 import { droneAboard } from '../drones/recall';
+import { inspectorsAboard } from '../inspect/aboard';
 import { shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { AboardC, VehicleC } from '../vehicles/components';
@@ -85,6 +86,8 @@ export interface JumpWarnings {
   vehicles: number[];
   /** Non-player vehicles docked at the ship's airlocks: the player chooses whether each comes along or is cut loose. */
   hostileDocked: number[];
+  /** Inspectors on the ship: leaving now carries them off, and that counts as attacking them (inspect/flow.ts `abortInspections`). */
+  inspectors: number[];
 }
 
 /** The jump-confirm query: crew and shuttles that would stay behind, and the non-player vehicles docked to the ship. */
@@ -97,5 +100,5 @@ export function jumpWarnings(sim: Sim, ship: number): JumpWarnings {
     return !lifting.has(id) && !!v && vehicleFaction(sim, v) === 'player';
   });
   const hostileDocked = attached(sim, onShipSet(sim, ship)).foreign;
-  return { crew, vehicles, hostileDocked };
+  return { crew, vehicles, hostileDocked, inspectors: inspectorsAboard(sim, ship) };
 }

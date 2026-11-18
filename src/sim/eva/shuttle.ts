@@ -6,7 +6,7 @@ import { EvaFloatC, SuitC } from './components';
 import type { Vehicle } from '../vehicles/components';
 import { Struct, isEvaWalkable } from '../structure';
 import { suitDef } from './suit';
-import { shipById } from '../combat/ships';
+import { shipById } from '../combat/shipQuery';
 import { shipGrid } from '../regions';
 import { BodyC } from '../body';
 import { VehicleC } from '../vehicles/components';

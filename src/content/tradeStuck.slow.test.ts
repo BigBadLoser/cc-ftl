@@ -3,6 +3,8 @@ import { ShipC } from '../sim/combat/components';
 import { newGame } from '../sim/newGame';
 import { deserialize, serialize } from '../sim/save';
 import { TraderC } from '../sim/trade/types';
+import { AirlockC } from '../sim/modules/airlock';
+import { ModuleC } from '../sim/modules/components';
 import { cargoCount } from '../sim/vehicles/cargo';
 import { VehicleC } from '../sim/vehicles/components';
 import { isLive } from '../sim/trade/deals';
@@ -78,8 +80,8 @@ describe('a delivery that cannot finish, full waits', () => {
 describe("a stuck delivery by the trader's own shuttle, full waits", () => {
   it('before the exchange (still flying in): the deal fails, the player is refunded and the trader gets its goods back; survives a reload', () => {
     const { sim, ship, before, stock } = order();
-    expect(sim.trade.deals[0]!.phase).toBe('back');
-    sim.world.destroyEntity(sim.trade.deals[0]!.airlock); // the destination airlock is destroyed with the shuttle on its way
+    until(sim, 'out');
+    for (const id of sim.world.query(AirlockC, ModuleC)) sim.world.get(id, ModuleC)!.enabled = false; // no airlock of the player's to dock at
     run(sim, 2000);
     const reloaded = deserialize(serialize(sim), content);
     runOut(reloaded, 3000);
@@ -95,7 +97,7 @@ describe("a stuck delivery by the trader's own shuttle, full waits", () => {
 
   it('docked but never unloaded: the deal fails and refunds, the shuttle leaves with its cargo back to the trader', () => {
     const { sim, ship, before, stock } = order();
-    until(sim, 'unload');
+    until(sim, 'stationWork');
     for (const id of playerCrew(sim)) sim.world.destroyEntity(id);
     run(sim, 3000);
     const reloaded = deserialize(serialize(sim), content);

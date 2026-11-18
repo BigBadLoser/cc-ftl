@@ -34,10 +34,10 @@ Counts are table rows per status (each row is one entry, so a row that groups se
 | [economy](catalog/economy.md) | Trade, traders, jobs, contraband, hauling, production | 37 | 0 | 0 | 1 | 0 | 3 |
 | [events-story](catalog/events-story.md) | Events, scenes, goals, lessons, story engine | 27 | 0 | 0 | 0 | 0 | 5 |
 | [galaxy-starmap](catalog/galaxy-starmap.md) | Map generator, structures, jumps, fleets, wars, heat, starmap UI | 21 | 2 | 0 | 0 | 0 | 2 |
-| [environment](catalog/environment.md) | Air, power, fire, heat, light, rooms, hull, roof | 20 | 0 | 0 | 0 | 0 | 4 |
+| [environment](catalog/environment.md) | Air, power, fire, heat, light, rooms, hull, roof | 20 | 1 | 0 | 0 | 0 | 4 |
 | [ui](catalog/ui.md) | Windows, panels, menus, kit | 26 | 4 | 0 | 1 | 1 | 1 |
 | [dev-tools](catalog/dev-tools.md) | Scenarios, debug commands, labs, profilers, test tools | 0 | 0 | 0 | 0 | 37 | 0 |
-| [art](catalog/art.md) | Manifest families, art-only sprites, render systems | 9 | 1 | 10 | 0 | 0 | 3 |
+| [art](catalog/art.md) | Manifest families, art-only sprites, render systems | 9 | 2 | 10 | 0 | 0 | 3 |
 | **Total** | | 465 | 59 | 59 | 2 | 42 | 30 |
 
 ## Commonly confused

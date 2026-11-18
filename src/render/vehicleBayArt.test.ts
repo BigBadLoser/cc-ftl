@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BAY_FRAME_MS, LAUNCH, LAUNCH_LIFT, RETURN, RETURN_LAND, bayId, createBayAnimator, parkedId, steady, PARKED_DZ, vehicleBayLayers } from './vehicleBayArt';
+import { BAY_FRAME_MS, LAUNCH, LAUNCH_LIFT, RETURN, RETURN_LAND, bayId, createBayAnimator, parkedId, steady, PARKED_DZ, vehicleBayLayers, bayHandoff } from './vehicleBayArt';
 
 describe('vehicle bay art ids', () => {
   it('name the bay state and the shuttle parked in it', () => {
@@ -53,5 +53,18 @@ describe('bay glow depth', () => {
     // Bay glow at key + 0.01 and its halo at + 0.015 (moduleView); the shuttle layer sits above both.
     expect(layers[1]?.dz).toBe(PARKED_DZ);
     expect(PARKED_DZ).toBeGreaterThan(0.015);
+  });
+});
+
+describe("bay handoff (who draws a craft entering or leaving its bay)", () => {
+  const F = BAY_FRAME_MS;
+  it("leaves a launch to the bay until the lift starts, then rises out of the pit", () => {
+    expect(bayHandoff(false, 0, Infinity)).toEqual({ drawn: false, lift: null });
+    expect(bayHandoff(false, LAUNCH_LIFT.start * F, Infinity)).toEqual({ drawn: true, lift: 0 });
+    expect(bayHandoff(false, LAUNCH_LIFT.end * F, Infinity)).toEqual({ drawn: true, lift: null });
+  });
+  it("draws a landing until the claws close, then the bay owns it", () => {
+    expect(bayHandoff(true, Infinity, RETURN_LAND.end * F - 1).drawn).toBe(true);
+    expect(bayHandoff(true, Infinity, RETURN_LAND.end * F).drawn).toBe(false);
   });
 });

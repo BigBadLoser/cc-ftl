@@ -27,10 +27,9 @@ const HIRE_PHASE: Partial<Record<Deal['phase'], string>> = {
 const list = (sim: Sim, lines: readonly { item: string; count: number }[]): string =>
   lines.map((l) => `${l.count} ${sim.content.items[l.item]?.name ?? l.item}`).join(', ');
 
-/** What stops a run in a direction, as a reject code, or '' if it can go. Probes with one unit of anything. */
-function probe(sim: Sim, ship: number, dir: 'out' | 'in', queue: boolean): { courier: string; error: string; cap: number } {
-  const unit = [{ item: Object.keys(sim.content.items)[0] ?? '', count: 1 }];
-  const plan = planCourier(sim, ship, dir === 'out' ? unit : [], dir === 'in' ? unit : [], false, queue);
+/** What stops a run, as a reject code, or '' if it can go (the same carrier takes goods both ways, #548). */
+function probe(sim: Sim, ship: number, queue: boolean): { courier: string; error: string; cap: number } {
+  const plan = planCourier(sim, ship, false, queue);
   return 'error' in plan ? { courier: '', error: plan.error, cap: 0 } : { courier: plan.courier, error: '', cap: plan.cap };
 }
 
@@ -64,7 +63,7 @@ function marketOf(sim: Sim, trader: Trader | undefined): UiMarketServices | unde
 
 /** What would stop a hiring run from this station now: the shuttle's reject code ('noShuttle', 'courierBusy', 'noAirlock'), or ''. */
 function hireProbe(sim: Sim, ship: number): string {
-  const plan = planCourier(sim, ship, [], [], true);
+  const plan = planCourier(sim, ship, true);
   return 'error' in plan ? (plan.error === 'noCourier' ? 'noShuttle' : plan.error) : '';
 }
 
@@ -103,7 +102,7 @@ export function buildTrade(sim: Sim, log?: StationLog): UiTrade {
       role: profile ? (sim.content.trade?.traders[profile]?.name ?? '') : '', trades: profile !== null,
       hail: !hail ? 'none' : hail.answered && answered ? 'answered' : 'refused', reason: hail && !answered ? (hail.reason || 'hostile') : '',
       wallet: trader?.credits ?? 0, walletFree: Math.max(0, (trader?.credits ?? 0) - (cm.theirs.get(id) ?? 0)), rep: trader ? reputationWith(sim, id) : 0, lines,
-      out: answered ? probe(sim, id, 'out', queued) : { courier: '', error: '', cap: 0 }, in: answered ? probe(sim, id, 'in', queued) : { courier: '', error: '', cap: 0 },
+      out: answered ? probe(sim, id, queued) : { courier: '', error: '', cap: 0 }, in: answered ? probe(sim, id, queued) : { courier: '', error: '', cap: 0 },
       offer: offer ? { id: offer.id, give: offer.give, get: offer.get, barter: offer.barter, balance: offer.balance } : null,
       recruits: trader?.station ? recruitsAt(sim, id) : [],
       hireError: trader?.station ? hireProbe(sim, id) : '',

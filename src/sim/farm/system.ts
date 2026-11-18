@@ -1,5 +1,5 @@
 import { JobC, type Job } from '../crew/components';
-import { destroyJob } from '../items/stacks';
+import { destroyJob } from '../crew/jobEnd';
 import { needsFrom } from '../items/materials';
 import { ModuleC } from '../modules/components';
 import { moduleSite } from '../modules/footprint';

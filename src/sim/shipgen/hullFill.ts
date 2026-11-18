@@ -46,6 +46,31 @@ export function plate(A: Arranger, maxGap: number, label = 'patch plates', donor
   return addPlate(A, [...cells.values()], label, donor);
 }
 
+/**
+ * Drive seams: a slot of at most `maxGap` tiles along x between a section's wall and the wall of a drive block aft of it
+ * (the drive bank meets the hull a little short of it, or behind a narrower end), plated shut. Only gaps whose aft side is
+ * a drive (a section's or the drive's own reactor bay), so sponsons, twin hulls and the channel between twin drives keep their
+ * shape.
+ */
+export function driveSeams(A: Arranger, maxGap: number): number {
+  const kindAt = new Map<number, string>();
+  for (const p of A.placed) p.block.rows.forEach((row, j) => { for (let k = 0; k < row.length; k++) if (row[k] !== '.') kindAt.set(key(p.x + k, p.y + j), p.block.kind); });
+  const wall = (x: number, y: number): boolean => A.cell(x, y) === '#';
+  const b = A.box();
+  const cells = new Map<number, Cell>();
+  for (let y = b.y0; y <= b.y1; y++) {
+    for (let x = b.x0; x <= b.x1; x++) {
+      if (!wall(x, y) || A.cell(x + 1, y) !== undefined) continue;
+      let n = 1;
+      while (n <= maxGap && A.cell(x + n, y) === undefined) n++;
+      if (n > maxGap || !wall(x + n, y) || kindAt.get(key(x + n, y)) !== 'drive') continue;
+      const run = Array.from({ length: n - 1 }, (_, i) => ({ x: x + i + 1, y }));
+      if (run.every((c) => free(A, c.x, c.y))) for (const c of run) cells.set(key(c.x, c.y), c);
+    }
+  }
+  return addPlate(A, [...cells.values()], 'drive seam plates');
+}
+
 /** Enclosed space (courtyards with no way out to open space), as connected regions of cells. */
 function enclosed(A: Arranger): Cell[][] {
   const b = A.box();

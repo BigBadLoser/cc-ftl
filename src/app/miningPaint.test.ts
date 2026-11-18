@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { AsteroidC } from '../sim/asteroids/components';
-import { homeShip } from '../sim/combat/ships';
+import { homeShip } from '../sim/combat/shipQuery';
 import { MiningPodC } from '../sim/mining/components';
 import { isOreTile } from '../sim/mining/pick';
 import { placementError, spawnModule } from '../sim/modules/spawn';

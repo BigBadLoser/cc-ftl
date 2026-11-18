@@ -24,6 +24,11 @@ export const TEMP_DIFFUSION = 0.04;
 export const TEMP_VENT = 0.02;
 /** Passive radiators: fraction of (temp - NORMAL_TEMP) lost per tick. */
 export const TEMP_AMBIENT_LOSS = 0.0008;
+/**
+ * Temperature solves every TEMP_EVERY ticks, each one a step TEMP_EVERY times as long (diffusion and vent rates scaled, the ambient loss
+ * compounded), on a phase per ship so the solves spread over the ticks (#65). Stable while 4 * TEMP_DIFFUSION * TEMP_EVERY <= 1.
+ */
+export const TEMP_EVERY = 4;
 
 // --- Smoke ---
 export const SMOKE_DIFFUSION = 0.12;

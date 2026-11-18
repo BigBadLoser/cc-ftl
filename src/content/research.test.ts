@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { homeShip } from '../sim/combat/ships';
+import { homeShip } from '../sim/combat/shipQuery';
 import { JobC, PositionC } from '../sim/crew/components';
 import { storageAdd } from '../sim/items/storage';
 import { isKnown as isBlueprintKnown } from '../sim/modules/blueprints';
