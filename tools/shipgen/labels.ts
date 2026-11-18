@@ -29,8 +29,8 @@ export function roomKind(role: string, mods: readonly string[]): string {
   const has = (m: string): boolean => mods.includes(`module.${m}`);
   const sleepers = mods.filter((m) => m === 'module.bed').length + 2 * mods.filter((m) => m === 'module.bunk').length;
   if (role === 'hall') return 'corridor';
-  // A prefab base's command room: the consoles without the helm.
-  if (role === 'bridge') return has('weaponsConsole') && !has('helm') ? 'command' : 'office';
+  // A ship's bridge holds the helm; a prefab base's command room the consoles without it.
+  if (role === 'bridge') return has('helm') ? 'bridge' : has('weaponsConsole') ? 'command' : 'office';
   if (role === 'plaza' && has('mess_table')) return 'customs';
   // A prefab base's market hall: trade counters in a court.
   if (role === 'plaza' && has('console')) return 'market';
@@ -46,7 +46,8 @@ export function roomKind(role: string, mods: readonly string[]): string {
   // A market stall: racks and a counter (console), not cold stores.
   if (role === 'cargo' && has('storage_rack') && has('console') && !has('storage_cold')) return 'stall';
   if (has('storage_cold') || (role === 'cargo' && has('storage_rack'))) return 'pantry';
-  if (has('battery') && !has('reactor') && !has('reactor.mk2') && !has('reactor.mk3') && !has('shieldGen')) return 'batteries';
+  // Gun bays and engine rooms carry a battery bank too: they keep their role's name.
+  if (role !== 'weapons' && role !== 'engine' && has('battery') && !has('reactor') && !has('reactor.mk2') && !has('reactor.mk3') && !has('shieldGen')) return 'batteries';
   if (has('recovery') && mods.filter((m) => m === 'module.med_bed').length <= 1) return 'trauma';
   if (has('droneBay')) return 'drones';
   if (has('vehicle_bay')) return 'shuttle';
