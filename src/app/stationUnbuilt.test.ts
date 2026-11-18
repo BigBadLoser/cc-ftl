@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { content } from '../content';
-import { newGame } from '../sim';
+import { newGame } from '../sim/newGame';
 import { spawnStation } from '../sim/stations/spawn';
 
 describe('spawnStation failure', () => {
