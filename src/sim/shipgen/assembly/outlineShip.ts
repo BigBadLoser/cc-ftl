@@ -19,7 +19,7 @@ import { RegionGrid, SOLID, SPACE } from './regions';
 
 /** Side bands: rows out from the axis. The corridor is rows -1..1, its wall row 2, room floor from row 3. */
 const BAND = 2;
-/** Floor rows a column of side band needs to count as room (narrower columns stay plating). */
+/** Floor rows a side room has along most of the hull (and a dock's straight stretch). */
 const MIN_DEPTH = 3;
 const ZONE = ['weapons', 'bridge', 'shields', 'core', 'dock', 'quarters', 'support', 'plant', 'cargo', 'hangar', 'reactor'];
 
@@ -125,6 +125,8 @@ function layout(plan: ShipPlan, sil: Silhouette, sx: number, sy: number, type: N
   // Where the hull stands out ahead of amidships (a wing): the gun rooms wait for it, so the guns stand in the wing.
   const sorted = Array.from({ length: xS - xBand }, (_, k) => depth(xBand + k)).sort((p, q) => p - q);
   const bodyDepth = sorted[Math.floor(sorted.length / 2)] ?? 0;
+  // Side rooms at least MIN_DEPTH deep along most of the hull: a wider hull, not a longer one.
+  if ((sorted[Math.floor(sorted.length / 4)] ?? 0) < MIN_DEPTH) return null;
   let xWing = -1;
   for (let bx = xBand; bx < xBand + (xS - xBand) * 0.6 && xWing < 0; bx++) if (depth(bx) > bodyDepth + 1) xWing = bx;
   const slice = (share: number): { order: (readonly [RoomSpec, RoomSpec])[]; cuts: [number, number][] } | null => {
