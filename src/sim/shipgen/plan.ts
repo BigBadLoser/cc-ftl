@@ -113,10 +113,15 @@ export function weaponSpec(defs: Record<string, ModuleDef>, mods: string[]): Roo
  */
 export interface CoreKit { engine: string; reactor: string }
 
-/** Reactor room for k reactors side by side, sized to the kit's reactor (Mk I 2x2, Mk II 2x3, Mk III 2x4). */
-export const reactorSpec = (k: number, kit: CoreKit): RoomSpec => ({
-  role: 'reactor', mods: Array<string>(k).fill(kit.reactor), w: 2 * k + 1, h: reactorDepth(kit.reactor) + 1,
-});
+/**
+ * Reactor room for k reactors laid lengthwise end to end along its back wall (Mk I 2x2, Mk II 2x3, Mk III 2x4, turned),
+ * a tile to walk before them: three deep at every tier, so a bigger reactor makes the room longer, not deeper. The width
+ * stays odd (a room on a hull's centre line keeps it symmetric).
+ */
+export const reactorSpec = (k: number, kit: CoreKit): RoomSpec => {
+  const len = k * reactorDepth(kit.reactor) + 1;
+  return { role: 'reactor', mods: Array<string>(k).fill(kit.reactor), w: len % 2 === 0 ? len + 1 : len, h: 3 };
+};
 
 /** Engine room for k engines stacked along the east hull. `door` is the wall crew enter by. */
 export const engineSpec = (k: number, door: 'w' | 'ns', kit: CoreKit): RoomSpec => ({

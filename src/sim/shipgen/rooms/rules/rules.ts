@@ -364,6 +364,8 @@ export const RULES: Partial<Record<RoomRole, readonly RuleArrangement[]>> = {
   reactor: [
     { name: 'R1 reactors, batteries between', weight: 1, rule: (c) => spread(c, powerUnits(c.need, c.defs), true) },
     { name: 'R2 reactors down both long walls', weight: 1, when: (n, r) => r.h > r.w && !across(r, powerUnits(n, r.defs)), rule: r2 },
+    // Turned lengthwise end to end along the back wall: a shallow room (a ship's reactor room is three deep at every tier).
+    { name: 'R4 reactors lengthwise along the back wall', weight: 2, when: (n, r) => { const u = powerUnits(n, r.defs); return u.length > 0 && u.reduce((t, m) => t + (r.defs[m]?.footprint[1] ?? 2), 0) <= r.w && Math.max(...u.map((m) => r.defs[m]?.footprint[0] ?? 2)) + 1 <= r.h; }, rule: (c) => { let x = 0; return powerUnits(c.need, c.defs).map((m) => { const p = P(m, x, 0, 1); x += c.defs[m]?.footprint[1] ?? 2; return p; }); } },
     // Packed flush from one corner along the back wall: no gap to leave a pocket of floor behind (a tight room's way).
     { name: 'R3 reactors packed along the back wall', weight: 1, when: (n, r) => powerUnits(n, r.defs).reduce((t, m) => t + (r.defs[m]?.footprint[0] ?? 2), 0) <= r.w, rule: (c) => { let x = 0; return powerUnits(c.need, c.defs).map((m) => { const p = P(m, x, 0, 0); x += size(c, m); return p; }); } },
   ],
