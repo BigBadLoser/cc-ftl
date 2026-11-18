@@ -55,6 +55,6 @@ Presets are files in `presets/`; `?scenario=<name>` takes the preset's own flags
 | Sprite pipeline | ``npm run sprites, assets`` | Headless Blender renders sprite sheets into public/assets/1x | Debug only | tools/blender/* (243 sprite scripts) |
 | Damage mock | ``tools/damage_mock`` | Python mocks for breach and roof damage art | Debug only | tools/damage_mock/* |
 | Spikes | ``spikes/crew-lab, spikes/pixel-lab`` | Old art experiments with their own vite config (`lab:build`, `pixel-lab:build`) | Debug only | spikes/* |
-| Test tiers and weights | ``npm run check, test:soak, test:weights:ci`` | Three test tiers, shard weights | Debug only | tools/testWeights.ts, tools/soakWeights.ts |
+| Test harness and checks | `npm run check:fast`, `npm run check:push`, `npm run test:soak`, `npm run test:weights:ci` | Shared fixtures, near and branch checks, soak tests, and shard weights | Debug only | `test/support/` and [Test tiers](../ARCHITECTURE.md#test-tiers) |
 
-Planned tooling: test overhaul with a shared harness and scenario builder (#371), end-to-end browser regression tests (#157), Vite dependency scan limit (#53), room-layout solver (#193).
+Planned tooling: end-to-end browser regression tests (#157), Vite dependency scan limit (#53), room-layout solver (#193).

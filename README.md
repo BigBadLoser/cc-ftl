@@ -14,6 +14,10 @@ npm run dev     # local dev server
 npm run check   # lint, typecheck, tests
 ```
 
+See [Writing a test](docs/ARCHITECTURE.md#writing-a-test) for fixture guidance,
+[Test tiers](docs/ARCHITECTURE.md#test-tiers) for commands, and the
+[Scenario builder](docs/ARCHITECTURE.md#scenario-builder) for scripted and cached examples.
+
 Wiki development and generated gameplay references: [wiki/README.md](wiki/README.md).
 
 ## Playtesting with AI agents (`?agent`)

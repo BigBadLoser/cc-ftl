@@ -480,8 +480,14 @@ file (Vite resolves it in the browser build, Vitest and the profiler, which all 
 - A hook is `hooks/<name>.ts`, `defineHook({ afterBuild?, tick?, event? })` with `ctx.after(ticks, fn)` / `ctx.when(pred, fn)` (tick-based, so deterministic). They read
   the sim and send commands. They are not `?hook` (the `__cc` debug API). The app loop calls `built.afterTick()` / `built.onEvents()`; tests and the profiler use `play(built, ticks)`
   or the same calls. Hooks: `inspect.fight`, `inspect.select`, `boarding`, `log`, `busy.arrive`, `medpod.deliver`, `stasis.unpowered`.
-- Tests (`test/support/scenario.ts`): `scenario(name, opts)` builds fresh; `cachedScenario(name, opts)` builds once per test file and returns a clone (`cachedWorld`'s rules), keyed
-  by name + canonical JSON of seed, params and overrides, so two worlds never share a key. Turning sim systems off is not available; add it for a focused unit test when one needs it.
+- Test helpers live in `test/support/scenario.ts`.
+  - **Cached checkpoint.** `cachedScenario('inspect', { seed: 3, params: { stage: 'search' } }).sim` gives each test its own copy of
+    the world with inspectors already aboard and searching. Use this when the starting state is fully captured by a save. The
+    cache builds once per test file, keyed by the preset name and canonical JSON of the seed, params, overrides and extra hooks.
+  - **Fresh scripted run.** Use `scenario('log', { seed: 3 })` and advance it with `play(built, ticks)` when the test depends on
+    hook setup or scheduled callbacks. A cached clone restores the save and attaches fresh hooks with `afterBuild` skipped. For
+    example, the callbacks that schedule the raider and credits in `log` live in memory and are lost on restore.
+  - Turning sim systems off is not available; add it for a focused unit test when one needs it.
 - `?scenario=<name>&<flag>...&seed=&starter=&credits=&items=&speed=&ticks=&hooks=` (`url.ts`); `src/app/scenarioStart.ts` builds it on the running game before the first frame and
   applies the UI requests. Profiler: `--scenario preset:<name>`.
 - Adding things: a file in `presets/`, `parts/` or `hooks/`. Keep `import.meta.glob(` written exactly so in `registry.ts` (no type argument): Vitest's on-disk module cache
