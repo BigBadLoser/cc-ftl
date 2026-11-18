@@ -32,8 +32,8 @@ The code shows the same thing. Shipgen is 109 files and about 16,000 lines:
   `fixDoors` (twice), `pruneDoors`, `erodeHull`, the hull fill's seam plates and pocket fill. After the fit-out come the
   extra-reactor squeeze, the `ELSEWHERE` fallback, the engine top-up rebuild (up to 3 builds) and the reseed (up to 24).
   Each one exists because an earlier step can produce something wrong.
-- **Two furnishers.** Stations furnish by rule and prove each room walkable (`rooms/rules`); ships use the older greedy
-  recipes (`rooms/*.ts`). That is why barracks look the way they do.
+- **Two furnishers** (before step 1). Stations furnished by rule and proved each room walkable (`rooms/rules`); ships
+  used the older greedy recipes. That is why barracks looked the way they did.
 
 ## The rule
 
@@ -69,17 +69,39 @@ tries its next local option, and never passes the problem on. A late failure is 
    faction's transition style picks them.
 5. **Doors.** From the regions: a room opens onto the hall it stands on (halls outrank rooms), never into a hall twice.
    `pruneDoors` goes.
-6. **Fit-out** (`fitShell`, shared). Required modules first, into the rooms planned for them. Then every room is
-   furnished by rule with the walkability proof (`furnishByRule`). Rules exist for every role but the engine room, the
-   dock, the garden and the drill hall (`rooms/rules/rules.ts`); ships only skip them today (`fitOut.ts`, the `immobile`
-   gate). The engine room gets a rule, and the greedy recipes (`rooms/*.ts`) go.
+6. **Fit-out** (`fitShell`, shared). Every room is furnished by rule with the walkability proof (`furnishByRule`); a
+   room no rule fits gets its planned modules placed plainly. Rules pick by the room's contents and shape, never by
+   ship or station: a ship's narrow room takes the rule that suits a narrow room. Engine rooms hold their engines
+   and nothing else.
 7. **Validate.** The same checks as now. A failure here means an earlier guarantee broke: the test sweep counts it,
    and the generator reseeds only as a safety net.
+
+## Progress
+
+**Step 1 (program and fit-out, every family), 2026-11-18, branch `fix/room-contents-581`.** Sweep of 8 factions at
+depths 1, 4 and 9, 8 seeds each (192 ships): 435 builds before, about 255 after (2.27 to 1.33 a ship). Civilian
+depth 9 went from 11.8 builds a ship to 1.0; navy builds first time.
+
+- Done: barracks of bunks (ships and stations), sized as the rule lays them, one wall on a ship; life support in
+  plant rooms with a machine-room rule; a helm bridge rule (the helm on the back wall, the consoles beside it or on
+  the side walls), bridges planned wide enough; crate closets two deep; crewed ships' shield rooms 4x4, the core a
+  tile wider; patched scrap reactor rooms of two at most, no longer dropped by a fixed offset; the packed reactor
+  rule. Guns may stand anywhere in their room (the gun room keeps to the hull by the layout, a style choice). The
+  room recipes are deleted: ships furnish by rule alone, as stations do.
+- Not done: deeper reactor rooms (the wall thinning broke the navy's mirror symmetry; for the regions step); the
+  extra-reactor squeeze still runs; empty filler rooms the grammars leave (no plan behind them).
+- What fails now: scrapper and pirate hull shape (floor touching space, hull parts too thin), from the welding.
+
+Notes for the later steps:
+- Engines need no walls between them: one engine room may hold several. The navy's walled pairs are a choice for
+  symmetry, not a rule.
+- The pirate factions (raider, cartel, zealot, mercenary) use the scrapper hull families and welding for now; they
+  are told apart by loadout only. They want recipes of their own.
 
 ## What stays
 
 - Content: factions, hull families, budgets, liveries, module defs, the engine and reactor tiers (`CoreKit`).
-- What each room holds (`rooms/` contents, the room-contents decisions of #581), the equipment count (`equipment.ts`),
+- What each room holds (the room-contents decisions of #581), the room rules (`rooms/rules`), the equipment count (`equipment.ts`),
   `fitShell`, `validate.ts`, `metrics.ts` and the faction metric bands.
 - The tools: `cli.js`, the labelled view, sheets, the layout lab.
 - Structural helpers that describe shape, reworked to paint regions: `profile.ts`, sockets, `navyMounts.ts`, the

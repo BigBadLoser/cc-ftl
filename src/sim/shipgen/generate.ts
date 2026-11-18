@@ -5,7 +5,7 @@ import type { Arranger } from './arranger';
 import { arrangeHull } from './navyLayouts';
 import { layoutMetrics, metricViolation } from './metrics';
 import { roleOfLetter } from './canvas';
-import { RECIPES, pruneDoors } from './rooms';
+import { pruneDoors } from './rooms';
 import { stockOf, toTemplate } from './fitted';
 import { fitOut, type ExtraCheck, type FinishOpts } from './fitOut';
 export type { ExtraCheck, FinishOpts } from './fitOut';
@@ -201,7 +201,7 @@ export function fitShell(
   debug?: (hall: (x: number, y: number) => boolean) => GenResult['debug'],
 ): GenResult {
   const { rows, roomOf, width, height, roles, specs } = shell;
-  const d = fitOut(rng, f, rows, roomOf, roles, specs, defs, opts.immobile ? {} : RECIPES, opts);
+  const d = fitOut(rng, f, rows, roomOf, roles, specs, defs, opts);
   // Airlock-only docks open into the corridor they border (wall and door go; openDocks.ts).
   const opened = d.error ? { merged: 0, walled: 0, tiles: [] } : openBareDocks(d.lay);
   const docks = { merged: opened.merged, walled: opened.walled };

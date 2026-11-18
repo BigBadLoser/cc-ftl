@@ -1,7 +1,6 @@
 import type { Rng } from '../rng';
 import type { ModuleDef, ShipTemplate } from '../registry';
 import { lightRoom, placeOne, rotsOf } from './fit';
-import { RECIPES, drawRoom, hostCompanions, reserveWalkway, furnish, placeStep, specStep, type RoomDraw } from './rooms';
 import { furnishByRule, placeFeed } from './rooms/rules/place';
 import { RULES } from './rooms/rules/rules';
 import { Layout } from './layout';
@@ -12,7 +11,10 @@ import { ENGINE_TIERS, REACTOR_TIERS, enginesIn, reactorsIn, type RoomSpec } fro
 import { equipKind, type EquipKind } from './equipment';
 import type { FactionDef, RoomRole } from './types';
 
-/** The fit-out: every room's planned modules placed in it, then lights and extra reactors (split from generate.ts). */
+/**
+ * The fit-out: every room furnished by rule where one fits (rooms/rules), a room no rule fits given its planned modules
+ * plainly, then lights and extra reactors (split from generate.ts). Ships and stations alike.
+ */
 
 /** Extra validation of a finished template (stations add their own rules), returning problems. */
 export type ExtraCheck = (t: ShipTemplate, defs: Record<string, ModuleDef>) => string[];
@@ -55,7 +57,7 @@ const rank = (id: string, d: ModuleDef): number => {
 /** Place every room's planned modules in that room; a reason string when something essential does not fit. */
 export function fitOut(
   rng: Rng, f: FactionDef, rows: string[], roomOf: Int16Array, roles: RoomRole[], specs: (RoomSpec | undefined)[], defs: Record<string, ModuleDef>,
-  recipes = RECIPES, o: Pick<FinishOpts, 'airlocksAnyWay' | 'immobile' | 'ground' | 'entries'> = {},
+  o: Pick<FinishOpts, 'airlocksAnyWay' | 'immobile' | 'ground' | 'entries'> = {},
 ): Fitted {
   const lay = new Layout(rows, roomOf, roles, defs);
   for (const e of o.entries ?? []) lay.entries.add(e);
@@ -65,20 +67,8 @@ export function fitOut(
   jobs.sort((a, b) => (a.spec.sealed ? 0 : 1) - (b.spec.sealed ? 0 : 1) || rank(a.def, defs[a.def] as ModuleDef) - rank(b.def, defs[b.def] as ModuleDef));
   const placed: Record<string, number> = {};
   const wanted: Record<string, number> = {};
-  // Rooms with a recipe draw their arrangement once; their planned modules go where the recipe says.
-  const draws = new Map<number, RoomDraw>();
-  // Station rooms furnished by rule (rooms/rules), and those no rule fits, which get their planned modules plainly.
-  const ruled = new Set<number>(), furnished = new Set<number>();
-  const drawOf = (room: number): RoomDraw | null => {
-    const recipe = recipes[roles[room] as RoomRole];
-    if (!recipe || specs[room]?.sealed || ruled.has(room)) return null;
-    if (!draws.has(room)) {
-      const d = drawRoom(rng, recipe);
-      draws.set(room, d);
-      reserveWalkway(lay, room, d);
-    }
-    return draws.get(room) as RoomDraw;
-  };
+  // Rooms a rule furnished: their planned modules are in.
+  const furnished = new Set<number>();
   // Equipment its own room has no space for stands in another room where it still belongs: the plan's equipment is required (#577).
   const elsewhere = (id: string, room: number): number[] => {
     const k = equipKind(defs[id]);
@@ -98,17 +88,11 @@ export function fitOut(
       out.stock.set(idx, pick.map((s) => ({ item: s.item, count: rng.int(s.min, s.max) })).filter((s) => s.count > 0 && accepts(filter, s.item)));
     }
   };
-  // Planned modules per room and def, for steps that place only a share of them.
-  const planned = new Map<string, number>();
-  for (const j of jobs) planned.set(`${j.room} ${j.def}`, (planned.get(`${j.room} ${j.def}`) ?? 0) + 1);
-  const done = new Map<string, number>();
   {
-    // Every room is furnished by rule where one fits; no room recipe runs. A room no rule fits gets its planned modules
-    // set plainly.
-    // Halls and plazas have no spec (nothing planned in them): a rule may still dress them.
+    // Every room is furnished by rule where one fits. Halls and plazas have no spec (nothing planned in them): a rule may
+    // still dress them.
     roles.forEach((role, room) => {
       const spec = specs[room], mods = spec?.mods ?? [];
-      ruled.add(room);
       if (spec?.sealed || (!spec && role !== 'hall' && role !== 'plaza') || !RULES[role]) return;
       const got = furnishByRule(lay, rng, room, role, mods, rots, spec?.bastion ? { bastion: true } : {});
       if (got) furnished.add(room);
@@ -124,26 +108,14 @@ export function fitOut(
   for (const j of jobs) {
     wanted[j.def] = (wanted[j.def] ?? 0) + 1;
     if (furnished.has(j.room)) continue;
-    const d = drawOf(j.room);
-    const si = d ? specStep(d, j.def) : -1;
-    const share = d && si >= 0 ? d.arr.steps[si]?.share : undefined;
-    const k = `${j.room} ${j.def}`;
-    if (share !== undefined && (done.get(k) ?? 0) >= Math.max(1, Math.ceil((planned.get(k) ?? 0) * share))) { wanted[j.def] = (wanted[j.def] ?? 1) - 1; continue; }
-    done.set(k, (done.get(k) ?? 0) + 1);
-    const pm = (d && si >= 0 ? placeStep(lay, rng, j.room, d, si, rots(j.def)) : null)
-      ?? placeOne(lay, rng, j.def, [j.room], { rots: rots(j.def), spread: !!defs[j.def]?.weapon, ...(j.spec.sealed ? { sealed: true } : {}) })
+    const pm = placeOne(lay, rng, j.def, [j.room], { rots: rots(j.def), spread: !!defs[j.def]?.weapon, ...(j.spec.sealed ? { sealed: true } : {}) })
       ?? (j.spec.sealed ? null : placeOne(lay, rng, j.def, elsewhere(j.def, j.room), { rots: rots(j.def), spread: !!defs[j.def]?.weapon }));
     if (!pm) continue;
     placed[j.def] = (placed[j.def] ?? 0) + 1;
     const idx = lay.modules.length - 1;
     stockUp(idx, j.spec);
-    if (d && si >= 0) {
-      const n = lay.modules.length;
-      hostCompanions(lay, rng, j.room, d, si, pm);
-      for (let i = n; i < lay.modules.length; i++) stockUp(i, j.spec);
-    }
-    // A station room no rule fit: what the module feeds from goes flush against it all the same (a refinery's ore bin).
-    if (o.immobile && !d) {
+    // A room no rule fit: what the module feeds from goes flush against it all the same (a refinery's ore bin).
+    {
       let fi = placeFeed(lay, j.room, idx);
       // No room for it there: the module tries the room's other spots in turn until its feed fits beside it.
       const was = lay.modules[idx];
@@ -186,24 +158,10 @@ export function fitOut(
   const pd = (m: Record<string, number>): number => Object.entries(m).filter(([id]) => defs[id]?.pointDefense).reduce((t, [, n]) => t + n, 0);
   if (o.ground && pd(wanted) > 0 && pd(placed) < pd(wanted)) return { ...out, error: 'point defence does not fit' };
   if (reactorsIn(placed) < reactorsIn(wanted)) return { ...out, error: 'reactors do not fit' };
-  // Rooms with a recipe are lit after they are furnished, so lamps take the walkways the furniture leaves.
-  for (let room = 0; room < roles.length; room++) if (!drawOf(room)) lightRoom(lay, rng, room);
+  for (let room = 0; room < roles.length; room++) lightRoom(lay, rng, room);
   let supply = 0;
   let demand = 0;
   for (const m of lay.modules) { const p = (defs[m.def] as ModuleDef).power; if (p > 0) supply += p; else demand -= p; }
-  // Lamps the furnished rooms will need (a trial lighting, taken back: they are lit after furnishing), plus a margin.
-  const recipeRooms = roles.map((_, i) => i).filter((i) => drawOf(i));
-  let lamps = 0;
-  for (const room of recipeRooms) {
-    const n = lay.modules.length;
-    lightRoom(lay, rng, room);
-    lamps += lay.modules.length - n;
-    while (lay.modules.length > n) lay.pop();
-  }
-  const lampPower = -((defs['module.light'] as ModuleDef | undefined)?.power ?? 0);
-  demand += lamps * lampPower;
-  // Furniture can push a lamp off its first-choice tile: keep a lamp per furnished room in hand.
-  const margin = recipeRooms.length * lampPower;
   // Short of power after lighting: squeeze extra reactors into engineering or stores (never a mess or other living room).
   // A station plans its reactors (assembly/program.ts) and squeezes one in only where reactors stand.
   const spare = roles.map((r, i) => (r === 'reactor' || r === 'engine' || (r === 'cargo' && !o.immobile) ? i : -1)).filter((i) => i >= 0);
@@ -212,24 +170,11 @@ export function fitOut(
   // An extra reactor: the ship's own tier (the one its plan asked for) where one fits, else the smaller tiers down to Mk I.
   const own = REACTOR_TIERS.findIndex((id) => (wanted[id] ?? 0) > 0);
   const extras = REACTOR_TIERS.slice(0, Math.max(0, own) + 1).reverse().filter((id) => defs[id]);
-  for (let k = 0; k < (courts.length > 0 ? 6 : 3) && supply < demand + margin; k++) {
+  for (let k = 0; k < (courts.length > 0 ? 6 : 3) && supply < demand; k++) {
     const id = extras.find((x) => (k < 3 && placeOne(lay, rng, x, spare)) || (courts.length > 0 && placeOne(lay, rng, x, courts)));
     if (!id) break;
     supply += (defs[id] as ModuleDef).power;
   }
   if (supply < demand) return { ...out, error: 'not enough power' };
-  // Furnishing: recipe extras that draw power (a galley) only while the planned reactors cover them, with a margin
-  // kept for the lamps those rooms still need.
-  const power = { spare: supply - demand - margin };
-  for (const room of recipeRooms) {
-    const d = drawOf(room) as RoomDraw;
-    const before = lay.modules.length;
-    furnish(lay, rng, room, d, rots, power);
-    for (let i = before; i < lay.modules.length; i++) stockUp(i, specs[room]);
-    lightRoom(lay, rng, room);
-  }
-  let draw = 0;
-  for (const m of lay.modules) draw -= Math.min(0, (defs[m.def] as ModuleDef).power);
-  if (supply < draw) return { ...out, error: 'not enough power' };
   return out;
 }

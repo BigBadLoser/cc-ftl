@@ -2,7 +2,7 @@ import type { ModuleDef } from '../sim';
 import { items } from './items';
 
 /**
- * Room furniture the ship generator's room recipes lay out (src/sim/shipgen/rooms). Mess tables and chairs have art
+ * Room furniture the ship generator's room rules lay out (src/sim/shipgen/rooms/rules). Mess tables and chairs have art
  * (the food pack); the rest are planned modules with no art yet, drawn by the fallback until their sheets exist.
  * None of them adds a mechanic: storage holds items like a crate, the others are dressing (no sit-to-eat yet).
  */
