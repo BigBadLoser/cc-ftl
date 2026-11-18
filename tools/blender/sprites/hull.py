@@ -80,6 +80,10 @@ class Out(Spec):
             d.append(x + 0.5)
         if m & 6 == 6 and not self.corners & 2:
             d.append(max(0.5 - x, 0.5 - y))
+        if m & 14 == 14 and not self.corners & 4:          # a partition off a run along x (an arm off a straight hull
+            d.append(max(x + 0.5, 0.5 - y))                # run is a partition): rooms both sides of it, a T
+        if m & 7 == 7 and not self.corners & 1:            # ... off a run along y
+            d.append(max(0.5 - x, y + 0.5))
         return min(d)
 
     def topz(self, x, y):
@@ -252,7 +256,7 @@ def _rise(m, mask, room, corners):
     hull ghosts, walls fully collapsed)."""
     from .walls import hull_top
     pts = [(-0.5, -0.5)]
-    z0 = 0.02; z1 = hull_top() / 3          # (from the cut hull's back edge on the deck: short, as in the reference)
+    z0 = 0.02; z1 = hull_top() / 6          # (from the cut hull's back edge on the deck: short, as in the reference)
     for a, b in ([((-0.5, -0.5), (0.5, -0.5))] if not mask & 1 else []) + ([((-0.5, 0.5), (-0.5, -0.5))] if not mask & 8 else []):
         m.poly([core.G(*a, z0), core.G(*b, z0), core.G(*b, z0 + DZ), core.G(*a, z0 + DZ)], "gW2")   # (that edge's line)
     for px, py in pts:
