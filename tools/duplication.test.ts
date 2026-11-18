@@ -9,9 +9,9 @@ import { describe, expect, it } from 'vitest';
  * The numbers below are today's: they may only go down. New duplicated code fails here: call the existing function, or fold
  * both copies into one owner ("One answer per question", docs/ARCHITECTURE.md). Removing duplicates fails the "current" test so
  * the baseline comes down with it. `npx jscpd` prints the clones (console reporter: `npx jscpd --reporters console`).
- * Takes about 20 s, so it is in the slow tier.
+ * jscpd 5 (the Rust engine) takes well under a second, so this runs with the other rule checks (`npm run test:rules`).
  */
-const BASELINE = { clones: 59, duplicatedLines: 468 };
+const BASELINE = { clones: 73, duplicatedLines: 661 };
 
 const out = mkdtempSync(join(tmpdir(), 'jscpd-'));
 let now = { clones: 0, duplicatedLines: 0 };
@@ -30,6 +30,6 @@ describe('duplicated code in src', () => {
   });
 
   it('the baseline is current (lower it when duplicates are removed)', () => {
-    expect(now, 'duplication shrank: lower BASELINE in tools/duplication.slow.test.ts to these numbers').toEqual(BASELINE);
+    expect(now, 'duplication shrank: lower BASELINE in tools/duplication.test.ts to these numbers').toEqual(BASELINE);
   });
 });

@@ -12,7 +12,7 @@ checks:
   - name: typecheck
     run: npm run typecheck
   - name: rules
-    run: npm run test:rules && npx vitest run tools/duplication.slow.test.ts
+    run: npm run test:rules
   - name: tests
     run: npm run test:branch
     timeout: 1800
