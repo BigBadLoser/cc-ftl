@@ -178,7 +178,7 @@ class Out(Spec):
     def col_face(self, face, x, y, z):
         s = self._fs(face, x, y)
         if self.part == "rim":
-            if not self.o and (z < DZ * 1.5 or s < C or s > 1 - C):
+            if not self.o and not self.tee and (z < DZ * 1.5 or s < C or s > 1 - C):   # (a T's: behind the wall)
                 return A.ghost_line(1)                                 # the rear foot: its line on the deck, its ends
             return A.ghost_line(0)                                     # the rim's own faces are see-through
         f = (self.foot - z) / (self.foot + self.drop_at(x, y))
@@ -272,10 +272,11 @@ def _tee(m, mask, corners):
         for p, q, (ox, oy) in ((a, b, (0, iy * w)), (b, c, (ix * w, 0))):       # (on the crest's flat side)
             m.poly([core.G(*p, zc + up), core.G(*q, zc + up), core.G(q[0] + ox, q[1] + oy, zc + up),
                     core.G(p[0] + ox, p[1] + oy, zc + up)], "gW2")
-        nx, ny = w / 2 * -iy / abs(iy), w / 2 * ix / abs(ix)                    # the mitre: across it, half each side
-        p, q = (cx, cy), b
-        m.poly([core.G(p[0] - nx, p[1] - ny, zf + up), core.G(q[0] - nx, q[1] - ny, zc + up),
-                core.G(q[0] + nx, q[1] + ny, zc + up), core.G(p[0] + nx, p[1] + ny, zf + up)], "gW2")
+        nx, ny = w * -iy, w * ix                # the mitre: 1 px across, one-sided (centred on the corner it splits
+        p, q = (cx, cy), b                      #   over two px columns and reads dotted)
+        um = 3 * up                             # (over the slope's cell steps, which cut it into dashes at 1x lift)
+        m.poly([core.G(*p, zf + um), core.G(*q, zc + um), core.G(q[0] + nx, q[1] + ny, zc + um),
+                core.G(p[0] + nx, p[1] + ny, zf + um)], "gW2")
 
 
 def _rise(m, mask, room, corners):
