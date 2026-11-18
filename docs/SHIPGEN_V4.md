@@ -162,5 +162,17 @@ Settled one part at a time on option sheets (the same body, one part varied), be
 - **Sterns:** S1 (square drive bank, engines across a flat stern), S2 (quarter flares), S7 (a flared drive section,
   also with a gentler flare); S3 (drive pods on pylons) to judge in a real ship; S4 (tapered tail, drives on the centre
   line) maybe.
+- **Body plans:** P1 (plain) as a base at most; Q7's swept wings, but at the rear (blending into the drive section); the
+  original split carrier (a V-notched launch lane in a broad, stepped body); an offset command pod (a flat-fronted pod
+  that tapers back into the body).
+- **Type identity** (fit-out requirements and theme; behaviour stays the shared doctrine):
+
+  | Type | Role | Fit-out slant | Shape |
+  |---|---|---|---|
+  | Corvette | Skirmisher | Big drives for its size, 1-2 light guns (often ion), thin shields | Small, slim, drives large: rear swept wings or a flared drive section |
+  | Frigate | Escort, screen | Point defence and defence drones, two shield layers, steady light guns | Medium, compact, a wing pair for the point defence |
+  | Destroyer | Striker | A heavy forward battery (missiles, mass drivers), thin shields | Long and lean, embrasures forward, the command pod |
+  | Cruiser | Ship of the line | Many mixed guns, 2-3 shield layers, a big crew | Big and heavy: embrasures and a raked wing, a square drive bank |
+  | Carrier | Launcher | Few guns; shuttles, defence drones, point defence | Broad, the split hull with a launch lane, an open hangar |
 - **Corridors three wide**, so the hull is odd-wide about a centre row and rooms centre on it.
 - **Carriers:** an open hangar with the bays spread inside it, not a walled room a bay.
