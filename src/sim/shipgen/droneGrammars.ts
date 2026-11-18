@@ -341,7 +341,8 @@ function truss(c: Ctx): boolean {
   const head = rollProfile(() => c.rng.next(), 0, c.rng.int(1, 4), [0.15, 0.6]);
   const topo = byVariant(c, [['single', 2], ['fork', 2], ['twin', 2], ['h', 1]]);
   const forked = topo === 'fork' || topo === 'twin' || topo === 'h';
-  const f = guns.length > 0 ? frame(c, core, topo, runOf(guns, 3) / (forked ? 2 : 1) + 4, thick) : { carriers: [], tips: [] };
+  // Whole tiles: a half-tile prong put its pods at half-tile offsets, which stamped nothing (unarmed lancers, #577).
+  const f = guns.length > 0 ? frame(c, core, topo, Math.ceil(runOf(guns, 3) / (forked ? 2 : 1)) + 4, thick) : { carriers: [], tips: [] };
   if (!f) return no(c, `frame ${topo}`);
   if (!load(c, f.carriers, guns, head)) return no(c, `load ${topo}`);
   const al = runOf(other);
