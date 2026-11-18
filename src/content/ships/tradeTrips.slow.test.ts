@@ -16,6 +16,7 @@ import type { Trip } from '../../sim/trade/types';
 import { shipIds, shipIdOf } from '../../sim/regions';
 import { content } from '../index';
 import { run } from '../../../test/support/sim';
+import { withStation } from '../../../test/support/fixtures/tradeStuck';
 
 /** One shuttle hold: what a trip carries, for the trader's courier and the player's alike. */
 const HOLD = content.vehicles['vehicle.shuttle'].cargo;
@@ -88,20 +89,28 @@ describe('orders bigger than one hold run as several trips', () => {
     expect(sim.world.query(VehicleC).filter((v) => sim.world.get(v, VehicleC)!.homeShip === ship)).toHaveLength(0);
   });
 
-  it('an order called off after the first trip keeps that trip settled and refunds only the one in escrow', () => {
-    const { sim, ship } = freighter();
+  it("an order on the station's shuttle runs trip after trip on the same shuttle; lost in flight on trip 2, trip 1 stays settled and only trip 2 is refunded", () => {
+    const { sim, ship } = withStation();
+    sim.enqueue({ type: 'trade.hail', ship });
+    run(sim, 2);
     const t = sim.world.get(ship, TraderC)!;
+    t.stock = t.stock.filter((s) => s.item !== 'item.metal');
+    t.stock.push({ item: 'item.metal', count: 1000 });
+    sim.enqueue({ type: 'debug.setCredits', value: 100000 });
+    run(sim, 1);
+    const vehicles = new Set(sim.world.query(VehicleC));
     const start = { credits: sim.trade.credits, theirs: t.credits, stock: metal(sim, ship), have: playerItems(sim, 'item.metal') };
     const { deal } = buy(sim, ship, 90); // trips of 40, 40 and 10
+    expect(deal().courier).toBe('them');
+    const courier = deal().vehicle;
     const first = deal().balance;
-    // Run until trip 2 has been started (trip 1 settled), then shoot its courier down.
-    for (let i = 0; i < 30000 && deal().trip?.n !== 2; i++) run(sim, 1);
+    // Trip 2 starts on the same shuttle once trip 1 has settled; shoot it down in flight with trip 2's goods aboard.
+    for (let i = 0; i < 30000 && !(deal().trip?.n === 2 && deal().phase === 'out' && sim.world.get(courier, VehicleC)?.state === 'flying'); i++) run(sim, 1);
     expect(deal().trip?.n).toBe(2);
+    expect(deal().vehicle).toBe(courier);
+    expect([...sim.world.query(VehicleC)].every((v) => vehicles.has(v))).toBe(true); // no shuttle made for trip 2
     expect(sim.trade.credits).toBe(start.credits - first - deal().held);
-    run(sim, 200);
-    const courier = sim.world.query(VehicleC).find((v) => sim.world.get(v, VehicleC)!.homeShip === ship);
-    expect(courier).toBeDefined();
-    destroyVehicle(sim, courier!);
+    destroyVehicle(sim, courier);
     expect(ofType(run(sim, 3), 'trade.failed')[0]).toMatchObject({ reason: 'lost' });
     // Trip 1 stays settled; trip 2's credits are refunded; trip 2's goods went down with the shuttle; trip 3 was never held.
     expect(deal().held).toBe(0);

@@ -54,6 +54,8 @@ export function withStation(): { sim: Sim; ship: number } {
   const ship = sim.world.query(ShipC).find((i) => sim.world.get(i, ShipC)!.immobile)!;
   const me = playerShip(sim);
   for (const id of [...sim.world.query(VehicleC)]) if (sim.world.get(id, VehicleC)!.homeShip === me) sim.world.destroyEntity(id);
+  // No galaxy turn passes during the test: the station is a live port market whose stock moves each turn, and the counts checked are the deal's alone.
+  sim.galaxy.turnClock = -1e9;
   sim.events.drain();
   return { sim, ship };
 }
