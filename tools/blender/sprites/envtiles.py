@@ -88,6 +88,8 @@ for _o, _clear in OUT_MASK.items():
             SPRITES.append((f"tile.hull.belly.o{_o}.m{_m}.v1", (1, 1), "block",
                             lambda m=_m, o=_o: out_block(m, o, 1, "belly")))
 SPRITES.append(("tile.hull.ghost.vert", (1, 1), "ghost", vert))
+from .hull_near import sprites as _near_ghosts      # noqa: E402 (the near hull's ghost, walls down: tile.hull.ghost.n.*)
+SPRITES += _near_ghosts()
 SPRITES.append(("tile.hull.full.m15", (1, 1), "block", lambda: block(15, "hull", level="up")))   # (the engine's
 #   stand-in, render/assets/fallback.ts: the far hull itself is tile.wall.full.m* + tile.hull.cap.m*, tiles.ts)
 END_CORNERS = {"s": (0, 2, 4, 6), "e": (0, 1, 2, 3)}   # the corner fills reaching each end face's edge
