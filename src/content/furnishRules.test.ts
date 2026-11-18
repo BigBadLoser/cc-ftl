@@ -94,7 +94,6 @@ function room(w: number, h: number, d: number): Layout {
   for (let y = 1; y <= h; y++) for (let x = 1; x <= w; x++) roomOf[y * (w + 2) + x] = 0;
   for (let x = 1; x <= w; x++) roomOf[(h + 2) * (w + 2) + x] = 1;
   const lay = new Layout(rows, roomOf, ['quarters', 'hall'], defs);
-  lay.gunsOnHull = false; // as on a station
   return lay;
 }
 

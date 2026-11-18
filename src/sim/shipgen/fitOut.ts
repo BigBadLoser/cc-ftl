@@ -21,8 +21,6 @@ export interface FinishOpts {
   check?: ExtraCheck;
   /** Airlocks may face any way (the station assembly; the arranger's hulls keep theirs off the stern). */
   airlocksAnyWay?: boolean;
-  /** Guns may stand anywhere in their bay, as the game allows (the arranger's hulls keep theirs beside the hull). */
-  gunsAnywhere?: boolean;
   /** Turrets to stand on open ground outside the hull, cabled to it (a prefab asteroid base's guns and point defence: groundTurrets.ts). */
   ground?: GroundPlan;
   /** Rooms where a module standing apart on open ground is entered: the fit-out checks its walk from there (a prefab farm's greenhouses). */
@@ -57,10 +55,9 @@ const rank = (id: string, d: ModuleDef): number => {
 /** Place every room's planned modules in that room; a reason string when something essential does not fit. */
 export function fitOut(
   rng: Rng, f: FactionDef, rows: string[], roomOf: Int16Array, roles: RoomRole[], specs: (RoomSpec | undefined)[], defs: Record<string, ModuleDef>,
-  recipes = RECIPES, o: Pick<FinishOpts, 'airlocksAnyWay' | 'gunsAnywhere' | 'immobile' | 'ground' | 'entries'> = {},
+  recipes = RECIPES, o: Pick<FinishOpts, 'airlocksAnyWay' | 'immobile' | 'ground' | 'entries'> = {},
 ): Fitted {
   const lay = new Layout(rows, roomOf, roles, defs);
-  lay.gunsOnHull = !o.gunsAnywhere;
   for (const e of o.entries ?? []) lay.entries.add(e);
   const out: Fitted = { lay, stock: new Map(), vehicles: new Map(), drones: new Map() };
   const jobs: { room: number; def: string; spec: RoomSpec }[] = [];

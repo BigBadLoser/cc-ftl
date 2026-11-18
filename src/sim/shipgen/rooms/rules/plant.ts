@@ -76,6 +76,8 @@ function crateSlots(w: number, h: number, clear: ReadonlySet<string>, cut: Reado
       if (y + 2 <= h - 3) rows.push({ y: y + 2, rot: 2 });
     }
     if (h >= 3) rows.push({ y: h - 1, rot: 2 });
+    // A closet two deep: one row on the back wall, the door's row to reach it.
+    if (h === 2) rows.push({ y: 0, rot: 0 });
   }
   const m = Math.max(1, Math.ceil((w + 1) / 5)), cols = w - (m - 1), xs: number[] = [];
   for (let s = 0, x = 0; s < m; s++) {
@@ -89,8 +91,9 @@ function crateSlots(w: number, h: number, clear: ReadonlySet<string>, cut: Reado
 
 /**
  * CG: a warehouse or crate room: rows of crates in stacks of four at most with a cross lane between, back to back round an
- * aisle (the back wall's row faces south, the next one north), the door wall's row only in a room three or four deep. The
- * planned crates take the first places; a roomier hold fills up to a quarter of its floor.
+ * aisle (the back wall's row faces south, the next one north), the door wall's row only in a room three or four deep, the
+ * back row alone in a closet two deep. The planned crates take the first places; a roomier hold fills up to a quarter of
+ * its floor.
  */
 export function crates(c: Ctx): Piece[] {
   const { w, h, d } = c, planned = count(c.need, CR);

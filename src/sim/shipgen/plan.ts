@@ -209,7 +209,8 @@ export function planShip(rng: Rng, f: FactionDef, role: ShipRoleDef, depth: numb
   // weapons charge only with a manned console).
   const consoles = f.living ? ['module.helm', 'module.weaponsConsole', ...(shields.length > 0 ? ['module.shieldConsole'] : [])] : ['module.weaponsConsole'];
   if (!f.living && f.aiCore) consoles.push('module.aiCore');
-  const command: RoomSpec = { role: f.living ? 'bridge' : 'core', mods: consoles, w: 7, h: f.living ? 4 : 5 };
+  // Wide enough for the consoles side by side on the back wall (the helm bridge rule), a tile to walk and one spare before them.
+  const command: RoomSpec = { role: f.living ? 'bridge' : 'core', mods: consoles, w: Math.max(7, consoles.reduce((n, m) => n + sizeOf(defs, m), 0)), h: f.living ? 4 : 5 };
   const pdCount = f.aiCore ? b.pointDefense : 0;
   // Defence drones (DESIGN.md "Drones"): a bay in the AI room (living crews) or in its own sealed pod (drone ships); it needs the core to run them.
   const dronesOn = !!f.defenceDrones && f.aiCore && depth >= ENEMY_DRONE_MIN_DEPTH;

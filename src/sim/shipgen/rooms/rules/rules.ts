@@ -231,7 +231,24 @@ const OPS: readonly string[] = ['module.weaponsConsole', 'module.shieldConsole']
  * off the ways between the doors).
  */
 function op(c: Ctx): Piece[] {
-  const list = c.need.filter((m) => OPS.includes(m)), sizes = list.map((m) => size(c, m)), x0 = off(c, 0, 0, 0, 1), x1 = off(c, c.w - 1, 0, c.w - 1, -1);
+  return consoleRow(c, c.need.filter((m) => OPS.includes(m)));
+}
+
+const HELM = 'module.helm';
+/** The helm and the consoles in the order a helm bridge stands them: half the consoles, the helm, the rest. */
+const helmRow = (need: readonly string[]): string[] => {
+  const ops = need.filter((m) => OPS.includes(m)), half = Math.floor(ops.length / 2);
+  return [...ops.slice(0, half), HELM, ...ops.slice(half)];
+};
+/** Whether a room fits its helm and consoles side by side on the back wall, with a tile to walk before them. */
+const helmFits = (need: readonly string[], r: { w: number; h: number; defs: Record<string, ModuleDef> }): boolean => {
+  const row = helmRow(need);
+  return need.includes(HELM) && row.reduce((n, m) => n + (r.defs[m]?.footprint[0] ?? 2), 0) <= r.w && Math.max(...row.map((m) => r.defs[m]?.footprint[1] ?? 2)) + 1 <= r.h;
+};
+
+/** Consoles on the back wall from corner to corner, and the ops room's table between the outer two where it fits. */
+function consoleRow(c: Ctx, list: readonly string[]): Piece[] {
+  const sizes = list.map((m) => size(c, m)), x0 = off(c, 0, 0, 0, 1), x1 = off(c, c.w - 1, 0, c.w - 1, -1);
   const gap = list.length > 1 ? Math.floor((x1 - x0 + 1 - sizes.reduce((a, b) => a + b, 0)) / (list.length - 1)) : 0;
   let x = list.length > 1 ? x0 : Math.floor((c.w - (sizes[0] ?? 0)) / 2);
   const consoles = list.map((m, i) => { const p = P(m, i === list.length - 1 && i > 0 ? x1 + 1 - (sizes[i] as number) : x, 0, 0); x += (sizes[i] as number) + gap; return p; });
@@ -280,12 +297,14 @@ export const RULES: Partial<Record<RoomRole, readonly RuleArrangement[]>> = {
   bridge: [
     { name: "CO chief's office, desk and planters", weight: 1, when: (n, r) => !n.includes('module.helm') && !n.some((m) => OPS.includes(m)) && r.w >= 5 && r.w <= 10 && r.h >= 4 && r.h <= 6, rule: co },
     { name: 'OP ops room, consoles on the back wall, a table', weight: 1, when: (n, r) => !n.includes('module.helm') && n.some((m) => OPS.includes(m)) && r.w >= 5 && r.h >= 5, rule: op },
+    // The helm amid the consoles, all facing the back wall: a ship's bridge has its door aft, so they face the bow.
+    { name: 'HB helm bridge, the helm amid the consoles on the back wall', weight: 1, when: helmFits, rule: (c) => consoleRow(c, helmRow(c.need)).filter((p) => p.def !== T && p.def !== 'module.chair') },
   ],
   cargo: [{
     name: 'PA pantry, cold stores along the back wall', weight: 1,
     when: (n, r) => n.length > 0 && n.every((m) => m === RK || m === CD) && r.h >= 3 && r.h <= 4 && count(n, RK) + count(n, CD) <= shelfSlots(r.w).length,
     rule: pa,
-  }, { name: 'CG warehouse, crates in aisles', weight: 1, when: (n, r) => n.length > 0 && n.every((m) => m === CR) && r.h >= 3, rule: crates }, {
+  }, { name: 'CG warehouse, crates in aisles', weight: 1, when: (n, r) => n.length > 0 && n.every((m) => m === CR) && r.h >= 2, rule: crates }, {
     name: 'OS ore store, bins down both long walls round an aisle', weight: 1,
     when: (n, r) => n.length > 0 && (n.every((m) => m === OB) || n.every((m) => m === OBL)) && Math.min(r.w, r.h) >= 5 && Math.max(r.w, r.h) >= n.length + 1,
     rule: ore,
