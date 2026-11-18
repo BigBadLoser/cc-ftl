@@ -15,13 +15,11 @@ name: CI
 # - Soak tier (*.soak.test.ts, design-number runs over game hours or many seeds; `npm run test:soak`): the daily run on main, a manual
 #   run, and a PR carrying the `soak` label (add the label, then push or re-run; the label adds the job to the PR's checks). Never
 #   on an unlabelled PR. The `soak` job below shards it (3 shards) and fails the run when a soak test fails.
-# - `pr-meta` (tools/prMeta.mjs, no install, drafts included, also when the PR title or body is edited): the PR links an issue, the branch has a
-#   known prefix, and no commit message or the body names a model. It does not run on markdown-only PRs (paths-ignore below).
 # Markdown-only and wiki-only changes don't run this CI (the wiki has .github/workflows/wiki-ci.yml).
 # Shared src/content edits still run both.
 on:
   pull_request:
-    types: [opened, synchronize, reopened, ready_for_review, labeled, edited]
+    types: [opened, synchronize, reopened, ready_for_review, labeled]
     paths-ignore: ['**/*.md', 'wiki/**', 'wiki-preview/**', '.github/workflows/wiki-ci.yml', '.github/workflows/wiki-preview.yml', '.github/workflows/pages.yml']
   schedule:
     - cron: '17 6 * * *'
@@ -41,37 +39,13 @@ env:
 
 concurrency:
   # A label event gets its own group, so it never cancels the PR's normal run (and a non-soak label starts nothing).
-  # A title/body edit gets its own too: it runs only pr-meta, and must cancel neither the normal run nor a soak label run.
-  group: ci-${{ github.event_name == 'schedule' && 'nightly' || github.ref }}${{ github.event.action == 'labeled' && '-label' || github.event.action == 'edited' && '-edited' || '' }}
+  group: ci-${{ github.event_name == 'schedule' && 'nightly' || github.ref }}${{ github.event.action == 'labeled' && '-label' || '' }}
   cancel-in-progress: true
 
 jobs:
-  pr-meta:
-    # PR process rules from CLAUDE.md as a check. The body goes in through the environment, never interpolated into the script.
-    if: github.event_name == 'pull_request' && github.event.action != 'labeled'
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-          # Every commit message, but no file contents beyond the script itself (the history holds the sprite sheets).
-          fetch-depth: 0
-          filter: blob:none
-          sparse-checkout: tools/prMeta.mjs
-          sparse-checkout-cone-mode: false
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - run: node tools/prMeta.mjs
-        env:
-          PR_BODY: ${{ github.event.pull_request.body }}
-          PR_BRANCH: ${{ github.event.pull_request.head.ref }}
-          PR_BASE: ${{ github.event.pull_request.base.ref }}
-
   gate:
     # A `labeled` event only matters for the soak label (the soak job); every other job skips it.
-    if: github.event_name != 'pull_request' || (!github.event.pull_request.draft && github.event.action != 'edited' && (github.event.action != 'labeled' || github.event.label.name == 'soak'))
+    if: github.event_name != 'pull_request' || (!github.event.pull_request.draft && (github.event.action != 'labeled' || github.event.label.name == 'soak'))
     runs-on: ubuntu-latest
     outputs:
       run: ${{ steps.fresh.outputs.run }}

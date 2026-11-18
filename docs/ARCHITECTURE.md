@@ -1086,7 +1086,7 @@ so does shrinking without lowering the baseline in the same change.
 | Systems never import each other; only `pipeline.ts` does (allow-list, empty) | `tools/systemImports.test.ts` |
 | Tests that mock or stub are isolated (list: `tools/isolatedTests.ts`) | `tools/isolatedMocks.test.ts` |
 | No new copy-paste (ratchet, slow tier, settings in `.jscpd.json`) | `tools/duplication.slow.test.ts` |
-| PR links an issue, branch prefix, no model names in commits or body | `pr-meta` job in `ci.yml` (`tools/prMeta.mjs`) |
+| PR links an issue, branch prefix, no model names in commits or body | `.github/workflows/pr-meta.yml` (`tools/prMeta.mjs`) |
 | Lint, typecheck and branch tests on agent work | `checks:` in `.harness.yml` |
 
 ## Quality rules

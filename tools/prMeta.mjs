@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /* global process, console */
-// PR process checks (CLAUDE.md "Workflow"), run by the `pr-meta` job in .github/workflows/ci.yml with no install.
+// PR process checks (CLAUDE.md "Workflow"), run by .github/workflows/pr-meta.yml with no install.
 //   PR_BODY, PR_BRANCH, PR_BASE in the environment; the commits are read with `git log origin/$PR_BASE..HEAD`.
 // Fails (exit 1, one message per problem saying what to change) when: the body links no issue; the branch has no known prefix;
 // a commit message or the body names a model. The pure functions are exported for tools/prMeta.test.ts.
