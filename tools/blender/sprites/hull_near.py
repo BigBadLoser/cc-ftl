@@ -6,10 +6,12 @@ turns (its chamfers), fading as they go, and the same fading fill between them. 
 from . import core
 from . import hull_outline as HO
 from . import wall3d_belly as B
-from .hull import BACK, FADE, _dummy, _Fill
+from .hull import FADE, _dummy, _Fill
 from .hull_wire import TONE, strip
 from .wall3d_ext_diag import UP, _solid
 
+BACK = tuple(f"gFillN{i}" for i in range(6))   # the fill, bottom up: as the rear's (hull.BACK) but stronger, over the
+#   lit armour face below it (the rear's over dark space)
 Z0 = B.FAR_LOW                             # (from the cut's top, flush with the deck)
 
 
