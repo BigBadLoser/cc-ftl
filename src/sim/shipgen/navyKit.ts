@@ -162,9 +162,9 @@ function matched(p: RoomSpec[], q: RoomSpec[]): [RoomSpec[], RoomSpec[]] {
 const rankPort = (id: string): number => (id.startsWith('h') ? 0 : id.startsWith('p') ? 1 : 2);
 
 /** Engine room entered from the west, on the axis rows (a pod at the end of a deck or hull). */
-export function endPod(rng: Rng, k: number): Block {
+export function endPod(rng: Rng, k: number, engine = 'module.engine'): Block {
   const b = localBuilder(rng);
-  const e = engineSpec(k, 'w');
+  const e = engineSpec(k, 'w', engine);
   b.place({ x: 0, y: -1 - 2 * k, w: e.w + 2, h: e.h + 2 }, 'engine', e);
   return blockFrom(b, 'drive', `pod ${k}E`, 'human', [{ id: 'w', side: 'w', x: 0, y: -1, len: 2, access: 'human' }]);
 }
@@ -174,18 +174,18 @@ export function propulsion(c: Ctx, aft: number, mode: HullFamilyDef['propulsion'
   const { rng, plan, A } = c;
   const E = plan.engines;
   c.parts.push(mode);
-  if (mode === 'bank') { const b = bankBlock(rng, E, plan.reactors); return (!!b && A.attach(aft, b, { side: 'e' }) !== null) || no(c, 'bank'); }
-  if (mode === 'cluster' || mode === 'wingPods') { const b = clusterBlock(rng, E, plan.reactors); return (!!b && A.attach(aft, b, { side: 'e' }) !== null) || no(c, 'cluster'); }
+  if (mode === 'bank') { const b = bankBlock(rng, E, plan.reactors, plan.engine); return (!!b && A.attach(aft, b, { side: 'e' }) !== null) || no(c, 'bank'); }
+  if (mode === 'cluster' || mode === 'wingPods') { const b = clusterBlock(rng, E, plan.reactors, plan.engine); return (!!b && A.attach(aft, b, { side: 'e' }) !== null) || no(c, 'cluster'); }
   const pw = powerBlock(rng, plan.reactors);
   const p = pw ? A.attach(aft, pw, { side: 'e' }) : null;
   if (p === null) return no(c, 'power');
   const k = Math.ceil(E / 2);
   if (mode === 'nacelles') {
     const arm = A.attachMirrored(p, p, hallBlock(rng, rng.int(1, 3), 2, false), { side: 'n', parentPort: 'hn' });
-    return (!!arm && !!A.attachMirrored(arm[0], arm[1], podBlock(rng, k), { side: 'n', doors: 1 })) || no(c, 'nacelles');
+    return (!!arm && !!A.attachMirrored(arm[0], arm[1], podBlock(rng, k, plan.engine), { side: 'n', doors: 1 })) || no(c, 'nacelles');
   }
   for (const port of A.free(p, 'n')) {
-    if (A.attachMirrored(p, p, podBlock(rng, k), { side: 'n', parentPort: port.id, align: 'end', doors: 1 })) return true;
+    if (A.attachMirrored(p, p, podBlock(rng, k, plan.engine), { side: 'n', parentPort: port.id, align: 'end', doors: 1 })) return true;
   }
   return no(c, 'side drives');
 }
@@ -194,7 +194,7 @@ export function propulsion(c: Ctx, aft: number, mode: HullFamilyDef['propulsion'
 export function twinDrives(c: Ctx, hulls: [number, number], mode: HullFamilyDef['propulsion'][number], align: 'start' | 'mid' = 'mid'): boolean {
   const e = Math.max(1, Math.ceil(c.plan.engines / 2));
   const r = Math.max(1, Math.ceil(c.plan.reactors / 2));
-  const blk = mode === 'cluster' ? clusterBlock(c.rng, e, r) : bankBlock(c.rng, e, r);
+  const blk = mode === 'cluster' ? clusterBlock(c.rng, e, r, c.plan.engine) : bankBlock(c.rng, e, r, c.plan.engine);
   c.parts.push(`twin ${mode}`);
   return (!!blk && !!c.A.attachMirrored(hulls[0], hulls[1], blk, { side: 'e', align })) || no(c, 'twin drives');
 }

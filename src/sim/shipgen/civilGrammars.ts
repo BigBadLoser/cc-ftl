@@ -79,7 +79,7 @@ function stationHull(c: Ctx): boolean {
     const spokes = shuffle(c.rng, ['n', 's', 'w', 'e'] as Side[]).slice(0, c.rng.int(2, 4));
     const o = { extra: c.rng.int(0, 5), weight: [c.rng.pick([0.6, 1, 1.6]), c.rng.pick([0.6, 1, 1.6]), c.rng.pick([0.6, 1, 2.5])], inner: c.rng.chance(0.5) };
     c.parts.push(`spokes ${spokes.join('')}${o.inner ? ' thick' : ''}`);
-    const b = civil(ringStation(c.rng, c.plan.command, shuffle(c.rng, rooms), c.plan.engines, c.plan.reactors, spokes, o), 'command', 'ring station');
+    const b = civil(ringStation(c.rng, c.plan.command, shuffle(c.rng, rooms), c.plan.engines, c.plan.reactors, spokes, o, c.plan.engine), 'command', 'ring station');
     if (!b) return no(c, 'ring');
     return arms(c, [c.A.placeRoot(b)], j.guns);
   }
@@ -88,7 +88,7 @@ function stationHull(c: Ctx): boolean {
   const mods = shuffle(c.rng, [...rooms, ...reactors]);
   const o = { gx: c.rng.int(2, 7), gy: c.rng.int(2, 6), spread: c.rng.pick([0.7, 1.3, 2.2]), holes: c.rng.pick([0, 0.15, 0.3]), pad: c.rng.int(0, 2) };
   c.parts.push(`grid ${o.spread}/${o.gx}x${o.gy}`);
-  const b = civil(latticeStation(c.rng, [c.plan.command, ...mods], c.plan.engines, o), 'command', 'lattice station');
+  const b = civil(latticeStation(c.rng, [c.plan.command, ...mods], c.plan.engines, o, c.plan.engine), 'command', 'lattice station');
   if (!b) return no(c, 'lattice');
   return arms(c, [c.A.placeRoot(b)], j.guns);
 }

@@ -207,6 +207,8 @@ export interface FactionDef {
   crew: { required: readonly string[]; pool: readonly Weighted<string>[]; species: readonly string[] };
   doctrine: { targeting: NonNullable<ShipTemplate['doctrine']>; boarding?: NonNullable<ShipTemplate['boarding']> };
   budget: ShipBudget;
+  /** Highest engine tier this faction's ships carry (1 to 3, default 3): drones' sealed 4x4 pods hold Mk I only. */
+  maxEngineTier?: 1 | 2 | 3;
 }
 
 /** Where a generated ship came from: stored on its ship entity. */

@@ -8,7 +8,7 @@ import { Layout } from './layout';
 import type { Fitted } from './fitted';
 import { placeGroundTurrets, type GroundPlan } from './groundTurrets';
 import { accepts } from '../items/storage';
-import type { RoomSpec } from './plan';
+import { ENGINE_TIERS, enginesIn, type RoomSpec } from './plan';
 import { equipKind, type EquipKind } from './equipment';
 import type { FactionDef, RoomRole } from './types';
 
@@ -41,7 +41,7 @@ const ELSEWHERE: Record<EquipKind, readonly RoomRole[]> = {
 
 /** Placement order: hull-bound and required modules first, stores last. */
 const ORDER = [
-  'module.engine', 'module.airlock', 'module.helm', 'module.weaponsConsole', 'module.aiCore', 'module.vehicle_bay', 'module.shieldConsole',
+  ...ENGINE_TIERS, 'module.airlock', 'module.helm', 'module.weaponsConsole', 'module.aiCore', 'module.vehicle_bay', 'module.shieldConsole',
 ];
 const rank = (id: string, d: ModuleDef): number => {
   const i = ORDER.indexOf(id);
@@ -177,7 +177,7 @@ export function fitOut(
     out.ground = { placed: new Set(g.placed), cable: g.cable, unwired: g.unwired };
   }
   if (out.ground && out.ground.unwired > 0) return { ...out, error: 'a module standing apart has no cable' };
-  const missing = (id: string): boolean => (wanted[id] ?? 0) > 0 && (placed[id] ?? 0) === 0;
+  const missing = (id: string): boolean => (id === 'module.engine' ? enginesIn(wanted) > 0 && enginesIn(placed) === 0 : (wanted[id] ?? 0) > 0 && (placed[id] ?? 0) === 0);
   for (const id of ['module.engine', 'module.helm', 'module.airlock', 'module.reactor', 'module.weaponsConsole', 'module.aiCore', 'module.vehicle_bay']) {
     if (missing(id)) return { ...out, error: `no ${id.replace('module.', '')} fits` };
   }

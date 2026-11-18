@@ -79,6 +79,8 @@ export interface ShipPlan {
   weapons: RoomSpec[];
   shields: RoomSpec[];
   engines: number;
+  /** The engine module the plan fits (`engineFor`): Mk I, II or III by depth. */
+  engine: string;
   reactors: number;
   /** Navy-style AI core room (with point defence); drones keep the core in the command room and pods for PD. */
   core: RoomSpec | null;
@@ -107,9 +109,25 @@ export function weaponSpec(defs: Record<string, ModuleDef>, mods: string[]): Roo
 export const reactorSpec = (k: number): RoomSpec => ({ role: 'reactor', mods: Array<string>(k).fill('module.reactor'), w: 2 * k + 1, h: 3 });
 
 /** Engine room for k engines stacked along the east hull. `door` is the wall crew enter by. */
-export const engineSpec = (k: number, door: 'w' | 'ns'): RoomSpec => ({
-  role: 'engine', mods: Array<string>(k).fill('module.engine'), w: door === 'w' ? 5 : 4, h: door === 'w' ? 4 * k : 4 * k + 1,
+export const engineSpec = (k: number, door: 'w' | 'ns', engine = 'module.engine'): RoomSpec => ({
+  role: 'engine', mods: Array<string>(k).fill(engine), w: engineDepth(engine) - (door === 'w' ? 0 : 1), h: door === 'w' ? 4 * k : 4 * k + 1,
 });
+
+/** Engine module ids, Mk I to Mk III (tiers.ts), and how far each reaches inboard from the hull edge (its long footprint side). */
+export const ENGINE_TIERS = ['module.engine', 'module.engine.mk2', 'module.engine.mk3'] as const;
+/** Engines in a module count (by def id), any tier. */
+export const enginesIn = (m: Record<string, number>): number => ENGINE_TIERS.reduce((t, id) => t + (m[id] ?? 0), 0);
+const engineDepth = (engine: string): number => 5 + Math.max(0, ENGINE_TIERS.indexOf(engine as (typeof ENGINE_TIERS)[number]));
+
+/**
+ * The engine a ship at generation `depth` carries: the highest tier whose blueprint danger tier (`minDanger`) the depth reaches (the
+ * generation depth is the node's danger tier), up to the faction's `maxEngineTier`. One owner: plans, rooms and the hull's engine count follow it.
+ */
+export function engineFor(defs: Record<string, ModuleDef>, depth: number, maxTier = 3): string {
+  let pick = 'module.engine';
+  for (const id of ENGINE_TIERS.slice(1, maxTier)) if (defs[id]?.engine && depth >= (defs[id].blueprint?.minDanger ?? Infinity)) pick = id;
+  return pick;
+}
 
 export const dockSpec = (): RoomSpec => ({ role: 'dock', mods: ['module.airlock'], w: 3, h: 3 });
 
@@ -117,19 +135,14 @@ export function cargoSpec(n: number): RoomSpec {
   return { role: 'cargo', mods: Array<string>(n).fill('module.storage'), w: Math.max(3, Math.ceil(n / 2) + 1), h: 3, stock: true };
 }
 
-/** Power the plan books for each engine. */
-const ENGINE_DEMAND = 6;
-
-/** Tiles of a stacked engine room (`engineSpec`'s interior). */
-const ENGINE_ROOM_TILES = 20;
 
 /**
  * Engines a hull of `perTile` hull tiles per room tile needs to carry the rooms (`specs`) and its own engine rooms (`hullCapacity`); 0
- * with no estimate (`HullFamilyDef.hullPerRoomTile`). Solves `perTile * (rooms + 20 * engines) <= engines * capacity`.
+ * with no estimate (`HullFamilyDef.hullPerRoomTile`). Solves `perTile * (rooms + room * engines) <= engines * capacity`.
  */
-function hullEngines(defs: Record<string, ModuleDef>, perTile: number, specs: readonly RoomSpec[]): number {
-  const cap = defs['module.engine']?.engine?.hullCapacity ?? 0;
-  const room = perTile * ENGINE_ROOM_TILES;
+function hullEngines(defs: Record<string, ModuleDef>, engine: string, perTile: number, specs: readonly RoomSpec[]): number {
+  const cap = defs[engine]?.engine?.hullCapacity ?? 0;
+  const room = perTile * engineSpec(1, 'w', engine).w * 4;
   if (perTile <= 0 || cap <= room) return 0;
   return Math.ceil((perTile * specs.reduce((t, r) => t + r.w * r.h, 0)) / (cap - room));
 }
@@ -200,21 +213,24 @@ export function planShip(rng: Rng, f: FactionDef, role: ShipRoleDef, depth: numb
   const hangars: RoomSpec[] = Array.from({ length: role.bays ?? (f.doctrine.boarding ? 1 : 0) }, () => ({
     role: 'hangar' as const, mods: ['module.vehicle_bay'], w: 5, h: 7, vehicle: true,
   }));
-  const budgetEngines = Math.max(1, b.engines);
-  const booked = Math.max(0, hullEngines(defs, hullPerRoomTile, [command, ...weapons, ...shields, ...(core ? [core] : []), ...pd, ...quarters, ...cargo, ...hangars, ...support]) - budgetEngines);
+  const engine = engineFor(defs, depth, f.maxEngineTier);
+  // The budget counts Mk I engines: a bigger tier stands in for as many as it out-evades.
+  const evade = (id: string): number => (defs[id]?.engine?.evasionPerPower ?? 0) * -(defs[id]?.power ?? 0);
+  const budgetEngines = Math.max(1, Math.ceil(b.engines / Math.max(1, evade(engine) / (evade('module.engine') || 1))));
+  const booked = Math.max(0, hullEngines(defs, engine, hullPerRoomTile, [command, ...weapons, ...shields, ...(core ? [core] : []), ...pd, ...quarters, ...cargo, ...hangars, ...support]) - budgetEngines);
   const plan: ShipPlan = {
-    role, command, weapons, shields, engines: budgetEngines + booked + extraEngines, reactors: 1, core, pd, quarters, cargo, hangars, support, crew,
+    role, command, weapons, shields, engines: budgetEngines + booked + extraEngines, engine, reactors: 1, core, pd, quarters, cargo, hangars, support, crew,
     size: b.size,
   };
   // Power: enough reactors for the plan, or drop guns until the reactor cap covers it.
   const demandOf = (): number => {
     const rooms = allRooms(plan);
-    let d = plan.engines * ENGINE_DEMAND + 2 + rooms.length * 3;
+    let d = plan.engines * -(defs[engine]?.power ?? -6) + 2 + rooms.length * 3;
     for (const r of rooms) for (const m of r.mods) d += Math.max(0, -(defs[m]?.power ?? 0));
     return d;
   };
   const supply = defs['module.reactor']?.power ?? 50;
-  const cap = Math.max(1, b.reactors) + Math.ceil(((booked + extraEngines) * ENGINE_DEMAND) / supply);
+  const cap = Math.max(1, b.reactors) + Math.ceil(((booked + extraEngines) * -(defs[engine]?.power ?? -6)) / supply);
   // Guns go before point defence when power is short (the last gun first).
   const isPd = (r: RoomSpec): boolean => r.mods.every((m) => !!defs[m]?.pointDefense);
   while (plan.weapons.length > 1 && Math.ceil(demandOf() / supply) > cap) {

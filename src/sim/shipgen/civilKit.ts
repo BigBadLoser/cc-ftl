@@ -39,7 +39,7 @@ export function join(c: Ctx, host: number, blk: Block | null, side: Side = 'e'):
 export function stern(c: Ctx, host: number): boolean {
   const H = blockOf(c, host).rows.length;
   const styles = shuffle(c.rng, ['nozzle', 'pair', 'nacelles'] as DriveStyle[]);
-  const built = styles.map((s) => civil(drive(c.rng, c.plan.engines, c.plan.reactors, s), 'drive', `${s} drive`)).filter((b): b is Block => !!b);
+  const built = styles.map((s) => civil(drive(c.rng, c.plan.engines, c.plan.reactors, s, c.plan.engine), 'drive', `${s} drive`)).filter((b): b is Block => !!b);
   const order = [...built.filter((b) => b.rows.length <= H), ...built.filter((b) => b.rows.length > H).sort((a, b) => a.rows.length - b.rows.length)];
   for (const d of order) if (join(c, host, d) !== null) { c.parts.push(d.label.replace('civil: ', '')); return true; }
   return no(c, 'drive');

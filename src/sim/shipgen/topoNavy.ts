@@ -36,15 +36,15 @@ const zoned = (specs: RoomSpec[]): RoomSpec[] => [...specs].sort((a, b) => ZONE.
  * Engineering at the stern: a transverse corridor at column `x` (its west wall) spanning the joins, engines and
  * reactors stacked on its east side, mirrored about the axis, with a centre item on the axis.
  */
-export function stern(b: Builder, x: number, joins: Rect[], engines: number, reactors: number): Part[] {
+export function stern(b: Builder, x: number, joins: Rect[], engines: number, reactors: number, engine = 'module.engine'): Part[] {
   const items: RoomSpec[] = [];
   let rLeft = reactors;
   let eLeft = engines;
   let centre: RoomSpec;
-  if (eLeft % 2 === 1) { centre = engineSpec(1, 'w'); eLeft--; } else { const k = rLeft % 2 === 1 ? 1 : 2; centre = reactorSpec(Math.min(k, rLeft)); rLeft -= Math.min(k, rLeft); }
+  if (eLeft % 2 === 1) { centre = engineSpec(1, 'w', engine); eLeft--; } else { const k = rLeft % 2 === 1 ? 1 : 2; centre = reactorSpec(Math.min(k, rLeft)); rLeft -= Math.min(k, rLeft); }
   while (eLeft > 0 || rLeft > 0) {
     if (rLeft > 0) { const k = Math.ceil(rLeft / 2); items.push(reactorSpec(k)); rLeft -= Math.min(rLeft, 2 * k); }
-    if (eLeft > 0) { items.push(engineSpec(1, 'w')); eLeft -= 2; }
+    if (eLeft > 0) { items.push(engineSpec(1, 'w', engine)); eLeft -= 2; }
   }
   // Centre item on the axis: pad its height for parity.
   let ch = centre.h + 2;
@@ -117,7 +117,7 @@ export function spine(b: Builder, f: FactionDef, plan: ShipPlan): string | null 
   if (!corr || !nose(b, front, 0)) return null;
   b.strip(corr, 'n', n2, 0);
   b.strip(corr, 's', s2, 0);
-  if (stern(b, L - 1, [corr], plan.engines, plan.reactors).length === 0) return null;
+  if (stern(b, L - 1, [corr], plan.engines, plan.reactors, plan.engine).length === 0) return null;
   return `spine ${profile}, ${n.length}+${s.length} pods`;
 }
 
@@ -178,16 +178,17 @@ export function ring(b: Builder, f: FactionDef, plan: ShipPlan, carrier = false)
     // Nacelles: engines at the east ends of both corridors, the band ends in a notch between them.
     const kN = Math.ceil(plan.engines / 2);
     const kS = plan.engines - kN;
-    const e = engineSpec(kN, 'w');
-    const pn = b.place({ x: nc.x + nc.w - 1, y: 1 - 4 * kN, w: 7, h: 4 * kN + 2 }, 'engine', e);
+    const e = engineSpec(kN, 'w', plan.engine);
+    const pn = b.place({ x: nc.x + nc.w - 1, y: 1 - 4 * kN, w: e.w + 2, h: 4 * kN + 2 }, 'engine', e);
     if (!pn) return null;
     b.door(nc, pn);
     if (kS > 0) {
-      const ps = b.place(b.mir({ x: nc.x + nc.w - 1, y: 1 - 4 * kS, w: 7, h: 4 * kS + 2 }), 'engine', engineSpec(kS, 'w'));
+      const eS = engineSpec(kS, 'w', plan.engine);
+      const ps = b.place(b.mir({ x: nc.x + nc.w - 1, y: 1 - 4 * kS, w: eS.w + 2, h: 4 * kS + 2 }), 'engine', eS);
       if (ps) b.door(sc, ps);
     }
     return `carrier, ${plan.hangars.length} bays, twin nacelles ${kN}+${kS}`;
   }
-  if (stern(b, nc.x + nc.w - 1, [nc, sc], plan.engines, plan.reactors).length === 0) return null;
+  if (stern(b, nc.x + nc.w - 1, [nc, sc], plan.engines, plan.reactors, plan.engine).length === 0) return null;
   return `ring, ${loops + 1} loop${loops > 0 ? 's' : ''}, band ${inner.length}`;
 }

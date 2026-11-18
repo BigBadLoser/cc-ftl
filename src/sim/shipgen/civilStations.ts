@@ -38,12 +38,12 @@ export interface RingOpts {
 }
 
 /** Ring station: a square corridor ring round an empty centre, rooms outboard, the hub joined by spokes. */
-export function ringStation(rng: Rng, hub: RoomSpec, rooms: RoomSpec[], engines: number, reactors: number, spokes: Side[], o: RingOpts): Builder | null {
+export function ringStation(rng: Rng, hub: RoomSpec, rooms: RoomSpec[], engines: number, reactors: number, spokes: Side[], o: RingOpts, engine = 'module.engine'): Builder | null {
   const b = localBuilder(rng);
   const [top, bot, wst, est] = deal(rooms, o.east ? 4 : 3, o.east ? [...o.weight, 1.4] : o.weight) as [RoomSpec[], RoomSpec[], RoomSpec[], RoomSpec[] | undefined];
   for (let i = 0; i < (o.docks ?? 2); i++) (i % 2 === 0 ? top : bot).push(dockSpec());
   const east: RoomSpec[] = [];
-  for (let i = 0; i < engines; i++) east.push(engineSpec(1, 'w'));
+  for (let i = 0; i < engines; i++) east.push(engineSpec(1, 'w', engine));
   for (let k = reactors; k > 0; k -= 2) east.push({ ...reactorSpec(Math.min(2, k)), w: 3, h: 2 * Math.min(2, k) + 1 });
   // East-side rooms stand outboard like the west ones: turned so their long side runs along the ring.
   for (const r of est ?? []) east.push(r.w > r.h ? { ...r, w: r.h, h: r.w } : r);
@@ -114,11 +114,11 @@ export interface LatticeOpts {
   docks?: number;
 }
 
-export function latticeStation(rng: Rng, modsIn: RoomSpec[], engines: number, o: LatticeOpts): Builder | null {
+export function latticeStation(rng: Rng, modsIn: RoomSpec[], engines: number, o: LatticeOpts, engine = 'module.engine'): Builder | null {
   const b = localBuilder(rng);
   const { gx, gy } = o;
   const mods = modsIn.map((r) => ({ ...r, w: r.w + rng.int(0, o.pad), h: r.h + rng.int(0, Math.min(1, o.pad)) }));
-  const eng = Array.from({ length: Math.max(0, engines) }, () => engineSpec(1, 'w'));
+  const eng = Array.from({ length: Math.max(0, engines) }, () => engineSpec(1, 'w', engine));
   const C = Math.max(2, Math.round(Math.sqrt((mods.length + eng.length) * o.spread)));
   // Rows fill west to east; a thruster closes each of the first rows (east-most there, so it faces open space).
   const grid: (RoomSpec | null)[][] = [];
