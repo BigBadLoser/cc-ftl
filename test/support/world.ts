@@ -4,6 +4,7 @@ import type { Sim } from '../../src/sim/sim';
 import type { ContentRegistry } from '../../src/sim/registry';
 import { run } from './run';
 import { fileCache } from './cache';
+import { withoutBuildShare } from './buildShare';
 
 export interface ReplayOpts {
   /** Compare the saved state of the two sims every this many ticks (and at the end). Default 10: per-tick comparison is expensive. */
@@ -16,8 +17,8 @@ export interface ReplayOpts {
 
 /** First compared tick at which the two sims' saved state differs, or null. */
 function firstDivergence(build: () => Sim, ticks: number, every: number, saveAt: number | undefined, events?: SimEvent[]): number | null {
-  const a = build();
-  let b = build();
+  const a = withoutBuildShare(build);
+  let b = withoutBuildShare(build);
   if (serialize(a) !== serialize(b)) return 0;
   for (let t = 1; t <= ticks; t++) {
     const ev = run(a, 1);

@@ -52,7 +52,7 @@ const env = (globalThis as unknown as { process: { env: Record<string, string | 
 // TICK_STATS=1 adds test/support/tickStats.ts: ticks and step time per test file (node tools/tickStats.mjs reports them).
 // Not in the isolated project: it imports the sim before a file's vi.mock could replace a module the sim loads.
 const SETUP = ['src/sim/testSetup.ts', 'test/support/setup.ts'];
-const SHARED_SETUP = [...SETUP, ...(env.TICK_STATS === '1' ? ['test/support/tickStats.ts'] : [])];
+const SHARED_SETUP = [...SETUP, 'test/support/buildShareSetup.ts', ...(env.TICK_STATS === '1' ? ['test/support/tickStats.ts'] : [])];
 const SLOW = env.VITEST_FAST === '1' ? ['**/*.slow.test.ts'] : [];
 /** The soak tier (`*.soak.test.ts`: design-number runs over game hours or many seeds) runs only with `VITEST_SOAK=1` (`npm run test:soak`). */
 const SOAK =
