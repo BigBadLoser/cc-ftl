@@ -4067,6 +4067,7 @@
   "brM": {"hex": "#48423c", "set": "berm"},
   "stK": {"hex": "#1d222d", "set": "station"},
   "stCut": {"hex": "#0a1113", "set": "station_cut"},
+  "stCutSeam": {"hex": "#44525e", "set": "station_cut"},
   "stE": {"hex": "#353c47", "set": "station"},
   "stDE": {"hex": "#3c4858", "set": "station"},
   "stLnCore": {"hex": "#485e72", "set": "station"},

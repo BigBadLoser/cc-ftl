@@ -19,6 +19,7 @@ from .wall3d_ext_geom import E, LINE
 
 CUT = "stCut"                           # the cut's black: the ship's (walls.CUT, wK), in the station's set
 FOOT_Z = W.ZG                           # the near hull's cut: at the ship's (the ghost rim's height)
+SEAM = "stCutSeam"                      # the seam along the cut's back (the ship's, wall3d_ext_diag.TOP_SEAM's tone)
 LIP, LIP_Z = "stB", 2 / core.ZPX        # the face's lit lip right under the cut (as the ship's armour's), px tall
 
 
@@ -80,12 +81,42 @@ def _lid(k, sp):
         if y1 == E:
             k.poly([T.Vector(p) for p in ((x1, e, z0), (x0, e, z0), (x0, e, z1), (x1, e, z1))], "steel", 3,
                    T.Vector((0, 1, 0)), fixed=LIP)
+        a, b = _seam_band()                             # (the seam along the cut's back, as the ship's)
+        z = FOOT_Z + T.PAINT
+        if x1 == E and y1 != E:
+            k.poly([T.Vector(p) for p in ((E - b, y0, z), (E - a, y0, z), (E - a, y1, z), (E - b, y1, z))], "steel", 3,
+                   T.Vector((0, 0, 1)), fixed=SEAM)
+        if y1 == E and x1 != E:
+            k.poly([T.Vector(p) for p in ((x0, E - b, z), (x1, E - b, z), (x1, E - a, z), (x0, E - a, z))], "steel", 3,
+                   T.Vector((0, 0, 1)), fixed=SEAM)
+
+
+def _seam_band():
+    """The ship's cut seam's depths behind the outline (wall3d_ext_diag.TOP_SEAM, in from the hull's back)."""
+    from . import hull_outline as HO
+    from .wall3d_ext_diag import TOP_SEAM
+    return HO.LIP - TOP_SEAM[1], HO.LIP - TOP_SEAM[0]
+
+
+def _seam(rel, planes, fronts):
+    """The seam on the cut's top, per front where it is the nearest (wall3d_ext_diag._seam's), at true distances."""
+    from .wall3d_ext_diag import _solid
+    a, b = _seam_band()
+    up = T.Vector((0, 0, 1))
+    side = [q for q in planes if abs(q[0].z) < 1e-9]
+    for s, c, _w in fronts:
+        band = [(s, c - a * s.length), (-s, -(c - b * s.length))]
+        band += [(t, d - b * t.length) for t, d, _ in fronts if t is not s]
+        for pts, m, _ in _solid(side + band + [(-up, -FOOT_Z), (up, FOOT_Z + T.PAINT)]):
+            if m.z > 0.85:
+                rel.poly(pts, "steel", 3, m, fixed=SEAM)
 
 
 def _back(s, c, w):
-    """The cut where the hull ends behind front (s, c, w) (wall3d_belly's: hull_outline.back, d(f) <= back)."""
+    """The cut where the hull ends behind front (s, c, w): the ship's depth (hull_outline.LIP, to the tile's back edge)
+    as a true distance, so a diagonal's band is as thick as a run's (hull_outline.back measures it along s . p)."""
     from . import hull_outline as HO
-    return (-s, -(c - w * HO.back((round(s.x), round(s.y)))))
+    return (-s, -(c - HO.LIP * s.length))
 
 
 def low(n):
@@ -112,6 +143,7 @@ def low(n):
             emit(rel, [(ends, rest + [back]) for ends, rest in parts], fronts, skip, sec)
         for ends, rest in parts:                        # (each camera-facing front's lit lip under the cut)
             planes = ends + rest
+            _seam(rel, planes, fronts)
             for s, c, _w in fronts:
                 if s.x + s.y <= 0:
                     continue
@@ -127,7 +159,7 @@ def low(n):
         return CUT if m.z > 0.85 and min(p.z for p in pts) >= FOOT_Z - 1e-6 else tone(pts, m, fronts, sec)
 
     def clipped(self):
-        self.clip_above(FOOT_Z)
+        self.clip_above(FOOT_Z + 2 * T.PAINT)                # (over the cut: its seam, lifted off it)
         return build(self)
 
     def hook(rk, sp):
