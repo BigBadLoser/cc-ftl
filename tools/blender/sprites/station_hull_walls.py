@@ -17,8 +17,9 @@ from . import wall3d as T
 from . import walls as W
 from .wall3d_ext_geom import E, LINE
 
-CUT = "stK"
-FOOT_Z = SH.GROOVE - 2 / core.ZPX       # the near hull's cut: two px under the groove
+CUT = "stCut"                           # the cut's black: the ship's (walls.CUT, wK), in the station's set
+FOOT_Z = W.ZG                           # the near hull's cut: at the ship's (the ghost rim's height)
+LIP, LIP_Z = "stB", 2 / core.ZPX        # the face's lit lip right under the cut (as the ship's armour's), px tall
 
 
 class CapShell(T.Shell):
@@ -72,6 +73,13 @@ def _lid(k, sp):
             y1 = E
         k.poly([T.Vector((x, y, FOOT_Z)) for x, y in ((x0, y0), (x1, y0), (x1, y1), (x0, y1))], "steel", 3,
                T.Vector((0, 0, 1)), fixed=CUT)
+        z0, z1, e = FOOT_Z - LIP_Z, FOOT_Z, E + T.PAINT
+        if x1 == E:                                     # (the lip on its face)
+            k.poly([T.Vector(p) for p in ((e, y0, z0), (e, y1, z0), (e, y1, z1), (e, y0, z1))], "steel", 3,
+                   T.Vector((1, 0, 0)), fixed=LIP)
+        if y1 == E:
+            k.poly([T.Vector(p) for p in ((x1, e, z0), (x0, e, z0), (x0, e, z1), (x1, e, z1))], "steel", 3,
+                   T.Vector((0, 1, 0)), fixed=LIP)
 
 
 def _back(s, c, w):
@@ -102,6 +110,14 @@ def low(n):
         for s, c, _w in fronts:
             back = _back(s, c, _w)
             emit(rel, [(ends, rest + [back]) for ends, rest in parts], fronts, skip, sec)
+        for ends, rest in parts:                        # (each camera-facing front's lit lip under the cut)
+            planes = ends + rest
+            for s, c, _w in fronts:
+                if s.x + s.y <= 0:
+                    continue
+                i = next((j for j, (n, d) in enumerate(planes) if (n - s).length < 1e-9 and abs(d - c) < 1e-9), None)
+                if i is not None:
+                    SG._paint(rel, planes, i, LIP, [(-T.Vector((0, 0, 1)), -(FOOT_Z - LIP_Z))])
 
     def low_step(rel, g, cut, sec):
         for s, c, w in map(SG._front, g):               # (the step too: the hull's depth behind each front)
@@ -131,22 +147,36 @@ def low(n):
         T.HOOK = old_hook
 
 
+PALETTE = "only:station+station_cut"    # the station's set and the cut's black (its own set: the rest of the family's
+                                        # cache key stays as it was)
+
+
+def _masked(sid, kind, build_fn):
+    """station_hull.masked in this module's palette."""
+    from unittest import mock
+    with mock.patch.object(SH, "PALETTE", PALETTE):
+        return SH.masked(sid, kind, build_fn)
+
+
 def jobs():
+    """The pieces' jobs; each carries this palette's digest (the family's cache key has only the station set's)."""
     from . import hull_catalog as HC
     from . import hull_outline as HO
+    from . import post
     from . import wall3d_ext_diag as DG
     from .hulltiles import _guard
     from .walls import corner_sets
+    pal = post.palette_digest(PALETTE)
     out = []
     for m in range(16):
         for c in corner_sets(m):
             sid = f"tile.hull.station.cap.m{m}{f'c{c}' if c else ''}"
-            out.append(lambda m=m, c=c, sid=sid: _guard(sid, lambda: SH.masked(sid, "over", lambda: cap(m, c)))())
+            out.append(lambda m=m, c=c, sid=sid, pal=pal: _guard(sid, lambda: _masked(sid, "over", lambda: cap(m, c)))())
     for key in HC.keys():
         if not key:
             continue
         n = HO.name(key)
         sid = f"tile.hull.station.low.{n}"
         kind = "block" if DG.uses_art(key) else "wide"
-        out.append(lambda n=n, sid=sid, kind=kind: _guard(sid, lambda: SH.masked(sid, kind, lambda: low(n)[0]))())
+        out.append(lambda n=n, sid=sid, kind=kind, pal=pal: _guard(sid, lambda: _masked(sid, kind, lambda: low(n)[0]))())
     return out
