@@ -1,6 +1,10 @@
 /** A save of this version written before #416 (no suit limit) still loads: the retired suit fields are dropped as it is read. */
 import { describe, expect, it } from 'vitest';
-import { AirlockC, JobC, VehicleC, deserialize, newGame, serialize } from '../sim';
+import { JobC } from '../sim/crew/components';
+import { AirlockC } from '../sim/modules/airlock';
+import { newGame } from '../sim/newGame';
+import { deserialize, serialize } from '../sim/save';
+import { VehicleC } from '../sim/vehicles/components';
 import { content } from './index';
 
 describe('retired save fields (#416)', () => {

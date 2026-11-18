@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { Struct, YardCrewC, builtCount, hullLoad, isLiveOrder, shipGrid, totalTiles } from '../sim';
+import { hullLoad } from '../sim/ftl/capacity';
+import { shipGrid } from '../sim/regions';
+import { Struct } from '../sim/structure';
+import { builtCount, totalTiles } from '../sim/yard/progress';
+import { isLiveOrder, YardCrewC } from '../sim/yard/types';
 import { giveItems } from '../sim/story/effects';
-import { outline, planHull, run, yardGame } from './yardFixture';
+import { outline, planHull, run, yardGame } from '../../test/support/fixtures/yard';
 
 // Soak tier: the hub-sized version of the yard job in yard.slow.test.ts (up to 12000 ticks on a hub). Run by `npm run test:soak`.
 describe('shipyard: hub jobs', () => {

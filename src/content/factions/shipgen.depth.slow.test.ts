@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { generateShip, type FactionDef, type GenResult, type ModuleDef } from '../../sim';
+import type { ModuleDef } from '../../sim/registry';
+import { generateShip } from '../../sim/shipgen/generate';
+import type { FactionDef, GenResult } from '../../sim/shipgen/types';
 import { content } from '../index';
 import { factions } from './index';
 

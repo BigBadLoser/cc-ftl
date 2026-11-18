@@ -1,8 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import {
-  CombatC, FTL_CHARGE_SEC, SENSOR_HOPS, START_NODE, deserialize, edgeBetween, galaxyIndex, newGame, playerShip, serialize,
-  standing, tierOf, type Sim,
-} from '../sim';
+import { CombatC } from '../sim/combat/components';
+import { edgeBetween } from '../sim/galaxy/route';
+import { standing, tierOf } from '../sim/galaxy/standing';
+import { galaxyIndex, START_NODE } from '../sim/galaxy/state';
+import { SENSOR_HOPS } from '../sim/galaxy/tuning';
+import { newGame } from '../sim/newGame';
+import { deserialize, serialize } from '../sim/save';
+import type { Sim } from '../sim/sim';
+import { playerShip } from '../sim/trade/player';
+import { FTL_CHARGE_SEC } from '../sim/tuning';
 import { GENERATOR_VERSION } from '../sim/galaxy/tuning';
 import { SCAVENGER_CHANCE, SCAVENGER_FACTION } from '../sim/galaxy/tuningHeat';
 import { galaxySystem } from '../sim/systems/galaxy';

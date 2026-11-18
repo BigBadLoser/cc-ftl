@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { ModuleDef } from '../sim';
+import type { ModuleDef } from '../sim/registry';
 import { Layout } from '../sim/shipgen/layout';
 import { roomProblems } from '../sim/shipgen/rooms/rules/check';
 import { furnishByRule } from '../sim/shipgen/rooms/rules/place';

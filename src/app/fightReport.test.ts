@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { content } from '../content';
-import { CrewC, ModuleC, ShipC, homeShip, newGame, type SimEvent } from '../sim';
+import { ShipC } from '../sim/combat/components';
+import { homeShip } from '../sim/combat/ships';
+import { CrewC } from '../sim/crew/components';
+import type { SimEvent } from '../sim/events';
+import { ModuleC } from '../sim/modules/components';
+import { newGame } from '../sim/newGame';
 import { shipIdOf, shipIds } from '../sim/regions';
 import { createFightReporter, fightLine } from './fightReport';
 

@@ -34,7 +34,7 @@ import { BodyC, ModuleC, shipRoomQuality, ROOM_QUALITY_EVERY, footprintTiles, NO
 import { shipGrid } from './sim/regions';
 import { homeShip } from './sim/index';
 import { buildFoeModule } from './app/foeModule';
-import { startScenario as scenarioStart, scenarioStarters } from './app/scenarios';
+import { applyScenarioUi, scenarioUrl, startUrlScenario } from './app/scenarioStart';
 import { createSignalFeed } from './app/signals';
 import { keymap } from './ui/keymap';
 import { isTypingTarget, modalOpen } from './ui/keys';
@@ -65,10 +65,13 @@ let artReadyResolve: () => void = () => {};
 const artReady = new Promise<void>((res) => (artReadyResolve = res));
 // The saved game if there is one (`?seed=` forces a new game of that seed), else a new one.
 const startParams = new URLSearchParams(location.search);
-const scenarioName = startParams.get('scenario');
-const start = await startGame(startParams.get('seed'), startParams.get('starter') ?? (scenarioName === null ? null : scenarioStarters[scenarioName] ?? null));
+const scenarioSpec = scenarioUrl(location.search);
+const start = await startGame(startParams.get('seed'), startParams.get('starter') ?? scenarioSpec?.starter ?? null);
 const sim = start.sim;
+// `?scenario=<preset>`: built now, before the first frame (the scene's setup ticks run here), so the game opens on the finished scene.
+const urlScenario = scenarioSpec ? startUrlScenario(sim, scenarioSpec) : null;
 const bridge = createBridge(sim, () => probe);
+urlScenario?.setDispatch(bridge.dispatch);
 const controller = createController(sim, bridge);
 let renderer: Renderer | undefined;
 let starmapOpen = false;
@@ -98,6 +101,7 @@ const prewarm = shipGen ? createPrewarm(sim, shipGen, () => performance.now(), (
 const loop = createLoop({
   sim,
   probe: () => probe,
+  onTick: () => urlScenario?.afterTick(),
   // The starmap covers the whole screen, and in hyperspace or while deploying the sector is empty: skip drawing the world.
   render: (alpha) => {
     // World animations freeze while the game is paused (speed 0); camera, UI and hover feedback keep running.
@@ -135,6 +139,7 @@ const loop = createLoop({
     }
     signals.events(events);
     hook?.onEvents(events.map((e) => e.type));
+    urlScenario?.onEvents(events);
     play?.onEvents(events);
   },
   onFrame: (stats) => {
@@ -285,12 +290,9 @@ function spawnStation(kind: string, size: 'outpost' | 'station' | 'hub', frameSt
   frame(30);
 }
 const stationFlag = params.get('station');
-/** `?scenario=<name>`: a debug start, from the registry in app/scenarios/. */
-const scenario = params.get('scenario');
+/** `?scenario=<preset>`: the registry in content/scenario/ built it before the first frame; here its requests (speed, selection, tool, camera) are applied. */
 function startScenario(): void {
-  scenarioStart(scenario, {
-    sim, params, dispatch: bridge.dispatch, setSpeed: loop.setSpeed, selectCrew: controller.selectCrew, setTool: controller.setTool, spawnStation, spawnRaider,
-  });
+  if (urlScenario) applyScenarioUi(sim, urlScenario, { setSpeed: loop.setSpeed, selectCrew: controller.selectCrew, setTool: controller.setTool, frameShips: (ids) => renderer?.frameShips(ids) });
 }
 
 /** The WebGL driver's renderer string, if the browser exposes it; pixi's canvas already owns a webgl context, so asking again returns it. */

@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { CrewC, ModuleC, newGame } from '../sim';
+import { CrewC } from '../sim/crew/components';
+import { ModuleC } from '../sim/modules/components';
+import { newGame } from '../sim/newGame';
 import { slabPlace } from '../sim/stasis/query';
 import { content } from '../content';
 import { deriveAlerts } from './alertsDerived';
-import { newHostiles, prisonerCommands } from './scenarios/stasis';
+import { newHostiles, prisonerCommands } from '../content/scenario/lib/stasis';
 
 describe('stasis alert', () => {
   it('is up while a slab runs on its reserve and gone once the wheel has power again', () => {

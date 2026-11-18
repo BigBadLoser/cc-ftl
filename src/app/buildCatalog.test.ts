@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { newGame } from '../sim';
-import type { ModuleDef } from '../sim';
+import { newGame } from '../sim/newGame';
+import type { ModuleDef } from '../sim/registry';
 import { content } from '../content';
 import type { Renderer } from '../render/scene';
 import type { UiApi, UiToolState } from '../ui/api';

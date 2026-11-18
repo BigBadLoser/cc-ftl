@@ -13,6 +13,7 @@ import { CREW_MAX_HP, SAC_STAGE_SEC } from '../tuning';
 import { TICK_HZ } from '../time';
 import { AlienC, EggSacC, NestC } from './components';
 import { laySac, spawnAlien } from './spawn';
+import { eventsOf } from '../../../test/support/sim';
 
 const NONE = {} as Priorities;
 const alien = { moveSpeed: 3.6, workSpeed: 0, restDecay: 0, airless: true, fearless: true, creature: { fleeBelow: 0.25 } } as const;
@@ -76,8 +77,6 @@ function run(sim: Sim, ticks: number, stop: () => boolean = () => false): SimEve
   }
   return out;
 }
-const of = <T extends SimEvent['type']>(events: SimEvent[], type: T): Extract<SimEvent, { type: T }>[] =>
-  events.filter((e): e is Extract<SimEvent, { type: T }> => e.type === type);
 const sac = (sim: Sim, id: number) => sim.world.get(id, EggSacC)!;
 const aliens = (sim: Sim) => sim.world.query(AlienC);
 const HATCH = Math.round(SAC_STAGE_SEC * TICK_HZ) * 2 + 5;
@@ -92,7 +91,7 @@ describe('egg sacs', () => {
     sim.world.get(crew, PositionC)!.x = 18;
     sim.world.get(crew, PositionC)!.toX = 18;
     const ev = run(sim, 10);
-    expect(of(ev, 'eggsac.disturbed')[0]?.cause).toBe('proximity');
+    expect(eventsOf(ev, 'eggsac.disturbed')[0]?.cause).toBe('proximity');
     expect(sac(sim, s).state).toBe('hatching');
   });
 
@@ -101,14 +100,14 @@ describe('egg sacs', () => {
     const s = laySac(sim, wreck, 20, 2, 1, false);
     sac(sim, s).hp -= 5;
     const ev = run(sim, 1);
-    expect(of(ev, 'eggsac.disturbed')[0]?.cause).toBe('damage');
+    expect(eventsOf(ev, 'eggsac.disturbed')[0]?.cause).toBe('damage');
     const stages: number[] = [];
     const all = run(sim, HATCH + 40, () => {
       if (stages.at(-1) !== sac(sim, s).stage) stages.push(sac(sim, s).stage);
       return false;
     });
     expect(stages).toEqual([0, 1, 2, 3]);
-    const hatched = of(all, 'eggsac.hatched');
+    const hatched = eventsOf(all, 'eggsac.hatched');
     expect(hatched).toHaveLength(1);
     expect(hatched[0]?.aliens).toHaveLength(1);
     const a = hatched[0]!.aliens[0]!;
@@ -124,7 +123,7 @@ describe('egg sacs', () => {
     const far = laySac(sim, wreck, 27, 1, 1, false);
     sac(sim, a).hp -= 1;
     const ev = run(sim, 4 * TICK_HZ);
-    expect(of(ev, 'eggsac.disturbed').map((e) => [e.sac, e.cause])).toEqual([[a, 'damage'], [b, 'chain']]);
+    expect(eventsOf(ev, 'eggsac.disturbed').map((e) => [e.sac, e.cause])).toEqual([[a, 'damage'], [b, 'chain']]);
     const delay = ev.findIndex((e) => e.type === 'eggsac.disturbed' && e.sac === b);
     expect(delay).toBeGreaterThan(0);
     expect(sac(sim, far).state).toBe('dormant');
@@ -138,7 +137,7 @@ describe('egg sacs', () => {
     run(sim, 1);
     sim.enqueue({ type: 'crew.attack', id: crew, target: s });
     const ev = run(sim, 30 * TICK_HZ, () => sac(sim, s).state === 'burst');
-    expect(of(ev, 'crew.hit').some((e) => e.target === s)).toBe(true);
+    expect(eventsOf(ev, 'crew.hit').some((e) => e.target === s)).toBe(true);
     expect(sac(sim, s).destroyed).toBe(true);
     expect(aliens(sim)).toHaveLength(0);
   });
@@ -152,9 +151,9 @@ describe('egg sacs', () => {
     expect(sac(sim, near).hp).toBe(sac(sim, near).max); // not drafted: no auto fire
     sim.enqueue({ type: 'crew.draft', id: idle, drafted: true });
     const ev = run(sim, 6 * TICK_HZ, () => sac(sim, near).hp < sac(sim, near).max); // a miss is possible: run until the first hit
-    expect(of(ev, 'crew.attacked').some((e) => e.crew === idle && e.target === near)).toBe(true);
+    expect(eventsOf(ev, 'crew.attacked').some((e) => e.crew === idle && e.target === near)).toBe(true);
     expect(sim.world.get(idle, PositionC)).toMatchObject({ x: 2, y: 3 });
-    const hits = of(ev, 'crew.hit').filter((e) => e.crew === idle).length;
+    const hits = eventsOf(ev, 'crew.hit').filter((e) => e.crew === idle).length;
     expect(hits).toBeGreaterThan(0);
     expect(sim.world.get(idle, SkillXpC)?.xp.gunnery ?? 0).toBeGreaterThanOrEqual(hits * 18 / XP_DAMAGE_PER_XP); // shooting sacs trains gunnery too
     expect(sac(sim, far).hp).toBe(sac(sim, far).max);
@@ -164,7 +163,7 @@ describe('egg sacs', () => {
     const c = person(b.sim, 2, 3, 'role.civ', 'item.rifle');
     b.sim.enqueue({ type: 'crew.draft', id: c, drafted: true });
     const ev2 = run(b.sim, 3 * TICK_HZ);
-    expect(of(ev2, 'crew.attacked')).toHaveLength(0);
+    expect(eventsOf(ev2, 'crew.attacked')).toHaveLength(0);
     expect(b.sim.world.get(c, PositionC)).toMatchObject({ x: 2, y: 3 });
   });
 
@@ -196,7 +195,7 @@ describe('aliens', () => {
     const ev = run(sim, 90 * TICK_HZ, () => sim.world.has(a, DeadC));
     expect(sim.world.has(a, DeadC)).toBe(true);
     expect(sim.world.has(a, DownedC)).toBe(false);
-    expect(of(ev, 'crew.hit').some((e) => e.target === a)).toBe(true);
+    expect(eventsOf(ev, 'crew.hit').some((e) => e.target === a)).toBe(true);
   });
 
   it('a spitter shoots from range and backs off while it reloads', () => {
@@ -204,7 +203,7 @@ describe('aliens', () => {
     const crew = person(sim, 5, 2);
     const a = spawnAlien(sim, wreck, 'role.spitter', 10, 2);
     const ev = run(sim, 20 * TICK_HZ);
-    const shots = of(ev, 'crew.attacked').filter((e) => e.crew === a);
+    const shots = eventsOf(ev, 'crew.attacked').filter((e) => e.crew === a);
     expect(shots.length).toBeGreaterThan(0);
     expect(shots.every((e) => e.ranged && e.weapon === 'spit')).toBe(true);
     expect(shots.some((e) => Math.hypot(e.tx - e.x, e.ty - e.y) > 1.5)).toBe(true);

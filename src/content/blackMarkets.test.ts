@@ -1,8 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import {
-  CombatC, CrewC, ForHireC, ItemStackC, ShipC, TraderC, attachServices, checkOffer, contrabandAboard, deserialize, newGame, pirateKeys, playerShip, reputationWith, serialize,
-  storageAdd, storageCount, truceBanned, truceHolds, unitPrice, SAVE_VERSION, type Sim,
-} from '../sim';
+import { attachServices } from '../sim/blackmarket/attach';
+import { contrabandAboard } from '../sim/blackmarket/scan';
+import { banned as truceBanned, pirateKeys, truceHolds } from '../sim/blackmarket/truce';
+import { CombatC, ShipC } from '../sim/combat/components';
+import { CrewC } from '../sim/crew/components';
+import { ItemStackC } from '../sim/items/components';
+import { storageAdd, storageCount } from '../sim/items/storage';
+import { newGame } from '../sim/newGame';
+import { deserialize, SAVE_VERSION, serialize } from '../sim/save';
+import type { Sim } from '../sim/sim';
+import { ForHireC } from '../sim/stations/components';
+import { checkOffer } from '../sim/trade/offers';
+import { playerShip } from '../sim/trade/player';
+import { reputationWith, unitPrice } from '../sim/trade/pricing';
+import { TraderC } from '../sim/trade/types';
 import { stat } from '../sim/stats';
 import { scanFor, scanPending } from '../sim/blackmarket/scan';
 import { choicesOf } from '../sim/galaxy/respond';

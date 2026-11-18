@@ -1,12 +1,20 @@
 import { describe, expect, it } from 'vitest';
-import {
-  CrewC, PositionC, TraderC, VehicleC, YardCrewC, SuitC, builtCount, hullLoad, isLiveOrder, quoteYard, Struct, shipGrid, totalTiles, yardPrice, yardService,
-} from '../sim';
+import { CrewC, PositionC } from '../sim/crew/components';
+import { SuitC } from '../sim/eva/components';
+import { hullLoad } from '../sim/ftl/capacity';
+import { shipGrid } from '../sim/regions';
+import { Struct } from '../sim/structure';
+import { TraderC } from '../sim/trade/types';
+import { VehicleC } from '../sim/vehicles/components';
+import { quoteYard } from '../sim/yard/plan';
+import { builtCount, totalTiles } from '../sim/yard/progress';
+import { yardPrice, yardService } from '../sim/yard/rules';
+import { isLiveOrder, YardCrewC } from '../sim/yard/types';
 import { ConsentC } from '../sim/consent/components';
 import { guestOn } from '../sim/consent/guests';
 import { isInvader, isOffDuty } from '../sim/fight/relations';
 import { shipIdOf } from '../sim/regions';
-import { outline, planHull, run, yardGame } from './yardFixture';
+import { outline, planHull, run, yardGame } from '../../test/support/fixtures/yard';
 
 // Slow tier: the full-length yard crew runs (each takes the order from the dock to done or called off). yardCrew.test.ts holds the
 // short versions that stop near the moment they test.

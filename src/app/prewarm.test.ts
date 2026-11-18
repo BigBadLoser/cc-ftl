@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { newGame, type Sim } from '../sim';
+import { newGame } from '../sim/newGame';
+import type { Sim } from '../sim/sim';
 import { isGenerated, isWarmedElsewhere, nextArrival, peekGenerated, warmContact } from '../sim/galaxy/arrivals';
 import { warmCandidates, warmFleets } from '../sim/galaxy/fleetShips';
 import { generateShip } from '../sim/shipgen/generate';

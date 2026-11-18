@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import {
-  STATION_SIZES, airlockTiles, buildStation, footprintTiles, generateShip, type FactionDef, type GenResult, type ModuleDef, type StationDef,
-} from '../sim';
+import { airlockTiles } from '../sim/modules/airlock';
+import { footprintTiles } from '../sim/modules/footprint';
+import type { ModuleDef } from '../sim/registry';
+import { generateShip } from '../sim/shipgen/generate';
+import { buildStation } from '../sim/shipgen/stationBuild';
+import { STATION_SIZES, type StationDef } from '../sim/shipgen/stationTypes';
+import type { FactionDef, GenResult } from '../sim/shipgen/types';
 import { content } from './index';
 import { stations } from './stations';
 

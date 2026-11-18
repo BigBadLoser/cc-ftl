@@ -9,6 +9,7 @@ import { VENT_CONDUCTANCE } from '../tuning';
 import { ModuleC } from '../modules/components';
 import { IonC } from '../combat/components';
 import { spawnModule } from '../modules/spawn';
+import { step as run } from '../../../test/support/sim';
 
 const mod = (o: Partial<ModuleDef>): ModuleDef => ({ name: 'm', asset: 'm', footprint: [1, 1], solid: true, power: 0, flammability: 0.1, maxHp: 100, buildWork: 20, ...o });
 const content: ContentRegistry = {
@@ -26,7 +27,6 @@ function make(powered = true): Sim {
   return sim;
 }
 const grid = (sim: Sim) => shipGrid(sim, 1)!;
-const run = (sim: Sim, n: number) => { for (let i = 0; i < n; i++) sim.step(); };
 const vent = (sim: Sim) => grid(sim).get('vent', D.x, D.y);
 function fill(sim: Sim, x0: number, x1: number, o2: number): void {
   for (let y = 2; y <= 4; y++) for (let x = x0; x <= x1; x++) grid(sim).set('o2', x, y, o2);

@@ -1,9 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { jumpWarnings, AboardC, AllegianceC, CombatC, CrewC, DeadC, ModuleC, VehicleC } from '../../sim';
+import { CombatC } from '../../sim/combat/components';
+import { CrewC, DeadC } from '../../sim/crew/components';
+import { AllegianceC } from '../../sim/fight/components';
+import { ModuleC } from '../../sim/modules/components';
+import { jumpWarnings } from '../../sim/sector/members';
+import { AboardC, VehicleC } from '../../sim/vehicles/components';
 import { loseStrandedCrew } from '../../sim/boarding/stranded';
 import { FTL_CHARGE_SEC } from '../../sim/tuning';
 import { shipIdOf } from '../../sim/regions';
-import { crewOn, dockParty, nth, of, run, setup, ship } from './boardingFixture';
+import { crewOn, dockParty, nth, of, run, setup, ship } from '../../../test/support/fixtures/boarding';
 
 describe('stranded parties are lost', () => {
   it('die with the ship when it is destroyed', () => {

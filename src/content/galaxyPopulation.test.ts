@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { START_NODE, ShipC, deserialize, fleetName, galaxyIndex, newGame, portOf, serialize, visibleFleets, type GalaxyContent, type Sim } from '../sim';
+import { ShipC } from '../sim/combat/components';
+import type { GalaxyContent } from '../sim/galaxy/defs';
+import { visibleFleets } from '../sim/galaxy/fleets';
+import { fleetName } from '../sim/galaxy/names';
+import { portOf } from '../sim/galaxy/portIndex';
+import { galaxyIndex, START_NODE } from '../sim/galaxy/state';
+import { newGame } from '../sim/newGame';
+import { deserialize, serialize } from '../sim/save';
+import type { Sim } from '../sim/sim';
 import { FLEET_RANGE } from '../sim/galaxy/tuning';
 import { catchUp, stepAgenda } from '../sim/galaxy/agenda';
 import { liftFleet, materialiseFleet, tendFleets } from '../sim/galaxy/fleetShips';

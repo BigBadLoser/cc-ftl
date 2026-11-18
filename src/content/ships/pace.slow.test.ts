@@ -1,9 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { CrewC, DeadC, DownedC, PositionC, newGame, type SimEvent } from '../../sim';
+import { CombatC } from '../../sim/combat/components';
+import { CrewC, DeadC, DownedC, PositionC } from '../../sim/crew/components';
+import type { SimEvent } from '../../sim/events';
+import { ModuleC } from '../../sim/modules/components';
+import { newGame } from '../../sim/newGame';
 import { content } from '../index';
 import { shipIdOf, shipIds } from '../../sim/regions';
 import { shipById } from '../../sim/combat/ships';
-import { CombatC, ModuleC } from '../../sim';
 import { WeaponC } from '../../sim/combat/components';
 import { ventError } from '../../sim/combat/heat';
 import { HEAT_MAX } from '../../sim/combat/heatTuning';

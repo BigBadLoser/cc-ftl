@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { DraftedC, ItemStackC, JobC, NeedsC, Struct, TraitsC, VehicleC, type ContentRegistry, type Sim } from '../../sim';
+import { DraftedC, JobC, NeedsC } from '../../sim/crew/components';
+import { TraitsC } from '../../sim/crew/traits';
+import { ItemStackC } from '../../sim/items/components';
+import type { ContentRegistry } from '../../sim/registry';
+import type { Sim } from '../../sim/sim';
+import { Struct } from '../../sim/structure';
+import { VehicleC } from '../../sim/vehicles/components';
 import { content } from '../index';
 import { AwayC, SiteRunC } from '../../sim/away/components';
 import { SuitC } from '../../sim/eva/components';
@@ -11,8 +17,8 @@ import { crateUnits, spillItems, takeFromStack } from '../../sim/items/stacks';
 import { shipGrid } from '../../sim/regions';
 import { LOAD_CRATE_SEC } from '../../sim/tuning';
 import { cargoCount } from '../../sim/vehicles/cargo';
-import { crewOn, landed, play } from './awayFixture';
-import { of, scrapHome, smallHold } from './salvageEvaFixture';
+import { crewOn, landed, play } from '../../../test/support/fixtures/away';
+import { of, scrapHome, smallHold } from '../../../test/support/fixtures/salvageEva';
 
 /** The staging zone of an away site (#286 slice 3, docs/ARCHITECTURE.md "Staging"): the party gathers loot there, the shuttle loads it. */
 

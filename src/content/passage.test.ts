@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { CrewC, PositionC, newGame, type Sim } from '../sim';
+import { CombatC } from '../sim/combat/components';
+import { CrewC, PositionC } from '../sim/crew/components';
+import { newGame } from '../sim/newGame';
+import type { Sim } from '../sim/sim';
+import { FTL_CHARGE_SEC } from '../sim/tuning';
 import { ConsentC } from '../sim/consent/components';
 import { killCrew } from '../sim/crew/death';
 import { nodesWithin } from '../sim/galaxy/graph';
@@ -8,7 +12,6 @@ import { placementGapError } from '../sim/regions';
 import { deserialize, serialize } from '../sim/save';
 import { playerCrew } from '../sim/story/world';
 import { playerShip } from '../sim/trade/player';
-import { CombatC, FTL_CHARGE_SEC } from '../sim';
 import { giveItems } from '../sim/story/effects';
 import { planStarRoute } from '../sim/galaxy/route';
 import { DraftedC } from '../sim/crew/components';

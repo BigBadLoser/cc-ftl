@@ -1,11 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import { CombatC, ModuleC, ShipC, WeaponC, newGame, weaponsIdleReason, type ContentRegistry, type Sim, type SimEvent } from '../../sim';
+import { CombatC, ShipC, WeaponC } from '../../sim/combat/components';
+import { weaponsIdleReason } from '../../sim/combat/idle';
+import type { SimEvent } from '../../sim/events';
+import { ModuleC } from '../../sim/modules/components';
+import { newGame } from '../../sim/newGame';
+import type { ContentRegistry } from '../../sim/registry';
+import type { Sim } from '../../sim/sim';
 import { content } from '../index';
-import { shipGrid, shipIdOf, shipIds } from '../../sim/regions';
+import { shipGrid, shipIdOf } from '../../sim/regions';
 import { operatorOf } from '../../sim/combat/operators';
 import { resolveTarget } from '../../sim/combat/targets';
+import { nth } from '../../../test/support/sim';
 
-const nth = (sim: Sim, n: number): number => shipIds(sim)[n - 1] as number;
 const modulesOf = (sim: Sim, shipId: number): number[] =>
   sim.world.query(ModuleC).filter((i) => shipIdOf(sim, sim.world.get(i, ModuleC)) === shipId);
 const aim = (sim: Sim, moduleId = 0): void =>

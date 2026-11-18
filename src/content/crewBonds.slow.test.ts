@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { ModuleC, TICK_HZ, homeShip, newGame, storageAdd, type Sim } from '../sim';
+import { homeShip } from '../sim/combat/ships';
+import { storageAdd } from '../sim/items/storage';
+import { ModuleC } from '../sim/modules/components';
+import { newGame } from '../sim/newGame';
+import type { Sim } from '../sim/sim';
+import { TICK_HZ } from '../sim/time';
 import { pipeline } from '../sim/pipeline';
 import { shipIdOf } from '../sim/regions';
 import { galaxySystem } from '../sim/systems/galaxy';

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { WORK_CATEGORIES, type RecipeDef } from '../sim';
+import { WORK_CATEGORIES } from '../sim/crew/components';
+import type { RecipeDef } from '../sim/registry';
 import { content } from './index';
 
 describe('work categories', () => {

@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { homeShip, hullLoad, newGame } from '../../../src/sim';
+import { homeShip } from '../../../src/sim/combat/ships';
+import { hullLoad } from '../../../src/sim/ftl/capacity';
+import { newGame } from '../../../src/sim/newGame';
 import { validateTemplate } from '../../../src/sim/shipgen';
 import { SHIPS, count, mods, withShip } from './kits';
 
