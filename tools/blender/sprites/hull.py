@@ -218,9 +218,35 @@ def out_block(mask, o, variant=0, part="rim", room=0, corners=0):
     emit(m, Out(mask, o, variant, part, room, corners))
     if not m.f:                                       # a corner piece with no camera-facing outer edge
         m.poly([core.G(0, 0, 0), core.G(0.001, 0, 0), core.G(0, 0.001, 0)], "dark")
+    if part == "rim" and o == 0:
+        _rise(m, mask, room, corners)
     if part == "rim":
         return [_dummy(f"ghost_plate_{o}_{mask}_{room}_{corners}"), m.build()]
     return [m.build()]
+
+
+FADE = ("gW2", "hsK", "hsXK", "hbXhsXK")   # the rising lines' tones, bottom up: their alpha fades with height
+
+
+def _rise(m, mask, room, corners):
+    """The rear ghost's faint lines rising from its crest at the tile's seams (and its corner) to the hull's full height,
+    fading as they go: the wall it stands for, hinted (Space Haven's far-side hull ghosts, walls fully collapsed)."""
+    from .walls import hull_top, skirt_top
+    r = RAMP_CELLS / GN
+    pts = []
+    if not mask & 4:
+        pts.append((-0.5, 0.5 - r))                             # a run along x, the room at +y: its left seam
+    if not mask & 2:
+        pts.append((0.5 - r, -0.5))                             # a run along y, the room at +x: its top seam
+    if mask & 6 == 6 and not corners & 2:
+        pts.append((0.5 - r, 0.5 - r))                          # the inner corner
+    w = 0.36 * C
+    z0, z1 = skirt_top(), hull_top()
+    for px, py in pts:
+        a, b = (px - w, py + w), (px + w, py - w)
+        for k, tone in enumerate(FADE):
+            za, zb = z0 + (z1 - z0) * k / len(FADE), z0 + (z1 - z0) * (k + 1) / len(FADE)
+            m.poly([core.G(*a, za), core.G(*b, za), core.G(*b, zb), core.G(*a, zb)], tone)
 
 
 def drop(side):
