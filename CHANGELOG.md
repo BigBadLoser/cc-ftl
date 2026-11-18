@@ -61,6 +61,7 @@ Player-facing changes, newest first. Each dated entry is a deploy of the live ga
 
 ### Changed
 
+- Ship shapes: navy warships no longer have a notch beside their drive bank, island carriers get a pointed nose and a longer hull, the smallest scrapper raiders come out smaller, and drone swarms and forked drones hold their pods more neatly. ([#564](https://github.com/BigBadLoser/cc-ftl/pull/564))
 - Smoother play on busy ships: ship temperature and crew mood cost less to simulate each moment, so large ships and stations run lighter. ([#565](https://github.com/BigBadLoser/cc-ftl/pull/565))
 - Crew called out of bed during their Sleep hours (a fire, battle stations) are no longer sent on an away trip: the trip still counts those hours as Sleep. ([#560](https://github.com/BigBadLoser/cc-ftl/pull/560))
 - Trading carriers: with no shuttle of your own free, a station sends its own real shuttle from its hangar or pad to buy and sell with you, and it flies home again afterwards. Your shuttle still goes first when it's free. ([#552](https://github.com/BigBadLoser/cc-ftl/pull/552))
