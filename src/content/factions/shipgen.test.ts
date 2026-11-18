@@ -42,8 +42,8 @@ describe('ship generator: doctrines', () => {
     }
     expect([...families].sort()).toEqual(['carrier', 'corvette', 'cruiser', 'frigate']);
     expect(sideBySide).toBeGreaterThan(25);
-    // Seeds 37 to 48: the silhouette spread of twelve deep hulls swings from 0.18 to 0.35 with the window of seeds (0.256 on average since #571).
-    const deep = Array.from({ length: 12 }, (_, i) => gen('faction.navy', i + 37, 9));
+    // 48 deep hulls: the spread of twelve swings from 0.18 to 0.35 with the window of seeds, so a wide fixed sample (0.263 silhouette, 0.532 adjacency).
+    const deep = Array.from({ length: 48 }, (_, i) => gen('faction.navy', i + 1, 9));
     expect(meanPairwise(deep.map((g) => silhouetteMask(g.template.rows)), silhouetteDistance)).toBeGreaterThan(0.25);
     expect(meanPairwise(deep.map((g) => adjacencySignature(g.debug!)), adjacencyDistance)).toBeGreaterThan(0.45);
   });
