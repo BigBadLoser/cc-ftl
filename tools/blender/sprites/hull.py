@@ -298,7 +298,8 @@ def _back_fill(f, mask):
     e = -0.5 + C
     z0, z1 = 0.02, hull_top() / 6
     step = (z1 - z0) / len(BACK)
-    cuts = [z0] + [z0 + step * (k + 4) for k in range(len(BACK))]      # (the bottom band 4 times the others' height)
+    lo = z0 + step * 4                                                  # (the bottom band 2/3 of the lines' height, the
+    cuts = [z0] + [lo + (z1 - lo) * k / (len(BACK) - 1) for k in range(len(BACK))]  # fade in the rest: ends with them)
     for a, b in _back_edges(mask):
         for k, tone in enumerate(BACK):
             za, zb = cuts[k], cuts[k + 1]
