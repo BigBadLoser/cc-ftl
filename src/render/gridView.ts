@@ -318,13 +318,15 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
           if (k === Struct.Floor) continue;
           // The engine's hull row (walls up or roofed) is the engine's own bulkhead sprite: no hull wall on it.
           if (special) continue;
+          // With the walls down the far hull's ghost (its outline) stays, over its cut hull.
+          const outline = drew && ghosts && hullSide(wallAt, x, y) === HullSide.Far;
           for (const piece of wallPieces(pieceAt, x, y, stone ? Struct.RockWall : k, mode, ghosts, gapAt, decodeWindow(windows?.[ci] ?? 0), host.hullLook?.() ?? "ship")) {
-            if (drew && !keepsOldPiece(k, ghosts, piece.under)) continue; // (a door stays, without its old belly)
+            if (drew && !keepsOldPiece(k, ghosts, piece.under) && !(outline && !piece.under)) continue; // (a door stays, without its old belly)
             const s = atlas.firstOf(piece.chain);
             if (!s) continue;
             // Roofed (no ghosts): walls and hull sort a little earlier so the roof plate of the tile behind them covers
             // their shared top edge (they all end flush at the roof top).
-            const made = addStatic(L, s, x, y, depthKey(x, y) + piece.order * 0.001 - (ghosts ? 0 : 0.15), piece.under ? L.under : L.sorted);
+            const made = addStatic(L, s, x, y, depthKey(x, y) + piece.order * 0.001 - (ghosts ? 0 : 0.15) + (outline ? 0.003 : 0), piece.under ? L.under : L.sorted);
             owned.push(...made);
             const isDoor = k === Struct.Door;
             if (isDoor) {
@@ -446,7 +448,8 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
       berm();
       return true;
     }
-    if (k !== Struct.Floor && hullSide(wallAt, x, y) !== HullSide.Near) return false;
+    // A wall tile shows its cut hull where its ghost replaces the floor: the near hull, and the far hull with the walls down.
+    if (k !== Struct.Floor && !replacesFloor(wallAt, x, y, mode)) return false;
     if (look === "station") {
       // A ground base's near hull: the station's foot (no belly), the berm against it.
       const foot = lowId(h, x, y, has);
