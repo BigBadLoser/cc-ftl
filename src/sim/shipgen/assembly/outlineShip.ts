@@ -3,7 +3,7 @@ import { Rng } from '../../rng';
 import { drawSilhouette, type Silhouette } from '../hull/silhouette';
 import { NAVY_PROFILES } from '../hull/navyProfiles';
 import { enginesShort, fitShell, seedOf } from '../generate';
-import { dockSpec, engineSpec, planShip, reactorSpec, type RoomSpec, type ShipPlan } from '../plan';
+import { dockSpec, engineSpec, planShip, reactorSpec, weaponSpec, type RoomSpec, type ShipPlan } from '../plan';
 import { pairUp } from '../topoNavy';
 import type { FactionDef, GenResult } from '../types';
 import { NAVY_TYPES, navyRole, type NavyType } from './navyShip';
@@ -61,7 +61,7 @@ function mirrorPairs(specs: RoomSpec[]): [RoomSpec[], RoomSpec[]] {
 }
 
 /** Rooms cut into the outline at one scale, or null when they do not fit. */
-function layout(plan: ShipPlan, sil: Silhouette, sx: number, sy: number, type: NavyType): Layout | null {
+function layout(plan: ShipPlan, sil: Silhouette, sx: number, sy: number, type: NavyType, vary: readonly number[], defs: Record<string, ModuleDef>): Layout | null {
   const { W, H, inside } = scaled(sil, sx, sy);
   if (2 * H + 4 > 120 || W + 4 > 240) return null;
   const g = new RegionGrid(128);
@@ -93,9 +93,14 @@ function layout(plan: ShipPlan, sil: Silhouette, sx: number, sy: number, type: N
   if (xBand >= xS - 6) return null;
 
   // Side rooms, paired to mirror, bow to stern by zone (guns forward).
-  const guns = plan.weapons;
+  // Gun rooms pair alike; a lone room of several guns splits, a gun each side, and a lone single gun pairs with
+  // another room (mirrorPairs) rather than a store.
+  const guns = plan.weapons.flatMap((r) => (r.mods.length > 1 && plan.weapons.length % 2 === 1 && r === plan.weapons[plan.weapons.length - 1]
+    ? [weaponSpec(defs, r.mods.slice(0, Math.ceil(r.mods.length / 2))), weaponSpec(defs, r.mods.slice(Math.ceil(r.mods.length / 2)))]
+    : [r]));
+  const lone = guns.length % 2 === 1 ? [guns.pop() as RoomSpec] : [];
   // A crew of three or more eats in a mess; a smaller one where it can (a mess opposite the odd room out, mirrorPairs).
-  const rest = [...(plan.crew.length >= 3 ? [MESS] : []), ...reactors, ...plan.shields, ...(plan.core ? [plan.core] : []), dockSpec(), dockSpec(), ...plan.quarters, ...plan.support, ...plan.cargo, ...plan.hangars]
+  const rest = [...lone, ...(plan.crew.length >= 3 ? [MESS] : []), ...reactors, ...plan.shields, ...(plan.core ? [plan.core] : []), dockSpec(), dockSpec(), ...plan.quarters, ...plan.support, ...plan.cargo, ...plan.hangars]
     .sort((a, b) => ZONE.indexOf(a.role) - ZONE.indexOf(b.role));
   const [gn, gs] = pairUp(guns);
   const [rn, rs] = mirrorPairs(rest);
@@ -117,6 +122,11 @@ function layout(plan: ShipPlan, sil: Silhouette, sx: number, sy: number, type: N
   // run reached, the other rooms in their zone order round it.
   const pairs = north.map((r, i) => [r, south[i] as RoomSpec] as const);
   const flat = (x0: number, w: number): boolean => { for (let k = -1; k <= w; k++) if (top(x0 + k) !== top(x0) || depth(x0 + k) < MIN_DEPTH) return false; return true; };
+  // Where the hull stands out ahead of amidships (a wing): the gun rooms wait for it, so the guns stand in the wing.
+  const sorted = Array.from({ length: xS - xBand }, (_, k) => depth(xBand + k)).sort((p, q) => p - q);
+  const bodyDepth = sorted[Math.floor(sorted.length / 2)] ?? 0;
+  let xWing = -1;
+  for (let bx = xBand; bx < xBand + (xS - xBand) * 0.6 && xWing < 0; bx++) if (depth(bx) > bodyDepth + 1) xWing = bx;
   const slice = (share: number): { order: (readonly [RoomSpec, RoomSpec])[]; cuts: [number, number][] } | null => {
     const docks = pairs.filter(([r]) => r.role === 'dock');
     const queue = pairs.filter(([r]) => r.role !== 'dock');
@@ -125,14 +135,17 @@ function layout(plan: ShipPlan, sil: Silhouette, sx: number, sy: number, type: N
     let x = xBand;
     while (queue.length > 0 || docks.length > 0) {
       const dock = docks.length > 0 && (flat(x, (docks[0] as readonly [RoomSpec, RoomSpec])[0].w) || queue.length === 0);
-      const pair = (dock ? docks.shift() : queue.shift()) as readonly [RoomSpec, RoomSpec];
+      const wait = !dock && x < xWing - 2 && queue[0]?.[0].role === 'weapons' ? queue.findIndex(([q]) => q.role !== 'weapons') : -1;
+      const pair = (dock ? docks.shift() : wait > 0 ? queue.splice(wait, 1)[0] : queue.shift()) as readonly [RoomSpec, RoomSpec];
       const r = pair[0];
       const x0 = x;
       let a = 0;
       // A reactor lies along its back wall (the hull), so its room is at least its length long; others at least their short side.
       const len = dock ? r.w : r.role === 'reactor' ? r.w : Math.min(r.w, r.h);
+      // Each room's share varies by seed (vary), so rooms of a kind are not all one size.
+      const want = r.w * r.h * share * (r.role === 'quarters' ? 2 : 1) * (vary[pairs.indexOf(pair) % vary.length] ?? 1);
       if (dock) { if (!flat(x, r.w)) return null; x += r.w; a = r.w * r.h; }
-      else while (x < xS && (a < r.w * r.h * share * (r.role === 'quarters' ? 2 : 1) || x - x0 < len)) { a += bandArea(x); x++; }
+      else while (x < xS && (a < want || x - x0 < len)) { a += bandArea(x); x++; }
       if (a < r.w * r.h || x - x0 < len || x > xS) return null;
       order.push(pair);
       cuts.push([x0, x]);
@@ -204,10 +217,12 @@ export function assembleOutline(
   const role = navyRole(f, type);
   const plan = planShip(rng, f, role, depth, defs, extra);
   const profiles = NAVY_PROFILES[type] ?? [];
-  const sil = drawSilhouette(rng, rng.pick(profiles));
+  const profile = rng.pick(profiles);
+  const sil = drawSilhouette(rng, profile);
+  const vary = Array.from({ length: 24 }, () => rng.int(80, 135) / 100);
   let lay: Layout | null = null;
   // The smallest beam the rooms fit, at a length from three quarters of it up: near the silhouette's proportions.
-  for (let sy = 1.2; sy <= 3.6 && !lay; sy += 0.1) for (let sx = Math.max(1, 0.75 * sy); sx <= 1.15 * sy && !lay; sx += 0.1) lay = layout(plan, sil, sx, sy, type);
+  for (let sy = 1.2; sy <= 3.6 && !lay; sy += 0.1) for (let sx = Math.max(1, 0.75 * sy); sx <= 1.15 * sy && !lay; sx += 0.1) lay = layout(plan, sil, sx, sy, type, vary, defs);
   if (!lay) throw new Error(`outline ${type}: rooms do not fit`);
   const { g } = lay;
   thinHull(g);

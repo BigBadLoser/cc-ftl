@@ -11,13 +11,13 @@ export const NAVY_PROFILES: Record<string, readonly Profile[]> = {
   corvette: [
     { id: 'corvette.wedge', nose: { style: ['stepped', 'steep'], len: [8, 11], front: [1, 2] },
       sections: [[{ len: [22, 28], half: [4, 5] }, { len: [14, 18], half: [3, 4] }], [{ len: [6, 8], half: [4, 5] }, { len: [12, 16], half: [5, 5] }]],
-      stern: { kind: 'quarters', len: [9, 12], out: [1, 2], aft: [2, 3] } },
+      stern: { kind: 'quarters', len: [9, 12], out: [2, 2], aft: [2, 3] } },
     // A dart: a long fine nose and a slim neck, the mass and swept wings at the rear.
     { id: 'corvette.swift', nose: { style: 'steep', len: [12, 16], front: [1, 1] },
       sections: [{ len: [6, 12], half: [3, 3] }, [{ len: [10, 14], half: [5, 5], taper: 1 }, { len: [12, 16], half: [4, 4] }]],
-      rearWings: { len: [8, 10], reach: [1, 2], sweep: [1, 2] }, stern: [{ kind: 'bank', len: [0, 0], out: [0, 0] }, { kind: 'tail', len: [4, 5], out: [1, 1], rate: 3 }] },
+      rearWings: { len: [8, 10], reach: [2, 2], sweep: [1, 2] }, stern: [{ kind: 'bank', len: [0, 0], out: [0, 0] }, { kind: 'tail', len: [4, 5], out: [1, 1], rate: 3 }] },
     { id: 'corvette.flare', nose: { style: ['steep', 'round'], len: [9, 13], front: [1, 2] }, sections: [{ len: [24, 32], half: [4, 6] }],
-      mounts: [{ kind: 'wing', count: [1, 1], len: [8, 10], reach: [3, 4], cut: true, span: [0.05, 0.55] }], stern: { kind: 'flare', len: [6, 9], out: [1, 2] } },
+      mounts: [{ kind: 'wing', count: [1, 1], len: [8, 10], reach: [3, 4], cut: true, span: [0.05, 0.55] }], stern: { kind: 'flare', len: [7, 10], out: [2, 2] } },
   ],
   // Escort: medium and compact, a wing pair for its point defence.
   frigate: [
