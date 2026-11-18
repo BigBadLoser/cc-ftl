@@ -236,18 +236,19 @@ FADE = ("gW2", "hsK", "hsXK", "hbXhsXK")   # the rising lines' tones, bottom up:
 
 
 def _toe(m, mask, corners):
-    """The rear ghost's line along the foot's top: a 1 px upright strip at the foot's height (toning the ramp's cells
-    there would fill the steep foot and the first step as bands, not a line)."""
-    z0 = FOOT_PX / ZART
+    """The rear ghost's line where its foot turns into the ramp: a 1 px upright strip at the foot's height, a little in
+    front of the steep first cell so its see-through surface does not hide it (toning the ramp's cells there would fill
+    the steep foot as a band, not a line)."""
+    z0, k = FOOT_PX / ZART, 0.4 * C          # (the foot's top: two thirds up the first cell's rise, set in front of it)
     segs = []
     if not mask & 4:
-        segs.append(((-0.5, 0.5 - C), (0.5, 0.5 - C)))
+        segs.append(((-0.5, 0.5 - k), (0.5, 0.5 - k)))
     if not mask & 2:
-        segs.append(((0.5 - C, 0.5), (0.5 - C, -0.5)))
+        segs.append(((0.5 - k, 0.5), (0.5 - k, -0.5)))
     if mask & 6 == 6 and not corners & 2:
-        segs += [((0.5 - C, 0.5 - C), (0.5, 0.5 - C)), ((0.5 - C, 0.5), (0.5 - C, 0.5 - C))]
+        segs += [((0.5 - C, 0.5 - k), (0.5, 0.5 - k)), ((0.5 - k, 0.5), (0.5 - k, 0.5 - C))]
     for a, b in segs:
-        m.poly([core.G(*a, z0), core.G(*b, z0), core.G(*b, z0 + DZ), core.G(*a, z0 + DZ)], "gW2")
+        m.poly([core.G(*a, z0 - DZ / 2), core.G(*b, z0 - DZ / 2), core.G(*b, z0 + DZ / 2), core.G(*a, z0 + DZ / 2)], "gW2")
 
 
 def _rise(m, mask, room, corners):
