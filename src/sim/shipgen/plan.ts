@@ -202,8 +202,10 @@ export function planShip(rng: Rng, f: FactionDef, role: ShipRoleDef, depth: numb
   const shields: RoomSpec[] = [];
   for (let i = 0; i < b.shields; i++) {
     const g = pickWeighted(rng, f.shields);
+    // Crewed: 4x4 whatever the generator, as on a tight station, room for a Mk III (3x3) and the walkway to it. A sealed
+    // pod (no crew) needs no walkway: the generator and a tile.
     const big = (defs[g]?.footprint[1] ?? 2) > 2;
-    shields.push({ role: 'shields', mods: [g], w: big ? 4 : 3, h: big ? 4 : 3 });
+    shields.push({ role: 'shields', mods: [g], w: f.living || big ? 4 : 3, h: f.living || big ? 4 : 3 });
   }
   // Crewed ships fly from a helm; AI-run ships have no helm, the AI core is their bridge (one weapons console stays:
   // weapons charge only with a manned console).
@@ -218,7 +220,7 @@ export function planShip(rng: Rng, f: FactionDef, role: ShipRoleDef, depth: numb
   // The core runs the point defence from wherever the mounts stand, so they are hull mounts of their own,
   // not furniture of the core's room: weapon rooms on crewed ships, sealed pods on drone ships.
   const core = f.aiCore && f.living
-    ? { role: 'core' as const, mods: ['module.aiCore', ...(dronesOn ? ['module.droneBay'] : [])], w: 3 + (dronesOn ? 3 : 0), h: 3, ...(dronesOn ? { drones } : {}) }
+    ? { role: 'core' as const, mods: ['module.aiCore', ...(dronesOn ? ['module.droneBay'] : [])], w: 4 + (dronesOn ? 3 : 0), h: 3, ...(dronesOn ? { drones } : {}) }
     : null;
   const pdRooms = Array.from({ length: pdCount }, () => ({ role: 'weapons' as const, mods: ['module.pointDefense'], w: 3, h: 3 }));
   if (f.living) weapons.push(...pdRooms);

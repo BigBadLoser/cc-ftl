@@ -24,8 +24,6 @@ import { containerChar } from './containerCells';
  */
 
 /** Salvaged reactor rooms are patched up around whatever doors the welds cut: a spare column and row. */
-const roomy = (k: number, kit: CoreKit): RoomSpec => { const r = reactorSpec(k, kit); return { ...r, w: r.w + 1, h: r.h + 1 }; };
-
 const run = (specs: RoomSpec[]): number => specs.reduce((t, r) => t + r.w + 1, 1);
 
 /** Civil bulk freighter: the bay under the gangway, shuttle bay and service rooms off the gangway's far side. */
@@ -156,7 +154,7 @@ export function podString(rng: Rng, crates: number, scrappy = false): Builder | 
 /** Mining tug: a stubby hull with an ore hopper, a reactor and one big engine aft. */
 export function tug(rng: Rng, hopper: RoomSpec, reactors: number, kit: CoreKit): Builder | null {
   const b = localBuilder(rng);
-  const r = roomy(Math.max(1, reactors), kit);
+  const r = reactorSpec(Math.max(1, reactors), kit);
   const L = Math.max(r.w, hopper.w) + 3;
   const h = b.place({ x: 0, y: -2, w: L + 2, h: 4 }, 'hall');
   if (!h) return null;
@@ -171,8 +169,9 @@ export function tug(rng: Rng, hopper: RoomSpec, reactors: number, kit: CoreKit):
 /** A patched-in reactor room (power the donors did not bring) on a short access passage. */
 export function reactorRoom(rng: Rng, k: number, kit: CoreKit): Builder | null {
   const b = localBuilder(rng);
-  const r = roomy(k, kit);
-  const room = b.place({ x: 0, y: -4, w: r.w + 2, h: r.h + 2 }, 'reactor', r);
+  const r = reactorSpec(k, kit);
+  // The room's south wall is the passage's north wall.
+  const room = b.place({ x: 0, y: -r.h, w: r.w + 2, h: r.h + 2 }, 'reactor', r);
   const pass = b.place({ x: 0, y: 1, w: r.w + 2, h: 3 }, 'hall');
   if (!room || !pass || !b.door(room, pass)) return null;
   return b;
