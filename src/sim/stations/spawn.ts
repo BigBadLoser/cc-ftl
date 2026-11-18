@@ -2,7 +2,8 @@ import { ShipC, type Faction } from '../combat/components';
 import { shipById, spawnShip } from '../combat/ships';
 import { placeAt, placementGapError, regions, shipGrid, shipIdOf, type Place } from '../regions';
 import { isTileWalkable } from '../modules/walk';
-import { buildStation } from '../shipgen/stationBuild';
+import type { StationResult } from '../shipgen/assembly/station';
+import { builtStation } from './buildMemo';
 import type { StationSize } from '../shipgen/stationTypes';
 import type { Sim } from '../sim';
 import { ensureTrader } from '../trade/traders';
@@ -30,9 +31,9 @@ const STATION_GAP = 2 * REGION_PAD + MIN_SHIP_GAP + 8;
 export function spawnStation(sim: Sim, kind: string, size: StationSize, seed: number, at?: Place, name?: string, side?: Faction): number | string {
   const def = sim.content.stations?.[kind];
   if (!def) return 'badKind';
-  let gen: ReturnType<typeof buildStation>;
+  let gen: StationResult;
   try {
-    gen = buildStation(def, kind, size, seed >>> 0, sim.content.modules);
+    gen = builtStation(sim, kind, size, seed) as StationResult; // the kind is known, so never null; made ahead on a worker when it could be (#538)
   } catch {
     return 'noLayout'; // no recipe of the kind stood on any try: a typed failure, not an exception out of the tick
   }

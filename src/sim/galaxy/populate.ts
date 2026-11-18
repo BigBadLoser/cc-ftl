@@ -1,10 +1,9 @@
-import { stationKindOf, eastEdge, populateDerelict, populateField, populateOutpost, populateStation, sizeOf, structureSeed } from './populateSpawn';
+import { eastEdge, populateDerelict, populateField, populateOutpost, populateStation } from './populateSpawn';
 import { populateCargo } from './populateCargo';
+import { planNode, SALT, type StructurePlan } from './populatePlan';
 import { strHash, unit } from './hash';
-import { portsAt } from './portIndex';
 import { nodeOf, nodeState } from './state';
 import type { Sim } from '../sim';
-import type { Port } from './ports';
 
 /**
  * Node population (living world, after stage 3): a node's structures exist only as galaxy data until the player first enters it, and then they become real.
@@ -18,6 +17,7 @@ import type { Port } from './ports';
  *   node with a field is not an orbital station but a dug base hidden in a big asteroid (the existing outpost style for pirates).
  * - Lost cargo becomes one or two sealed containers adrift (populateCargo.ts).
  * - A derelict becomes a ruined wreck of the node's faction (or any faction's); a drone nest (a derelict in rogue space) is a heavier ruin full of robots.
+ * What each structure becomes is decided by `planNode` (populatePlan.ts), which the worker prewarm reads too (#538).
  * Layout: west to east in structure order, each at least SLOT_GAP tiles east of everything before it and never nearer the west edge than WEST_MARGIN (the free
  * water the player deploys in), centred on a line with a small hashed offset. The sector grows to hold them, as it does for hubs.
  */
@@ -27,7 +27,6 @@ export const WEST_MARGIN = 70;
 /** Tiles of open space between one structure and the next. */
 export const SLOT_GAP = 30;
 const MID_Y = 60;
-const SALT = { place: 81, station: 91, field: 92, outpost: 93, derelict: 94, dug: 95, cargo: 96 } as const;
 
 /** Where the next structure goes: east of everything, centred on the mid line with a hashed offset. */
 export function slot(sim: Sim, node: string, index: number): (w: number, h: number) => { x: number; y: number } {
@@ -40,49 +39,37 @@ export function slot(sim: Sim, node: string, index: number): (w: number, h: numb
  * the node's. Safe to call for the start node on a fresh game (the player's ship stays where it is: structures go east of it).
  */
 export function populateNode(sim: Sim, id: string): number {
-  const content = sim.content.galaxy;
   const node = nodeOf(sim, id);
-  if (!content || !node || sim.sector.node !== id) return 0;
+  if (!sim.content.galaxy || !node || sim.sector.node !== id) return 0;
   const st = nodeState(sim, id);
   if (st.populated) return 0;
   st.populated = true;
-  const ports = new Map<number, Port>(portsAt(sim, id).map((p) => [Number(p.id.slice(p.id.indexOf('#') + 1)), p]));
-  const hasField = node.structures.some((s) => content.structures[s.def]?.kind === 'asteroids');
   let made = 0;
-  const build = (s: (typeof node.structures)[number], i: number): boolean => {
-    const def = content.structures[s.def];
-    if (!def) return false;
-    const port = ports.get(i);
-    const at = slot(sim, id, i);
-    let ok = false;
-    if (def.kind === 'station') {
-      const pirate = content.factions[s.owner ?? '']?.kind === 'pirates';
-      if (port?.kind === 'den' && hasField) {
-        // A den among the rocks is dug into a big asteroid and hidden there.
-        ok = populateOutpost(sim, port, 'dug', 'pirate', structureSeed(sim, id, i, SALT.dug), at);
-      } else {
-        const kind = stationKindOf(sim, port, def.station === 'military', pirate, def.station === 'research');
-        ok = populateStation(sim, port, kind, sizeOf(port), structureSeed(sim, id, i, SALT.station), at) !== null;
+  const build = (p: StructurePlan): boolean => {
+    const at = slot(sim, id, p.i);
+    switch (p.type) {
+      case 'station':
+        return populateStation(sim, p.port, p.kind, p.size, p.seed, at) !== null;
+      case 'outpost':
+        return populateOutpost(sim, p.port, p.outpost.style, p.outpost.kind, p.outpost.seed, at);
+      case 'field': {
+        const ok = populateField(sim, p.seed, at, p.structure);
+        return (!!p.outpost && populateOutpost(sim, p.port, p.outpost.style, p.outpost.kind, p.outpost.seed, slot(sim, id, p.i))) || ok;
       }
-    } else if (def.kind === 'asteroids') {
-      ok = populateField(sim, structureSeed(sim, id, i, SALT.field), at, s.def);
-      if (port?.kind === 'outpost') ok = populateOutpost(sim, port, 'surface', 'mining', structureSeed(sim, id, i, SALT.outpost), slot(sim, id, i)) || ok;
-    } else if (def.kind === 'cargo') {
-      ok = populateCargo(sim, node, structureSeed(sim, id, i, SALT.cargo), at);
-    } else {
-      ok = populateDerelict(sim, node, port?.kind === 'nest', structureSeed(sim, id, i, SALT.derelict), at);
+      case 'cargo':
+        return populateCargo(sim, node, p.seed, at);
+      case 'derelict':
+        return populateDerelict(sim, node, p.nest, p.seed, at);
     }
-    return ok;
   };
-  node.structures.forEach((s, i) => {
+  for (const p of planNode(sim, id)) {
     try {
-      if (build(s, i)) made++;
+      if (build(p)) made++;
     } catch {
       // One structure that fails to build is skipped and the node keeps what it has: it must not abort the others or the tick.
     }
-  });
+  }
   sim.galaxy.rev++;
   sim.events.emit({ type: 'galaxy.populated', node: id, count: made });
   return made;
 }
-

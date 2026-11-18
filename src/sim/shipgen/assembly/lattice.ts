@@ -97,19 +97,29 @@ export interface Site {
  */
 export function site(R: number, pad = 24, outline: Outline = 'disc', cut = 2, keep?: (x: number, y: number) => boolean, round = false, shoulders = false, openTo?: 'n' | 'e' | 's' | 'w'): Site {
   const g = new RegionGrid(R + pad);
-  const whole = shapes(R, outline, cut, round, openTo), inside = whole.inside;
+  const whole = shapes(R, outline, cut, round, openTo);
   const kept = keep ?? ((): boolean => true);
   const hull = (x: number, y: number): boolean => kept(x, y) && whole.hull(x, y);
-  const memo = new Map<number, number>();
+  // The shape tests are pure and asked of the same tiles many times over (depth looks at a square round each tile), so
+  // both are kept per tile over the grid and a margin; a tile beyond that is worked out each time.
+  const W = R + pad + RING_WALL + 2, side = 2 * W;
+  const slot = (x: number, y: number): number => (x < -W || y < -W || x >= W || y >= W ? -1 : (y + W) * side + x + W);
+  const insideAt = new Int8Array(side * side).fill(-1), depthAt = new Int8Array(side * side).fill(-1);
+  const inside = (x: number, y: number): boolean => {
+    const k = slot(x, y);
+    if (k < 0) return whole.inside(x, y);
+    let v = insideAt[k] as number;
+    if (v < 0) insideAt[k] = v = whole.inside(x, y) ? 1 : 0;
+    return v === 1;
+  };
   const depth = (x: number, y: number): number => {
-    const key = (y + 512) * 1024 + x + 512;
-    let d = memo.get(key);
-    if (d !== undefined) return d;
+    const k = slot(x, y);
+    if (k >= 0 && (depthAt[k] as number) >= 0) return depthAt[k] as number;
     const far = RING_WALL + 1;
-    d = far;
+    let d = far;
     if (!inside(x, y)) d = 0;
     else for (let r = 1; r <= RING_WALL && d === far; r++) for (let dy = -r; dy <= r && d === far; dy++) for (let dx = -r; dx <= r && d === far; dx++) if (!inside(x + dx, y + dy)) d = r;
-    memo.set(key, d);
+    if (k >= 0) depthAt[k] = d;
     return d;
   };
   const ring = g.hall();
