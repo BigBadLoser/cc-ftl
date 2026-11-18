@@ -11,7 +11,7 @@ import { ModuleC } from '../../sim/modules/components';
 import { newGame } from '../../sim/newGame';
 import { shipGrid } from '../../sim/regions';
 import type { Sim } from '../../sim/sim';
-import { Struct } from '../../sim/structure';
+import { Struct, writeStruct } from '../../sim/structure';
 import { TICK_HZ } from '../../sim/time';
 import { VehicleC } from '../../sim/vehicles/components';
 import { destroyVehicle } from '../../sim/vehicles/lifecycle';
@@ -280,6 +280,8 @@ describe('air drive', () => {
     const p = sim.world.get(rescuer, PositionC)!;
     const vented: [number, number][] = [];
     for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) vented.push([p.x + dx, p.y + dy]);
+    // A true breach around them: airless rock ground, which the gas solve holds empty within its substeps (#65), kept at no oxygen.
+    vented.forEach(([x, y]) => writeStruct(grid, x, y, Struct.Ground));
     const vent = (): void => vented.forEach(([x, y]) => grid.set('o2', x, y, 0));
     vent();
     run(sim, 1);

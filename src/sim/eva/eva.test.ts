@@ -31,7 +31,7 @@ import { Sim } from '../sim';
 
 import { stat } from '../stats';
 
-import { Struct } from '../structure';
+import { Struct, writeStruct } from '../structure';
 
 import { CREW_MAX_HP, DEFAULT_SUIT } from '../tuning';
 
@@ -208,6 +208,8 @@ describe('suit air', () => {
     run(sim, 20 * 5);
     expect(suitAir(sim, suited)).toBe(DEFAULT_SUIT.airSec); // breathable air: the tank is untouched
     vent(sim, 3, 3, 6, 5);
+    // A true breach: the patch is airless rock ground, a vacuum the gas solve holds empty within its substeps, not only between ticks (#65).
+    for (let y = 3; y <= 5; y++) for (let x = 3; x <= 6; x++) writeStruct(shipGrid(sim, 1)!, x, y, Struct.Ground);
     const ev = run(sim, 20 * 10);
     expect(suitAir(sim, suited)).toBeCloseTo(DEFAULT_SUIT.airSec - 10, 0);
     expect(sim.world.get(suited, HealthC)!.hp).toBe(CREW_MAX_HP);
