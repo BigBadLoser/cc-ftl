@@ -92,7 +92,7 @@ function outlined(r: Raster, s: string, x: number, y: number, c: RGB, ts: number
 /** One layout as a labelled image: tiles `t` pixels square, the key in a column on the right; with `marks`, its edge markings drawn on the floor. */
 export function labelView(spec: string, seed: number, depth = 4, t = 16, marks = false): Raster {
   const g = gen(spec, seed, depth);
-  return labelOf(g, `${spec} seed ${seed}`, t, [], true, marks ? edgeMarkings(g, defs) : undefined);
+  return labelOf(g, `${spec.split(':')[0]} ${g.role.toUpperCase()} seed ${seed} d${depth}`, t, [], true, marks ? edgeMarkings(g, defs) : undefined);
 }
 
 /** Line colour of each edge marking on the view (the hazard band alternates with black, as chevrons would). */
