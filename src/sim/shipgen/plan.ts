@@ -133,6 +133,15 @@ export const REACTOR_TIERS = ['module.reactor', 'module.reactor.mk2', 'module.re
 export const reactorsIn = (m: Record<string, number>): number => REACTOR_TIERS.reduce((t, id) => t + (m[id] ?? 0), 0);
 const reactorDepth = (reactor: string): number => 2 + Math.max(0, REACTOR_TIERS.indexOf(reactor as (typeof REACTOR_TIERS)[number]));
 
+/** Tiles of planned room a lamp, halls' share included (measured on generated stations): the fit-out's lamps in a power estimate. */
+export const LAMP_AREA = 10;
+
+/** The smallest reactor of `tiers` that covers `demand` with at most two, else the largest (ships and stations). */
+export function reactorTier(defs: Record<string, ModuleDef>, demand: number, tiers: readonly string[]): string {
+  const have = tiers.filter((id) => defs[id]);
+  return have.find((id) => Math.ceil(demand / (defs[id]?.power ?? 50)) <= 2) ?? have[have.length - 1] ?? 'module.reactor';
+}
+
 /**
  * The engine and reactor a ship at generation `depth` carries: for each, the highest tier whose blueprint danger tier (`minDanger`) the
  * depth reaches (the generation depth is the node's danger tier), up to the faction's `maxCoreTier`. One owner: plans, rooms, the hull's
@@ -250,7 +259,6 @@ export function planShip(rng: Rng, f: FactionDef, role: ShipRoleDef, depth: numb
   };
   // The budget's reactors are Mk I units of power (`mk1`); the ship then fits as few of its own tier as cover the demand.
   const mk1 = defs['module.reactor']?.power ?? 50;
-  const supply = defs[kit.reactor]?.power ?? mk1;
   const cap = Math.max(1, b.reactors) + Math.ceil(((booked + extraEngines) * -(defs[engine]?.power ?? -6)) / mk1);
   // Guns go before point defence when power is short (the last gun first).
   const isPd = (r: RoomSpec): boolean => r.mods.every((m) => !!defs[m]?.pointDefense);
@@ -258,7 +266,11 @@ export function planShip(rng: Rng, f: FactionDef, role: ShipRoleDef, depth: numb
     const gun = plan.weapons.map(isPd).lastIndexOf(false);
     plan.weapons.splice(gun >= 0 ? gun : plan.weapons.length - 1, 1);
   }
-  plan.reactors = Math.max(1, Math.ceil(demandOf() / supply));
+  // As on stations (assembly/program.ts): the lamps the fit-out lights count too, and the reactor is the smallest tier the depth allows
+  // that powers the ship from at most two, so the fit-out need not squeeze extras in elsewhere.
+  const demand = demandOf() + Math.ceil(allRooms(plan).reduce((n, r) => n + r.w * r.h, 0) / LAMP_AREA);
+  kit.reactor = reactorTier(defs, demand, REACTOR_TIERS.slice(0, REACTOR_TIERS.indexOf(kit.reactor as (typeof REACTOR_TIERS)[number]) + 1));
+  plan.reactors = Math.max(1, Math.ceil(demand / (defs[kit.reactor]?.power ?? mk1)));
   return plan;
 }
 
