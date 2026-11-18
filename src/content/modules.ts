@@ -456,7 +456,7 @@ export const modules = {
     cost: [{ item: 'item.metal', count: 14 }, { item: 'item.electronics', count: 8 }, { item: 'item.polymer', count: 6 }],
   },
   // `hullCapacity`: tiles of ship size (interior area, see `hullArea`) one engine carries (Mk II and III in tiers.ts). The starter's area is 416 on two Mk I engines (660, 63%), so a
-  // couple of yard expansions need a second drive pair or a Mk II. Only the player's ship obeys it (see ftl/capacity.ts, #129).
+  // couple of yard expansions need a second drive pair or a Mk II. Every ship obeys it: shipgen gives a generated hull engines enough (ftl/capacity.ts, #129).
   // 4 wide along the hull, 5 deep. At rotation 0 the north row (y = 0) replaces the hull wall (rotate clockwise for
   // east, south, west); the bell protrudes into space beyond it.
   'module.engine': {

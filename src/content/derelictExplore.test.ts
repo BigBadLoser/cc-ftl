@@ -13,6 +13,7 @@ import { SuitC } from '../sim/eva/components';
 import { hatchSpot } from '../sim/eva/shuttle';
 import { planWalk } from '../sim/eva/route';
 import { shipIdOf } from '../sim/regions';
+import { isTileWalkable } from '../sim/modules/walk';
 import { DoorJam } from '../sim/structure';
 import { giveItems } from '../sim/story/effects';
 import { playerCrew } from '../sim/story/world';
@@ -54,6 +55,29 @@ function inScene(seed: number): { sim: Sim; wreck: number } {
   return { sim, wreck: sim.galaxy.event?.scene.derelicts[0]?.ship as number };
 }
 
+/** The wreck's walkable tile farthest from `from` that a suited walker reaches from it (the ruin may wall parts of it off). */
+function deepestTile(sim: Sim, wreck: number, from: { x: number; y: number }): { x: number; y: number } {
+  const g = sim.sector.grid;
+  const ship = sim.world.get(wreck, ShipC)!;
+  const inside = (x: number, y: number): boolean =>
+    x >= ship.x && y >= ship.y && x < ship.x + ship.width && y < ship.y + ship.height && shipIdOf(sim, { x, y }) === wreck && isTileWalkable(sim, g, x, y, true);
+  const key = (x: number, y: number): number => y * 100000 + x;
+  const seen = new Set([key(from.x, from.y)]);
+  const stack = [[from.x, from.y] as const];
+  let best = { x: from.x, y: from.y, d: 0 };
+  while (stack.length) {
+    const [x, y] = stack.pop()!;
+    const d = Math.hypot(x - from.x, y - from.y);
+    if (d > best.d) best = { x, y, d };
+    for (const [nx, ny] of [[x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]] as const) {
+      if (seen.has(key(nx, ny)) || !inside(nx, ny)) continue;
+      seen.add(key(nx, ny));
+      stack.push([nx, ny]);
+    }
+  }
+  return best;
+}
+
 describe('exploring a scene derelict by hand', () => {
   it('draft, fly out, float across, walk inside, force a jammed door, walk back aboard and fly home', () => {
     const { sim, wreck } = inScene(8);
@@ -84,7 +108,8 @@ describe('exploring a scene derelict by hand', () => {
     const ship = sim.world.get(wreck, ShipC)!;
     const g = sim.sector.grid;
     const spot = hatchSpot(sim, shuttle)!;
-    sim.enqueue({ type: 'crew.moveGroup', ids: party, x: ship.x + Math.floor(ship.width / 2), y: ship.y + Math.floor(ship.height / 2), ship: wreck });
+    const inner = deepestTile(sim, wreck, spot);
+    sim.enqueue({ type: 'crew.moveGroup', ids: party, x: inner.x, y: inner.y, ship: wreck });
     expect(rejected(step(sim, 1200))).toEqual([]);
     const far = (c: number) => { const p = sim.world.get(c, PositionC)!; return Math.hypot(p.x - spot.x, p.y - spot.y); };
     for (const c of party) expect(far(c)).toBeGreaterThan(10);
@@ -107,7 +132,7 @@ describe('exploring a scene derelict by hand', () => {
 
     // Called back from wherever they are: they walk to the hatch spot and float aboard.
     for (const c of party) sim.enqueue({ type: 'crew.draft', id: c, drafted: true });
-    sim.enqueue({ type: 'crew.moveGroup', ids: party, x: ship.x + Math.floor(ship.width / 2), y: ship.y + Math.floor(ship.height / 2), ship: wreck });
+    sim.enqueue({ type: 'crew.moveGroup', ids: party, x: inner.x, y: inner.y, ship: wreck });
     step(sim, 1200);
     for (const c of party) expect(far(c)).toBeGreaterThan(10);
     for (const c of party) sim.enqueue({ type: 'eva.board', crew: c, vehicle: shuttle });

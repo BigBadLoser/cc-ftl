@@ -88,7 +88,8 @@ function volley(sim: Sim, gun: number, pin?: { ec: { shield: { layers: number; t
       }
       if (e.type === 'weapon.fired' || !('projectile' in e) || mine.has(e.projectile)) events.push(e);
     }
-    if (t > 5 && sim.world.query(ProjectileC).length === 0 && (sim.world.get(gun, WeaponC)?.shotsLeft ?? 0) === 0) break;
+    // The enemy may be firing too: only this gun's shots count.
+    if (t > 5 && !sim.world.query(ProjectileC).some((p) => sim.world.get(p, ProjectileC)?.fromModuleId === gun) && (sim.world.get(gun, WeaponC)?.shotsLeft ?? 0) === 0) break;
   }
   return { events, shots };
 }

@@ -225,15 +225,19 @@ describe('fighting and refusing the inspectors (#138 step 3)', () => {
       return !!p && shipIdOf(sim, p) === ship;
     });
     expect(aboard.length).toBeGreaterThan(0);
-    // The fight aboard is the subject, not the station's guns: knocked out, they cannot wreck the ship (and end the
+    // The fight aboard is the subject, not the station's guns: knocked out (and kept so), they cannot wreck the ship (and end the
     // inspection with it) before the lift time, whatever the station's fit-out mounts.
     const station = sim.world.query(ShipC).find((i) => sim.world.get(i, ShipC)!.immobile)!;
-    for (const id of sim.world.query(ModuleC)) {
+    const guns = sim.world.query(ModuleC).filter((id) => {
       const m = sim.world.get(id, ModuleC)!;
-      if ((content.modules as Record<string, { weapon?: unknown }>)[m.def]?.weapon && sim.sector.grid.get('ship', m.x, m.y) === station) sim.enqueue({ type: 'debug.setModuleHp', id, hp: 0 });
-    }
+      return !!(content.modules as Record<string, { weapon?: unknown }>)[m.def]?.weapon && sim.sector.grid.get('ship', m.x, m.y) === station;
+    });
+    // Kept down: the station's crew would mend them within the fight.
+    const knockOut = (): void => { for (const id of guns) if ((sim.world.get(id, ModuleC)?.hp ?? 0) > 0) sim.enqueue({ type: 'debug.setModuleHp', id, hp: 0 }); };
+    knockOut();
     // Keep the fight going past the lift time: the inspectors are topped up each tick, so it cannot end before the recall would lift them.
     for (let i = 0; i < (AWAY_LIFT_SEC + 60) * TICK_HZ; i++) {
+      knockOut();
       for (const c of aboard) {
         const h = sim.world.get(c, HealthC);
         if (h) h.hp = h.max;

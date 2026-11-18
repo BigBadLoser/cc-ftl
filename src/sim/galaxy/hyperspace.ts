@@ -84,7 +84,7 @@ export function jump(sim: Sim, ship: number, route: readonly string[], withDocke
   const edges = routeEdges(sim, nodes);
   const blocked = routeBlocker(sim, edges, ship);
   if (blocked || !edges) return reject(blocked ?? 'noRoute');
-  // TODO(#129): NPC ships do not obey engine capacity yet. A ship heavier than its engines carry needs the overcharge (the player's flee takes it: staying is worse).
+  // A ship heavier than its engines carry needs the overcharge (the player's flee takes it: staying is worse).
   const overcharged = hullLoad(sim, ship).over > 0;
   if (overcharged && !overcharge && command !== 'combat.flee') return reject('overweight');
   // Drones out in space: the ship waits a moment for them (drones/recall.ts).
