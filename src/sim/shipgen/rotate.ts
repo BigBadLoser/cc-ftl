@@ -5,7 +5,7 @@ import type { GenResult } from './types';
 const CLAMP = { n: 'e', e: 's', s: 'w', w: 'n' } as const;
 
 /**
- * A generated layout turned a quarter clockwise: its rows, floor finishes and ground cable, its rooms, and every module (its corner,
+ * A generated layout turned a quarter clockwise: its rows, floor finishes, ground cable and tubes, its rooms, and every module (its corner,
  * its turn, the side a container is clamped by). Tile (x, y) of a W x H layout goes to (H - 1 - y, x) of an H x W one.
  * Viewer debug (positions of assemblies) is dropped. For callers that need a side of the layout to face a given way (an asteroid outpost's dock faces north or south).
  */
@@ -19,7 +19,7 @@ export function rotateLayout<T extends GenResult>(r: T, defs: Record<string, Mod
     const def = defs[m.def], [, h] = def ? rotatedSize(def, m.rot) : [1, 1];
     return { ...m, x: H - m.y - h, y: m.x, rot: (m.rot + 1) % 4, ...(m.clamp ? { clamp: CLAMP[m.clamp] } : {}) };
   });
-  const template = { ...r.template, rows: turn(r.template.rows), ...(r.template.floors ? { floors: turn(r.template.floors) } : {}), ...(r.template.cable ? { cable: turn(r.template.cable) } : {}), modules };
+  const template = { ...r.template, rows: turn(r.template.rows), ...(r.template.floors ? { floors: turn(r.template.floors) } : {}), ...(r.template.cable ? { cable: turn(r.template.cable) } : {}), ...(r.template.tubes ? { tubes: turn(r.template.tubes) } : {}), modules };
   // A prefab base's pads turn with it.
   const site = (r as { site?: { pads: { x: number; y: number; w: number; h: number }[] } }).site;
   const turned = site ? { site: { pads: site.pads.map((p) => ({ x: H - p.y - p.h, y: p.x, w: p.h, h: p.w })) } } : {};

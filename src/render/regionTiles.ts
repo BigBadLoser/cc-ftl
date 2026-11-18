@@ -1,6 +1,7 @@
 import { CHUNK_SIZE, type FieldArray, type Grid } from '../sim/grid';
 import { ShipGrid } from '../sim/shipGrid';
 import { Struct } from '../sim/structure';
+import { tubeFloor, tubeOwn } from '../sim/tube';
 import { artKind } from './tiles';
 import { OPEN_GATE, type BuildGate } from './buildBudget';
 
@@ -95,6 +96,10 @@ export function createRegionTiles(src: ChunkSource, ox: number, oy: number, widt
     const d = src.chunkData(field, chunkOf(sx), chunkOf(sy));
     return d ? (d[inChunk(sx, sy)] as number) : src.emptyValue(field);
   };
+  // (the tube layer first: almost every tile has none, and then its struct is not read)
+  const floorAt = (lx: number, ly: number): boolean => { const t = get('tube', lx, ly); return t !== 0 && tubeFloor(get('struct', lx, ly), t); };
+  const tubeAt = (lx: number, ly: number, k: number): boolean =>
+    (k === Struct.Floor || k === Struct.Wall) && tubeOwn(k, get('tube', lx, ly), () => floorAt(lx + 1, ly) || floorAt(lx - 1, ly) || floorAt(lx, ly + 1) || floorAt(lx, ly - 1));
   const strips = new Map<string, { rev: number; hash: number }>();
   const strip = (field: string, c: ChunkRef, m: number): number => {
     const k = `${field}|${m}|${c.cx},${c.cy}`;
@@ -123,7 +128,11 @@ export function createRegionTiles(src: ChunkSource, ox: number, oy: number, widt
     inside,
     get,
     // asteroid rock (mass and ground) inside a region is drawn by asteroidView: the region's tile art sees it as Space
-    kindAt: (lx, ly) => { const k = inside(lx, ly) ? get('struct', lx, ly) : Struct.Space; return k === Struct.Rock || k === Struct.Ground ? Struct.Space : artKind(k); },
+    // A prefab base's tube (its floor and the walls beside it) is drawn by tubeView: the tile art sees it as outside too.
+    kindAt: (lx, ly) => {
+      const k = inside(lx, ly) ? get('struct', lx, ly) : Struct.Space;
+      return k === Struct.Rock || k === Struct.Ground || tubeAt(lx, ly, k) ? Struct.Space : artKind(k);
+    },
     // Wall art also reads an open truss (Beam: frames, container seats) as outside: a hull wall facing it is exterior hull,
     // so it is near / far hull with end faces like one facing Space, not a partition.
     wallAt: (lx, ly) => {
@@ -175,10 +184,10 @@ function denseChunks(grid: Grid): ChunkSource {
     emptyValue: () => 0,
     chunkRevision: (field, cx, cy) => {
       const nx = Math.ceil(grid.width / C), ny = Math.ceil(grid.height / C);
-      return cx < 0 || cy < 0 || cx >= nx || cy >= ny ? 0 : grid.chunkRevision(field, cx, cy);
+      return cx < 0 || cy < 0 || cx >= nx || cy >= ny || !grid.has(field) ? 0 : grid.chunkRevision(field, cx, cy);
     },
     chunkData(field, cx, cy) {
-      if (cx < 0 || cy < 0 || cx * C >= grid.width || cy * C >= grid.height) return undefined;
+      if (cx < 0 || cy < 0 || cx * C >= grid.width || cy * C >= grid.height || !grid.has(field)) return undefined;
       const k = `${field}|${cx}|${cy}`;
       const rev = grid.chunkRevision(field, cx, cy);
       let e = cache.get(k);

@@ -348,6 +348,9 @@ def jobs(name):
     if name == "cable":  # the ground power cable (#514): sheet cable, ids from src/render/groundCable.ts
         from . import cable_duct
         return cable_duct.jobs(), cable_duct.PAL
+    if name == "tube":  # the prefab base tube (#508): sheet tube, ids from src/render/tubeArt.ts
+        from . import tube_study
+        return tube_study.jobs(), tube_study.PAL
     if name == "purifier_g1":  # look study, preview only (not in RENDERED): the picked water purifier, polished (#321)
         from . import purifier_g1
         return purifier_g1.jobs(), purifier_g1.PAL
@@ -639,5 +642,5 @@ RENDERED = ("env", "walls", "consoles", "weapons", "roof", "robot_bay", "drones"
             "hull", "windows", "scrapper", "upgrades", "research_bench", "arcade_cabinet", "gametable_module",
             "recovery_pod", "bunk_module", "exercise_module", "bench_module", "planter_module", "vending_module", "bar_module",
             "stasis", "stasisload", "decor", "lights", "deck_finishes", "deck_marks", "landmarks", "purifier_module",
-            "cable", "landing_pad")
+            "cable", "tube", "landing_pad")
 ALL = RENDERED + ("sol", "damage_sol", "marks")

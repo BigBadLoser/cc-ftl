@@ -139,6 +139,8 @@ export class RegionGrid {
   readonly apartModules: number[][] = [];
   /** Airlock rooms for the crew's walks outside (not berths for ships). */
   readonly crewLocks = new Set<number>();
+  /** A prefab base's tube floor tiles (x, y): drawn as glass tubes (sim/tube.ts). */
+  readonly tubes: [number, number][] = [];
 
   /** A hall; with a spec, a fixture that stands in one (an airlock unit on a quay): open to the halls round it, and a room of the program. */
   hall(role: RoomRole = 'hall', dept?: string, spec?: RoomSpec): number {

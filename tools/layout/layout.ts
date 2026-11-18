@@ -36,6 +36,8 @@ export interface Layout {
    * stamps it the way the game does and the renderer picks its livery (container colours, logos) from the faction. Absent for a blank grid or a starter.
    */
   origin?: { gen: { faction: string; seed: number; depth: number; role?: string }; side: string };
+  /** A prefab base: it stands on levelled asteroid ground, which the preview lays round it (world.ts `groundUnder`). */
+  ground?: true;
 }
 export interface Rect { x: number; y: number; w: number; h: number }
 export type Tile = [number, number];
@@ -60,6 +62,9 @@ export function layoutOfGen(g: GenResult, name: string, immobile: boolean): Layo
     cells.push(row);
   }
   const extra: Layout['extra'] = { ...g.template };
+  // Rows that run row for row with the cells (floor finishes, ground cable, tubes) take the same pad.
+  const pad = (rows: string[]): string[] => [...Array<string>(PAD).fill(''), ...rows.map((r) => '.'.repeat(PAD) + r)];
+  for (const k of ['floors', 'cable', 'tubes'] as const) if (g.template[k]) extra[k] = pad(g.template[k]);
   const modules = g.template.modules;
   delete (extra as Partial<ShipTemplate>).name;
   delete (extra as Partial<ShipTemplate>).rows;

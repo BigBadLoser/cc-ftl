@@ -8,6 +8,7 @@ import type { Grid } from '../sim/grid';
 import { ModuleC } from '../sim/modules/components';
 import { Struct } from '../sim/structure';
 import { REGION_PAD } from '../sim/tuning';
+import { isTube } from '../sim/tube';
 
 /**
  * Roofing and visibility per region (ARCHITECTURE "Sector grid" §5), read from ShipC and the tiles. Renderer only.
@@ -37,9 +38,12 @@ export const wantsRoof = (world: World, shipId: number, s: Ship, roofOthers: boo
   (roofPlayer && s.faction === 'player' && s.state !== 'wreck')
   || (roofOthers && s.faction !== 'player' && s.state !== 'wreck' && (!s.immobile || factionsHostile(s.faction, 'player')) && !boarded(world, shipId));
 
-/** An interior tile: floor, door, or under a module. Crew on one of a roofed region are hidden under its roof. */
+/**
+ * An interior tile: floor, door, or under a module. Crew on one of a roofed region are hidden under its roof. A prefab base's tube
+ * is glass, not under the roof: its floor is not interior.
+ */
 export function isInterior(grid: Grid, x: number, y: number): boolean {
-  if (!grid.inBounds(x, y)) return false;
+  if (!grid.inBounds(x, y) || isTube(grid, x, y)) return false;
   const st = grid.get('struct', x, y);
   return st === Struct.Floor || st === Struct.Door || grid.get('module', x, y) !== 0;
 }
