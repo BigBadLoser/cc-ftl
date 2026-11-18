@@ -22,6 +22,10 @@ see `docs/STATUS_ARCHIVE.md` and the October handoff snapshot in `docs/HANDOFF.m
 - `npm run check:push`: lint, typecheck and every fast test the branch affects (Vitest's import graph, since the merge
   base with `origin/main`, plus uncommitted changes), slow tier skipped. Run it before pushing a work branch. `git add`
   new files first: Vitest's graph never sees untracked ones.
+- `npm run dup:semantic`: functions that do the same thing written differently (jscpd `--semantic`), minus the accepted pairs in
+  `.jscpd-semantic-baseline.json`; prints new pairs as markdown, nothing when there are none. Advisory: about a third are real
+  "one answer per question" breaks. Fold a real one into its owner; accept a false one with `npm run dup:semantic:accept` and commit
+  the baseline. The agent-harness host runs it nightly on `main`, embedding on its NPU (`JSCPD_SEMANTIC_URL`).
 - `npm run test:why -- <file>`: how many fast test files an edit to `<file>` selects and through which import;
   `--top` lists the files most tests reach. Use it to keep focused tests off `newGame` and the pipeline.
 - Three test tiers by file name: `*.test.ts` (fast), `*.slow.test.ts` (slow: sweeps and long runs, plus a cheap guard of each soak
