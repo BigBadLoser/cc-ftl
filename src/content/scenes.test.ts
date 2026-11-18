@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { CombatC, ShipC } from '../sim/combat/components';
-import { galaxyIndex, START_NODE } from '../sim/galaxy/state';
 import { newGame } from '../sim/newGame';
 import { deserialize, serialize } from '../sim/save';
 import type { Sim } from '../sim/sim';
@@ -25,60 +24,10 @@ import { hostileAct } from '../sim/combat/provoke';
 import type { Fleet } from '../sim/galaxy/types';
 import { AboardC, VehicleC, type Vehicle } from '../sim/vehicles/components';
 import { content } from '.';
+import { deploy, step } from '../../test/support/fixtures/traffic';
+import { choose, inScene, routeOf, signalled } from '../../test/support/fixtures/scenes';
 
 /** Physical encounters (#173): a signal's remote actions, investigating into a scene in a pocket, the observer, leaving, save and load. */
-
-const step = (sim: Sim, n = 1) => {
-  const out = [];
-  for (let i = 0; i < n; i++) {
-    sim.step();
-    out.push(...sim.events.drain());
-  }
-  return out;
-};
-const deploy = (sim: Sim) => {
-  for (const [x, y] of [[100, 60], [20, 50], [300, 200], [40, 150], [200, 20], [350, 100]] as const) {
-    sim.enqueue({ type: 'sector.deploy', x, y });
-    step(sim);
-    if (sim.sector.state === 'active') break;
-  }
-};
-const adjacent = (sim: Sim, id: string): string[] => (galaxyIndex(sim.galaxy).adjacent.get(id) ?? []).map((e) => (e.a === id ? e.b : e.a)).sort();
-function routeOf(sim: Sim, hops: number): string[] {
-  const route = [START_NODE];
-  for (let h = 0; h < hops; h++) {
-    const next = adjacent(sim, route[route.length - 1] as string).find((n) => !route.includes(n));
-    if (!next) break;
-    route.push(next);
-  }
-  return route.slice(1);
-}
-
-/** A two-hop trip whose first hop signals the trader skiff (queued, so it opens at the hop); stops with the decision open. */
-function signalled(seed: number, c = content): Sim {
-  const sim = newGame(seed, c);
-  sim.story.goals.skipped = true;
-  sim.galaxy.fleets = [];
-  giveItems(sim, 'item.fuel', 80);
-  const combat = sim.world.get(playerShip(sim), CombatC);
-  if (combat) combat.ftl = FTL_CHARGE_SEC;
-  sim.story.queue.push({ event: 'event.trader_swap', due: 0, force: true });
-  sim.enqueue({ type: 'galaxy.jump', ship: playerShip(sim), route: routeOf(sim, 2) });
-  for (let i = 0; i < 90000 && sim.galaxy.travel?.phase !== 'story'; i++) sim.step();
-  sim.events.drain();
-  return sim;
-}
-const choose = (sim: Sim, choice: string) => {
-  sim.enqueue({ type: 'story.choose', choice });
-  return step(sim, 2);
-};
-/** Into the skiff's scene, deployed. Returns the skiff's ship id. */
-function inScene(seed: number, c = content): { sim: Sim; skiff: number } {
-  const sim = signalled(seed, c);
-  choose(sim, 'approach');
-  deploy(sim);
-  return { sim, skiff: sim.galaxy.event?.scene.ships[0]?.contact.ship as number };
-}
 
 /** Battle stations, an aim at the ship and one volley from charged weapons (the shot that leaves is the hostile act). */
 function fireOn(sim: Sim, target: number): void {
@@ -294,7 +243,10 @@ describe('scene departures', () => {
     const s = sim.galaxy.event?.scene.ships[0];
     delete s?.hailed; // (a comms call holds it; here the hail is taken back)
     expect(s?.stay).toBeGreaterThanOrEqual(100);
-    const out = step(sim, Math.round(((s?.stay ?? 0) + 60) * 20));
+    s!.leaveAt = sim.tick + 40; // the leave timer and the drive charge start near their ends (the whole `stay` wait runs in scenes.slow)
+    sim.world.get(skiff, CombatC)!.ftl = FTL_CHARGE_SEC - 2;
+    const out = step(sim, 400);
+    out.push(...step(sim, 100)); // the observer logs it a few ticks after it leaves
     expect(out.some((e) => e.type === 'ship.fled' && e.ship === skiff)).toBe(true);
     expect(out.filter((e) => e.type === 'scene.observed' && e.rule === 'fled')).toHaveLength(1);
     expect(s?.gone).toBe('fled');
@@ -305,12 +257,12 @@ describe('scene departures', () => {
   });
 
   it('a skiff that called holds station', () => {
-    const sim = signalled(3);
-    choose(sim, 'approach');
-    deploy(sim);
+    const { sim } = inScene(3);
     const s = sim.galaxy.event?.scene.ships[0];
     expect(s?.hailed).toBe(true);
-    const out = step(sim, Math.round(((s?.stay ?? 0) + 60) * 20));
+    s!.leaveAt = sim.tick + 40; // its leave timer comes due while it holds, its drive nearly charged (the whole `stay` wait runs in scenes.slow)
+    sim.world.get(s?.contact.ship as number, CombatC)!.ftl = FTL_CHARGE_SEC - 2;
+    const out = step(sim, 400);
     expect(out.some((e) => e.type === 'ship.fled')).toBe(false);
     expect(sim.world.get(s?.contact.ship as number, ShipC)?.state).toBe('active');
   });
