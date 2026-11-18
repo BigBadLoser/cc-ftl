@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { newGame, ShipC, type Sim } from '../sim';
+import { newGame } from '../sim/newGame';
+import { ShipC } from '../sim/combat/components';
+import { type Sim } from '../sim/sim';
 import { addNotoriety } from '../sim/galaxy/heat';
 import { dispatchHunters, huntersHere } from '../sim/galaxy/hunters';
 import { spawnContact } from '../sim/galaxy/arrivals';

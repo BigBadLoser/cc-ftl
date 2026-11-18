@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { CombatC, ShipC, TraderC, galaxyIndex, newGame, storageAdd, type Sim } from '../sim';
+import { CombatC, ShipC } from '../sim/combat/components';
+import { TraderC } from '../sim/trade/types';
+import { galaxyIndex } from '../sim/galaxy/state';
+import { newGame } from '../sim/newGame';
+import { storageAdd } from '../sim/items/storage';
+import { type Sim } from '../sim/sim';
 import { InspectionC } from '../sim/inspect/types';
 import { liveInspection } from '../sim/inspect/start';
 import { inspectorsAboard } from '../sim/inspect/fight';
