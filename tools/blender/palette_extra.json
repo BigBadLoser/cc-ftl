@@ -4092,22 +4092,19 @@
   "stPLo": {"hex": "#8699a4", "set": "station"},
   "stPM": {"hex": "#5c7585", "set": "station"},
  "gFillB1": {
-  "hex": "#0a0a0c"
- },
- "gFillB2": {
-  "hex": "#070809"
- },
- "gFillB3": {
   "hex": "#050607"
  },
+ "gFillB2": {
+  "hex": "#040405"
+ },
+ "gFillB3": {
+  "hex": "#030304"
+ },
  "gFillB4": {
-  "hex": "#040404"
+  "hex": "#020203"
  },
  "gFillB5": {
-  "hex": "#020202"
- },
- "gFillB0": {
-  "hex": "#141619"
+  "hex": "#010101"
  },
  "gW2s": {
   "hex": "#353b41"

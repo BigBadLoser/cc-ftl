@@ -288,7 +288,7 @@ class _Fill(core.Mesh):
             super().poly(pts, color, flip)
 
 
-BACK = ("gFillB0", "gFillB1", "gFillB2", "gFillB3", "gFillB4", "gFillB5")   # the back face's fill, bottom up
+BACK = (FILL, "gFillB1", "gFillB2", "gFillB3", "gFillB4", "gFillB5")   # the back face's fill, bottom up (from the slopes' own)
 
 
 def _back_fill(f, mask):
@@ -298,7 +298,7 @@ def _back_fill(f, mask):
     e = -0.5 + C
     z0, z1 = 0.02, hull_top() / 6
     step = (z1 - z0) / len(BACK)
-    cuts = [z0] + [z0 + step * (k + 2) for k in range(len(BACK))]      # (the bottom band twice the others' height)
+    cuts = [z0] + [z0 + step * (k + 4) for k in range(len(BACK))]      # (the bottom band 4 times the others' height)
     for a, b in _back_edges(mask):
         for k, tone in enumerate(BACK):
             za, zb = cuts[k], cuts[k + 1]
