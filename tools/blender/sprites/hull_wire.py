@@ -1,7 +1,7 @@
 """The rear hull ghost (walls fully down) as a wireframe: its lines drawn as strips exactly 1 px wide on screen, so
 every line has the same strength once antialiased (env_build.render_ghost: alpha by coverage). The shape is the
 partition's low stub (hull.Out._inner: L-inf distance to the room side): a foot, the ramp, its crest at the step. Lines:
-the foot's top along the room side, the crest (no creases where two ramps meet: corners read by the crest), and the
+the crest (no creases where two ramps meet: corners read by the crest), and the
 fall line on the tile's -x / -y edges (each tile draws its own; the next tile's is its neighbour's)."""
 import math
 
@@ -101,13 +101,6 @@ def wire(m, sp):
     for a, b in _level(d, CD):
         a, b = _to_wall(sp, a, b)
         strip(m, (*a, zof(CD)), (*b, zof(CD)))
-    # the foot's top: along the tile's edges where the room side is (distance 0 there)
-    for edge in range(4):
-        ts = [i / N - 0.5 for i in range(N + 1)]
-        pts = [((t, 0.5), (t, -0.5), (0.5, t), (-0.5, t))[edge] for t in ts]
-        on = [k for k, p in enumerate(pts) if sp._inner(*p) < 1e-9]
-        for k0, k1 in _merge([(k, k + 1) for k in on if k + 1 in on]):
-            strip(m, (*pts[k0], zof(0.0)), (*pts[k1], zof(0.0)))
     # the fall line on the tile's -x and -y edges (a seam, or a run's free end)
     for edge in ("x", "y"):
         pts = [((-0.5, t) if edge == "x" else (t, -0.5)) for t in xs]

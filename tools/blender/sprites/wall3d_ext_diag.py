@@ -211,9 +211,9 @@ def _ridges(fronts, H, k):
     return out
 
 
-def _seam(rel, part, g, H):
-    """The run's seam (TOP_SEAM) on the part's top, where the nearest front's depth is in its band."""
-    a, b, col = TOP_SEAM
+def _seam(rel, part, g, H, seam=None):
+    """The run's seam (TOP_SEAM, or seam) on the part's top, where the nearest front's depth is in its band."""
+    a, b, col = seam or TOP_SEAM
     lo, hi = HO.LIP - b, HO.LIP - a
     for ends, rest in [part]:
         cut = [q for q in ends + rest if abs(q[0].z) < 1e-9] + [(-UP, -H), (UP, H + PAINT)]

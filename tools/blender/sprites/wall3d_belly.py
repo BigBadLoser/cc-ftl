@@ -24,11 +24,14 @@ from . import hull_outline as HO
 from . import wall3d as T
 from . import walls as W
 from .wall3d_ext_diag import UP, WIDE, _lift, _seam, _solid, _tile
+from .wall3d_ext_t3 import TOP_PX
 from .wall3d_ext_geom import BELLY_SLOPE, YS
 from .wall3d_ext_t3 import CORNER_C
 
 ZG = W.ZG
 FAR_LOW = 0.5 / W.ZART              # walls down: the far sides' cut flush with the deck (half an art px over it)
+FAR_SEAM = (5 * TOP_PX, 5.75 * TOP_PX, "farSeam")   # a far side's top seam (the cut hull, walls down): 5 art px in from
+#   its inside, clear of the floor's edge (Space Haven's far-side hull ghosts), not the exterior's 2, bluer
 ARMOUR = 0.77                       # tiles: the near armour's upright drop under the cut (hull 46 D3's: 31 px at 64
 SLOPE = (0.375, 0.638)              # px tiles; its Bottom draws 33, but the two meet), then its slope in (square to its
                                     # front) and down under the ship: a px column shows 13 px of it on a run (39.2 h
@@ -212,8 +215,9 @@ def _piece(key, far, layer, margin, look):
                         rel.poly(p2, "steel", 3, m2, fixed=END)
         if near(f[0]) and not plain:                    # (the bay looks' frame, as the runs carry it)
             _frame(rel, f, planes)
-        if layer == "over" and near(f[0]) and not plain:    # (a cut top at the deck is plain, near or far: the
-            _seam(rel, ([], [q for q in planes if abs(q[0].z) < 1e-9]), [f], span(f[0], far)[1])   # ghosts trace its edge)
+        if layer == "over" and not plain:              # (the near side's cut at the deck is plain; a far side's
+            _seam(rel, ([], [q for q in planes if abs(q[0].z) < 1e-9]), [f], span(f[0], far)[1],     # seam its own)
+                  None if near(f[0]) else FAR_SEAM)
     return (rel.build() if rel.m.f else []) + art       # (none: a far side has nothing under the deck)
 
 
