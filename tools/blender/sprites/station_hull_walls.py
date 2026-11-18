@@ -200,7 +200,12 @@ def low_berm(n, v, ends=None):
     post.select(PALETTE)
     objs, kind = low(n)
     post.select("only:berm")
-    hold = objs[0] if kind == "wide" else objs
+    hold = objs
+    if kind == "wide":                                  # (a diagonal's: the narrow piece holds out; its wide copy,
+        hold = objs[0]                                  # out past the tile's edges, goes, or it shows in the berm)
+        import bpy
+        for ob in [o for o in objs[1] if o not in objs[0]]:
+            bpy.data.objects.remove(ob, do_unlink=True)
     sid = f"tile.hull.station.berm.{n}.v{v}" + (f".e{ends[0]}{ends[1]}" if ends else "") + ".low"
     it = env_build.crop_item(sid, (1, 1), *env_build.render_sprite(sid, "wide", (own, own + list(hold))))
     return [it] if it else []
