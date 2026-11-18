@@ -1,14 +1,15 @@
 /* global process */
 // The repo's value-import graph, read from source (used by testWhy.mjs and testFast.mjs). It mirrors what Vitest follows for
 // `--changed`/`related`: value imports, re-exports, dynamic `import()` and `import.meta.glob` patterns; `import type` and
-// `export type` are erased by the compiler and do not count. Relative paths only (packages and the `$lib` alias are skipped);
+// `export type` are erased by the compiler and do not count. Relative paths and the `$lib` alias (packages are skipped);
 // extensionless paths are tried as .ts, .svelte.ts, .svelte, .js, .mjs and /index.ts. A regex read, not Vite's resolver: close
 // to Vitest's selection, not exact.
 import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 
 const ROOTS = ['src', 'test', 'tools'];
-const SKIP = new Set(['node_modules', 'dist', 'blender', 'layout']);
+const SKIP = new Set(['node_modules', 'dist', 'blender']);
+const ALIAS = { '$lib/': 'tools/layout/lib/' }; // vite.config.ts `resolve.alias`
 const EXT = ['', '.ts', '.svelte.ts', '.svelte', '.js', '.mjs', '/index.ts'];
 const IMPORT = /(?:^|[;\n])\s*(import|export)\s+(type\s+)?(?:[\w*{}\s,$]+?\s+from\s+)?['"]([^'"]+)['"]|import\(\s*['"]([^'"]+)['"]\s*\)/g;
 const GLOB = /import\.meta\.glob(?:<[^>]*>)?\(\s*(\[[^\]]*\]|['"][^'"]+['"])/g;
@@ -38,10 +39,12 @@ export function importGraph(root = process.cwd()) {
     const at = (spec) => relative(root, resolve(root, dirname(f), spec.replace(/\?.*$/, '')));
     for (const m of text.matchAll(IMPORT)) {
       if (m[2]) continue;
-      const spec = m[3] ?? m[4];
-      if (!spec?.startsWith('.')) continue;
+      let spec = m[3] ?? m[4];
+      const alias = Object.keys(ALIAS).find((a) => spec?.startsWith(a));
+      if (alias) spec = join(relative(dirname(join(root, f)), join(root, ALIAS[alias])), spec.slice(alias.length));
+      else if (!spec?.startsWith('.')) continue;
       const base = at(spec);
-      const hit = EXT.map((x) => base + x).find((c) => known.has(c));
+      const hit = [...EXT.map((x) => base + x), base.replace(/\.js$/, '.ts')].find((c) => known.has(c)); // `./x.js` may name x.ts
       if (hit) out.add(hit);
     }
     for (const m of text.matchAll(GLOB)) {
