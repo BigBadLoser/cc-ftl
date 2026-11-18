@@ -14,7 +14,7 @@ import { lightingSystem } from './lighting';
 import { roomsSystem } from './rooms';
 import { smokeSystem } from './smoke';
 import { temperatureSystem } from './temperature';
-import { TEMP_EVERY } from '../tuning';
+import { GAS_EVERY, TEMP_EVERY } from '../tuning';
 
 /**
  * Change tracking of the environment solvers: once a region has settled, a solve is skipped, and every kind of edit to what
@@ -65,11 +65,11 @@ function loads(field: string, fn: () => void): number {
 }
 
 /**
- * One period of `system`: the ticks over which each region solves once. Temperature solves every TEMP_EVERY ticks on a phase per ship
+ * One period of `system`: the ticks over which each region solves once. Temperature and gas solve every TEMP_EVERY / GAS_EVERY ticks on a phase per ship
  * (#65), so its period is that many calls, each on the next tick; the others solve every tick.
  */
 function period(sim: Sim, system: (sim: Sim) => void): void {
-  const n = system === temperatureSystem ? TEMP_EVERY : 1;
+  const n = system === temperatureSystem ? TEMP_EVERY : system === atmosphereSystem ? GAS_EVERY : 1;
   for (let k = 0; k < n; k++) {
     system(sim);
     if (n > 1) sim.tick++;

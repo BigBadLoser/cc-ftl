@@ -2,7 +2,7 @@ import { SteadyState, conductanceMap, diffuseStep, fieldFrame, inputKey, fieldMi
 import { regions } from '../regions';
 import type { Sim } from '../sim';
 import { Struct, isAirless, isSolidRock } from '../structure';
-import { GAS_DIFFUSION, GAS_EPSILON, GAS_SUBSTEPS, GAS_VENT } from '../tuning';
+import { GAS_DIFFUSION, GAS_EPSILON, GAS_EVERY, GAS_SUBSTEPS, GAS_VENT } from '../tuning';
 
 /** Every field the solve reads. */
 const INPUTS = ['o2', 'co2', 'struct', 'door'] as const
@@ -17,10 +17,12 @@ const holdsNoGas = (kind: number): boolean => isAirless(kind) || kind === Struct
  * to Space (a breach) vents fast and the whole connected volume bleeds out through it.
  * Mass is conserved between ordinary tiles. Walls hold no gas (anything left in a freshly built
  * wall is dropped). Runs per region; diffusion visits only the region's active tiles (see diffusion.ts). A region whose
- * last solve wrote nothing and whose inputs are unwritten since is at a fixed point and is skipped (SteadyState).
+ * last solve wrote nothing and whose inputs are unwritten since is at a fixed point and is skipped (SteadyState). Each ship solves every
+ * GAS_EVERY ticks, on its own phase, with the substeps of those ticks (#65).
  */
 export function atmosphereSystem(sim: Sim): void {
-  for (const { grid } of regions(sim)) {
+  for (const { ship, grid } of regions(sim)) {
+    if ((sim.tick + ship) % GAS_EVERY !== 0) continue;
     if (!grid.has('o2') || !grid.has('struct')) continue;
     const key = inputKey(grid, grid.has('vent') ? INPUTS_VENT : INPUTS);
     if (steady.quiet(grid, key)) continue;
@@ -34,7 +36,7 @@ export function atmosphereSystem(sim: Sim): void {
       o2[i] = 0;
       co2[i] = 0;
     }
-    for (let s = 0; s < GAS_SUBSTEPS; s++) diffuseStep(frame, cond, [o2, co2], GAS_DIFFUSION, GAS_VENT, true);
+    for (let s = 0; s < GAS_SUBSTEPS * GAS_EVERY; s++) diffuseStep(frame, cond, [o2, co2], GAS_DIFFUSION, GAS_VENT, true);
     const wrote = writeBackMirror(grid, 'o2', o2, o2Before, GAS_EPSILON) + writeBackMirror(grid, 'co2', co2, co2Before, GAS_EPSILON);
     steady.done(grid, key, wrote);
   }

@@ -12,6 +12,12 @@ export const NORMAL_TEMP = 20;
 export const SPACE_TEMP = -100;
 /** Explicit diffusion substeps per tick. */
 export const GAS_SUBSTEPS = 2;
+/**
+ * Gas solves every GAS_EVERY ticks per ship, on a phase per ship, running the GAS_SUBSTEPS * GAS_EVERY substeps of those ticks at once (#65):
+ * the same diffusion, while the per-solve work (loading the fields, the frame, the write-back) is done a quarter as often. Gas a module or a
+ * crew member adds in between spreads at the next solve.
+ */
+export const GAS_EVERY = 4;
 /** Fraction of the pressure difference moved per substep across a fully open link (stable at <= 0.25). */
 export const GAS_DIFFUSION = 0.2;
 /** Same, for a link into Space (a breach). */
