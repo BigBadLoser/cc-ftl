@@ -21,7 +21,14 @@ export interface Nose { style: NoseStyle | readonly NoseStyle[]; len: Range; /**
 /** A command pod at the bow: flat-fronted and narrower than the body, tapering back into it. */
 export interface Pod { len: Range; half: Range }
 
-export interface Section { len: Range; half: Range }
+/**
+ * A stretch of body at one half-width, reached from the one before by a taper of `taper` tiles along per tile out
+ * (default 2; 1 is a hard 45-degree shoulder).
+ */
+export interface Section { len: Range; half: Range; taper?: number; chance?: number }
+
+/** A body part: one section, or a choice of sections picked per seed (how a recipe moves its masses between seeds). */
+export type Part = Section | readonly Section[];
 
 /** A launch lane open out of the stern, from a V at `at` (fraction of the body) to the stern. */
 export interface Split { at: Range; lane: Range; /** How the lane ends inside the hull, picked per seed: squared off or rounded. */ end?: readonly ('square' | 'round')[] }
@@ -48,7 +55,7 @@ export interface Profile {
   id: string;
   nose?: Nose;
   pod?: Pod;
-  sections: readonly Section[];
+  sections: readonly Part[];
   split?: Split & Optional;
   mounts?: readonly Mount[];
   /** Swept wings at the rear: the leading edge raked 2:1, the trailing edge swept forward over `sweep` tiles. */
@@ -79,9 +86,12 @@ function noseHalf(style: NoseStyle, i: number, n: number, front: number, h: numb
   }
 }
 
-/** The body's half-widths bow to stern: nose or pod, then the sections joined by 2:1 tapers. */
+/** The body's half-widths bow to stern: nose or pod, then the sections joined by their tapers. */
 function body(rng: Rng, p: Profile): { outer: number[]; bodyStart: number } {
-  const secs = p.sections.map((s) => ({ len: pick(rng, s.len), half: pick(rng, s.half) }));
+  const secs = p.sections
+    .map((part) => one(rng, part))
+    .filter((s) => s.chance === undefined || rng.chance(s.chance))
+    .map((s) => ({ len: pick(rng, s.len), half: pick(rng, s.half), taper: s.taper ?? 2 }));
   const H0 = (secs[0] as { half: number }).half;
   const outer: number[] = [];
   if (p.pod) {
@@ -100,8 +110,8 @@ function body(rng: Rng, p: Profile): { outer: number[]; bodyStart: number } {
   let prev = H0;
   for (const s of secs) {
     const start = outer.length;
-    while (prev < s.half) { prev++; outer.push(prev, prev); }
-    while (prev > s.half) { outer.push(prev, prev); prev--; }
+    while (prev < s.half) { prev++; for (let k = 0; k < s.taper; k++) outer.push(prev); }
+    while (prev > s.half) { for (let k = 0; k < s.taper; k++) outer.push(prev); prev--; }
     while (outer.length - start < s.len) outer.push(s.half);
   }
   return { outer, bodyStart };
@@ -162,9 +172,12 @@ function addMounts(rng: Rng, p: Profile, outer: number[], top: number[], bodySta
       const fits = (k: number): number[] | null => {
         const run = k * len + (k - 1) * m.tooth;
         if (run > b + len - a) return null;
-        const x0 = a + Math.floor((b + len - a - run) / 2);
-        const xs = Array.from({ length: k }, (_, i) => x0 + i * (len + m.tooth));
-        return straight(outer, x0, x0 + run, 2) ? xs : null;
+        // Any straight placement inside the span, picked per seed, so the battery moves along the hull between seeds.
+        const ok: number[] = [];
+        for (let x0 = a; x0 + run <= b + len; x0++) if (straight(outer, x0, x0 + run, m.tooth)) ok.push(x0);
+        if (ok.length === 0) return null;
+        const x0 = rng.pick(ok);
+        return Array.from({ length: k }, (_, i) => x0 + i * (len + m.tooth));
       };
       let xs = fits(n);
       while (!xs && n > 1) xs = fits(--n);
