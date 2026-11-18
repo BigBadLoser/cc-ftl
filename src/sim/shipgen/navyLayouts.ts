@@ -1,5 +1,5 @@
 import { Arranger } from './arranger';
-import { fillHoles, holes, taper } from './hullFill';
+import { driveSeams, fillHoles, holes, taper } from './hullFill';
 import { Builder } from './builder';
 import { CIVIL_GRAMMARS } from './civilGrammars';
 import { DRONE_GRAMMARS } from './droneGrammars';
@@ -64,6 +64,8 @@ export function arrangeHull(
   // Transitions in the faction's style where sections of different widths meet, then small pockets plated over.
   if (f.transition && taper(best.A, f.transition, () => rng.next()) > 0) best.c.parts.push('tapered');
   if (fillHoles(best.A, 16) > 0) best.c.parts.push('filled');
+  // Slots left between a section's end and the drive bank behind it are plated shut.
+  if (driveSeams(best.A, 5) > 0) best.c.parts.push('seamed');
   const b = new Builder(rng, -1);
   best.A.stamp(b);
   return { b, A: best.A, profile: best.c.parts.join(' '), plan: best.c.plan };

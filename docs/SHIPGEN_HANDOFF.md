@@ -192,41 +192,28 @@ the structure and silhouette sheets.
 are stale against them (and were already behind the shipped stock lists), so running `ship.py` would erase the edits: port
 them into the generators first.
 
-1. **Navy drive-bank notch.**
-   - Symptom: a one-tile vertical slot between the last spine section and the drive bank (and between twin hulls
-     and their drives).
-   - Cause: the taper stops at exhaust rays or doesn't find the step (`hullFill.ts` `taper`; the drive attached in
-     `navyKit.ts` `propulsion`).
-   - Done: no slot on the depth-9 silhouettes, and engines still validate.
-2. **Scrapper size scaling.**
-   - Symptom: depth-1 scrappers are almost as big as depth-9 ones.
-   - Cause: every job gets a donor and donors have minimum sizes (`scrapGrammars.ts` `choose`, `scrapDonors.ts`).
-   - Done: depth-1 sheets visibly smaller, while the at-least-three-donor-kinds test still holds.
-3. **Navy carrier length.**
-   - Symptom: carriers come out at about 2.3 against a 2.8–3.6 target.
-   - Cause: the central hangar block and two deck layers (`navyGrammars.ts` `carrierIsland`, `flightDeck`).
-   - Done: carrier aspect about 2.8 on 12 depth-9 seeds.
-4. **Drone swarm mixed grammar.**
-   - Symptom: some lattices grow a straight line of nodes (half comb).
-   - Cause: links prefer growing east (`droneGrammars.ts` `cluster`).
-   - Done: no swarm with three or more nodes in a straight line on the depth-9 structure sheets.
-5. **Drone prong crowding.**
-   - Symptom: inner-face pods on fork and twin prongs clump against the stem.
-   - Cause: `frame` prongs give inner faces when `sep >= 6`, and the sockets fall back to direct placement
-     (`socketed`).
-   - Done: pods stay ordered on the prongs (staggered at most).
-6. **Scrapper grey slabs.**
+Done in the #119 pass:
+- **Navy drive-bank notch:** `hullFill.driveSeams` plates a slot of up to four tiles along x whose aft side is a drive block.
+- **Navy carrier length:** island carriers take the navy nose; aspect about 2.2 -> 2.5-2.8 (still a little under the 2.8 floor).
+- **Scrapper size scaling:** small budgets lean on multi-job donors and take no extras; depth-1 mean area 1729 -> 1470 tiles
+  (depth 9: 3280).
+- **Drone swarm lines and prong crowding:** no lattice row of three nodes; one prong's inner face only. The user plans to
+  rework the drones later, so these are holding fixes.
+
+Still open, renumbered:
+
+1. **Scrapper grey slabs.**
    - Symptom: patched reactors and strapped engines read as plain slabs.
    - Cause: `civilBlocks.ts` `reactorRoom`, and `podBlock` used for strapped engines.
    - Done: those pieces have a recognisable shape.
-7. **Scrapper blobs.**
+2. **Scrapper blobs.**
    - Symptom: heaps of four or more donors merge into one blob.
    - Cause: welding onto any host on any face (`scrapGrammars.ts` `compose`).
    - Done: donors are still distinguishable on the structure sheet.
-8. **Taper plating draws as solid grey walls** in the detail view.
+3. **Taper plating draws as solid grey walls** in the detail view.
    - This is a tools concern (`tools/shipgen/draw.ts`), not sim. Optionally draw `plate` blocks as a lighter
      armour tone.
-9. **Smaller weak spots:**
+4. **Smaller weak spots:**
    - Battleships still bulge slightly at the turret pairs.
    - Within-grammar variety in the navy is low.
    - Ring pickets have long struts on the outer staggered row.

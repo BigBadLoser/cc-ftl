@@ -125,4 +125,16 @@ describe('ship generator: doctrines', () => {
     expect(seen).toBeGreaterThan(0);
   });
 
+  it('an island carrier keeps one bridge: its nose holds stores, not a second helm', () => {
+    let seen = 0;
+    for (const seed of [9, 10]) {
+      const r = generateShip(factions['faction.navy'] as FactionDef, 'faction.navy', seed, 9, content.modules as Record<string, ModuleDef>);
+      if (!r.topology.includes('carrierIsland')) continue;
+      seen++;
+      expect(r.problems).toEqual([]);
+      expect((r.template.modules ?? []).filter((m) => m.def === 'module.helm').length).toBe(1);
+    }
+    expect(seen).toBeGreaterThan(0);
+  });
+
 });
