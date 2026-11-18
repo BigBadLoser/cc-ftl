@@ -20,14 +20,13 @@ import { isDeployed } from '../../../src/sim/modules/deploy';
 import { footprintTiles } from '../../../src/sim/modules/footprint';
 import { networkOf } from '../../../src/sim/modules/network';
 import { regions, shipGrid, shipIdOf } from '../../../src/sim/regions';
-import { roomTiles } from '../../../src/sim/roomIndex';
 import { DoorJam } from '../../../src/sim/structure';
 import { doorsSystem } from '../../../src/sim/systems/doors';
 import { helmSystem } from '../../../src/sim/systems/helm';
 import { modulesSystem } from '../../../src/sim/systems/modules';
 import { allocate, powerSystem, type Member } from '../../../src/sim/systems/power';
 import {
-  DOOR_CLOSE_PER_TICK, EVASION_CAP, FTL_CHARGE_SEC, GAS_EPSILON, NORMAL_O2, SKILL_STEP, XP_PER_WORK_SEC,
+  DOOR_CLOSE_PER_TICK, EVASION_CAP, FTL_CHARGE_SEC, SKILL_STEP, XP_PER_WORK_SEC,
 } from '../../../src/sim/tuning';
 import { content } from '../content';
 
@@ -182,21 +181,7 @@ function refModules(sim: Sim): void {
     const def = m && sim.content.modules[m.def];
     const grid = m && shipGrid(sim, shipIdOf(sim, m));
     if (!m || !def || !grid?.has('o2') || !m.powered || m.hp <= 0) continue;
-    if (def.o2PerSec || def.co2ScrubPerSec) {
-      const room = grid.get('room', m.x, m.y);
-      const tiles = room ? roomTiles(grid).get(room) : undefined;
-      const idx = tiles ?? [(m.y - grid.y0) * grid.width + (m.x - grid.x0)];
-      const addO2 = ((def.o2PerSec ?? 0) / TICK_HZ) / idx.length;
-      const scrub = ((def.co2ScrubPerSec ?? 0) / TICK_HZ) / idx.length;
-      for (const i of idx) {
-        const x = grid.x0 + (i % grid.width);
-        const y = grid.y0 + Math.floor(i / grid.width);
-        const cur = grid.get('o2', x, y);
-        if (addO2 > 0 && cur < NORMAL_O2 - GAS_EPSILON) grid.set('o2', x, y, Math.min(NORMAL_O2, cur + addO2));
-        const c = grid.get('co2', x, y);
-        if (scrub > 0 && c > GAS_EPSILON) grid.set('co2', x, y, Math.max(0, c - scrub));
-      }
-    }
+    // Life support's o2 and CO2 left the modules system for the gas solve (modules/lifeSupport.ts, #65): the real atmosphere system runs it in both runs.
     if (def.heatPerSec) {
       const tiles = footprintTiles(def, m.x, m.y, m.rot);
       const heat = def.heatPerSec / TICK_HZ / tiles.length;

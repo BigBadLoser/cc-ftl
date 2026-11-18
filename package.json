@@ -14,6 +14,8 @@
     "test:fast": "node tools/testFast.mjs",
     "test:branch": "node tools/testFast.mjs --base origin/main",
     "test:why": "node tools/testWhy.mjs",
+    "dup:semantic": "node tools/dupSemantic.mjs",
+    "dup:semantic:accept": "node tools/dupSemantic.mjs --accept",
     "test:rules": "vitest run tools/fileSize.test.ts tools/systemImports.test.ts tools/isolatedMocks.test.ts tools/importCycles.test.ts tools/duplication.test.ts",
     "test:weights:ci": "node tools/testWeights.mjs --ci",
     "test:weights": "vitest run --reporter=json --outputFile=.vitest-report.json && node tools/testWeights.mjs .vitest-report.json",

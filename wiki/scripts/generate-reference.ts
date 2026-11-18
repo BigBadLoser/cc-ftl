@@ -10,6 +10,7 @@ import { recipes as sourceRecipes } from '../../src/content/recipes.ts';
 import { factions as sourceFactions } from '../../src/content/factions/index.ts';
 import { research as sourceResearch } from '../../src/content/research.ts';
 import * as tuning from '../../src/sim/tuning.ts';
+import * as tuningGas from '../../src/sim/tuningGas.ts';
 import type { Effect, ItemDef, ItemQty, ModuleDef, RecipeDef, ResearchDef, VehicleDef, WeaponDef } from '../../src/sim/registry.ts';
 import type { FactionDef } from '../../src/sim/shipgen/types.ts';
 import * as tuningJobs from '../../src/sim/galaxy/tuningJobs.ts';
@@ -410,7 +411,7 @@ await saveJson('game-data', {
   modules: liveKind('modules', (_, def: Module & { powerPriority?: number }) => ({ powerPriority: def.powerPriority ?? tuning.DEFAULT_POWER_PRIORITY })),
   items: liveKind('items'), weapons: liveKind('weapons'), vehicles: liveKind('vehicles'), research: liveKind('research'),
   tuning: await usedTuning(pool(
-    scalars(tuning, '', 2), scalars(tuningJobs, '', 2), scalars(tuningGalaxy, '', 2), scalars(tuningRecruit, '', 2),
+    scalars(tuning, '', 2), scalars(tuningGas, '', 2), scalars(tuningJobs, '', 2), scalars(tuningGalaxy, '', 2), scalars(tuningRecruit, '', 2),
     scalars(tuningGalaxyHeat, '', 2), scalars(tuningWar, '', 2), scalars(tuningBlackMarket, '', 2), scalars(tuningCombatHeat, '', 2),
     scalars({ trade, yard, crops, blackMarkets, traits, upbringings, careers, drones, events, furniture }, '', 6),
     scalars({ recipes: recipeData(), starters: starterData() }, '', 6),

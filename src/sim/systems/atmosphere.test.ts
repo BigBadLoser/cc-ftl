@@ -11,7 +11,7 @@ import { Sim } from '../sim';
 
 
 import type { SimEvent } from '../events';
-import { Struct } from '../structure';
+import { Struct, writeStruct } from '../structure';
 
 import { ModuleC } from '../modules/components';
 
@@ -120,6 +120,15 @@ describe('atmosphere', () => {
     step(sim, secs(20));
     expect(total()).toBeCloseTo(before, 1);
     expect(Math.abs(left(sim) - right(sim))).toBeLessThan(1);
+  });
+
+  it('life support standing on airless ground adds no gas there (#570)', () => {
+    const sim = make();
+    const g = shipGrid(sim, 1)!;
+    writeStruct(g, 2, 2, Struct.Ground); // the life support's own tile, levelled to airless rock ground
+    step(sim, secs(2));
+    expect(g.get('o2', 2, 2)).toBe(0);
+    expect(g.get('co2', 2, 2)).toBe(0);
   });
 
   it('grid reports rooms for the two compartments', () => {
