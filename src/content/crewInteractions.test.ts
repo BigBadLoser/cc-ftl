@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { content } from './index';
-import { AssignmentC, CarriedC, CrewC, DownedC, FighterC, PositionC, TICK_HZ, TraitsC, newGame, stat, type Sim, type SimEvent } from '../sim';
+import { AssignmentC, CarriedC, CrewC, DownedC, PositionC } from '../sim/crew/components';
+import { TraitsC } from '../sim/crew/traits';
+import type { SimEvent } from '../sim/events';
+import { FighterC } from '../sim/fight/components';
+import { newGame } from '../sim/newGame';
+import type { Sim } from '../sim/sim';
+import { stat } from '../sim/stats';
+import { TICK_HZ } from '../sim/time';
 import { startBreak } from '../sim/systems/breakdown';
 import { relationshipSystem } from '../sim/systems/relationship';
 import { bondBoth, bondTo, ensurePerson, friendsOf, opinionOf, personOf } from '../sim/crew/bonds';

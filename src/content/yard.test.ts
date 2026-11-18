@@ -1,13 +1,25 @@
 import { describe, expect, it } from 'vitest';
-import {
-  CombatC, CrewC, NORMAL_O2, DraftedC, FTL_CHARGE_SEC, HullPlanC, ModuleC, START_NODE, ShipC, Struct, TraderC, YardCrewC, deserialize, galaxyIndex, hullLoad, hullTiles, interiorArea, isLiveOrder, nodeOf, plannedTiles, quoteYard, serialize, shipGrid,
-  viewPlan, yardPrice, yardService, innerWalls, openInnerWalls,
-} from '../sim';
+import { CombatC, ShipC } from '../sim/combat/components';
+import { hullTiles, interiorArea } from '../sim/combat/hull';
+import { CrewC, DraftedC } from '../sim/crew/components';
+import { hullLoad } from '../sim/ftl/capacity';
+import { galaxyIndex, START_NODE } from '../sim/galaxy/state';
+import { ModuleC } from '../sim/modules/components';
+import { shipGrid } from '../sim/regions';
+import { deserialize, serialize } from '../sim/save';
+import { Struct } from '../sim/structure';
+import { TraderC } from '../sim/trade/types';
+import { FTL_CHARGE_SEC, NORMAL_O2 } from '../sim/tuning';
+import { innerWalls, openInnerWalls } from '../sim/yard/open';
+import { plannedTiles, quoteYard, viewPlan } from '../sim/yard/plan';
+import { yardPrice, yardService } from '../sim/yard/rules';
+import { HullPlanC, isLiveOrder, YardCrewC } from '../sim/yard/types';
 import { giveItems } from '../sim/story/effects';
 import { storageCount } from '../sim/items/storage';
 import { StorageC } from '../sim/items/components';
 import { content } from './index';
-import { outline, planHull, rect, run, yardGame } from './yardFixture';
+import { contentAtDanger } from '../../test/support/content';
+import { outline, planHull, rect, run, yardGame } from '../../test/support/fixtures/yard';
 
 /** Metal in all the player's storage. */
 const metalOf = (sim: ReturnType<typeof yardGame>['sim']): number =>
@@ -42,13 +54,13 @@ describe('shipyard: pricing', () => {
     const svc = yardService(sim, station)!;
     const one = yardPrice(sim, svc, 1);
     expect(yardPrice(sim, svc, 10).credits).toBe(10 * one.credits);
-    const node = nodeOf(sim, sim.galaxy.current)!;
-    const was = node.danger; // generated nodes are cached per seed: put it back
-    node.danger = 0;
-    const calm = yardPrice(sim, yardService(sim, station)!, 20);
-    node.danger = 6;
-    const deep = yardPrice(sim, yardService(sim, station)!, 20);
-    node.danger = was;
+    // The same world played at two danger tiers (generated nodes are shared and frozen: each tier has its own copy of the galaxy).
+    const at = (danger: number) => {
+      const s = deserialize(serialize(sim), contentAtDanger(1, danger));
+      return yardPrice(s, yardService(s, station)!, 20);
+    };
+    const calm = at(0);
+    const deep = at(6);
     expect(deep.credits).toBeGreaterThan(calm.credits);
     expect(deep.credits).toBeLessThan(calm.credits * 1.5); // slightly
     expect(deep.metal).toBeGreaterThanOrEqual(calm.metal);
@@ -429,20 +441,4 @@ describe('shipyard: joining on (#385)', () => {
     expect(grid.get('struct', room.x, room.y)).toBe(Struct.Floor);
     expect(grid.get('o2', room.x, room.y)).toBeGreaterThan(NORMAL_O2 - 1);
   });
-
-  it('pressurises a finished section even when no old wall opens for it (#429)', () => {
-    const { sim, station, me } = yardGame('station', 'station.military');
-    giveItems(sim, 'item.metal', 300);
-    planHull(sim, me, outline(sim, me, 28, -2, 4, 3));
-    sim.enqueue({ type: 'yard.order', station });
-    expect(run(sim, 1)).toContain('yard.ordered');
-    const order = sim.yard.orders[0]!;
-    // The run stops once the order ends; the cap only has to outlast the trip home, which depends on the station's layout.
-    run(sim, 9000, () => !isLiveOrder(order));
-    expect(order.phase).toBe('done');
-    expect(order.opens ?? []).toEqual([]);
-    const grid = shipGrid(sim, me)!;
-    expect(order.floor.length).toBeGreaterThan(0);
-    for (const t of order.floor) expect(grid.get('o2', t.x, t.y), `${t.x},${t.y}`).toBeGreaterThan(NORMAL_O2 - 1);
-  }, 120000);
 });

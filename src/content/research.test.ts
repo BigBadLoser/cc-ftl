@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { JobC, ModuleC, PositionC, ResearchC, accessTile, homeShip, isBlueprintKnown, labsOf, newGame, serialize, deserialize, stockOn, storageAdd, type ModuleDef, type RecipeDef } from '../sim';
+import { homeShip } from '../sim/combat/ships';
+import { JobC, PositionC } from '../sim/crew/components';
+import { storageAdd } from '../sim/items/storage';
+import { isKnown as isBlueprintKnown } from '../sim/modules/blueprints';
+import { ModuleC } from '../sim/modules/components';
+import { accessTile } from '../sim/modules/footprint';
+import { newGame } from '../sim/newGame';
+import type { ModuleDef, RecipeDef } from '../sim/registry';
+import { ResearchC } from '../sim/research/components';
+import { labsOf, stockOn } from '../sim/research/research';
+import { deserialize, serialize } from '../sim/save';
 import { content } from './index';
 
 const modules: Record<string, ModuleDef> = content.modules;

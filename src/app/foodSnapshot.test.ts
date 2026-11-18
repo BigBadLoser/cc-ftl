@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { JobC, ModuleC, StorageC, newGame, type Sim } from '../sim';
+import { JobC } from '../sim/crew/components';
+import { StorageC } from '../sim/items/components';
+import { ModuleC } from '../sim/modules/components';
+import { newGame } from '../sim/newGame';
+import type { Sim } from '../sim/sim';
 import { content } from '../content';
 import { buildFood } from './foodSnapshot';
 import { learn } from '../sim/modules/blueprints';

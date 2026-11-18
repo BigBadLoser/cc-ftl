@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { content } from '.';
 import { giveItems } from '../sim/story/effects';
-import { CombatC, FTL_CHARGE_SEC, START_NODE, galaxyIndex, newGame, playerShip, unmetReasons, type EventDef, type EventEffect, type Outcome, type Requirement } from '../sim';
+import { CombatC } from '../sim/combat/components';
+import { galaxyIndex, START_NODE } from '../sim/galaxy/state';
+import { newGame } from '../sim/newGame';
+import type { EventDef, EventEffect, Outcome, Requirement } from '../sim/story/defs';
+import { unmetReasons } from '../sim/story/requirements';
+import { playerShip } from '../sim/trade/player';
+import { FTL_CHARGE_SEC } from '../sim/tuning';
 
 const defs = Object.entries<EventDef>(content.events);
 const outcomes = (): Outcome[] => defs.flatMap(([, d]) => (d.choices ?? []).flatMap((c) => [c.outcome, c.success, c.failure].filter((o): o is Outcome => !!o)));

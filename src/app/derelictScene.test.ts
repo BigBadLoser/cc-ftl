@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { CombatC, FTL_CHARGE_SEC, START_NODE, ShipC, deserialize, galaxyIndex, newGame, playerShip, serialize, type Sim } from '../sim';
+import { CombatC, ShipC } from '../sim/combat/components';
+import { galaxyIndex, START_NODE } from '../sim/galaxy/state';
+import { newGame } from '../sim/newGame';
+import { deserialize, serialize } from '../sim/save';
+import type { Sim } from '../sim/sim';
+import { playerShip } from '../sim/trade/player';
+import { FTL_CHARGE_SEC } from '../sim/tuning';
 import { DeadC } from '../sim/crew/components';
 import { EggSacC, NestC } from '../sim/aliens/components';
 import { hostileAboard } from '../sim/salvage/system';

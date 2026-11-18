@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ModuleC } from '../../src/sim';
+import { ModuleC } from '../../src/sim/modules/components';
 import { ORIGIN } from './camera';
 import { buildLayout, DEFAULT_SOURCE } from './source';
 import { buildWorld, sameShell, swapModules, type World } from './world';

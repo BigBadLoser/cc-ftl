@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import {
-  CombatC, CrewC, PositionC, ShipC, Struct, deserialize, homeShip, isDormant, newGame, serialize, shipGrid, type Sim,
-} from '../sim';
+import { CombatC, ShipC } from '../sim/combat/components';
+import { isDormant } from '../sim/combat/dormant';
+import { homeShip } from '../sim/combat/ships';
+import { CrewC, PositionC } from '../sim/crew/components';
+import { newGame } from '../sim/newGame';
+import { shipGrid } from '../sim/regions';
+import { deserialize, serialize } from '../sim/save';
+import type { Sim } from '../sim/sim';
+import { Struct } from '../sim/structure';
 import { targetableShip } from '../sim/combat/targets';
 import { hostileAct } from '../sim/combat/provoke';
 import { content } from '../content';

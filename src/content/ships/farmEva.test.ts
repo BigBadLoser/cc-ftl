@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { content } from '../index';
-import { ShipC, Sim } from '../../sim';
+import { ShipC } from '../../sim/combat/components';
+import { Sim } from '../../sim/sim';
 import { storagesOn } from '../../sim/combat/ammo';
 import { StorageC } from '../../sim/items/components';
 import { PlotC } from '../../sim/farm/components';
@@ -14,8 +15,8 @@ import { donSuit, doffSuit, suitTile } from '../../sim/eva/suit';
 import { canStartMeal } from '../../sim/ai/machines/eat';
 
 /** A farming outpost whose greenhouses stand apart on the ground (the farmRows base): its crew farm them by EVA (#508). */
-describe('farmRows base in the running sim', () => {
-  it('crew suit up, cross the ground to the greenhouses, plant and harvest, haul the crop in, and nobody suffocates', { timeout: 120000 }, () => {
+describe('farmRows base in the running sim (the greens start near ripe; the whole growing time runs in farmEva.slow)', () => {
+  it('crew suit up, cross the ground to the greenhouses, plant and harvest, haul the crop in, and nobody suffocates', () => {
     const sim = new Sim(5, content);
     sim.enqueue({ type: 'debug.spawnOutpost', style: 'surface', kind: 'farming', seed: 3 });
     sim.step();
@@ -25,8 +26,13 @@ describe('farmRows base in the running sim', () => {
     expect(plots.length).toBeGreaterThan(0);
     // Out of the box: the beds are set to a crop and the base carries water.
     expect(plots.every((p) => !!sim.world.get(p, PlotC)!.crop)).toBe(true);
+    // The greens beds start 20 s short of ripe (a command), so the harvest and the haul come in the first minutes; the beans still get sown.
+    for (const p of plots) {
+      const crop = sim.world.get(p, PlotC)!.crop!;
+      if (crop === 'crop.greens') sim.enqueue({ type: 'debug.setPlot', moduleId: p, crop, grown: content.crops![crop]!.growSec - 20 });
+    }
     const count: Record<string, number> = {};
-    for (let i = 0; i < 9000; i++) {
+    for (let i = 0; i < 2400; i++) {
       sim.step();
       for (const e of sim.events.drain()) count[e.type] = (count[e.type] ?? 0) + 1;
     }

@@ -15,6 +15,7 @@ import {
 } from './components';
 import { killCrew } from './death';
 import { findPath } from './pathfind';
+import { step as run } from '../../../test/support/sim';
 
 const mod = (o: Partial<ModuleDef>): ModuleDef => ({
   name: 'm', asset: 'm', footprint: [1, 1], solid: false, power: 0, flammability: 0.1, maxHp: 100, buildWork: 40, ...o,
@@ -57,7 +58,6 @@ function crew(sim: Sim, x: number, y: number, rest = 100, species = 'species.hum
   sim.world.add(id, HealthC, { hp: CREW_MAX_HP, max: CREW_MAX_HP });
   return id;
 }
-const run = (sim: Sim, n: number): void => { for (let i = 0; i < n; i++) sim.step(); };
 const beds = (sim: Sim): number[] => sim.world.query(ModuleC).filter((i) => sim.content.modules[sim.world.get(i, ModuleC)!.def]?.bed);
 const ownerOf = (sim: Sim, id: number): number | undefined => sim.world.get(id, BedOwnerC)?.bed;
 const bedAt = (sim: Sim, x: number, y: number): number => beds(sim).find((b) => sim.world.get(b, ModuleC)!.x === x && sim.world.get(b, ModuleC)!.y === y) as number;

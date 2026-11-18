@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { galaxyIndex, newGame, reportNews } from '../sim';
+import { report as reportNews } from '../sim/galaxy/news';
+import { galaxyIndex } from '../sim/galaxy/state';
+import { newGame } from '../sim/newGame';
 import { nodesWithin } from '../sim/galaxy/fleets';
 import { content } from '../content';
 import { buildStarmap } from './starmapSnapshot';

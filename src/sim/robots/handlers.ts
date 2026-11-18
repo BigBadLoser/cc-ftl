@@ -20,7 +20,7 @@ import { isTileWalkable } from '../modules/walk';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { HACK_MIN_SKILL, HACK_SEC } from '../tuning';
-import { HackedC } from './components';
+import { HackedC, StunC } from './components';
 import { assemblyAt, bayFree, cradleOf, isBay } from './bay';
 import { destroyJob } from '../items/stacks';
 import { shipIdOf, shipGrid } from '../regions';
@@ -106,6 +106,7 @@ export const robotHandlers: { [T in RobotCommand]: Handler<T> } = {
     if (n && cmd.rest !== undefined) n.rest = Math.max(0, Math.min(100, cmd.rest));
     const hp = sim.world.get(cmd.id, HealthC);
     if (hp && cmd.hp !== undefined) hp.hp = Math.max(0, Math.min(hp.max, cmd.hp));
+    if (cmd.stun !== undefined) sim.world.add(cmd.id, StunC, { until: cmd.stun });
   },
   'debug.spawnCrew': (sim, cmd) => {
     const grid = shipGrid(sim, cmd.ship);

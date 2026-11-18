@@ -1,16 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { AirlockC, CrewC, ModuleC, PositionC, SuitC, airSources, airlockAir, newGame, suitAir, suitDef, type Sim, type SimEvent } from '../../sim';
+import { CrewC, PositionC } from '../../sim/crew/components';
+import { airlockAir } from '../../sim/eva/air';
+import { SuitC } from '../../sim/eva/components';
+import { airSources } from '../../sim/eva/sources';
+import { suitAir, suitDef } from '../../sim/eva/suit';
+import { AirlockC } from '../../sim/modules/airlock';
+import { ModuleC } from '../../sim/modules/components';
+import { newGame } from '../../sim/newGame';
 import { shipIdOf } from '../../sim/regions';
 import { content } from '../index';
+import { run } from '../../../test/support/sim';
 
-const run = (sim: Sim, n: number): SimEvent[] => {
-  const out: SimEvent[] = [];
-  for (let i = 0; i < n; i++) {
-    sim.step();
-    out.push(...sim.events.drain());
-  }
-  return out;
-};
 
 describe('air stores on the starter ship', () => {
   it('a suited engineer finds the starter airlock as a source, fills a low tank there on order, and the store goes down by what was drawn', () => {

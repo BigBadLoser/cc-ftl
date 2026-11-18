@@ -16,19 +16,13 @@ import type { ContentRegistry, ModuleDef } from '../registry';
 import { spawnTemplateModules } from '../ship';
 import { Sim } from '../sim';
 
-import { stampShip } from '../combat/ships';
 
-import type { ShipTemplate } from '../registry';
 
 import { Struct } from '../structure';
 
 import { BLEED_OUT_SECONDS, CREW_MAX_HP, GET_UP_HP } from '../tuning';
+import { fixtureShip } from '../../../test/support/sim';
 
-
-/** A fixture ship: the template stamped at the sector origin as an inert ship (a prize is skipped by every ship system). It is the first entity, so its id is 1. */
-function fixtureShip(sim: Sim, t: ShipTemplate): number {
-  return stampShip(sim, t, { faction: 'player', state: 'prize', x: 0, y: 0 });
-}
 
 const mod = (o: Partial<ModuleDef>): ModuleDef => ({
   name: 'm', asset: 'm', footprint: [1, 1], solid: false, power: 0, flammability: 0.1, maxHp: 100, buildWork: 20, ...o,

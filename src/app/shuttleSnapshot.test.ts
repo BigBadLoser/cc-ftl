@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { generateShip, newGame, stampShip, type FactionDef, type ModuleDef } from '../sim';
+import { stampShip } from '../sim/combat/ships';
+import { newGame } from '../sim/newGame';
+import type { ModuleDef } from '../sim/registry';
+import { generateShip } from '../sim/shipgen/generate';
+import type { FactionDef } from '../sim/shipgen/types';
 import { wreckShip } from '../sim/combat/wreck';
 import { content } from '../content';
 import { factions } from '../content/factions';

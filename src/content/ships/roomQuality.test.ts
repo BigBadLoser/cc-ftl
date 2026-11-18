@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { ModuleC, PathC, TaskC, CrewC, PositionC, PrioritiesC, homeShip, newGame, placementError, shipGrid, spawnModule, removeModule, shipRoomQuality, type ContentRegistry, type Sim } from '../../sim';
+import { TaskC } from '../../sim/ai/components';
+import { homeShip } from '../../sim/combat/ships';
+import { CrewC, PathC, PositionC, PrioritiesC } from '../../sim/crew/components';
+import { ModuleC } from '../../sim/modules/components';
+import { placementError, removeModule, spawnModule } from '../../sim/modules/spawn';
+import { newGame } from '../../sim/newGame';
+import { shipGrid } from '../../sim/regions';
+import type { ContentRegistry } from '../../sim/registry';
+import { shipRoomQuality } from '../../sim/roomQuality';
+import type { Sim } from '../../sim/sim';
 import { noteLeisure, noteMeal, noteSleep, moodFactors, ensureMood } from '../../sim/crew/mood';
 import { TraitsC } from '../../sim/crew/traits';
 import { standTiles } from '../../sim/ai/machines/leisureSpots';

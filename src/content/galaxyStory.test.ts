@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { HealthC } from '../sim/crew/components';
-import { CombatC, FTL_CHARGE_SEC, START_NODE, deserialize, galaxyIndex, newGame, passingMeets, playerShip, serialize, type Sim } from '../sim';
+import { CombatC } from '../sim/combat/components';
+import { passingMeets } from '../sim/galaxy/encounters';
+import { galaxyIndex, START_NODE } from '../sim/galaxy/state';
+import { newGame } from '../sim/newGame';
+import { deserialize, serialize } from '../sim/save';
+import type { Sim } from '../sim/sim';
+import { playerShip } from '../sim/trade/player';
+import { FTL_CHARGE_SEC } from '../sim/tuning';
 import type { Fleet } from '../sim/galaxy/types';
 import { giveItems } from '../sim/story/effects';
 import { packetCount } from '../sim/sector/packet';
@@ -8,17 +15,10 @@ import { checkOdds, unmetReasons } from '../sim/story/requirements';
 import { playerStock } from '../sim/story/world';
 import type { EventDef } from '../sim/story/defs';
 import { content } from '.';
+import { run as step } from '../../test/support/sim';
 
 /** Story events belong to hyperspace hops (storyHop.ts): none while the ship idles, one at most per hop, never on an interdicted hop. */
 
-const step = (sim: Sim, n = 1) => {
-  const out = [];
-  for (let i = 0; i < n; i++) {
-    sim.step();
-    out.push(...sim.events.drain());
-  }
-  return out;
-};
 const adjacent = (sim: Sim, id: string): string[] => (galaxyIndex(sim.galaxy).adjacent.get(id) ?? []).map((e) => (e.a === id ? e.b : e.a)).sort();
 /** A route of `hops` nodes from the start that never doubles back. */
 function routeOf(sim: Sim, hops: number): string[] {

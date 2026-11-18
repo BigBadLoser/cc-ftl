@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { ModuleC, ProjectileC, ShipC, WeaponC, newGame, type Sim, type SimEvent } from '../../sim';
+import { ProjectileC, ShipC, WeaponC } from '../../sim/combat/components';
+import type { SimEvent } from '../../sim/events';
+import { ModuleC } from '../../sim/modules/components';
+import { newGame } from '../../sim/newGame';
+import type { Sim } from '../../sim/sim';
 import { cutLeaving } from '../../sim/sector/refs';
 import { commitCharge, commitValid } from '../../sim/combat/commit';
 import { content } from '../index';

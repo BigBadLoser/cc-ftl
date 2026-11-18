@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { ShipC, generateShip, newGame, stampShip, type FactionDef, type ModuleDef } from '../../sim';
+import { ShipC } from '../../sim/combat/components';
+import { stampShip } from '../../sim/combat/ships';
+import { newGame } from '../../sim/newGame';
+import type { ModuleDef } from '../../sim/registry';
+import { generateShip } from '../../sim/shipgen/generate';
+import type { FactionDef } from '../../sim/shipgen/types';
 import { applyRuin } from '../../sim/combat/derelict';
 import { shipGrid } from '../../sim/regions';
 import { ruin } from '../../sim/shipgen/ruin';

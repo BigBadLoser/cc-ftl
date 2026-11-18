@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { ProductionC, StorageC, homeShip, newGame, placementError, shipGrid, spawnModule, storageAdd, totalStock } from '../../sim';
+import { homeShip } from '../../sim/combat/ships';
+import { ProductionC, StorageC } from '../../sim/items/components';
+import { totalStock } from '../../sim/items/stock';
+import { storageAdd } from '../../sim/items/storage';
+import { placementError, spawnModule } from '../../sim/modules/spawn';
+import { newGame } from '../../sim/newGame';
+import { shipGrid } from '../../sim/regions';
 import { content } from '../index';
 
 /** First spot (scanning from the bottom right) where the purifier fits on the player's ship. */

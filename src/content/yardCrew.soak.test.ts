@@ -1,9 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import {
-  JobC, ShipC, TraderC, YardCrewC, builtCount, deserialize, isLiveOrder, serialize, yardPrice, yardService,
-} from '../sim';
+import { ShipC } from '../sim/combat/components';
+import { JobC } from '../sim/crew/components';
+import { deserialize, serialize } from '../sim/save';
+import { TraderC } from '../sim/trade/types';
+import { builtCount } from '../sim/yard/progress';
+import { yardPrice, yardService } from '../sim/yard/rules';
+import { isLiveOrder, YardCrewC } from '../sim/yard/types';
 import { content } from './index';
-import { outline, planHull, run, yardGame } from './yardFixture';
+import { outline, planHull, run, yardGame } from '../../test/support/fixtures/yard';
 
 // Soak tier: the full-length versions of the save/load-midway and called-off yard crew runs. yardCrew.test.ts stops near the moment each tests;
 // yardCrew.slow.test.ts holds the small order and the consent grant to their ends.

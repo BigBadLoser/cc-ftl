@@ -14,8 +14,15 @@ or removes content. Before non-trivial work, read the index at the top of `docs/
 - `npm test`: Vitest
 - `npm run lint`: ESLint, including the import-boundary rules
 - `npm run typecheck`: `tsc` and `svelte-check`
-- `npm run check:fast`: lint, typecheck, and only the tests affected by uncommitted changes (Vitest's import graph),
-  skipping `*.slow.test.ts` (`VITEST_FAST=1`). Run it before every commit and before pushing a work branch.
+- `npm run check:fast`: lint, typecheck, and the near tests of uncommitted changes (untracked files included): the test
+  files within two imports of what changed, plus edited test files; with nothing uncommitted, the branch against
+  `origin/main`. Run it before every commit. A sim edit reaches most of the suite through three imports, so the rest
+  waits for the push.
+- `npm run check:push`: lint, typecheck and every fast test the branch affects (Vitest's import graph, since the merge
+  base with `origin/main`, plus uncommitted changes), slow tier skipped. Run it before pushing a work branch. `git add`
+  new files first: Vitest's graph never sees untracked ones.
+- `npm run test:why -- <file>`: how many fast test files an edit to `<file>` selects and through which import;
+  `--top` lists the files most tests reach. Use it to keep focused tests off `newGame` and the pipeline.
 - Three test tiers by file name: `*.test.ts` (fast), `*.slow.test.ts` (slow: sweeps and long runs, plus a cheap guard of each soak
   test) and `*.soak.test.ts` (soak: design-number runs over game hours or many seeds). `npm test`, `check:fast` and PR CI never run
   soak. `npm run test:soak` runs it (`VITEST_SOAK=1`; about 4.5 minutes on the 4-core dev box). CI runs it in the nightly run on `main`,
@@ -32,6 +39,7 @@ or removes content. Before non-trivial work, read the index at the top of `docs/
   one on `main` by default). `npm run test:weights` does the same from a local full run; prefer the CI one. The weights are per-file
   times that order the run and balance the CI shards
   after adding or reshaping heavy tests.
+- Shared test helpers (`run`, `nth`, `fixtureShip`, `expectReplayable`, `cachedWorld`) live in `test/support/`; use them instead of local copies (see "Test harness" in `docs/ARCHITECTURE.md`).
 - Tests share one module graph (`isolate: false`) except the files listed as isolated in `vite.config.ts`. A test that
   mocks or spies, or changes shared or cached data (the component registry, generated nodes cached per seed), goes on that list.
 - `npm run lab -- --panel <id>`: screenshot a render lab panel, any visual drawn on its own as a grid of stills (dev page

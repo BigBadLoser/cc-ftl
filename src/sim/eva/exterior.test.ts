@@ -6,7 +6,7 @@ import { ModuleC } from '../modules/components';
 import { removeModule, spawnModule } from '../modules/spawn';
 import { shipGrid, shipIdOf } from '../regions';
 import { Struct, isEvaWalkable } from '../structure';
-import { content, ring, world } from './airFixture';
+import { content, ring, world } from '../../../test/support/fixtures/air';
 import { nearestExterior } from './shuttle';
 import { Sim } from '../sim';
 

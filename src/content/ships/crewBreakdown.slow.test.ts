@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { CrewC, MoodC, PrioritiesC, TICK_HZ, newGame, type Sim, type SimEvent } from '../../sim';
+import { CrewC, MoodC, PrioritiesC } from '../../sim/crew/components';
+import type { SimEvent } from '../../sim/events';
+import { newGame } from '../../sim/newGame';
+import type { Sim } from '../../sim/sim';
+import { TICK_HZ } from '../../sim/time';
 import { BREAK_BASE_P } from '../../sim/tuning';
 import { rollBreak } from '../../sim/crew/breakdown';
 import { content } from '../index';

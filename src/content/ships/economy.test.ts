@@ -1,14 +1,18 @@
 import { describe, expect, it } from 'vitest';
-import { CarryingC, ModuleC, ProductionC, StorageC, deserialize, newGame, serialize, storageCount, totalStock, type Sim } from '../../sim';
+import { CarryingC, ProductionC, StorageC } from '../../sim/items/components';
+import { totalStock } from '../../sim/items/stock';
+import { storageCount } from '../../sim/items/storage';
+import { ModuleC } from '../../sim/modules/components';
+import { newGame } from '../../sim/newGame';
+import { deserialize, serialize } from '../../sim/save';
+import type { Sim } from '../../sim/sim';
 import { content } from '../index';
 import { shipGrid } from '../../sim/regions';
 import { shipIds } from '../../sim/regions';
+import { nth, step } from '../../../test/support/sim';
 
-/** The ship with ordinal `n` (1 = the player's, 2 = the first enemy). */
-const nth = (sim: Sim, n: number): number => shipIds(sim)[n - 1] as number;
 import { PLAYER_START as P0 } from '../../sim/tuning'; // the player ship's sector top-left
 
-const run = (sim: Sim, n: number) => { for (let i = 0; i < n; i++) sim.step(); };
 const find = (sim: Sim, def: string): number => sim.world.query(ModuleC).find((id) => sim.world.get(id, ModuleC)?.def === def) as number;
 
 /** A starter ship with a metal order and a few build jobs, so crew haul, supply and craft. */
@@ -23,7 +27,7 @@ function busy(): Sim {
 describe('starter economy', () => {
   it('starts with stocked storage and a powered fabricator', () => {
     const sim = newGame(1, content);
-    run(sim, 40);
+    step(sim, 40);
     expect(totalStock(sim, 'item.metal')).toBe(80);
     expect(totalStock(sim, 'item.electronics')).toBe(30);
     expect(totalStock(sim, 'item.polymer')).toBe(30);
@@ -34,7 +38,7 @@ describe('starter economy', () => {
 
   it('crafts spare parts and hauls them away on the real ship', { timeout: 30000 }, () => {
     const sim = busy();
-    run(sim, 3000);
+    step(sim, 3000);
     expect(sim.world.get(find(sim, 'module.fabricator'), ProductionC)?.orders[0]?.done).toBe(3);
     expect(totalStock(sim, 'item.parts')).toBe(6);
     expect(totalStock(sim, 'item.metal')).toBe(80 + 30 - 3 - 2); // the parts' inputs and the built struct's metal
@@ -44,8 +48,8 @@ describe('starter economy', () => {
   it('is deterministic over 1500 ticks', () => {
     const a = busy();
     const b = busy();
-    run(a, 1500);
-    run(b, 1500);
+    step(a, 1500);
+    step(b, 1500);
     expect(serialize(a)).toBe(serialize(b));
   });
 
@@ -58,8 +62,8 @@ describe('starter economy', () => {
     }
     expect(carrying).toBe(true);
     const b = deserialize(serialize(a), content);
-    run(a, 600);
-    run(b, 600);
+    step(a, 600);
+    step(b, 600);
     expect(serialize(b)).toBe(serialize(a));
     expect(storageCount(b, b.world.query(StorageC)[0] as number, 'item.metal')).toBeGreaterThan(0);
   });
@@ -67,7 +71,7 @@ describe('starter economy', () => {
   it('runs 1000 busy ticks to the end of the run (speed itself is the profiler\'s job)', () => {
     const sim = busy();
     const before = sim.tick;
-    run(sim, 1000);
+    step(sim, 1000);
     expect(sim.tick - before).toBe(1000);
   });
 });

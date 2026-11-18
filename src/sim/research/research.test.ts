@@ -11,6 +11,7 @@ import type { ContentRegistry, ModuleDef, ResearchDef, ShipTemplate } from '../r
 import { deserialize, serialize } from '../save';
 import { Sim } from '../sim';
 import { ResearchC } from './components';
+import { run } from '../../../test/support/sim';
 
 const mod = (o: Partial<ModuleDef>): ModuleDef => ({
   name: 'm', asset: 'm', footprint: [1, 1], solid: false, power: 0, flammability: 0.1, maxHp: 100, buildWork: 20, ...o,
@@ -69,14 +70,6 @@ function setup(o: Opts = {}) {
   });
   return { sim, ship, labs, store };
 }
-const run = (sim: Sim, n: number): SimEvent[] => {
-  const events: SimEvent[] = [];
-  for (let i = 0; i < n; i++) {
-    sim.step();
-    events.push(...sim.events.drain());
-  }
-  return events;
-};
 const rejects = (events: SimEvent[]): string[] => events.flatMap((e) => (e.type === 'command.rejected' ? [e.reason] : []));
 const queue = (sim: Sim, ship: number): string[] => sim.world.get(ship, ResearchC)?.queue ?? [];
 const progress = (sim: Sim, ship: number): number => sim.world.get(ship, ResearchC)?.progress ?? 0;

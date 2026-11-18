@@ -1,19 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import {
-  AssignmentC, CombatC, CrewC, DraftedC, FTL_CHARGE_SEC, JobC, ModuleC, START_NODE, deserialize, ftlStatus, galaxyIndex, homeShip, newGame,
-  operatorOf, serialize, type Sim, type SimEvent,
-} from '../../sim';
+import { CombatC } from '../../sim/combat/components';
+import { operatorOf } from '../../sim/combat/operators';
+import { homeShip } from '../../sim/combat/ships';
+import { AssignmentC, CrewC, DraftedC, JobC } from '../../sim/crew/components';
+import { ftlStatus } from '../../sim/ftl/status';
+import { galaxyIndex, START_NODE } from '../../sim/galaxy/state';
+import { ModuleC } from '../../sim/modules/components';
+import { newGame } from '../../sim/newGame';
+import { deserialize, serialize } from '../../sim/save';
+import type { Sim } from '../../sim/sim';
+import { FTL_CHARGE_SEC } from '../../sim/tuning';
 import { giveItems } from '../../sim/story/effects';
 import { content } from '../index';
+import { run } from '../../../test/support/sim';
 
-const run = (sim: Sim, n: number): SimEvent[] => {
-  const out: SimEvent[] = [];
-  for (let i = 0; i < n; i++) {
-    sim.step();
-    out.push(...sim.events.drain());
-  }
-  return out;
-};
 const helmOf = (sim: Sim): number => sim.world.query(ModuleC).find((m) => sim.content.modules[sim.world.get(m, ModuleC)!.def]?.console === 'helm') as number;
 const seatedBy = (sim: Sim): number => operatorOf(sim, helmOf(sim));
 const roleOf = (sim: Sim, id: number): string | undefined => sim.world.get(id, CrewC)?.role;

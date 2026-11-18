@@ -3,7 +3,10 @@ import { content } from '../content';
 import { ShipC } from '../sim/combat/components';
 import { ContainerC } from '../sim/containers/components';
 import { StorageC } from '../sim/items/components';
-import { currentNode, newGame, playerShip, populateCargo } from '../sim';
+import { populateCargo } from '../sim/galaxy/populateCargo';
+import { currentNode } from '../sim/galaxy/state';
+import { newGame } from '../sim/newGame';
+import { playerShip } from '../sim/trade/player';
 import { buildMining } from './miningSnapshot';
 
 /** The lost-container inspector's data (#503): what the panel lists for a box, before and while it is cut. */
