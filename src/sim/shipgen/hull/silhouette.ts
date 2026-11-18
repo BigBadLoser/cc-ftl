@@ -26,7 +26,23 @@ export interface Sponsons {
   depth: Range;
   /** Stretch of the hull they stand along, as fractions bow (0) to stern (1). */
   span: Range;
-  side?: 'both' | 'south';
+  side?: 'both' | 'north' | 'south';
+}
+
+/** Hulls of their own beside the main one, joined to it by beams across the gap. */
+export interface Outriggers {
+  len: Range;
+  /** Half-height of each outrigger hull. */
+  half: Range;
+  /** Open space between the main hull's side and the outrigger. */
+  gap: Range;
+  /** Where its bow stands along the main hull, as a fraction bow (0) to stern (1). */
+  at: Range;
+  /** Beams across the gap. */
+  beams: Range;
+  /** Stand out past the stern. */
+  aft?: Range;
+  side?: 'both' | 'north' | 'south';
 }
 
 export interface Pods {
@@ -45,6 +61,7 @@ export interface Profile {
   sections: readonly Section[];
   sponsons?: readonly Sponsons[];
   pods?: Pods;
+  outriggers?: Outriggers;
 }
 
 export interface Silhouette {
@@ -72,14 +89,20 @@ export function drawSilhouette(rng: Rng, p: Profile): Silhouette {
       const step = Math.max(2, Math.min(slope, 3));
       for (let h = prev; h !== s.half; h += s.half > prev ? 1 : -1) for (let k = 0; k < step; k++) { outer.push(h + (s.half > prev ? 1 : 0)); inner.push(Math.min(s.inner, prevIn)); }
     }
-    while (outer.length - start < s.len) { outer.push(s.half); inner.push(s.inner); }
+    // A void opening up starts as a point and widens a tile every two along (a V); one closing narrows the same way.
+    let i = 0;
+    while (outer.length - start < s.len) {
+      outer.push(s.half);
+      inner.push(s.inner > prevIn ? Math.min(s.inner, prevIn + Math.floor(i / 2)) : Math.max(s.inner, prevIn - Math.floor(i / 2)));
+      i++;
+    }
     prev = s.half; prevIn = s.inner;
   }
   const L = outer.length;
   const maxHalf = Math.max(...outer) + 12;
   const H = 2 * maxHalf + 1, axis = maxHalf;
   const grid = Array.from({ length: H }, () => Array<string>(L + 12).fill('.'));
-  const fill = (x: number, y: number): void => { const row = grid[axis + y]; if (row && x >= 0 && x < row.length) row[x] = '#'; };
+  const fill = (x: number, y: number, c = '#'): void => { const row = grid[axis + y]; if (row && x >= 0 && x < row.length && (c === '#' || row[x] === '.')) row[x] = c; };
   for (let x = 0; x < L; x++) for (let y = -(outer[x] as number); y <= (outer[x] as number); y++) if (Math.abs(y) > (inner[x] as number) || (inner[x] as number) === 0) fill(x, y);
   // Sponsons: blocks standing out from the side, their outer corners cut.
   for (const sp of p.sponsons ?? []) {
@@ -93,7 +116,7 @@ export function drawSilhouette(rng: Rng, p: Profile): Silhouette {
         if (cut) continue;
         const y = base + d;
         if (sp.side !== 'south') fill(x, -y);
-        fill(x, y);
+        if (sp.side !== 'north') fill(x, y);
       }
     }
   }
@@ -109,9 +132,26 @@ export function drawSilhouette(rng: Rng, p: Profile): Silhouette {
       for (let y = innerEdge; y <= half + reach; y++) { fill(x, y); fill(x, -y); }
     }
   }
+  // Outriggers: hulls of their own past a gap, bow ends tapered, beams across.
+  if (p.outriggers) {
+    const o = p.outriggers;
+    const len = pick(rng, o.len), oh = pick(rng, o.half), gap = pick(rng, o.gap), aft = o.aft ? pick(rng, o.aft) : 0, beams = pick(rng, o.beams);
+    const x0 = Math.min(L - len + aft, Math.floor(pick(rng, [Math.round(o.at[0] * 100), Math.round(o.at[1] * 100)]) * L / 100));
+    const side = Math.max(...outer.slice(x0, Math.min(L, x0 + len)));
+    const cy = side + gap + oh + 1;
+    const sides = o.side === 'north' ? [-1] : o.side === 'south' ? [1] : [-1, 1];
+    for (let x = x0; x < x0 + len; x++) {
+      const t = Math.min(oh, Math.floor((x - x0) / 2)); // the bow end tapered
+      for (let y = cy - t; y <= cy + t; y++) for (const sg of sides) fill(x, sg * y);
+    }
+    for (let b = 0; b < beams; b++) {
+      const bx = x0 + 3 + Math.round(((len - 8) * (b + 0.5)) / beams);
+      for (let x = bx; x < bx + 2; x++) for (let y = 1; y < cy; y++) for (const sg of sides) fill(x, sg * y, '=');
+    }
+  }
   // Trim to what was drawn.
   const used = grid.map((r) => r.join(''));
-  const ys = used.flatMap((r, y) => (r.includes('#') ? [y] : []));
+  const ys = used.flatMap((r, y) => (/[#=]/.test(r) ? [y] : []));
   const y0 = Math.min(...ys), y1 = Math.max(...ys);
   const w = Math.max(...used.map((r) => r.lastIndexOf('#'))) + 1;
   return { rows: used.slice(y0, y1 + 1).map((r) => r.slice(0, w)), axis: axis - y0, length: w };
