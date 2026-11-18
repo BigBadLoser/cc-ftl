@@ -217,8 +217,7 @@ export const WARN_DEBOUNCE = 400;
 export const ITEM_BURN_PER_SEC = 6;
 // --- Combat ---
 /** A node's size in tiles: the floor every node has (a restored one too: sector/size.ts); stations and yards may grow it. */
-export const SECTOR_WIDTH = 200;
-export const SECTOR_HEIGHT = 200;
+export const SECTOR_WIDTH = 200, SECTOR_HEIGHT = 200;
 /** Tiles a region's frame reaches beyond its bbox: the EVA ring plus one tile of vacuum for venting. */
 export const REGION_PAD = 2;
 /** Least gap in tiles between two ships' padded frames (ships are never close: user rule). */
