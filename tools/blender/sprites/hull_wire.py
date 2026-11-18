@@ -152,10 +152,17 @@ def _stem_crease(sp, cl):
 def _to_wall(sp, a, b):
     """A T's far-side stem crest runs on a pixel past the tile edge, under the wall, so it meets the wall's top edge."""
     t, e = 1.0 / N, 1.0 / 32
-    if sp.mask & 14 == 14 and abs(a[0] - b[0]) < t and abs(a[0] + 0.5 - CD) < t:
+    tw = (sp.mask & 14 == 14 and not sp.corners & 4, sp.mask & 7 == 7 and not sp.corners & 1)
+    if tw[0] and abs(a[0] - b[0]) < t and abs(a[0] + 0.5 - CD) < t:            # (and a px in: on the wall's edge)
+        a, b = (a[0] + e, a[1]), (b[0] + e, b[1])
         return (a, (b[0], b[1] + e)) if b[1] > a[1] else ((a[0], a[1] + e), b)
-    if sp.mask & 7 == 7 and abs(a[1] - b[1]) < t and abs(a[1] + 0.5 - CD) < t:
+    if tw[1] and abs(a[1] - b[1]) < t and abs(a[1] + 0.5 - CD) < t:
+        a, b = (a[0], a[1] + e), (b[0], b[1] + e)
         return (a, (b[0] + e, b[1])) if b[0] > a[0] else ((a[0] + e, a[1]), b)
+    if tw[0] and abs(a[1] - b[1]) < t and abs(a[1] - 0.5 + CD) < t and max(a[0], b[0]) < 0:   # (the arm's crest
+        return (a, (b[0] + e, b[1])) if b[0] > a[0] else ((a[0] + e, a[1]), b)                #   on to meet it)
+    if tw[1] and abs(a[0] - b[0]) < t and abs(a[0] - 0.5 + CD) < t and max(a[1], b[1]) < 0:
+        return (a, (b[0], b[1] + e)) if b[1] > a[1] else ((a[0], a[1] + e), b)
     return a, b
 
 
@@ -164,10 +171,10 @@ def behind_stem(sp, x, y):
     leaves out): the fill stops at the crest, as the lines do."""
     zc = zof(CD)
     if sp.mask & 14 == 14 and not sp.corners & 4 and x < -0.5 + CD and y > 0.5 - CD:
-        c = (-0.5 + CD, 0.5 - CD)
+        c = (-0.5 + CD + 1 / 32, 0.5 - CD)              # (the crest as drawn: _to_wall)
         slope = -0.5                                    # (the crest runs along +y: screen (-32, 16))
     elif sp.mask & 7 == 7 and not sp.corners & 1 and x > 0.5 - CD and y < -0.5 + CD:
-        c = (0.5 - CD, -0.5 + CD)
+        c = (0.5 - CD, -0.5 + CD + 1 / 32)
         slope = 0.5                                     # (... along +x: screen (32, 16))
     else:
         return False
