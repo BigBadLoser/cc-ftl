@@ -4,10 +4,8 @@ import type { OreDef } from '../../sim/asteroids/types';
 import { ShipC } from '../../sim/combat/components';
 import { homeShip } from '../../sim/combat/ships';
 import { CrewC, PositionC } from '../../sim/crew/components';
-import { newGame } from '../../sim/newGame';
 import { generateOutpost } from '../../sim/outposts/gen';
 import { shipGrid } from '../../sim/regions';
-import type { ModuleDef } from '../../sim/registry';
 import { deserialize, serialize } from '../../sim/save';
 import type { Sim } from '../../sim/sim';
 import { Struct } from '../../sim/structure';
@@ -21,38 +19,9 @@ import { factionsHostile } from '../../sim/combat/factions';
 import { SuitC } from '../../sim/eva/components';
 import { WeaponC } from '../../sim/combat/components';
 import { mannedConsole } from '../../sim/combat/operators';
-
-const MODS: Record<string, ModuleDef> = content.modules;
+import { MODS, provoke, run, setup, type Ev } from '../../../test/support/fixtures/groundTurrets';
 
 /** Ground turrets on an asteroid trading post (#514): guns and point defence out on the levelled rock, cabled to the base. */
-
-function run(sim: Sim, n: number): { type: string; ship?: number }[] {
-  const log: { type: string; ship?: number }[] = [];
-  for (let i = 0; i < n; i++) {
-    sim.step();
-    log.push(...(sim.events.drain() as { type: string; ship?: number }[]));
-  }
-  return log;
-}
-
-/** The starter ship plus a surface trading outpost (a prefab base); returns the base and its ground turrets. */
-function setup(seed = 1): { sim: Sim; base: number; turrets: number[] } {
-  const sim = newGame(2, content);
-  sim.enqueue({ type: 'debug.spawnOutpost', style: 'surface', kind: 'trading', seed });
-  sim.step();
-  const base = [...sim.world.query(ShipC)].find((id) => sim.world.get(id, ShipC)?.outpost)!;
-  const turrets = [...sim.world.query(ModuleC)].filter((id) => {
-    const m = sim.world.get(id, ModuleC)!;
-    const def = MODS[m.def];
-    return (def?.weapon || def?.pointDefense) && sim.sector.grid.get('struct', m.x, m.y) === Struct.Ground;
-  });
-  return { sim, base, turrets };
-}
-
-/** Provoke the base into a fight: one hostile act wakes a dormant neutral outpost and turns it (combat/provoke.ts). */
-function provoke(sim: Sim, base: number): void {
-  hostileAct(sim, base, 'fired');
-}
 
 const N4 = [[1, 0], [-1, 0], [0, 1], [0, -1]] as const;
 
@@ -129,7 +98,7 @@ describe('ground turrets', () => {
     const me = homeShip(sim);
     run(sim, 20); // the fight is on (the player's guns take the base as their target), then the aim at the turret
     sim.enqueue({ type: 'combat.setTarget', ship: me, weaponId: null, targetShip: base, targetModuleId: gun });
-    const log: { type: string; ship?: number }[] = [];
+    const log: Ev[] = [];
     let low = Infinity;
     for (let k = 0; k < 12; k++) {
       for (const id of sim.world.query(WeaponC, ModuleC)) if (shipIdOf(sim, sim.world.get(id, ModuleC)!) === me) sim.world.get(id, WeaponC)!.charge = 1;
@@ -138,6 +107,8 @@ describe('ground turrets', () => {
         log.push(...run(sim, 1));
         low = Math.min(low, sim.world.get(gun, ModuleC)!.hp);
       }
+      // (the volleys run on in groundTurrets.slow; here they stop once the aim has landed and a missile was shot down)
+      if (low < MODS[sim.world.get(gun, ModuleC)!.def]!.maxHp && log.some((e) => e.type === 'projectile.intercepted' && e.ship === base)) break;
     }
     expect(log.some((e) => e.type === 'projectile.hit' && e.ship === base && (e as { moduleId?: number }).moduleId === gun)).toBe(true);
     expect(low).toBeLessThan(MODS[sim.world.get(gun, ModuleC)!.def]!.maxHp);
@@ -149,7 +120,7 @@ describe('ground turrets', () => {
     const id = turrets[0]!;
     const m = sim.world.get(id, ModuleC)!;
     const max = MODS[m.def]!.maxHp;
-    m.hp = Math.round(max / 2);
+    m.hp = max - 2; // lightly damaged (half its hit points in groundTurrets.slow)
     let suited = false;
     for (let i = 0; i < 240 * 20 && m.hp < max; i++) {
       sim.step();
