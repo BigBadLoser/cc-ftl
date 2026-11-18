@@ -10,7 +10,7 @@ from .hull import FADE, _dummy, _Fill
 from .hull_wire import TONE, strip
 from .wall3d_ext_diag import UP, _solid
 
-BACK = tuple(f"gFillN{i}" for i in range(6))   # the fill, bottom up: as the rear's (hull.BACK) but stronger, over the
+BACK = tuple(f"gFillN{i}" for i in range(11))   # the fill, bottom up: as the rear's (hull.BACK) but stronger, over the
 #   lit armour face below it (the rear's over dark space)
 Z0 = B.FAR_LOW                             # (from the cut's top, flush with the deck)
 
@@ -36,8 +36,7 @@ def _faces(key, za, zb):
 
 def _cuts():
     z1 = _top()
-    step = (z1 - Z0) / len(BACK)
-    lo = Z0 + step * 4                     # (as hull._back_fill: the bottom band 2/3 of the height, the fade above)
+    lo = Z0 + (z1 - Z0) / 3                # (the bottom band a third of the height, the fade in ten bands above)
     return [Z0] + [lo + (z1 - lo) * k / (len(BACK) - 1) for k in range(len(BACK))]
 
 

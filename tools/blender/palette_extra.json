@@ -4098,19 +4098,34 @@
   "hex": "#2a2e34"
  },
  "gFillN1": {
-  "hex": "#22262a"
+  "hex": "#262a2f"
  },
  "gFillN2": {
-  "hex": "#1a1d20"
+  "hex": "#22262b"
  },
  "gFillN3": {
-  "hex": "#121416"
+  "hex": "#1f2126"
  },
  "gFillN4": {
-  "hex": "#0b0c0d"
+  "hex": "#1b1d21"
  },
  "gFillN5": {
-  "hex": "#050506"
+  "hex": "#17191c"
+ },
+ "gFillN6": {
+  "hex": "#131518"
+ },
+ "gFillN7": {
+  "hex": "#0f1113"
+ },
+ "gFillN8": {
+  "hex": "#0b0d0e"
+ },
+ "gFillN9": {
+  "hex": "#080809"
+ },
+ "gFillN10": {
+  "hex": "#040405"
  },
  "gFillB1": {
   "hex": "#050607"
