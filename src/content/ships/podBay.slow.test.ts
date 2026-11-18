@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { JobC, storageCount, ModuleC, VehicleBayC, VehicleC, homeShip, newGame, placementError, shipGrid, storageAdd, StorageC, type Sim } from '../../sim';
+import { homeShip } from '../../sim/combat/ships';
+import { JobC } from '../../sim/crew/components';
+import { StorageC } from '../../sim/items/components';
+import { storageAdd, storageCount } from '../../sim/items/storage';
+import { ModuleC } from '../../sim/modules/components';
+import { placementError } from '../../sim/modules/spawn';
+import { newGame } from '../../sim/newGame';
+import { shipGrid } from '../../sim/regions';
+import type { Sim } from '../../sim/sim';
+import { VehicleBayC, VehicleC } from '../../sim/vehicles/components';
 import { content } from '../index';
 
 describe('pod bay with its pod', () => {

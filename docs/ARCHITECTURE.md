@@ -7,13 +7,16 @@ One line per section; read the index, then only the sections your task touches.
 - [Stack](#stack): TypeScript (strict), Vite.
 - [Layout and dependency direction](#layout-and-dependency-direction): src/
 - [Simulation core](#simulation-core): Determinism.
-- [Two kinds of state](#two-kinds-of-state): Every ship, station, derelict and wreck is a Grid with:
-  - [1. Grids: tile fields as typed arrays](#1-grids-tile-fields-as-typed-arrays): Every ship, station, derelict and wreck is a Grid with:
+- [Two kinds of state](#two-kinds-of-state): Shared sector tiles and ECS entities.
+  - [1. Grids: tile fields as typed arrays](#1-grids-tile-fields-as-typed-arrays): Region views over the shared tile store.
   - [2. Entities: a small in-house ECS](#2-entities-a-small-in-house-ecs): Crew, modules, doors, items, projectiles, ships and so on. A few hundred to a few thousand entities.
 - [Cross-cutting mechanisms](#cross-cutting-mechanisms): Stat resolver; effects; materials; hauling; one answer per question.
 - [Content](#content): Content is TypeScript files exporting objects checked with satisfies WeaponDef (and so on): the
 - [Rendering](#rendering): Two-way contract.
-- [Test tiers](#test-tiers): Fast tier (npm run check:fast, before every commit): lint, typecheck, then VITESTFAST=1 vitest run...
+  - [Camera passes and layer ownership](#camera-passes-and-layer-ownership)
+- [Test tiers](#test-tiers): fast (`check:fast`: near tests of the change), branch (`check:push`), slow, soak, full CI; `test:why` and `TICK_STATS` to see what a change selects and where time goes.
+- [Test harness](#test-harness): `test/support/`: `run`, `nth`, `fixtureShip`, `expectReplayable`, `cachedWorld`, fixtures; who may import it; [writing a test](#writing-a-test) (start near the moment, no weakening, cost rules).
+- [Scenario builder](#scenario-builder): `src/content/scenario/`: parts, presets and hooks found by glob; one builder for tests, `?scenario=` and the profiler.
 - [Asset pipeline](#asset-pipeline): Asset creation is decoupled from asset rendering. Models are built as 3D in Blender, then
 - [Crew AI](#crew-ai): The planned crew AI architecture (interrupts, utility AI, job scheduler, HFSM executor) is in...
 - [UI](#ui): Svelte components read snapshots published by app after each tick, or on demand for
@@ -32,18 +35,9 @@ One line per section; read the index, then only the sections your task touches.
 - [Food and farming, `src/sim/farm/`](#food-and-farming-srcsimfarm): `PlotC` on hydroponics beds, `farmSystem`, plant and harvest jobs, meal quality from the cook's skill, herbs in medical beds.
 - [Trade, `src/sim/trade/`](#trade-srcsimtrade): Terminology (user decision, 2026-10-19): a node is one playable grid or location (what older text and code...
 - [Asteroids (slices 1-3 on branch `asteroids`), `src/sim/asteroids/`, `mining/`, `rock/`, `outposts/`](#asteroids-slices-1-3-on-branch-asteroids-srcsimasteroids-mining-rock-outposts): Region model: its own AsteroidC entity plus the owner layer (not a ShipC kind). An asteroid (one big body,...
-- [Starmap (galaxy), `src/sim/galaxy/`](#starmap-galaxy-srcsimgalaxy): Sim only so far (branch galaxy): no UI, no snapshot, no tools. The starmap view, its zoom levels and the...
-- [Sector grid (planned)](#sector-grid-planned): Decision (user, 2026-10-19): a sector is one large grid with everything placed on it. It replaces the...
-  - [Target model in one paragraph](#target-model-in-one-paragraph): sim.sector.grid is a chunked, sparse SectorGrid in sector-tile coordinates. A ship, station, derelict or...
-  - [1. Inventory: what assumes many grids](#1-inventory-what-assumes-many-grids): Size = lines likely touched: S < 30, M 30–150, L > 150. About 780 gridId / sim.grids references in src/...
-  - [2. Data model](#2-data-model): Storage: SectorGrid (sim/sectorGrid.ts, new).
-  - [3. Vehicles as free entities](#3-vehicles-as-free-entities): Position and heading. New BodyC { x, y, heading, alt }: continuous sector tiles, radians, and altitude in...
-  - [4. Placement and jumping](#4-placement-and-jumping): Packets (built in 9a, sim/sector/packet.ts). ShipPacket is the single format for a ship in transit:
-  - [5. Combat on one map](#5-combat-on-one-map): Projectiles. Already sector-space with dt = speed / distance, so travel time is real distance. They launch...
-  - [6. Performance budget (phone target: mid-range Android, 60 fps render, 20 Hz sim)](#6-performance-budget-phone-target-mid-range-android-60-fps-render-20-hz-sim): 
-  - [7. Migration order](#7-migration-order): Amended (user, 2026-10-19). The single shared tile store is confirmed: mining is planned, and building in...
-  - [Step 7 split (planned 2026-10-20)](#step-7-split-planned-2026-10-20): Step 7 is split into four slices. Each keeps npm run check green, changes no behaviour (the sectorEquiv...
-  - [8. Risks (open questions for the user are in `docs/STATUS.md`, "Sector grid decision")](#8-risks-open-questions-for-the-user-are-in-docsstatusmd-sector-grid-decision): Step 6 (the coordinate flip) is the one wide change. It is safe only if step 5 has removed every...
+- [Starmap (galaxy), `src/sim/galaxy/`](#starmap-galaxy-srcsimgalaxy): Galaxy state, the app snapshot, and the Svelte and Pixi starmap.
+- [Sector grid](#sector-grid): Sparse tiles, ship views, and placement in the current node.
+- [Historical sector-grid migration](#historical-sector-grid-migration): The October refactor plan and implementation notes.
 - [Crew AI: one system for every ship (user principle, 2026-10-21)](#crew-ai-one-system-for-every-ship-user-principle-2026-10-21): NPCs use almost exactly the same crew AI as the player's crew. There is no parallel "NPC behaviour" stack:
 - [Stations](#stations): Built by the station assembly, shipgen/stationBuild.ts (kinds and sizes in content/stations.ts; docs/STATION_ASSEMBLY.md) and stamped by
 - [Crew for hire](#crew-for-hire): Trade stations post candidates derived from hashes (galaxy/recruit.ts, tuningRecruit.ts). While the player...
@@ -88,6 +82,9 @@ src/
 - `render` and `ui` read sim state and never mutate it.
 - `app` is the only place that knows about everything.
 - Enforced by ESLint `no-restricted-imports`; a violation fails the build.
+- No new import cycles in `src`: `tools/importCycles.test.ts` is a ratchet on the largest cycle, the files in cycles and the number of
+  groups. It fails when a cycle appears or grows, and when one shrinks without its baseline being lowered in the same change. The plan to
+  break the large feature-module cycle is #553.
 
 ## Simulation core
 
@@ -110,10 +107,8 @@ call each other. The order is the only coupling, and it lives in one file.
 
 ### 1. Grids: tile fields as typed arrays
 
-Every ship, station, derelict and wreck is a `Grid` with:
-- dimensions
-- a world placement
-- per-tile arrays:
+Each playable node has one sparse [sector grid](#sector-grid). A ship, station, derelict or wreck has a bounded
+`ShipGrid` view over it. The shared store holds per-tile arrays for:
   - structure: floor, wall or hull type, door
   - flags: solid, walkable, breach
   - gases (O2, CO2)
@@ -169,11 +164,8 @@ Crew, modules, doors, items, projectiles, ships and so on. A few hundred to a fe
 **Materials.** Flammability, conductivity, hull strength and permeability are content data that the
 field systems read.
 
-**Multi-grid** (being replaced by one grid per sector; see "Sector grid (planned)" below).
-- Positions are `(gridId, x, y)`.
-- Docked or boarded grids connect through airlock and teleporter links in a **portal graph**, and
-  pathfinding spans grids through it.
-- This one mechanism covers boarding, away teams, derelicts, captured ships and future fleets.
+**Tile coordinates.** Runtime positions use sector tiles. Ship templates and generator plans use local tiles until
+they are stamped into the [sector grid](#sector-grid).
 
 **Hauling** (`items/haul.ts`, `items/stock.ts`, `items/plan.ts`).
 - A haul job moves goods from a source (`floor` stack, `storage`, `vehicle` hold) to a destination (`storage`, `vehicle`, a `job`,
@@ -234,8 +226,31 @@ Each placeholder is replaced by pipeline art once that art exists.
 **Depth sorting.** Draw order is by isometric depth (tile `x + y`, then height). Multi-tile objects
 anchor at their front-most footprint tile. Crew sort by their interpolated sub-tile position.
 
-**Batching (#389).** Everything depth-sorted renders through one `RenderLayer`, so its sprites from many sheets interleave
-and the draw-call count is the number of times the batch has to break. Keep that run batchable:
+### Camera passes and layer ownership
+
+[`scene.ts`](../src/render/scene.ts) puts the backdrop, the shared `WorldStack` (`W`), and the sector air stack
+(`SL`) on one Pixi stage. Region views add tiles, roofs, props, crew and local effects through `W.region()`.
+Bodies near the deck use `W.low` so they sort against region art. Airborne bodies and sector combat effects
+draw above that stack through `SL`.
+
+| Stage content | Main view | Combat inset | Minified art bake |
+| --- | --- | --- | --- |
+| Region art and `W.low` | Live art or the baked texture | Live art | Into the texture |
+| Sector air art and effects (`SL.sorted`, `SL.fx`, `SL.fxAdd`) | Live art or the baked texture | Live art | Into the texture |
+| Per-region overlays (`W.ui`) | Drawn directly at the main scale | Hidden | Hidden |
+| Sector overlays (`SL.ui`), including combat indicators and crew marks | Drawn directly at the main scale | Enabled | Hidden |
+| Legacy target marks (`W.marks`) | Hidden | Hidden | Hidden |
+| Space backdrop | Drawn when enabled | Flat inset background | Transparent clear |
+
+`place()` positions both world stacks for each camera and sets overlay visibility. The inset renders the stage
+into its own texture, then the main pass composites the inset sprite. Below camera scale 0.5, `renderMini()`
+can bake the world at 0.5 and downsample it. The main pass then draws the backdrop, baked art, overlays and inset.
+It falls back to drawing live art if the bake would exceed the texture budget. Check which passes need a new
+overlay before choosing its parent. `SL.ui` is enabled in both cameras, and individual views still decide whether
+they have anything to draw.
+
+**Batching (#389).** Depth-sorted region art and low bodies interleave in depth bands. Each band has its own
+Pixi `RenderLayer` and render group. Keep sprites in each band batchable:
 - One batcher (`render/batch.ts`, replacing pixi's default): per-sprite effects are flag bits in the vertex data read by one
   shader, not separate batchers or blend modes. Additive glow (`batchAdditive`) draws under the normal blend with alpha 0, which
   is `add` exactly on an opaque target (only world glows opt in, never art drawn into a transparent texture); hull paint is
@@ -371,10 +386,17 @@ and the draw-call count is the number of times the batch has to break. Keep that
 
 ## Test tiers
 
-- **Fast tier** (`npm run check:fast`, before every commit): lint, typecheck, then `VITEST_FAST=1 vitest run --changed`, which runs only the
-  test files that import an uncommitted file, directly or transitively. A render or UI change runs its own tests in seconds.
-  A `src/sim` change still selects most content tests, because they build a full game through `newGame` and so depend on every
-  system. That is correct, not noise.
+- **Fast tier, commit check** (`npm run check:fast`, before every commit): lint, typecheck, then the *near tests* of uncommitted changes
+  (`tools/testFast.mjs`): test files within two imports of a changed file, plus edited test files, slow ones included only when edited. A
+  `power.ts` edit runs about 6 files instead of about 300. With nothing uncommitted it checks the branch against `origin/main`, never zero
+  tests. A change to `vite.config.ts`, `src/sim/testSetup.ts` or the lockfile runs the whole fast tier.
+- **Branch check** (`npm run check:push` = lint, typecheck, `test:branch`, before pushing a work branch): every fast test Vitest's import graph
+  links to a change since the merge base with `origin/main`. Most sim edits select about two thirds of the fast tier, because most tests step a
+  game through `newGame` and the pipeline (#553). `git add` new files first.
+- **What a change selects:** `npm run test:why -- <file>` lists the selected test files by import chain (`--top` lists the files most tests
+  reach). `tools/importGraph.mjs` is the shared graph (value imports, dynamic `import()`, `import.meta.glob`, the `$lib` alias).
+- **Where time goes:** 73% of fast-tier time is `Sim.step` (#371 measurement), so a test's cost is mostly its ticks. `TICK_STATS=1` with
+  `node tools/tickStats.mjs` lists ticks, step time and ms per tick per file (instructions at the top of that file).
 - **Slow tier** (`*.slow.test.ts`): sweeps and long runs. The fast tier skips them; `npm run check` and CI
   always run them. Today: the shipgen seed and depth sweeps, the end-to-end trade runs (`content/trade`, `ships/trade`), and the cheap
   guards of the soak tests (one seed or a short horizon asserting the same claim, e.g. `ships/pace`, `ships/balance`, `galaxyGrace`).
@@ -388,6 +410,99 @@ and the draw-call count is the number of times the batch has to break. Keep that
   Files run longest first (`vitest.sequencer.ts`, weights in `tools/testWeights.ts`, refreshed by `npm run test:weights:ci` from CI timings).
 - Vitest runs files in parallel, so one huge file sets the wall time. Split sweeps across files rather than growing one.
 - Test files never import other test files: an imported `*.test.ts` runs its tests again in the importer.
+
+## Test harness
+
+Shared test helpers live in `test/support/` (repo root); use them instead of a local copy of `run`, `nth` or `fixtureShip`.
+
+- `sim.ts` (sim-only; imports only `src/sim`, narrowly, so a test that uses it does not pull the whole pipeline into its import graph):
+  - `run(sim, ticks = 1, { until?, stopBefore? })` (from `run.ts`) steps and drains events, returns the events; `step` steps without collecting. `until` is checked after each step,
+    `stopBefore` before it (the first too). `runLog` returns them as strings (`command.rejected:<command>:<reason>` for a rejection),
+    `runSim` returns `{ ticks, events, log }` when the tick count matters.
+  - `nth(sim, n)` (ship by creation order, 1-based), `crewOn(sim, n)`, `eventsOf(events, type)`,
+    `fixtureShip(sim, template)` (an inert prize ship at the origin).
+- `world.ts` (sim-only):
+  - `expectReplayable(build, ticks, { every = 10, saveAt? })` builds twice, steps both and compares `serialize` every `every` ticks;
+    with `saveAt` one copy is saved and reloaded on the way; `events: []` collects the first copy's events for a test that also asserts something happened. A failure names the first tick that differs (it re-runs per tick to find it).
+  - `cachedWorld(key, build)` builds once per test file (a `fileCache` from `test/support/cache.ts`, emptied after each file so a shared worker's heap does not grow) and returns a fresh `deserialize(serialize(world))` clone per call. Use it when many
+    tests start from the same expensive state (a game run to a scene); build fresh when a test is about the build itself, or about
+    state a save does not hold. Clones are independent: never share a mutable node or world between tests.
+- `content.ts` (the only module that may import `content`): `content`, `cachedNewGame(seed)`.
+- Import rule (lint): only `*.test.ts`, `*.slow.test.ts`, `*.soak.test.ts` and `test/support` may import `test/support`; the sim-only
+  modules follow the sim's boundary (no `content`, `render`, `ui`, `app`), so `src/sim` tests can use them.
+- `fixtures/` (`test/support/fixtures/*.ts`): scenario setups shared by test files (yard, shuttle, farm, stations, outposts, freighter,
+  boarding, away, ferry, ...). They may reach content; none lives in `src/` any more. A fixture that builds an expensive start uses
+  `cachedWorld` (the yard game, the shuttle scene, the farm game); building a game is cheap (`newGame` is about 9 ms), so cache only
+  what steps or spawns.
+- Tests import the module that owns what they use, never the sim barrel `src/sim/index.ts` (lint, `tools/lint/simBarrelBaseline.js`
+  lists the few files not migrated yet; do not add to it). Through the barrel every test depends on the whole sim.
+- Generated galaxy chunks are cached per (content, seed) and shared by every test in a worker, so `src/sim/testSetup.ts` deep-freezes
+  them: a test that assigns `node.danger`, `node.faction` or `edge.fuel` fails with "read only". Play on `contentEdited(seed, key, edit)`
+  or `contentAtDanger(seed, tier)` (`test/support/content.ts`): a copy of the content with its own generator whose chunks carry the edit.
+- Where a sweep over seeds or sizes is too long for the fast tier, the fast test keeps one seed and the rest moves to the `.slow` file
+  (`stations`, `outposts`); a long natural wait keeps a short version in the fast file that starts near the moment tested and the full
+  wait in the `.slow` file (`food`, `shuttleDefence`).
+- Turn systems off only in a focused unit test with an explicit list; never in a gameplay-outcome test.
+- Where a branch case only needs the moment it tests (party aboard, reactor near its deadline), start there (set the timer, deploy
+  from a cached scene) and keep one natural signal-to-rescue test on the production pipeline (`content/freighter.test.ts`).
+
+### Writing a test
+
+The rules the #371 migration followed; new tests follow them too.
+
+- **Start near the moment tested.** Set the timer, crop or deadline just short of its end (`debug.*` commands, a scenario preset), stop at
+  the first event the test checks (`run(..., { until })`), and build expensive starts once with `cachedWorld` / `cachedScenario`. Keep one
+  natural end-to-end run of a flow on the production pipeline; branch cases start near their moment.
+- **Never weaken to save time.** A shortened fast test keeps its claim; the original (natural wait, every seed, every-tick comparison) moves
+  verbatim to a `*.slow.test.ts` beside it, never away. Count `expect(` and cases across the fast file, its slow file and its fixture: they
+  may not drop, except for an exact duplicate folded into `expectReplayable`. Typical splits: one seed fast, the rest slow; saved states
+  compared every 5–10 ticks fast, every tick slow.
+- **Determinism and save round trips** go through `expectReplayable`, not a hand-written pair of runs, unless the test asserts more than
+  it checks (several reload points, the saved JSON's shape); say why in the test.
+- **Keep rule tests small.** Test a rule on a `World` or `Grid` by calling its owning function where practical; reach for `newGame` and
+  `Sim.step` only for behaviour that needs the pipeline. Import the owning module, not `src/sim/index.ts`.
+- **Fresh state per test.** Each test gets its own world (a `cachedWorld` clone or a fresh build); one that edits a generated node uses
+  `contentEdited` / `contentAtDanger`. A new module-level cache in a test or fixture is a `fileCache()`.
+- **Shared setup** goes in `test/support/fixtures/<name>.ts`, a run loop is the shared `run` (a local copy only when it returns or stops
+  differently, and then as a thin wrapper), a scene a preset is likely to want is a scenario preset.
+- **Isolation:** a test that mocks or spies, or changes shared or cached data, goes on `ISOLATED` in `vite.config.ts`. So does one that
+  needs a lot of heap by itself (`researchReach`, about 1.4 GB).
+- **New or reshaped heavy files** get an estimate in `tools/testWeights.ts` (about 2.5 × the local time) until the next
+  `npm run test:weights:ci`.
+
+## Scenario builder
+
+One builder (`src/content/scenario/`) makes a scene for tests, `?scenario=` and the profiler. A scene is a **spec** of independent parts; **presets** combine parts;
+**hooks** are code that runs on a built scene. Nothing is listed centrally: parts, presets and hooks are found by `import.meta.glob`, so adding one is adding a
+file (Vite resolves it in the browser build, Vitest and the profiler, which all run under Vite).
+
+- `ScenarioSpec` (`types.ts`) is an interface with no keys of its own: each part adds its key by declaration merging. A part is `parts/<key>.ts`, default export
+  `definePart({ key, after?, apply(ctx, slice) })`; parts apply in topological order of `after`. Parts: `ship` (the only one that makes the sim; hull, seed, crew,
+  skip goals), `node` (warm-up ticks, hop to an empty neighbour, stations), `items`, `prep` and `steps` (scripts of commands and waits before / after the other
+  parts), `events` (story flags, queued event, a trip to its signal, answers, deploy), `crew` (traits, xp, breaks, bonds, fire, drops), `modules` (beds near a module,
+  plots, production orders), `ships` (enemy, generated, derelict, raider), `hooks`, `ui` (speed, selection, tool, camera: data the app applies; tests ignore it).
+  A part changes the sim through commands (the `debug.*` ones, or a new one where none exists); a direct write is allowed only for pre-start setup tests already did
+  (skip goals, a story flag, the queued event) and only inside the owning part.
+- A preset is `presets/<name>.ts` (`presets/inspect/station.ts` is `inspect.station`), default export `definePreset({ doc, params?, starter?, spec(params) })`. `params`
+  are its URL knobs by kind (`flag`, `num`, `str`, `oneOf`). `buildScenario(name | spec, { seed, params, overrides, sim?, extraHooks? })` returns `Built`:
+  the finished scene (the build steps the sim itself), `requests` (UI), `rejected` (command rejections by `command:reason`) and the hooks. `overrides` is a partial spec
+  merged over the preset's (objects merge, arrays replace, `null` deletes); a key no part owns is an error.
+- A hook is `hooks/<name>.ts`, `defineHook({ afterBuild?, tick?, event? })` with `ctx.after(ticks, fn)` / `ctx.when(pred, fn)` (tick-based, so deterministic). They read
+  the sim and send commands. They are not `?hook` (the `__cc` debug API). The app loop calls `built.afterTick()` / `built.onEvents()`; tests and the profiler use `play(built, ticks)`
+  or the same calls. Hooks: `inspect.fight`, `inspect.select`, `boarding`, `log`, `busy.arrive`, `medpod.deliver`, `stasis.unpowered`.
+- Test helpers live in `test/support/scenario.ts`.
+  - **Cached checkpoint.** `cachedScenario('inspect', { seed: 3, params: { stage: 'search' } }).sim` gives each test its own copy of
+    the world with inspectors already aboard and searching. Use this when the starting state is fully captured by a save. The
+    cache builds once per test file, keyed by the preset name and canonical JSON of the seed, params, overrides and extra hooks.
+  - **Fresh scripted run.** Use `scenario('log', { seed: 3 })` and advance it with `play(built, ticks)` when the test depends on
+    hook setup or scheduled callbacks. A cached clone restores the save and attaches fresh hooks with `afterBuild` skipped. For
+    example, the callbacks that schedule the raider and credits in `log` live in memory and are lost on restore.
+  - Turning sim systems off is not available; add it for a focused unit test when one needs it.
+- `?scenario=<name>&<flag>...&seed=&starter=&credits=&items=&speed=&ticks=&hooks=` (`url.ts`); `src/app/scenarioStart.ts` builds it on the running game before the first frame and
+  applies the UI requests. Profiler: `--scenario preset:<name>`.
+- Adding things: a file in `presets/`, `parts/` or `hooks/`. Keep `import.meta.glob(` written exactly so in `registry.ts` (no type argument): Vitest's on-disk module cache
+  skips a file only when it contains that text, and a cached registry would not see a file added later. `registry.test.ts` (fast) checks unique names, resolvable `after` and a part for
+  every spec key; `presets.slow.test.ts` builds every preset on the app start and plays 100 ticks.
 
 ## Asset pipeline
 
@@ -1615,7 +1730,7 @@ DESIGN.md "Physical encounters". Three parts kept apart: triggers (the transit d
   its crew `vehicle.embark`, the shuttle `undock`s and `return`s, `home` is set and the skiff is dismissed (`leaveAt` now, so `departScene` jumps it
   out). Refused, an honest skiff is dismissed at once (fact `declined`, rule `honestRefused`). A player shot first (`provoked` set) makes it `sprung` already. Observer facts `ambushed` (`provoked === 'ambush'`) and
   `boardersDown` (party all dead or down), rule filter `trap: true|false`. Scan rows are skill-sharpened (`app/ambushIntel.ts`: gunnery, piloting,
-  hacking). Debug: `?scenario=ambush[&trap|&honest][&signal]` (`app/ambushScenario.ts`, `debug.ambush`).
+  hacking). Debug: `?scenario=ambush[&trap|&honest][&signal]` (`content/scenario/presets/ambush.ts`, `debug.ambush`).
 
 ## Food and farming, `src/sim/farm/`
 
@@ -1685,13 +1800,16 @@ barter?}` (validated and priced, becomes a pending offer, `trade.offered`; one o
 accept adds the courier ones `noCourier noPilot courierBusy noAirlock tooBig dealOpen`. `bridge.dispatch` runs one tick for `trade.*`
 commands while paused so the window answers at once.
 
-**Delivery (who flies, decided and documented).** `planCourier` picks:
-1. Goods the **player hands over** always go on the **player's shuttle** (it flies itself, no pilot or crew needed: `Vehicle.autopilot` lifts the pilot rules for the run only; it needs an empty hold and a free working
-   airlock on the player's ship).
-2. Goods **from the trader** come on the **trader's own shuttle** if its kind has `shuttle: true` (a real `VehicleC` spawned at its ship,
-   no crew, `home: 0`, despawned when it is back); otherwise the **player's shuttle goes over** to fetch them.
-3. Stations are ships (an immobile `ShipC`, see "Stations" below). Station kinds have no shuttle, so the player's shuttle flies every
-   station run, and it **docks** (`trade/stationDock.ts`) instead of hovering: `out` -> `dockStation` (dock at a free working station
+**Delivery (who flies, decided and documented; one flow for every carrier, #548).** `planCourier` (trade/courier.ts) picks one carrier for both
+directions, by `freeShuttle` (the one answer to "which shuttle of this ship can carry now"):
+1. The **player's free shuttle** first (it flies itself, no pilot or crew needed: `Vehicle.autopilot` lifts the pilot rules for the run only; it needs an
+   empty hold and a free working airlock on the player's ship).
+2. Else the **trader's own real shuttle** (courier 'them'): a station's, stowed in its hangar or on its pad, free. Nothing is ever made up for a run. It flies
+   itself, nobody aboard, through the mirrored phases in `trade/theirRun.ts`: `dispatch` (stage the bought goods beside its bay) -> `load` (station crew,
+   suited out onto a pad) -> `out` (dock at the player's airlock) -> `stationWork` (the player's crew unload what was bought, then load what was sold, hold
+   sealed) -> `back` -> `unload` (station crew carry the player's goods in; they become trader stock) -> settle. `theirGiveUp` settles timeouts. Freighters
+   and liners have no shuttle (#551): they trade only through the player's. `sendHome` is the one rule for a station shuttle going home after any job.
+3. Stations are ships (an immobile `ShipC`, see "Stations" below). The player's shuttle **docks** at a station (`trade/stationDock.ts`) instead of hovering: `out` -> `dockStation` (dock at a free working station
    airlock; the dock order reserves it, `dockError` 'occupied' for anyone else) -> `stationWork` (the bought goods are staged from the
    trader's set-aside stock into the station storage nearest the airlock, station crew haul both ways between station storage and the
    shuttle, the player's goods pass from station storage into the trader's stock) -> undock -> `back`. No free station airlock, a
@@ -1843,8 +1961,10 @@ shipgen's `structureParts`):
 
 ## Starmap (galaxy), `src/sim/galaxy/`
 
-Sim only so far (branch `galaxy`): no UI, no snapshot, no tools. The starmap view, its zoom levels and the dev tools live on the
-unmerged `starmap-macro-wip` (PR #16) and are described under "Zoom levels" as the target.
+Galaxy generation, routes, travel and encounters live in `src/sim/galaxy/`. The app builds the UI snapshot in
+`src/app/starmapSnapshot.ts` and publishes it through the bridge. `src/ui/StarmapView.svelte` owns map interaction
+and panels, while `src/render/starmap/` draws the zoom levels in Pixi. The starmap issues commands through the app
+to change sim state.
 
 **Terms (user decisions).**
 - **Node:** one playable location (one sector grid; older text says "sector" for it).
@@ -2060,21 +2180,22 @@ more loops: `ROUTE_EXTRA`, `LOOP_CHANCE`; cluster size and spacing: `CLUSTER_SPA
 `GATE_*`, `NO_GATE`; faster danger ramp: `DANGER_STEP`; bigger faction blobs: `TERRITORY_CELL`, `TERRITORY_SCALE`; jump prices: `*_UNITS_PER_FUEL`,
 `ROUTE_CHARGE`; pressure while staying: `ARRIVAL_*`.
 
-## Sector grid (planned)
+## Sector grid
 
-Decision (user, 2026-10-19): **a sector is one large grid with everything placed on it.** It replaces the many-grids model
-above ("Multi-grid", one `Grid` per ship, cross-grid portals, per-grid scenes). Nothing here is built yet. This section is the
-migration plan; the user's answers are in `docs/STATUS.md` ("Sector grid decision").
+`sim.sector.grid` is the sparse, chunked `SectorGrid` for the playable node. A ship or station's `ShipC` holds its
+bounds. The tile store's `ship` field identifies the owner of each tile, and `shipGrid(sim, shipId)` gives
+field systems a bounded view for region work. Reads and writes on that view use sector coordinates directly.
 
-### Target model in one paragraph
+Templates and generated layouts are stamped from local coordinates into the node. Live crew, modules, jobs,
+projectiles and vehicle bodies use sector coordinates. A jump uses a `ShipPacket` from
+`src/sim/sector/packet.ts` to lift the ship and stamp it into the destination. The renderer shows the node
+through the [main and inset cameras](#camera-passes-and-layer-ownership).
 
-`sim.sector.grid` is a chunked, sparse `SectorGrid` in **sector-tile coordinates**. A ship, station, derelict or wreck is a
-**region** of it: the tiles whose `ship` layer holds its `ShipC` entity id, inside the bounding box stored on `ShipC`.
-Every entity position (crew, modules, items, jobs, vehicles, projectiles) is a sector coordinate; `gridId` disappears.
-Field systems (rooms, air, fire, heat, smoke, light, power) iterate **per region frame**, never the whole sector.
-Vehicles are free bodies with continuous position and heading that attach to an airlock or bay. One render scene draws the
-sector; the combat panel is a second camera on it. Templates and the generator keep ship-local coordinates and are
-**stamped** at a sector offset; jumping **lifts** the player's region (plus docked vehicles) and stamps it into the next sector.
+## Historical sector-grid migration
+
+> October 2026 refactor notes. The plan, work branches and performance estimates below describe the migration
+> from separate ship grids. See [Sector grid](#sector-grid) for the live model and [Profiling](PROFILING.md)
+> for measuring the current desktop build.
 
 ### 1. Inventory: what assumes many grids
 
@@ -2282,7 +2403,7 @@ Space tiles keep owner 0; the EVA ring and hover space belong to the region whos
     hull, floating, or on the EVA ring are always drawn, as are crew of any faction outside a hull.
   - Roof livery, roof parts and cutaway mode stay per region.
 
-### 6. Performance budget (phone target: mid-range Android, 60 fps render, 20 Hz sim)
+### 6. Historical mobile performance estimates
 
 | Item | Today | Sector grid | Bound |
 |---|---|---|---|
@@ -2658,7 +2779,7 @@ no floorless wall stubs. What the cap does not reach stays as truss (open scaffo
 (`yard/jobs.ts`, `YardOrder.stage`). The hull is priced by tile built, outline and floor alike (credits and metal x the tier's multiplier x 1 + `dangerStep` x node
 danger; station cap 40 tiles at 10 credits and 0.75 metal each, hub 100 at x1.4); the quote lists the planning fee on its own line and reports the size after
 against capacity. `yard.order { station }` pays the whole price into escrow (metal from storage), grows the `ShipC` rectangle, posts the truss jobs (`Job.yard`)
-and the station sends its shuttle. `yardSystem` (`yard/flow.ts`, after the trade system) runs it: `launch` (a courier-type shuttle made beside the station with
+and the station sends its shuttle. `yardSystem` (`yard/flow.ts`, after the trade system) runs it: `launch` (the station's own real shuttle, `freeShuttle`; it waits LAUNCH_WAIT_SEC while that is busy, with
 `YardDef.crew` contractors aboard, neutral allegiance, `YardCrewC`; since #287 it is an away site on the player's ship, owner 'yard', the contractors its party from
 the start: `dock` the order's airlock, `outside` (they land suited from the shuttle), `noLoot`, no demand; the site's run flies, lands them, takes the
 tired or hurt home to the station, and brings everyone home when the order closes the site), `fly` (until one has landed), `work` (they take the jobs through the normal crew AI;
@@ -2689,7 +2810,8 @@ Design: DESIGN.md "Pirate factions and the black market". Content: `content/blac
   them scans with the usual PASSING_ENCOUNTER_CHANCE (`galaxy/encounters.ts`). A scan that finds contraband carries `Encounter.scan` (`value`): the patrol hails the
   player to stop (Patrol hails, below); trade offers are refused meanwhile (`scanPending`).
 - **Inspections** (#138 step 1, `src/sim/inspect/`). The station's inspectors come aboard (design: DESIGN.md "Contraband inspections in the world").
-  - `InspectionC` sits on the inspectors' shuttle (the trade courier's type, made beside the station, its hold sealed with `Vehicle.outbound` so the player's
+  - `InspectionC` sits on the inspectors' shuttle (the station's own real one, `freeShuttle`, #548; only a ship with no shuttle at all, a patrol
+    corvette, gets a made-up stand-in, `Inspection.standIn`; its hold sealed with `Vehicle.outbound` so the player's
     airlock unloaders leave it alone). `start.ts` opens an away site on the player's ship (owner `inspect`, `noLoot`) served by it: the site's run docks at a free
     airlock or hovers, and the party goes out of the hatch in suits (EVA boarding). The inspectors (INSPECTORS of INSPECTOR_ROLE, neutral) are the party, aboard
     by an `inspect` consent grant; their only priority is `patrol`.

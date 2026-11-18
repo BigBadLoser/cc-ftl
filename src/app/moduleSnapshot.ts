@@ -66,7 +66,7 @@ const familyOf = (id: string): string => id.replace(/\.mk\d$/, '');
 
 export function buildModuleDefs(sim: Sim): UiModuleDef[] {
   const mods = sim.content.modules;
-  return Object.entries(mods).filter(([, d]) => !isGroundMount(d) && !isLandingPad(d)).map(([id, d]) => {
+  return Object.entries(mods).filter(([, d]) => d.buildable !== false && !isGroundMount(d) && !isLandingPad(d)).map(([id, d]) => {
     const family = familyOf(id);
     const tiered = !!d.blueprint || Object.keys(mods).some((o) => o !== id && familyOf(o) === id);
     return {

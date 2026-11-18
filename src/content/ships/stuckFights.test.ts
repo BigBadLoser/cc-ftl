@@ -1,9 +1,18 @@
 import { describe, expect, it } from 'vitest';
-import { BoarderC, CrewC, ModuleC, PositionC, ShipC, Struct, newGame, type ModuleDef, type Sim, type SimEvent } from '../../sim';
+import { ShipC } from '../../sim/combat/components';
+import { CrewC, PositionC } from '../../sim/crew/components';
+import type { SimEvent } from '../../sim/events';
+import { ModuleC } from '../../sim/modules/components';
+import { newGame } from '../../sim/newGame';
+import type { ModuleDef } from '../../sim/registry';
+import type { Sim } from '../../sim/sim';
+import { Struct } from '../../sim/structure';
+import { BoarderC } from '../../sim/vehicles/components';
 import { SurrenderedC } from '../../sim/fight/components';
 import { shipGrid, shipIdOf, shipIds } from '../../sim/regions';
 import { HOPELESS_HULL, WRECK_BELOW } from '../../sim/tuning';
 import { content } from '../index';
+import { run } from '../../../test/support/sim';
 
 /**
  * Stuck fights (issue #225), part 2: a hostile ship whose fight is hopeless (hull failing, weapons dead, crew cut off or outnumbered)
@@ -27,15 +36,6 @@ function crippled(opts: { weaponsAlive?: boolean } = {}): { sim: Sim; them: numb
 
 const enemyCrew = (sim: Sim, ship: number): number[] =>
   sim.world.query(CrewC, PositionC).filter((id) => shipIdOf(sim, sim.world.get(id, PositionC)) === ship);
-
-function run(sim: Sim, ticks: number): SimEvent[] {
-  const out: SimEvent[] = [];
-  for (let i = 0; i < ticks; i++) {
-    sim.step();
-    out.push(...sim.events.drain());
-  }
-  return out;
-}
 
 describe('hopeless enemies surrender (issue #225)', () => {
   it('the crippled set-up stays above the wreck line (with its guns alive, nothing gives it up)', () => {

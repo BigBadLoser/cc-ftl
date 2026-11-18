@@ -100,3 +100,102 @@ export function vehicleBayLayers(m: Module, def: ModuleDef, s: BayStep): ModuleL
   if (s.shuttle !== null) out.push({ chain: [parkedId(m.rot, s.shuttle, craft), parkedId(m.rot, '', craft)], key: `${craft}.parked`, tiles: 'all', strips: true, dz: PARKED_DZ });
   return out;
 }
+
+/** Smoothstep 0..1. */
+export const ease = (k: number): number => {
+  const c = Math.max(0, Math.min(1, k));
+  return c * c * (3 - 2 * c);
+};
+
+/**
+ * The one answer to "who draws a vehicle that is leaving or entering its bay": the bay's parked layer (`drawn` false) or the sector
+ * layer (`drawn` true). A launch hands over at LAUNCH_LIFT.start, as the doors stand open; a landing is the sector layer's until the
+ * claws close on the parked craft (RETURN_LAND.end). `lift` is the craft's height while it rises out of the pit or settles into it
+ * (0 pit floor .. 1 cruise), null once it is in plain flight or parked. `sinceLaunch` / `sinceLand` are ms since the state change
+ * (Infinity if none).
+ */
+export function bayHandoff(stowed: boolean, sinceLaunch: number, sinceLand: number): { drawn: boolean; lift: number | null } {
+  if (stowed) {
+    if (sinceLand >= RETURN_LAND.end * BAY_FRAME_MS) return { drawn: false, lift: null };
+    return { drawn: true, lift: 1 - ease((sinceLand - RETURN_LAND.start * BAY_FRAME_MS) / ((RETURN_LAND.end - RETURN_LAND.start - 2) * BAY_FRAME_MS)) };
+  }
+  if (sinceLaunch < LAUNCH_LIFT.start * BAY_FRAME_MS) return { drawn: false, lift: null };
+  if (sinceLaunch >= LAUNCH_LIFT.end * BAY_FRAME_MS) return { drawn: true, lift: null };
+  return { drawn: true, lift: ease((sinceLaunch - LAUNCH_LIFT.start * BAY_FRAME_MS) / ((LAUNCH_LIFT.end - LAUNCH_LIFT.start) * BAY_FRAME_MS)) };
+}
+
+/** A craft that has left its bay catches up with the sim over this long (ms) once the doors have let it go. */
+export const CATCH_MS = 1500;
+
+/** One craft's place in the bay handoff this frame (see `createBayTrack`). */
+export interface BayPose {
+  /** The sector layer draws it (false: the bay's parked layer does). */
+  drawn: boolean;
+  /** Height while it rises out of the pit or settles into it (0 pit floor .. 1 cruise), null in plain flight or parked. */
+  lift: number | null;
+  /** Launched less than the lift plus CATCH_MS ago: its drawn position follows `delayed`. */
+  launching: boolean;
+  /** Stowed and still settling in (the bay takes over when the claws close). */
+  landing: boolean;
+  sinceLaunch: number;
+  sinceLand: number;
+}
+
+interface Sample { t: number; x: number; y: number }
+export interface BayTrack {
+  /** Call every frame with the craft's sim state: a change out of or into 'stowed' stamps the launch or landing time. */
+  update(state: string, now: number): void;
+  /** A launch that did not come from a bay (a landing pad's take-off): restart the launch clock and the position trail at `now`. */
+  restart(now: number): void;
+  /** Forget the recorded positions (an undock starts a fresh trail). */
+  clearTrail(): void;
+  /** Where the craft is drawn: its sim position replayed `lag` ms late, the delay easing out to nothing over CATCH_MS from `since` ms in (held over the pit, then catching up). */
+  delayed(now: number, x: number, y: number, lag: number, since: number): { x: number; y: number };
+  /** Who draws it and how high; `padded`: it sits on a landing pad, so no doors to wait for. */
+  pose(state: string, now: number, padded?: boolean): BayPose;
+}
+
+/** One craft's launch / landing clock and position trail: the one owner of the bay handoff, shared by the shuttle and pod views. */
+export function createBayTrack(state: string): BayTrack {
+  let last = state;
+  let launched = -Infinity;
+  let landed = -Infinity;
+  let trail: Sample[] = [];
+  return {
+    update(s, now) {
+      if (s === last) return;
+      if (last === 'stowed') {
+        launched = now;
+        trail = [];
+      } else if (s === 'stowed') landed = now;
+      last = s;
+    },
+    restart(now) {
+      launched = now;
+      trail = [];
+    },
+    clearTrail() {
+      trail = [];
+    },
+    delayed(now, x, y, lag, since) {
+      trail.push({ t: now, x, y });
+      const at = now - lag * (1 - ease((since - lag) / CATCH_MS));
+      while (trail.length > 2 && (trail[1] as Sample).t <= at) trail.shift();
+      const a = trail[0] as Sample;
+      const n = trail[1] ?? a;
+      const f = n.t > a.t ? Math.max(0, Math.min(1, (at - a.t) / (n.t - a.t))) : 0;
+      return { x: a.x + (n.x - a.x) * f, y: a.y + (n.y - a.y) * f };
+    },
+    pose(s, now, padded = false) {
+      const sinceLaunch = now - launched;
+      const sinceLand = now - landed;
+      const stowed = s === 'stowed';
+      const h = padded && !stowed ? { drawn: true, lift: null } : bayHandoff(stowed, sinceLaunch, sinceLand);
+      return {
+        ...h, sinceLaunch, sinceLand,
+        launching: !stowed && sinceLaunch < LAUNCH_LIFT.end * BAY_FRAME_MS + CATCH_MS,
+        landing: stowed && sinceLand < RETURN_LAND.end * BAY_FRAME_MS,
+      };
+    },
+  };
+}

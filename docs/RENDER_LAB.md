@@ -7,6 +7,8 @@ only when the thing to judge is how it sits in a real scene. Code: `tools/lab/` 
 
 ## Use it
 
+For screenshot commands, install Chromium using the [browser tools setup](../README.md#browser-tools).
+
 | Goal | How |
 | --- | --- |
 | Look at it in a browser | `npm run dev`, open `/tools/lab/` (the index lists the panels and their options) |

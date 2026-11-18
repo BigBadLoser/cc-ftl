@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { JobC, homeShip, newGame, shipGrid } from '../sim';
+import { homeShip } from '../sim/combat/ships';
+import { JobC } from '../sim/crew/components';
+import { newGame } from '../sim/newGame';
+import { shipGrid } from '../sim/regions';
 import { content } from '../content';
 import type { Renderer } from '../render/scene';
 import { createStore } from './store';

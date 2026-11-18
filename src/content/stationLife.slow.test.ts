@@ -1,8 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { CrewC, NeedsC, ShipC, crewSize, newGame, type SimEvent } from '../sim';
+import { ShipC } from '../sim/combat/components';
+import { CrewC, NeedsC } from '../sim/crew/components';
+import type { SimEvent } from '../sim/events';
+import { newGame } from '../sim/newGame';
+import { crewSize } from '../sim/shipgen/stationCrew';
 import { StationAlarmC, StationCrewC } from '../sim/stations/components';
 import { content } from './index';
-import { intruderRuns } from './stationLifeFixture';
+import { intruderRuns } from '../../test/support/fixtures/stationLife';
 
 describe('station life over a long stretch', () => {
   it('a hub runs its schedules for two and a half minutes of game time (guard; stationLife.soak.test.ts runs seven and a half): work, sleep, no alarms, no errors', () => {

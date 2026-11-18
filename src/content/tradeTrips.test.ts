@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { ShipC, TraderC, newGame, unitPrice, type ItemQty, type Sim } from '../sim';
+import { ShipC } from '../sim/combat/components';
+import { newGame } from '../sim/newGame';
+import type { ItemQty } from '../sim/registry';
+import type { Sim } from '../sim/sim';
+import { unitPrice } from '../sim/trade/pricing';
+import { TraderC } from '../sim/trade/types';
 import { MAX_TRIPS, peakFunding, planTrips } from '../sim/trade/trips';
 import type { Trip } from '../sim/trade/types';
 import { content } from './index';

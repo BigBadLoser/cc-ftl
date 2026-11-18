@@ -4,8 +4,8 @@ import { LAWLESS_DANGER, LESSER_SHARE } from '../blackmarket/tuning';
 import { generateAsteroid } from '../asteroids/gen';
 import { placedParts, stampAsteroid } from '../asteroids/place';
 import { spawnDerelict } from '../combat/derelict';
-import { outpostContent } from '../outposts/handlers';
-import { generateOutpost, type OutpostKind, type OutpostStyle } from '../outposts/gen';
+import type { OutpostKind, OutpostStyle } from '../outposts/gen';
+import { builtOutpost } from '../stations/buildMemo';
 import { stampOutpost } from '../outposts/stamp';
 import { asteroidParts, asteroidGapError, regions, type Place } from '../regions';
 import type { StationSize } from '../shipgen/stationTypes';
@@ -24,7 +24,7 @@ import type { NodeData } from './types';
 /**
  * The real things a node's structures become (node population, see populate.ts). Each spawner makes one structure at a place the layout gives and returns
  * whether it was made; everything about it is a function of the seed it is given. Ships and asteroids are made by the same generators the debug spawners use
- * (`spawnStation`, `generateAsteroid` + `stampAsteroid`, `generateOutpost` + `stampOutpost`, `spawnDerelict`).
+ * (`spawnStation`, `generateAsteroid` + `stampAsteroid`, `builtOutpost` + `stampOutpost`, `spawnDerelict`).
  */
 
 const SIZES: readonly StationSize[] = ['outpost', 'station', 'hub'];
@@ -79,7 +79,7 @@ export function populateStation(sim: Sim, port: Port | undefined, kind: string, 
 
 /** An outpost on a big asteroid ('surface': mining; 'dug': a pirate base hidden in the rock), bound to its port's market. */
 export function populateOutpost(sim: Sim, port: Port | undefined, style: OutpostStyle, kind: OutpostKind, seed: number, at: Place): boolean {
-  const o = generateOutpost(style, seed, outpostContent(sim), kind);
+  const o = builtOutpost(sim, style, seed, kind);
   if (!o) return false;
   const { x, y } = typeof at === 'function' ? at(o.asteroid.w, o.asteroid.h) : at;
   if (asteroidGapError(sim, placedParts(o.asteroid, x, y))) return false;

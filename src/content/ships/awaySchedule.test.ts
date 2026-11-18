@@ -1,6 +1,7 @@
 /** Away sites and crew schedules (#412, docs/DESIGN.md "Schedules", user decisions 2026-11-10): who goes, and who comes home when. */
 import { describe, expect, it } from 'vitest';
-import { AssignmentC, JobC, NeedsC, type Job, type Sim } from '../../sim';
+import { AssignmentC, type Job, JobC, NeedsC } from '../../sim/crew/components';
+import type { Sim } from '../../sim/sim';
 import { AwayC, SiteRunC } from '../../sim/away/components';
 import { passageFits } from '../../sim/away/crew';
 import { passagesOf } from '../../sim/away/passage';
@@ -8,8 +9,8 @@ import { hourAt } from '../../sim/clock';
 import { blockNow, secToSleep } from '../../sim/crew/schedule';
 import { TICK_HZ } from '../../sim/time';
 import { AWAY_GO_STAY_SEC } from '../../sim/tuning';
-import { crewOn, landed, play } from './awayFixture';
-import { boarding } from './salvage404Fixture';
+import { crewOn, landed, play } from '../../../test/support/fixtures/away';
+import { boarding } from '../../../test/support/fixtures/salvage404';
 
 const block = (sim: Sim, id: number, from: number, to: number, b: 'any' | 'work' | 'sleep' | 'free'): void => {
   sim.enqueue({ type: 'crew.schedule.set', id, from: ((from % 24) + 24) % 24, to: ((to % 24) + 24) % 24, block: b });

@@ -8,13 +8,36 @@ combat, crew species and encounters.
 
 Design: [docs/DESIGN.md](docs/DESIGN.md) · Architecture and milestones: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 
+## Development
+
+Use Node.js 22.17 or later in the 22.x series. Run the commands in a Bash environment. On Windows, use WSL
+with Node installed inside it.
+
 ```sh
-npm install
-npm run dev     # local dev server
-npm run check   # lint, typecheck, tests
+npm ci
+npm run dev
 ```
 
-Wiki development and generated gameplay references: [wiki/README.md](wiki/README.md).
+Run `npm run check:fast` before committing. Use `npm run check` for lint, type checking, and the full suite
+including slow tests. Soak tests have their own command.
+
+See [Writing a test](docs/ARCHITECTURE.md#writing-a-test) for fixture guidance,
+[Test tiers](docs/ARCHITECTURE.md#test-tiers) for commands, and the
+[Scenario builder](docs/ARCHITECTURE.md#scenario-builder) for scripted and cached examples.
+
+See the [wiki README](wiki/README.md#development) to build the gameplay wiki locally.
+
+### Browser tools
+
+After installing the root dependencies, install Playwright's Chromium for render lab screenshots
+(`npm run lab`) and browser profiles (`npm run profile`).
+
+```sh
+npx playwright-core install chromium
+```
+
+If Chromium reports missing system libraries on Linux or WSL, run `npx playwright-core install --with-deps chromium`.
+The headless sim profiler (`npm run profile:sim`) runs in Node.
 
 ## Playtesting with AI agents (`?agent`)
 

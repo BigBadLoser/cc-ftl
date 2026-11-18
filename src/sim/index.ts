@@ -12,7 +12,7 @@ export type { DroneDef, DroneJobDef, DroneBayDef } from './drones/types';
 export { gridFromTemplate, spawnTemplateModules, placeTemplateModules } from './ship';
 export { ModuleC, DeployC, type Module, type Deploy } from './modules/components';
 export { isDeployed } from './modules/deploy';
-export { isKnown as isBlueprintKnown, blueprintVenue } from './modules/blueprints';
+export { isKnown as isBlueprintKnown, isBuildable, blueprintVenue } from './modules/blueprints';
 export { ResearchC, type Research } from './research/components';
 export { labsOf, projectOf, stockOn, queueBlocker, isDone as isResearchDone } from './research/research';
 export { portBlueprints, gatedBlueprints, OFF_SPECIALITY_STOCK, type BlueprintOffer } from './galaxy/blueprintShop';
@@ -123,7 +123,7 @@ export { isContraband, contrabandItems, setsOf, serviceItems, contrabandRate, CO
 export { truceHolds, banned as truceBanned, setTruce, breachTruce, pirateKeys } from './blackmarket/truce';
 export { contrabandAboard, contrabandValue, scanPending, scanPrices, enforces } from './blackmarket/scan';
 export { checkOffer, cleanLines, unitsOf, type OfferCheck } from './trade/offers';
-export { planCourier, courierDef, type CourierPlan } from './trade/courier';
+export { planCourier, type CourierPlan } from './trade/courier';
 export { playerShip, playerShipId, playerShipPackedOk, playerItems } from './trade/player';
 export { liveDealWith, isLive } from './trade/deals';
 export { commitments, type Commitments } from './trade/commit';

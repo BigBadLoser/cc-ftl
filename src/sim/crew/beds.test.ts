@@ -7,6 +7,7 @@ import type { ContentRegistry, ModuleDef } from '../registry';
 import { deserialize, serialize } from '../save';
 import { spawnTemplateModules } from '../ship';
 import { Sim } from '../sim';
+import { SuitC } from '../eva/components';
 import { CREW_MAX_HP } from '../tuning';
 import { findFreeBed } from './beds';
 import {
@@ -14,6 +15,7 @@ import {
 } from './components';
 import { killCrew } from './death';
 import { findPath } from './pathfind';
+import { step as run } from '../../../test/support/sim';
 
 const mod = (o: Partial<ModuleDef>): ModuleDef => ({
   name: 'm', asset: 'm', footprint: [1, 1], solid: false, power: 0, flammability: 0.1, maxHp: 100, buildWork: 40, ...o,
@@ -56,7 +58,6 @@ function crew(sim: Sim, x: number, y: number, rest = 100, species = 'species.hum
   sim.world.add(id, HealthC, { hp: CREW_MAX_HP, max: CREW_MAX_HP });
   return id;
 }
-const run = (sim: Sim, n: number): void => { for (let i = 0; i < n; i++) sim.step(); };
 const beds = (sim: Sim): number[] => sim.world.query(ModuleC).filter((i) => sim.content.modules[sim.world.get(i, ModuleC)!.def]?.bed);
 const ownerOf = (sim: Sim, id: number): number | undefined => sim.world.get(id, BedOwnerC)?.bed;
 const bedAt = (sim: Sim, x: number, y: number): number => beds(sim).find((b) => sim.world.get(b, ModuleC)!.x === x && sim.world.get(b, ModuleC)!.y === y) as number;
@@ -223,12 +224,26 @@ describe('findFreeBed early stop', () => {
             const p = findPath(sim, 1, { x: from[0], y: from[1] }, { x: m.x, y: m.y, adjacent });
             if (p && (!best || p.length < best.steps)) best = { bed: b, steps: p.length };
           }
-          const got = findFreeBed(sim, 1, { x: from[0], y: from[1] }, adjacent);
+          const got = findFreeBed(sim, 1, crew(sim, from[0], from[1]), { x: from[0], y: from[1] }, adjacent);
           expect(got ? { bed: got.bed, steps: got.steps.length } : null).toEqual(best);
           compared++;
         }
       }
     }
     expect(compared).toBeGreaterThan(200);
+  });
+});
+
+describe('bed search follows the walker\'s walk mode (#534)', () => {
+  it('does not pick a bed whose only route crosses thin air for unsuited crew', () => {
+    const sim = make(ROOM, [[8, 2]]);
+    const g = sim.sector.grid;
+    for (let y = 0; y < 5; y++) for (let x = 0; x < 10; x++) g.set('o2', x, y, x === 5 ? 0 : 21); // a vacuum band splits the room
+    const c = crew(sim, 1, 2);
+    const from = { x: 1, y: 2 };
+    expect(findPath(sim, 1, from, { x: 8, y: 2 })).not.toBeNull(); // a plain path crosses the band
+    expect(findFreeBed(sim, 1, c, from)).toBeNull();
+    sim.world.add(c, SuitC, { worn: true });
+    expect(findFreeBed(sim, 1, c, from)).not.toBeNull();
   });
 });

@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { AllegianceC, CrewC, PositionC, newGame, type Sim } from '../sim';
+import { CrewC, PositionC } from '../sim/crew/components';
+import { AllegianceC } from '../sim/fight/components';
+import { newGame } from '../sim/newGame';
+import type { Sim } from '../sim/sim';
 import { grant } from '../sim/consent/guests';
 import { canDraft, fightsBareHanded, isLodger, onStationRoll, roleOf } from '../sim/consent/roles';
 import { ForHireC, StationCrewC } from '../sim/stations/components';

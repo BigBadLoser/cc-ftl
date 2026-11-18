@@ -12,6 +12,7 @@ import { ART_SCALE as S, TILE_H, TILE_W, iso } from './iso';
 import { sectorArt } from './sectorPos';
 import type { Atlas } from './assets/loader';
 import { applyDroneArt, createDroneArtSprites, droneArtIds, type DroneArtSprites } from './droneArt';
+import { BAY_PLATE_DEPTH, DRONE_AIR_DEPTH, DRONE_DECK_DEPTH } from './droneBayArt';
 
 /**
  * PLACEHOLDER drones and drone-bay pads, drawn in code until their pipeline art exists (CLAUDE.md: placeholders while art is pending).
@@ -187,7 +188,7 @@ export function createDroneView(world: World, host: DroneHost): DroneView {
           g.ellipse(p.x, p.y - h, 15 * S, 7.5 * S).stroke({ color: 0xffc040, width: 1 * S, alpha: 0.7 });
         });
         const front = tiles.reduce((a, t) => (t.x + t.y > a.x + a.y ? t : a));
-        g.zIndex = front.x + front.y + 0.3;
+        g.zIndex = front.x + front.y + BAY_PLATE_DEPTH;
       }
       for (const [id, g] of [...pads]) {
         if (bays.has(id)) continue;
@@ -208,7 +209,7 @@ export function createDroneView(world: World, host: DroneHost): DroneView {
         if (!m || !def) continue;
         const tiles = footprintTiles(def, m.x, m.y, m.rot);
         if (!tiles.some((t) => wanted.has(`${t.x},${t.y}`))) continue;
-        const front = tiles.reduce((a, t) => Math.max(a, t.x + t.y), -Infinity) + (def.droneBay ? 0.3 : 0);
+        const front = tiles.reduce((a, t) => Math.max(a, t.x + t.y), -Infinity) + (def.droneBay ? BAY_PLATE_DEPTH : 0);
         for (const t of tiles) under.set(`${t.x},${t.y}`, Math.max(under.get(`${t.x},${t.y}`) ?? -Infinity, front));
       }
       const seen = new Set<number>();
@@ -257,7 +258,7 @@ export function createDroneView(world: World, host: DroneHost): DroneView {
         const parent = host.air && isAirborne(b) ? host.air : host.layer;
         if (t.root.parent !== parent) parent.addChild(t.root);
         // Sector depth (x + y in tiles): over the module it hovers above (its front tile's depth), else over its own tile.
-        t.root.zIndex = parent === host.air ? b.x + b.y : Math.max(b.x - 0.5 + b.y - 0.5, under.get(`${Math.floor(b.x)},${Math.floor(b.y)}`) ?? -Infinity) + (b.alt > 0.05 ? 0.9 : 0.4);
+        t.root.zIndex = parent === host.air ? b.x + b.y : Math.max(b.x - 0.5 + b.y - 0.5, under.get(`${Math.floor(b.x)},${Math.floor(b.y)}`) ?? -Infinity) + (b.alt > 0.05 ? DRONE_AIR_DEPTH : DRONE_DECK_DEPTH);
       }
       for (const id of [...tracks.keys()]) if (!seen.has(id)) drop(id);
     },

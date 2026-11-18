@@ -26,8 +26,10 @@ const ISOLATED = [
   'src/app/stockHints.test.ts', // these two set `danger` on generated nodes, which are cached per seed
   'src/content/standing.test.ts',
   'src/content/derelictFailure.test.ts',
+  'src/content/researchReach.test.ts', // ~1.4 GB of heap by itself (20 galaxies revealed to radius 14): in a shared worker it ran out of heap on whatever the earlier files left
   'src/content/jobs.test.ts',
   'src/content/ships/envSkip.test.ts',
+  'src/content/ships/envSkip.slow.test.ts',
   'src/render/moduleMemo.test.ts', // switches the module-level memo off and back
   'tools/layout/lab.test.ts', // stubs `window` for the lab's state
   'src/render/animClock.test.ts',
@@ -39,6 +41,7 @@ const ISOLATED = [
   'src/render/regionTiles.test.ts',
   'src/sim/sector/translate.test.ts', // reads the global component registry that ecs.test.ts adds to
   'src/sim/systems/envSolvers.test.ts',
+  'src/content/stationBuildMemo.test.ts', // mocks buildStation to count and stub the builds
 ];
 
 /**
@@ -46,6 +49,10 @@ const ISOLATED = [
  * does not reach per-project settings, so the tier is chosen here.
  */
 const env = (globalThis as unknown as { process: { env: Record<string, string | undefined> } }).process.env; // no @types/node here
+// TICK_STATS=1 adds test/support/tickStats.ts: ticks and step time per test file (node tools/tickStats.mjs reports them).
+// Not in the isolated project: it imports the sim before a file's vi.mock could replace a module the sim loads.
+const SETUP = ['src/sim/testSetup.ts', 'test/support/setup.ts'];
+const SHARED_SETUP = [...SETUP, ...(env.TICK_STATS === '1' ? ['test/support/tickStats.ts'] : [])];
 const SLOW = env.VITEST_FAST === '1' ? ['**/*.slow.test.ts'] : [];
 /** The soak tier (`*.soak.test.ts`: design-number runs over game hours or many seeds) runs only with `VITEST_SOAK=1` (`npm run test:soak`). */
 const SOAK =
@@ -65,8 +72,8 @@ export default defineConfig({
     maxWorkers: 4, // the whole box: the default leaves a core idle
     sequence: { sequencer: WeightedSequencer },
     projects: [
-      { extends: true, test: { name: 'shared', setupFiles: ['src/sim/testSetup.ts'], include: ['src/**/*.test.ts', 'tools/**/*.test.ts'], exclude: [...ISOLATED, ...SLOW, ...SOAK], isolate: false } },
-      { extends: true, test: { name: 'isolated', setupFiles: ['src/sim/testSetup.ts'], include: ISOLATED, exclude: [...SLOW, ...SOAK], isolate: true } },
+      { extends: true, test: { name: 'shared', setupFiles: SHARED_SETUP, include: ['src/**/*.test.ts', 'tools/**/*.test.ts', 'test/**/*.test.ts'], exclude: [...ISOLATED, ...SLOW, ...SOAK], isolate: false } },
+      { extends: true, test: { name: 'isolated', setupFiles: SETUP, include: ISOLATED, exclude: [...SLOW, ...SOAK], isolate: true } },
     ],
   },
 });

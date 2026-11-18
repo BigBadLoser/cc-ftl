@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { content } from '../../content';
-import { AllegianceC, CrewC, RolledSkillsC, TraitsC, newGame, startingRoles, type TraitDef } from '../../sim';
+import { CrewC } from '../../sim/crew/components';
+import type { TraitDef } from '../../sim/crew/traitDef';
+import { RolledSkillsC, TraitsC } from '../../sim/crew/traits';
+import { AllegianceC } from '../../sim/fight/components';
+import { newGame, startingRoles } from '../../sim/newGame';
 import { planOf } from '../saves';
 import { previewCrew } from './crewRoll';
 

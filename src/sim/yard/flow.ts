@@ -22,6 +22,8 @@ const REPEAT = 20;
  * without a finished tile before the work is called stalled.
  */
 const FLY_SEC = 120;
+/** Seconds an order waits for the station's shuttle to come back from another job before it is called off ('noShuttle'). */
+const LAUNCH_WAIT_SEC = 120;
 const HOME_SEC = 300;
 const STALL_SEC = 600;
 const SEAL_SEC = 60;
@@ -109,11 +111,15 @@ function step(sim: Sim, o: YardOrder): void {
   if (!station || station.state !== 'active' || sim.sector.state !== 'active') return endNow(sim, o, 'left');
   const v = sim.world.get(o.vehicle, VehicleC);
   switch (o.phase) {
-    case 'launch':
-      if (!launchShuttle(sim, o)) return endNow(sim, o, 'noShuttle');
+    case 'launch': {
+      // The station's shuttle may be out on another job (a trade run): the order waits for it a while.
+      const sent = launchShuttle(sim, o);
+      if (sent === 'busy' && o.timer < LAUNCH_WAIT_SEC * TICK_HZ) return;
+      if (sent !== 'ok') return endNow(sim, o, 'noShuttle');
       o.phase = 'fly';
       o.timer = 0;
       return;
+    }
     case 'fly': {
       // The site's run flies the crew over and lands them (docked at the order's airlock, or any other, or out of the hatch).
       if (!v || !yardRun(sim, o)) return endNow(sim, o, 'lost');

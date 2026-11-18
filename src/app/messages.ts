@@ -7,6 +7,7 @@ const REASONS: Record<string, string> = {
   fleetGone: 'They are gone',
   noEvent: 'You are not in an event grid',
   interdicted: 'Answer the interdiction first',
+  inspectorsAboard: 'Jump called off: inspectors are aboard. Leaving with them counts as attacking them',
   inStory: 'Answer the signal first',
   unknownBlueprint: 'You need this blueprint: buy it at a station',
   notWall: 'A window goes on a wall',
@@ -139,6 +140,7 @@ const REASONS: Record<string, string> = {
   crewBusy: 'Someone in that party is already picked for another launch',
   siteOpen: 'A party is already boarding that ship',
   courierBusy: 'Your shuttle is busy: it needs an empty hold and no other job',
+  theirBusy: 'Their shuttle is busy, and you have none to send',
 };
 
 /** Plain-text version of a `command.rejected` reason code. */

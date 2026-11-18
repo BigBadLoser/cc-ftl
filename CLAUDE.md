@@ -1,11 +1,11 @@
 # cc-ftl
 
-Persistent isometric ship-colony game in the browser (Space Haven + FTL depth). Read `docs/HANDOFF.md` and `docs/STATUS.md`
-(current state, branches, decisions) first. `docs/CATALOG.md` lists everything in the game and how far each piece is wired
+Persistent isometric ship-colony game in the browser (Space Haven + FTL depth). Start with `docs/STATUS.md` for current work
+and decisions. `docs/CATALOG.md` lists everything in the game and how far each piece is wired
 (in game, partial, art only, debug only, planned); check it before assuming something exists, and update its line when a PR adds
 or removes content. Before non-trivial work, read the index at the top of `docs/DESIGN.md` and
-`docs/ARCHITECTURE.md`, then only the sections your task touches; don't read those files whole. Older history lives in
-`docs/STATUS_ARCHIVE.md`; open it only when you need the background of a past decision.
+`docs/ARCHITECTURE.md`, then only the sections your task touches; don't read those files whole. For background on past decisions,
+see `docs/STATUS_ARCHIVE.md` and the October handoff snapshot in `docs/HANDOFF.md`.
 
 ## Commands
 
@@ -14,8 +14,15 @@ or removes content. Before non-trivial work, read the index at the top of `docs/
 - `npm test`: Vitest
 - `npm run lint`: ESLint, including the import-boundary rules
 - `npm run typecheck`: `tsc` and `svelte-check`
-- `npm run check:fast`: lint, typecheck, and only the tests affected by uncommitted changes (Vitest's import graph),
-  skipping `*.slow.test.ts` (`VITEST_FAST=1`). Run it before every commit and before pushing a work branch.
+- `npm run check:fast`: lint, typecheck, and the near tests of uncommitted changes (untracked files included): the test
+  files within two imports of what changed, plus edited test files; with nothing uncommitted, the branch against
+  `origin/main`. Run it before every commit. A sim edit reaches most of the suite through three imports, so the rest
+  waits for the push.
+- `npm run check:push`: lint, typecheck and every fast test the branch affects (Vitest's import graph, since the merge
+  base with `origin/main`, plus uncommitted changes), slow tier skipped. Run it before pushing a work branch. `git add`
+  new files first: Vitest's graph never sees untracked ones.
+- `npm run test:why -- <file>`: how many fast test files an edit to `<file>` selects and through which import;
+  `--top` lists the files most tests reach. Use it to keep focused tests off `newGame` and the pipeline.
 - Three test tiers by file name: `*.test.ts` (fast), `*.slow.test.ts` (slow: sweeps and long runs, plus a cheap guard of each soak
   test) and `*.soak.test.ts` (soak: design-number runs over game hours or many seeds). `npm test`, `check:fast` and PR CI never run
   soak. `npm run test:soak` runs it (`VITEST_SOAK=1`; about 4.5 minutes on the 4-core dev box). CI runs it in the nightly run on `main`,
@@ -32,6 +39,10 @@ or removes content. Before non-trivial work, read the index at the top of `docs/
   one on `main` by default). `npm run test:weights` does the same from a local full run; prefer the CI one. The weights are per-file
   times that order the run and balance the CI shards
   after adding or reshaping heavy tests.
+- Shared test helpers (`run`, `nth`, `fixtureShip`, `expectReplayable`, `cachedWorld`, `cachedScenario`, `fixtures/`) live in `test/support/`;
+  use them instead of local copies. Read "Writing a test" in `docs/ARCHITECTURE.md` before adding or reshaping tests: start near the moment
+  tested, never weaken to save time (a shortened fast test keeps its original verbatim in `*.slow.test.ts`), import owning modules, not
+  the sim index.
 - Tests share one module graph (`isolate: false`) except the files listed as isolated in `vite.config.ts`. A test that
   mocks or spies, or changes shared or cached data (the component registry, generated nodes cached per seed), goes on that list.
 - `npm run lab -- --panel <id>`: screenshot a render lab panel, any visual drawn on its own as a grid of stills (dev page
@@ -54,6 +65,7 @@ or removes content. Before non-trivial work, read the index at the top of `docs/
   - `app` wires everything together.
 - Commands are the only way into the sim. Events are output only and are never used for sim logic.
 - Systems never import or call each other. Their order lives in `src/sim/pipeline.ts`.
+- No new import cycles in `src` (`tools/importCycles.test.ts`). When a change breaks one, lower the baseline in that test.
 - One answer per question. Each game question (can this crew member do this, is this tile breathable or passable, is this
   ship roofed, does this stock exist, may this job run) has one owning function. Systems, render and UI call it and never
   re-derive it with their own checks. When a caller needs a slightly different answer, extend the owner with a parameter;
@@ -84,6 +96,7 @@ or removes content. Before non-trivial work, read the index at the top of `docs/
      review runs). Fix whatever it finds; after a later merge of `main`, CI runs again on the push. CI and Codex review
      it, and only the user merges it to `main`. Nothing reaches `main` any other way.
   Docs-only changes (`*.md`, no code) skip the PR and go straight to `main`.
+- Small bug fixes found together go in one PR on one `fix/…` branch, not a PR each.
 - `CHANGELOG.md` holds player-facing patch notes; refactors, tests and tooling stay out. When a PR with a player-visible
   effect merges, add a line under "Unreleased" (New / Changed / Fixed) with its PR link. A Pages deploy is a release
   named by its date: before the user runs the deploy, rename "Unreleased" to that date and start a new empty one. A
@@ -98,7 +111,7 @@ or removes content. Before non-trivial work, read the index at the top of `docs/
   (`Refs #N`). When work lands or stalls without a PR, comment on the issue.
 - Attribution: only GitHub comments (PR, review and issue comments) end with the "Generated by Claude Code" line. PR
   bodies, issue bodies and commit messages carry no attribution line, footer or trailer, and nothing anywhere names a model.
-- Use Sonnet or Haiku subagents for well-scoped tasks, and keep token use low.
+- Use Sonnet or Haiku subagents for well-scoped tasks that are worth a handoff, and keep token use low.
 - Verify visual changes with a headless screenshot before handing them to the user. Shoot the subject on its own in the
   render lab first (`npm run lab`, seconds per shot), and the game only to judge it in a real scene. In the game, shoot at a 1920×950 viewport (2x
   scale): the user plays on a 1080p monitor in a browser window that isn't fullscreen. Switch lessons off for screenshots
@@ -118,7 +131,10 @@ or removes content. Before non-trivial work, read the index at the top of `docs/
 
 - Agents:
   - The main session is the orchestrator. It talks with the user, plans, briefs agents, reviews their results and
-    drives the PRs, and does small things itself when that is quicker than a handoff.
+    drives the PRs. It may also do any piece of work itself when it judges that better than a handoff: small things
+    that are quicker than a brief, and work where its own judgement and context matter most (designs other work
+    builds on, decisions the user's requirements hinge on, tricky reviews or fixes). Delegate what is well scoped and
+    can be checked from a report.
   - Subagents default to Sonnet, which handles most well-scoped work.
   - Keep one Opus agent (the `opus-fixer` type in `.claude/agents`, 1-hour cache) open for bug fixes and work that
     really needs Opus, and reuse it by message rather than starting new ones, so its cache isn't rebuilt every time. Use

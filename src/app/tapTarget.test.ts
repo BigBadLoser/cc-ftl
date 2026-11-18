@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { newGame, homeShip } from '../sim';
+import { homeShip } from '../sim/combat/ships';
+import { newGame } from '../sim/newGame';
 import { content } from '../content';
 import { foreignShipTarget } from './tapTarget';
 import { buildTrade } from './tradeSnapshot';

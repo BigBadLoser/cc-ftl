@@ -3,6 +3,7 @@ import { batchAdditive } from './batch';
 import { animNow } from './animClock';
 import type { World } from '../sim/ecs';
 import { JobC } from '../sim/crew/components';
+import { ModuleC } from '../sim/modules/components';
 import type { Grid } from '../sim/grid';
 import { footprintTiles, hullRow, openTilesOf, rotatedSize } from '../sim/modules/footprint';
 import type { Module } from '../sim/modules/components';
@@ -26,6 +27,8 @@ const HOLO_AMBER = [0.5, 0.9, 0.3, 0, 0.45, 0.35, 0.6, 0.2, 0, 0.25, 0.1, 0.15, 
 const IDENTITY = [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0];
 const blend = (a: number[], b: number[], t: number): never => a.map((v, i) => v * (1 - t) + (b[i] as number) * t) as never;
 const EDGE = 0x66f0ff;
+/** A queued module deconstruction: the footprint's floor marked in the struct deconstruct's red (jobView DECON), pulsing, brighter as the work goes. */
+const DECON = 0xff3b3b;
 const BLOCKED = 0xffb020;
 /** Art px of the bright line riding the fill edge. */
 const EDGE_ROWS = 2;
@@ -82,6 +85,8 @@ function crop(tex: Texture, start: number, rows: number): Texture {
 /** Module construction sites (blueprint jobs) drawn as ghosts of the module's real art. */
 export function createSiteView(world: World, atlas: Atlas, L: Layers, defs: ModuleDefs, host: SiteViewHost): SiteView {
   const sites = new Map<number, Entry>();
+  /** Deconstruct marks by job id: one red outline per footprint tile of the module being taken down. */
+  const decons = new Map<number, { sig: string; marks: Sprite[] }>();
   const outline = diamondTextures().outline;
   let blocked: ReadonlySet<number> = new Set();
   let selected: number | null = null;
@@ -222,6 +227,49 @@ export function createSiteView(world: World, atlas: Atlas, L: Layers, defs: Modu
       drop(e);
       sites.delete(id);
     }
+    updateDecons(t, now);
+  }
+
+  function dropDecon(id: number): void {
+    for (const s of decons.get(id)?.marks ?? []) s.destroy();
+    decons.delete(id);
+  }
+
+  /** A pending module deconstruction (`moduleDecon` job on a built module): red outlines on its footprint, so the order shows like a queued build. */
+  function updateDecons(t: { grid: Grid } | null, now: number): void {
+    const live = new Set<number>();
+    if (t) {
+      const { grid } = t;
+      for (const id of world.query(JobC)) {
+        const j = world.get(id, JobC);
+        const m = j?.kind === 'moduleDecon' ? world.get(j.target ?? 0, ModuleC) : undefined;
+        const def = m && defs[m.def];
+        if (!j || !m || !def || !grid.inBounds(m.x, m.y)) continue;
+        live.add(id);
+        const sig = `${m.def}|${m.x}|${m.y}|${m.rot}`;
+        let e = decons.get(id);
+        if (e && e.sig !== sig) {
+          dropDecon(id);
+          e = undefined;
+        }
+        if (!e) {
+          const marks = footprintTiles(def, m.x - grid.x0, m.y - grid.y0, m.rot).map((tt) => {
+            const s = new Sprite(outline);
+            s.anchor.set(0.5);
+            const p = iso(tt.x, tt.y);
+            s.position.set(p.x, p.y);
+            s.tint = DECON;
+            L.decal.addChild(s);
+            return s;
+          });
+          decons.set(id, (e = { sig, marks }));
+        }
+        const frac = j.work > 0 ? Math.min(1, j.progress / j.work) : 0;
+        const a = 0.55 + 0.45 * frac + 0.15 * Math.sin(now / 220);
+        for (const s of e.marks) s.alpha = Math.min(1, a);
+      }
+    }
+    for (const id of [...decons.keys()]) if (!live.has(id)) dropDecon(id);
   }
 
   return {
@@ -247,6 +295,7 @@ export function createSiteView(world: World, atlas: Atlas, L: Layers, defs: Modu
     dispose() {
       for (const e of sites.values()) drop(e);
       sites.clear();
+      for (const id of [...decons.keys()]) dropDecon(id);
     },
   };
 }

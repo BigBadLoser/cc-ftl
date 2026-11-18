@@ -30,7 +30,7 @@ that fly between ships and rocks. **Robots** are crew-like machines (species.rob
 | Name | id | What it does | Status | Where |
 |---|---|---|---|---|
 | Robot crew | `species.robot, role.robot_*` | Three roles (worker, security, repair); recharge in robot bays, repair with parts and metal | In game | see crew.md; sim/robots/*, systems/robots.ts |
-| Robot fabricator | `module.robotFabricator` | Builds robots while its AI core is live | In game | sim/systems/fabricators.ts; buildable; the player-owned version has no starter |
+| Robot fabricator | `module.robotFabricator` | Builds robots while its AI core is live | In game | sim/systems/fabricators.ts; not player-buildable (`buildable: false`) |
 | Robot bay | `module.robotBay` | Charging cradle | In game | sim/systems/robotBays.ts; ui/RobotBayPanel.svelte |
 | AI core and robot control | `module.aiCore` | Robots go inert when their core is destroyed, unpowered or hacked; holding it captures | In game | sim/robots/core.ts, halt.ts |
 | Logistics robot | `-` | Player-buildable hauling robot | Planned | issue #322 |

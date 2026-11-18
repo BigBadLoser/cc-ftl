@@ -1,8 +1,18 @@
 import { describe, expect, it } from 'vitest';
-import {
-  CombatC, CrewC, crewSize, FTL_CHARGE_SEC, PositionC, SECURITY_ROLE, ShipC, TraderC, VehicleC, deserialize, galaxyIndex, homeShip, isSurplus, newGame, planCourier,
-  serialize, unitPrice, type Sim,
-} from '../sim';
+import { CombatC, ShipC } from '../sim/combat/components';
+import { homeShip } from '../sim/combat/ships';
+import { CrewC, PositionC } from '../sim/crew/components';
+import { galaxyIndex } from '../sim/galaxy/state';
+import { newGame } from '../sim/newGame';
+import { expectReplayable } from '../../test/support/world';
+import { crewSize, SECURITY_ROLE } from '../sim/shipgen/stationCrew';
+import type { Sim } from '../sim/sim';
+import { planCourier } from '../sim/trade/courier';
+import { unitPrice } from '../sim/trade/pricing';
+import { isSurplus } from '../sim/trade/traders';
+import { TraderC } from '../sim/trade/types';
+import { FTL_CHARGE_SEC } from '../sim/tuning';
+import { VehicleC } from '../sim/vehicles/components';
 import { stationAirlock } from '../sim/trade/stationDock';
 import { shipIdOf } from '../sim/regions';
 import { hostileAct } from '../sim/combat/provoke';
@@ -89,9 +99,9 @@ describe('stations in the node', () => {
 
   it('trades by shuttle: the instant fallback is gone', () => {
     const { sim, station } = withStation();
-    const plan = planCourier(sim, station, [], [{ item: 'item.metal', count: 5 }]);
+    const plan = planCourier(sim, station);
     expect(plan).toMatchObject({ courier: 'you' });
-    expect(planCourier(sim, 99999, [], [{ item: 'item.metal', count: 5 }])).toEqual({ error: 'noTrader' });
+    expect(planCourier(sim, 99999)).toEqual({ error: 'noTrader' });
   });
 
   it('a pirate den stays dormant until provoked, then fights', () => {
@@ -127,13 +137,7 @@ describe('stations in the node', () => {
       run(sim, 120);
       return sim;
     };
-    const a = play();
-    const b = play();
-    expect(serialize(a)).toBe(serialize(b));
-    const c = deserialize(serialize(a), content);
-    run(a, 200);
-    run(c, 200);
-    expect(serialize(c)).toBe(serialize(a));
+    expectReplayable(play, 200, { every: 50, saveAt: 1 });
   });
 });
 

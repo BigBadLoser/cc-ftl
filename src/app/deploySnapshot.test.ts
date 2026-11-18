@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { galaxyIndex, newGame, playerShip, ShipC, type Sim } from '../sim';
+import { ShipC } from '../sim/combat/components';
+import { galaxyIndex } from '../sim/galaxy/state';
+import { newGame } from '../sim/newGame';
+import type { Sim } from '../sim/sim';
+import { playerShip } from '../sim/trade/player';
 import { ensureAround } from '../sim/galaxy/state';
 import { content } from '../content';
 import { buildCombat } from './combatSnapshot';
@@ -64,7 +68,7 @@ describe('deploy picker data', () => {
 
   it('lists crew away from the ship by name for the jump confirm', () => {
     const sim = newGame(3, content);
-    expect(buildJumpWarnings(sim, playerShip(sim))).toEqual({ crew: [], vehicles: [], hostileDocked: [] });
+    expect(buildJumpWarnings(sim, playerShip(sim))).toEqual({ crew: [], vehicles: [], hostileDocked: [], inspectors: [] });
   });
 
   it('shows no combat while the ship waits to deploy, whatever is placed in the empty sector', () => {

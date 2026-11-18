@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { ItemStackC, JobC, ShipC, serialize, type Sim } from '../../src/sim';
+import { ShipC } from '../../src/sim/combat/components';
+import { JobC } from '../../src/sim/crew/components';
+import { ItemStackC } from '../../src/sim/items/components';
+import { serialize } from '../../src/sim/save';
+import type { Sim } from '../../src/sim/sim';
 import { buildScenario, getScenario, scenarioNames, setupRejections } from './scenarios';
 import { dumpBoard, rle, unrle } from './board';
 

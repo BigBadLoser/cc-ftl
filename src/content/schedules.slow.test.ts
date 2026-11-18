@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { AssignmentC, CrewC, JobC, ModuleC, NeedsC, PositionC, homeShip, newGame, storageAdd, type Job, type Sim } from '../sim';
+import { homeShip } from '../sim/combat/ships';
+import { AssignmentC, CrewC, type Job, JobC, NeedsC, PositionC } from '../sim/crew/components';
+import { storageAdd } from '../sim/items/storage';
+import { ModuleC } from '../sim/modules/components';
+import { newGame } from '../sim/newGame';
+import type { Sim } from '../sim/sim';
 import { DAY_TICKS } from '../sim/clock';
 import { jobTakeable } from '../sim/crew/jobFit';
 import { blockNow, hoursOf } from '../sim/crew/schedule';

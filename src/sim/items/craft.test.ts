@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 
 import { CrewC, JobC, NeedsC, PathC, PositionC, PrioritiesC, type Priorities } from '../crew/components';
 
-import type { SimEvent } from '../events';
 import { spawnModule } from '../modules/spawn';
 
 import type { ContentRegistry, ModuleDef } from '../registry';
@@ -10,19 +9,15 @@ import { Sim } from '../sim';
 
 import { stampShip } from '../combat/ships';
 
-import type { ShipTemplate } from '../registry';
 
 import { ItemStackC, ProductionC } from './components';
 
 import { storageAdd, storageCount } from './storage';
 
 import { totalStock } from './stock';
+import { fixtureShip } from '../../../test/support/sim';
+import { run } from '../../../test/support/sim';
 
-
-/** A fixture ship: the template stamped at the sector origin as an inert ship (a prize is skipped by every ship system). It is the first entity, so its id is 1. */
-function fixtureShip(sim: Sim, t: ShipTemplate): number {
-  return stampShip(sim, t, { faction: 'player', state: 'prize', x: 0, y: 0 });
-}
 
 const mod = (o: Partial<ModuleDef>): ModuleDef => ({
   name: 'm', asset: 'm', footprint: [1, 1], solid: false, power: 0, flammability: 0.1, maxHp: 100, buildWork: 20, ...o,
@@ -71,14 +66,6 @@ function setup(scrap: number, prio: Partial<Priorities> = { crafting: 1, refinin
   return { sim, fab, store, out };
 }
 const jobCategories = (sim: Sim): string[] => sim.world.query(JobC).map((j) => sim.world.get(j, JobC)).filter((j) => j?.kind === 'craft').map((j) => j?.category ?? '');
-const run = (sim: Sim, n: number): SimEvent[] => {
-  const events: SimEvent[] = [];
-  for (let i = 0; i < n; i++) {
-    sim.step();
-    events.push(...sim.events.drain());
-  }
-  return events;
-};
 const order = (sim: Sim, fab: number, mode: 'count' | 'keep', target: number): void =>
   sim.enqueue({ type: 'production.add', moduleId: fab, recipe: 'metal', mode, target });
 const metalInStorage = (sim: Sim, ...ids: number[]): number => ids.reduce((n, id) => n + storageCount(sim, id, 'metal'), 0);

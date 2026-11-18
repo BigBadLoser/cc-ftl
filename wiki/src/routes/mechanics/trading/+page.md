@@ -5,6 +5,7 @@ order: 10
 
 <script lang="ts">
   import Stat from '../../../lib/Stat.svelte'
+  import ComingLater from '../../../lib/ComingLater.svelte'
   import GamePanel from '../../../lib/GamePanel.svelte'
   import JobsTabs from '../../../lib/JobsTabs.svelte'
   import TradeView from '../../../../../src/ui/TradeView.svelte'
@@ -28,7 +29,7 @@ without suits, and you can see them inside it with the roof on.
 
 ## Hailing and docking
 
-You don't fly your ship into a station. You stay in the node and your **shuttle** does the running.
+You don't fly your ship into a station. You stay in the node and a **shuttle** does the running: yours, or the station's.
 
 1. Select the station in the node view. Its panel shows the owner, docks and defences.
 2. Press **Hail station**. For a ship the button reads **Hail ship**.
@@ -47,10 +48,21 @@ A hail can be refused. You'll see the reason and a **Hail again** button:
 > trade with it. Trade waits for the search. See [Contraband and inspections](../inspections/).
 
 When you buy or sell, your shuttle docks at a **free, working airlock** on the station and the station's crew carry the
-goods across. With a trading ship it hovers beside the hull instead. For this you need a shuttle in a bay, a working
-airlock of your own, and that shuttle not being busy with another run. The slip tells you when something is missing. If
-the station's crew don't get the goods across within five minutes, the shuttle undocks and trades from alongside the hull
-instead; the ship's log says so.
+goods across. With a trading ship it hovers beside the hull instead. If the station's crew don't get the goods across
+within five minutes, the shuttle undocks and trades from alongside the hull instead; the ship's log says so.
+
+**No shuttle of your own?** A station sends its own. It's a real shuttle from the station's hangar (or its pad), and it
+flies itself. The station's crew carry what you bought into it, it docks at one of your airlocks, and your crew unload it
+and then load what you sold. It flies home, and the station's crew carry your goods in. You can buy and sell this way, as
+you would with your own shuttle. Your shuttle goes first when it's free; the station's goes when yours is busy or you
+have none. Either way you need a working airlock. Freighters and liners have no shuttle to send, so trading with them
+needs yours. The slip tells you when something is missing.
+
+<ComingLater>
+
+Freighters and liners carrying a shuttle of their own to trade with are not in the game yet.
+
+</ComingLater>
 
 **Asteroid bases.** A trading post (or farm or mine) on an asteroid's surface has no hangar. It keeps its own shuttle on an
 open **landing pad** on the levelled ground, with a second pad free for visitors. A shuttle that comes to trade there lands
@@ -161,7 +173,7 @@ turns left and the client. A card with three turns or fewer left has an amber ed
 
 | Job | Posted by | What you do |
 |---|---|---|
-| **Delivery** | Trading stations and dens | A sealed crate comes aboard. Carry it to the other port. At arrival the station sends a shuttle, your crew haul the crate to the airlock and you're paid when it leaves. |
+| **Delivery** | Trading stations and dens | A sealed crate comes aboard. Carry it to the other port. At arrival your shuttle takes it over, or the station sends its own for it; you're paid when the crate leaves your ship. |
 | **Bounty** | Military stations, depots and dens | Destroy or take a named ship, then **Hand in** at a military station of the same faction. The card compares its guns, shields and size with yours. |
 | **Survey** | Research stations | Visit a node with a feature, such as a nebula, black hole, blue giant or asteroid field, then **Hand in** at a research station of the same faction. Black holes and blue giants pay extra. |
 | **Passage** | Passengers aboard | A passenger wants a lift. See [Travel and encounters](../encounters/). Accept or refuse from the card, wherever your ship is. |
@@ -228,7 +240,8 @@ What it changes:
 
 - **Prices**: friends sell for less and pay more (see above).
 - **Hailing**: a hostile faction won't talk to you. The law (navy and corporations) also turns hostile while you are
-  **wanted**: the starmap legend shows your **Notoriety**, and **Hunted by** lists factions sending hunters.
+  **wanted**: the starmap legend shows your **Notoriety**, and **Hunted by** lists factions sending hunters. When hunters
+  reach your node, an urgent alert names them; click it to jump to their ship.
 - **Blueprints**: hostile factions sell nothing and some gear needs high standing.
 - **Interdictions**: a faction that likes you asks less to let you pass.
 

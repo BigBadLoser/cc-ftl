@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { AssignmentC, CrewC, JobC, ModuleC, PathC, PositionC, PrioritiesC, WORK_CATEGORIES, findPath, homeShip, newGame, shipGrid, type Job, type Priorities, type Sim } from '../../sim';
+import { homeShip } from '../../sim/combat/ships';
+import { AssignmentC, CrewC, type Job, JobC, PathC, PositionC, type Priorities, PrioritiesC, WORK_CATEGORIES } from '../../sim/crew/components';
+import { findPath } from '../../sim/crew/pathfind';
+import { ModuleC } from '../../sim/modules/components';
+import { newGame } from '../../sim/newGame';
+import { shipGrid } from '../../sim/regions';
+import type { Sim } from '../../sim/sim';
 import { admitLevel, pairCost, repairUrgency } from '../../sim/ai/jobRank';
 import { astar, dijkstraFrom } from '../../sim/ai/navSearch';
 import { goalTiles, indexOf, isFallbackStop, reaches, startLabels, viewOf } from '../../sim/ai/navView';
@@ -16,19 +22,13 @@ import { shipIdOf } from '../../sim/regions';
 import { DoorJam, Struct, isWalkable } from '../../sim/structure';
 import { SCHED_CADENCE, SCHED_DIJKSTRA_ABOVE } from '../../sim/tuning';
 import { content } from '../index';
+import { run } from '../../../test/support/sim';
 
 /**
  * The job scheduler (docs/CREW_AI.md 7.4, #194 Phase 2). Its navigation views agree with `findPath` tile for tile; its matching equals an
  * exhaustive reference built on the legacy walk planner (`planSiteWalk`, every pair searched); priorities are strict; the nearest crew member
  * wins; the pass gate skips only unchanged inputs and runs again on the cadence.
  */
-
-const run = (sim: Sim, n: number): void => {
-  for (let i = 0; i < n; i++) {
-    sim.step();
-    sim.events.drain();
-  }
-};
 
 /** Deterministic LCG for picking tiles. */
 const lcg = (seed: number) => {

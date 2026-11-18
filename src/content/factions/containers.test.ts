@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { BodyC, ModuleC, ShipC, StorageC, footprintTiles, generateShip, newGame, stampShip, type FactionDef, type ModuleDef, type ShipTemplate, type Sim } from '../../sim';
+import { BodyC } from '../../sim/body';
+import { ShipC } from '../../sim/combat/components';
+import { stampShip } from '../../sim/combat/ships';
+import { StorageC } from '../../sim/items/components';
+import { ModuleC } from '../../sim/modules/components';
+import { footprintTiles } from '../../sim/modules/footprint';
+import { newGame } from '../../sim/newGame';
+import type { ModuleDef, ShipTemplate } from '../../sim/registry';
+import { generateShip } from '../../sim/shipgen/generate';
+import type { FactionDef } from '../../sim/shipgen/types';
+import type { Sim } from '../../sim/sim';
 import { ContainerC } from '../../sim/containers/components';
 import { applyRuin } from '../../sim/combat/derelict';
 import { applyEffects } from '../../sim/combat/effects';

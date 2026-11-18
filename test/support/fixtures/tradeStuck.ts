@@ -1,0 +1,80 @@
+import { expect } from 'vitest';
+import { ShipC } from '../../../src/sim/combat/components';
+import { newGame } from '../../../src/sim/newGame';
+import type { Sim } from '../../../src/sim/sim';
+import { playerItems, playerShip } from '../../../src/sim/trade/player';
+import { TraderC } from '../../../src/sim/trade/types';
+import { VehicleC } from '../../../src/sim/vehicles/components';
+import { isLive } from '../../../src/sim/trade/deals';
+import { holding } from '../../../src/sim/trade/player';
+import { content } from '../../../src/content/index';
+import { step as run } from '../sim';
+
+/** A started game with a hailed trading outpost, and a bought order of 10 metal accepted. */
+export function buying(): { sim: Sim; station: number; start: number } {
+  const sim = newGame(1, content);
+  const start = sim.trade.credits;
+  sim.enqueue({ type: 'debug.spawnStation', kind: 'station.trading', size: 'outpost', seed: 4 });
+  sim.step();
+  const station = sim.world.query(ShipC).find((i) => sim.world.get(i, ShipC)!.immobile)!;
+  sim.enqueue({ type: 'trade.hail', ship: station });
+  sim.step();
+  sim.enqueue({ type: 'trade.offer', ship: station, give: [], get: [{ item: 'item.metal', count: 10 }] });
+  sim.step();
+  sim.enqueue({ type: 'trade.accept', offer: sim.trade.offers[0]!.id });
+  sim.step();
+  return { sim, station, start };
+}
+/** Metal the player physically has: in the stores plus anything in a shuttle's hold. */
+export function metal(sim: Sim): number {
+  const held = holding(sim, 'item.metal').reduce((n, s) => n + s.count, 0);
+  return held + sim.world.query(VehicleC).reduce((n, id) => n + (sim.world.get(id, VehicleC)!.cargo.find((c) => c.item === 'item.metal')?.count ?? 0), 0);
+}
+export function until(sim: Sim, phase: string): void {
+  for (let i = 0; i < 6000 && sim.trade.deals[0]?.phase !== phase; i++) sim.step();
+  expect(sim.trade.deals[0]?.phase).toBe(phase);
+}
+/** Run until no deal is live (or `max` ticks pass: the failure case), then a settling tail so refunds, jobs and the like finish. */
+export function runOut(sim: Sim, max: number, tail = 150): void {
+  let i = 0;
+  while (i < max && sim.trade.deals.some(isLive)) { sim.step(); i++; }
+  run(sim, Math.min(tail, Math.max(0, max - i)));
+}
+
+/** Units of an item the player physically has: stores plus any shuttle hold. */
+export function metalLike(sim: Sim, item: string): number {
+  return playerItems(sim, item) + sim.world.query(VehicleC).reduce((n, id) => n + (sim.world.get(id, VehicleC)!.cargo.find((c) => c.item === item)?.count ?? 0), 0);
+}
+
+/** A started game with a trading outpost and no shuttle of the player's: the station's own (real, in its hangar) carries every deal (#548). */
+export function withStation(): { sim: Sim; ship: number } {
+  const sim = newGame(1, content);
+  sim.enqueue({ type: 'debug.spawnStation', kind: 'station.trading', size: 'outpost', seed: 4 });
+  sim.step();
+  const ship = sim.world.query(ShipC).find((i) => sim.world.get(i, ShipC)!.immobile)!;
+  const me = playerShip(sim);
+  for (const id of [...sim.world.query(VehicleC)]) if (sim.world.get(id, VehicleC)!.homeShip === me) sim.world.destroyEntity(id);
+  // No galaxy turn passes during the test: the station is a live port market whose stock moves each turn, and the counts checked are the deal's alone.
+  sim.galaxy.turnClock = -1e9;
+  sim.events.drain();
+  return { sim, ship };
+}
+
+/** `withStation`, hailed, with an order of 12 metal accepted: the station's shuttle carries it. */
+export function order() {
+  const { sim, ship } = withStation();
+  sim.enqueue({ type: 'trade.hail', ship });
+  run(sim, 2);
+  const t = sim.world.get(ship, TraderC)!;
+  const stock = (s: Sim): number => s.world.get(ship, TraderC)!.stock.find((q) => q.item === 'item.metal')?.count ?? 0;
+  const before = { credits: sim.trade.credits, theirs: t.credits, stock: stock(sim), metal: metalLike(sim, 'item.metal') };
+  sim.enqueue({ type: 'trade.offer', ship, give: [], get: [{ item: 'item.metal', count: 12 }] });
+  run(sim, 2);
+  sim.enqueue({ type: 'trade.accept', offer: sim.trade.offers[0]!.id });
+  run(sim, 2);
+  expect(sim.trade.deals[0]!.courier).toBe('them');
+  return { sim, ship, before, stock };
+}
+
+
+export { run };

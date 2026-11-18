@@ -12,8 +12,8 @@ Nine sprite families have no def: cryo pod (not the prisoner holding: that is th
 | Floor light | `module.light` | A lit grate set into the deck, walkable. Art `module.light_grate` (family `lights`) | In game | src/content/modules.ts; shipgen fit.ts, starters; sim/systems/lighting.ts |
 | Cage lamp | `module.light_cage` | A solid work lamp, radius 10, half a power | Buildable only | src/content/modules.ts; art lights.py |
 | Light mast | `module.light_mast` | A solid tall lamp, radius 15, one power | Buildable only | src/content/modules.ts; art lights.py |
-| Deck inlay, Hazard plate | `module.deck_inlay`, `module.deck_hazard` | Walkable deck marks; dressing only (art to be redesigned) | Buildable only | src/content/furniture.ts; art decor.py |
-| Banner post | `module.banner` | Banner in the ship's livery (`livery: true`, emblem mask per roof scheme); dressing only | Buildable only | src/content/furniture.ts; render/moduleArt.ts schemeEmblem; art landmarks.py |
+| Deck inlay, Hazard plate | `module.deck_inlay`, `module.deck_hazard` | Walkable deck marks; dressing only (art to be redesigned) | Not buildable (`buildable: false`; kept so saves that built one still load) | src/content/furniture.ts; art decor.py |
+| Banner post | `module.banner` | Banner in the ship's livery (`livery: true`, emblem mask per roof scheme); dressing only | Not buildable (`buildable: false`); placed by nothing yet | src/content/furniture.ts; render/moduleArt.ts schemeEmblem; art landmarks.py |
 | Bed | `module.bed` | Somewhere for a crew member to sleep and recover rest. | In game | src/content/modules.ts:66; shipgen, starters; sim/systems/bedOwners.ts, needs.ts; render/bedPose.ts |
 | Console | `module.console` | A general console. | In game | src/content/modules.ts:81; shipgen bridge/engineering; render/assets/fallback.ts |
 | Research module | `module.research` | Crew study the ship's active research project here, faster with science. | Partial: buildable only | src/content/modules.ts:101; no ship template or shipgen room places one; sim/research/*, systems/researchJobs.ts use it; 3x2 art |
@@ -21,8 +21,8 @@ Nine sprite families have no def: cryo pod (not the prisoner holding: that is th
 | Scrapper | `module.scrapper` | Reclaims salvaged scrap into metal, electronics, spare parts and more. | Partial: buildable only | src/content/modules.ts:142; no ship places one (the starter has none); recipes.ts `scrap_*` use it; sim/systems/craftJobs.ts |
 | Galley | `module.galley` | Prints hot meals. | In game | src/content/modules.ts:162; shipgen, starters; recipes.ts cooking |
 | Storage crate | `module.storage` | A small crate. | In game | src/content/modules.ts:182; shipgen, starters, stations; sim/items/storage.ts |
-| Small container | `container.2x4` | A sealed cargo container clamped to the frame. | In game | src/content/modules.ts:201; spawned only by shipgen/containerCells.ts on derelicts/freighters; sim/containers; detachable cargo |
-| Large container | `container.3x6` | A large sealed cargo container clamped to the frame. | In game | src/content/modules.ts:209; spawned only by shipgen/containerCells.ts; sim/containers |
+| Small container | `container.2x4` | A sealed cargo container clamped to the frame. | In game (not buildable) | src/content/modules.ts:201; spawned only by shipgen/containerCells.ts on derelicts/freighters; sim/containers; detachable cargo |
+| Large container | `container.3x6` | A large sealed cargo container clamped to the frame. | In game (not buildable) | src/content/modules.ts:209; spawned only by shipgen/containerCells.ts; sim/containers |
 | Burst laser | `module.burstLaser` | Fast light laser. | In game | src/content/modules.ts:221; all starters, factions; sim/systems/firing.ts, weaponCharge.ts; render/turretView.ts |
 | Flak cannon | `module.flakCannon` | Fires hull scrap in a wide spread: every pellet that hits a shield strips a layer. | Partial: blueprint only | src/content/modules.ts:231; needs research.weapon.flak or a bought blueprint; no ship fields one; weapons.ts:46 |
 | Mass driver | `module.massDriver` | Heavy kinetic gun. | In game | src/content/modules.ts:242; faction ships (raider, navy) and stations; buildable |
@@ -37,8 +37,8 @@ Nine sprite families have no def: cryo pod (not the prisoner holding: that is th
 | Helm | `module.helm` | The pilot's seat. | In game | src/content/modules.ts:357; shipgen bridge, starters; sim/systems/helm.ts; ui/module |
 | Point defence | `module.pointDefense` | Shoots down incoming missiles, enemy drones and shuttles. | In game | src/content/modules.ts:367; starter.ts, shipgen drone-faction ships and stations; sim/systems/pointDefence.ts |
 | Radiator | `module.radiator` | Speeds up cooling of the ship's combat heat. | Partial: buildable only | src/content/modules.ts:377; no ship or shipgen room places one; ModuleDef.radiator read by sim/systems/temperature.ts and combat/heat.ts |
-| Robot fabricator | `module.robotFabricator` | Builds robots for the ship, a few at a time. | In game | src/content/modules.ts:388; Rogue AI shipyard and ruin shipgen; sim/systems/fabricators.ts. Buildable |
-| Robot bay | `module.robotBay` | A charging cradle that recharges and repairs one robot. | In game | src/content/modules.ts:399; shipgen (robot ships), rogue shipyard; sim/systems/robotBays.ts; ui/RobotBayPanel.svelte |
+| Robot fabricator | `module.robotFabricator` | Builds robots for the ship, a few at a time. | In game (not buildable) | src/content/modules.ts:388; Rogue AI shipyard and ruin shipgen; sim/systems/fabricators.ts. Not player-buildable (`buildable: false`) |
+| Robot bay | `module.robotBay` | A charging cradle that recharges and repairs one robot. | In game (not buildable) | src/content/modules.ts:399; shipgen (robot ships), rogue shipyard; sim/systems/robotBays.ts; ui/RobotBayPanel.svelte |
 | Drone bay | `module.droneBay` | Docks and recharges two drones. | Partial: buildable, shipgen only for drone factions | src/content/modules.ts:410; sim/drones/bay.ts; ui/DroneBayPanel.svelte; no starter ship has one; drones need research |
 | AI core | `module.aiCore` | Runs ship automation such as point defence. | In game | src/content/modules.ts:419; shipgen, rogue ships; sim/robots/core.ts; research.ts |
 | Shuttle bay | `module.vehicle_bay` | A pit that holds one shuttle and launches it through hatch doors. | In game | src/content/modules.ts:430; Wayfarer, Lancer, shipgen hangars; sim/vehicles/*; ui/ShuttlePanel.svelte |

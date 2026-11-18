@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { CrewC, ShipC, newGame, type SimEvent } from '../../sim';
+import { ShipC } from '../../sim/combat/components';
+import { CrewC } from '../../sim/crew/components';
+import type { SimEvent } from '../../sim/events';
+import { newGame } from '../../sim/newGame';
 import { content } from '../index';
 import { shipById } from '../../sim/combat/ships';
 import { shipGrid, shipIds } from '../../sim/regions';

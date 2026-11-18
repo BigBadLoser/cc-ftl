@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { assembleStation, crewSize, deptOf, warehoused, type Recipe, type StationSize } from '../sim';
+import { deptOf } from '../sim/shipgen/assembly/dept';
+import { warehoused } from '../sim/shipgen/assembly/program';
+import type { Recipe } from '../sim/shipgen/assembly/recipe';
+import { assembleStation } from '../sim/shipgen/assembly/station';
+import { crewSize } from '../sim/shipgen/stationCrew';
+import type { StationSize } from '../sim/shipgen/stationTypes';
 import { modules } from './modules';
-import { assembled, programOf } from './stationRecipeFixture';
+import { assembled, programOf } from '../../test/support/fixtures/stationRecipe';
 import { stationRecipes } from './stationRecipes';
 import { stations } from './stations';
 
@@ -14,6 +19,17 @@ describe('station program', () => {
     expect(cargo.every((r) => r.warehouse && r.mods.length <= 24)).toBe(true);
     const crates = [{ role: 'cargo' as const, mods: Array<string>(6).fill('module.storage'), w: 4, h: 3 }, { role: 'cargo' as const, mods: Array<string>(5).fill('module.storage'), w: 4, h: 3 }];
     expect(warehoused(crates).flatMap((r) => r.mods)).toHaveLength(11);
+  });
+
+  it('stocks every warehouse with every item, so no cold store goes unstocked (#530)', () => {
+    const room = (item: string) => ({ role: 'cargo' as const, mods: Array<string>(30).fill('module.storage'), w: 6, h: 4, items: [{ item, min: 4, max: 8 }] });
+    const wh = warehoused([room('ration'), room('water'), room('ration'), room('water')]).filter((r) => r.warehouse);
+    expect(wh.length).toBeGreaterThan(1);
+    for (const w of wh) expect(new Set((w.items ?? []).map((i) => i.item))).toEqual(new Set(['ration', 'water']));
+    for (const seed of [1, 2, 3]) {
+      const farm = programOf('station.farming', 'station', seed).rooms.filter((r) => r.warehouse);
+      for (const w of farm) expect(w.items === undefined || w.items.length > 0).toBe(true);
+    }
   });
 
   it('has one mess (two at hub size) and a rec room from station size up, as the commons department', () => {

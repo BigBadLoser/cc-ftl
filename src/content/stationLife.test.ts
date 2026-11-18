@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { ShipC, deserialize, serialize, type Sim, type SimEvent } from '../sim';
+import { ShipC } from '../sim/combat/components';
+import type { SimEvent } from '../sim/events';
+import { cachedWorld, expectReplayable } from '../../test/support/world';
+import type { Sim } from '../sim/sim';
 import { StationAlarmC, StationCrewC, WantedC } from '../sim/stations/components';
-import { content } from './index';
 
-import { intruderRuns, intrude, isGuard, run, station, types } from './stationLifeFixture';
+import { intruderRuns, intrude, isGuard, run, station, types } from '../../test/support/fixtures/stationLife';
 
 describe('station life and security', () => {
   it('a quiet station stays calm; its guards arm themselves and walk their patrol', () => {
@@ -23,11 +25,11 @@ describe('station life and security', () => {
     expect(new Set(watches.map((e) => (e.type === 'crew.jobDone' ? `${e.x},${e.y}` : ''))).size).toBeGreaterThanOrEqual(2);
   });
 
-  it('an intruder raises the alarm; guards converge and fight, civilians run; then it calms down (seeds 1 to 3; seeds 1 to 8 in stationLife.slow.test.ts)', () => {
+  it('an intruder raises the alarm; guards converge and fight, civilians run; then it calms down (seeds 1 and 2; seeds 1 to 8 in stationLife.slow.test.ts)', () => {
     // Whether civilians see the intruder before the guards down it (and how long that takes) depends on the station layout and the sim's
     // rng state, so the outcome is judged over a fixed range of seeds, not one: the triggers (alarm, wanted, guards engage) in every
     // one, the outcomes (civilians flee, intruder downed within 400 ticks, calm, alarm again) in at least half.
-    const runs = intruderRuns([1, 2, 3]);
+    const runs = intruderRuns([1, 2]);
     const count = (k: 'alarmed' | 'wanted' | 'engaged' | 'fled' | 'downed' | 'forgotten' | 'again'): number => runs.filter((r) => r[k]).length;
     const table = JSON.stringify(runs);
     // Every seed reacts at once (#107: seed 7's first patrol stop was under a mess table, so its intruder was never spawned).
@@ -70,20 +72,18 @@ describe('station life and security', () => {
 
   it('is deterministic and survives a save round trip in the middle of an alarm', () => {
     const play = (): Sim => {
-      const { sim, st } = station();
-      run(sim, 100);
-      intrude(sim, st);
+      const sim = cachedWorld('stationLife.quiet100', () => {
+        const s = station().sim;
+        run(s, 100);
+        return s;
+      });
+      intrude(sim, sim.world.query(ShipC).find((i) => sim.world.get(i, ShipC)!.immobile)!);
       run(sim, 40);
+      expect(sim0(sim)).toBe('alarm');
       return sim;
     };
-    const a = play();
-    const b = play();
-    expect(sim0(a)).toBe('alarm');
-    expect(serialize(a)).toBe(serialize(b));
-    const c = deserialize(serialize(a), content);
-    run(a, 300);
-    run(c, 300);
-    expect(serialize(c)).toBe(serialize(a));
+    // Two builds step 300 ticks of the alarm, one saved and reloaded on the way.
+    expectReplayable(play, 300, { every: 50, saveAt: 1 });
   });
 });
 

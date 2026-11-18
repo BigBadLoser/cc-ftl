@@ -514,6 +514,8 @@ export interface ModuleDef {
    * console's chair and the free floor beside it. All other footprint tiles of a solid module block walking.
    */
   openTiles?: readonly (readonly [number, number])[];
+  /** `false`: never offered in the build menu and refused by `module.build` (found, spawned or scripted only). Absent = player-buildable. */
+  buildable?: false;
   /** Scrap type stripping this module from a derelict gives. Absent = salvage leaves it alone (robot modules). */
   scrap?: ScrapType;
   /** Positive supplies power, negative draws it (units per second). */
