@@ -153,7 +153,7 @@ describe('hailing', () => {
     const sim = newGame(3, content);
     sim.galaxy.fleets = []; // keep NPC traffic out of this long run (fleets arrive in the node every minute)
     sim.enqueue({ type: 'debug.spawnGenerated', faction: 'faction.scrapper', seed: 5, depth: 2, cx: 130, cy: 70 });
-    sim.enqueue({ type: 'debug.spawnGenerated', faction: 'faction.drones', seed: 5, depth: 2, cx: 130, cy: 110 });
+    sim.enqueue({ type: 'debug.spawnGenerated', faction: 'faction.drones', seed: 5, depth: 2, cx: 60, cy: 105 }); // below the home ship, clear of the scrapper (a 200x120 node)
     sim.step();
     const [pirate, drone] = sim.world.query(ShipC).filter((i) => sim.world.get(i, ShipC)!.faction === 'hostile') as [number, number];
     expect(sim.world.get(pirate, ShipC)!.gen!.faction).toBe('faction.scrapper');
