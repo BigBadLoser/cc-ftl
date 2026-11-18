@@ -223,60 +223,21 @@ def out_block(mask, o, variant=0, part="rim", room=0, corners=0):
     brightness as alpha; drawn in the sorted layer). part "belly": the solid armour below the deck (drawn UNDER the
     floor layer, so a deck in front of it hides it)."""
     m = core.Mesh(f"hull_ghost{o}_{mask}_{variant}_{part}_{room}_{corners}", flat=True)
-    emit(m, Out(mask, o, variant, part, room, corners))
+    sp = Out(mask, o, variant, part, room, corners)
+    if part == "rim" and o == 0:                      # the rear ghost: only its lines (hull_wire), no surfaces (they
+        from .hull_wire import wire                   #   drew nothing and hid lines behind them)
+        wire(m, sp)
+        _rise(m, mask, room, corners)
+    else:
+        emit(m, sp)
     if not m.f:                                       # a corner piece with no camera-facing outer edge
         m.poly([core.G(0, 0, 0), core.G(0.001, 0, 0), core.G(0, 0.001, 0)], "dark")
-    if part == "rim" and o == 0:
-        _rise(m, mask, room, corners)
-        _toe(m, mask, corners)
-        _tee(m, mask, corners)
     if part == "rim":
         return [_dummy(f"ghost_plate_{o}_{mask}_{room}_{corners}"), m.build()]
     return [m.build()]
 
 
 FADE = ("gW2", "hsK", "hsXK", "hbXhsXK")   # the rising lines' tones, bottom up: their alpha fades with height
-
-
-def _toe(m, mask, corners):
-    """The rear ghost's line where its foot turns into the ramp: a 1 px upright strip at the foot's height, a little in
-    front of the steep first cell so its see-through surface does not hide it (toning the ramp's cells there would fill
-    the steep foot as a band, not a line)."""
-    z0, k = FOOT_PX / ZART, 0.4 * C          # (the foot's top: two thirds up the first cell's rise, set in front of it)
-    segs = []
-    if not mask & 4:
-        segs.append(((-0.5, 0.5 - k), (0.5, 0.5 - k)))
-    if not mask & 2:
-        segs.append(((0.5 - k, 0.5), (0.5 - k, -0.5)))
-    if mask & 6 == 6 and not corners & 2:
-        segs += [((0.5 - C, 0.5 - k), (0.5, 0.5 - k)), ((0.5 - k, 0.5), (0.5 - k, 0.5 - C))]
-    for a, b in segs:
-        m.poly([core.G(*a, z0 - DZ / 2), core.G(*b, z0 - DZ / 2), core.G(*b, z0 + DZ / 2), core.G(*a, z0 + DZ / 2)], "gW2")
-
-
-def _tee(m, mask, corners):
-    """Where a partition meets the rear ghost (a T: mask 14, a partition at +y; 7, at +x), its lines drawn, not found
-    from the cells (that left stubs): at each room corner beside the partition, the crest in an L (along the hull, then
-    along the partition to the tile's edge, where the partition's own piece goes on) and the mitre up to it."""
-    from .walls import shelf_top
-    cd, zc, zf, w, up = (RAMP_CELLS - SHELF_CELLS) / GN, shelf_top(), FOOT_PX / ZART, C / 2, 0.01
-    rooms = []                               # (the room corners beside the partition: SW / SE for 14, NE / SE for 7)
-    if mask & 14 == 14:
-        rooms += [((-0.5, 0.5), 4), ((0.5, 0.5), 2)]
-    if mask & 7 == 7:
-        rooms += [((0.5, -0.5), 1), ((0.5, 0.5), 2)]
-    rooms = [c for c, bit in dict.fromkeys(rooms) if not corners & bit]
-    for cx, cy in rooms:
-        ix, iy = (1 if cx < 0 else -1), (1 if cy < 0 else -1)
-        a, b, c = (cx, cy + iy * cd), (cx + ix * cd, cy + iy * cd), (cx + ix * cd, cy)
-        for p, q, (ox, oy) in ((a, b, (0, iy * w)), (b, c, (ix * w, 0))):       # (on the crest's flat side)
-            m.poly([core.G(*p, zc + up), core.G(*q, zc + up), core.G(q[0] + ox, q[1] + oy, zc + up),
-                    core.G(p[0] + ox, p[1] + oy, zc + up)], "gW2")
-        nx, ny = w * -iy, w * ix                # the mitre: 1 px across, one-sided (centred on the corner it splits
-        p, q = (cx, cy), b                      #   over two px columns and reads dotted)
-        um = 3 * up                             # (over the slope's cell steps, which cut it into dashes at 1x lift)
-        m.poly([core.G(*p, zf + um), core.G(*q, zc + um), core.G(q[0] + nx, q[1] + ny, zc + um),
-                core.G(p[0] + nx, p[1] + ny, zf + um)], "gW2")
 
 
 def _rise(m, mask, room, corners):
