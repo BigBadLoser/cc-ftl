@@ -5,8 +5,6 @@ import { isDormant } from '../../sim/combat/dormant';
 import { homeShip } from '../../sim/combat/ships';
 import { AirlockC } from '../../sim/modules/airlock';
 import { ModuleC } from '../../sim/modules/components';
-import { newGame } from '../../sim/newGame';
-import type { OutpostKind } from '../../sim/outposts/gen';
 import { discoverOutpost } from '../../sim/outposts/state';
 import { shipGrid } from '../../sim/regions';
 import type { Sim } from '../../sim/sim';
@@ -18,23 +16,7 @@ import { dockError } from '../../sim/vehicles/handlers';
 import { stationAirlock } from '../../sim/trade/stationDock';
 import { shipIdOf } from '../../sim/regions';
 import { isTileWalkable } from '../../sim/modules/walk';
-import { content } from '../index';
-
-function run(sim: Sim, n: number, log: string[] = []): string[] {
-  for (let i = 0; i < n; i++) {
-    sim.step();
-    for (const e of sim.events.drain()) log.push(e.type === 'command.rejected' ? `rejected:${e.command}:${e.reason}` : e.type);
-  }
-  return log;
-}
-
-function spawn(style: 'dug' | 'surface', kind: OutpostKind, seed = 1): { sim: Sim; base: number } {
-  const sim = newGame(2, content);
-  sim.enqueue({ type: 'debug.spawnOutpost', style, seed, kind });
-  sim.step();
-  sim.events.drain();
-  return { sim, base: [...sim.world.query(ShipC)].find((id) => sim.world.get(id, ShipC)?.outpost)! };
-}
+import { run, spawn } from '../../../test/support/fixtures/outpostDefence';
 
 /** A walkable floor tile of the base in its east half (a spot well inside, clear of the rock and the furniture). */
 function insideTile(sim: Sim, base: number): { x: number; y: number } {
@@ -53,7 +35,7 @@ describe('a woken hostile outpost defends like a woken pirate den', () => {
     discoverOutpost(sim, base, 'proximity');
     // An aim alone, ship-wide and then with weapons held at battle stations, is no hostile act (user ruling, #173).
     sim.enqueue({ type: 'combat.setTarget', ship: me, weaponId: null, targetShip: base, targetModuleId: 0 });
-    expect(run(sim, 300)).not.toContain('ship.provoked');
+    expect(run(sim, 60)).not.toContain('ship.provoked');
     sim.enqueue({ type: 'combat.battleStations', on: true });
     expect(run(sim, 5 * 20)).not.toContain('ship.provoked'); // the turrets run out
     expect(isDormant(sim.world.get(base, ShipC))).toBe(true);
@@ -65,7 +47,7 @@ describe('a woken hostile outpost defends like a woken pirate den', () => {
     // It wakes as the shot leaves (a hostile act through combat/provoke.ts), before anything lands.
     expect(log).toContain('ship.provoked');
     expect(isDormant(sim.world.get(base, ShipC))).toBe(false);
-    run(sim, 600, log);
+    run(sim, 100, log); // (the aim runs 300 ticks and the fight 600 in outpostDefence.slow)
     expect(log).toContain('ship.provoked');
     expect(log).toContain('combat.started');
     expect(isDormant(sim.world.get(base, ShipC))).toBe(false);
@@ -94,6 +76,7 @@ describe('a woken hostile outpost defends like a woken pirate den', () => {
     for (let i = 0; i < 600; i++) {
       run(sim, 1, log);
       for (const c of sim.world.query(StationCrewC, FighterC)) if (sim.world.get(c, FighterC)!.mode === 'engage') engaged = true;
+      if (engaged && log.includes('crew.attacked')) break; // (no need to run on)
     }
     expect(log).toContain('ship.provoked');
     expect(log).toContain('station.alarm');
@@ -108,14 +91,14 @@ describe('a woken hostile outpost defends like a woken pirate den', () => {
     sim.world.get(shuttle, VehicleC)!.autopilot = true;
     sim.world.get(base, ShipC)!.integrity -= 0.05; // provoked
     sim.enqueue({ type: 'vehicle.hover', vehicle: shuttle, ship: base });
-    const log = run(sim, 1500);
+    const log = run(sim, 300); // (the whole 1500 ticks run in outpostDefence.slow)
     expect(log).toContain('combat.started');
     expect(log).not.toContain('vehicle.damaged'); // only the missile launcher can hit a shuttle
   });
 
   it('sleeping outposts stay quiet: no crew fight, no combat', () => {
     const { sim } = spawn('dug', 'pirate');
-    const log = run(sim, 1500);
+    const log = run(sim, 300); // (the whole 1500 ticks run in outpostDefence.slow)
     expect(log).not.toContain('combat.started');
     expect(log).not.toContain('station.alarm');
     expect(log.filter((e) => e.startsWith('crew.attacked'))).toEqual([]);
