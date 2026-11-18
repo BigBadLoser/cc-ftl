@@ -142,9 +142,6 @@ class Out(Spec):
                         v = max(v, 1)                                  # rear slope: a fall line at every tile seam
                     if self.o and self.dist(x, y) - BEV < C and k == "flat":
                         v = 2                                          # the front rim's outer crest
-                    if not self.o and k != "flat" and C < self._inner(x, y) < 2 * C:
-                        v = max(v, 1)                                  # the foot's top (its first cell, the foot
-                        #   itself, a steep face over one cell: see-through like the rest, not a solid band)
                     if self.o in (1, 2, 3) and k == "flat" and (
                             (a == 0 and self.o != 2 and self.mask & 8) or (b == 0 and self.o != 1 and self.mask & 1)):
                         v = max(v, 1)                                  # front rim: its seam across the rim top
@@ -221,6 +218,7 @@ def out_block(mask, o, variant=0, part="rim", room=0, corners=0):
         m.poly([core.G(0, 0, 0), core.G(0.001, 0, 0), core.G(0, 0.001, 0)], "dark")
     if part == "rim" and o == 0:
         _rise(m, mask, room, corners)
+        _toe(m, mask, corners)
     if part == "rim":
         return [_dummy(f"ghost_plate_{o}_{mask}_{room}_{corners}"), m.build()]
     return [m.build()]
@@ -229,11 +227,26 @@ def out_block(mask, o, variant=0, part="rim", room=0, corners=0):
 FADE = ("gW2", "hsK", "hsXK", "hbXhsXK")   # the rising lines' tones, bottom up: their alpha fades with height
 
 
+def _toe(m, mask, corners):
+    """The rear ghost's line along the foot's top: a 1 px upright strip at the foot's height (toning the ramp's cells
+    there would fill the steep foot and the first step as bands, not a line)."""
+    z0 = FOOT_PX / ZART
+    segs = []
+    if not mask & 4:
+        segs.append(((-0.5, 0.5 - C), (0.5, 0.5 - C)))
+    if not mask & 2:
+        segs.append(((0.5 - C, 0.5), (0.5 - C, -0.5)))
+    if mask & 6 == 6 and not corners & 2:
+        segs += [((0.5 - C, 0.5 - C), (0.5, 0.5 - C)), ((0.5 - C, 0.5), (0.5 - C, 0.5 - C))]
+    for a, b in segs:
+        m.poly([core.G(*a, z0), core.G(*b, z0), core.G(*b, z0 + DZ), core.G(*a, z0 + DZ)], "gW2")
+
+
 def _rise(m, mask, room, corners):
     """The rear ghost's faint lines rising from its crest at the tile's seams (and its corner) to the hull's full height,
     fading as they go: the wall it stands for, hinted (Space Haven's far-side hull ghosts, walls fully collapsed)."""
     from .walls import hull_top, shelf_top
-    r = RAMP_CELLS / GN
+    r = (RAMP_CELLS - SHELF_CELLS) / GN                         # (the crest: the ramp's top, at its step)
     pts = []
     if not mask & 4:
         pts.append((-0.5, 0.5 - r))                             # a run along x, the room at +y: its left seam
