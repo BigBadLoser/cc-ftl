@@ -212,8 +212,8 @@ def _piece(key, far, layer, margin, look):
                         rel.poly(p2, "steel", 3, m2, fixed=END)
         if near(f[0]) and not plain:                    # (the bay looks' frame, as the runs carry it)
             _frame(rel, f, planes)
-        if layer == "over" and near(f[0]):              # (a far side's cut top is plain: the rear ghost's lines
-            _seam(rel, ([], [q for q in planes if abs(q[0].z) < 1e-9]), [f], span(f[0], far)[1])   # trace its edge)
+        if layer == "over" and near(f[0]) and not plain:    # (a cut top at the deck is plain, near or far: the
+            _seam(rel, ([], [q for q in planes if abs(q[0].z) < 1e-9]), [f], span(f[0], far)[1])   # ghosts trace its edge)
     return (rel.build() if rel.m.f else []) + art       # (none: a far side has nothing under the deck)
 
 
