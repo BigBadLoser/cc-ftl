@@ -3,6 +3,7 @@ import { defineConfig } from 'vitest/config';
 import { svelte } from '@sveltejs/vite-plugin-svelte';
 import tailwindcss from '@tailwindcss/vite';
 import { layoutCases } from './tools/layout/casesPlugin.mjs';
+import { ISOLATED } from './tools/isolatedTests.ts';
 import WeightedSequencer from './vitest.sequencer.ts';
 
 /** The short commit hash baked into the build for bug reports; "dev" when git is not available. */
@@ -15,36 +16,6 @@ function commit(): string {
 }
 
 /**
- * Test files that change global state: module mocks, spies on globals, fake timers, environment variables. Each runs in a
- * fresh module graph. Every other file shares its worker's loaded modules (`isolate: false`), which saves re-importing the
- * whole sim and content for each of the ~280 files. A new test that mocks or stubs something, or changes data the sim
- * caches per seed (generated galaxy nodes), goes in this list.
- */
-const ISOLATED = [
-  'src/app/saves.test.ts',
-  'src/app/playHook.test.ts', // stubs `window`
-  'src/app/stockHints.test.ts', // these two set `danger` on generated nodes, which are cached per seed
-  'src/content/standing.test.ts',
-  'src/content/derelictFailure.test.ts',
-  'src/content/researchReach.test.ts', // ~1.4 GB of heap by itself (20 galaxies revealed to radius 14): in a shared worker it ran out of heap on whatever the earlier files left
-  'src/content/jobs.test.ts',
-  'src/content/ships/envSkip.test.ts',
-  'src/content/ships/envSkip.slow.test.ts',
-  'src/render/moduleMemo.test.ts', // switches the module-level memo off and back
-  'tools/layout/lab.test.ts', // stubs `window` for the lab's state
-  'src/render/animClock.test.ts',
-  'src/render/assets/compose.test.ts',
-  'src/render/assets/gpuKeep.test.ts',
-  'src/render/moduleStrips.test.ts',
-  'src/render/partPick.test.ts',
-  'src/render/pixiFixes.test.ts', // patches two pixi BindGroup methods
-  'src/render/regionTiles.test.ts',
-  'src/sim/sector/translate.test.ts', // reads the global component registry that ecs.test.ts adds to
-  'src/sim/systems/envSolvers.test.ts',
-  'src/content/stationBuildMemo.test.ts', // mocks buildStation to count and stub the builds
-];
-
-/**
  * Three tiers: fast (`*.test.ts`), slow (`*.slow.test.ts`) and soak (`*.soak.test.ts`, off unless `VITEST_SOAK=1`). The fast tier skips `*.slow.test.ts` (`VITEST_FAST=1`, set by `test:quick` / `test:fast` and by PR CI). A CLI `--exclude`
  * does not reach per-project settings, so the tier is chosen here.
  */
@@ -52,7 +23,7 @@ const env = (globalThis as unknown as { process: { env: Record<string, string | 
 // TICK_STATS=1 adds test/support/tickStats.ts: ticks and step time per test file (node tools/tickStats.mjs reports them).
 // Not in the isolated project: it imports the sim before a file's vi.mock could replace a module the sim loads.
 const SETUP = ['src/sim/testSetup.ts', 'test/support/setup.ts'];
-const SHARED_SETUP = [...SETUP, 'test/support/buildShareSetup.ts', ...(env.TICK_STATS === '1' ? ['test/support/tickStats.ts'] : [])];
+const SHARED_SETUP = [...SETUP, ...(env.TICK_STATS === '1' ? ['test/support/tickStats.ts'] : [])];
 const SLOW = env.VITEST_FAST === '1' ? ['**/*.slow.test.ts'] : [];
 /** The soak tier (`*.soak.test.ts`: design-number runs over game hours or many seeds) runs only with `VITEST_SOAK=1` (`npm run test:soak`). */
 const SOAK =

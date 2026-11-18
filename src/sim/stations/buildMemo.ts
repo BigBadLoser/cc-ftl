@@ -51,11 +51,6 @@ const claims = (sim: Sim): Set<string> => {
   return s;
 };
 
-/** A replacement for the on-the-spot build in `built` (the test harness shares builds between files, `test/support/buildShare.ts`). Null in the game. */
-type BuildRunner = (job: BuildJob, content: OutpostContent, registry: object) => BuildResult;
-let runner: BuildRunner | null = null;
-export const setBuildRunner = (r: BuildRunner | null): void => { runner = r; };
-
 /** The job's result: taken from the memo, else made now (any claim on it is dropped, so a late result is not kept). Throws as `runBuild` does. */
 function built(sim: Sim, job: BuildJob): BuildResult {
   const key = buildKey(job);
@@ -66,7 +61,7 @@ function built(sim: Sim, job: BuildJob): BuildResult {
     return r;
   }
   claims(sim).delete(key);
-  return runner ? runner(job, buildContent(sim.content), sim.content) : runBuild(job, buildContent(sim.content));
+  return runBuild(job, buildContent(sim.content));
 }
 
 /** A station of a kind and size from a seed: what `buildStation` gives. Throws when no recipe of the kind stands. */
