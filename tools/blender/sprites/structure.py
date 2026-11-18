@@ -49,7 +49,7 @@ def jobs():
     for name in names:
         lk = look(name)
         for sid, fp, kind, fn in DEFAULT:
-            if kind == "ghost" or sid.startswith("tile.door") or sid == STAND_IN or CORNER.search(sid) or \
+            if kind in ("ghost", "wire") or sid.startswith("tile.door") or sid == STAND_IN or CORNER.search(sid) or \
                     (only and sid not in only):
                 continue
             if DEFAULT_VARIANT.search(sid):

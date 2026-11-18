@@ -40,23 +40,19 @@ def _alpha_cnt(a):
 
 
 def render_ghost(objs, W, H):
-    """objs = [plate, glass(, fill)]. Plate: opaque palette-quantized floor plate. Glass: separate pass, never quantized
-    or outlined; its brightness becomes alpha over a pale tint. Fill: faint surfaces, a pass of their own (so they never
-    hide the glass's lines), their alpha combined with the lines'. Returns (rgb, alpha uint8, padded)."""
-    plate, glass, *fill = objs
-    _show([glass] + fill, False)
+    """objs = [plate, glass]. Plate: opaque palette-quantized floor plate. Glass: separate pass, never quantized or
+    outlined; its brightness becomes alpha over a pale tint. Returns (rgb, alpha uint8, padded)."""
+    plate, glass = objs
+    glass.hide_render = True
     rgb, a = core.render(W, H, "color")
     c, op = post.downsample(rgb, a > 0.5, SS, 8, True)
-    plate.hide_render = True
-    ga = 0.0
-    for ob in [glass] + fill:
-        ob.hide_render = False
-        rgb2, a2 = core.render(W, H, "color")
-        ob.hide_render = True
-        cov = post.blocks(a2 > 0.5, SS)
-        lum = (post.blocks(rgb2.mean(-1), SS) * cov).sum(-1) / cov.shape[-1]      # (weighted by coverage: antialiased)
-        ga = 1 - (1 - ga) * (1 - np.clip(lum / 255.0 * 0.65, 0, 0.9))
-    _show([plate, glass] + fill, True)
+    glass.hide_render, plate.hide_render = False, True
+    rgb2, a2 = core.render(W, H, "color")
+    plate.hide_render = False
+    cov = post.blocks(a2 > 0.5, SS)
+    cnt = cov.sum(-1)
+    lum = (post.blocks(rgb2.mean(-1), SS) * cov).sum(-1) / np.maximum(cnt, 1)
+    ga = np.where(cnt >= post.scaled(3, SS), np.clip(lum / 255.0 * 0.65, 0, 0.9), 0.0)    # low threshold: thin lines stay unbroken
     tint = np.array([200.0, 214.0, 232.0])
     out = np.where(op[..., None], c.astype(float), tint)
     mixed = np.where(op[..., None], c * (1 - ga[..., None]) + tint * ga[..., None], tint)
@@ -70,12 +66,16 @@ def _show(objs, on):
 
 
 def render_sprite(sid, kind, objs, want_uv=False):
-    if kind == "ghost":
+    if kind in ("ghost", "wire"):                       # ("wire": the rear hull ghost's renderer, hull_wire.render)
         xs = core.extent_px(objs)
         xmin, xmax, ymin, ymax = xs
         W = 2 * (int(math.ceil(max(-xmin, xmax))) + 5)
         H = 2 * (int(math.ceil(max(-ymin, ymax))) + 5)
-        c, al = render_ghost(objs, W, H)
+        if kind == "wire":
+            from .hull_wire import render
+            c, al = render(objs, W, H)
+        else:
+            c, al = render_ghost(objs, W, H)
         c, al = _pad1(c), np.pad(al, 1)
         z = np.zeros((H + 2, W + 2, 4), np.uint8)
         return c, al > 0, z, (W + 2) // 2, (H + 2) // 2, al
@@ -114,7 +114,7 @@ def render_sprite(sid, kind, objs, want_uv=False):
     elif kind.startswith("decal:"):                     # a quarter-tile decal ("decal:<qi><qj>"): only its quarter's px,
         op = op & quarter_mask(W, H, int(kind[6]), int(kind[7]))     # the rest of the mesh is margin for the px on its edge
         c, op = _pad1(c), _pad1(op)
-    elif kind in ("block", "wide", "over", "fx", "ghost"):
+    elif kind in ("block", "wide", "over", "fx", "ghost", "wire"):
         c, op = _pad1(c), _pad1(op)
     else:
         c, op = post.outline(c, op, True)

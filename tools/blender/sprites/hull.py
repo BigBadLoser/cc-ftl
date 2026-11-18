@@ -228,8 +228,11 @@ def out_block(mask, o, variant=0, part="rim", room=0, corners=0):
         wire(m, sp)
         _rise(m, mask, room, corners)
         f = core.Mesh(f"hull_ghost_fill_{mask}_{room}_{corners}", flat=True)
-        sp.col_top = sp.col_skirt = sp.col_face = lambda *a: FILL           # noqa: E731 (its surfaces: a faint
-        emit(f, sp)                                                         #   fill, rendered on their own)
+        sp.col_top = sp.col_skirt = lambda *a: FILL                         # noqa: E731 (its surfaces: a faint
+        sp.col_face = lambda face, x, y, z: FILL if sp._inner(x, y) < 0.5 / GN else None   # noqa: E731 (fill,
+        emit(f, sp)                                                         #   rendered on their own; of the faces
+                                                                            #   only the foot's on the room side: the
+                                                                            #   rest are cut ends no line bounds)
         fill = [f.build()] if f.f else []
     else:
         emit(m, sp)

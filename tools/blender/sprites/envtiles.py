@@ -57,7 +57,7 @@ for _m in range(16):
         for _r in (0, 1, 8, 9):                    # ... and which unconnected N / W sides face a room
             if _r & _m:
                 continue
-            SPRITES.append((f"tile.hull.ghost.m{_m}{f'c{_c}' if _c else ''}{f'.r{_r}' if _r else ''}", (1, 1), "ghost",
+            SPRITES.append((f"tile.hull.ghost.m{_m}{f'c{_c}' if _c else ''}{f'.r{_r}' if _r else ''}", (1, 1), "wire",
                             lambda m=_m, r=_r, c=_c: out_block(m, 0, room=r, corners=c)))
 def _variant(fn, tr):
     """fn built as a straight piece's variant (wall3d.VARIANT = tr)."""

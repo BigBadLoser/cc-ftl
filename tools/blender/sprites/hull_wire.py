@@ -153,3 +153,34 @@ def _extend(sp, lo, hi):
         return lo, hi
     vx, vy = (hi[0] - lo[0]) / (dh - dl), (hi[1] - lo[1]) / (dh - dl)
     return (lo[0] - vx * dl, lo[1] - vy * dl), (hi[0] + vx * (CD - dh), hi[1] + vy * (CD - dh))
+
+
+def render(objs, W, H):
+    """The "wire" sprite kind (env_build.render_sprite): objs = [plate, lines(, fill)]. Like env_build.render_ghost (the
+    plate opaque and quantized; a pass's brightness becomes alpha over a pale tint) but its alpha weighted by coverage, so
+    the 1 px lines are antialiased, and the fill a pass of its own, so its surfaces never hide a line: the passes' alphas
+    combined. Returns (rgb, alpha uint8)."""
+    import numpy as np
+    from . import post
+    SS = core.SS
+    plate, *glass = objs
+    for ob in glass:
+        ob.hide_render = True
+    rgb, a = core.render(W, H, "color")
+    c, op = post.downsample(rgb, a > 0.5, SS, 8, True)
+    plate.hide_render = True
+    ga = 0.0
+    for ob in glass:
+        ob.hide_render = False
+        rgb2, a2 = core.render(W, H, "color")
+        ob.hide_render = True
+        cov = post.blocks(a2 > 0.5, SS)
+        lum = (post.blocks(rgb2.mean(-1), SS) * cov).sum(-1) / cov.shape[-1]
+        ga = 1 - (1 - ga) * (1 - np.clip(lum / 255.0 * 0.65, 0, 0.9))
+    plate.hide_render = False
+    for ob in glass:
+        ob.hide_render = False
+    tint = np.array([200.0, 214.0, 232.0])
+    mixed = np.where(op[..., None], c * (1 - ga[..., None]) + tint * ga[..., None], tint)
+    alpha = np.where(op, 255, np.round(ga * 255)).astype(np.uint8)
+    return mixed.astype(np.uint8), alpha
