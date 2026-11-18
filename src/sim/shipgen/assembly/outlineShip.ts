@@ -21,7 +21,12 @@ import { RegionGrid, SOLID, SPACE } from './regions';
 const BAND = 2;
 /** Floor rows a side room has along most of the hull (and a dock's straight stretch). */
 const MIN_DEPTH = 3;
-const ZONE = ['weapons', 'bridge', 'shields', 'core', 'dock', 'quarters', 'support', 'plant', 'cargo', 'hangar', 'reactor'];
+/** Columns a cabin takes at least, its wall included. */
+const CABIN = 4;
+/** Floor a cabin takes: barracks with this much floor a bunk become cabins. */
+const CABIN_AREA = 14;
+/** Side rooms bow to stern: guns forward, then defences, stores and works, the crew's rooms aft (where a flared stern is deepest). */
+const ZONE = ['weapons', 'bridge', 'shields', 'core', 'dock', 'reactor', 'plant', 'cargo', 'hangar', 'support', 'quarters'];
 
 /** The silhouette at `sx` times its length and `sy` its beam, as a mask about the centre row: `inside(x, y)` with y = 0 the axis. */
 function scaled(sil: Silhouette, sx: number, sy: number): { W: number; H: number; inside: (x: number, y: number) => boolean } {
@@ -103,7 +108,10 @@ function layout(plan: ShipPlan, sil: Silhouette, sx: number, sy: number, type: N
   const rest = [...lone, ...(plan.crew.length >= 3 ? [MESS] : []), ...reactors, ...plan.shields, ...(plan.core ? [plan.core] : []), dockSpec(), dockSpec(), ...plan.quarters, ...plan.support, ...plan.cargo, ...plan.hangars]
     .sort((a, b) => ZONE.indexOf(a.role) - ZONE.indexOf(b.role));
   const [gn, gs] = pairUp(guns);
-  const [rn, rs] = mirrorPairs(rest);
+  const [rn0, rs0] = mirrorPairs(rest);
+  // Pairing reorders them: back into zone order, by the north room.
+  const byZone = rn0.map((r, i) => [r, rs0[i] as RoomSpec] as const).sort(([a], [b]) => ZONE.indexOf(a.role) - ZONE.indexOf(b.role));
+  const rn = byZone.map(([a]) => a), rs = byZone.map(([, b]) => b);
   const north = [...gn, ...rn], south = [...gs, ...rs];
   if (NAVY_TYPES[type].guns === 'spread' && gn.length > 1) {
     // Spread: the first pair forward, the rest one between every few rooms.
@@ -159,10 +167,15 @@ function layout(plan: ShipPlan, sil: Silhouette, sx: number, sy: number, type: N
   const cut = slice(full) ?? slice((1 + full) / 2) ?? slice(1);
   if (!cut) return null;
   const { order, cuts } = cut;
-  // The last room runs on to the drive section's wall; a dock last leaves its bay as cut and the gap to the drive
-  // section is the corridor's (an open alcove).
+  // What the band has left over goes to the crew's quarters (the rooms after them move aft), else to the last room;
+  // a dock last leaves its bay as cut and the gap to the drive section is the corridor's (an open alcove).
   const lastDock = order[order.length - 1]?.[0].role === 'dock';
-  if (cuts.length > 0 && !lastDock) (cuts[cuts.length - 1] as [number, number])[1] = xS;
+  const slack = xS - ((cuts[cuts.length - 1] as [number, number])[1]);
+  const qi = order.findIndex(([r]) => r.role === 'quarters');
+  if (slack > 0 && qi >= 0) {
+    (cuts[qi] as [number, number])[1] += slack;
+    for (let k = qi + 1; k < cuts.length; k++) { (cuts[k] as [number, number])[0] += slack; (cuts[k] as [number, number])[1] += slack; }
+  } else if (cuts.length > 0 && !lastDock) (cuts[cuts.length - 1] as [number, number])[1] = xS;
 
   const paint = (id: number, x0: number, x1: number, yIn: (y: number) => boolean): void => {
     for (let tx = x0; tx < x1; tx++) for (let ty = -H; ty <= H; ty++) if (inside(tx, ty) && yIn(ty)) g.set(ox + tx, ty, id);
@@ -174,8 +187,16 @@ function layout(plan: ShipPlan, sil: Silhouette, sx: number, sy: number, type: N
     // An airlock bay is open to the corridor: a hall with its fixture, through the corridor's wall row.
     const make = (spec: RoomSpec): number => (spec.role === 'dock' ? g.hall('dock', undefined, spec) : g.room(spec.role, { spec }));
     const from = r.role === 'dock' ? BAND - 1 : 1;
-    paint(make(r), x0, x1, (y) => y < -from);
-    paint(make(sr), x0, x1, (y) => y > from);
+    // Barracks long enough for it become cabins of a bunk or two, a plating column between, each off the corridor.
+    let area = 0;
+    for (let tx = x0; tx < x1; tx++) area += Math.max(0, depth(tx));
+    const k = r.role === 'quarters' ? Math.max(1, Math.min(r.mods.length, Math.floor(area / CABIN_AREA), Math.floor((x1 - x0 + 1) / CABIN))) : 1;
+    for (let c = 0; c < k; c++) {
+      const c0 = x0 + Math.round(((x1 - x0 + 1) * c) / k), c1 = x0 + Math.round(((x1 - x0 + 1) * (c + 1)) / k) - (c < k - 1 ? 1 : 0);
+      const part = (spec: RoomSpec): RoomSpec => (k === 1 ? spec : { ...spec, mods: spec.mods.filter((_, m) => m % k === c), w: c1 - c0 });
+      paint(make(part(r)), c0, c1, (y) => y < -from);
+      paint(make(part(sr)), c0, c1, (y) => y > from);
+    }
   });
   for (let tx = 0; tx < W; tx++) for (let ty = -H; ty <= H; ty++) if (inside(tx, ty) && g.at(ox + tx, ty) === SPACE) g.set(ox + tx, ty, SOLID);
   paint(g.room('engine', { spec: engine }), xS + 1, W, (y) => y <= -BAND);
