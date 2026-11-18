@@ -106,6 +106,9 @@ node tools/shipgen/cli.js faction.navy --depth 9 --count 12 --views all --out /t
 # Views: detail | silhouette | assembly | structure (comma list) or all. Seeds: --from 13 --count 24
 # One hull family only:
 node tools/shipgen/cli.js faction.drones:picket --depth 9 --count 12 --views structure,silhouette --out /tmp/sheets/after
+# Every room named and every piece of furniture coded, one PNG per seed (<base>-labels-s<seed>.png): use this
+# to show a layout to the user, since silhouette and structure views are hard to judge rooms from
+node tools/shipgen/cli.js faction.navy:cruiser --depth 9 --count 3 --views labels --out /tmp/sheets/labels
 # Live viewer: npm run dev, then open /tools/shipgen/
 ```
 
