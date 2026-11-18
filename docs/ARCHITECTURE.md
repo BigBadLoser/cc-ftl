@@ -2741,8 +2741,9 @@ and the jobs screen. There is no overall ship maximum: engine capacity, summed o
 **Engine capacity** (`sim/ftl/capacity.ts`, `ftl/overcharge.ts`). `EngineDef.hullCapacity` is the size one engine carries (Mk I 330 in
 `content/modules.ts`, Mk II 495 and Mk III 700 in `content/tiers.ts`; the starter on two Mk I is 416 / 660, 63%). `hullLoad(sim, ship)` gives tiles, capacity
 (engines with hp above 0), `over` and `ratio`; a ship with no engine module has no limit. Over capacity, `jump` rejects with `overweight` (`galaxy.jump`
-and a queued `ftl.charge` with a route) unless the command carries `overcharge`; `combat.flee` always overcharges. Only the player's ship obeys it: NPC ships
-are exempt until shipgen gives big hulls enough engines (issue #129, TODO at `hullLoad` and in `jump`). An overcharged jump calls `applyOvercharge`
+and a queued `ftl.charge` with a route) unless the command carries `overcharge`; `combat.flee` always overcharges. Generated ships obey it too: `templateHullLoad`
+(the same measure on a template) is a generation check (`fitShell`; hand-drawn templates are not held to it), and `generateAttempt` rebuilds a hull short of engines with the engines it lacks
+added to the plan (#129), so an NPC ship, and a prize taken from one, starts within capacity. An overcharged jump calls `applyOvercharge`
 before the ship is lifted: risk = overload (tiles over capacity / capacity) against `OVERCHARGE_FULL` (0.5), zero at capacity (nothing rolled). Each working
 engine rolls once for its fate (hit for 25-60% of max hp, or destroyed) and once for a fire in its room, on `sim.rng` in engine id order. Event
 `ftl.overcharged`. No fuel scaling by hull size. UI: "Size N / M" in the ship overview, and the starmap drawer's overweight line, warning and Overcharge button.

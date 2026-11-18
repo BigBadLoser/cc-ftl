@@ -40,7 +40,12 @@ design and iteration history and [STATION_ASSEMBLY.md](STATION_ASSEMBLY.md) for 
 5. **Stamp and fit out** (`generate.ts`, `fit.ts`, `layout.ts`): place modules in rooms, then lights, then extra
    reactors.
 6. **Validate** (`validate.ts`): modules on floor or hull, reachability, power, helm or AI core, engines on the +x
-   hull. Then **metrics** (`metrics.ts`) and the faction's metric bands. Any problem triggers a reseed.
+   hull; `fitShell` also checks for engines enough for the hull's size (`templateHullLoad`, the player's engine capacity rule). Then **metrics**
+   (`metrics.ts`) and the faction's metric bands. Any problem triggers a reseed.
+
+**Engine top-up** (`generateAttempt`, #129): after the arrangement, and again after the fit-out, a hull bigger than its
+engines carry is built again from the same attempt seed with the engines it lacks added to the plan (`planShip`'s
+`extraEngines`; the reactor cap grows with them, so they cost no guns), up to 3 times, before that check reseeds it.
 
 ## File map
 

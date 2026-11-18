@@ -111,7 +111,7 @@
   - "Hull" means the ship's whole footprint, every tile.
   - Ship size is the area inside the outer hull, and engine capacity limits it. Any number of engines can be fitted,
     and there is no ship size cap.
-  - NPC ships ignore engine capacity for now (#129).
+  - Generated (NPC) ships obey engine capacity too: shipgen adds engines until the hull fits (#129).
   - You plan hull growth in Build > Hull plan with brushes: a rectangle of at least 3x3 that must touch the ship, erase,
     a line cut, and mirror. A yard then builds the plan.
   - Yard builds put scaffolding trusses on the whole plan first, for a planning fee. They then turn trusses into hull
