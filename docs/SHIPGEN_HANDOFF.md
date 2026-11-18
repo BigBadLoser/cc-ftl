@@ -26,7 +26,8 @@ design and iteration history and [STATION_ASSEMBLY.md](STATION_ASSEMBLY.md) for 
 1. **Plan** (`plan.ts`): the faction budget at this depth becomes `RoomSpec`s (guns, crew, stores, hangars),
    engine and reactor counts.
 2. **Arrange** (`navyLayouts.ts` `arrangeHull`):
-   - Pick a hull family, draw its grammar once, and run 6 candidate arrangements.
+   - Pick a hull family, draw its grammar once, and run 6 candidate arrangements. The family is the seed's: every attempt
+     builds the family of attempt 0 (`hullOf`), so `previewHull` is what the ship becomes (the roster relies on it, #577).
    - Score them on aspect against the family target, compactness and enclosed holes, and keep the best.
    - `Ctx.variant` is drawn once per ship, so every candidate shares architecture choices such as the drone
      topology.
@@ -37,11 +38,14 @@ design and iteration history and [STATION_ASSEMBLY.md](STATION_ASSEMBLY.md) for 
      `components.ts`; truss sockets in `droneGrammars.ts`), sponson mounts (`navyMounts.ts`).
 4. **Hull fill** (`hullFill.ts`): tapered transitions in the faction's style, seam plates and enclosed-pocket fill.
    These only add wall on space and never touch reserved cells (gun and airlock faces, engine exhaust).
-5. **Stamp and fit out** (`generate.ts`, `fit.ts`, `layout.ts`): place modules in rooms, then lights, then extra
-   reactors.
+5. **Stamp and fit out** (`fitOut.ts`, `fit.ts`, `layout.ts`): place modules in rooms, then lights, then extra
+   reactors. Equipment its own room has no space for tries a room where it still belongs (`ELSEWHERE`: a shield
+   generator in engineering, a shield console in the core).
 6. **Validate** (`validate.ts`): modules on floor or hull, reachability, power, helm or AI core, engines on the +x
    hull; `fitShell` also checks for engines enough for the hull's size (`templateHullLoad`, the player's engine capacity rule). Then **metrics**
-   (`metrics.ts`) and the faction's metric bands. Any problem triggers a reseed.
+   (`metrics.ts`) and the faction's metric bands. The plan's equipment is required (`equipment.ts`, #577): a ship short of
+   the guns, point defence, shield generators and consoles, drone or shuttle bays `plannedEquipment` counted is a problem.
+   Any problem triggers a reseed.
 
 **Engine top-up** (`generateAttempt`, #129, #571): `planShip` first books the engines a hull will need from its rooms: the family's
 `hullPerRoomTile` (hull tiles per room tile, measured over generated ships) times the planned room area, against `hullCapacity`; the
@@ -58,7 +62,9 @@ costs an unneeded engine.
 |---|---|
 | `types.ts` | FactionDef, HullFamilyDef, grammar ids, DonorKind, TransitionStyle, GenResult and debug records |
 | `plan.ts` | budget → ShipPlan and RoomSpecs, `weaponSpec`, `cargoSpec`, `pickWeighted`, `shuffle` |
-| `generate.ts` | the attempt/reseed loop, fit-out, template, metrics |
+| `generate.ts` | the attempt/reseed loop, the seed's hull family, template, metrics |
+| `fitOut.ts`, `fitted.ts` | the fit-out (modules into rooms, lights, extra reactors); the fitted layout and its template |
+| `equipment.ts` | the plan's required equipment: `plannedEquipment`, `equipmentShort` |
 | `arranger.ts` | the 2D arranger: Block, ports, attach, attachMirrored, `mirrorBlock`, `mirrorX`, `cell` / `reserved` / `box` |
 | `hullFill.ts` | after-arrangement plating: `taper`, `plate`, `holes`, `fillHoles` |
 | `blocks.ts` | `blockFrom` (freeze a local Builder into a Block), `localBuilder`, `hallBlock` |

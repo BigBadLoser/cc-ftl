@@ -1,5 +1,6 @@
 import type { Faction } from '../combat/components';
 import type { ItemQty, ShipTemplate } from '../registry';
+import type { Equipment } from './equipment';
 
 /**
  * Procedural ship layouts, in stages: pick a ship role and a hull archetype (weighted by the faction's architectural
@@ -245,6 +246,8 @@ export interface GenResult {
   failures: string[];
   /** Diagnostic metrics of the layout. */
   metrics?: Record<MetricId, number>;
+  /** The equipment the ship's plan asked for (`plannedEquipment`; generated ships only), which the template must carry. */
+  planned?: Equipment;
   /** Wall thinning (thinWalls.ts): slabs absorbed, tiles folded, outline tiles changed (must stay 0). */
   thin?: { slabs: number; folded: number; outlineChanged: number };
   /** Airlock-only docks opened into their corridor, and those left walled for want of one (openDocks.ts). */

@@ -243,18 +243,31 @@ export const DONORS: Record<DonorKind, { serves: Need[]; build: Build }> = {
 /** Whatever no donor carried, patched in: a bow for the bridge, a gun band, a habitat, a reactor room. */
 export function leftovers(c: Ctx, f: FactionDef, p: Pool): Block[] {
   const out: Block[] = [];
+  // A donor that cannot be built hands back what it took (as `build` does), so nothing planned is dropped (#577).
   const add = (k: DonorKind): void => {
     p.share = {};
     if (k === 'navyBow' || k === 'habitat') p.commandBy = k;
+    const save = clone(p);
     const b = DONORS[k].build(c, f, p);
     if (b) out.push(b);
+    else restore(p, save);
   };
   if (p.command) add('navyBow');
   if (p.command) add('habitat');
   if (p.hangars.length > 0) add('freighter');
   if (p.guns.length > 0) add('navyBattery');
   if (p.quarters.length > 0 || p.support.length > 0) add('habitat');
-  if (p.core.length > 0) add('station');
+  for (let n = p.core.length; n > 0; n = p.core.length) {
+    add('station');
+    if (p.core.length >= n) break;
+  }
+  // Shields or a core no station module took (it wants two rooms): a band of their own.
+  if (p.core.length > 0) {
+    const specs = p.core.splice(0);
+    const half = Math.ceil(specs.length / 2);
+    const blk = bandBlock(c.rng, 'battery', specs.slice(0, half), specs.slice(half), { depth: Math.max(3, ...specs.map((s) => s.h)), hatchN: true, hatchS: true });
+    if (blk) out.push({ ...blk, donor: 'navy', label: 'navy: equipment bay' });
+  }
   const rr = p.reactors > 0 ? reactorRoom(c.rng, p.reactors) : null;
   if (rr) {
     out.push(freeze(rr, 'reactor', 'patched reactor', 'scrap'));
