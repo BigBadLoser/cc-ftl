@@ -185,6 +185,8 @@ export interface FactionDef {
   architecture: ArchitectureDef;
   /** Assembly-driven generation (v3): hull families. When present, the faction uses the composer instead of v2. */
   hullFamilies?: readonly HullFamilyDef[];
+  /** Prototype (SHIPGEN_V4 step 2): the drawn hull's walls and doors are settled on the region grid (assembly/regrid.ts), not thinned. */
+  regrid?: boolean;
   /** Tapered transitions where sections of different widths meet (none: exposed joins, e.g. drone beams). */
   transition?: TransitionStyle;
   /** Salvage sources: the factions whose generators build navy- and drone-origin donors, and the families they use. */

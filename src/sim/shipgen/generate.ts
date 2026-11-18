@@ -21,6 +21,7 @@ import { thinWalls } from './thinWalls';
 import { extractContainers, type PlacedContainer } from './containerCells';
 import { openBareDocks } from './openDocks';
 import { erodeHull } from './erodeHull';
+import { regrid } from './assembly/regrid';
 import type { ArchetypeId, FactionDef, GenResult, GenRoom, HullFamilyDef, RoomRole, ShipRoleDef } from './types';
 
 /** Attempts before giving up on a seed (each reseeds deterministically). */
@@ -144,6 +145,16 @@ export function finishLayout(
   const labels = b.cv.labels;
   const roleOfLabel = (l: { chunk: string; letter: string }): RoomRole => b.chunkRoles.get(`${l.chunk}:${l.letter}`) ?? roleOfLetter(l.letter) ?? 'cargo';
   const partByKey = new Map(b.parts.map((p) => [p.key, p.spec]));
+  const KEEP0: readonly RoomRole[] = ['dock', 'engine', 'hangar'];
+  if (f.regrid) {
+    // The drawing as it stands, its walls and doors settled on the region grid (assembly/regrid.ts).
+    const { rows: drawn, labels: lab, width, height, oy } = b.cv.crop();
+    const { rows: framed, containers } = extractContainers(drawn);
+    const roles = labels.map((l) => roleOfLabel(l));
+    const specs = specsOf(b);
+    const shell = regrid({ rows: framed, labels: lab, width, height, roles, specs, grow: true, ...(f.architecture.symmetry > 0 ? { axis2: b.axis2 - 2 * oy } : {}), canGrow: (i) => !specs[i]?.sealed && !KEEP0.includes(roles[i] as RoomRole) });
+    return fitShell(rng, f, factionId, seed, role, archetype, plan, { ...shell, containers }, topology, defs, n, opts);
+  }
   // One wall between parts: slabs become floor, spare hull layers and double partitions go (thinWalls.ts).
   const KEEP: readonly RoomRole[] = ['dock', 'engine', 'hangar'];
   const thin = thinWalls(b.cv, {

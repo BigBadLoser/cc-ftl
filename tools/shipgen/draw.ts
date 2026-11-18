@@ -127,11 +127,12 @@ export function gen(factionSpec: string, seed: number, depth: number): GenResult
     const type = factionSpec.split(':')[1] as NavyType | undefined;
     return generateNavy(content.factions['faction.navy' as keyof typeof content.factions] as never, 'faction.navy', seed, depth, defs, ...(type ? [type] : []));
   }
-  const [faction, family] = factionSpec.split(':') as [string, string | undefined];
+  const grid = factionSpec.includes('~grid');
+  const [faction, family] = factionSpec.replace('~grid', '').split(':') as [string, string | undefined];
   const f0 = (content.factions as Record<string, (typeof content.factions)[keyof typeof content.factions]>)[faction];
   if (!f0) throw new Error(`unknown faction ${faction}; try ${factionIds().join(', ')}`);
   const f = family && f0.hullFamilies ? { ...f0, hullFamilies: f0.hullFamilies.filter((h) => h.id === family) } : f0;
-  return generateShip(f as typeof f0, faction, seed, depth, defs);
+  return generateShip((grid ? { ...f, regrid: true } : f) as typeof f0, faction, seed, depth, defs);
 }
 
 export const stationIds = (): string[] => Object.keys(content.stations);
