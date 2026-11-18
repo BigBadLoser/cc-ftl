@@ -21,8 +21,6 @@ export type ExtraCheck = (t: ShipTemplate, defs: Record<string, ModuleDef>) => s
 export interface FinishOpts {
   immobile?: boolean;
   check?: ExtraCheck;
-  /** Airlocks may face any way (the station assembly; the arranger's hulls keep theirs off the stern). */
-  airlocksAnyWay?: boolean;
   /** Turrets to stand on open ground outside the hull, cabled to it (a prefab asteroid base's guns and point defence: groundTurrets.ts). */
   ground?: GroundPlan;
   /** Rooms where a module standing apart on open ground is entered: the fit-out checks its walk from there (a prefab farm's greenhouses). */
@@ -57,7 +55,7 @@ const rank = (id: string, d: ModuleDef): number => {
 /** Place every room's planned modules in that room; a reason string when something essential does not fit. */
 export function fitOut(
   rng: Rng, f: FactionDef, rows: string[], roomOf: Int16Array, roles: RoomRole[], specs: (RoomSpec | undefined)[], defs: Record<string, ModuleDef>,
-  o: Pick<FinishOpts, 'airlocksAnyWay' | 'immobile' | 'ground' | 'entries'> = {},
+  o: Pick<FinishOpts, 'immobile' | 'ground' | 'entries'> = {},
 ): Fitted {
   const lay = new Layout(rows, roomOf, roles, defs);
   for (const e of o.entries ?? []) lay.entries.add(e);
@@ -74,7 +72,7 @@ export function fitOut(
     const k = equipKind(defs[id]);
     return (k ? ELSEWHERE[k] : []).flatMap((r) => roles.flatMap((x, i) => (x === r && i !== room && !specs[i]?.sealed ? [i] : [])));
   };
-  const rots = (id: string): number[] => (o.airlocksAnyWay && defs[id]?.airlock ? [0, 1, 2, 3] : rotsOf(id, defs[id] as ModuleDef));
+  const rots = (id: string): number[] => rotsOf(id, defs[id] as ModuleDef);
   const stockUp = (idx: number, spec: RoomSpec | undefined): void => {
     const id = lay.modules[idx]?.def as string;
     if (spec?.stock && defs[id]?.storage) {

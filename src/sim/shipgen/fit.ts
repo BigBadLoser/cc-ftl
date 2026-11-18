@@ -3,18 +3,19 @@ import { footprintTiles, rotatedSize } from '../modules/footprint';
 import type { ModuleDef } from '../registry';
 import type { Layout, PlacedModule } from './layout';
 
-/** Rotations the generator uses per module: the ones the hand-made templates use (and the art covers). */
+/**
+ * Rotations the generator may give a module: any (every module has art in every direction), but for engines, which
+ * face the stern (+x) for their exhaust, and pieces that look the same turned half round (two are enough).
+ */
 export function rotsOf(defId: string, def: ModuleDef): number[] {
   if (def.engine) return [1]; // engines on the camera-facing stern (+x) hull
-  if (def.airlock) return [0, 2, 3];
-  if (defId === 'module.bed') return [1, 3, 0];
-  if (defId === 'module.lifeSupport') return [0, 1, 3];
-  // A reactor stands upright or turned lengthwise (a long, shallow reactor room).
-  if (def.power > 0) return [0, 1];
   if (defId === 'module.mess_table' || defId === 'module.med_bed' || defId === 'module.hydroponics') return [0, 1];
-  if (def.console || def.galley || def.storage || def.access || defId === 'module.chair') return [0, 1, 2, 3];
-  return [0];
+  return [0, 1, 2, 3];
 }
+
+/** A placement preference, not a rule: an airlock looks best on a side of the hull (facing +y or -y). */
+const SIDE_AIRLOCK = 3;
+const preferred = (def: ModuleDef, rot: number): number => (def.airlock && rot % 2 === 0 ? SIDE_AIRLOCK : 0);
 
 /** How snugly a footprint hugs walls (tiles of its rim that touch a wall or another room), plus a little noise. */
 function hugScore(lay: Layout, def: ModuleDef, x: number, y: number, rot: number, room: number): number {
@@ -57,7 +58,7 @@ export function placeOne(
       for (let y = y0 - h; y <= y1 + 1; y++) {
         for (let x = x0 - w; x <= x1 + 1; x++) {
           if (lay.fitError(defId, x, y, rot, room)) continue;
-          let score = hugScore(lay, def, x, y, rot, room) + rng.next() * 1.5;
+          let score = hugScore(lay, def, x, y, rot, room) + preferred(def, rot) + rng.next() * 1.5;
           if (opts.spread) score += distToModules(lay, x + w / 2, y + h / 2) * 0.6;
           cands.push({ pm: { def: defId, x, y, rot }, score });
         }
