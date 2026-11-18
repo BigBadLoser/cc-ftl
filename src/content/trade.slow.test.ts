@@ -1,20 +1,23 @@
 import { describe, expect, it } from 'vitest';
-import { CombatC, ShipC, StorageC, TraderC, ModuleC, deserialize, newGame, serialize, storageAdd, isContraband, unitPrice, quote, hailVerdict, reputationWith, playerItems, type Sim, type SimEvent } from '../sim';
+import { isContraband } from '../sim/blackmarket/services';
+import { CombatC, ShipC } from '../sim/combat/components';
+import type { SimEvent } from '../sim/events';
+import { StorageC } from '../sim/items/components';
+import { storageAdd } from '../sim/items/storage';
+import { ModuleC } from '../sim/modules/components';
+import { newGame } from '../sim/newGame';
+import { deserialize, serialize } from '../sim/save';
+import type { Sim } from '../sim/sim';
+import { playerItems } from '../sim/trade/player';
+import { quote, reputationWith, unitPrice } from '../sim/trade/pricing';
+import { hailVerdict } from '../sim/trade/traders';
+import { TraderC } from '../sim/trade/types';
 import { content } from './index';
 import { shipIdOf } from '../sim/regions';
 import { shipIds } from '../sim/regions';
+import { nth, run } from '../../test/support/sim';
 
-/** The ship with ordinal `n` (1 = the player's, 2 = the first enemy). */
-const nth = (sim: Sim, n: number): number => shipIds(sim)[n - 1] as number;
 
-const run = (sim: Sim, n: number): SimEvent[] => {
-  const out: SimEvent[] = [];
-  for (let i = 0; i < n; i++) {
-    sim.step();
-    out.push(...sim.events.drain());
-  }
-  return out;
-};
 const ofType = <T extends SimEvent['type']>(events: SimEvent[], type: T): Extract<SimEvent, { type: T }>[] =>
   events.filter((e): e is Extract<SimEvent, { type: T }> => e.type === type);
 const rejected = (events: SimEvent[]): string[] => ofType(events, 'command.rejected').map((e) => e.reason);

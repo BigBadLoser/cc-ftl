@@ -1,21 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import {
-  AsteroidC, ShipC, asteroidAt, deserialize, generateAsteroid, homeShip, isAsteroidRock, newGame, ownerAt,
-  serialize, shipAt, shipIdAt, type OreDef, type Sim,
-} from '../../sim';
-import { emptyNeighbour } from './nodeFixture';
+import { AsteroidC } from '../../sim/asteroids/components';
+import { generateAsteroid } from '../../sim/asteroids/gen';
+import type { OreDef } from '../../sim/asteroids/types';
+import { ShipC } from '../../sim/combat/components';
+import { homeShip } from '../../sim/combat/ships';
+import { newGame } from '../../sim/newGame';
+import { asteroidAt, ownerAt, shipAt, shipIdAt } from '../../sim/regions';
+import { deserialize, serialize } from '../../sim/save';
+import type { Sim } from '../../sim/sim';
+import { isAsteroidRock } from '../../sim/structure';
+import { emptyNeighbour } from '../../../test/support/fixtures/node';
 import { content } from '../index';
+import { runLog } from '../../../test/support/sim';
 
 const ORES = Object.values(content.ores) as OreDef[];
-
-function run(sim: Sim, n: number): string[] {
-  const log: string[] = [];
-  for (let i = 0; i < n; i++) {
-    sim.step();
-    for (const e of sim.events.drain()) log.push(e.type === 'command.rejected' ? `${e.type}:${e.command}:${e.reason}` : e.type);
-  }
-  return log;
-}
 
 const asteroids = (sim: Sim): number[] => [...sim.world.query(AsteroidC)].sort((a, b) => a - b);
 
@@ -34,7 +32,7 @@ describe('asteroids in the sector', () => {
   it('debug.spawnAsteroid stamps the plan: rock owned by the asteroid, ore as generated, not a ship', () => {
     const sim = newGame(1, content);
     sim.enqueue({ type: 'debug.spawnAsteroid', kind: 'big', seed: 4, coverage: 'mixed' });
-    expect(run(sim, 1)).toContain('asteroid.spawned');
+    expect(runLog(sim, 1)).toContain('asteroid.spawned');
     const [id] = asteroids(sim);
     const a = sim.world.get(id!, AsteroidC)!;
     expect(sim.world.has(id!, ShipC)).toBe(false);
@@ -62,33 +60,33 @@ describe('asteroids in the sector', () => {
     const sim = newGame(1, content);
     const s = sim.world.get(homeShip(sim), ShipC)!;
     sim.enqueue({ type: 'debug.spawnAsteroid', kind: 'big', seed: 4, x: s.x, y: s.y });
-    expect(run(sim, 1)).toContain('command.rejected:debug.spawnAsteroid:overlap');
+    expect(runLog(sim, 1)).toContain('command.rejected:debug.spawnAsteroid:overlap');
     sim.enqueue({ type: 'debug.spawnAsteroid', kind: 'field', seed: 2 });
-    run(sim, 1);
+    runLog(sim, 1);
     const [id] = asteroids(sim);
     const part = sim.world.get(id!, AsteroidC)!.parts[0]!;
     sim.enqueue({ type: 'debug.spawnEnemy', template: 'ship.raider', x: part.x, y: part.y });
-    expect(run(sim, 1)).toContain('command.rejected:debug.spawnEnemy:overlap');
+    expect(runLog(sim, 1)).toContain('command.rejected:debug.spawnEnemy:overlap');
     sim.enqueue({ type: 'debug.spawnAsteroid', kind: 'field', seed: 2, x: sim.world.get(id!, AsteroidC)!.x, y: sim.world.get(id!, AsteroidC)!.y });
-    expect(run(sim, 1)).toContain('command.rejected:debug.spawnAsteroid:overlap');
+    expect(runLog(sim, 1)).toContain('command.rejected:debug.spawnAsteroid:overlap');
   });
 
   it('survives a save and load round trip, and the sim plays on identically', () => {
     const a = newGame(2, content);
     a.enqueue({ type: 'debug.spawnAsteroid', kind: 'field', seed: 9 });
-    run(a, 20);
+    runLog(a, 20);
     const b = deserialize(serialize(a), content);
     expect(serialize(b)).toBe(serialize(a));
     const [id] = asteroids(b);
     expect(rockTiles(b, id!)).toBe(rockTiles(a, id!));
-    expect(run(b, 100)).toEqual(run(a, 100));
+    expect(runLog(b, 100)).toEqual(runLog(a, 100));
     expect(serialize(b)).toBe(serialize(a));
   });
 
   it('stays in its node when the player jumps away, and comes back whole on return', () => {
     const sim = newGame(3, content);
     sim.enqueue({ type: 'debug.spawnAsteroid', kind: 'big', seed: 5 });
-    run(sim, 1);
+    runLog(sim, 1);
     const [id] = asteroids(sim);
     const before = { c: JSON.stringify(sim.world.get(id!, AsteroidC)), tiles: rockTiles(sim, id!) };
     const ship = homeShip(sim);
@@ -97,7 +95,7 @@ describe('asteroids in the sector', () => {
     const start = sim.sector.node;
     const away = emptyNeighbour(sim, start);
     sim.enqueue({ type: 'debug.galaxyTeleport', node: away });
-    run(sim, 1);
+    runLog(sim, 1);
     expect(asteroids(sim)).toEqual([]);
     expect(sim.archives.find((x) => x.node === start)?.entities.some((e) => e.id === id)).toBe(true);
     // a generated ship may lie on the home spot in the away node: deploy at the first clear one
@@ -107,15 +105,15 @@ describe('asteroids in the sector', () => {
       if (!sim.events.drain().some((e) => e.type === 'command.rejected')) break;
     }
     sim.enqueue({ type: 'debug.galaxyTeleport', node: start });
-    run(sim, 1);
+    runLog(sim, 1);
     expect(asteroids(sim)).toEqual([id]);
     expect(JSON.stringify(sim.world.get(id!, AsteroidC))).toBe(before.c);
     expect(rockTiles(sim, id!)).toBe(before.tiles);
     // the asteroid blocks deploying onto it
     const a = sim.world.get(id!, AsteroidC)!;
     sim.enqueue({ type: 'sector.deploy', x: a.x, y: a.y });
-    expect(run(sim, 1).some((e) => e === 'command.rejected:sector.deploy:overlap' || e === 'command.rejected:sector.deploy:outOfBounds')).toBe(true);
+    expect(runLog(sim, 1).some((e) => e === 'command.rejected:sector.deploy:overlap' || e === 'command.rejected:sector.deploy:outOfBounds')).toBe(true);
     sim.enqueue({ type: 'sector.deploy', ...home });
-    expect(run(sim, 1)).toContain('sector.deployed');
+    expect(runLog(sim, 1)).toContain('sector.deployed');
   });
 });

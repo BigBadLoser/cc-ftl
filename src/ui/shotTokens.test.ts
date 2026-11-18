@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { SHOT_COLORS, shotColor } from '../sim';
+import { SHOT_COLORS, shotColor } from '../sim/combat/shotColors';
 
 /** Node's fs, loaded by name: the UI tsconfig has no Node types. */
 async function readTheme(): Promise<string> {

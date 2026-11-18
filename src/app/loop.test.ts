@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { content } from '../content';
-import { newGame } from '../sim';
+import { newGame } from '../sim/newGame';
 import { MarkerC } from '../sim/components';
 import { advance, createLoop } from './loop';
 

@@ -1,12 +1,21 @@
 import { describe, expect, it } from 'vitest';
-import { SuitC, AboardC, DraftedC, EquipC, FighterC, HealthC, ModuleC, StunC, PathC, PositionC, VehicleC, deserialize, placementError, serialize, spawnModule, stampShip, type Sim } from '../../sim';
+import { stampShip } from '../../sim/combat/ships';
+import { DraftedC, HealthC, PathC, PositionC } from '../../sim/crew/components';
+import { SuitC } from '../../sim/eva/components';
+import { EquipC, FighterC } from '../../sim/fight/components';
+import { ModuleC } from '../../sim/modules/components';
+import { placementError, spawnModule } from '../../sim/modules/spawn';
+import { StunC } from '../../sim/robots/components';
+import { deserialize, serialize } from '../../sim/save';
+import type { Sim } from '../../sim/sim';
+import { AboardC, VehicleC } from '../../sim/vehicles/components';
 import { AwayC, AwaySiteC, SiteRunC } from '../../sim/away/components';
 import { orderLaunch } from '../../sim/boarding/launch';
 import { awayLeaks } from '../../sim/away/owned';
 import { nearestExterior } from '../../sim/eva/shuttle';
 import { content } from '../index';
 import { shipIdOf } from '../../sim/regions';
-import { airlockOf, crewOn, dockParty, launchParty, modulesOf, nth, of, raiderCrew, run, setup, shuttleOf } from './boardingFixture';
+import { airlockOf, crewOn, dockParty, launchParty, modulesOf, nth, of, raiderCrew, run, setup, shuttleOf } from '../../../test/support/fixtures/boarding';
 
 const home = (sim: Sim, c: number): boolean => shipIdOf(sim, sim.world.get(c, PositionC)) === nth(sim, 1);
 

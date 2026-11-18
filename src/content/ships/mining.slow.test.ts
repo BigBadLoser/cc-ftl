@@ -1,6 +1,18 @@
 import { describe, expect, it } from 'vitest';
-import { AsteroidC, MiningPodC, VehicleC, homeShip, newGame, placementError, shipGrid, spawnModule, spawnVehicle, totalStock, type Sim } from '../../sim';
+import { AsteroidC } from '../../sim/asteroids/components';
+import { homeShip } from '../../sim/combat/ships';
+import { totalStock } from '../../sim/items/stock';
+import { MiningPodC } from '../../sim/mining/components';
+import { placementError, spawnModule } from '../../sim/modules/spawn';
+import { newGame } from '../../sim/newGame';
+import { shipGrid } from '../../sim/regions';
+import type { Sim } from '../../sim/sim';
+import { VehicleC } from '../../sim/vehicles/components';
+import { spawnVehicle } from '../../sim/vehicles/lifecycle';
 import { content } from '../index';
+import { deserialize, serialize } from '../../sim/save';
+import { Struct } from '../../sim/structure';
+import { HOLD, hold, oreTiles, setup as setupPod, stock, until } from '../../../test/support/fixtures/mining';
 
 /** The starter ship with `n` pod bays (first spots that fit, scanning rows), a pod in each, and a field. */
 function setup(n: number): { sim: Sim; pods: number[]; asteroid: number } {
@@ -19,18 +31,6 @@ function setup(n: number): { sim: Sim; pods: number[]; asteroid: number } {
   sim.enqueue({ type: 'debug.spawnAsteroid', kind: 'field', seed: 3 });
   sim.step();
   return { sim, pods, asteroid: [...sim.world.query(AsteroidC)][0]! };
-}
-
-function oreTiles(sim: Sim, asteroid: number): { x: number; y: number; amt: number }[] {
-  const a = sim.world.get(asteroid, AsteroidC)!;
-  const out: { x: number; y: number; amt: number }[] = [];
-  for (let y = a.y; y < a.y + a.height; y++) {
-    for (let x = a.x; x < a.x + a.width; x++) {
-      const ore = sim.sector.grid.get('ore', x, y);
-      if (ore && ore !== content.ores['ore.crystal'].code) out.push({ x, y, amt: sim.sector.grid.get('oreAmt', x, y) });
-    }
-  }
-  return out;
 }
 
 function oreLeft(sim: Sim, asteroid: number): number {
@@ -70,5 +70,38 @@ describe('mining pods, long run', () => {
       expect(sim.world.get(pod, VehicleC)!.state).toBe('stowed');
       expect([undefined, 'unloading']).toContain(sim.world.get(pod, MiningPodC)?.phase);
     }
+  });
+
+  it('never carries more than its hold, goes home full, and makes several trips until the ore runs out', () => {
+    const { sim, pod, asteroid } = setupPod();
+    const tiles = oreTiles(sim, asteroid).filter((o) => o.amt > HOLD).slice(0, 2);
+    const total = tiles.reduce((n, o) => n + o.amt, 0);
+    expect(total).toBeGreaterThan(HOLD * 2);
+    const before = stock(sim);
+    sim.enqueue({ type: 'mining.order', pod, asteroid, tiles });
+    let most = 0;
+    const log = until(sim, 40000, (l) => l.includes('mining.done'), () => { most = Math.max(most, hold(sim, pod)); });
+    expect(most).toBe(HOLD);
+    expect(log.filter((e) => e === 'mining.launched').length).toBeGreaterThanOrEqual(Math.ceil(total / HOLD));
+    expect(log.filter((e) => e === 'mining.tileCleared')).toHaveLength(2);
+    expect(log.at(-1)).toBe('mining.done');
+    for (const t of tiles) expect(sim.sector.grid.get('struct', t.x, t.y)).toBe(Struct.Space);
+    until(sim, 2000, () => false);
+    expect(stock(sim) - before).toBe(total);
+  });
+
+  it('a save mid-trip loads and plays on identically; two runs of a seed match', () => {
+    const a = setupPod(5);
+    const b = setupPod(5);
+    for (const s of [a, b]) s.sim.enqueue({ type: 'mining.order', pod: s.pod, asteroid: s.asteroid });
+    until(a.sim, 3000, () => a.sim.world.get(a.pod, MiningPodC)?.phase === 'mining');
+    until(b.sim, 3000, () => b.sim.world.get(b.pod, MiningPodC)?.phase === 'mining');
+    expect(serialize(b.sim)).toBe(serialize(a.sim));
+    expect(a.sim.world.get(a.pod, VehicleC)!.pilot).not.toBe(0); // saved with the pilot aboard
+    const c = deserialize(serialize(a.sim), content);
+    const la = until(a.sim, 1500, () => false);
+    const lc = until(c, 1500, () => false);
+    expect(lc).toEqual(la);
+    expect(serialize(c)).toBe(serialize(a.sim));
   });
 });

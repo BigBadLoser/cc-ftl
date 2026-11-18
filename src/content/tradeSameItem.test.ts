@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { ShipC, checkOffer, newGame } from '../sim';
+import { ShipC } from '../sim/combat/components';
+import { newGame } from '../sim/newGame';
+import { checkOffer } from '../sim/trade/offers';
 import { content } from './index';
 
 /**

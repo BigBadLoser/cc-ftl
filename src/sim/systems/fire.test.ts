@@ -11,19 +11,13 @@ import type { ContentRegistry, ModuleDef } from '../registry';
 import { spawnTemplateModules } from '../ship';
 import { Sim } from '../sim';
 
-import { stampShip } from '../combat/ships';
 
-import type { ShipTemplate } from '../registry';
 
 import { CREW_MAX_HP } from '../tuning';
 
 import { shipGrid } from '../regions';
+import { fixtureShip, step } from '../../../test/support/sim';
 
-
-/** A fixture ship: the template stamped at the sector origin as an inert ship (a prize is skipped by every ship system). It is the first entity, so its id is 1. */
-function fixtureShip(sim: Sim, t: ShipTemplate): number {
-  return stampShip(sim, t, { faction: 'player', state: 'prize', x: 0, y: 0 });
-}
 
 const mod = (o: Partial<ModuleDef>): ModuleDef => ({
   name: 'm', asset: 'm', footprint: [1, 1], solid: false, power: 0, flammability: 0.1, maxHp: 100, buildWork: 20, ...o,
@@ -62,7 +56,6 @@ function crew(sim: Sim, x: number, y: number): number {
   sim.world.add(id, HealthC, { hp: CREW_MAX_HP, max: CREW_MAX_HP });
   return id;
 }
-const run = (sim: Sim, n: number) => { for (let i = 0; i < n; i++) sim.step(); };
 const secs = (s: number) => s * 20;
 const burning = (sim: Sim) => shipGrid(sim, 1)!.load('fire').filter((f) => f > 0).length;
 const meanO2 = (sim: Sim) => {
@@ -77,7 +70,7 @@ describe('fire', () => {
     const sim = make();
     const events: SimEvent[] = [];
     sim.enqueue({ type: 'debug.ignite', ship: 1, x: 3, y: 2 });
-    run(sim, secs(20));
+    step(sim, secs(20));
     events.push(...sim.events.drain());
     const g = shipGrid(sim, 1)!;
     expect(burning(sim)).toBeGreaterThan(1);
@@ -93,9 +86,9 @@ describe('fire', () => {
     const sim = make();
     crew(sim, 3, 4);
     sim.enqueue({ type: 'debug.ignite', ship: 1, x: 3, y: 2 });
-    run(sim, 2);
+    step(sim, 2);
     expect(sim.world.query(JobC).some((j) => sim.world.get(j, JobC)!.kind === 'extinguish')).toBe(true);
-    run(sim, secs(60));
+    step(sim, secs(60));
     expect(burning(sim)).toBe(0);
     expect(sim.world.query(JobC).filter((j) => sim.world.get(j, JobC)!.kind === 'extinguish')).toHaveLength(0);
     // The crates were damaged, so repair jobs now exist (or are already done).
@@ -107,14 +100,14 @@ describe('fire', () => {
     const g = shipGrid(sim, 1)!;
     for (let y = 2; y <= 4; y++) for (let x = 2; x <= 4; x++) g.set('o2', x, y, 6);
     sim.enqueue({ type: 'debug.ignite', ship: 1, x: 3, y: 2 });
-    run(sim, secs(5));
+    step(sim, secs(5));
     expect(burning(sim)).toBe(0);
   });
 
   it('burns itself out in a sealed room by using up the oxygen', () => {
     const sim = make();
     sim.enqueue({ type: 'debug.ignite', ship: 1, x: 3, y: 2 });
-    run(sim, secs(120));
+    step(sim, secs(120));
     expect(burning(sim)).toBe(0);
     expect(meanO2(sim)).toBeLessThan(13);
     expect(meanO2(sim)).toBeGreaterThan(8);
@@ -124,11 +117,11 @@ describe('fire', () => {
     const { serialize, deserialize } = await import('../save');
     const sim = make();
     sim.enqueue({ type: 'debug.ignite', ship: 1, x: 3, y: 2 });
-    run(sim, secs(8));
+    step(sim, secs(8));
     const loaded = deserialize(serialize(sim), content);
     expect(serialize(loaded)).toBe(serialize(sim));
-    run(sim, 200);
-    run(loaded, 200);
+    step(sim, 200);
+    step(loaded, 200);
     expect(serialize(loaded)).toBe(serialize(sim));
   });
 });

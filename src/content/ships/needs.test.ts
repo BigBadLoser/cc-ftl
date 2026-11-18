@@ -1,12 +1,23 @@
 import { describe, expect, it } from 'vitest';
-import { shipIds } from '../../sim/regions';
-import { CrewC, DownedC, HealthC, ModuleC, MoodC, ShipC, StorageC, TaskC, TICK_HZ, deserialize, homeShip, liftShip, removeModule, stampPacket, newGame, serialize, stat, totalStock, type Sim, type SimEvent } from '../../sim';
+import { TaskC } from '../../sim/ai/components';
+import { ShipC } from '../../sim/combat/components';
+import { homeShip } from '../../sim/combat/ships';
+import { CrewC, DownedC, HealthC, MoodC } from '../../sim/crew/components';
+import type { SimEvent } from '../../sim/events';
+import { StorageC } from '../../sim/items/components';
+import { totalStock } from '../../sim/items/stock';
+import { ModuleC } from '../../sim/modules/components';
+import { removeModule } from '../../sim/modules/spawn';
+import { newGame } from '../../sim/newGame';
+import { expectReplayable } from '../../../test/support/world';
+import { liftShip, stampPacket } from '../../sim/sector/packet';
+import type { Sim } from '../../sim/sim';
+import { stat } from '../../sim/stats';
+import { TICK_HZ } from '../../sim/time';
 import { claimedBed, mealOf } from '../../sim/ai/task';
 import { MOOD_LOW_WORK_MULT, MOOD_VERY_LOW_WORK_MULT } from '../../sim/tuning';
 import { content } from '../index';
 
-/** The ship with ordinal `n` (1 = the player's, 2 = the first enemy). */
-const nth = (sim: Sim, n: number): number => shipIds(sim)[n - 1] as number;
 import { PLAYER_START as P0 } from '../../sim/tuning'; // the player ship's sector top-left
 
 const find = (sim: Sim, def: string): number => sim.world.query(ModuleC).find((id) => sim.world.get(id, ModuleC)?.def === def) as number;
@@ -18,7 +29,8 @@ function emptyLarder(sim: Sim): void {
     if (s) s.stacks = s.stacks.filter((st) => st.item !== 'item.ration');
   }
 }
-import { humans, hungry, needs, run } from './needsFixture';
+import { humans, hungry, needs, run } from '../../../test/support/fixtures/needs';
+import { nth } from '../../../test/support/sim';
 
 describe('hunger', () => {
   it('decays at the species rate and starts every crew member part-fed', () => {
@@ -301,18 +313,11 @@ describe('robots and determinism', () => {
   });
 
   it('is deterministic and survives a save round trip mid-meal', { timeout: 60000 }, () => {
-    const make = () => {
-      const { sim, id } = hungry(30);
-      return { sim, id };
-    };
-    const a = make().sim;
-    run(a, 6 * TICK_HZ);
-    const mid = deserialize(serialize(a), content);
-    run(a, 1500);
-    run(mid, 1500);
-    const b = make().sim;
-    run(b, 6 * TICK_HZ + 1500);
-    expect(serialize(a)).toBe(serialize(b));
-    expect(serialize(mid)).toBe(serialize(a));
+    // Two builds, both 6 s into the meal; one is saved and reloaded at once, then both run 1500 ticks.
+    expectReplayable(() => {
+      const { sim } = hungry(30);
+      run(sim, 6 * TICK_HZ);
+      return sim;
+    }, 1500, { every: 100, saveAt: 1 });
   });
 });

@@ -2,19 +2,13 @@ import { describe, expect, it } from 'vitest';
 
 import { Sim } from '../sim';
 
-import { stampShip } from '../combat/ships';
 
-import type { ShipTemplate } from '../registry';
 
 import { deserialize, serialize } from '../save';
 
 import { shipGrid } from '../regions';
+import { fixtureShip } from '../../../test/support/sim';
 
-
-/** A fixture ship: the template stamped at the sector origin as an inert ship (a prize is skipped by every ship system). It is the first entity, so its id is 1. */
-function fixtureShip(sim: Sim, t: ShipTemplate): number {
-  return stampShip(sim, t, { faction: 'player', state: 'prize', x: 0, y: 0 });
-}
 
 const rows = ['#####', '#_#_#', '#_D_#', '#####'];
 

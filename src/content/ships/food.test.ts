@@ -1,58 +1,22 @@
 import { describe, expect, it } from 'vitest';
-import {
-  CrewC, DownedC, HealthC, JobC, ModuleC, MoodC, NeedsC, PlotC, PositionC, PrioritiesC, ShipC, TICK_HZ, homeShip, newGame, placementError, playerShip, spawnModule, stat, totalStock,
-  type Sim, type SimEvent,
-} from '../../sim';
+import { homeShip } from '../../sim/combat/ships';
+import { DownedC, HealthC, JobC, MoodC, NeedsC, PositionC, PrioritiesC } from '../../sim/crew/components';
+import type { SimEvent } from '../../sim/events';
+import { totalStock } from '../../sim/items/stock';
+import { ModuleC } from '../../sim/modules/components';
+import { newGame } from '../../sim/newGame';
+import type { Sim } from '../../sim/sim';
+import { stat } from '../../sim/stats';
+import { playerShip } from '../../sim/trade/player';
 import { isIdle } from '../../sim/modules/draw';
 import { findFreeBed } from '../../sim/crew/beds';
 import { storageAdd } from '../../sim/items/storage';
 import { moodFactors } from '../../sim/crew/mood';
 import { content } from '../index';
-import { accessTile, footprintTiles } from '../../sim/modules/footprint';
+import { accessTile } from '../../sim/modules/footprint';
 import { findPath } from '../../sim/crew/pathfind';
-
-const run = (sim: Sim, n: number): SimEvent[] => {
-  const out: SimEvent[] = [];
-  for (let i = 0; i < n; i++) {
-    sim.step();
-    out.push(...sim.events.drain());
-  }
-  return out;
-};
-const secs = (n: number): number => Math.round(n * TICK_HZ);
-const humans = (sim: Sim): number[] => sim.world.query(CrewC).filter((id) => sim.world.get(id, CrewC)?.species === 'species.human');
-const find = (sim: Sim, def: string): number => sim.world.query(ModuleC).find((id) => sim.world.get(id, ModuleC)?.def === def) as number;
-const plotOf = (sim: Sim, id: number) => sim.world.get(id, PlotC)!;
-const jobKinds = (sim: Sim): string[] => sim.world.query(JobC).map((j) => sim.world.get(j, JobC)!.kind);
-
-/** A free spot (with the walkway beside it, off every other module's access tile) for a module, scanning the ship from its top-left. */
-function bedAt(sim: Sim, def = 'module.hydroponics'): number {
-  const ship = playerShip(sim) as number;
-  const at = sim.world.get(ship, ShipC)!;
-  const d = content.modules[def as 'module.hydroponics'];
-  const access = new Set(sim.world.query(ModuleC).map((id) => {
-    const m = sim.world.get(id, ModuleC)!;
-    const a = accessTile(content.modules[m.def as 'module.hydroponics'], m.x, m.y, m.rot);
-    return a ? `${a.x},${a.y}` : '';
-  }));
-  const blocks = (x: number, y: number): boolean => footprintTiles(d, x, y, 0).some((t) => access.has(`${t.x},${t.y}`));
-  for (let y = at.y; y < at.y + at.height; y++) {
-    for (let x = at.x; x < at.x + at.width; x++) if (placementError(sim, ship, def, x, y, 0) === null && !blocks(x, y)) return spawnModule(sim, def, x, y, 0);
-  }
-  throw new Error('no room for the bed');
-}
-
-/** The starter game with the larder emptied of everything but what a test adds, one bed, and the crew fed so only the test's crew member acts. */
-function farmGame(): { sim: Sim; bed: number; crew: number[] } {
-  const sim = newGame(3, content);
-  run(sim, 5);
-  const bed = bedAt(sim);
-  for (const h of humans(sim)) {
-    sim.world.get(h, NeedsC)!.hunger = 100;
-    sim.world.get(h, NeedsC)!.rest = 100;
-  }
-  return { sim, bed, crew: humans(sim) };
-}
+import { run } from '../../../test/support/sim';
+import { bedAt, farmGame, find, humans, jobKinds, plotOf, secs } from '../../../test/support/fixtures/farm';
 
 describe('hydroponics', () => {
   it('a bed starts empty, with nothing to do until it is set to a crop', () => {
@@ -73,7 +37,9 @@ describe('hydroponics', () => {
     expect(totalStock(sim, 'item.water')).toBe(water - greens.water);
     expect(plotOf(sim, bed).ready).toBe(false);
     // Grown after its growing time, then a harvest job is posted and done.
-    const grown = run(sim, secs(greens.growSec));
+    // (the full growing time is waited out in food.slow.test.ts: here the crop starts a few seconds short of grown)
+    sim.enqueue({ type: 'debug.setPlot', moduleId: bed, crop: 'crop.greens', grown: greens.growSec - 5 });
+    const grown = run(sim, secs(10));
     expect(grown.some((e) => e.type === 'crop.harvested' && e.count === greens.yield)).toBe(true);
     run(sim, secs(30));
     expect(totalStock(sim, 'item.greens')).toBe(greens.yield);
@@ -274,10 +240,10 @@ describe('medicinal herbs', () => {
     const med = bedAt(sim, 'module.med_bed');
     const ship = homeShip(sim);
     const from = { x: sim.world.get(crew[0] as number, PositionC)!.x, y: sim.world.get(crew[0] as number, PositionC)!.y };
-    expect(findFreeBed(sim, ship, from)?.bed).not.toBe(med);
+    expect(findFreeBed(sim, ship, crew[0] as number, from)?.bed).not.toBe(med);
     for (const id of sim.world.query(ModuleC)) if (id !== med && content.modules[sim.world.get(id, ModuleC)!.def as 'module.bed'].bed) sim.world.get(id, ModuleC)!.reservedBy = 99;
-    expect(findFreeBed(sim, ship, from)).toBeNull();
-    expect(findFreeBed(sim, ship, from, false, undefined, 'critical')?.bed).toBe(med);
+    expect(findFreeBed(sim, ship, crew[0] as number, from)).toBeNull();
+    expect(findFreeBed(sim, ship, crew[0] as number, from, false, undefined, 'critical')?.bed).toBe(med);
   });
 });
 
@@ -342,7 +308,8 @@ describe('bed power and the large bed', () => {
     const events = run(sim, secs(40));
     expect(events.some((e) => e.type === 'crop.planted')).toBe(true);
     expect(totalStock(sim, 'item.water')).toBe(water - greens.water * 2);
-    const grown = run(sim, secs(greens.growSec));
+    sim.enqueue({ type: 'debug.setPlot', moduleId: large, crop: 'crop.greens', grown: greens.growSec - 5 });
+    const grown = run(sim, secs(10));
     expect(grown.some((e) => e.type === 'crop.harvested' && e.count === greens.yield * 3)).toBe(true);
   });
 });

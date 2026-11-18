@@ -8,9 +8,7 @@ import { roomTiles } from '../roomIndex';
 
 import { Sim } from '../sim';
 
-import { stampShip } from '../combat/ships';
 
-import type { ShipTemplate } from '../registry';
 
 import type { SimEvent } from '../events';
 import { Struct } from '../structure';
@@ -20,12 +18,8 @@ import { ModuleC } from '../modules/components';
 import { CREW_MAX_HP } from '../tuning';
 
 import { shipGrid } from '../regions';
+import { fixtureShip, step } from '../../../test/support/sim';
 
-
-/** A fixture ship: the template stamped at the sector origin as an inert ship (a prize is skipped by every ship system). It is the first entity, so its id is 1. */
-function fixtureShip(sim: Sim, t: ShipTemplate): number {
-  return stampShip(sim, t, { faction: 'player', state: 'prize', x: 0, y: 0 });
-}
 
 const mod = (o: Partial<ModuleDef>): ModuleDef => ({
   name: 'm', asset: 'm', footprint: [1, 1], solid: true, power: 0, flammability: 0.1, maxHp: 100, buildWork: 20, ...o,
@@ -68,7 +62,6 @@ function make(withModules = true): Sim {
   if (withModules) spawnTemplateModules(sim, 1, { name: 't', rows, modules });
   return sim;
 }
-const run = (sim: Sim, n: number) => { for (let i = 0; i < n; i++) sim.step(); };
 const secs = (s: number) => s * 20;
 function avgO2(sim: Sim, x0: number, x1: number): number {
   const g = shipGrid(sim, 1)!;
@@ -92,7 +85,7 @@ function breathing(sim: Sim, x: number, y: number): number {
 describe('atmosphere', () => {
   it('starts normal and stays stable in sealed rooms', () => {
     const sim = make();
-    run(sim, secs(30));
+    step(sim, secs(30));
     expect(left(sim)).toBeCloseTo(21, 1);
     expect(right(sim)).toBeCloseTo(21, 1);
     expect(shipGrid(sim, 1)!.get('o2', 0, 0)).toBe(0);
@@ -102,7 +95,7 @@ describe('atmosphere', () => {
     const sim = make();
     const events: SimEvent[] = [];
     sim.enqueue({ type: 'debug.setStruct', ship: 1, x: 1, y: 3, kind: Struct.Floor });
-    run(sim, secs(40));
+    step(sim, secs(40));
     events.push(...sim.events.drain());
     expect(left(sim)).toBeLessThan(5);
     expect(right(sim)).toBeGreaterThan(18);
@@ -112,7 +105,7 @@ describe('atmosphere', () => {
     // Someone stands in the doorway: it stays open and the second room vents too.
     const guard = breathing(sim, 5, 3);
     sim.world.remove(guard, HealthC);
-    run(sim, secs(60));
+    step(sim, secs(60));
     expect(right(sim)).toBeLessThan(5);
   });
 
@@ -124,7 +117,7 @@ describe('atmosphere', () => {
     sim.world.remove(guard, HealthC);
     const total = () => { let t = 0; for (const v of g.load('o2')) t += v; return t; };
     const before = total();
-    run(sim, secs(20));
+    step(sim, secs(20));
     expect(total()).toBeCloseTo(before, 1);
     expect(Math.abs(left(sim) - right(sim))).toBeLessThan(1);
   });
@@ -141,18 +134,18 @@ describe('power', () => {
     const sim = make();
     const g = shipGrid(sim, 1)!;
     breathing(sim, 3, 3);
-    run(sim, 10);
+    step(sim, 10);
     expect(g.get('light', 3, 3)).toBeGreaterThan(40);
     const mods = sim.world.query(ModuleC).map((id) => ({ id, m: sim.world.get(id, ModuleC)! }));
     const reactor = mods.find((x) => x.m.def === 'reactor')!;
     expect(mods.filter((x) => x.m.def !== 'reactor').every((x) => x.m.powered)).toBe(true);
     sim.events.drain();
     sim.enqueue({ type: 'module.setEnabled', id: reactor.id, enabled: false });
-    run(sim, 2);
+    step(sim, 2);
     expect(mods.every((x) => !x.m.powered)).toBe(true);
     expect(sim.events.drain().some((e) => e.type === 'power.shortage')).toBe(true);
     const o2Before = left(sim);
-    run(sim, secs(60));
+    step(sim, secs(60));
     expect(g.get('light', 3, 3)).toBe(0);
     expect(g.get('light', 7, 3)).toBe(0);
     expect(left(sim)).toBeLessThan(o2Before);

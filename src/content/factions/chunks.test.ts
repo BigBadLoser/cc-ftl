@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { roleOfLetter, type ChunkDef } from '../../sim';
+import { roleOfLetter } from '../../sim/shipgen/canvas';
+import type { ChunkDef } from '../../sim/shipgen/types';
 import { factions } from './index';
 
 /** Problems of a chunk drawing: open floor, rooms touching without a wall, missing attach doors, unknown chars. */

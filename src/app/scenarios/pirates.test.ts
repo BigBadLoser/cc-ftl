@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { newGame, type Sim } from '../../sim';
 import { content } from '../../content';
 import { encountersOf, resultOf } from '../encounterSnapshot';
-import { patrolNode } from './patrol';
-import { piratesCommands } from './pirates';
+import { patrolNode } from '../../content/scenario/lib/patrol';
+import { piratesCommands } from '../../content/scenario/lib/pirates';
 
 /** The scenario's start, stepped until the interdiction halts the trip. */
 function interdicted(opts: Parameters<typeof piratesCommands>[2] = {}): Sim {

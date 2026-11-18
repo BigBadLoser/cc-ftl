@@ -1,22 +1,22 @@
 import { describe, expect, it } from 'vitest';
-import {
-  CombatC, FTL_CHARGE_SEC, START_NODE, ShipC, bribeCost, deserialize, evadeOddsFor, passingMeets, evadeOdds, evadeRoll, galaxyIndex, newGame, playerShip, serialize, type Sim,
-} from '../sim';
+import { CombatC, ShipC } from '../sim/combat/components';
+import { bribeCost, evadeOdds, evadeOddsFor } from '../sim/galaxy/encounterOdds';
+import { passingMeets } from '../sim/galaxy/encounters';
+import { evadeRoll } from '../sim/galaxy/respond';
+import { galaxyIndex, START_NODE } from '../sim/galaxy/state';
+import { newGame } from '../sim/newGame';
+import { deserialize, serialize } from '../sim/save';
+import type { Sim } from '../sim/sim';
+import { playerShip } from '../sim/trade/player';
+import { FTL_CHARGE_SEC } from '../sim/tuning';
 import { fleetStrength } from '../sim/galaxy/encounterOdds';
 import { eventNodeId } from '../sim/galaxy/eventGrid';
 import type { Fleet } from '../sim/galaxy/types';
 import { giveItems } from '../sim/story/effects';
 import { noteHelp } from '../sim/galaxy/eventGrid';
 import { content } from '.';
+import { run as step } from '../../test/support/sim';
 
-const step = (sim: Sim, n = 1) => {
-  const out = [];
-  for (let i = 0; i < n; i++) {
-    sim.step();
-    out.push(...sim.events.drain());
-  }
-  return out;
-};
 const deploy = (sim: Sim) => {
   for (const [x, y] of [[100, 60], [20, 50], [300, 200], [40, 150], [200, 20], [350, 100]] as const) {
     sim.enqueue({ type: 'sector.deploy', x, y });

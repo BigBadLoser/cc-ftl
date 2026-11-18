@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { homeShip, newGame, placementError, shipGrid } from '../sim';
+import { homeShip } from '../sim/combat/ships';
+import { placementError } from '../sim/modules/spawn';
+import { newGame } from '../sim/newGame';
+import { shipGrid } from '../sim/regions';
 import { accepts } from '../sim/items/storage';
 import { content } from './index';
 import manifest from '../../public/assets/1x/manifest.json';

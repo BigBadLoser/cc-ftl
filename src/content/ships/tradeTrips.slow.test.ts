@@ -1,21 +1,25 @@
 import { describe, expect, it } from 'vitest';
-import { ModuleC, ShipC, StorageC, TraderC, VehicleC, destroyVehicle, newGame, storageAdd, unitPrice, playerItems, type Deal, type Sim, type SimEvent } from '../../sim';
+import { ShipC } from '../../sim/combat/components';
+import type { SimEvent } from '../../sim/events';
+import { StorageC } from '../../sim/items/components';
+import { storageAdd } from '../../sim/items/storage';
+import { ModuleC } from '../../sim/modules/components';
+import { newGame } from '../../sim/newGame';
+import type { Sim } from '../../sim/sim';
+import { playerItems } from '../../sim/trade/player';
+import { unitPrice } from '../../sim/trade/pricing';
+import { type Deal, TraderC } from '../../sim/trade/types';
+import { VehicleC } from '../../sim/vehicles/components';
+import { destroyVehicle } from '../../sim/vehicles/lifecycle';
 import { MAX_TRIPS, planTrips } from '../../sim/trade/trips';
 import type { Trip } from '../../sim/trade/types';
 import { shipIds, shipIdOf } from '../../sim/regions';
 import { content } from '../index';
+import { run } from '../../../test/support/sim';
 
 /** One shuttle hold: what a trip carries, for the trader's courier and the player's alike. */
 const HOLD = content.vehicles['vehicle.shuttle'].cargo;
 
-const run = (sim: Sim, n: number): SimEvent[] => {
-  const out: SimEvent[] = [];
-  for (let i = 0; i < n; i++) {
-    sim.step();
-    out.push(...sim.events.drain());
-  }
-  return out;
-};
 const ofType = <T extends SimEvent['type']>(events: SimEvent[], type: T): Extract<SimEvent, { type: T }>[] =>
   events.filter((e): e is Extract<SimEvent, { type: T }> => e.type === type);
 

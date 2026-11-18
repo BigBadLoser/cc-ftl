@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { content } from './index';
-import { CrewC, PositionC, TICK_HZ, newGame, type Sim, type SimEvent } from '../sim';
+import { CrewC, PositionC } from '../sim/crew/components';
+import type { SimEvent } from '../sim/events';
+import { newGame } from '../sim/newGame';
+import type { Sim } from '../sim/sim';
+import { TICK_HZ } from '../sim/time';
 import { deserialize, serialize } from '../sim/save';
 import {
   bump, entityOf, ensurePerson, fadeBonds, friendsOf, mainReason, opinionOf, personOf, rivalsOf,

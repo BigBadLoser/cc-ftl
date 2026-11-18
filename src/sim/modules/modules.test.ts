@@ -12,9 +12,7 @@ import type { ContentRegistry, ModuleDef } from '../registry';
 import { spawnTemplateModules } from '../ship';
 import { Sim } from '../sim';
 
-import { stampShip } from '../combat/ships';
 
-import type { ShipTemplate } from '../registry';
 
 import { CREW_MAX_HP } from '../tuning';
 
@@ -23,12 +21,8 @@ import { ModuleC } from './components';
 import { accessTile, footprintTiles } from './footprint';
 
 import { shipGrid } from '../regions';
+import { fixtureShip, run } from '../../../test/support/sim';
 
-
-/** A fixture ship: the template stamped at the sector origin as an inert ship (a prize is skipped by every ship system). It is the first entity, so its id is 1. */
-function fixtureShip(sim: Sim, t: ShipTemplate): number {
-  return stampShip(sim, t, { faction: 'player', state: 'prize', x: 0, y: 0 });
-}
 
 const mod = (o: Partial<ModuleDef>): ModuleDef => ({
   name: 'm', asset: 'm', footprint: [1, 1], solid: false, power: 0, flammability: 0.1, maxHp: 100, buildWork: 40, ...o,
@@ -72,7 +66,6 @@ function crew(sim: Sim, x: number, y: number, p: Priorities = all(4), rest = 100
   sim.world.add(id, HealthC, { hp: CREW_MAX_HP, max: CREW_MAX_HP });
   return id;
 }
-const run = (sim: Sim, n: number) => { for (let i = 0; i < n; i++) sim.step(); };
 const construction: Priorities = { ...all(4), construction: 1 };
 const modulesOf = (sim: Sim, def: string) => sim.world.query(ModuleC).filter((i) => sim.world.get(i, ModuleC)!.def === def);
 
