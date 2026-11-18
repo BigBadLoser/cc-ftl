@@ -1,47 +1,34 @@
 import type { Profile } from './silhouette';
 
 /**
- * Navy silhouettes, a few per type (SHIPGEN_V4 prototype; content once settled). Mid-depth proportions: a ship's plan
- * will size them. Half-widths are tiles beside the centre row, so a hull is 2 * half + 1 wide. `pitch` marks a shape
- * offered as a new idea (none of the old generator's).
+ * Navy silhouettes, two per type, from the parts settled on the option sheets and the type identities (docs/SHIPGEN_V4.md,
+ * "Hull shape decisions"). Mid-depth proportions: a ship's plan will size them. Half-widths are tiles beside the centre
+ * row, so a hull is 2 * half + 1 wide.
  */
-export const NAVY_PROFILES: Record<string, readonly (Profile & { pitch?: true })[]> = {
-  // Small and agile: sleek, no sponsons (the guns stand inside the hull), the drives in pods.
+export const NAVY_PROFILES: Record<string, readonly Profile[]> = {
+  // Skirmisher: small and slim, drives large for its size.
   corvette: [
-    { id: 'corvette.dart', bow: { tip: [1, 2], slope: [2, 3] }, sections: [{ len: [30, 38], half: [6, 7] }], pods: { len: [9, 11], out: [4, 5], aft: [2, 3] } },
-    { id: 'corvette.wedge', bow: { tip: [2, 3], slope: [3, 4] }, sections: [{ len: [12, 16], half: [7, 8] }, { len: [16, 20], half: [5, 6], join: 'step' }], pods: { len: [8, 10], out: [3, 5], aft: [2, 3] } },
-    // A delta: one long taper from a needle bow to a broad stern, no sponsons, the guns inside the wings.
-    { id: 'corvette.arrow', pitch: true, bow: { tip: [1, 1], slope: [3, 3] }, sections: [{ len: [10, 12], half: [9, 10] }], pods: { len: [8, 10], out: [2, 3], aft: [2, 3] } },
+    { id: 'corvette.swift', nose: { style: 'round', len: [8, 10], front: [2, 2] }, sections: [{ len: [24, 28], half: [5, 5] }], rearWings: { len: [12, 14], reach: [5, 6] }, stern: { kind: 'bank', len: [0, 0], out: [0, 0] } },
+    { id: 'corvette.flare', nose: { style: 'steep', len: [10, 12], front: [2, 2] }, sections: [{ len: [26, 30], half: [5, 5] }], mounts: [{ kind: 'wing', count: [1, 1], len: [9, 10], reach: [3, 3], cut: true, span: [0.15, 0.4] }], stern: { kind: 'flare', len: [10, 12], out: [4, 4] } },
   ],
-  // Longer, still sleek: a forward body and a waist, or a broad midsection, the drives on wing pods.
+  // Escort: medium and compact, a wing pair for its point defence.
   frigate: [
-    { id: 'frigate.waist', bow: { tip: [2, 2], slope: [2, 3] }, sections: [{ len: [28, 34], half: [7, 7] }, { len: [14, 18], half: [5, 6] }], pods: { len: [12, 14], out: [4, 5], aft: [2, 3] } },
-    { id: 'frigate.wings', bow: { tip: [2, 3], slope: [2, 3] }, sections: [{ len: [16, 20], half: [6, 6] }, { len: [18, 22], half: [10, 11] }, { len: [10, 12], half: [6, 7] }], pods: { len: [10, 12], out: [4, 5], aft: [2, 3] } },
-    // Asymmetric by design: one big gun blister to port, a boat bay blister further aft to starboard.
-    { id: 'frigate.blister', pitch: true, bow: { tip: [2, 2], slope: [2, 3] }, sections: [{ len: [40, 46], half: [6, 7] }], sponsons: [{ count: [1, 1], len: [10, 12], depth: [4, 5], span: [0.2, 0.45], side: 'north' }, { count: [1, 1], len: [9, 10], depth: [3, 4], span: [0.5, 0.75], side: 'south' }], pods: { len: [10, 12], out: [4, 5], aft: [2, 3] } },
+    { id: 'frigate.screen', nose: { style: 'cheek', len: [12, 14], front: [3, 3] }, sections: [{ len: [34, 38], half: [7, 7] }], mounts: [{ kind: 'wing', count: [1, 1], len: [12, 14], reach: [4, 4], span: [0.25, 0.55] }], stern: { kind: 'quarters', len: [10, 12], out: [3, 3] } },
+    { id: 'frigate.belly', nose: { style: 'round', len: [14, 16], front: [3, 3] }, sections: [{ len: [12, 14], half: [6, 6] }, { len: [18, 20], half: [9, 9] }, { len: [10, 12], half: [7, 7] }], mounts: [{ kind: 'wing', count: [2, 2], len: [9, 10], reach: [3, 3], cut: true, span: [0.3, 0.75] }], stern: { kind: 'flare', len: [10, 12], out: [3, 3], rate: 3 } },
   ],
-  // Long and lean: a long sharp bow, guns forward, big drives.
+  // Striker: long and lean, the guns forward in embrasures.
   destroyer: [
-    { id: 'destroyer.lance', bow: { tip: [1, 2], slope: [4, 4] }, sections: [{ len: [40, 46], half: [6, 6] }, { len: [10, 12], half: [8, 8] }], sponsons: [{ count: [2, 3], len: [6, 7], depth: [3, 3], span: [0.15, 0.5] }], pods: { len: [12, 14], out: [3, 5], aft: [2, 3] } },
-    // A hammer head of guns on a long boom, the drives out on the stern quarters.
-    { id: 'destroyer.hammer', pitch: true, bow: { tip: [5, 6], slope: [2, 2] }, sections: [{ len: [12, 14], half: [10, 11] }, { len: [30, 36], half: [4, 4] }, { len: [8, 10], half: [7, 8] }], pods: { len: [12, 14], out: [4, 5], aft: [3, 4] } },
+    { id: 'destroyer.pod', pod: { len: [6, 8], half: [3, 3] }, sections: [{ len: [44, 50], half: [6, 6] }], mounts: [{ kind: 'embrasure', count: [3, 3], len: [4, 4], depth: [2, 2], span: [0.05, 0.4] }], stern: { kind: 'pylons', len: [12, 14], out: [0, 0] } },
+    { id: 'destroyer.lance', nose: { style: 'stepped', len: [18, 21], front: [2, 2] }, sections: [{ len: [42, 46], half: [6, 6] }], mounts: [{ kind: 'embrasure', count: [3, 3], len: [4, 4], depth: [2, 2], span: [0.05, 0.4] }], stern: { kind: 'flare', len: [12, 14], out: [3, 3] } },
   ],
-  // Big and heavy: sponson batteries down their sides, a heavy bow block, the drives across the stern.
+  // Ship of the line: big and heavy, embrasures down the side and a raked wing, a square drive bank.
   cruiser: [
-    { id: 'cruiser.twin', bow: { tip: [3, 4], slope: [2, 3] }, sections: [{ len: [14, 16], half: [9, 10] }, { len: [32, 38], half: [11, 12], inner: [4, 5] }, { len: [10, 12], half: [11, 12] }], sponsons: [{ count: [4, 4], len: [6, 7], depth: [3, 4], span: [0.25, 0.85] }], pods: { len: [10, 12], out: [4, 5], aft: [2, 3] } },
-    { id: 'cruiser.citadel', bow: { tip: [3, 3], slope: [3, 3] }, sections: [{ len: [18, 22], half: [9, 9] }, { len: [26, 30], half: [12, 13] }, { len: [12, 14], half: [9, 10] }], sponsons: [{ count: [4, 5], len: [6, 7], depth: [3, 4], span: [0.2, 0.85] }], pods: { len: [12, 14], out: [3, 5], aft: [2, 3] } },
-    // A fork: the arms run open out of the stern, the drives at their ends.
-    { id: 'cruiser.fork', pitch: true, bow: { tip: [3, 4], slope: [3, 3] }, sections: [{ len: [20, 24], half: [9, 10] }, { len: [36, 40], half: [11, 12], inner: [4, 5] }], sponsons: [{ count: [3, 3], len: [6, 7], depth: [3, 4], span: [0.3, 0.8] }], pods: { len: [10, 12], out: [3, 4], aft: [2, 3] } },
-    // A trimaran: a slim main hull with an outrigger each side on beams.
-    { id: 'cruiser.trimaran', pitch: true, bow: { tip: [2, 3], slope: [3, 3] }, sections: [{ len: [56, 62], half: [6, 7] }], sponsons: [{ count: [2, 2], len: [6, 7], depth: [3, 3], span: [0.1, 0.3] }], outriggers: { len: [30, 36], half: [3, 4], gap: [3, 4], at: [0.35, 0.45], beams: [2, 3], aft: [2, 4] } },
+    { id: 'cruiser.line', nose: { style: 'stepped', len: [18, 21], front: [3, 3] }, sections: [{ len: [16, 18], half: [9, 9] }, { len: [40, 44], half: [11, 11] }], mounts: [{ kind: 'embrasure', count: [4, 4], len: [4, 4], depth: [2, 2], span: [0.3, 0.7] }, { kind: 'wing', count: [1, 1], len: [18, 20], reach: [5, 5], rake: 3, span: [0.72, 0.98] }], stern: { kind: 'bank', len: [0, 0], out: [0, 0] } },
+    { id: 'cruiser.citadel', pod: { len: [8, 10], half: [5, 5] }, sections: [{ len: [44, 50], half: [11, 11] }], mounts: [{ kind: 'wing', count: [1, 1], len: [14, 14], reach: [4, 4], span: [0.08, 0.32] }, { kind: 'embrasure', count: [4, 4], len: [4, 4], depth: [2, 2], span: [0.4, 0.85] }], stern: { kind: 'quarters', len: [12, 14], out: [3, 3] } },
   ],
-  // Long and broad, shoulders tapered: a hangar deck, point-defence sponsons, the drives across the stern.
+  // Launcher: broad, a launch lane open out of the stern between two decks.
   carrier: [
-    { id: 'carrier.island', bow: { tip: [3, 4], slope: [3, 3] }, sections: [{ len: [14, 16], half: [9, 10] }, { len: [46, 52], half: [13, 14] }], sponsons: [{ count: [1, 1], len: [12, 14], depth: [4, 5], span: [0.4, 0.65], side: 'north' }, { count: [3, 3], len: [6, 6], depth: [3, 3], span: [0.15, 0.95], side: 'south' }], pods: { len: [12, 14], out: [3, 4], aft: [2, 3] } },
-    // A split deck: two hulls from a shared bow, a launch lane open out of the stern between them.
-    { id: 'carrier.split', bow: { tip: [3, 4], slope: [3, 3] }, sections: [{ len: [18, 22], half: [11, 12] }, { len: [42, 48], half: [14, 15], inner: [4, 5] }], sponsons: [{ count: [3, 3], len: [6, 7], depth: [3, 3], span: [0.2, 0.9] }], pods: { len: [12, 14], out: [3, 4], aft: [2, 3] } },
-    { id: 'carrier.deck', bow: { tip: [3, 4], slope: [3, 4] }, sections: [{ len: [16, 18], half: [9, 10] }, { len: [40, 46], half: [14, 15] }, { len: [10, 12], half: [11, 12] }], sponsons: [{ count: [3, 3], len: [6, 7], depth: [3, 3], span: [0.2, 0.75] }], pods: { len: [10, 12], out: [3, 5], aft: [2, 3] } },
-    // Split with an island: the lane between two decks, the bridge tower out on one side.
-    { id: 'carrier.split-island', pitch: true, bow: { tip: [3, 4], slope: [3, 3] }, sections: [{ len: [16, 18], half: [11, 12] }, { len: [46, 52], half: [14, 15], inner: [4, 5] }], sponsons: [{ count: [1, 1], len: [12, 14], depth: [4, 5], span: [0.3, 0.55], side: 'south' }, { count: [3, 3], len: [6, 6], depth: [3, 3], span: [0.2, 0.95], side: 'north' }], pods: { len: [12, 14], out: [3, 4], aft: [2, 3] } },
+    { id: 'carrier.split', nose: { style: 'round', len: [14, 16], front: [4, 4] }, sections: [{ len: [12, 14], half: [10, 10] }, { len: [48, 54], half: [14, 14] }], split: { at: [0.35, 0.4], lane: [4, 4] }, mounts: [{ kind: 'wing', count: [2, 2], len: [7, 8], reach: [2, 2], span: [0.2, 0.6] }], stern: { kind: 'bank', len: [0, 0], out: [0, 0] } },
+    { id: 'carrier.deck', nose: { style: 'cheek', len: [14, 16], front: [4, 4] }, sections: [{ len: [56, 60], half: [13, 13] }], split: { at: [0.45, 0.5], lane: [5, 5] }, mounts: [{ kind: 'wing', count: [2, 2], len: [7, 8], reach: [2, 2], span: [0.15, 0.5] }], stern: { kind: 'flare', len: [12, 14], out: [2, 2], rate: 3 } },
   ],
 };
