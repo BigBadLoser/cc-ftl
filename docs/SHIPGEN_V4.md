@@ -159,5 +159,8 @@ Settled one part at a time on option sheets (the same body, one part varied), be
   fewer guns: one swept wing pair (3a) or two with cut trailing edges (3d); two small low pairs (3b) situationally.
 - **Small families feel agile:** corvettes and frigates stay sleek. Asymmetry only where it reads as designed; parked
   until the symmetric parts are settled.
+- **Sterns:** S1 (square drive bank, engines across a flat stern), S2 (quarter flares), S7 (a flared drive section,
+  also with a gentler flare); S3 (drive pods on pylons) to judge in a real ship; S4 (tapered tail, drives on the centre
+  line) maybe.
 - **Corridors three wide**, so the hull is odd-wide about a centre row and rooms centre on it.
 - **Carriers:** an open hangar with the bays spread inside it, not a walled room a bay.
