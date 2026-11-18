@@ -22,6 +22,10 @@ order: 10
 Stations are where you sell what you've found, buy what you need, take work, hire crew and expand your hull. You deal with
 them over a comms channel. Trading ships on the lane work the same way, with a captain in place of the station staff.
 
+A trading, mining or farming outpost on an asteroid is a prefab base: separate modules standing on the levelled rock, joined
+by short glass tubes. A tube is an ordinary corridor with a door at each end, sealed and breathable, so crew walk through it
+without suits, and you can see them inside it with the roof on.
+
 ## Hailing and docking
 
 You don't fly your ship into a station. You stay in the node and your **shuttle** does the running.
@@ -224,7 +228,8 @@ What it changes:
 
 - **Prices**: friends sell for less and pay more (see above).
 - **Hailing**: a hostile faction won't talk to you. The law (navy and corporations) also turns hostile while you are
-  **wanted**: the starmap legend shows your **Notoriety**, and **Hunted by** lists factions sending hunters.
+  **wanted**: the starmap legend shows your **Notoriety**, and **Hunted by** lists factions sending hunters. When hunters
+  reach your node, an urgent alert names them; click it to jump to their ship.
 - **Blueprints**: hostile factions sell nothing and some gear needs high standing.
 - **Interdictions**: a faction that likes you asks less to let you pass.
 

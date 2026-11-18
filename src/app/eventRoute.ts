@@ -43,7 +43,7 @@ export const raisesAlert = (type: SimEvent['type']): boolean => EVENT_ROUTE[type
  */
 export const ALERT_PRIORITY: Record<UiAlertKind, 0 | 1 | 2> = {
   'fire.started': 2, 'hull.breach': 2, 'o2.low': 2, 'power.shortage': 2, 'crew.downed': 2, 'suit.airLow': 2, 'suit.airOut': 2, 'crew.airUnreachable': 2,
-  'away.stranded': 2, 'boarders.stranded': 2, 'combat.started': 2, 'creatures.aboard': 2, 'ship.disabled': 2, 'fuel.out': 2, 'core.lost': 2, 'vehicle.lost': 2, 'ship.yielded': 2, 'stasis.failing': 2,
+  'away.stranded': 2, 'boarders.stranded': 2, 'combat.started': 2, 'creatures.aboard': 2, 'ship.disabled': 2, 'fuel.out': 2, 'core.lost': 2, 'vehicle.lost': 2, 'ship.yielded': 2, 'stasis.failing': 2, 'hunters.here': 2,
   'crew.starving': 1, 'crew.break': 1, 'fuel.low': 1, 'save.failed': 1, 'inspect.waiting': 1, 'inspect.blocked': 1, 'story.lead': 1,
   'galaxy.incomingHostile': 0, 'crew.asksToJoin': 0, 'fight.report': 0,
 };

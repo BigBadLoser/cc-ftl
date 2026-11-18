@@ -4,7 +4,9 @@ Living document: update it whenever a milestone lands, a decision is made, or a 
 Last updated: 2026-11-17.
 
 **History:** completed-work logs, past PR notes and superseded decisions are in [STATUS_ARCHIVE.md](STATUS_ARCHIVE.md). Standing decisions that live there:
-- Sector grid (user, 2026-10-19): each sector becomes one large chunked grid; ships never move or dock with each other; a jump takes the player's ship plus anything docked to it. Plan: "Sector grid (planned)" in ARCHITECTURE.md; user answers in the archive section "Sector grid decision".
+- Sector grid (user, 2026-10-19). Each node uses one chunked grid. Ships keep their positions within a node, while
+  vehicles handle docking and boarding. A jump takes the player's ship and docked vehicles to the destination.
+  See the [live sector grid](ARCHITECTURE.md#sector-grid) and the archive's "Sector grid decision".
 - Art pipeline and look decisions from the M4 art rework (session 2026-10-17): archive section "M4 art rework".
 
 

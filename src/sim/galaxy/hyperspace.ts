@@ -2,6 +2,7 @@ import { hullLoad } from '../ftl/capacity';
 import { applyOvercharge } from '../ftl/overcharge';
 import { abortYards } from '../yard/flow';
 import { abortInspections } from '../inspect/flow';
+import { inspectorsAboard } from '../inspect/fight';
 import { abortPatrolStop } from '../inspect/patrol';
 import { settleLosses } from './jobs';
 import { dropOut, enterHyperspace } from '../sector/jump';
@@ -75,6 +76,9 @@ export function jump(sim: Sim, ship: number, route: readonly string[], withDocke
   if (!checkLeaving(sim, ship, reject)) return false;
   // A pending interdiction holds the ship until it is resolved (`galaxy.respond`); the player's own flee is never blocked.
   if (command !== 'combat.flee' && interdicted(sim)) return reject('interdicted');
+  // Leaving with inspectors aboard counts as attacking them (`abortInspections`): only a jump the player commits now may do that. A queued one (the
+  // charge order's, which fires on its own when the drive is full) is called off instead, so it never makes that choice for them (#541).
+  if (command === 'ftl.charge' && inspectorsAboard(sim, ship).length) return reject('inspectorsAboard');
   if (!galaxyIndex(g).nodes.has(g.current)) ensureAround(sim, g.current);
   const nodes = [g.current, ...route];
   const edges = routeEdges(sim, nodes);

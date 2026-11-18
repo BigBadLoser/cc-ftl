@@ -6,10 +6,13 @@ Costs are reported as **self ms** (time in the label, minus nested labels) and t
 
 ## Run it
 
+Install Chromium using the [browser tools setup](../README.md#browser-tools) before running browser profiles.
+
 | Goal | Command |
 | --- | --- |
 | Per-system sim cost, no browser, deterministic work | `npm run profile:sim -- --ticks 5000 --seed 1` |
 | Same on a built scenario (crew AI) | `npm run profile:sim -- --scenario storm --seed 1` (`--scenario list` shows them) |
+| Use the shared browser preset in the headless sim | `npm run profile:sim -- --scenario preset:log --seed 1` |
 | Baseline table for every scenario and seed | `npm run profile:baseline -- --seeds 1,2,3` |
 | Record or compare crew decisions | `npm run ai:diff -- --record ...`, `npm run ai:diff -- --a x.jsonl --b y.jsonl` |
 | Whole game in headless Chromium | `npm run profile -- --scenario log --seconds 20 --speed 3 --seed 1` |
@@ -21,8 +24,8 @@ Both scripts print the text report to stdout and write the JSON summary (`--out`
 `profile` starts its own dev server on a free port and stops it by PID when done (`--url` uses a running one instead). It uses the dev
 server on purpose: system labels come from function names, which a minified build mangles.
 
-Scenarios are the `?scenario=` presets of `src/content/scenario/presets/` (ARCHITECTURE "Scenario builder"), passed straight through: currently `log` (a raider arrives, fire breaks out, speed 3),
-`hullplan`, `handover`, `bounty`, `survey`, `fight` (a raider beside the ship, game running; add `far` for engagement distance, which exercises the combat view and inset) and `damage` (a fire, a breach and a damaged reactor). `none` or no flag is the colony baseline.
+The browser profiler passes the preset name to the game's `?scenario=` parameter. For example, `--scenario fight --query far`
+exercises the combat view and inset at engagement distance. Use `none` or omit the scenario for the colony baseline.
 `--speed 1|2|3` presses the speed key after load; `--warmup 2` seconds run before the tally resets and the recording starts.
 
 Headless Chromium renders with software WebGL (SwiftShader): `render/present`, `render/gl` and `render/inset` are inflated by it and
@@ -36,7 +39,13 @@ debug commands, so any run is reproducible from `--scenario` and `--seed`.
 
 ### `profile:sim --scenario <name>`
 
-`profile:sim` also runs any registry preset as `--scenario preset:<name>` (the same builder as `?scenario=`; `--scenario list` shows them after the profile boards), with the preset's hooks ticking on the run.
+`npm run profile:sim -- --scenario list` lists benchmark names first and shared presets with a `preset:` prefix.
+
+- Use `--scenario log` to compare against the dedicated `log` benchmark. Its setup spawns a raider and starts a fire
+  before recording.
+- Use `--scenario preset:log` to exercise the same preset and tick-driven hooks as the browser URL
+  `?scenario=log`, including the timed raider and credits. The headless runner builds its own starting game, so
+  compare browser captures through `npm run profile` with the same seed and URL options.
 
 `npm run profile:sim -- --scenario <name> [--ticks N] [--seed 1] [--out file.json] [--no-metrics] [--stride 25] [--record-decisions f.jsonl] [--dump-board <tick> --board-out f.json]`.
 `--ticks` defaults to the scenario's own count; `--empty` and no scenario keep the old start-node run. The text report ends with the metrics block and the
@@ -46,7 +55,7 @@ JSON summary has `scenario`, `seed` and `metrics`. The observers (metrics, decis
 | --- | --- | --- |
 | `colony` | the populated start node, no extra work | 5000 |
 | `hullplan` | a trading hub, an outer hull plan ordered at its yard (hull ring, EVA, thin air), 100+ build jobs on the ship | 5000 |
-| `log` | the browser `?scenario=log`: a raider (combat) and a fire at the first crew member | 5000 |
+| `log` | dedicated benchmark with a raider and a fire at the first crew member | 5000 |
 | `hub` | a 44-crew trading hub beside the ship (patrols, big grid) | 5000 |
 | `storm` | the six side rooms of the starter ship sealed (doors become walls, crew moved out first), 160+ jobs inside, none reachable | 1500 |
 | `haul` | 500 item stacks on the floors of the ship and a hub, few storages | 2500 |
@@ -54,9 +63,10 @@ JSON summary has `scenario`, `seed` and `metrics`. The observers (metrics, decis
 | `multiship` | the ship, a trading station and a navy derelict (salvage; ~100 repair jobs on the wreck, mostly out of reach) | 5000 |
 | `salvageHub` | salvage beside a station (#389): the ship with 4 more engineers, a navy derelict under a salvage order for every scrap type (away site, passages, hauling) and a 44-crew trading hub | 10000 |
 
-TODO: `fight` and `damage` arrive with PR #184. A prize or a yard crew run is not in `multiship` yet. To add a scenario, append an entry (`name`, `description`,
-`ticks`, `populate`, `setup(sim)`) to `SCENARIOS` in `tools/profile/scenarios.ts`: `exec(sim, commands, steps)` queues commands and steps the sim, and tallies
-rejected commands in `setupRejections` (a test can assert that the commands that matter went through). Scenario setup ticks count in `sim.tick`.
+Use `preset:fight` and `preset:damage` for the shared fight and damage scenes. Add a shared preset through the
+[scenario builder](ARCHITECTURE.md#scenario-builder). For a dedicated headless benchmark, add an entry to
+`SCENARIOS` in `tools/profile/scenarios.ts`. Its `exec(sim, commands, steps)` helper queues commands, steps
+the sim, and tallies rejections in `setupRejections`. Setup ticks count in `sim.tick`.
 
 Costs to expect (one machine, see the baseline in `docs/CREW_AI.md` 7.4): `storm` and `haul` stress `sim/schedule` (`sim/decide` before crew AI Phase 1; `sim/interrupt` is the forced-state detector). They cost tens of ms per tick on the legacy picker and about
 0.2 and 0.5 ms since the Phase 2 scheduler, which is the point of them. The other scenarios are quick.
