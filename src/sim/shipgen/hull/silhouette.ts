@@ -24,7 +24,7 @@ export interface Pod { len: Range; half: Range }
 export interface Section { len: Range; half: Range }
 
 /** A launch lane open out of the stern, from a V at `at` (fraction of the body) to the stern. */
-export interface Split { at: Range; lane: Range }
+export interface Split { at: Range; lane: Range; /** How the lane ends inside the hull, picked per seed: squared off or rounded. */ end?: readonly ('square' | 'round')[] }
 
 /** Optional parts carry a chance (default 1), so one profile varies between seeds. */
 interface Optional { chance?: number }
@@ -58,7 +58,7 @@ export interface Profile {
 }
 
 export interface Silhouette {
-  /** Rows north to south; row `axis` is the centre row. '#': hull, '=': beam, '>': where the drives exhaust. */
+  /** Rows north to south; row `axis` is the centre row. '#': hull, '>': where the drives exhaust. */
   rows: string[];
   axis: number;
   length: number;
@@ -86,11 +86,15 @@ function body(rng: Rng, p: Profile): { outer: number[]; bodyStart: number } {
   const outer: number[] = [];
   if (p.pod) {
     const len = pick(rng, p.pod.len), half = pick(rng, p.pod.half);
-    for (let i = 0; i < len; i++) outer.push(half);
+    // Flat-fronted, its front corners chamfered so the pod never meets the dark at a right angle.
+    for (let i = 0; i < len; i++) outer.push(Math.max(1, half - Math.max(0, 2 - i)));
     for (let h = half + 1; h <= H0; h++) outer.push(h, h);
   } else if (p.nose) {
     const len = pick(rng, p.nose.len), front = pick(rng, p.nose.front), style = one(rng, p.nose.style);
-    for (let i = 0; i < len; i++) outer.push(Math.min(H0, noseHalf(style, i, len, front, H0)));
+    // At most two tiles out per column, so no nose has a square shoulder; a nose that falls short runs on 2:1.
+    let h = front - 2;
+    for (let i = 0; i < len; i++) { h = Math.min(H0, noseHalf(style, i, len, front, H0), h + 2); outer.push(h); }
+    while (h < H0) { h = Math.min(H0, h + 2); outer.push(h); }
   }
   const bodyStart = outer.length;
   let prev = H0;
@@ -135,8 +139,9 @@ function addMounts(rng: Rng, p: Profile, outer: number[], top: number[], bodySta
   for (const m of p.mounts ?? []) {
     if (!has(rng, m)) continue;
     const len = pick(rng, m.len);
-    const a = pos(m.span[0]), b = Math.min(pos(m.span[1]), sternFrom) - len;
-    if (b < a) continue;
+    const a = pos(m.span[0]);
+    let b = Math.min(pos(m.span[1]), sternFrom) - len;
+    if (b < a) { if (a + len > sternFrom) continue; b = a; }
     if (m.kind === 'wing') {
       const n = pick(rng, m.count), reach = pick(rng, m.reach), rake = m.rake ?? 2;
       for (let i = 0; i < n; i++) {
@@ -199,7 +204,11 @@ export function drawSilhouette(rng: Rng, p: Profile): Silhouette {
   if (p.split && has(rng, p.split)) {
     const f = rng.int(Math.round(p.split.at[0] * 100), Math.round(p.split.at[1] * 100)) / 100;
     const x0 = bodyStart + Math.floor((L - bodyStart) * f), lane = pick(rng, p.split.lane);
-    for (let x = x0; x < L; x++) inner[x] = Math.min(lane, Math.floor((x - x0) / 2));
+    const end = p.split.end ? rng.pick(p.split.end) : 'square';
+    for (let x = x0; x < L; x++) {
+      const dx = x - x0;
+      inner[x] = end === 'square' || dx >= lane ? lane : Math.floor(Math.sqrt(lane * lane - (lane - dx) ** 2));
+    }
   }
 
   const aft = st.aft ? pick(rng, st.aft) : 2;
@@ -214,7 +223,7 @@ export function drawSilhouette(rng: Rng, p: Profile): Silhouette {
   if (st.kind === 'quarters') {
     for (let x = L - sLen; x < L + aft; x++) {
       const r = Math.min(sOut, Math.floor((x - (L - sLen)) / 2) + 1);
-      for (let y = half - 3; y <= half + r; y++) both(x, y);
+      for (let y = Math.max(2, half - 3); y <= half + r; y++) both(x, y);
     }
   }
   if (st.kind === 'pylons') {
@@ -223,7 +232,9 @@ export function drawSilhouette(rng: Rng, p: Profile): Silhouette {
       const t = Math.min(pod - 1, Math.floor((x - (L - sLen)) / 2) + 1);
       for (let y = y0 + (pod - 1 - t); y < y0 + pod; y++) both(x, y);
     }
-    for (const bx of [L - sLen + 3, L - 4]) for (let x = bx; x < bx + 2; x++) for (let y = half + 1; y < y0; y++) both(x, y, '=');
+    // One enclosed passage from the hull out to each pod, wide enough to walk through.
+    const cx = L - sLen + Math.floor((sLen - 4) / 2);
+    for (let x = cx; x < cx + 4; x++) for (let y = half + 1; y < y0; y++) both(x, y);
   }
   // Where the drives exhaust: past the hull's last tile on every row that reaches the stern.
   for (const row of grid) {
