@@ -542,8 +542,8 @@ differ little.
 
 ## Known limits
 
-- **Barracks need a double bunk module** (a bed's footprint, two beds). There is none, so a barracks cannot be furnished
-  as drawn.
+- **Barracks plan single beds.** The bunk (`module.bunk`, two sleepers in a bed's footprint) is in the game, but the
+  program and the barracks rules do not place it yet (`rooms/rules/parts.ts` `Beds`). [SHIPGEN_V4.md](SHIPGEN_V4.md) step 1 switches them.
 - The mess and the rec room have no room recipe of their own (`support` furnishes as a mess), and medbays and plant
   rooms have none at all. The rooms added since are the same: planned with their modules, no room recipe (workshop,
   battery room, suit-up rooms, chief's cabin, pantry, trauma room, laboratory, breaker shop, drone bay).
