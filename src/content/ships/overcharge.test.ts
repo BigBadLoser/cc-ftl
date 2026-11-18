@@ -1,18 +1,20 @@
 import { describe, expect, it } from 'vitest';
-import {
-  CombatC, FTL_CHARGE_SEC, ModuleC, START_NODE, engineFuelFactor, fuelStock, jumpFuel, applyOvercharge, galaxyIndex, homeShip, hullLoad, newGame, riskOf, shipGrid, type ModuleDef, type Sim, type SimEvent,
-} from '../../sim';
+import { CombatC } from '../../sim/combat/components';
+import { homeShip } from '../../sim/combat/ships';
+import { hullLoad } from '../../sim/ftl/capacity';
+import { applyOvercharge, riskOf } from '../../sim/ftl/overcharge';
+import { engineFuelFactor, fuelStock, jumpFuel } from '../../sim/galaxy/fuel';
+import { galaxyIndex, START_NODE } from '../../sim/galaxy/state';
+import { ModuleC } from '../../sim/modules/components';
+import { newGame } from '../../sim/newGame';
+import { shipGrid } from '../../sim/regions';
+import type { ModuleDef } from '../../sim/registry';
+import type { Sim } from '../../sim/sim';
+import { FTL_CHARGE_SEC } from '../../sim/tuning';
 import { giveItems } from '../../sim/story/effects';
 import { content } from '../index';
+import { runLog } from '../../../test/support/sim';
 
-const run = (sim: Sim, n: number): string[] => {
-  const log: string[] = [];
-  for (let i = 0; i < n; i++) {
-    sim.step();
-    for (const e of sim.events.drain() as SimEvent[]) log.push(e.type === 'command.rejected' ? `rejected:${e.command}:${e.reason}` : e.type);
-  }
-  return log;
-};
 const neighbour = (sim: Sim): string => {
   const e = (galaxyIndex(sim.galaxy).adjacent.get(START_NODE) ?? [])[0]!;
   return e.a === START_NODE ? e.b : e.a;
@@ -28,7 +30,7 @@ function heavy(extra: number): Sim {
   const engine = content.modules['module.engine']!;
   const weak = { ...content, modules: { ...content.modules, 'module.engine': { ...engine, engine: { ...engine.engine!, hullCapacity: each } } } } as typeof content;
   const sim = newGame(3, weak);
-  run(sim, 5);
+  runLog(sim, 5);
   return sim;
 }
 
@@ -136,7 +138,7 @@ describe('the jump rule', () => {
   it('a ship at capacity jumps normally', () => {
     const sim = ready(0);
     sim.enqueue({ type: 'galaxy.jump', ship: homeShip(sim), route: [neighbour(sim)] });
-    expect(run(sim, 2)).not.toContain('rejected:galaxy.jump:overweight');
+    expect(runLog(sim, 2)).not.toContain('command.rejected:galaxy.jump:overweight');
     expect(sim.sector.state).toBe('hyperspace');
   });
 
@@ -144,7 +146,7 @@ describe('the jump rule', () => {
     const sim = ready(over(2));
     const fuel = JSON.stringify(sim.galaxy.travel);
     sim.enqueue({ type: 'galaxy.jump', ship: homeShip(sim), route: [neighbour(sim)] });
-    expect(run(sim, 2)).toContain('rejected:galaxy.jump:overweight');
+    expect(runLog(sim, 2)).toContain('command.rejected:galaxy.jump:overweight');
     expect(sim.sector.state).toBe('active');
     expect(sim.world.get(homeShip(sim), CombatC)!.ftl).toBe(FTL_CHARGE_SEC);
     expect(JSON.stringify(sim.galaxy.travel)).toBe(fuel);
@@ -153,8 +155,8 @@ describe('the jump rule', () => {
   it('overcharge jumps anyway and the toll is paid', () => {
     const sim = ready(over(30));
     sim.enqueue({ type: 'galaxy.jump', ship: homeShip(sim), route: [neighbour(sim)], overcharge: true });
-    const log = run(sim, 2);
-    expect(log).not.toContain('rejected:galaxy.jump:overweight');
+    const log = runLog(sim, 2);
+    expect(log).not.toContain('command.rejected:galaxy.jump:overweight');
     expect(log).toContain('ftl.overcharged');
     expect(sim.sector.state).toBe('hyperspace');
   });
@@ -164,7 +166,7 @@ describe('the jump rule', () => {
     const thrifty = { ...content, modules: { ...content.modules, 'module.engine': { ...engine, engine: { ...engine.engine!, hullCapacity: 1, fuelFactor: 0.5 } } } } as typeof content;
     for (let seed = 1; seed <= 60; seed++) {
       const sim = newGame(seed, thrifty);
-      run(sim, 2);
+      runLog(sim, 2);
       const ship = homeShip(sim);
       const to = neighbour(sim);
       const base = galaxyIndex(sim.galaxy).adjacent.get(START_NODE)!.find((e) => e.a === to || e.b === to)!.fuel;
@@ -174,7 +176,7 @@ describe('the jump rule', () => {
       giveItems(sim, 'item.fuel', price + 5 - fuelStock(sim, ship)); // the discounted price, and some spare
       expect(fuelStock(sim, ship)).toBe(price + 5);
       sim.enqueue({ type: 'galaxy.jump', ship, route: [to], overcharge: true });
-      run(sim, 2);
+      runLog(sim, 2);
       expect(sim.sector.state).toBe('hyperspace');
       expect(fuelStock(sim)).toBe(5); // paid the checked price, not the dearer one
       if (engineFuelFactor(sim) === 1) return; // the discount engines were destroyed on the jump: the case under test
@@ -186,9 +188,9 @@ describe('the jump rule', () => {
     const sim = heavy(over(30));
     giveItems(sim, 'item.fuel', 50);
     sim.enqueue({ type: 'ftl.charge', ship: homeShip(sim), jump: [neighbour(sim)] });
-    expect(run(sim, 1)).toContain('rejected:ftl.charge:overweight');
+    expect(runLog(sim, 1)).toContain('command.rejected:ftl.charge:overweight');
     sim.enqueue({ type: 'ftl.charge', ship: homeShip(sim), jump: [neighbour(sim)], overcharge: true });
-    expect(run(sim, 1)).not.toContain('rejected:ftl.charge:overweight');
+    expect(runLog(sim, 1)).not.toContain('command.rejected:ftl.charge:overweight');
     expect(sim.world.get(homeShip(sim), CombatC)!.ftlOrder?.overcharge).toBe(true);
   });
 });

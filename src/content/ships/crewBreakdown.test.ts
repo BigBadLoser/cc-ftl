@@ -1,8 +1,23 @@
 import { describe, expect, it } from 'vitest';
-import {
-  AirlockC, ShipC, AssignmentC, BreakdownC, JobC, ModuleC, PickupC, SuitC, VehicleC, destroyVehicle, suitDef, BreakMemoryC, CrewC, DraftedC, InterruptC, MoodC, NeedsC, PathC, PositionC, PrioritiesC, TaskC, TICK_HZ, TraitsC, deserialize,
-  homeShip, newGame, serialize, shipGrid, type BreakKind, type ContentRegistry, type Sim, type SimEvent,
-} from '../../sim';
+import { InterruptC, PickupC, TaskC } from '../../sim/ai/components';
+import { ShipC } from '../../sim/combat/components';
+import { homeShip } from '../../sim/combat/ships';
+import { BreakdownC, type BreakKind, BreakMemoryC } from '../../sim/crew/breakTypes';
+import { AssignmentC, CrewC, DraftedC, JobC, MoodC, NeedsC, PathC, PositionC, PrioritiesC } from '../../sim/crew/components';
+import { TraitsC } from '../../sim/crew/traits';
+import { SuitC } from '../../sim/eva/components';
+import { suitDef } from '../../sim/eva/suit';
+import type { SimEvent } from '../../sim/events';
+import { AirlockC } from '../../sim/modules/airlock';
+import { ModuleC } from '../../sim/modules/components';
+import { newGame } from '../../sim/newGame';
+import { shipGrid } from '../../sim/regions';
+import type { ContentRegistry } from '../../sim/registry';
+import { deserialize, serialize } from '../../sim/save';
+import type { Sim } from '../../sim/sim';
+import { TICK_HZ } from '../../sim/time';
+import { VehicleC } from '../../sim/vehicles/components';
+import { destroyVehicle } from '../../sim/vehicles/lifecycle';
 import { IntentC } from '../../sim/ai/components';
 import { reserveJob } from '../../sim/ai/task';
 import { auditReservations } from '../../sim/ai/audit';
@@ -14,6 +29,7 @@ import { startBreak, endBreak } from '../../sim/systems/breakdown';
 import { tierOf } from '../../sim/crew/breakTable';
 import { BREAK_BASE_P, BREAK_COOLDOWN_SEC } from '../../sim/tuning';
 import { content } from '../index';
+import { step } from '../../../test/support/sim';
 
 /**
  * Mental breaks (docs/TRAITS.md section 5, issue #175): the hashed roll, the tiers against drafts and hazards, the break machine, the
@@ -21,13 +37,12 @@ import { content } from '../index';
  */
 
 const colonists = (sim: Sim): number[] => sim.world.query(CrewC).filter((c) => sim.world.has(c, PrioritiesC));
-const run = (sim: Sim, n: number): void => { for (let i = 0; i < n; i++) sim.step(); };
 const mood = (sim: Sim, id: number) => sim.world.get(id, MoodC)!;
 
 /** A settled colonist with nothing on, on the starter ship. */
 function quiet(seed = 1, reg: ContentRegistry = content): { sim: Sim; c: number } {
   const sim = newGame(seed, reg, 'ship.starter', false);
-  run(sim, 40);
+  step(sim, 40);
   const free = colonists(sim).filter((id) => !sim.world.has(id, AssignmentC));
   const c = (free.find((id) => isSettled(sim.world.get(id, PositionC)!)) ?? free[0]) as number;
   expect(c).toBeGreaterThan(0);
@@ -131,11 +146,11 @@ describe('a break in play', () => {
     }
     expect(states.has('Cower') || states.has('Flee')).toBe(true);
     const events: SimEvent[] = [];
-    run(sim, 3 * TICK_HZ);
+    step(sim, 3 * TICK_HZ);
     events.push(...sim.events.drain());
     expect(sim.world.has(c, BreakdownC)).toBe(false);
     expect(events.some((e) => e.type === 'crew.breakEnded' && e.crew === c)).toBe(true);
-    run(sim, 2);
+    step(sim, 2);
     expect(sim.world.get(c, InterruptC)?.reason).not.toBe('breakdown');
     expect(sim.world.get(c, TaskC)?.machine).not.toBe('break');
     expect(mood(sim, c).letOut).toBeGreaterThan(0);
@@ -144,15 +159,15 @@ describe('a break in play', () => {
   it('a severe break overrides a draft, a moderate one yields to it', () => {
     const { sim, c } = quiet();
     sim.enqueue({ type: 'crew.draft', id: c, drafted: true });
-    run(sim, 2);
+    step(sim, 2);
     startBreak(sim, c, pick('panic', 'fire'));
-    run(sim, 2);
+    step(sim, 2);
     expect(sim.world.get(c, InterruptC)?.reason).toBe('breakdown');
     expect(sim.world.has(c, DraftedC)).toBe(true);
     endBreak(sim, c);
-    run(sim, 2);
+    step(sim, 2);
     startBreak(sim, c, pick('despair'));
-    run(sim, 2);
+    step(sim, 2);
     expect(sim.world.has(c, BreakdownC)).toBe(false); // the draft ended it
     expect(sim.world.get(c, InterruptC)?.reason).toBe('drafted');
   });
@@ -160,7 +175,7 @@ describe('a break in play', () => {
   it('hazard overrides a break, which keeps running and resumes after the escape', () => {
     const { sim, c } = quiet();
     startBreak(sim, c, { ...pick('despair'), ticks: 60 * TICK_HZ });
-    run(sim, 5);
+    step(sim, 5);
     // Wait until they have stopped where the break takes them: a walk through fire is obeyed (the route was chosen), so the fire must catch them standing.
     for (let i = 0; i < 400 && ((sim.world.get(c, PathC)?.steps.length ?? 0) > 0 || !isSettled(sim.world.get(c, PositionC)!)); i++) sim.step();
     const p = { ...sim.world.get(c, PositionC)! }; // the tile they stood on (a copy: the live position would move the fire after them as they escape)
@@ -176,7 +191,7 @@ describe('a break in play', () => {
     // Put the fire out, the tiles it spread to as well (left burning, they light the first tile again).
     const g = shipGrid(sim, homeShip(sim))!;
     for (let y = g.y0; y < g.y0 + g.height; y++) for (let x = g.x0; x < g.x0 + g.width; x++) if (g.get('fire', x, y) > 0) g.set('fire', x, y, 0);
-    run(sim, 40);
+    step(sim, 40);
     expect(sim.world.get(c, InterruptC)?.reason).toBe('breakdown');
     expect(sim.world.get(c, TaskC)?.machine).toBe('break');
   });
@@ -184,11 +199,11 @@ describe('a break in play', () => {
   it('survival beats a break even for a drafted crew member who still holds an order: they are stepped off the fire', () => {
     const { sim, c } = quiet();
     sim.enqueue({ type: 'crew.draft', id: c, drafted: true });
-    run(sim, 2);
+    step(sim, 2);
     const p = sim.world.get(c, PositionC)!;
     sim.world.get(c, DraftedC)!.target = { x: Math.round(p.x) + 3, y: Math.round(p.y) }; // an order the break suspends
     startBreak(sim, c, { ...pick('freeze', 'combat'), ticks: 60 * TICK_HZ }); // a combat freeze: severe, stands still
-    run(sim, 5);
+    step(sim, 5);
     const at = { x: Math.round(sim.world.get(c, PositionC)!.x), y: Math.round(sim.world.get(c, PositionC)!.y) };
     const seen = new Set<string>();
     for (let i = 0; i < 80; i++) {
@@ -233,7 +248,7 @@ describe('a break in play', () => {
   it('survival comes before a break: a freezing crew member with a nearly empty tank on a depressurised ship goes for a refill', () => {
     const { sim, c } = quiet();
     sim.enqueue({ type: 'suit.set', crew: c, worn: true });
-    run(sim, 2);
+    step(sim, 2);
     const g = shipGrid(sim, homeShip(sim))!;
     const vent = (): void => { for (let y = g.y0; y < g.y0 + g.height; y++) for (let x = g.x0; x < g.x0 + g.width; x++) if (g.get('o2', x, y) > 0) g.set('o2', x, y, 0); };
     vent();
@@ -253,7 +268,7 @@ describe('a break in play', () => {
   it('a break is suspended while survival is critical: an unreachable air source raises the pickup request, and the break resumes', () => {
     const { sim, c } = quiet();
     sim.enqueue({ type: 'suit.set', crew: c, worn: true });
-    run(sim, 2);
+    step(sim, 2);
     const g = shipGrid(sim, homeShip(sim))!;
     const vent = (): void => { for (let y = g.y0; y < g.y0 + g.height; y++) for (let x = g.x0; x < g.x0 + g.width; x++) if (g.get('o2', x, y) > 0) g.set('o2', x, y, 0); };
     for (const id of sim.world.query(AirlockC)) sim.world.get(id, ModuleC)!.enabled = false; // no source in reach
@@ -266,7 +281,7 @@ describe('a break in play', () => {
     // A source again: the break resumes with its time still running.
     for (const id of sim.world.query(AirlockC)) sim.world.get(id, ModuleC)!.enabled = true;
     sim.world.get(c, SuitC)!.air = suitDef(sim).airSec;
-    run(sim, 60);
+    step(sim, 60);
     expect(sim.world.get(c, BreakdownC)?.suspended).toBeUndefined();
     expect(sim.world.get(c, TaskC)?.machine).toBe('break');
   });
@@ -274,7 +289,7 @@ describe('a break in play', () => {
   it('a break that resumes mid-refill tears the refill down: no orphaned job or reservation', () => {
     const { sim, c } = quiet();
     sim.enqueue({ type: 'suit.set', crew: c, worn: true });
-    run(sim, 2);
+    step(sim, 2);
     const g = shipGrid(sim, homeShip(sim))!;
     const vent = (): void => { for (let y = g.y0; y < g.y0 + g.height; y++) for (let x = g.x0; x < g.x0 + g.width; x++) if (g.get('o2', x, y) > 0) g.set('o2', x, y, 0); };
     vent();
@@ -299,13 +314,13 @@ describe('a break in play', () => {
   it('player orders that assign work are rejected while a break holds control, and a stray task is torn down when the break takes over', () => {
     const { sim, c } = quiet();
     sim.enqueue({ type: 'crew.draft', id: c, drafted: true });
-    run(sim, 2);
+    step(sim, 2);
     startBreak(sim, c, { ...pick('freeze', 'combat'), ticks: 300 * TICK_HZ });
-    run(sim, 3);
+    step(sim, 3);
     const consoleId = sim.world.query(ModuleC).find((m) => sim.content.modules[sim.world.get(m, ModuleC)!.def]?.console)!;
     sim.events.drain();
     sim.enqueue({ type: 'crew.man', id: c, module: consoleId });
-    run(sim, 2);
+    step(sim, 2);
     expect(sim.events.drain().filter((e) => e.type === 'command.rejected')).toMatchObject([{ command: 'crew.man', reason: 'breaking' }]);
     expect(sim.world.has(c, AssignmentC)).toBe(false);
     expect(auditReservations(sim).problems).toEqual([]);
@@ -315,7 +330,7 @@ describe('a break in play', () => {
     sim.world.add(job, JobC, { category: 'operating', kind: 'operate', x: Math.round(at.x), y: Math.round(at.y), struct: 0, work: 1, progress: 0, reservedBy: 0, target: consoleId });
     reserveJob(sim, c, job);
     expect(sim.world.get(c, TaskC)?.machine).not.toBe('break');
-    run(sim, 2);
+    step(sim, 2);
     expect(sim.world.has(c, AssignmentC)).toBe(false);
     expect(sim.world.get(job, JobC)?.reservedBy ?? 0).toBe(0);
     expect(sim.world.get(c, TaskC)?.machine).toBe('break');
@@ -325,10 +340,10 @@ describe('a break in play', () => {
   it('orders that would wipe a panicking crew member\'s path are rejected: an attack, a move, un-drafting', () => {
     const { sim, c } = quiet();
     sim.enqueue({ type: 'crew.draft', id: c, drafted: true });
-    run(sim, 2);
+    step(sim, 2);
     const p = sim.world.get(c, PositionC)!;
     startBreak(sim, c, { ...pick('panic', 'fire'), ticks: 60 * TICK_HZ, src: { x: Math.round(p.x) + 1, y: Math.round(p.y) } });
-    run(sim, 3);
+    step(sim, 3);
     expect(sim.world.get(c, TaskC)?.state).toBe('Flee');
     const steps = sim.world.get(c, PathC)!.steps.length;
     expect(steps).toBeGreaterThan(0);
@@ -358,7 +373,7 @@ describe('a break in play', () => {
   it('a mild break scores the work drive 0 and holds no job, while needs still work', () => {
     const { sim, c } = quiet();
     startBreak(sim, c, pick('refusal'));
-    run(sim, 5);
+    step(sim, 5);
     expect(sim.world.get(c, InterruptC)).toBeUndefined();
     const intent = sim.world.get(c, IntentC)!;
     const workAt = sim.content.policies!['policy.colonist']!.drives.findIndex((d) => d.id === 'work');
@@ -375,7 +390,7 @@ describe('a break in play', () => {
   it('cooldown and memory survive a save and load', () => {
     const { sim, c } = quiet();
     startBreak(sim, c, pick('panic', 'fire'));
-    run(sim, 5);
+    step(sim, 5);
     endBreak(sim, c);
     expect(onCooldown(sim, c)).toBe(true);
     const back = deserialize(serialize(sim), content);
@@ -404,10 +419,10 @@ describe('a break in play', () => {
     expect((sim.events.drain().find((e) => e.type === 'crew.break') as { alert: boolean }).alert).toBe(true);
     endBreak(sim, c);
     sim.events.drain();
-    run(sim, 5 * TICK_HZ);
+    step(sim, 5 * TICK_HZ);
     startBreak(sim, other, pick('panic', 'fire'));
     expect((sim.events.drain().find((e) => e.type === 'crew.break') as { alert: boolean }).alert).toBe(false);
-    run(sim, 70 * TICK_HZ);
+    step(sim, 70 * TICK_HZ);
     endBreak(sim, other);
     startBreak(sim, c, pick('panic', 'fire'));
     expect(sim.world.get(homeShip(sim), ShipC)!.lastSevereBreak).toBe(sim.tick);
@@ -430,7 +445,7 @@ describe('a break in play', () => {
     endBreak(sim, c);
     // fire break with no fire at all: ends once the context has been gone 10 s
     startBreak(sim, c, { ...pick('refusal', 'fire'), ticks: 100 * TICK_HZ });
-    run(sim, 20 * TICK_HZ);
+    step(sim, 20 * TICK_HZ);
     expect(sim.world.has(c, BreakdownC)).toBe(false);
   });
 });
@@ -439,7 +454,7 @@ describe('the stressors', () => {
   it('reads a path from the break machine only: the broken crew member is not given a job, a draft order or a fight turn', () => {
     const { sim, c } = quiet();
     startBreak(sim, c, { ...pick('freeze', 'combat'), ticks: 20 * TICK_HZ });
-    run(sim, 3);
+    step(sim, 3);
     expect(sim.world.get(c, PathC)!.steps).toEqual([]);
     expect(sim.world.get(c, TaskC)?.state).toBe('Freeze');
   });

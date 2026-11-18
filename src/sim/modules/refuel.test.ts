@@ -8,6 +8,7 @@ import { Sim } from '../sim';
 import { ModuleC } from './components';
 import { fuelOf } from './energy';
 import { spawnModule } from './spawn';
+import { step as run } from '../../../test/support/sim';
 
 const mod = (o: Partial<ModuleDef>): ModuleDef => ({ name: 'm', asset: 'm', footprint: [1, 1], solid: false, power: 0, flammability: 0.1, maxHp: 100, buildWork: 20, ...o });
 const reactorDef = mod({ solid: true, footprint: [2, 2], power: 50, powerPriority: 1, fuel: { item: 'crystal', store: 6, refillBelow: 3, powerPerUnit: 2000 } });
@@ -38,7 +39,6 @@ function setup(stock: number, layout: string[] = rows, at = { x: 1, y: 1 }, stor
 }
 const fuel = (sim: Sim, id: number): number => fuelOf(sim.world.get(id, ModuleC)!, reactorDef);
 const refuelJobs = (sim: Sim): number => sim.world.query(JobC).filter((j) => sim.world.get(j, JobC)?.kind === 'refuel').length;
-const run = (sim: Sim, n: number): void => { for (let i = 0; i < n; i++) sim.step(); };
 
 describe('reactor refuelling', () => {
   it('posts no job while the store is at or above half', () => {

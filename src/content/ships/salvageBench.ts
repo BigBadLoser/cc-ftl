@@ -4,9 +4,11 @@
  * the slow test read it; salvage's own code is not touched.
  */
 import { CrewC, DeadC, ItemStackC, PositionC, StorageC, VehicleC, homeShip, storageAdd, newGame, placementError, ShipC, shipGrid, spawnModule, stampShip, type ScrapType, type Sim, type WorkCategory } from '../../sim';
+import { ModuleC } from '../../sim/modules/components';
 import { shipIdAt, shipIdOf } from '../../sim/regions';
 import { content } from '../index';
-import { storages } from './ferryFixture';
+
+const storages = (sim: Sim, ship: number): number[] => [...sim.world.query(StorageC, ModuleC)].filter((s) => shipIdOf(sim, sim.world.get(s, ModuleC)) === ship);
 
 export interface BenchOpts {
   /** Crew at home: 6 (three of them with construction and hauling at 1, the rest at 3) or 4 (all four at 1). */

@@ -1,8 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import { NORMAL_O2, ShipC, Struct, YardCrewC, builtCount, deserialize, hullLoad, isLiveOrder, plannedTiles, quoteYard, serialize, shipGrid, totalTiles, yardPrice, yardService } from '../sim';
+import { ShipC } from '../sim/combat/components';
+import { hullLoad } from '../sim/ftl/capacity';
+import { shipGrid } from '../sim/regions';
+import { deserialize, serialize } from '../sim/save';
+import { Struct } from '../sim/structure';
+import { NORMAL_O2 } from '../sim/tuning';
+import { plannedTiles, quoteYard } from '../sim/yard/plan';
+import { builtCount, totalTiles } from '../sim/yard/progress';
+import { yardPrice, yardService } from '../sim/yard/rules';
+import { isLiveOrder, YardCrewC } from '../sim/yard/types';
 import { content } from './index';
 import { giveItems } from '../sim/story/effects';
-import { outline, planHull, run, yardGame } from './yardFixture';
+import { outline, planHull, run, yardGame } from '../../test/support/fixtures/yard';
 
 // Slow tier (see "Test tiers" in docs/ARCHITECTURE.md): bigger yard jobs, run to the end. Skipped by `npm run check:fast`.
 describe('shipyard: bigger jobs', () => {
@@ -153,4 +162,22 @@ describe('shipyard: bigger jobs', () => {
     const inOrder = new Set([...order.floor, ...order.opens!].map((t) => `${t.x},${t.y}`));
     expect([...seen].some((k) => !inOrder.has(k))).toBe(true); // and on into the old ship's own floor
   }, 300000);
+});
+
+describe('shipyard: joining on, run to the end (#429)', () => {
+  it('pressurises a finished section even when no old wall opens for it (#429)', () => {
+    const { sim, station, me } = yardGame('station', 'station.military');
+    giveItems(sim, 'item.metal', 300);
+    planHull(sim, me, outline(sim, me, 28, -2, 4, 3));
+    sim.enqueue({ type: 'yard.order', station });
+    expect(run(sim, 1)).toContain('yard.ordered');
+    const order = sim.yard.orders[0]!;
+    // The run stops once the order ends; the cap only has to outlast the trip home, which depends on the station's layout.
+    run(sim, 9000, () => !isLiveOrder(order));
+    expect(order.phase).toBe('done');
+    expect(order.opens ?? []).toEqual([]);
+    const grid = shipGrid(sim, me)!;
+    expect(order.floor.length).toBeGreaterThan(0);
+    for (const t of order.floor) expect(grid.get('o2', t.x, t.y), `${t.x},${t.y}`).toBeGreaterThan(NORMAL_O2 - 1);
+  }, 120000);
 });

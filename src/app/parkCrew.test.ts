@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { AllegianceC, AssignmentC, CrewC, JobC, PathC, PositionC, Sim } from '../sim';
+import { AssignmentC, CrewC, JobC, PathC, PositionC } from '../sim/crew/components';
+import { AllegianceC } from '../sim/fight/components';
+import { Sim } from '../sim/sim';
 import { parkCrew } from './parkCrew';
 
 describe('parkCrew', () => {

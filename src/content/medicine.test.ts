@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { CrewC, DeadC, DownedC, HealthC, NeedsC, newGame, type Sim } from '../sim';
+import { CrewC, DeadC, DownedC, HealthC, NeedsC } from '../sim/crew/components';
+import { newGame } from '../sim/newGame';
+import type { Sim } from '../sim/sim';
 import { playerCrew } from '../sim/story/world';
 import { content } from '.';
 

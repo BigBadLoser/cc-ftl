@@ -1,10 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { AssignmentC, CrewC, DeadC, DownedC, DraftedC, EquipC, FighterC, HealthC, JobC, ModuleC, PositionC, SabotageOrderC, StunC, deserialize, serialize, type Sim } from '../../sim';
+import { SabotageOrderC } from '../../sim/boarding/components';
+import { AssignmentC, CrewC, DeadC, DownedC, DraftedC, HealthC, JobC, PositionC } from '../../sim/crew/components';
+import { EquipC, FighterC } from '../../sim/fight/components';
+import { ModuleC } from '../../sim/modules/components';
+import { StunC } from '../../sim/robots/components';
+import { deserialize, serialize } from '../../sim/save';
+import type { Sim } from '../../sim/sim';
 import { content } from '../index';
 import { shipIdOf } from '../../sim/regions';
 import { SABOTAGE_PER_SEC } from '../../sim/tuning';
 import { TICK_HZ } from '../../sim/time';
-import { crewOn, dockParty, raiderCrew, modulesOf, nth, of, run, setup, ship } from './boardingFixture';
+import { crewOn, dockParty, raiderCrew, modulesOf, nth, of, run, setup, ship } from '../../../test/support/fixtures/boarding';
 
 const hpOf = (sim: Sim, id: number): number => sim.world.get(id, ModuleC)!.hp;
 const sabotageJobs = (sim: Sim): number[] => sim.world.query(JobC).filter((j) => sim.world.get(j, JobC)!.kind === 'sabotage');

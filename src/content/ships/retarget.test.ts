@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { CombatC, ModuleC, ShipC, WeaponC, newGame, type Sim } from '../../sim';
+import { CombatC, ShipC, WeaponC } from '../../sim/combat/components';
+import { ModuleC } from '../../sim/modules/components';
+import { newGame } from '../../sim/newGame';
+import type { Sim } from '../../sim/sim';
 import { content } from '../index';
-import { shipIdOf, shipIds } from '../../sim/regions';
+import { shipIdOf } from '../../sim/regions';
 import { resolveTarget } from '../../sim/combat/targets';
+import { nth } from '../../../test/support/sim';
 
-const nth = (sim: Sim, n: number): number => shipIds(sim)[n - 1] as number;
 const modulesOf = (sim: Sim, n: number, def: string): number[] =>
   sim.world.query(ModuleC).filter((i) => shipIdOf(sim, sim.world.get(i, ModuleC)) === nth(sim, n) && sim.world.get(i, ModuleC)!.def === def);
 

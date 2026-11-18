@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { ModuleC, WeaponC, galaxyIndex, newGame, shipIdOf } from '../sim';
+import { WeaponC } from '../sim/combat/components';
+import { galaxyIndex } from '../sim/galaxy/state';
+import { ModuleC } from '../sim/modules/components';
+import { newGame } from '../sim/newGame';
+import { shipIdOf } from '../sim/regions';
 import { portsAt } from '../sim/galaxy/portIndex';
 import { stationClass } from '../sim/galaxy/ports';
 import { spawnContact } from '../sim/galaxy/arrivals';

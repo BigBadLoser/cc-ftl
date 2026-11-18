@@ -21,7 +21,7 @@ Both scripts print the text report to stdout and write the JSON summary (`--out`
 `profile` starts its own dev server on a free port and stops it by PID when done (`--url` uses a running one instead). It uses the dev
 server on purpose: system labels come from function names, which a minified build mangles.
 
-Scenarios are the `?scenario=` values in `src/main.ts`, passed straight through: currently `log` (a raider arrives, fire breaks out, speed 3),
+Scenarios are the `?scenario=` presets of `src/content/scenario/presets/` (ARCHITECTURE "Scenario builder"), passed straight through: currently `log` (a raider arrives, fire breaks out, speed 3),
 `hullplan`, `handover`, `bounty`, `survey`, `fight` (a raider beside the ship, game running; add `far` for engagement distance, which exercises the combat view and inset) and `damage` (a fire, a breach and a damaged reactor). `none` or no flag is the colony baseline.
 `--speed 1|2|3` presses the speed key after load; `--warmup 2` seconds run before the tally resets and the recording starts.
 
@@ -35,6 +35,8 @@ All of it lives in `tools/profile/` (never in `src/`), reads the sim after each 
 debug commands, so any run is reproducible from `--scenario` and `--seed`.
 
 ### `profile:sim --scenario <name>`
+
+`profile:sim` also runs any registry preset as `--scenario preset:<name>` (the same builder as `?scenario=`; `--scenario list` shows them after the profile boards), with the preset's hooks ticking on the run.
 
 `npm run profile:sim -- --scenario <name> [--ticks N] [--seed 1] [--out file.json] [--no-metrics] [--stride 25] [--record-decisions f.jsonl] [--dump-board <tick> --board-out f.json]`.
 `--ticks` defaults to the scenario's own count; `--empty` and no scenario keep the old start-node run. The text report ends with the metrics block and the

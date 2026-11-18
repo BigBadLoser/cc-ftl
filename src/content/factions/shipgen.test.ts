@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { Struct, generateShip, isTileWalkable, newGame, adjacencyDistance, adjacencySignature, meanPairwise, silhouetteDistance, silhouetteMask, type FactionDef, type GenResult, type ModuleDef } from '../../sim';
+import { isTileWalkable } from '../../sim/modules/walk';
+import { newGame } from '../../sim/newGame';
+import type { ModuleDef } from '../../sim/registry';
+import { generateShip } from '../../sim/shipgen/generate';
+import { adjacencyDistance, adjacencySignature, meanPairwise, silhouetteDistance, silhouetteMask } from '../../sim/shipgen/metrics';
+import type { FactionDef, GenResult } from '../../sim/shipgen/types';
+import { Struct } from '../../sim/structure';
 import { content } from '../index';
 import { factions } from './index';
 import { shipGrid, shipIds } from '../../sim/regions';

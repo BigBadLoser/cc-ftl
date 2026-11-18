@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import {
-  AsteroidC, TraderC, homeShip, newGame, placementError, shipGrid, spawnModule, spawnVehicle, totalStock, unitPrice, type Sim,
-} from '../sim';
+import { AsteroidC } from '../sim/asteroids/components';
+import { homeShip } from '../sim/combat/ships';
+import { totalStock } from '../sim/items/stock';
+import { placementError, spawnModule } from '../sim/modules/spawn';
+import { newGame } from '../sim/newGame';
+import { shipGrid } from '../sim/regions';
+import type { Sim } from '../sim/sim';
+import { unitPrice } from '../sim/trade/pricing';
+import { TraderC } from '../sim/trade/types';
+import { spawnVehicle } from '../sim/vehicles/lifecycle';
 import { DELIVERY_BASE, DELIVERY_HOPS, DELIVERY_PER_DANGER, DELIVERY_PER_HOP } from '../sim/galaxy/tuningJobs';
 import { ROUTE_CHARGE, TURN_TICKS } from '../sim/galaxy/tuning';
 import { TICK_HZ } from '../sim/time';

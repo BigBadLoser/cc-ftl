@@ -11,20 +11,14 @@ import { newGame } from '../newGame';
 import type { ContentRegistry } from '../registry';
 import { Sim } from '../sim';
 
-import { stampShip } from '../combat/ships';
 
-import type { ShipTemplate } from '../registry';
 
 import { Struct } from '../structure';
 
 import type { SimEvent } from '../events';
 import { shipGrid } from '../regions';
+import { fixtureShip, run } from '../../../test/support/sim';
 
-
-/** A fixture ship: the template stamped at the sector origin as an inert ship (a prize is skipped by every ship system). It is the first entity, so its id is 1. */
-function fixtureShip(sim: Sim, t: ShipTemplate): number {
-  return stampShip(sim, t, { faction: 'player', state: 'prize', x: 0, y: 0 });
-}
 
 const rows = ['#########', '#___#___#', '#___D___#', '#___#___#', '#########'];
 const all = (v: number): Priorities => ({
@@ -66,7 +60,6 @@ function spawn(sim: Sim, x: number, y: number, prio: Priorities = all(4), rest =
 }
 
 const construction = { ...all(4), construction: 1 };
-const run = (sim: Sim, n: number) => { for (let i = 0; i < n; i++) sim.step(); };
 const struct = (sim: Sim, x: number, y: number) => shipGrid(sim, 1)!.get('struct', x, y);
 const build = (sim: Sim, x: number, y: number, s: number = Struct.Wall) =>
   sim.enqueue({ type: 'job.build', ship: 1, x, y, struct: s });

@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { ShipC, Sim, Struct, shipGrid } from '../../sim';
+import { ShipC } from '../../sim/combat/components';
+import { shipGrid } from '../../sim/regions';
+import { Sim } from '../../sim/sim';
+import { Struct } from '../../sim/structure';
 import { content } from '../index';
 
 /** Mean o2 + co2 per room of the base (room id -> kPa). */

@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { ModuleC, ShipC, Struct, newGame, shipGrid } from '../sim';
+import { ShipC } from '../sim/combat/components';
+import { ModuleC } from '../sim/modules/components';
+import { newGame } from '../sim/newGame';
+import { shipGrid } from '../sim/regions';
+import { Struct } from '../sim/structure';
 import { airlockTiles } from '../sim/modules/airlock';
 import { shipIdOf } from '../sim/regions';
 import { content } from '../content';

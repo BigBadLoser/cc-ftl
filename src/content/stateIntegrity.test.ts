@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { VehicleC, CombatC, FTL_CHARGE_SEC, ModuleC, StorageC, galaxyIndex, newGame, playerShip, type Sim } from '../sim';
+import { CombatC } from '../sim/combat/components';
+import { galaxyIndex } from '../sim/galaxy/state';
+import { StorageC } from '../sim/items/components';
+import { ModuleC } from '../sim/modules/components';
+import { newGame } from '../sim/newGame';
+import type { Sim } from '../sim/sim';
+import { playerShip } from '../sim/trade/player';
+import { FTL_CHARGE_SEC } from '../sim/tuning';
+import { VehicleC } from '../sim/vehicles/components';
 import { stepDistress } from '../sim/galaxy/stranded';
 import { yardSystem } from '../sim/yard/flow';
 import { payStation, refund, retryRefund } from '../sim/yard/money';

@@ -1,19 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import {
-  CombatC, FTL_CHARGE_SEC, START_NODE, ShipC, deserialize, fuelStock, galaxyIndex, hopTicksOf, jumpFuel, newGame, playerShip, playerShipId, routeEdges, serialize, type Sim,
-} from '../sim';
+import { CombatC, ShipC } from '../sim/combat/components';
+import { fuelStock, jumpFuel } from '../sim/galaxy/fuel';
+import { hopTicksOf, routeEdges } from '../sim/galaxy/hyperspace';
+import { galaxyIndex, START_NODE } from '../sim/galaxy/state';
+import { newGame } from '../sim/newGame';
+import { deserialize, serialize } from '../sim/save';
+import type { Sim } from '../sim/sim';
+import { playerShip, playerShipId } from '../sim/trade/player';
+import { FTL_CHARGE_SEC } from '../sim/tuning';
 import { ensureAround } from '../sim/galaxy/state';
 import { giveItems, takeItems } from '../sim/story/effects';
 import { content } from '.';
+import { expectReplayable } from '../../test/support/world';
+import { run as step } from '../../test/support/sim';
 
-const step = (sim: Sim, n = 1) => {
-  const out = [];
-  for (let i = 0; i < n; i++) {
-    sim.step();
-    out.push(...sim.events.drain());
-  }
-  return out;
-};
 /** Deploy at the first of a few spots the gap rule accepts (a node's own ships may be in the way of some). */
 const deploy = (sim: Sim) => {
   const out = [];
@@ -279,14 +279,12 @@ describe('hyperspace travel', () => {
     });
 
     it('is deterministic', () => {
-      const run = (): string => {
+      expectReplayable(() => {
         const sim = fled(20);
         step(sim, 100);
         jump(sim, [neighbour(sim, START_NODE)]);
-        step(sim, 200);
-        return JSON.stringify(serialize(sim));
-      };
-      expect(run()).toBe(run());
+        return sim;
+      }, 200, { every: 20 });
     });
   });
 

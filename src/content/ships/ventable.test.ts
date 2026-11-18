@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { content } from '..';
-import { AirlockC, ModuleC, airlockTiles, homeShip, newGame, shipGrid, Struct } from '../../sim';
+import { homeShip } from '../../sim/combat/ships';
+import { AirlockC, airlockTiles } from '../../sim/modules/airlock';
+import { ModuleC } from '../../sim/modules/components';
+import { newGame } from '../../sim/newGame';
+import { shipGrid } from '../../sim/regions';
+import { Struct } from '../../sim/structure';
 import { ventableDoor } from '../../sim/vents';
 
 describe('which doors can have a vent', () => {

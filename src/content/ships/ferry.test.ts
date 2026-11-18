@@ -1,9 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import {
-  AboardC, CrewC, FerryC, ModuleC, PositionC, SuitC, VehicleC, deserialize, homeShip, newGame, serialize, spawnCrew,
-} from '../../sim';
-import { ItemStackC } from '../../sim';
-import { done, outpostRegion, run, shuttleOf, stockOn, storages } from './ferryFixture';
+import { homeShip, spawnCrew } from '../../sim/combat/ships';
+import { CrewC, PositionC } from '../../sim/crew/components';
+import { SuitC } from '../../sim/eva/components';
+import { FerryC } from '../../sim/ferry/components';
+import { ItemStackC } from '../../sim/items/components';
+import { ModuleC } from '../../sim/modules/components';
+import { newGame } from '../../sim/newGame';
+import { deserialize, serialize } from '../../sim/save';
+import { AboardC, VehicleC } from '../../sim/vehicles/components';
+import { done, outpostRegion, run, shuttleOf, stockOn, storages } from '../../../test/support/fixtures/ferry';
 import { shipIdOf } from '../../sim/regions';
 import { ferryFree } from '../../sim/ferry/pick';
 import { content } from '../index';

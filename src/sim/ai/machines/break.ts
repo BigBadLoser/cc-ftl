@@ -106,7 +106,7 @@ export function breakTurn(sim: Sim, id: number, pos: Position): void {
       if (!planned) {
         task.bb.n = 1;
         const here = origin(at);
-        const steps = grid && fleePath(sim, grid, here, [b.src ?? here]);
+        const steps = grid && fleePath(sim, grid, here, [b.src ?? here], id);
         if (steps && steps.length > 0) path.steps = [...head, ...steps];
         else setState(sim, id, task, 'Cower');
       } else if (path.steps.length === 0 && isSettled(pos)) setState(sim, id, task, 'Cower');

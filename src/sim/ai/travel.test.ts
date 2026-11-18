@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { airlockOf, crew, world } from '../eva/airFixture';
-import { shuttle } from '../eva/airFixture';
+import { airlockOf, crew, world } from '../../../test/support/fixtures/air';
+import { shuttle } from '../../../test/support/fixtures/air';
 import { airlockTiles } from '../modules/airlock';
 import { ModuleC } from '../modules/components';
 import { SuitC } from '../eva/components';

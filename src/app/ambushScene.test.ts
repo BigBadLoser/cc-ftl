@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CombatC, FTL_CHARGE_SEC, START_NODE, ShipC, galaxyIndex, newGame, playerShip, serialize, deserialize, type Sim } from '../sim';
+import { ShipC, playerShip, serialize, deserialize, type Sim } from '../sim';
 import { AllegianceC } from '../sim/fight/components';
 import { CrewC, DownedC, PositionC } from '../sim/crew/components';
 import { shipIdOf } from '../sim/regions';
@@ -10,7 +10,7 @@ import { ConsentC } from '../sim/consent/components';
 import { guestOn } from '../sim/consent/guests';
 import { isInvader, isOffDuty } from '../sim/fight/relations';
 import { killCrew } from '../sim/crew/death';
-import { applyEffect, giveItems } from '../sim/story/effects';
+import { applyEffect } from '../sim/story/effects';
 import { RolledSkillsC } from '../sim/crew/traits';
 import { playerCrew, playerStock, withPlayerAboard } from '../sim/story/world';
 import { ItemStackC } from '../sim/items/components';
@@ -18,6 +18,7 @@ import { BoarderC, VehicleC } from '../sim/vehicles/components';
 import { buildStory } from './storySnapshot';
 import { eventOf } from './encounterSnapshot';
 import { content } from '../content';
+import { cachedScenario, scenario } from '../../test/support/scenario';
 
 /** The pirate ambush (#173 step 4): the signal and its scan, the skiff in its pocket, the dock request, and what the observer makes of it. */
 
@@ -29,51 +30,18 @@ const step = (sim: Sim, n = 1) => {
   }
   return out;
 };
-const deploy = (sim: Sim) => {
-  for (const [x, y] of [[100, 60], [20, 50], [300, 200], [40, 150], [200, 20], [350, 100]] as const) {
-    sim.enqueue({ type: 'sector.deploy', x, y });
-    step(sim);
-    if (sim.sector.state === 'active') break;
-  }
-};
-const adjacent = (sim: Sim, id: string): string[] => (galaxyIndex(sim.galaxy).adjacent.get(id) ?? []).map((e) => (e.a === id ? e.b : e.a)).sort();
-function routeOf(sim: Sim, hops: number): string[] {
-  const route = [START_NODE];
-  for (let h = 0; h < hops; h++) {
-    const next = adjacent(sim, route[route.length - 1] as string).find((n) => !route.includes(n));
-    if (!next) break;
-    route.push(next);
-  }
-  return route.slice(1);
-}
 const choose = (sim: Sim, choice: string) => {
   sim.enqueue({ type: 'story.choose', choice });
   return step(sim, 2);
 };
 
-/** A two-hop trip whose first hop signals the returning pirate; stops with the decision open. */
-function signalled(seed: number, trap?: boolean): Sim {
-  const sim = newGame(seed, content);
-  sim.story.goals.skipped = true;
-  sim.story.flags['spared_pirate'] = 1;
-  sim.galaxy.fleets = [];
-  giveItems(sim, 'item.fuel', 80);
-  const combat = sim.world.get(playerShip(sim), CombatC);
-  if (combat) combat.ftl = FTL_CHARGE_SEC;
-  sim.story.queue.push({ event: 'event.pirate_returns', due: 0, force: true });
-  sim.enqueue({ type: 'galaxy.jump', ship: playerShip(sim), route: routeOf(sim, 2) });
-  for (let i = 0; i < 90000 && sim.galaxy.travel?.phase !== 'story'; i++) sim.step();
-  sim.events.drain();
-  if (trap !== undefined) sim.enqueue({ type: 'debug.ambush', trap });
-  step(sim);
-  return sim;
-}
-/** Into the skiff's pocket, deployed. Returns the skiff's ship id. */
+/** The ambush scenario's params for a trap, an honest skiff, or the seed's roll (`trap` undefined); `warm: 0` starts the trip at tick 0. */
+const params = (trap: boolean | undefined, more: Record<string, boolean | number> = {}) => ({ warm: 0, ...(trap === true ? { trap: true } : trap === false ? { honest: true } : {}), ...more });
+/** A two-hop trip whose first hop signals the returning pirate; stops with the decision open (built once per worker and cloned; `fresh`: built anew, for a test about the build). */
+const signalled = (seed: number, trap?: boolean, fresh = false): Sim => (fresh ? scenario : cachedScenario)('ambush', { seed, params: params(trap, { signal: true }) }).sim;
+/** Into the skiff's pocket, deployed and settled 20 ticks. Returns the skiff's ship id. */
 function inScene(seed: number, trap: boolean): { sim: Sim; skiff: number } {
-  const sim = signalled(seed, trap);
-  choose(sim, 'approach');
-  deploy(sim);
-  step(sim, 20);
+  const sim = cachedScenario('ambush', { seed, params: params(trap) }).sim;
   return { sim, skiff: sim.galaxy.event?.scene.ships[0]?.contact.ship as number };
 }
 /** Missiles lying loose on the floor of any ship. */
@@ -103,7 +71,7 @@ describe('the returning pirate: signal', () => {
   it('the flag queues it and the signal builds one skiff: trap or honest by seed, nothing spawned in hyperspace', () => {
     const traps = new Set<boolean>();
     for (let s = 1; s < 16 && traps.size < 2; s++) {
-      const sim = signalled(s);
+      const sim = signalled(s, undefined, true);
       const spec = sim.galaxy.signal;
       expect(sim.story.active?.event).toBe('event.pirate_returns');
       expect(spec?.ships).toHaveLength(1);
@@ -118,7 +86,7 @@ describe('the returning pirate: signal', () => {
         expect(a?.party).toBeLessThanOrEqual(2);
       }
       expect(sim.world.query(ShipC)).toHaveLength(0); // the player's ship is a packet in hyperspace and nothing spawned
-      expect(signalled(s).galaxy.signal).toEqual(sim.galaxy.signal); // the same signal, the same skiff
+      expect(signalled(s, undefined, true).galaxy.signal).toEqual(sim.galaxy.signal); // the same signal, the same skiff
     }
     expect(traps.size).toBe(2);
   });

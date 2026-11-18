@@ -1,85 +1,29 @@
 import { describe, expect, it, vi } from 'vitest';
 import * as itemStacks from '../sim/items/stacks';
 import { cargoOf } from '../sim/vehicles/cargo';
-import { AirlockC, CombatC, FTL_CHARGE_SEC, ModuleC, ShipC, VehicleC, deserialize, galaxyIndex, newGame, playerShip, serialize, type Sim, type SimEvent } from '../sim';
+import { CombatC, ShipC } from '../sim/combat/components';
+import { galaxyIndex } from '../sim/galaxy/state';
+import { AirlockC } from '../sim/modules/airlock';
+import { ModuleC } from '../sim/modules/components';
+import { deserialize, serialize } from '../sim/save';
+import { playerShip } from '../sim/trade/player';
+import { FTL_CHARGE_SEC } from '../sim/tuning';
+import { VehicleC } from '../sim/vehicles/components';
 import { spawnContact } from '../sim/galaxy/arrivals';
-import { featureOf, offersHere, portOffers } from '../sim/galaxy/jobOffers';
+import { featureOf, offersHere } from '../sim/galaxy/jobOffers';
 import { CRATE, crateAboard, expireJobs } from '../sim/galaxy/jobs';
-import { stationClass, type Port } from '../sim/galaxy/ports';
+import { stationClass } from '../sim/galaxy/ports';
 import { wreckShip } from '../sim/combat/wreck';
 import { ItemStackC } from '../sim/items/components';
 import { placementGapError } from '../sim/regions';
 import { planStarRoute } from '../sim/galaxy/route';
 import { portsAt } from '../sim/galaxy/portIndex';
-import { repKey } from '../sim/galaxy/standing';
-import { ensureAround } from '../sim/galaxy/state';
 import { BREACH_NOTORIETY, MAX_JOBS } from '../sim/galaxy/tuningJobs';
 import type { StationJob } from '../sim/galaxy/types';
 import { playerStock } from '../sim/story/world';
 import { giveItems } from '../sim/story/effects';
+import { accept, aroundGame, arrivedDelivery, atBoard, boards, goTo, rep, shuttleOut, takeOffer, until } from '../../test/support/fixtures/jobs';
 import { content } from '.';
-
-const rep = (sim: Sim, faction: string): number => sim.story.reputation[repKey(sim, faction)] ?? 0;
-
-/** Put the player at a node, live (a debug teleport, then deploy). */
-function goTo(sim: Sim, node: string): void {
-  sim.enqueue({ type: 'debug.galaxyTeleport', node });
-  sim.step();
-  for (const [x, y] of [[100, 60], [20, 50], [60, 120], [150, 40], [30, 130], [170, 110], [10, 10]] as const) {
-    if (sim.sector.state === 'active') break;
-    sim.enqueue({ type: 'sector.deploy', x, y });
-    sim.step();
-  }
-}
-
-/** The player's node, any board (an offer of any kind), as a game: the first node near the start with a station, depot or den. */
-function atBoard(seed = 3): Sim {
-  const sim = newGame(seed, content);
-  ensureAround(sim, sim.galaxy.current);
-  if (!offersHere(sim).length) {
-    const node = [...galaxyIndex(sim.galaxy).nodes.keys()].sort().find((n) => portsAt(sim, n).some((p) => p.kind === 'station' || p.kind === 'depot'));
-    if (!node) throw new Error('no station');
-    goTo(sim, node);
-  }
-  return sim;
-}
-
-/** Every port of the generated map with its offers, in node order. */
-function boards(sim: Sim): { port: Port; offers: ReturnType<typeof portOffers> }[] {
-  return [...galaxyIndex(sim.galaxy).nodes.keys()].sort().flatMap((n) => portsAt(sim, n).map((port) => ({ port, offers: portOffers(sim, port) })));
-}
-
-/** Go to the first port of a station class that posts an offer of `kind` (searching seeds in order), take it, and return the game with its job. */
-function takeOffer(kind: 'delivery' | 'bounty' | 'survey', cls: string): { sim: Sim; job: StationJob } {
-  for (let seed = 1; seed <= 12; seed++) {
-    const sim = newGame(seed, content);
-    ensureAround(sim, sim.galaxy.current);
-    const hit = boards(sim).find((b) => stationClass(b.port) === cls && b.offers.some((o) => o.kind === kind));
-    if (!hit) continue;
-    if (hit.port.node !== sim.galaxy.current) goTo(sim, hit.port.node);
-    const offer = portOffers(sim, hit.port).find((o) => o.kind === kind)!;
-    accept(sim, offer.key);
-    const job = sim.galaxy.jobs.find((j) => j.key === offer.key);
-    if (job) return { sim, job };
-  }
-  throw new Error(`no ${kind} offer at a ${cls} station`);
-}
-
-const accept = (sim: Sim, key: string) => {
-  sim.enqueue({ type: 'jobs.accept', key });
-  sim.step();
-  return sim.events.drain();
-};
-
-/** Step until `done` holds (at most `max` ticks), collecting the events. */
-function until(sim: Sim, done: () => boolean, max = 4000): SimEvent[] {
-  const seen: SimEvent[] = [];
-  for (let i = 0; i < max && !done(); i++) {
-    sim.step();
-    seen.push(...sim.events.drain());
-  }
-  return seen;
-}
 
 describe('station jobs', () => {
   it('offers the same jobs, with the same keys, until the window turns over', () => {
@@ -93,8 +37,7 @@ describe('station jobs', () => {
   it('the station type decides the jobs: trade deliveries, military bounties, research surveys, dens a mix', () => {
     const count: Record<string, Record<string, number>> = {};
     for (const seed of [1, 2, 3, 4, 5, 6]) {
-      const sim = newGame(seed, content);
-      ensureAround(sim, sim.galaxy.current);
+      const sim = aroundGame(seed);
       for (const b of boards(sim)) {
         const cls = stationClass(b.port) ?? b.port.kind;
         for (const o of b.offers) {
@@ -141,24 +84,14 @@ describe('station jobs', () => {
     expect(rep(sim, issuer)).toBe(standing + 1);
     expect(playerStock(sim, CRATE)).toBe(0);
     expect(crateAboard(sim, id)).toBe(false);
-    // The shuttle flies home and is stowed again, free for other work.
+    // The shuttle's flight home and its stowing again are in jobs.slow.test.ts.
     const deal = sim.trade.deals.find((d) => d.handover)!;
     expect(deal.phase).toBe('done');
-    until(sim, () => deal.vehicle === 0, 3000);
-    expect(deal.vehicle).toBe(0);
-    // Every vehicle stowed and off autopilot (a station's own that never flew has no autopilot set at all).
-    for (const vid of sim.world.query(VehicleC)) {
-      const v = sim.world.get(vid, VehicleC)!;
-      expect(v.state).toBe('stowed');
-      expect(v.autopilot ?? false).toBe(false);
-    }
   });
 
   it('the crate rides in the player\'s shuttle to the station; the delivery pays only on the drop-off', () => {
-    const { sim, job } = takeOffer('delivery', 'trade');
-    goTo(sim, job.to!);
+    const { sim, job } = shuttleOut();
     const credits = sim.trade.credits;
-    until(sim, () => sim.trade.deals.some((d) => d.handover && d.phase === 'out'));
     const d = sim.trade.deals.find((x) => x.handover)!;
     expect(d.handover!.via).toBe('own');
     expect(sim.world.get(d.vehicle, VehicleC)!.cargo).toEqual([{ item: CRATE, count: 1 }]);
@@ -170,9 +103,7 @@ describe('station jobs', () => {
   });
 
   it('a delivery that ends while its crate is in the shuttle breaks the crate open: stolen goods on deck, nothing left in the hold', () => {
-    const { sim, job } = takeOffer('delivery', 'trade');
-    goTo(sim, job.to!);
-    until(sim, () => sim.trade.deals.some((d) => d.handover && d.phase === 'out'));
+    const { sim, job } = shuttleOut();
     const d = sim.trade.deals.find((x) => x.handover)!;
     expect(cargoOf(sim, d.vehicle, CRATE)).toBe(1);
     expireJobs(sim, job.due + 1);
@@ -216,9 +147,7 @@ describe('station jobs', () => {
   });
 
   it('a crate in the shuttle is never lost when it cannot be put back on deck: the run waits with it', () => {
-    const { sim, job } = takeOffer('delivery', 'trade');
-    goTo(sim, job.to!);
-    until(sim, () => sim.trade.deals.some((d) => d.handover && d.phase === 'out'));
+    const { sim } = shuttleOut();
     const d = sim.trade.deals.find((x) => x.handover)!;
     const foe = boards(sim).flatMap((b) => b.offers).find((o) => o.kind === 'bounty')!;
     const c = { id: 9002, faction: foe.targetFaction!, shipgen: foe.shipgen!, seed: foe.seed ?? 0, depth: 1, since: 0 };
@@ -256,16 +185,14 @@ describe('station jobs', () => {
   });
 
   it('with no shuttle at all the crate is handed across by hand', () => {
-    const { sim, job } = takeOffer('delivery', 'trade');
-    goTo(sim, job.to!);
+    const { sim, job } = arrivedDelivery();
     for (const vid of [...sim.world.query(VehicleC)]) sim.world.destroyEntity(vid);
     const seen = until(sim, () => sim.galaxy.jobs.length === 0, 200);
     expect(seen.find((e) => e.type === 'job.handedOver')).toMatchObject({ id: job.id, via: 'instant' });
   });
 
   it('the delivery is not paid before the shuttle has the crate', () => {
-    const { sim, job } = takeOffer('delivery', 'trade');
-    goTo(sim, job.to!);
+    const { sim, job } = arrivedDelivery();
     const credits = sim.trade.credits;
     until(sim, () => sim.trade.deals.some((d) => d.handover && d.phase === 'load'));
     expect(sim.galaxy.jobs).toHaveLength(1);
@@ -274,8 +201,7 @@ describe('station jobs', () => {
   });
 
   it('with no working airlock the crate is handed across by hand at once, still paying', () => {
-    const { sim, job } = takeOffer('delivery', 'trade');
-    goTo(sim, job.to!);
+    const { sim, job } = arrivedDelivery();
     for (const id of sim.world.query(AirlockC, ModuleC)) sim.world.get(id, ModuleC)!.enabled = false;
     const seen = until(sim, () => sim.galaxy.jobs.length === 0, 200);
     expect(seen.find((e) => e.type === 'job.handedOver')).toMatchObject({ id: job.id, via: 'instant' });
@@ -284,8 +210,7 @@ describe('station jobs', () => {
   });
 
   it('in combat the shuttle is held back, the crate stays and the job stays open; when it is over the shuttle comes', () => {
-    const { sim, job } = takeOffer('delivery', 'trade');
-    goTo(sim, job.to!);
+    const { sim } = arrivedDelivery();
     // A hostile ship at the node (any bounty target will do).
     const foe = boards(sim).flatMap((b) => b.offers).find((o) => o.kind === 'bounty')!;
     const c = { id: 9001, faction: foe.targetFaction!, shipgen: foe.shipgen!, seed: foe.seed ?? 0, depth: 1, since: 0 };
@@ -430,8 +355,7 @@ describe('station jobs', () => {
   });
 
   it('the debug scenarios set up a handover and hand-ins that work', () => {
-    const sim = newGame(3, content);
-    ensureAround(sim, sim.galaxy.current);
+    const sim = aroundGame(3);
     // A fresh game has no station ship at the start node: put one beside the ship, as the scenario does.
     sim.enqueue({ type: 'debug.spawnStation', kind: 'station.trading', size: 'outpost', seed: 5 });
     sim.enqueue({ type: 'debug.jobScenario', name: 'handover' });
@@ -440,8 +364,7 @@ describe('station jobs', () => {
     const seen = until(sim, () => sim.galaxy.jobs.length === 0);
     expect(seen.find((e) => e.type === 'job.handedOver')).toMatchObject({ via: 'own' });
     for (const name of ['bounty', 'survey'] as const) {
-      const other = newGame(3, content);
-      ensureAround(other, other.galaxy.current);
+      const other = aroundGame(3);
       other.enqueue({ type: 'debug.jobScenario', name });
       other.step();
       expect(other.galaxy.claims).toHaveLength(1);

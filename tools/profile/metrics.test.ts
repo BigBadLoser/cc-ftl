@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { content } from '../../src/content';
-import { AssignmentC, CrewC, JobC, PositionC, PrioritiesC, ShipC, homeShip, newGame, serialize, shipGrid, type Sim } from '../../src/sim';
+import { ShipC } from '../../src/sim/combat/components';
+import { homeShip } from '../../src/sim/combat/ships';
+import { AssignmentC, CrewC, JobC, PositionC, PrioritiesC } from '../../src/sim/crew/components';
+import { newGame } from '../../src/sim/newGame';
+import { shipGrid } from '../../src/sim/regions';
+import { serialize } from '../../src/sim/save';
+import type { Sim } from '../../src/sim/sim';
 import { Struct } from '../../src/sim/structure';
 import { MetricsRecorder, percentile } from './metrics';
 import { buildScenario } from './scenarios';

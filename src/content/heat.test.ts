@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { CombatC, ShipC, deserialize, galaxyIndex, newGame, playerShip, serialize, tierOf, type Sim } from '../sim';
+import { CombatC, ShipC } from '../sim/combat/components';
+import { tierOf } from '../sim/galaxy/standing';
+import { galaxyIndex } from '../sim/galaxy/state';
+import { newGame } from '../sim/newGame';
+import { deserialize, serialize } from '../sim/save';
+import type { Sim } from '../sim/sim';
+import { playerShip } from '../sim/trade/player';
 import { wreckShip } from '../sim/combat/wreck';
 import { capturePrize } from '../sim/capture/prize';
 import { TraderC } from '../sim/trade/types';

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { START_NODE, galaxyIndex, newGame } from '../sim';
+import { galaxyIndex, START_NODE } from '../sim/galaxy/state';
+import { newGame } from '../sim/newGame';
 import { content } from '../content';
 import { backdropSpecOf } from './backdropSpec';
 

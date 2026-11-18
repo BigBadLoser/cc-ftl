@@ -1,6 +1,9 @@
 // #248: a gunner fetching a weapon must not park on a doorway (the Dart magazine door moved one tile, diagonal to the crate).
 import { expect, it } from 'vitest';
-import { CrewC, PositionC, homeShip, newGame, shipGrid } from '../../sim';
+import { homeShip } from '../../sim/combat/ships';
+import { CrewC, PositionC } from '../../sim/crew/components';
+import { newGame } from '../../sim/newGame';
+import { shipGrid } from '../../sim/regions';
 import { content } from '../index';
 it('no crew parks on a door tile after the opening equip trips (#248)', () => {
   const t = (content.ships as Record<string, { rows: string[] }>)['ship.lancer']!;
