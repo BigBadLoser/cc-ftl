@@ -33,7 +33,7 @@ export const checkBranch = (branch) =>
 export const checkCommits = (messages, shas = []) =>
   messages.flatMap((m, i) => {
     const names = modelNames(m);
-    return names.length ? [`Commit ${(shas[i] ?? `#${i + 1}`).slice(0, 9)} names a model (${[...new Set(names)].join(', ')}): reword it (git rebase -i / commit --amend) and drop any Co-Authored-By or session trailer. Commit messages carry no attribution.`] : [];
+    return names.length ? [`Commit ${(shas[i] ?? `#${i + 1}`).slice(0, 9)} names a model (${[...new Set(names)].join(', ')}): reword it and drop any Co-Authored-By or session trailer (commit messages carry no attribution). Amend it before pushing; a pushed commit is reworded only with the user's go-ahead, since that rewrites the branch.`] : [];
   });
 
 export const checkAll = ({ body, branch, messages, shas }) => {
