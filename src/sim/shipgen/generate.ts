@@ -23,6 +23,7 @@ import { templateHullLoad } from '../ftl/capacity';
 import { thinWalls } from './thinWalls';
 import { extractContainers, type PlacedContainer } from './containerCells';
 import { openBareDocks } from './openDocks';
+import { erodeHull } from './erodeHull';
 import type { ArchetypeId, FactionDef, GenResult, GenRoom, HullFamilyDef, RoomRole, ShipRoleDef } from './types';
 
 /** Attempts before giving up on a seed (each reseeds deterministically). */
@@ -351,7 +352,9 @@ export function finishLayout(
   const { rows: drawn, labels: roomOf, width, height, ox, oy } = b.cv.crop();
   const roles = labels.map((l) => roleOfLabel(l));
   const { rows: framed, containers } = extractContainers(drawn);
-  const rows = pruneDoors(framed, roomOf, width, roles);
+  const pruned = pruneDoors(framed, roomOf, width, roles);
+  // Salvage builds: the welds leave slabs of plating around the rooms; the hull is trimmed back to one tile (erodeHull.ts).
+  const rows = f.salvage ? erodeHull(pruned, width).rows : pruned;
   const specs = specsOf(b);
   return {
     ...fitShell(rng, f, factionId, seed, role, archetype, plan, { rows, roomOf, width, height, roles, specs, containers }, topology, defs, n, opts,

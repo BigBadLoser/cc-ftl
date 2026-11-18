@@ -58,6 +58,20 @@ export function pruneDoors(rows: string[], roomOf: Int16Array, w: number, roles:
   };
   const isHall = (r: number): boolean => roles[r] === 'hall';
   const keepAll = (r: number): boolean => isHall(r) || roles[r] === 'dock';
+  // A door that joins only corridor to corridor is a bulkhead across one walkway (user decision): it opens to floor and the
+  // corridors become one room, so a long spine reads as one corridor rather than a run of door-separated segments.
+  const merged = new Map<number, number>();
+  const rootOf = (r: number): number => { let x = r; while (merged.has(x)) x = merged.get(x) as number; return x; };
+  for (const g of groups) {
+    const rooms = [...g.rooms];
+    if (rooms.length < 2 || !rooms.every(isHall)) continue;
+    const ids = [...new Set(rooms.map(rootOf))].sort((a, b) => a - b);
+    const keep = ids[0] as number;
+    for (const r of ids.slice(1)) merged.set(r, keep);
+    for (const t of g.tiles) { cells[t] = '_'; roomOf[t] = keep; }
+    g.tiles = [];
+  }
+  if (merged.size > 0) for (let i = 0; i < roomOf.length; i++) if ((roomOf[i] as number) >= 0) roomOf[i] = rootOf(roomOf[i] as number);
   let reached = reach();
   for (let room = 0; room < roles.length; room++) {
     if (keepAll(room)) continue;
