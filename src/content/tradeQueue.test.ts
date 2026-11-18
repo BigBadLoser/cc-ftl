@@ -1,59 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import { ShipC } from '../sim/combat/components';
-import { newGame } from '../sim/newGame';
-import type { Sim } from '../sim/sim';
 import { checkOffer } from '../sim/trade/offers';
 import { playerItems } from '../sim/trade/player';
-import { TraderC } from '../sim/trade/types';
 import { isLive } from '../sim/trade/deals';
 import { commitments } from '../sim/trade/commit';
 import { cargoAdd } from '../sim/vehicles/cargo';
-import { content } from './index';
+import { METAL, agree, firstBack, rejected, runOut, setup, step, stockOf } from '../../test/support/fixtures/tradeQueue';
 
-/** A started game with a hailed trading outpost. */
-function setup(): { sim: Sim; st: number } {
-  const sim = newGame(1, content);
-  sim.enqueue({ type: 'debug.spawnStation', kind: 'station.trading', size: 'outpost', seed: 4 });
-  step(sim);
-  const st = sim.world.query(ShipC).find((i) => sim.world.get(i, ShipC)!.immobile)!;
-  sim.enqueue({ type: 'trade.hail', ship: st });
-  step(sim);
-  return { sim, st };
-}
-const stockOf = (sim: Sim, st: number, item: string): number => sim.world.get(st, TraderC)!.stock.find((s) => s.item === item)?.count ?? 0;
-/** Reject reasons seen so far: every step of the game is drained into it. */
-const seen = new WeakMap<Sim, string[]>();
-function rejected(sim: Sim): string[] {
-  const out: string[] = [];
-  seen.set(sim, out);
-  return out;
-}
-function step(sim: Sim): void {
-  sim.step();
-  for (const e of sim.events.drain()) if (e.type === 'command.rejected') seen.get(sim)?.push(e.reason);
-}
-/** Propose and accept in two steps; returns the new deal. */
-function agree(sim: Sim, ship: number, give: { item: string; count: number }[], get: { item: string; count: number }[]) {
-  const before = sim.trade.deals.length;
-  sim.enqueue({ type: 'trade.offer', ship, give, get });
-  step(sim);
-  const offer = sim.trade.offers.find((o) => o.ship === ship);
-  if (offer) {
-    sim.enqueue({ type: 'trade.accept', offer: offer.id });
-    step(sim);
-  }
-  return sim.trade.deals.length > before ? sim.trade.deals[sim.trade.deals.length - 1] : undefined;
-}
-function runOut(sim: Sim, max = 20000): void {
-  for (let i = 0; i < max && sim.trade.deals.some(isLive); i++) step(sim);
-}
-const METAL = { item: 'item.metal', count: 10 };
 
 describe('queued deals', () => {
   it('a second buy waits behind the first, holds nothing, then runs after it', () => {
-    const { sim, st } = setup();
+    const { sim, st } = firstBack(); // the first buy is on its way home (the whole run is in tradeQueue.slow)
     const start = sim.trade.credits;
-    const first = agree(sim, st, [], [METAL])!;
+    const first = sim.trade.deals[0]!;
     const stock1 = stockOf(sim, st, 'item.metal');
     const credits1 = sim.trade.credits;
     const second = agree(sim, st, [], [METAL])!;
@@ -73,8 +31,8 @@ describe('queued deals', () => {
   });
 
   it('a buy plus a sell: the sell waits for its goods and both settle', () => {
-    const { sim, st } = setup();
-    const first = agree(sim, st, [], [METAL])!;
+    const { sim, st } = firstBack(); // the first buy is on its way home (the whole run is in tradeQueue.slow)
+    const first = sim.trade.deals[0]!;
     const second = agree(sim, st, [{ item: 'item.metal', count: 5 }], [])!;
     expect(first.phase).not.toBe('queued');
     expect(second).toBeDefined();
@@ -110,8 +68,8 @@ describe('queued deals', () => {
   });
 
   it('cancelling the second deal costs nothing and leaves the first running', () => {
-    const { sim, st } = setup();
-    const first = agree(sim, st, [], [METAL])!;
+    const { sim, st } = firstBack(); // the first buy is on its way home (the whole run is in tradeQueue.slow)
+    const first = sim.trade.deals[0]!;
     const credits = sim.trade.credits;
     const stock = stockOf(sim, st, 'item.metal');
     const second = agree(sim, st, [], [METAL])!;
