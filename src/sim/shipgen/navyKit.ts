@@ -1,4 +1,5 @@
 import { mirrorBlock, type Arranger, type Block } from './arranger';
+import type { arrangeHull } from './navyLayouts';
 import { hallBlock } from './blocks';
 import { bandBlock, bankBlock, clusterBlock, deckBlock, enclosedBlock, podBlock, powerBlock, type SectionOpts } from './navyBlocks';
 import { cargoSpec, dockSpec, engineSpec, shuffle, type RoomSpec, type ShipPlan } from './plan';
@@ -31,6 +32,8 @@ export interface Ctx {
   defs: Record<string, import('../registry').ModuleDef>;
   /** Drawn once per ship (like the grammar): architecture choices every candidate arrangement shares. */
   variant?: number;
+  /** `arrangeHull`, handed in by navyLayouts.ts: scrapper grammars arrange their navy and drone donors with it, without importing it back (#553). */
+  arrange: typeof arrangeHull;
 }
 
 export const no = (c: Ctx, why: string): false => { c.why ||= why; return false; };

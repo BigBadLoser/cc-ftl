@@ -2,7 +2,6 @@ import type { Block } from './arranger';
 import { Builder } from './builder';
 import { bandBlock, bankBlock, noseBlock } from './navyBlocks';
 import type { Ctx } from './navyKit';
-import { arrangeHull } from './navyLayouts';
 import { cargoSpec, dockSpec, pickWeighted, weaponSpec, type RoomSpec, type ShipPlan } from './plan';
 import { cutSeam, freeze, notch, survivors, trimThin } from './salvage';
 import { barge, freighter, habitat, liner, podString, reactorRoom, station, tug } from './civilBlocks';
@@ -101,7 +100,7 @@ function generated(c: Ctx, src: FactionDef['salvage'], who: 'navy' | 'drone', su
   if (!s || fams.length === 0) return null;
   const fam = pickWeighted(c.rng, fams.map((h) => ({ value: h, weight: 1 })));
   // One candidate: a donor is cut and welded anyway, its proportions do not matter.
-  const r = arrangeHull(c.rng, s.faction, fam, sub, c.defs, 1);
+  const r = c.arrange(c.rng, s.faction, fam, sub, c.defs, 1);
   return typeof r === 'string' ? null : { b: r.b, A: r.A };
 }
 
