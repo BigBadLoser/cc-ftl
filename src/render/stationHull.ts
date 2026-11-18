@@ -16,12 +16,15 @@ export const BERM_OTHER = 3;
 const hash = (a: number, b: number, salt: number): number => tileHash(a + salt * 7919, b - salt * 104729) >>> 8;
 const num = (t: string): number => (t.startsWith("m") ? -Number(t.slice(1)) : Number(t));
 
-/** The berm sprite on this tile, or null (no key, or no art for it). */
-export function bermId(h: HullKeys, x: number, y: number, has: (id: string) => boolean): string | null {
+/**
+ * The berm sprite on this tile, or null (no key, or no art for it). `roofed` false (the hull cut down: every unroofed view) takes
+ * its low version (`.low`, flattened under the hull's cut), none where that has no art.
+ */
+export function bermId(h: HullKeys, x: number, y: number, has: (id: string) => boolean, roofed = true): string | null {
   const k = h.at(x, y);
   if (!k) return null;
   const name = hullKeyName(k);
-  const id = `tile.hull.station.berm.${name}.v${runVariant(h, x, y, name) ?? hash(x, y, 3) % BERM_OTHER}${ends(h, x, y, name)}`;
+  const id = `tile.hull.station.berm.${name}.v${runVariant(h, x, y, name) ?? hash(x, y, 3) % BERM_OTHER}${ends(h, x, y, name)}${roofed ? "" : ".low"}`;
   return has(id) ? id : null;
 }
 

@@ -424,7 +424,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
     };
     // A ground base's berm (stationHull.ts) heaps against the hull's foot, over the tile's piece.
     const berm = () => {
-      const id = look === "station" ? bermId(h, x, y, has) : null;
+      const id = look === "station" ? bermId(h, x, y, has, !ghosts) : null;
       if (id) put(id, z + 0.002, L.sorted, solid);
       return !!id;
     };

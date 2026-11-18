@@ -85,5 +85,7 @@ describe("station hull", () => {
     expect(lowId(h, 4, 6, all)).toBe("tile.hull.station.low.0_1_15");
     expect(lowId(h, 4, 6, () => false)).toBeNull();
     expect(lowId(h, 4, 3, all)).toBeNull();
+    expect(bermId(h, 4, 6, all, false)).toMatch(/^tile\.hull\.station\.berm\.0_1_15\.v\d\.e\d\d\.low$/);
+    expect(bermId(h, 4, 6, all, false)!.replace(/\.low$/, "")).toBe(bermId(h, 4, 6, all));
   });
 });

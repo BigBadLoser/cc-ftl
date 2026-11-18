@@ -43,7 +43,7 @@ function scene(root: Container, atlas: Atlas, shape: Shape, W: number, H: number
       if (k === Struct.Space) continue;
       const [cx, cy] = [sx(x, y), sy(x, y)];
       if (k === Struct.Floor) root.addChild(new Graphics().poly([cx - TW / 2, cy, cx, cy - TH / 2, cx + TW / 2, cy, cx, cy + TH / 2]).fill(0x1b222b));
-      const berm = bermId(keys, x, y, has);
+      const berm = bermId(keys, x, y, has, mode === 'roof');
       if (mode === 'roof') {
         for (const id of exteriorIds(keys, x, y, has, false, null, 'station') ?? []) put(root, atlas, pick ? pick(id) : id, cx, cy);
       } else if (k === Struct.Wall && hullSide(kindAt, x, y) === HullSide.Near) {

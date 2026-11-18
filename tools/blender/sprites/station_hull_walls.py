@@ -179,6 +179,33 @@ def low(n):
         T.HOOK = old_hook
 
 
+LOW_BERM = 0.55                         # the berm's height with the hull cut down: under its cut (the drift's tallest heap
+                                        # 0.48 tile, the cut 0.30)
+
+
+def low_berm(n, v, ends=None):
+    """The rock berm with the hull cut down (`<berm id>.low`): station_hull._berm's drift flattened to LOW_BERM of its height,
+    held out by the cut-down foot (low) instead of the full piece."""
+    from . import env_build, post
+    from . import station_berm as BM
+    k = SH._unname(n)
+    core.clear_scene_meshes()
+    post.select("only:berm")
+    own = BM.berm(k, v, ends or (0, 0))
+    if not own:
+        return []
+    for ob in own:
+        for vert in ob.data.vertices:
+            vert.co.z *= LOW_BERM
+    post.select(PALETTE)
+    objs, kind = low(n)
+    post.select("only:berm")
+    hold = objs[0] if kind == "wide" else objs
+    sid = f"tile.hull.station.berm.{n}.v{v}" + (f".e{ends[0]}{ends[1]}" if ends else "") + ".low"
+    it = env_build.crop_item(sid, (1, 1), *env_build.render_sprite(sid, "wide", (own, own + list(hold))))
+    return [it] if it else []
+
+
 PALETTE = "only:station+station_cut"    # the station's set and the cut's black (its own set: the rest of the family's
                                         # cache key stays as it was)
 
@@ -198,7 +225,9 @@ def jobs():
     from . import wall3d_ext_diag as DG
     from .hulltiles import _guard
     from .walls import corner_sets
+    from . import station_berm as BM
     pal = post.palette_digest(PALETTE)
+    bp = post.palette_digest("only:berm")
     out = []
     for m in range(16):
         for c in corner_sets(m):
@@ -211,4 +240,8 @@ def jobs():
         sid = f"tile.hull.station.low.{n}"
         kind = "block" if DG.uses_art(key) else "wide"
         out.append(lambda n=n, sid=sid, kind=kind, pal=pal: _guard(sid, lambda: _masked(sid, kind, lambda: low(n)[0]))())
+        run = BM.along(key) is not None                 # (the low berm: as station_hull.jobs' berm)
+        ends = [(a, b) for a in (0, 1) for b in (0, 1)] if run or BM.turn_key(key) else [None]
+        out += [lambda n=n, v=v, e=e, bp=bp: _guard((n, v, e, "low"), lambda: low_berm(n, v, e))()
+                for v in range(BM.RUN if run else BM.VARIANTS) for e in ends]
     return out
