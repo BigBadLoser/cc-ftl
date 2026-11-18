@@ -30,7 +30,7 @@ from .wall3d_ext_t3 import CORNER_C
 
 ZG = W.ZG
 FAR_LOW = 0.5 / W.ZART              # walls down: the far sides' cut flush with the deck (half an art px over it)
-FAR_SEAM = (6 * TOP_PX, 6.75 * TOP_PX, "farSeam")   # a far side's top seam (the cut hull, walls down): 6 art px in from
+FAR_SEAM = (6 * TOP_PX, 6.75 * TOP_PX, "farSeam")   # the cut hull's top seam at the deck (walls down), all round: 6 art px in from
 #   its inside (Space Haven's far-side hull ghosts), bluer than the exterior's
 ARMOUR = 0.77                       # tiles: the near armour's upright drop under the cut (hull 46 D3's: 31 px at 64
 SLOPE = (0.375, 0.638)              # px tiles; its Bottom draws 33, but the two meet), then its slope in (square to its
@@ -215,9 +215,9 @@ def _piece(key, far, layer, margin, look):
                         rel.poly(p2, "steel", 3, m2, fixed=END)
         if near(f[0]) and not plain:                    # (the bay looks' frame, as the runs carry it)
             _frame(rel, f, planes)
-        if layer == "over" and not plain:              # (the near side's cut at the deck is plain; a far side's
-            _seam(rel, ([], [q for q in planes if abs(q[0].z) < 1e-9]), [f], span(f[0], far)[1],     # seam its own)
-                  None if near(f[0]) else FAR_SEAM)
+        if layer == "over":                             # (a cut at the deck, far side or near, the blue seam; a
+            _seam(rel, ([], [q for q in planes if abs(q[0].z) < 1e-9]), [f], span(f[0], far)[1],     # near rim at
+                  FAR_SEAM if plain or not near(f[0]) else None)                                      # ZG the exterior's)
     return (rel.build() if rel.m.f else []) + art       # (none: a far side has nothing under the deck)
 
 
