@@ -1,7 +1,7 @@
 import type { ModuleDef } from '../../registry';
 import type { Rng } from '../../rng';
 import { shuffle } from '../civilKit';
-import { cargoSpec, dockSpec, pickWeighted, weaponSpec, type RoomSpec, type StationDept } from '../plan';
+import { cargoSpec, dockSpec, pickWeighted, weaponSpec, type RoomSpec, type StationDept, REACTOR_TIERS } from '../plan';
 import { docksOf, stationCrew } from '../stationCrew';
 import type { StationDef, StationSize } from '../stationTypes';
 import { messSize } from '../rooms/rules/parts';
@@ -23,10 +23,8 @@ function grown(rng: Rng, r: RoomSpec, s: number): RoomSpec {
 }
 
 
-/** Reactor tiers, Mk I to Mk III (50, 100 and 180 power; 2x2, 2x3 and 2x4). */
 /** Tiles of planned room a lamp, halls' share included (measured on generated stations). */
 const LAMP_AREA = 10;
-const REACTOR_TIERS = ['module.reactor', 'module.reactor.mk2', 'module.reactor.mk3'];
 
 /** The planned rooms: command, guns, shields, the core, quarters, messes, the kind's rooms, docks, holds, bays, reactors. */
 function planned(rng: Rng, def: StationDef, size: StationSize, defs: Record<string, ModuleDef>): { command: RoomSpec; rest: RoomSpec[]; docks: RoomSpec[]; space: number } {

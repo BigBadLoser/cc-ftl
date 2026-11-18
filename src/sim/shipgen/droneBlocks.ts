@@ -35,7 +35,7 @@ export function podSpecs(plan: ShipPlan, defs: Record<string, ModuleDef>): { mou
   const reactors: RoomSpec[] = [];
   for (let left = plan.reactors; left > 0; left -= 2) {
     const k = Math.min(2, left);
-    reactors.push({ role: 'reactor', mods: Array<string>(k).fill('module.reactor'), w: 2 * k, h: 2, sealed: true });
+    reactors.push({ role: 'reactor', mods: Array<string>(k).fill(plan.kit.reactor), w: 2 * k, h: 2, sealed: true });
   }
   const engines = Array.from({ length: plan.engines }, () => ({ role: 'engine' as const, mods: ['module.engine'], w: 4, h: 4, sealed: true }));
   return { mounts, reactors, engines };

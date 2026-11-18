@@ -8,7 +8,7 @@ import { Layout } from './layout';
 import type { Fitted } from './fitted';
 import { placeGroundTurrets, type GroundPlan } from './groundTurrets';
 import { accepts } from '../items/storage';
-import { ENGINE_TIERS, enginesIn, type RoomSpec } from './plan';
+import { ENGINE_TIERS, REACTOR_TIERS, enginesIn, reactorsIn, type RoomSpec } from './plan';
 import { equipKind, type EquipKind } from './equipment';
 import type { FactionDef, RoomRole } from './types';
 
@@ -177,7 +177,8 @@ export function fitOut(
     out.ground = { placed: new Set(g.placed), cable: g.cable, unwired: g.unwired };
   }
   if (out.ground && out.ground.unwired > 0) return { ...out, error: 'a module standing apart has no cable' };
-  const missing = (id: string): boolean => (id === 'module.engine' ? enginesIn(wanted) > 0 && enginesIn(placed) === 0 : (wanted[id] ?? 0) > 0 && (placed[id] ?? 0) === 0);
+  const count = (m: Record<string, number>, id: string): number => (id === 'module.engine' ? enginesIn(m) : id === 'module.reactor' ? reactorsIn(m) : (m[id] ?? 0));
+  const missing = (id: string): boolean => count(wanted, id) > 0 && count(placed, id) === 0;
   for (const id of ['module.engine', 'module.helm', 'module.airlock', 'module.reactor', 'module.weaponsConsole', 'module.aiCore', 'module.vehicle_bay']) {
     if (missing(id)) return { ...out, error: `no ${id.replace('module.', '')} fits` };
   }
@@ -186,7 +187,7 @@ export function fitOut(
   if (guns(wanted) > 0 && (guns(placed) === 0 || guns(placed) * 4 < guns(wanted) * 3)) return { ...out, error: 'weapons do not fit' };
   const pd = (m: Record<string, number>): number => Object.entries(m).filter(([id]) => defs[id]?.pointDefense).reduce((t, [, n]) => t + n, 0);
   if (o.ground && pd(wanted) > 0 && pd(placed) < pd(wanted)) return { ...out, error: 'point defence does not fit' };
-  if ((placed['module.reactor'] ?? 0) < (wanted['module.reactor'] ?? 0)) return { ...out, error: 'reactors do not fit' };
+  if (reactorsIn(placed) < reactorsIn(wanted)) return { ...out, error: 'reactors do not fit' };
   // Rooms with a recipe are lit after they are furnished, so lamps take the walkways the furniture leaves.
   for (let room = 0; room < roles.length; room++) if (!drawOf(room)) lightRoom(lay, rng, room);
   let supply = 0;
@@ -210,10 +211,13 @@ export function fitOut(
   const spare = roles.map((r, i) => (r === 'reactor' || r === 'engine' || (r === 'cargo' && !o.immobile) ? i : -1)).filter((i) => i >= 0);
   // Courts (lit to scale, so lamp-hungry) can take a reactor on their open floor as a last resort; not on a station.
   const courts = o.immobile ? [] : roles.map((r, i) => (r === 'plaza' || r === 'garden' || r === 'drill' ? i : -1)).filter((i) => i >= 0);
-  const reactor = defs['module.reactor'];
-  for (let k = 0; k < (courts.length > 0 ? 6 : 3) && supply < demand + margin && reactor; k++) {
-    if (!(k < 3 && placeOne(lay, rng, 'module.reactor', spare)) && !(courts.length > 0 && placeOne(lay, rng, 'module.reactor', courts))) break;
-    supply += reactor.power;
+  // An extra reactor: the ship's own tier (the one its plan asked for) where one fits, else the smaller tiers down to Mk I.
+  const own = REACTOR_TIERS.findIndex((id) => (wanted[id] ?? 0) > 0);
+  const extras = REACTOR_TIERS.slice(0, Math.max(0, own) + 1).reverse().filter((id) => defs[id]);
+  for (let k = 0; k < (courts.length > 0 ? 6 : 3) && supply < demand + margin; k++) {
+    const id = extras.find((x) => (k < 3 && placeOne(lay, rng, x, spare)) || (courts.length > 0 && placeOne(lay, rng, x, courts)));
+    if (!id) break;
+    supply += (defs[id] as ModuleDef).power;
   }
   if (supply < demand) return { ...out, error: 'not enough power' };
   // Furnishing: recipe extras that draw power (a galley) only while the planned reactors cover them, with a margin

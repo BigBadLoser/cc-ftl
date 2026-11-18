@@ -10,8 +10,8 @@ import type { FactionDef } from './types';
  */
 
 const turretsOf = (plan: ShipPlan): RoomSpec[] => [...plan.weapons, ...plan.pd, ...plan.shields, dockSpec()];
-const reactorPods = (plan: ShipPlan): RoomSpec[] => Array.from({ length: plan.reactors }, () => reactorSpec(1));
-const enginePods = (plan: ShipPlan): RoomSpec[] => Array.from({ length: plan.engines }, () => engineSpec(1, 'w', plan.engine));
+const reactorPods = (plan: ShipPlan): RoomSpec[] => Array.from({ length: plan.reactors }, () => reactorSpec(1, plan.kit));
+const enginePods = (plan: ShipPlan): RoomSpec[] => Array.from({ length: plan.engines }, () => engineSpec(1, 'w', plan.kit));
 
 /** Split specs over two sides: mirrored pairs, or an uneven random split. */
 function split(b: Builder, specs: RoomSpec[], mirror: boolean): [RoomSpec[], RoomSpec[]] {
@@ -111,7 +111,7 @@ export function rails(b: Builder, f: FactionDef, plan: ShipPlan): string | null 
   railParts.forEach((r, i) => {
     const k = Math.floor(pods.length / count) + (i < pods.length % count ? 1 : 0);
     if (k === 0) return;
-    const e = engineSpec(k, 'w', plan.engine);
+    const e = engineSpec(k, 'w', plan.kit);
     const p = b.place({ x: r.x + r.w - 1, y: rowOf(r) - 1 - 2 * (k - 1), w: e.w + 2, h: e.h + 2 }, 'engine', e);
     if (p) { b.door(r, p); placed++; }
   });

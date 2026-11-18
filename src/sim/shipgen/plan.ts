@@ -79,8 +79,8 @@ export interface ShipPlan {
   weapons: RoomSpec[];
   shields: RoomSpec[];
   engines: number;
-  /** The engine module the plan fits (`engineFor`): Mk I, II or III by depth. */
-  engine: string;
+  /** The engine and reactor modules the plan fits (`coreKit`): Mk I, II or III by depth. */
+  kit: CoreKit;
   reactors: number;
   /** Navy-style AI core room (with point defence); drones keep the core in the command room and pods for PD. */
   core: RoomSpec | null;
@@ -106,11 +106,20 @@ export function weaponSpec(defs: Record<string, ModuleDef>, mods: string[]): Roo
   return { role: 'weapons', mods, w: s * 2 + 1, h: s + 1 };
 }
 
-export const reactorSpec = (k: number): RoomSpec => ({ role: 'reactor', mods: Array<string>(k).fill('module.reactor'), w: 2 * k + 1, h: 3 });
+/**
+ * The ship's engine and reactor modules (their tiers): picked once per plan (`coreKit`) and handed to every room builder, so no layout
+ * names a tier itself.
+ */
+export interface CoreKit { engine: string; reactor: string }
+
+/** Reactor room for k reactors side by side, sized to the kit's reactor (Mk I 2x2, Mk II 2x3, Mk III 2x4). */
+export const reactorSpec = (k: number, kit: CoreKit): RoomSpec => ({
+  role: 'reactor', mods: Array<string>(k).fill(kit.reactor), w: 2 * k + 1, h: reactorDepth(kit.reactor) + 1,
+});
 
 /** Engine room for k engines stacked along the east hull. `door` is the wall crew enter by. */
-export const engineSpec = (k: number, door: 'w' | 'ns', engine = 'module.engine'): RoomSpec => ({
-  role: 'engine', mods: Array<string>(k).fill(engine), w: engineDepth(engine) - (door === 'w' ? 0 : 1), h: door === 'w' ? 4 * k : 4 * k + 1,
+export const engineSpec = (k: number, door: 'w' | 'ns', kit: CoreKit): RoomSpec => ({
+  role: 'engine', mods: Array<string>(k).fill(kit.engine), w: engineDepth(kit.engine) - (door === 'w' ? 0 : 1), h: door === 'w' ? 4 * k : 4 * k + 1,
 });
 
 /** Engine module ids, Mk I to Mk III (tiers.ts), and how far each reaches inboard from the hull edge (its long footprint side). */
@@ -118,15 +127,24 @@ export const ENGINE_TIERS = ['module.engine', 'module.engine.mk2', 'module.engin
 /** Engines in a module count (by def id), any tier. */
 export const enginesIn = (m: Record<string, number>): number => ENGINE_TIERS.reduce((t, id) => t + (m[id] ?? 0), 0);
 const engineDepth = (engine: string): number => 5 + Math.max(0, ENGINE_TIERS.indexOf(engine as (typeof ENGINE_TIERS)[number]));
+/** Reactor module ids, Mk I to Mk III (tiers.ts), and each one's long footprint side. */
+export const REACTOR_TIERS = ['module.reactor', 'module.reactor.mk2', 'module.reactor.mk3'] as const;
+/** Reactors in a module count (by def id), any tier. */
+export const reactorsIn = (m: Record<string, number>): number => REACTOR_TIERS.reduce((t, id) => t + (m[id] ?? 0), 0);
+const reactorDepth = (reactor: string): number => 2 + Math.max(0, REACTOR_TIERS.indexOf(reactor as (typeof REACTOR_TIERS)[number]));
 
 /**
- * The engine a ship at generation `depth` carries: the highest tier whose blueprint danger tier (`minDanger`) the depth reaches (the
- * generation depth is the node's danger tier), up to the faction's `maxEngineTier`. One owner: plans, rooms and the hull's engine count follow it.
+ * The engine and reactor a ship at generation `depth` carries: for each, the highest tier whose blueprint danger tier (`minDanger`) the
+ * depth reaches (the generation depth is the node's danger tier), up to the faction's `maxCoreTier`. One owner: plans, rooms, the hull's
+ * engine count and the power budget follow it.
  */
-export function engineFor(defs: Record<string, ModuleDef>, depth: number, maxTier = 3): string {
-  let pick = 'module.engine';
-  for (const id of ENGINE_TIERS.slice(1, maxTier)) if (defs[id]?.engine && depth >= (defs[id].blueprint?.minDanger ?? Infinity)) pick = id;
-  return pick;
+export function coreKit(defs: Record<string, ModuleDef>, depth: number, maxTier = 3): CoreKit {
+  const top = (tiers: readonly string[]): string => {
+    let pick = tiers[0] as string;
+    for (const id of tiers.slice(1, maxTier)) if (defs[id] && depth >= (defs[id].blueprint?.minDanger ?? Infinity)) pick = id;
+    return pick;
+  };
+  return { engine: top(ENGINE_TIERS), reactor: top(REACTOR_TIERS) };
 }
 
 export const dockSpec = (): RoomSpec => ({ role: 'dock', mods: ['module.airlock'], w: 3, h: 3 });
@@ -140,9 +158,9 @@ export function cargoSpec(n: number): RoomSpec {
  * Engines a hull of `perTile` hull tiles per room tile needs to carry the rooms (`specs`) and its own engine rooms (`hullCapacity`); 0
  * with no estimate (`HullFamilyDef.hullPerRoomTile`). Solves `perTile * (rooms + room * engines) <= engines * capacity`.
  */
-function hullEngines(defs: Record<string, ModuleDef>, engine: string, perTile: number, specs: readonly RoomSpec[]): number {
-  const cap = defs[engine]?.engine?.hullCapacity ?? 0;
-  const room = perTile * engineSpec(1, 'w', engine).w * 4;
+function hullEngines(defs: Record<string, ModuleDef>, kit: CoreKit, perTile: number, specs: readonly RoomSpec[]): number {
+  const cap = defs[kit.engine]?.engine?.hullCapacity ?? 0;
+  const room = perTile * engineSpec(1, 'w', kit).w * 4;
   if (perTile <= 0 || cap <= room) return 0;
   return Math.ceil((perTile * specs.reduce((t, r) => t + r.w * r.h, 0)) / (cap - room));
 }
@@ -213,13 +231,14 @@ export function planShip(rng: Rng, f: FactionDef, role: ShipRoleDef, depth: numb
   const hangars: RoomSpec[] = Array.from({ length: role.bays ?? (f.doctrine.boarding ? 1 : 0) }, () => ({
     role: 'hangar' as const, mods: ['module.vehicle_bay'], w: 5, h: 7, vehicle: true,
   }));
-  const engine = engineFor(defs, depth, f.maxEngineTier);
+  const kit = coreKit(defs, depth, f.maxCoreTier);
+  const engine = kit.engine;
   // The budget counts Mk I engines: a bigger tier stands in for as many as it out-evades.
   const evade = (id: string): number => (defs[id]?.engine?.evasionPerPower ?? 0) * -(defs[id]?.power ?? 0);
   const budgetEngines = Math.max(1, Math.ceil(b.engines / Math.max(1, evade(engine) / (evade('module.engine') || 1))));
-  const booked = Math.max(0, hullEngines(defs, engine, hullPerRoomTile, [command, ...weapons, ...shields, ...(core ? [core] : []), ...pd, ...quarters, ...cargo, ...hangars, ...support]) - budgetEngines);
+  const booked = Math.max(0, hullEngines(defs, kit, hullPerRoomTile, [command, ...weapons, ...shields, ...(core ? [core] : []), ...pd, ...quarters, ...cargo, ...hangars, ...support]) - budgetEngines);
   const plan: ShipPlan = {
-    role, command, weapons, shields, engines: budgetEngines + booked + extraEngines, engine, reactors: 1, core, pd, quarters, cargo, hangars, support, crew,
+    role, command, weapons, shields, engines: budgetEngines + booked + extraEngines, kit, reactors: 1, core, pd, quarters, cargo, hangars, support, crew,
     size: b.size,
   };
   // Power: enough reactors for the plan, or drop guns until the reactor cap covers it.
@@ -229,11 +248,13 @@ export function planShip(rng: Rng, f: FactionDef, role: ShipRoleDef, depth: numb
     for (const r of rooms) for (const m of r.mods) d += Math.max(0, -(defs[m]?.power ?? 0));
     return d;
   };
-  const supply = defs['module.reactor']?.power ?? 50;
-  const cap = Math.max(1, b.reactors) + Math.ceil(((booked + extraEngines) * -(defs[engine]?.power ?? -6)) / supply);
+  // The budget's reactors are Mk I units of power (`mk1`); the ship then fits as few of its own tier as cover the demand.
+  const mk1 = defs['module.reactor']?.power ?? 50;
+  const supply = defs[kit.reactor]?.power ?? mk1;
+  const cap = Math.max(1, b.reactors) + Math.ceil(((booked + extraEngines) * -(defs[engine]?.power ?? -6)) / mk1);
   // Guns go before point defence when power is short (the last gun first).
   const isPd = (r: RoomSpec): boolean => r.mods.every((m) => !!defs[m]?.pointDefense);
-  while (plan.weapons.length > 1 && Math.ceil(demandOf() / supply) > cap) {
+  while (plan.weapons.length > 1 && Math.ceil(demandOf() / mk1) > cap) {
     const gun = plan.weapons.map(isPd).lastIndexOf(false);
     plan.weapons.splice(gun >= 0 ? gun : plan.weapons.length - 1, 1);
   }

@@ -98,7 +98,7 @@ const hostsOf = (c: Ctx): number[] => c.A.placed.map((_, i) => i).filter((i) => 
 /** Strap the extra engines on as pods, bolt on crates and airlocks, plate the seams. */
 function improvise(c: Ctx, p: Pool): boolean {
   for (; p.engines > 0; p.engines--) {
-    const pod = { ...podBlock(c.rng, 1, c.plan.engine), donor: 'scrap', label: 'scrap: strapped engine' };
+    const pod = { ...podBlock(c.rng, 1, c.plan.kit), donor: 'scrap', label: 'scrap: strapped engine' };
     if (weld(c, shuffle(c.rng, hostsOf(c)), pod, ['n', 's']) === null) return no(c, 'strapped engine');
     c.parts.push('strapped engine');
   }

@@ -1,6 +1,6 @@
 import { localBuilder } from './blocks';
 import type { Builder, Rect, Side } from './builder';
-import { cargoSpec, engineSpec, reactorSpec, type RoomSpec } from './plan';
+import { cargoSpec, engineSpec, reactorSpec, type RoomSpec, type CoreKit } from './plan';
 import type { Rng } from '../rng';
 import { containerChar } from './containerCells';
 
@@ -24,7 +24,7 @@ import { containerChar } from './containerCells';
  */
 
 /** Salvaged reactor rooms are patched up around whatever doors the welds cut: a spare column and row. */
-const roomy = (k: number): RoomSpec => ({ ...reactorSpec(k), w: 2 * k + 2, h: 4 });
+const roomy = (k: number, kit: CoreKit): RoomSpec => { const r = reactorSpec(k, kit); return { ...r, w: r.w + 1, h: r.h + 1 }; };
 
 const run = (specs: RoomSpec[]): number => specs.reduce((t, r) => t + r.w + 1, 1);
 
@@ -154,24 +154,24 @@ export function podString(rng: Rng, crates: number, scrappy = false): Builder | 
 }
 
 /** Mining tug: a stubby hull with an ore hopper, a reactor and one big engine aft. */
-export function tug(rng: Rng, hopper: RoomSpec, reactors: number, engine = 'module.engine'): Builder | null {
+export function tug(rng: Rng, hopper: RoomSpec, reactors: number, kit: CoreKit): Builder | null {
   const b = localBuilder(rng);
-  const r = roomy(Math.max(1, reactors));
+  const r = roomy(Math.max(1, reactors), kit);
   const L = Math.max(r.w, hopper.w) + 3;
   const h = b.place({ x: 0, y: -2, w: L + 2, h: 4 }, 'hall');
   if (!h) return null;
   b.strip(h, 'n', [r], 1);
   b.strip(h, 's', [{ ...hopper, h: Math.max(3, hopper.h) }], 1);
-  const e = engineSpec(1, 'w', engine);
+  const e = engineSpec(1, 'w', kit);
   const eng = b.place({ x: L + 1, y: -3, w: e.w + 2, h: e.h + 2 }, 'engine', e);
   if (!eng || !b.door(h, eng)) return null;
   return b;
 }
 
 /** A patched-in reactor room (power the donors did not bring) on a short access passage. */
-export function reactorRoom(rng: Rng, k: number): Builder | null {
+export function reactorRoom(rng: Rng, k: number, kit: CoreKit): Builder | null {
   const b = localBuilder(rng);
-  const r = roomy(k);
+  const r = roomy(k, kit);
   const room = b.place({ x: 0, y: -4, w: r.w + 2, h: r.h + 2 }, 'reactor', r);
   const pass = b.place({ x: 0, y: 1, w: r.w + 2, h: 3 }, 'hall');
   if (!room || !pass || !b.door(room, pass)) return null;
@@ -229,11 +229,11 @@ function level(a: RoomSpec[], b: RoomSpec[]): void {
  * at its end. `nozzle` one engine room holding every engine; `pair` two engine rooms stacked on a short rail;
  * `nacelles` two engine rooms out on the rail's ends with open space between them. One engine is always a nozzle.
  */
-export function drive(rng: Rng, engines: number, reactors: number, style: DriveStyle, engine = 'module.engine'): Builder | null {
+export function drive(rng: Rng, engines: number, reactors: number, style: DriveStyle, kit: CoreKit): Builder | null {
   const b = localBuilder(rng);
   const E = Math.max(1, engines);
-  const n: RoomSpec[] = reactors > 0 ? [reactorSpec(Math.ceil(reactors / 2))] : [];
-  const s: RoomSpec[] = reactors > 1 ? [reactorSpec(Math.floor(reactors / 2))] : [];
+  const n: RoomSpec[] = reactors > 0 ? [reactorSpec(Math.ceil(reactors / 2), kit)] : [];
+  const s: RoomSpec[] = reactors > 1 ? [reactorSpec(Math.floor(reactors / 2), kit)] : [];
   if (n.length > 0 && s.length > 0) level(n, s);
   const W = Math.max(4, run(n), run(s)) + rng.int(0, 2);
   const sp = b.place({ x: 0, y: -2, w: W, h: 3 }, 'hall');
@@ -241,14 +241,14 @@ export function drive(rng: Rng, engines: number, reactors: number, style: DriveS
   b.strip(sp, 'n', n, 0);
   b.strip(sp, 's', s, 0);
   if (style === 'nozzle' || E < 2) {
-    const e = engineSpec(E, 'w', engine);
+    const e = engineSpec(E, 'w', kit);
     const eng = b.place({ x: W - 1, y: -2 - Math.floor((e.h - 1) / 2), w: e.w + 2, h: e.h + 2 }, 'engine', e);
     return eng && b.door(sp, eng) ? b : null;
   }
   // Two engine rooms on a rail: stacked (gap -1, a shared wall) or nacelles with open rows between.
   const gap = style === 'pair' ? -1 : rng.int(1, 3);
-  const top = engineSpec(Math.ceil(E / 2), 'w', engine);
-  const bot = engineSpec(Math.floor(E / 2), 'w', engine);
+  const top = engineSpec(Math.ceil(E / 2), 'w', kit);
+  const bot = engineSpec(Math.floor(E / 2), 'w', kit);
   const nb = -1 - Math.ceil(gap / 2);
   const a = nb - top.h - 1;
   const sb = nb + gap + 1;

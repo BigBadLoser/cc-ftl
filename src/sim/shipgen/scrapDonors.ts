@@ -2,7 +2,7 @@ import type { Block } from './arranger';
 import { Builder } from './builder';
 import { bandBlock, bankBlock, noseBlock } from './navyBlocks';
 import type { Ctx } from './navyKit';
-import { ENGINE_TIERS, cargoSpec, dockSpec, pickWeighted, weaponSpec, type RoomSpec, type ShipPlan } from './plan';
+import { ENGINE_TIERS, REACTOR_TIERS, cargoSpec, dockSpec, pickWeighted, weaponSpec, type RoomSpec, type ShipPlan } from './plan';
 import { cutSeam, freeze, notch, survivors, trimThin } from './salvage';
 import { barge, freighter, habitat, liner, podString, reactorRoom, station, tug } from './civilBlocks';
 import { pickNose } from './topoNavy';
@@ -80,7 +80,7 @@ function settle(p: Pool, b: Builder, taken: { specs: RoomSpec[]; guns: string[];
   while (e < taken.engines && ENGINE_TIERS.some(has)) e++;
   p.engines += taken.engines - e;
   let r = 0;
-  while (r < taken.reactors && has('module.reactor')) r++;
+  while (r < taken.reactors && REACTOR_TIERS.some(has)) r++;
   p.reactors += taken.reactors - r;
 }
 
@@ -118,7 +118,7 @@ const navyBow: Build = (c, f, p) => {
 const navyDrive: Build = (c, _f, p) => {
   if (p.reactors <= 0 && p.engines <= 0) return null;
   const e = Math.min(p.engines, c.rng.int(1, 2));
-  const blk = e > 0 ? bankBlock(c.rng, e, Math.max(1, p.reactors), c.plan.engine) : null;
+  const blk = e > 0 ? bankBlock(c.rng, e, Math.max(1, p.reactors), c.plan.kit) : null;
   if (!blk) return null;
   p.engines -= e;
   p.reactors = 0;
@@ -236,7 +236,7 @@ export const DONORS: Record<DonorKind, { serves: Need[]; build: Build }> = {
     t.reactors = Math.max(1, Math.min(2, p.reactors));
     p.engines -= t.engines;
     p.reactors = Math.max(0, p.reactors - t.reactors);
-    return tug(c.rng, cargoSpec(2), t.reactors, c.plan.engine);
+    return tug(c.rng, cargoSpec(2), t.reactors, c.plan.kit);
   }) },
 };
 
@@ -268,7 +268,7 @@ export function leftovers(c: Ctx, f: FactionDef, p: Pool): Block[] {
     const blk = bandBlock(c.rng, 'battery', specs.slice(0, half), specs.slice(half), { depth: Math.max(3, ...specs.map((s) => s.h)), hatchN: true, hatchS: true });
     if (blk) out.push({ ...blk, donor: 'navy', label: 'navy: equipment bay' });
   }
-  const rr = p.reactors > 0 ? reactorRoom(c.rng, p.reactors) : null;
+  const rr = p.reactors > 0 ? reactorRoom(c.rng, p.reactors, c.plan.kit) : null;
   if (rr) {
     out.push(freeze(rr, 'reactor', 'patched reactor', 'scrap'));
     p.reactors = 0;

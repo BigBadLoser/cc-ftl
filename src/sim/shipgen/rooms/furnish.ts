@@ -23,7 +23,9 @@ export function drawRoom(rng: Rng, recipe: RoomRecipe): RoomDraw {
 }
 
 /** Index of the draw's 'spec' step for a planned module, or -1. */
-export const specStep = (d: RoomDraw, defId: string): number => d.arr.steps.findIndex((s, i) => s.count === 'spec' && d.picks[i] === defId);
+/** The recipe step that places a planned module: its id, or a higher tier of it (`module.reactor.mk3` takes a `module.reactor` step). */
+export const specStep = (d: RoomDraw, defId: string): number =>
+  d.arr.steps.findIndex((s, i) => s.count === 'spec' && (d.picks[i] === defId || defId.startsWith(`${d.picks[i] as string}.mk`)));
 
 /** Compass index (the rotation that makes a module's user look that way): port 0, aft 1, stbd 2, fore 3. */
 const COMPASS: Record<Dir, number> = { port: 0, aft: 1, stbd: 2, fore: 3 };
