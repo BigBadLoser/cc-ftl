@@ -1,7 +1,7 @@
 import type { Command } from '../commands';
 import { JobC } from '../crew/components';
 import { needsFrom } from '../items/materials';
-import { destroyJob } from '../items/stacks';
+import { destroyJob } from '../crew/jobEnd';
 import { shipStoreCount } from '../items/stock';
 import { ModuleC } from '../modules/components';
 import { moduleSite } from '../modules/footprint';

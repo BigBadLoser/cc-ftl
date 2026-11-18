@@ -20,7 +20,8 @@ import { CRATE, crateOf, loadCrate, recoverCrate } from './crate';
 import { HANDOVER_RETRY_SEC } from './tuningJobs';
 import type { StationJob } from './types';
 import { boardRecruits, landRecruits } from '../trade/recruitLand';
-import { passengerOff, postedCards } from './passage';
+import { postedCards } from './passage';
+import { passengerOff } from './passengerOff';
 import { askingToJoin } from './joinOffer';
 
 /**

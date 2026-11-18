@@ -1,5 +1,5 @@
 import { scanFor } from '../blackmarket/scan';
-import { holdsTrip } from '../inspect/patrol';
+import { holdsTrip } from '../inspect/holds';
 import { truceHolds } from '../blackmarket/truce';
 import type { Sim } from '../sim';
 import { unit } from './hash';

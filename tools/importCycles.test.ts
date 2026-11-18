@@ -3,14 +3,13 @@ import { describe, expect, it } from 'vitest';
 import { importGraph } from './importGraph.mjs';
 
 /**
- * Import-cycle ratchet. The sim has one large import cycle through its feature modules (combat/ships, vehicles, trade,
- * story, galaxy, away...), which ties most features to each other and makes a sim edit reach most of the tests. The numbers
+ * Import-cycle ratchet. #553 broke the large cycle through the sim's feature modules (it tied most features to each other); the numbers
  * below are the current state: they may only go down. A change that adds a cycle or grows one fails here; a change that
  * breaks one fails too, so the numbers come down with it (lower them in the same change). `npm run test:why` and
  * tools/importGraph.mjs `cycles()` show the groups.
  */
-// #553 PR 1 broke the 142-file cycle apart into smaller groups (more groups, far fewer files), hence groups went up from 3.
-const BASELINE = { largest: 12, inCycles: 34, groups: 6 };
+// #553 broke every sim cycle but one: the shipgen trio (navyLayouts, scrapDonors, scrapGrammars; proposal on the issue).
+const BASELINE = { largest: 3, inCycles: 3, groups: 1 };
 
 type Graph = { cycles: (keep?: (f: string) => boolean) => string[][] };
 

@@ -5,8 +5,9 @@ import { ModuleC } from '../sim/modules/components';
 import { newGame } from '../sim/newGame';
 import type { Sim } from '../sim/sim';
 import { HOUR_TICKS, hourAt } from '../sim/clock';
-import { ScheduleC, blockAt, blockNow, hoursOf, onCall, secToSleep } from '../sim/crew/schedule';
-import { staySec } from '../sim/away/crew';
+import { ScheduleC, blockAt, hoursOf, secToSleep } from '../sim/crew/schedule';
+import { blockNow, onCall } from '../sim/crew/onCall';
+import { staySec } from '../sim/away/tripFit';
 import { shipGrid, shipIdOf } from '../sim/regions';
 import { Struct } from '../sim/structure';
 import { TICK_HZ } from '../sim/time';
@@ -120,6 +121,18 @@ describe('block lookup and commands', () => {
     sim.enqueue({ type: 'crew.schedule.preset', id, preset: 'schedule.any' });
     sim.applyCommands();
     expect(secToSleep(sim, id)).toBe(Infinity);
+  });
+
+  it('on call in a planned Sleep hour: the block in force reads Work, but trip planning still counts the Sleep block (#553)', () => {
+    const sim = fresh();
+    const id = onDefault(sim)[0]!;
+    sim.enqueue({ type: 'crew.schedule.set', id, from: hourAt(sim.tick), block: 'sleep' });
+    sim.enqueue({ type: 'combat.battleStations', on: true });
+    sim.applyCommands();
+    expect(blockAt(sim, id)).toBe('sleep');
+    expect(onCall(sim, id)).toBe(true);
+    expect(blockNow(sim, id)).toBe('work'); // on call: up and at work
+    expect(secToSleep(sim, id)).toBe(0); // but no trip: their plan has them in Sleep now
   });
 });
 

@@ -20,7 +20,7 @@ import { auditReservations } from '../../sim/ai/audit';
 import { machineStates } from '../../sim/ai/classes';
 import { killCrew } from '../../sim/crew/death';
 import { findJobAt, isIncapacitated } from '../../sim/crew/helpers';
-import { destroyJob } from '../../sim/items/stacks';
+import { destroyJob } from '../../sim/crew/jobEnd';
 import { shipIdOf } from '../../sim/regions';
 import { content } from '../index';
 import { landed, siteWork } from '../../../test/support/fixtures/away';

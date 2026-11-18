@@ -7,7 +7,7 @@ import type { WorkResult } from '../crew/jobWork';
 import { isFighting, isIncapacitated, origin } from '../crew/helpers';
 import { planWalk } from '../eva/route';
 import { AllegianceC, FighterC } from '../fight/components';
-import { destroyJob } from '../items/stacks';
+import { destroyJob } from '../crew/jobEnd';
 import { ModuleC } from '../modules/components';
 import { footprintTiles } from '../modules/footprint';
 import { shipIdOf } from '../regions';

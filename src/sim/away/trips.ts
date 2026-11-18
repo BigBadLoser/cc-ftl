@@ -18,7 +18,8 @@ import { VehicleC, type Vehicle } from '../vehicles/components';
 import { occupants, vehicleDefOf } from '../vehicles/lifecycle';
 import { StagingC } from '../items/components';
 import { AwayC, SiteRunC, type SiteRun } from './components';
-import { passageFits, passengerUrgent, scheduleHome, takesSiteWork } from './crew';
+import { passengerUrgent, scheduleHome, takesSiteWork } from './crew';
+import { passageFits } from './tripFit';
 import { departCheck, homePoint, partyOut } from './depart';
 
 /**

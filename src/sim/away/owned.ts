@@ -3,7 +3,7 @@ import { isIncapacitated } from '../crew/helpers';
 import { releaseAirHolds } from '../eva/airLedger';
 import { AirHoldsC, EvaFloatC, SuitC, type AirHold } from '../eva/components';
 import { StagingC } from '../items/components';
-import { destroyJob } from '../items/stacks';
+import { destroyJob } from '../crew/jobEnd';
 import { AirlockC } from '../modules/airlock';
 import { shipIdOf } from '../regions';
 import type { Sim } from '../sim';

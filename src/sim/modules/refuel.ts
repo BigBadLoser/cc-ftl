@@ -1,7 +1,7 @@
 import { JobC, type Job } from '../crew/components';
 import type { WorkResult } from '../crew/jobWork';
 import { consumeDelivered, missingMaterials, needsFrom, needsMaterials } from '../items/materials';
-import { destroyJob } from '../items/stacks';
+import { destroyJob } from '../crew/jobEnd';
 import { claimableCount, refKey, reservations } from '../items/stock';
 import { shipIdOf } from '../regions';
 import type { Sim } from '../sim';

@@ -12,7 +12,7 @@ import type { Fleet } from '../sim/galaxy/types';
 import { giveItems } from '../sim/story/effects';
 import { packetCount } from '../sim/sector/packet';
 import { checkOdds, unmetReasons } from '../sim/story/requirements';
-import { playerStock } from '../sim/story/world';
+import { playerStock } from '../sim/items/held';
 import type { EventDef } from '../sim/story/defs';
 import { content } from '.';
 import { run as step } from '../../test/support/sim';

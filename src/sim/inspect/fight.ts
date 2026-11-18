@@ -4,11 +4,11 @@ import { hostileAct } from '../combat/provoke';
 import { revoke } from '../consent/guests';
 import { DeadC } from '../crew/components';
 import { AllegianceC } from '../fight/components';
-import { destroyJob } from '../items/stacks';
+import { destroyJob } from '../crew/jobEnd';
 import type { Sim } from '../sim';
 import { TraderC } from '../trade/types';
 import { partyJobs } from './search';
-import { hit } from './settle';
+import { standingHit } from '../galaxy/standing';
 import { go } from './start';
 import { InspectionC, type Inspection } from './types';
 import { onInspectedShip } from './aboard';
@@ -40,7 +40,7 @@ const sideOf = (sim: Sim, faction: string): 'hostile' | 'rogue' => sim.content.g
 /** The inspection becomes a fight (see the file's note). No-op once it is one. */
 export function fightInspection(sim: Sim, vehicle: number, insp: Inspection): void {
   if (insp.phase === 'fight') return;
-  hit(sim, insp.faction, INSPECT_FIGHT_HIT);
+  standingHit(sim, insp.faction, INSPECT_FIGHT_HIT);
   for (const id of partyJobs(sim, vehicle)) destroyJob(sim, id);
   insp.jobs = [];
   const side = sideOf(sim, insp.faction);

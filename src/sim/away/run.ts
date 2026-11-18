@@ -10,7 +10,7 @@ import { VehicleC, type Vehicle } from '../vehicles/components';
 import { bayWorking } from '../vehicles/geometry';
 import { dockError } from '../vehicles/handlers';
 import { AwayC, AwaySiteC, SiteRunC, type SiteRun } from './components';
-import { ofSide } from './crew';
+import { ofSide } from './tripFit';
 import { endRun } from './end';
 import { planCarry, unloadStep } from './haul';
 import { stagedStacks } from '../items/staging';

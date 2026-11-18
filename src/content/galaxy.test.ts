@@ -14,7 +14,7 @@ import { SCAVENGER_CHANCE, SCAVENGER_FACTION } from '../sim/galaxy/tuningHeat';
 import { galaxySystem } from '../sim/systems/galaxy';
 import { nextArrival, rollArrival } from '../sim/galaxy/arrivals';
 import { ensureAround, nodeState } from '../sim/galaxy/state';
-import { playerStock } from '../sim/story/world';
+import { playerStock } from '../sim/items/held';
 import { takeItems } from '../sim/story/effects';
 import { ores } from './ores';
 import { content } from '.';

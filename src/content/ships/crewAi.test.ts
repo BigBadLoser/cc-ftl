@@ -18,7 +18,7 @@ import { auditReservations } from '../../sim/ai/audit';
 import { deriveTask, mealOf } from '../../sim/ai/task';
 import { killCrew } from '../../sim/crew/death';
 import { explainCrew } from '../../sim/ai/explain';
-import { destroyJob } from '../../sim/items/stacks';
+import { destroyJob } from '../../sim/crew/jobEnd';
 import { policyOf } from '../../sim/ai/utility';
 import { content } from '../index';
 import { expectScriptedReplay, haulBoard, lcg } from '../../../test/support/fixtures/crewAi';

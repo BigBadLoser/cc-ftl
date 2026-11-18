@@ -6,7 +6,7 @@ import { shipGrid } from '../../sim/regions';
 import { Struct } from '../../sim/structure';
 import { AboardC } from '../../sim/vehicles/components';
 import { SiteRunC } from '../../sim/away/components';
-import { passageFits, staySec } from '../../sim/away/crew';
+import { passageFits, staySec } from '../../sim/away/tripFit';
 import { siteShuttleOk } from '../../sim/away/handlers';
 import { passagesOf } from '../../sim/away/boarding';
 import { breachTiles } from '../../sim/crew/breach';

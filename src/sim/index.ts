@@ -194,7 +194,7 @@ export { passingMeets } from './galaxy/encounters';
 export { incomingFleets, type IncomingFleet } from './galaxy/incoming';
 export { evadeOdds, bribeCost, fleetStrength, playerHelm, evadeOddsFor } from './galaxy/encounterOdds';
 export { eventNodeId, isEventNode, inEvent, leaveBlocker, hostilesPresent } from './galaxy/eventGrid';
-export { playerStock } from './story/world';
+export { playerStock } from './items/held';
 export { siteStatus, siteIds, type SiteStatus, type SiteBlock, type SiteMaterial } from './crew/site';
 export { quoteYard, viewPlan, plannedTiles, type YardQuote, type HullView, type YardError } from './yard/plan';
 export { brushPlan, cutPlan, touchesShip, type BrushResult } from './yard/brush';

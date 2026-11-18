@@ -16,7 +16,7 @@ import { boardCrew, vehicleDefOf } from '../vehicles/lifecycle';
 import { reportLaunched } from '../vehicles/transitions';
 import { ALT, BodyC } from '../body';
 import { INSPECTOR_ROLE, INSPECTORS } from '../blackmarket/tuning';
-import { destroyJob } from '../items/stacks';
+import { destroyJob } from '../crew/jobEnd';
 import { partyJobs } from './search';
 import { InspectionC, inspections, type Inspection } from './types';
 

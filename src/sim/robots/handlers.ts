@@ -22,7 +22,7 @@ import { TICK_HZ } from '../time';
 import { HACK_MIN_SKILL, HACK_SEC } from '../tuning';
 import { HackedC, StunC } from './components';
 import { assemblyAt, bayFree, cradleOf, isBay } from './bay';
-import { destroyJob } from '../items/stacks';
+import { destroyJob } from '../crew/jobEnd';
 import { shipIdOf, shipGrid } from '../regions';
 import { shipById } from '../combat/shipQuery';
 

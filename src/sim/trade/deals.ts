@@ -8,7 +8,7 @@ import { TraderC, type Deal, type DealPhase, type Offer, type Trader, type Trip 
 import type { CourierPlan } from './courier';
 import { releaseRecruits } from './recruitLand';
 import { canStart } from './trips';
-import { destroyJob } from '../items/stacks';
+import { destroyJob } from '../crew/jobEnd';
 import { JobC } from '../crew/components';
 import { addCredits } from './credits';
 import { noteHelp } from '../galaxy/help';

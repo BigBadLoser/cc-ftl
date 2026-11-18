@@ -4,7 +4,7 @@ import { wakeUp } from '../ai/machines/sleep';
 import { planWalk } from '../eva/route';
 import { isEmergency } from '../ai/emergency';
 import { isIncapacitated, isSettled, origin } from '../crew/helpers';
-import { destroyJob } from '../items/stacks';
+import { destroyJob } from '../crew/jobEnd';
 import { FighterC } from '../fight/components';
 import type { Sim } from '../sim';
 import { VehicleC, type Vehicle } from '../vehicles/components';

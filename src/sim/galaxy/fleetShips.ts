@@ -5,7 +5,7 @@ import type { Sim } from '../sim';
 import { retreat, strand } from './agenda';
 import { isWarmedElsewhere, spawnContact, warmContact } from './arrivals';
 import { graceHolds } from './grace';
-import { inspectingFleets } from '../inspect/patrol';
+import { inspectingFleets } from '../inspect/holds';
 import { nodesWithin } from './graph';
 import { owe } from './portIndex';
 import { FLEET_NODE_SHIPS, STRANDED_INTEGRITY, WARM_HOPS } from './tuning';

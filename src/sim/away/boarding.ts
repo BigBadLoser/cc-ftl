@@ -1,5 +1,5 @@
 import { JobC } from '../crew/components';
-import { destroyJob } from '../items/stacks';
+import { destroyJob } from '../crew/jobEnd';
 import { isTileWalkable } from '../modules/walk';
 import { shipGrid } from '../regions';
 import type { Sim } from '../sim';

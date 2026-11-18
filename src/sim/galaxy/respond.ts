@@ -1,5 +1,6 @@
 import type { Sim } from '../sim';
-import { comply, holdsTrip, run } from '../inspect/patrol';
+import { comply, run } from '../inspect/hail';
+import { holdsTrip } from '../inspect/holds';
 import { headHome } from './agenda';
 import { bribeCost, evadeOdds } from './encounterOdds';
 import { finishEncounter } from './encounters';
