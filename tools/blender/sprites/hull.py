@@ -34,6 +34,7 @@ class Out(Spec):
         self.mask, self.o, self.variant, self.part, self.room = mask, o, variant if o in (1, 2) else 0, part, room
         self.corners = corners
         self._lines = None
+        self.tee = not o and (mask & 14 == 14 or mask & 7 == 7)     # rear ghost: a partition meets it (a T)
         self.drop_y = bool(o & 1) and o != 4
         self.drop_x = bool(o & 2) and o != 4
         self.open_y = self.drop_y or not mask & 4
@@ -141,8 +142,9 @@ class Out(Spec):
                     v = 0
                     for da, db in ((1, 0), (0, 1)):
                         n = K[a + da][b + db] if a + da < GN and b + db < GN else k
-                        if n is not None and n != k and "flat" in (k, n):
+                        if n is not None and n != k and "flat" in (k, n) and not self.tee:
                             v = max(v, 2)                              # crest; slope-to-slope mitres stay unlined
+                            #   (a T's crest and mitres are drawn as lines: _tee)
                     if self.o and self._edge(x, y) < C and not self.dist(x, y) < BEV:
                         v = max(v, 1)                                  # outline (the outer side has the crest)
                     if not self.o and k in ("x", "y") and (a == 0 if k == "y" else b == 0):
@@ -227,6 +229,7 @@ def out_block(mask, o, variant=0, part="rim", room=0, corners=0):
     if part == "rim" and o == 0:
         _rise(m, mask, room, corners)
         _toe(m, mask, corners)
+        _tee(m, mask, corners)
     if part == "rim":
         return [_dummy(f"ghost_plate_{o}_{mask}_{room}_{corners}"), m.build()]
     return [m.build()]
@@ -249,6 +252,30 @@ def _toe(m, mask, corners):
         segs += [((0.5 - C, 0.5 - k), (0.5, 0.5 - k)), ((0.5 - k, 0.5), (0.5 - k, 0.5 - C))]
     for a, b in segs:
         m.poly([core.G(*a, z0 - DZ / 2), core.G(*b, z0 - DZ / 2), core.G(*b, z0 + DZ / 2), core.G(*a, z0 + DZ / 2)], "gW2")
+
+
+def _tee(m, mask, corners):
+    """Where a partition meets the rear ghost (a T: mask 14, a partition at +y; 7, at +x), its lines drawn, not found
+    from the cells (that left stubs): at each room corner beside the partition, the crest in an L (along the hull, then
+    along the partition to the tile's edge, where the partition's own piece goes on) and the mitre up to it."""
+    from .walls import shelf_top
+    cd, zc, zf, w, up = (RAMP_CELLS - SHELF_CELLS) / GN, shelf_top(), FOOT_PX / ZART, C / 2, 0.01
+    rooms = []                               # (the room corners beside the partition: SW / SE for 14, NE / SE for 7)
+    if mask & 14 == 14:
+        rooms += [((-0.5, 0.5), 4), ((0.5, 0.5), 2)]
+    if mask & 7 == 7:
+        rooms += [((0.5, -0.5), 1), ((0.5, 0.5), 2)]
+    rooms = [c for c, bit in dict.fromkeys(rooms) if not corners & bit]
+    for cx, cy in rooms:
+        ix, iy = (1 if cx < 0 else -1), (1 if cy < 0 else -1)
+        a, b, c = (cx, cy + iy * cd), (cx + ix * cd, cy + iy * cd), (cx + ix * cd, cy)
+        for p, q, (ox, oy) in ((a, b, (0, iy * w)), (b, c, (ix * w, 0))):       # (on the crest's flat side)
+            m.poly([core.G(*p, zc + up), core.G(*q, zc + up), core.G(q[0] + ox, q[1] + oy, zc + up),
+                    core.G(p[0] + ox, p[1] + oy, zc + up)], "gW2")
+        nx, ny = w / 2 * -iy / abs(iy), w / 2 * ix / abs(ix)                    # the mitre: across it, half each side
+        p, q = (cx, cy), b
+        m.poly([core.G(p[0] - nx, p[1] - ny, zf + up), core.G(q[0] - nx, q[1] - ny, zc + up),
+                core.G(q[0] + nx, q[1] + ny, zc + up), core.G(p[0] + nx, p[1] + ny, zf + up)], "gW2")
 
 
 def _rise(m, mask, room, corners):
