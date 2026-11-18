@@ -392,7 +392,8 @@ Pixi `RenderLayer` and render group. Keep sprites in each band batchable:
   `power.ts` edit runs about 6 files instead of about 300. With nothing uncommitted it checks the branch against `origin/main`, never zero
   tests. A change to `vite.config.ts`, `src/sim/testSetup.ts` or the lockfile runs the whole fast tier. A tuning file (`tuning*.ts`)
   counts from the files that use a constant whose declaration changed (`tools/nearTests.mjs`), not from every importer: a median edit to
-  `tuning.ts` runs 1 file instead of about 310. A changed private helper or import line falls back to the whole file.
+  `tuning.ts` runs 1 file instead of about 310. A constant or helper that reads a changed one counts as changed too; a changed import
+  line or a new file falls back to the whole file.
 - **Branch check** (`npm run check:push` = lint, typecheck, `test:branch`, before pushing a work branch): every fast test Vitest's import graph
   links to a change since the merge base with `origin/main`. Most sim edits select about two thirds of the fast tier, because most tests step a
   game through `newGame` and the pipeline (#553). `git add` new files first.

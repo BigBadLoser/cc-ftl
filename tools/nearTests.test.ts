@@ -40,8 +40,12 @@ describe('changedExports', () => {
     expect(changedExports(BEFORE, `${BEFORE}export const D = 1;\n`)).toEqual(new Set(['D']));
     expect(changedExports(BEFORE, BEFORE)).toEqual(new Set());
   });
-  it('gives up (null) on a changed private helper, changed imports or a new file', () => {
-    expect(changedExports(BEFORE, BEFORE.replace('helper = 3', 'helper = 4'))).toBeNull();
+  it('follows declarations that read a changed one, private helpers included (#583)', () => {
+    expect(changedExports(BEFORE, BEFORE.replace('helper = 3', 'helper = 4'))).toEqual(new Set(['C']));
+    const derived = `${BEFORE}export const E = GAP * 2;\nexport const F = E + 1;\n`;
+    expect(changedExports(derived, derived.replace('GAP = 4', 'GAP = 5'))).toEqual(new Set(['GAP', 'E', 'F']));
+  });
+  it('gives up (null) on changed imports or a new file', () => {
     expect(changedExports(BEFORE, BEFORE.replace("'./x'", "'./y'"))).toBeNull();
     expect(changedExports(null, BEFORE)).toBeNull();
   });

@@ -28,22 +28,29 @@ export function declarations(text) {
 }
 
 /**
- * The exported names whose declaration differs between `before` and `after` (added and removed ones too), or null when the
- * change can't be pinned to exports: a new or deleted file, or a changed non-exported declaration that exports may use.
- * Comments sit with the declaration above them, so an edited comment may name a neighbour: harmless, it only adds tests.
+ * The exported names whose value may differ between `before` and `after`: declarations whose text changed (added and removed ones
+ * too), then every declaration in the file that names one of those, until none is added (`TURN_STEP_WORK` reads
+ * `TURN_STEP_SECONDS`; a private helper reaches the exports that use it). Null when the change can't be pinned to declarations: a
+ * new or deleted file, or changed imports or header code. Comments sit with the declaration above them, so an edited comment may
+ * name a neighbour: harmless, it only adds tests.
  */
 export function changedExports(before, after) {
   if (before == null || after == null) return null;
   const a = declarations(before), b = declarations(after);
-  const names = new Set();
+  const changed = new Set();
   for (const n of new Set([...a.keys(), ...b.keys()])) {
     const x = a.get(n), y = b.get(n);
     if (x?.text === y?.text) continue;
     if (n === '') { if (strip(x?.text) !== strip(y?.text)) return null; continue; } // imports or header code changed
-    if ((x && !x.exported) || (y && !y.exported)) return null; // a private helper: exports may use it
-    names.add(n);
+    changed.add(n);
   }
-  return names;
+  const decls = [...b].filter(([n]) => n !== '');
+  for (let grew = true; grew;) {
+    grew = false;
+    const words = [...changed].map((n) => new RegExp(`\\b${n}\\b`));
+    for (const [n, d] of decls) if (!changed.has(n) && words.some((w) => w.test(strip(d.text)))) { changed.add(n); grew = true; }
+  }
+  return new Set([...changed].filter((n) => (b.get(n) ?? a.get(n)).exported));
 }
 const strip = (t = '') => t.split('\n').filter((l) => !/^\s*(\/\/|\/?\*|$)/.test(l)).join('\n');
 
