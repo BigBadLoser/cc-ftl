@@ -1,8 +1,8 @@
 """The rear hull ghost (walls fully down) as a wireframe: its lines drawn as strips exactly 1 px wide on screen, so
 every line has the same strength once antialiased (env_build.render_ghost: alpha by coverage). The shape is the
 partition's low stub (hull.Out._inner: L-inf distance to the room side): a foot, the ramp, its crest at the step. Lines:
-the foot's top along the room side, the crest, the creases where two ramps meet (a concave corner, a T), and the fall
-line on the tile's -x / -y edges (each tile draws its own; the next tile's is its neighbour's)."""
+the foot's top along the room side, the crest (no creases where two ramps meet: corners read by the crest), and the
+fall line on the tile's -x / -y edges (each tile draws its own; the next tile's is its neighbour's)."""
 import math
 
 from . import core
@@ -25,10 +25,9 @@ def _screen(p):
     return (x - y) * 32, (x + y) * 16 - z * ZART
 
 
-def strip(m, p, q, tone=TONE, left=False):
-    """Segment p -> q (x, y, z) as a strip 1 px wide on screen, one-sided (up, or for an upright line right, or left
-    with `left`: the side a wall's own edge takes, at a T): its pixels line up with the grid instead of splitting over
-    two."""
+def strip(m, p, q, tone=TONE):
+    """Segment p -> q (x, y, z) as a strip 1 px wide on screen, one-sided (up, or right for an upright line): its pixels
+    line up with the grid instead of splitting over two."""
     (ax, ay), (bx, by) = _screen(p), _screen(q)
     dx, dy = bx - ax, by - ay
     ln = math.hypot(dx, dy)
@@ -37,8 +36,8 @@ def strip(m, p, q, tone=TONE, left=False):
     if abs(dx) >= 0.3 * ln:                      # (off upright: widen it up, in z)
         k = ln / (ZART * abs(dx))
         o = (0.0, 0.0, k)
-    else:                                       # (upright on screen: widen it right, along +x -y, or left)
-        h = ln / (32 * abs(dy)) * (-1 if left else 1)     # (screen x of (h/2, -h/2): 32 h)
+    else:                                       # (upright on screen: widen it right, along +x -y)
+        h = ln / (32 * abs(dy))                 # (screen x of (h/2, -h/2): 32 h)
         o = (h / 2, -h / 2, 0.0)
     pts = [p, q, tuple(a + b for a, b in zip(q, o)), tuple(a + b for a, b in zip(p, o))]
     m.poly([core.G(x, y, z + LIFT) for x, y, z in pts], tone)
@@ -109,25 +108,6 @@ def wire(m, sp):
         on = [k for k, p in enumerate(pts) if sp._inner(*p) < 1e-9]
         for k0, k1 in _merge([(k, k + 1) for k in on if k + 1 in on]):
             strip(m, (*pts[k0], zof(0.0)), (*pts[k1], zof(0.0)))
-    # creases: where the fall direction changes on the ramp (0 < d < CD), straight lines; each from its foot to its top
-    groups = {}
-    for i in range(N - 1):
-        for j in range(N - 1):
-            if not 0 < d[i][j] < CD:
-                continue
-            here = _dirs(sp, xs[i], xs[j])
-            for di, dj in ((1, 0), (0, 1)):
-                if 0 < d[i + di][j + dj] < CD and _dirs(sp, xs[i + di], xs[j + dj]) != here:
-                    key = tuple(sorted((here, _dirs(sp, xs[i + di], xs[j + dj]))))
-                    groups.setdefault(key, []).append(((xs[i] + xs[i + di]) / 2, (xs[j] + xs[j + dj]) / 2))
-    for pts in groups.values():
-        for cl in _clusters(pts):
-            if _stem_crease(sp, cl):
-                continue
-            lo = min(cl, key=lambda p: sp._inner(*p))
-            hi = max(cl, key=lambda p: sp._inner(*p))
-            a, b = _extend(sp, lo, hi)
-            strip(m, (*a, zof(sp._inner(*a))), (*b, zof(sp._inner(*b))), left=sp.tee)
     # the fall line on the tile's -x and -y edges (a seam, or a run's free end)
     for edge in ("x", "y"):
         pts = [((-0.5, t) if edge == "x" else (t, -0.5)) for t in xs]
@@ -137,17 +117,6 @@ def wire(m, sp):
             b = max(on, key=lambda p: sp._inner(*p))
             a = (a[0], a[1] + 0.5 / N) if edge == "x" else (a[0] + 0.5 / N, a[1])
             strip(m, (*a, zof(0.0)), (*b, zof(sp._inner(*b))), SEAM)
-
-
-def _stem_crease(sp, cl):
-    """A T's crease on its far side, where the arm's slope meets the stem's back slope: a 45 degree line on screen. Left
-    out: that side's outline is the stem's crest, straight on from the wall's own top edge (the fill stops there too:
-    behind_stem)."""
-    x = sum(p[0] for p in cl) / len(cl)
-    y = sum(p[1] for p in cl) / len(cl)
-    if sp.mask & 14 == 14 and not sp.corners & 4 and x < -0.5 + CD and y > 0.5 - CD:
-        return True
-    return sp.mask & 7 == 7 and not sp.corners & 1 and x > 0.5 - CD and y < -0.5 + CD
 
 
 def _to_wall(sp, a, b):
@@ -168,8 +137,8 @@ def _to_wall(sp, a, b):
 
 
 def behind_stem(sp, x, y):
-    """True where a T's far-side slopes show on screen beyond the stem's crest (between it and the crease _stem_crease
-    leaves out): the fill stops at the crest, as the lines do."""
+    """True where a T's far-side slopes show on screen beyond the stem's crest (where the crease between the two slopes
+    would be; no crease is drawn): the fill stops at the crest, as the lines do."""
     zc = zof(CD)
     if sp.mask & 14 == 14 and not sp.corners & 4 and x < -0.5 + CD and y > 0.5 - CD:
         c = (-0.5 + CD + 1 / 32, 0.5 - CD)              # (the crest as drawn: _to_wall)
@@ -181,27 +150,6 @@ def behind_stem(sp, x, y):
         return False
     (cx, cy), (px, py) = _screen((*c, zc)), _screen((x, y, zof(sp._inner(x, y))))
     return py > cy + slope * (px - cx) + 1e-6
-
-
-def _clusters(pts, gap=4 / N):
-    out = []
-    for p in sorted(pts):
-        for cl in out:
-            if any(abs(p[0] - q[0]) <= gap and abs(p[1] - q[1]) <= gap for q in cl[-8:]):
-                cl.append(p)
-                break
-        else:
-            out.append([p])
-    return out
-
-
-def _extend(sp, lo, hi):
-    """A crease's ends pushed out to d = 0 and d = CD along its own direction (the samples stop half a step short)."""
-    dl, dh = sp._inner(*lo), sp._inner(*hi)
-    if dh - dl < 1e-9:
-        return lo, hi
-    vx, vy = (hi[0] - lo[0]) / (dh - dl), (hi[1] - lo[1]) / (dh - dl)
-    return (lo[0] - vx * dl, lo[1] - vy * dl), (hi[0] + vx * (CD - dh), hi[1] + vy * (CD - dh))
 
 
 def render(objs, W, H):
