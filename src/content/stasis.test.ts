@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { AllegianceC, AssignmentC, CrewC, DraftedC, ModuleC, NeedsC, PositionC, ShipC, placementError, playerShip, spawnModule, type Sim, type SimEvent } from '../sim';
+import { ShipC } from '../sim/combat/components';
+import { AssignmentC, CrewC, DraftedC, NeedsC, PositionC } from '../sim/crew/components';
+import type { SimEvent } from '../sim/events';
+import { AllegianceC } from '../sim/fight/components';
+import { ModuleC } from '../sim/modules/components';
+import { placementError, spawnModule } from '../sim/modules/spawn';
+import { newGame } from '../sim/newGame';
+import type { Sim } from '../sim/sim';
+import { playerShip } from '../sim/trade/player';
 import { JobC, RecoveringC, type Job } from '../sim/crew/components';
 import { sealPrisoner } from '../sim/stasis/freeze';
 import { CarryingC } from '../sim/items/components';
@@ -22,19 +30,11 @@ import { sealMarked, sealRefusal } from '../sim/stasis/order';
 import { RESERVE_TICKS, SLAB_ITEM, STOW_WORK, TURN_STEP_WORK } from '../sim/stasis/tuning';
 import { playerCrew } from '../sim/story/world';
 import { heldItems } from '../sim/items/held';
-import { newGame } from '../sim';
 import { content } from '.';
+import { run } from '../../test/support/sim';
 
 /** Prisoner holding (#116): seal on the spot, cart to the stasis wheel, reserve and thaw. */
 
-const run = (sim: Sim, n: number): SimEvent[] => {
-  const out: SimEvent[] = [];
-  for (let i = 0; i < n; i++) {
-    sim.step();
-    out.push(...sim.events.drain());
-  }
-  return out;
-};
 /** Step until `done` holds (at most `max` ticks); the events seen. */
 const until = (sim: Sim, done: () => boolean, max = 3000): SimEvent[] => {
   const out: SimEvent[] = [];

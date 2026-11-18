@@ -1,8 +1,14 @@
 import logSrc from './logText.ts?raw';
 import boardingSrc from './boardingText.ts?raw';
 import { describe, expect, it } from 'vitest';
-import { AllegianceC, CrewC, DeadC, DownedC, ModuleC, PositionC, ShipC, newGame, type Sim } from '../sim';
-import { homeShip, isOnOurSide } from '../sim/index';
+import { ShipC } from '../sim/combat/components';
+import { homeShip } from '../sim/combat/ships';
+import { CrewC, DeadC, DownedC, PositionC } from '../sim/crew/components';
+import { AllegianceC } from '../sim/fight/components';
+import { isOnOurSide } from '../sim/fight/relations';
+import { ModuleC } from '../sim/modules/components';
+import { newGame } from '../sim/newGame';
+import type { Sim } from '../sim/sim';
 import { AlienC } from '../sim/aliens/components';
 import { AwayC } from '../sim/away/components';
 import { drawFromStores } from '../sim/items/stock';

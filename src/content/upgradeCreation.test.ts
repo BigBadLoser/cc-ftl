@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { ModuleC, ShipC, WeaponC, newGame, type Contact, type Sim } from '../sim';
+import { ShipC, WeaponC } from '../sim/combat/components';
+import type { Contact } from '../sim/galaxy/types';
+import { ModuleC } from '../sim/modules/components';
+import { newGame } from '../sim/newGame';
+import type { Sim } from '../sim/sim';
 import { spawnDerelict } from '../sim/combat/derelict';
 import { shipCreated, spawnShip } from '../sim/combat/ships';
 import { spawnContact } from '../sim/galaxy/arrivals';

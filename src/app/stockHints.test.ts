@@ -1,20 +1,29 @@
 import { describe, expect, it } from 'vitest';
-import { AllegianceC, CrewC, PositionC, ShipC, galaxyIndex, hailVerdict, isHostile, isInvader, newGame, nodeOf, shipIdOf, type Port, type Sim } from '../sim';
+import { ShipC } from '../sim/combat/components';
+import { CrewC, PositionC } from '../sim/crew/components';
+import { AllegianceC } from '../sim/fight/components';
+import { isHostile, isInvader } from '../sim/fight/relations';
+import type { Port } from '../sim/galaxy/ports';
+import { galaxyIndex, nodeOf } from '../sim/galaxy/state';
+import { newGame } from '../sim/newGame';
+import { shipIdOf } from '../sim/regions';
+import type { Sim } from '../sim/sim';
+import { hailVerdict } from '../sim/trade/traders';
 import { placementGapError } from '../sim/regions';
 import { portsAt } from '../sim/galaxy/portIndex';
 import { content } from '../content';
+import { contentAtDanger } from '../../test/support/content';
 import { buildStarmap } from './starmapSnapshot';
 import { buildTrade } from './tradeSnapshot';
 import { nodeHints, portHints } from './stockHints';
 
 /** A game with the whole revealed galaxy at the deepest danger tier, and its ports. */
 function deep(seed: number): { sim: Sim; ports: Port[] } {
-  const sim = newGame(seed, content);
+  const sim = newGame(seed, contentAtDanger(seed, 9));
   sim.step();
   sim.enqueue({ type: 'debug.galaxyReveal', radius: 14 });
   sim.step();
   const nodes = [...galaxyIndex(sim.galaxy).nodes.values()].sort((a, b) => (a.id < b.id ? -1 : 1));
-  for (const n of nodes) (nodeOf(sim, n.id) as { danger: number }).danger = 9;
   return { sim, ports: nodes.flatMap((n) => portsAt(sim, n.id)) };
 }
 

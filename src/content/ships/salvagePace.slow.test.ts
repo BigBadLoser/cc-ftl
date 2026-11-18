@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { AboardC, CrewC, DeadC, EvaFloatC, JobC, TaskC, type Sim } from '../../sim';
+import { TaskC } from '../../sim/ai/components';
+import { CrewC, DeadC, JobC } from '../../sim/crew/components';
+import { EvaFloatC } from '../../sim/eva/components';
+import type { Sim } from '../../sim/sim';
+import { AboardC } from '../../sim/vehicles/components';
 import { shipIdOf } from '../../sim/regions';
 import { AwayC, SiteRunC } from '../../sim/away/components';
 import { shuttleDueBack } from '../../sim/away/trips';

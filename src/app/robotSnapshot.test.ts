@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { ModuleC, homeShip, newGame, openTilesOf, PLAYER_START, type Sim } from '../sim';
+import { homeShip } from '../sim/combat/ships';
+import { ModuleC } from '../sim/modules/components';
+import { openTilesOf } from '../sim/modules/footprint';
+import { newGame } from '../sim/newGame';
+import type { Sim } from '../sim/sim';
+import { PLAYER_START } from '../sim/tuning';
 import { cradleOf } from '../sim/robots/bay';
 import { content } from '../content';
 import { buildRobotBay } from './robotSnapshot';

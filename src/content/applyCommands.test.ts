@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { newGame, type Sim } from '../sim';
+import { newGame } from '../sim/newGame';
+import type { Sim } from '../sim/sim';
 import { MarkerC } from '../sim/components';
 import { NeedsC } from '../sim/crew/components';
 import { content } from '.';

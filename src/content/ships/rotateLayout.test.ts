@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { content } from '../index';
-import type { ModuleDef } from '../../sim';
+import type { ModuleDef } from '../../sim/registry';
 import { airlockTiles } from '../../sim/modules/airlock';
 import { hullSide } from '../../sim/modules/footprint';
 import { rotateLayout } from '../../sim/shipgen/rotate';

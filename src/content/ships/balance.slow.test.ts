@@ -1,12 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { CrewC, DeadC, DownedC, ModuleC, PositionC, newGame, type Sim, type SimEvent } from '../../sim';
+import { CrewC, DeadC, DownedC, PositionC } from '../../sim/crew/components';
+import type { SimEvent } from '../../sim/events';
+import { ModuleC } from '../../sim/modules/components';
+import { newGame } from '../../sim/newGame';
+import type { Sim } from '../../sim/sim';
 import { content } from '../index';
 import { shipIdOf } from '../../sim/regions';
 import { shipById } from '../../sim/combat/ships';
 import { shipIds } from '../../sim/regions';
+import { nth } from '../../../test/support/sim';
 
-/** The ship with ordinal `n` (1 = the player's, 2 = the first enemy). */
-const nth = (sim: Sim, n: number): number => shipIds(sim)[n - 1] as number;
 
 const TPS = 20;
 

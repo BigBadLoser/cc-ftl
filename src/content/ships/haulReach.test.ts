@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { CrewC, newGame, playerShip, storageCount } from '../../sim';
+import { CrewC } from '../../sim/crew/components';
+import { storageCount } from '../../sim/items/storage';
+import { newGame } from '../../sim/newGame';
+import { playerShip } from '../../sim/trade/player';
 import { JobC, PositionC } from '../../sim/crew/components';
 import { AllegianceC } from '../../sim/fight/components';
 import { CarryingC, ItemStackC } from '../../sim/items/components';

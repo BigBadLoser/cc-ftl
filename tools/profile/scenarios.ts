@@ -7,6 +7,7 @@
  * add them here once it merges.
  */
 import { content } from '../../src/content';
+import { buildScenario as buildPreset, presets, type Built } from '../../src/content/scenario';
 import { newGame, homeShip, shipGrid, ShipC, CrewC, PositionC, type Sim, type Command } from '../../src/sim';
 import { Struct } from '../../src/sim/structure';
 import { prepareBench, scrapHome, type Bench } from '../../src/content/ships/salvageBench';
@@ -220,7 +221,21 @@ const SCENARIOS: Scenario[] = [
 ];
 
 export const scenarioNames = (): string[] => SCENARIOS.map((s) => s.name);
+/** Built registry scenarios by sim, so the profile run can drive their hooks (`afterTick`, `onEvents`). */
+export const presetRuns = new WeakMap<Sim, Built>();
+
+/** A registry preset (src/content/scenario) as a profile scenario: `--scenario preset:<name>`. The same builder as `?scenario=`, so the profiler measures the scene the game opens on. */
+export function presetScenario(name: string): Scenario {
+  const preset = presets.get(name);
+  if (!preset) throw new Error(`Unknown preset "${name}". Known: ${[...presets.keys()].join(', ')}`);
+  return {
+    name: `preset:${name}`, description: preset.doc, ticks: preset.profile?.ticks ?? 3000, populate: true,
+    setup: (sim) => void presetRuns.set(sim, buildPreset(name, { sim })),
+  };
+}
+
 export const getScenario = (name: string): Scenario => {
+  if (name.startsWith('preset:')) return presetScenario(name.slice(7));
   const s = SCENARIOS.find((x) => x.name === name);
   if (!s) throw new Error(`Unknown scenario "${name}". Known: ${scenarioNames().join(', ')}`);
   return s;
@@ -230,7 +245,7 @@ export const allScenarios = (): readonly Scenario[] => SCENARIOS;
 /** Build a scenario's sim: `newGame(seed)` plus the scenario's setup. */
 export function buildScenario(name: string, seed: number): Sim {
   const sc = getScenario(name);
-  const sim = newGame(seed, content, undefined, sc.populate);
+  const sim = newGame(seed, content, name.startsWith('preset:') ? presets.get(name.slice(7))?.starter : undefined, sc.populate);
   sc.setup(sim);
   return sim;
 }

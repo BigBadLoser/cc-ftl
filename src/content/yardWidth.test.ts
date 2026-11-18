@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { HullPlanC, ShipC, planFootprint, brushPlan, cutPlan, plannedTiles, planViolations, quoteYard, touchesShip } from '../sim';
+import { ShipC } from '../sim/combat/components';
+import { brushPlan, cutPlan, touchesShip } from '../sim/yard/brush';
+import { plannedTiles, quoteYard } from '../sim/yard/plan';
+import { HullPlanC } from '../sim/yard/types';
+import { planFootprint, planViolations } from '../sim/yard/width';
 import { newViolations, hullFootprint } from '../sim/yard/width';
-import { outline, planHull, rect, run, yardGame } from './yardFixture';
+import { outline, planHull, rect, run, yardGame } from '../../test/support/fixtures/yard';
 
 /** The hull starts one row below the ship's rectangle, so a block ending at row 0 touches it. */
 const top = (h: number): number => 1 - h;

@@ -1,65 +1,20 @@
 import { describe, expect, it } from 'vitest';
-import { CombatC, CrewC, SkillXpC, spawnCrew, IonC, JobC, ModuleC, PositionC, ProjectileC, ShipC, StorageC, WeaponC, aimDirection, deserialize, newGame, turretPosition, serialize, type ContentRegistry, type ShipTemplate, type Sim, type SimEvent } from '../../sim';
-import { content } from '../index';
-import { shipIdOf, shipGrid } from '../../sim/regions';
+import { IonC, ProjectileC, ShipC, WeaponC } from '../../sim/combat/components';
+import { aimDirection, turretPosition } from '../../sim/combat/geometry';
 import { shipById } from '../../sim/combat/ships';
-import { shipIds } from '../../sim/regions';
-
-type Mod = NonNullable<ShipTemplate['modules']>[number];
-
-/** A 14x9 test hull: reactor, weapons console (chair at (6, 2)), one weapon bay, a clear lane, optional extras. */
-function gunShip(weapon: string, crew: string[], extra: Mod[] = [], faction?: 'hostile'): ShipTemplate {
-  return {
-    name: 'Gun', crew, ...(faction ? { faction } : {}),
-    rows: [
-      '##############', '#____________#', '#____________#', '#____________#', '#____________#', '#____________#',
-      '#____________#', '#____________#', '##############',
-    ],
-    modules: [
-      { def: 'module.reactor', x: 1, y: 1, rot: 0 },
-      { def: 'module.weaponsConsole', x: 6, y: 1, rot: 0 },
-      { def: weapon, x: 9, y: 1, rot: 0 },
-      ...extra,
-    ],
-  };
-}
-/** The raider with no crew: a passive target that still has power, shields and walls. */
-const dummy: ShipTemplate = { ...content.ships['ship.raider'], crew: [] };
-const dummyNoShield: ShipTemplate = {
-  ...dummy, modules: dummy.modules!.filter((m) => m.def !== 'module.shieldGen'),
-};
-const withMissiles: Mod = { def: 'module.storage', x: 5, y: 6, rot: 2, stock: [{ item: 'item.missile', count: 20 }] };
-
-function registry(ships: Record<string, ShipTemplate>): ContentRegistry {
-  return { ...content, ships: { ...content.ships, ...ships } };
-}
-const run = (sim: Sim, n: number): SimEvent[] => {
-  const out: SimEvent[] = [];
-  for (let i = 0; i < n; i++) {
-    sim.step();
-    out.push(...sim.events.drain());
-  }
-  return out;
-};
-const ofType = <T extends SimEvent['type']>(events: SimEvent[], type: T): Extract<SimEvent, { type: T }>[] =>
-  events.filter((e): e is Extract<SimEvent, { type: T }> => e.type === type);
-/** The ship with ordinal `n` (1 = the player's, 2 = the first enemy). */
-const nth = (sim: Sim, n: number): number => shipIds(sim)[n - 1] as number;
-const modulesOf = (sim: Sim, n: number, def: string): number[] =>
-  sim.world.query(ModuleC).filter((i) => shipIdOf(sim, sim.world.get(i, ModuleC)) === nth(sim, n) && sim.world.get(i, ModuleC)!.def === def);
-const combatOf = (sim: Sim, n: number) => sim.world.get(nth(sim, n), CombatC)!;
-const aim = (sim: Sim, from: number, to: number, moduleId = 0): void =>
-  sim.enqueue({ type: 'combat.setTarget', ship: nth(sim, from), weaponId: null, targetShip: nth(sim, to), targetModuleId: moduleId });
-
-/** Player gun ship (grid 1) facing a hostile target template (grid 2). */
-function duel(weapon: string, target: ShipTemplate, opts: { crew?: string[]; extra?: Mod[]; seed?: number } = {}): Sim {
-  const reg = registry({ 'ship.gun': gunShip(weapon, opts.crew ?? ['role.gunner'], opts.extra), 'ship.target': target });
-  const sim = newGame(opts.seed ?? 1, reg, 'ship.gun');
-  sim.enqueue({ type: 'debug.spawnEnemy', template: 'ship.target', x: 100, y: 50 });
-  sim.step(); // the enemy exists now, so tests can look up its module ids
-  sim.events.drain();
-  return sim;
-}
+import { CrewC, JobC, PositionC } from '../../sim/crew/components';
+import type { SimEvent } from '../../sim/events';
+import { ModuleC } from '../../sim/modules/components';
+import { newGame } from '../../sim/newGame';
+import type { ShipTemplate } from '../../sim/registry';
+import { shipGrid, shipIdOf, shipIds } from '../../sim/regions';
+import { SkillXpC } from '../../sim/story/components';
+import { content } from '../index';
+import {
+  aim, arsonSim, combatOf, countAmmo, duel, dummy, dummyNoShield, fightSim, gunShip, modulesOf, registry, withMissiles, withTargets,
+} from '../../../test/support/fixtures/combat';
+import { eventsOf as ofType, nth, run } from '../../../test/support/sim';
+import { expectReplayable } from '../../../test/support/world';
 
 describe('combat start and consoles', () => {
   it('starts combat and crew man their consoles by skill', () => {
@@ -260,22 +215,12 @@ describe('weapons', () => {
   });
 
   it('incendiary starts a fire that crew extinguish', () => {
-    const reg = registry({ 'ship.arson': gunShip('module.incendiaryLauncher', ['role.gunner'], [], 'hostile') });
-    const sim = newGame(1, reg);
-    sim.enqueue({ type: 'debug.spawnEnemy', template: 'ship.arson', x: 100, y: 50 });
-    const gen = modulesOf(sim, 1, 'module.shieldGen')[0] as number;
-    sim.enqueue({ type: 'module.setEnabled', id: gen, enabled: false });
-    const fab = modulesOf(sim, 1, 'module.fabricator')[0] as number;
-    sim.step(); // the raider exists once the spawn command has run: commands name it by ship id
-    spawnCrew(sim, nth(sim, 1), ['role.engineer', 'role.engineer']); // three hands on the hoses: with crew no longer walking to the locker at the start (they carry sidearms), two lose the race on seed 1
-    aim(sim, 2, 1, fab);
-    const events = run(sim, 20 * 60);
+    const sim = arsonSim();
+    // Up to a minute, ending once a crew member has put a fire out (the run on to the last fire is in combat.slow.test.ts).
+    const events: SimEvent[] = [];
+    for (let i = 0; i < 60 && !events.some((e) => e.type === 'crew.jobDone' && e.kind === 'extinguish'); i++) events.push(...run(sim, 20));
     expect(ofType(events, 'fire.started').length).toBeGreaterThan(0);
     expect(events.some((e) => e.type === 'crew.jobDone' && e.kind === 'extinguish')).toBe(true);
-    // Stop the arsonist and let the crew finish.
-    sim.enqueue({ type: 'module.setEnabled', id: modulesOf(sim, 2, 'module.incendiaryLauncher')[0] as number, enabled: false });
-    run(sim, 20 * 120); // two minutes: the crew levelling mid-fight shifts when the last fire goes out (90 s on seed 1)
-    expect(shipGrid(sim, shipIds(sim)[0] as number)!.load('fire').some((f) => f > 0)).toBe(false);
   });
 });
 
@@ -328,12 +273,11 @@ describe('evasion, point defence, shields', () => {
     sim.enqueue({ type: 'debug.spawnEnemy', template: 'ship.gun', x: 100, y: 50 });
     const fab = modulesOf(sim, 1, 'module.fabricator')[0] as number;
     aim(sim, 2, 1, fab);
-    const events = run(sim, 20 * 120);
-    const fired = ofType(events, 'weapon.fired').length;
-    expect(fired).toBeGreaterThanOrEqual(10);
-    const intercepted = ofType(events, 'projectile.intercepted').length;
-    expect(intercepted).toBeGreaterThan(0);
-    expect(intercepted).toBeLessThan(fired);
+    // Until the first interception (the two minutes and the share of missiles that get through are in combat.slow.test.ts).
+    const events: SimEvent[] = [];
+    for (let i = 0; i < 120 && !events.some((e) => e.type === 'projectile.intercepted'); i++) events.push(...run(sim, 20));
+    expect(ofType(events, 'weapon.fired').length).toBeGreaterThanOrEqual(1);
+    expect(ofType(events, 'projectile.intercepted').length).toBeGreaterThan(0);
   });
 });
 
@@ -402,50 +346,13 @@ describe('enemy AI, endings', () => {
   });
 });
 
-function countAmmo(sim: Sim, crate: number): number {
-  const s = sim.world.get(crate, StorageC)!;
-  return s.stacks.filter((x) => x.item === 'item.missile').reduce((n, x) => n + x.count, 0);
-}
-
-describe('determinism, saves, performance', () => {
-  const fightSim = (seed: number): Sim => {
-    const sim = newGame(seed, content);
-    sim.enqueue({ type: 'debug.spawnEnemy', template: 'ship.raider', x: 100, y: 50 });
-    sim.enqueue({ type: 'combat.setHold', ship: nth(sim, 1), hold: false });
-    return sim;
-  };
-  const withTargets = (sim: Sim): Sim => {
-    aim(sim, 1, 2, modulesOf(sim, 2, 'module.reactor')[0] as number);
-    return sim;
-  };
-
-  it('same seed and commands give an identical save after 2400 ticks of combat', () => {
-    const go = (): string => {
-      const sim = withTargets(fightSim(9));
-      const events = run(sim, 2400);
-      expect(ofType(events, 'weapon.fired').length).toBeGreaterThan(3);
-      return serialize(sim);
-    };
-    expect(go()).toBe(go());
-  });
-
-  it('round-trips a save taken with projectiles in flight', () => {
+describe('determinism and saves', () => {
+  it('a fight is replayable, and a save taken with projectiles in flight reloads into the same fight', () => {
     const sim = withTargets(fightSim(5));
-    for (let i = 0; i < 4000 && sim.world.query(ProjectileC).length === 0; i++) sim.step();
+    for (let i = 0; i < 1000 && sim.world.query(ProjectileC).length === 0; i++) sim.step();
     expect(sim.world.query(ProjectileC).length).toBeGreaterThan(0);
-    const json = serialize(sim);
-    const loaded = deserialize(json, content);
-    expect(serialize(loaded)).toBe(json);
-    run(sim, 600);
-    run(loaded, 600);
-    expect(serialize(loaded)).toBe(serialize(sim));
-  });
-
-  it('runs 2000 ticks of a two-ship fight to the end of the run (speed itself is the profiler\'s job)', () => {
-    const sim = withTargets(fightSim(2));
-    const before = sim.tick;
-    run(sim, 2000);
-    expect(sim.tick - before).toBe(2000);
+    // The shorter run (the full ones are in combat.slow.test.ts): two builds step 400 ticks, one reloaded at tick 250, projectiles in flight from about tick 180.
+    expectReplayable(() => withTargets(fightSim(5)), 400, { every: 100, saveAt: 250 });
   });
 });
 

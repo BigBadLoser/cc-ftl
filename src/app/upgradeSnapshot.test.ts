@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { content } from '../content';
-import { ModuleC, ShipC, WeaponC, newGame, playerShip } from '../sim';
+import { ShipC, WeaponC } from '../sim/combat/components';
+import { ModuleC } from '../sim/modules/components';
+import { newGame } from '../sim/newGame';
+import { playerShip } from '../sim/trade/player';
 import { shipIdOf } from '../sim/regions';
 import { buildCombat } from './combatSnapshot';
 import { buildModuleList } from './moduleSnapshot';

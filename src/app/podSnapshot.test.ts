@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { CombatC, FTL_CHARGE_SEC, START_NODE, galaxyIndex, newGame, playerShip } from '../sim';
+import { CombatC } from '../sim/combat/components';
+import { galaxyIndex, START_NODE } from '../sim/galaxy/state';
+import { newGame } from '../sim/newGame';
+import { playerShip } from '../sim/trade/player';
+import { FTL_CHARGE_SEC } from '../sim/tuning';
 import { content } from '../content';
 import { giveItems } from '../sim/story/effects';
 import { playerCrew } from '../sim/story/world';

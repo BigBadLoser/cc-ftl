@@ -9,6 +9,7 @@ import type { Command } from '../commands';
 import { CrewC, DraftedC, HealthC, JobC, NeedsC, PathC, PositionC, type Path } from '../crew/components';
 import { isIncapacitated, origin } from '../crew/helpers';
 import { findPath } from '../crew/pathfind';
+import { walkOpts } from '../eva/route';
 import { createCrew } from '../crew/spawn';
 import { AllegianceC, EquipC, FighterC } from '../fight/components';
 import { TraitsC } from '../crew/traits';
@@ -19,7 +20,7 @@ import { isTileWalkable } from '../modules/walk';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { HACK_MIN_SKILL, HACK_SEC } from '../tuning';
-import { HackedC } from './components';
+import { HackedC, StunC } from './components';
 import { assemblyAt, bayFree, cradleOf, isBay } from './bay';
 import { destroyJob } from '../items/stacks';
 import { shipIdOf, shipGrid } from '../regions';
@@ -46,7 +47,7 @@ export const robotHandlers: { [T in RobotCommand]: Handler<T> } = {
     if (shipIdOf(sim, pos) !== shipIdOf(sim, m)) return reject(sim, cmd.type, 'notAboard');
     let plan: { x: number; y: number; steps: { x: number; y: number }[] } | null = null;
     for (const t of footprintTiles(def, m.x, m.y, m.rot)) {
-      const steps = findPath(sim, shipIdOf(sim, pos), origin(pos), { x: t.x, y: t.y, adjacent: true });
+      const steps = findPath(sim, shipIdOf(sim, pos), origin(pos), { x: t.x, y: t.y, adjacent: true }, walkOpts(sim, cmd.id));
       if (steps && (!plan || steps.length < plan.steps.length)) plan = { x: t.x, y: t.y, steps };
     }
     if (!plan) return reject(sim, cmd.type, 'unreachable');
@@ -105,6 +106,7 @@ export const robotHandlers: { [T in RobotCommand]: Handler<T> } = {
     if (n && cmd.rest !== undefined) n.rest = Math.max(0, Math.min(100, cmd.rest));
     const hp = sim.world.get(cmd.id, HealthC);
     if (hp && cmd.hp !== undefined) hp.hp = Math.max(0, Math.min(hp.max, cmd.hp));
+    if (cmd.stun !== undefined) sim.world.add(cmd.id, StunC, { until: cmd.stun });
   },
   'debug.spawnCrew': (sim, cmd) => {
     const grid = shipGrid(sim, cmd.ship);

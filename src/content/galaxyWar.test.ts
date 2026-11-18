@@ -1,8 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import {
-  ShipC, clash, deserialize, econOf, galaxyIndex, newGame, newsFeed, portOf, portsAt, reportNews, resolveMeetings, serialize, stockAt,
-  type Sim,
-} from '../sim';
+import { ShipC } from '../sim/combat/components';
+import { clash } from '../sim/galaxy/clash';
+import { econOf, stockAt } from '../sim/galaxy/market';
+import { resolveMeetings } from '../sim/galaxy/meetings';
+import { newsFeed, report as reportNews } from '../sim/galaxy/news';
+import { portOf, portsAt } from '../sim/galaxy/portIndex';
+import { galaxyIndex } from '../sim/galaxy/state';
+import { newGame } from '../sim/newGame';
+import { deserialize, serialize } from '../sim/save';
+import type { Sim } from '../sim/sim';
 import { atWar } from '../sim/galaxy/clash';
 import { encounterKind } from '../sim/galaxy/encounters';
 import { nodesWithin, syncFleets } from '../sim/galaxy/fleets';

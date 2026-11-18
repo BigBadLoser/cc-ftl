@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { ScheduleBlock } from '../sim';
+import type { ScheduleBlock } from '../sim/ai/types';
 import { clickSelect, clockText, coverage, coverTone, matchPreset, paintRange, painted, targets } from './schedule';
 
 const row = (fill: ScheduleBlock, ...runs: [ScheduleBlock, number, number][]): ScheduleBlock[] => {

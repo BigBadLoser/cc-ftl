@@ -3,7 +3,7 @@ import { JobC, type Job } from '../crew/components';
 import { AirlockC } from '../modules/airlock';
 import { YardCrewC } from '../yard/types';
 import { SuitC } from '../eva/components';
-import { airlockOf, crew, world } from '../eva/airFixture';
+import { airlockOf, crew, world } from '../../../test/support/fixtures/air';
 import { shipGrid } from '../regions';
 import { Struct } from '../structure';
 import { TICK_HZ } from '../time';

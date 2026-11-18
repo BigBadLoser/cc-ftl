@@ -8,6 +8,7 @@ import { shipGrid } from '../regions';
 import type { ContentRegistry } from '../registry';
 import { Sim } from '../sim';
 import { DoorJam } from '../structure';
+import { step as run } from '../../../test/support/sim';
 
 const rows = ['#########', '#___#___#', '#___D___#', '#___#___#', '#########'];
 const all = (v: number): Priorities => ({
@@ -41,7 +42,6 @@ function spawn(sim: Sim, x: number, y: number): number {
   return id;
 }
 
-const run = (sim: Sim, n: number): void => { for (let i = 0; i < n; i++) sim.step(); };
 const door = (sim: Sim): number => shipGrid(sim, 1)!.get('door', 4, 2);
 
 describe('jammed doors', () => {

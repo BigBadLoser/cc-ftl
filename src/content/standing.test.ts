@@ -1,10 +1,20 @@
 import { describe, expect, it } from 'vitest';
-import {
-  SAVE_VERSION, TraderC, atWar, deserialize, galaxyIndex, gatedBlueprints, newGame, nodeOf, portBlueprints, reputationWith, rollTrader, serialize, spillSources,
-  standing, standings, stanceBetween, tierOf, unitPrice, type GalaxyContent, type Port, type Sim,
-} from '../sim';
+import { gatedBlueprints, portBlueprints } from '../sim/galaxy/blueprintShop';
+import { atWar } from '../sim/galaxy/clash';
+import type { GalaxyContent } from '../sim/galaxy/defs';
+import type { Port } from '../sim/galaxy/ports';
+import { spillSources, stanceBetween } from '../sim/galaxy/relations';
+import { standing, standings, tierOf } from '../sim/galaxy/standing';
+import { galaxyIndex, nodeOf } from '../sim/galaxy/state';
+import { newGame } from '../sim/newGame';
+import { deserialize, SAVE_VERSION, serialize } from '../sim/save';
+import type { Sim } from '../sim/sim';
+import { reputationWith, unitPrice } from '../sim/trade/pricing';
+import { rollTrader } from '../sim/trade/traders';
+import { TraderC } from '../sim/trade/types';
 import { portsAt } from '../sim/galaxy/portIndex';
 import { content } from '.';
+import { contentAtDanger } from '../../test/support/content';
 
 const galaxy = content.galaxy as unknown as GalaxyContent;
 const ids = Object.keys(content.galaxy.factions);
@@ -144,12 +154,11 @@ describe('faction stock specialities', () => {
 
 /** Every blueprint port of a revealed galaxy with its danger forced to the deepest tier. */
 function deepPorts(seed: number): { sim: Sim; ports: Port[] } {
-  const sim = newGame(seed, content);
+  const sim = newGame(seed, contentAtDanger(seed, 9));
   sim.step();
   sim.enqueue({ type: 'debug.galaxyReveal', radius: 14 });
   sim.step();
   const nodes = [...galaxyIndex(sim.galaxy).nodes.values()].sort((a, b) => (a.id < b.id ? -1 : 1));
-  for (const n of nodes) (nodeOf(sim, n.id) as { danger: number }).danger = 9;
   const ports = nodes.flatMap((n) => portsAt(sim, n.id)).filter((p) => {
     const s = nodeOf(sim, p.node)!.structures[Number(p.id.slice(p.id.indexOf('#') + 1))];
     return galaxy.structures[s!.def]?.services?.includes('blueprints');

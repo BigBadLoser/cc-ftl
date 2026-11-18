@@ -1,9 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { AssignmentC, CrewC, JobC, ModuleC, PathC, PositionC, newGame, operatorOf, placementError, type Sim } from '../../sim';
+import { operatorOf } from '../../sim/combat/operators';
+import { AssignmentC, CrewC, JobC, PathC, PositionC } from '../../sim/crew/components';
+import { ModuleC } from '../../sim/modules/components';
+import { placementError } from '../../sim/modules/spawn';
+import { newGame } from '../../sim/newGame';
+import type { Sim } from '../../sim/sim';
 import { operateJobsSystem } from '../../sim/systems/operateJobs';
 import { content } from '../index';
 import { shipIdOf, shipIds } from '../../sim/regions';
 import { abortTask } from '../../sim/ai/task';
+import { step } from '../../../test/support/sim';
 
 /** A crewless raider never fires back: nothing of ours breaks unless a test breaks it, so no repair job appears by itself. */
 const dummy = { ...content.ships['ship.raider'], crew: [] };
@@ -13,7 +19,7 @@ function setup(): Sim {
   for (let i = 0; i < 5; i++) sim.step();
   return sim;
 }
-const run = (sim: Sim, n: number, stop: () => boolean = () => false): void => { for (let i = 0; i < n && !stop(); i++) sim.step(); };
+const run = (sim: Sim, n: number, stop?: () => boolean): void => { step(sim, n, { stopBefore: stop }); }; // `stop` is checked before each step; events are left undrained
 const crewOf = (sim: Sim, role: string): number => sim.world.query(CrewC).find((c) => sim.world.get(c, CrewC)!.role === role) as number;
 const weaponsConsole = (sim: Sim): number =>
   sim.world.query(ModuleC).find((i) => sim.content.modules[sim.world.get(i, ModuleC)!.def]?.console === 'weapons' && shipIdOf(sim, sim.world.get(i, ModuleC)!) === shipIds(sim)[0]) as number;

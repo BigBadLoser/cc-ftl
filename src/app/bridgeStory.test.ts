@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { content } from '../content';
-import { newGame, type Sim } from '../sim';
+import { newGame } from '../sim/newGame';
+import type { Sim } from '../sim/sim';
 import { createBridge } from './bridge';
 import type { Loop, Speed } from './loop';
 
