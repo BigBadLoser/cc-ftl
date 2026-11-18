@@ -77,4 +77,4 @@ Territory, standing (reputation), fleets, traffic, speciality stock and which st
 | Alien nests / egg sacs | `sim/aliens/*` | Derelicts with hatching aliens | In game | sim/systems/eggSacs.ts; content/creatures.ts |
 | Sealed containers | `sim/shipgen/containerCells.ts` | Detachable cargo containers on freighters | In game | sim/containers/*; content modules container.2x4, container.3x6 |
 | Rogue robots on derelicts | `-` | Machine points in the ruin pass, run by an emergency core | Planned | issue #310 |
-| Shipgen backlog | `-` | Navy notch, scrapper size, carrier length, drone layout, truss glitches | Planned | issues #119, #103, #129 (engine capacity), #122 (room layout audit) |
+| Shipgen backlog | `-` | Navy notch, scrapper size, carrier length, drone layout, truss glitches | Planned | issues #119, #103, #122 (room layout audit) |

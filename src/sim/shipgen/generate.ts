@@ -19,6 +19,7 @@ import { ring, spine } from './topoNavy';
 import { salvage } from './topoSalvage';
 import { trimThin } from './salvage';
 import { validateTemplate } from './validate';
+import { templateHullLoad } from '../ftl/capacity';
 import { thinWalls } from './thinWalls';
 import { extractContainers, type PlacedContainer } from './containerCells';
 import { openBareDocks } from './openDocks';
@@ -282,10 +283,35 @@ function pickRole(rng: Rng, f: FactionDef, depth: number): { role: ShipRoleDef; 
 export const previewHull = (f: FactionDef, seed: number, depth: number): string =>
   pickWeighted(new Rng(attemptSeed(seed, 0)), hullChoices(f, depth)).id;
 
-/** One generation attempt (attempt `n` of `seed`): the result, or the stage that failed. */
+/** Times an attempt is built again with more engines when its hull came out bigger than its engines carry. */
+const ENGINE_TOP_UPS = 3;
+
+/** Engines a hull lacks to carry itself (`templateHullLoad`), at the capacity of the engines it has; 0 when it fits. */
+function enginesShort(defs: Record<string, ModuleDef>, t: Pick<ShipTemplate, 'rows' | 'modules'>): number {
+  const load = templateHullLoad(defs, t);
+  return load.over > 0 && load.engines > 0 ? Math.ceil(load.over / (load.capacity / load.engines)) : 0;
+}
+
+/**
+ * One generation attempt (attempt `n` of `seed`): the result, or the stage that failed. A hull its planned engines cannot carry is built
+ * again from the same seed with the engines it lacks added to the plan (the extra drives grow the hull a little, so each build checks
+ * again), up to `ENGINE_TOP_UPS` times; one still over fails `fitShell`'s check and is reseeded.
+ */
 export function generateAttempt(
   f: FactionDef, factionId: string, seed: number, depth: number, defs: Record<string, ModuleDef>, n: number,
 ): GenResult | string {
+  let extra = 0;
+  for (let k = 0; ; k++) {
+    const r = buildAttempt(f, factionId, seed, depth, defs, n, extra, k < ENGINE_TOP_UPS);
+    if (typeof r !== 'number') return r;
+    extra += r;
+  }
+}
+
+/** One build of an attempt with `extraEngines` over the budget. With `topUp`, a hull short of engines returns how many it lacks instead. */
+function buildAttempt(
+  f: FactionDef, factionId: string, seed: number, depth: number, defs: Record<string, ModuleDef>, n: number, extraEngines: number, topUp: boolean,
+): GenResult | string | number {
   const rng = new Rng(attemptSeed(seed, n));
   let role: ShipRoleDef;
   let archetype: ArchetypeId;
@@ -299,7 +325,7 @@ export function generateAttempt(
     const fam = pickWeighted(rng, hullChoices(f, depth)) as HullFamilyDef;
     role = { id: fam.id, weight: fam.weight, archetypes: [], ...(fam.bonus ? { bonus: fam.bonus } : {}), ...(fam.bays ? { bays: fam.bays } : {}) };
     archetype = 'sections';
-    plan = planShip(rng, f, role, depth, defs);
+    plan = planShip(rng, f, role, depth, defs, extraEngines);
     const r = arrangeHull(rng, f, fam, plan, defs);
     if (typeof r === 'string') return `${fam.id}: ${r}`;
     comp = r.A;
@@ -309,12 +335,18 @@ export function generateAttempt(
     topology = r.profile;
   } else {
     ({ role, archetype } = pickRole(rng, f, depth));
-    plan = planShip(rng, f, role, depth, defs);
+    plan = planShip(rng, f, role, depth, defs, extraEngines);
     b = new Builder(rng);
     topology = TOPOLOGIES[archetype as Exclude<ArchetypeId, 'sections'>](b, f, plan);
   }
   if (!topology) return `${archetype}: structure clash`;
-  return finishLayout(rng, f, factionId, seed, role, archetype, plan, b, topology, comp, profile, defs, n);
+  // The hull as arranged, on the engines its rooms hold, checked before the fit-out (whose thinner walls barely change its size).
+  const engines = specsOf(b).flatMap((sp) => (sp?.mods ?? []).filter((m) => defs[m]?.engine).map((def) => ({ def, x: 0, y: 0, rot: 0 })));
+  const short = topUp ? enginesShort(defs, { rows: b.cv.crop().rows, modules: engines }) : 0;
+  if (short > 0) return short;
+  const r = finishLayout(rng, f, factionId, seed, role, archetype, plan, b, topology, comp, profile, defs, n);
+  const after = topUp ? enginesShort(defs, r.template) : 0;
+  return after > 0 ? after : r;
 }
 
 /** Extra validation of a finished template (stations add their own rules), returning problems. */
@@ -364,13 +396,18 @@ export function finishLayout(
   const roles = labels.map((l) => roleOfLabel(l));
   const { rows: framed, containers } = extractContainers(drawn);
   const rows = pruneDoors(framed, roomOf, width, roles);
-  const byKey = new Map(b.parts.map((p) => [p.key, p.spec]));
-  const specs = labels.map((l) => byKey.get(l.chunk) ?? b.chunkSpecs.get(`${l.chunk}:${l.letter}`));
+  const specs = specsOf(b);
   return {
     ...fitShell(rng, f, factionId, seed, role, archetype, plan, { rows, roomOf, width, height, roles, specs, containers }, topology, defs, n, opts,
       comp ? (hall) => comp.debug(ox, oy, width, height, rows, hall, profile) : undefined),
     thin,
   };
+}
+
+/** The planned contents of each room the builder drew, by room label. */
+function specsOf(b: Builder): (RoomSpec | undefined)[] {
+  const byKey = new Map(b.parts.map((p) => [p.key, p.spec]));
+  return b.cv.labels.map((l) => byKey.get(l.chunk) ?? b.chunkSpecs.get(`${l.chunk}:${l.letter}`));
 }
 
 /** A built structure, cropped: its tiles, the room of each floor tile, and each room's role and planned contents. */
@@ -407,6 +444,9 @@ export function fitShell(
   template.modules = [...(template.modules ?? []), ...(shell.containers ?? []).map((k) => ({ ...k, ...stockOf(rng, f, defs[k.def]) }))];
   const problems = d.error ? [d.error] : validateTemplate(template, defs, opts.immobile ? { immobile: true } : {});
   if (problems.length === 0 && opts.check) problems.push(...opts.check(template, defs));
+  // A generated ship that jumps carries its hull on its engines (ftl/capacity.ts), as the player's does (#129). Hand-drawn hulls are not held to it.
+  const load = opts.immobile ? null : templateHullLoad(defs, template);
+  if (problems.length === 0 && load && load.over > 0) problems.push(`engines carry ${load.capacity} of ${load.tiles} tiles`);
   const hall = (x: number, y: number): boolean => roles[roomOf[y * width + x] ?? -1] === 'hall' && !dockTile.has(y * width + x);
   const metrics = layoutMetrics(template, hall, defs);
   const bad = metricViolation(metrics, f.metrics);

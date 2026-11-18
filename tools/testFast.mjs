@@ -31,8 +31,13 @@ const flag = (name) => {
 const base = flag('--base');
 const depth = Number(flag('--depth') ?? 2);
 
+const has = (ref) => { try { git('rev-parse', '--verify', '--quiet', `${ref}^{commit}`); return true; } catch { return false; } };
+// A sandbox worktree may have no origin/main: try one fetch, then fail with the fix (the harness check then reports it).
 const verify = (ref) => {
-  try { git('rev-parse', '--verify', '--quiet', `${ref}^{commit}`); } catch { console.error(`testFast: base ${ref} not found (git fetch origin main?)`); process.exit(2); }
+  if (has(ref)) return;
+  const m = /^origin\/(.+)$/.exec(ref);
+  if (m) { try { git('fetch', '--quiet', 'origin', `${m[1]}:refs/remotes/origin/${m[1]}`); } catch { /* offline: reported below */ } }
+  if (!has(ref)) { console.error(`testFast: base ${ref} not found and could not be fetched (git fetch origin main)`); process.exit(2); }
 };
 const vitest = (vargs, env = {}) => {
   const r = spawnSync('npx', ['vitest', 'run', '--passWithNoTests', ...vargs, ...args], { stdio: 'inherit', env: { ...process.env, ...env } });

@@ -103,7 +103,6 @@ in #392. Next is more to find per node (#171; danger bands #382 folded in: no vi
 - **Open:** recruiting prisoners (#492); #300 in-node events; #303 augments as stat modifiers; #305 shuttle landing in a bay that breaks on approach.
 - **Designed, not started:** new modules (DESIGN.md "New modules"); crew implants (#311) needs its design pass. Addictions are parked.
 - **Waiting on the user:** shield art; a feature-completeness review of #205, #238 and #203.
-- **Temporary:** NPC ships ignore engine capacity until shipgen gives big hulls enough engines (#129).
 
 ## Done since #308 (one-liners; detail in the PRs, older notes in STATUS_ARCHIVE.md)
 
@@ -141,7 +140,7 @@ The planned feature order lives in [ROADMAP.md](ROADMAP.md); the list below is t
 1. The "In progress" list above.
 2. Engine Mk II/III art (#105).
 3. Renderer follow-ups (#123): render on demand, cached static layers, per-sprite culling.
-4. Shipgen session (separate): generator backlog (#119), room layout audit (#122), hull glitches (#103), NPC engine capacity (#129).
+4. Shipgen session (separate): generator backlog (#119), room layout audit (#122), hull glitches (#103).
 
 Other open issues: #65 sim performance, #54, #53, #52, #50, #49, #48, #47, #158, #157, #193, #139, #212, #245, #485, #490, #320-#322, #162, #130-#133.
 
