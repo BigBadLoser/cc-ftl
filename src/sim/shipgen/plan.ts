@@ -173,10 +173,14 @@ export function planShip(rng: Rng, f: FactionDef, role: ShipRoleDef, depth: numb
   // Defence drones (DESIGN.md "Drones"): a bay in the AI room (living crews) or in its own sealed pod (drone ships); it needs the core to run them.
   const dronesOn = !!f.defenceDrones && f.aiCore && depth >= ENEMY_DRONE_MIN_DEPTH;
   const drones = { def: 'drone.defence', count: ENEMY_DRONES_BASE + (depth >= ENEMY_DRONE_SECOND_DEPTH ? 1 : 0) };
+  // The core runs the point defence from wherever the mounts stand, so they are hull mounts of their own,
+  // not furniture of the core's room: weapon rooms on crewed ships, sealed pods on drone ships.
   const core = f.aiCore && f.living
-    ? { role: 'core' as const, mods: ['module.aiCore', ...Array<string>(pdCount).fill('module.pointDefense'), ...(dronesOn ? ['module.droneBay'] : [])], w: 3 + 3 * (pdCount + (dronesOn ? 1 : 0)), h: 3, ...(dronesOn ? { drones } : {}) }
+    ? { role: 'core' as const, mods: ['module.aiCore', ...(dronesOn ? ['module.droneBay'] : [])], w: 3 + (dronesOn ? 3 : 0), h: 3, ...(dronesOn ? { drones } : {}) }
     : null;
-  const pd: RoomSpec[] = !f.living ? Array.from({ length: pdCount }, () => ({ role: 'weapons' as const, mods: ['module.pointDefense'], w: 3, h: 3 })) : [];
+  const pdRooms = Array.from({ length: pdCount }, () => ({ role: 'weapons' as const, mods: ['module.pointDefense'], w: 3, h: 3 }));
+  if (f.living) weapons.push(...pdRooms);
+  const pd: RoomSpec[] = !f.living ? pdRooms : [];
   if (!f.living && dronesOn) pd.push({ role: 'weapons', mods: ['module.droneBay'], w: 3, h: 3, drones });
   const crew = [...f.crew.required];
   while (crew.length < Math.max(f.crew.required.length, b.crew)) crew.push(pickWeighted(rng, f.crew.pool));
@@ -211,7 +215,12 @@ export function planShip(rng: Rng, f: FactionDef, role: ShipRoleDef, depth: numb
   };
   const supply = defs['module.reactor']?.power ?? 50;
   const cap = Math.max(1, b.reactors) + Math.ceil(((booked + extraEngines) * ENGINE_DEMAND) / supply);
-  while (plan.weapons.length > 1 && Math.ceil(demandOf() / supply) > cap) plan.weapons.pop();
+  // Guns go before point defence when power is short (the last gun first).
+  const isPd = (r: RoomSpec): boolean => r.mods.every((m) => !!defs[m]?.pointDefense);
+  while (plan.weapons.length > 1 && Math.ceil(demandOf() / supply) > cap) {
+    const gun = plan.weapons.map(isPd).lastIndexOf(false);
+    plan.weapons.splice(gun >= 0 ? gun : plan.weapons.length - 1, 1);
+  }
   plan.reactors = Math.max(1, Math.ceil(demandOf() / supply));
   return plan;
 }

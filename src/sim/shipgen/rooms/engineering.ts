@@ -1,6 +1,6 @@
 import type { RoomRecipe } from './types';
 
-/** Engineering (reactor rooms): reactors with clear floor around them for access, one or two battery banks, a console, lockers and racks on the walls. */
+/** Engineering (reactor rooms): reactors with clear floor around them for access, one or two battery banks (the ship's only ones), lockers and racks on the walls. */
 export const engineering = {
   fill: 0.5,
   arrangements: [
@@ -8,7 +8,6 @@ export const engineering = {
       name: 'core', weight: 2, steps: [
         { mod: 'module.reactor', count: 'spec', centre: 'y', clear: 1, row: true },
         { mod: 'module.battery', count: 2, wall: 'long', row: true },
-        { mod: 'module.console', count: 1, wall: 'any' },
         { mod: 'module.storage_locker', count: 'fill', wall: 'any', row: true },
       ],
     },

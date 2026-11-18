@@ -1,39 +1,20 @@
 import type { Arrangement, RoomRecipe } from './types';
 
 /**
- * Recipes for rooms built around hull or roof mounts: weapons, shields, engines, docks and hangars. Their planned
- * modules keep the generic placer and its mount rules (no 'spec' steps here); recipes only furnish around them:
- * a duty console, battery banks, lockers and racks on the walls, with access and the door approach kept clear.
+ * Recipes for rooms built around hull or roof mounts: shields, engines, docks and hangars. Their planned modules keep the
+ * generic placer and its mount rules (no 'spec' steps here); recipes only furnish around them: lockers and racks on the
+ * walls, with access and the door approach kept clear. Gun rooms have no recipe: they hold their guns and nothing else.
+ * No spare consoles and no battery banks here (batteries stand with the reactors).
  */
 const around = (name: string, weight: number, steps: Arrangement['steps']): Arrangement => ({ name, weight, steps });
-
-export const weapons = {
-  fill: 0.6,
-  arrangements: [
-    around('loader', 2, [
-      { mod: 'module.storage_rack', count: 2, wall: 'any', row: true },
-      { mod: 'module.battery', count: 1, wall: 'any' },
-      { mod: 'module.storage_locker', count: 1, wall: 'any' },
-    ]),
-    around('duty', 1, [
-      { mod: 'module.console', count: 1, wall: 'any', face: 'in' },
-      { mod: 'module.battery', count: 1, wall: 'any' },
-      { mod: ['module.storage_locker', 'module.storage_rack'], count: 2, wall: 'any', row: true },
-    ]),
-  ],
-} as const satisfies RoomRecipe;
 
 export const shields = {
   fill: 0.6,
   arrangements: [
-    around('banks', 2, [
-      { mod: 'module.battery', count: 2, wall: 'any', row: true },
-      { mod: 'module.storage_locker', count: 2, wall: 'any', row: true },
-    ]),
-    around('monitor', 1, [
-      { mod: 'module.console', count: 1, wall: 'any' },
-      { mod: 'module.battery', count: 1, wall: 'any' },
+    around('lockers', 2, [{ mod: 'module.storage_locker', count: 2, wall: 'any', row: true }]),
+    around('stores', 1, [
       { mod: 'module.storage_rack', count: 1, wall: 'any' },
+      { mod: 'module.storage_locker', count: 1, wall: 'any' },
     ]),
   ],
 } as const satisfies RoomRecipe;
@@ -41,14 +22,9 @@ export const shields = {
 export const engines = {
   fill: 0.6,
   arrangements: [
-    around('control', 2, [
-      { mod: 'module.console', count: 1, wall: 'fore' },
-      { mod: 'module.battery', count: 1, wall: 'any' },
-      { mod: 'module.storage_locker', count: 2, wall: 'any', row: true },
-    ]),
+    around('lockers', 2, [{ mod: 'module.storage_locker', count: 2, wall: 'any', row: true }]),
     around('workshop', 1, [
       { mod: 'module.storage_rack', count: 1, wall: 'long' },
-      { mod: 'module.battery', count: 1, wall: 'any' },
       { mod: 'module.storage_locker', count: 2, wall: 'any', row: true },
     ]),
   ],
