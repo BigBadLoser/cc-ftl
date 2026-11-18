@@ -6,6 +6,9 @@ import type { Rng } from '../../rng';
  * the ones settled on the option sheets (docs/SHIPGEN_V4.md, "Hull shape decisions"): a nose (or a command pod), body
  * sections joined by 2:1 tapers, an optional split (a launch lane open out of the stern), gun mounts (swept wings or
  * embrasures cut into the side), swept wings at the rear, and a stern.
+ *
+ * The outline is held as edges, one half-width per column, so every part is a change to an edge and a final pass can
+ * take out one-tile spikes and notches wherever parts meet.
  */
 
 export type Range = readonly [number, number];
@@ -13,7 +16,7 @@ export type Range = readonly [number, number];
 /** Nose styles, from the sheets: stepped (A2), round (D1, D2), round onto a straight cheek (DG), steep then gentle (AD). */
 export type NoseStyle = 'stepped' | 'round' | 'cheek' | 'steep';
 
-export interface Nose { style: NoseStyle; len: Range; /** Half-width of the flat front. */ front: Range }
+export interface Nose { style: NoseStyle | readonly NoseStyle[]; len: Range; /** Half-width of the flat front. */ front: Range }
 
 /** A command pod at the bow: flat-fronted and narrower than the body, tapering back into it. */
 export interface Pod { len: Range; half: Range }
@@ -23,24 +26,35 @@ export interface Section { len: Range; half: Range }
 /** A launch lane open out of the stern, from a V at `at` (fraction of the body) to the stern. */
 export interface Split { at: Range; lane: Range }
 
-/** Gun mounts: a swept wing pair (3a; `cut` trims its trailing edge, 3d; `rake` 3 is the long root, 3c) or embrasures cut into the side (5a). */
-export type Mount =
-  | { kind: 'wing'; count: Range; len: Range; reach: Range; rake?: number; cut?: boolean; span: Range }
-  | { kind: 'embrasure'; count: Range; len: Range; depth: Range; span: Range };
+/** Optional parts carry a chance (default 1), so one profile varies between seeds. */
+interface Optional { chance?: number }
 
-/** Sterns: a flat drive bank (S1), a flared drive section (S7), quarter flares (S2), drive pods on pylons (S3), a tapered tail (S4). */
-export interface Stern { kind: 'bank' | 'flare' | 'quarters' | 'pylons' | 'tail'; len: Range; out: Range; /** Tiles along per tile out (flare, tail). */ rate?: number }
+/**
+ * Gun mounts. A wing pair is a swept blister (3a; `cut` sweeps its trailing edge forward too, 3d; `rake` 3 is the long
+ * root, 3c). Embrasures are notches cut into a straight side (5a); the hull left between two notches is a gun's blister,
+ * at least `tooth` long, so each has room for a gun bay behind it.
+ */
+export type Mount = Optional & (
+  | { kind: 'wing'; count: Range; len: Range; reach: Range; rake?: number; cut?: boolean; span: Range }
+  | { kind: 'embrasure'; count: Range; len: Range; depth: Range; tooth: number; span: Range });
+
+/**
+ * Sterns: a flat drive bank (S1), a flared drive section (S7), quarter flares (S2), drive pods on pylons (S3), a tapered
+ * tail (S4). Quarters and pylons stand `aft` tiles past the stern.
+ */
+export interface Stern { kind: 'bank' | 'flare' | 'quarters' | 'pylons' | 'tail'; len: Range; out: Range; /** Tiles along per tile out (flare, tail). */ rate?: number; aft?: Range }
 
 export interface Profile {
   id: string;
   nose?: Nose;
   pod?: Pod;
   sections: readonly Section[];
-  split?: Split;
+  split?: Split & Optional;
   mounts?: readonly Mount[];
-  /** Swept wings at the rear, their trailing edge at the stern. */
-  rearWings?: { len: Range; reach: Range };
-  stern: Stern;
+  /** Swept wings at the rear: the leading edge raked 2:1, the trailing edge swept forward over `sweep` tiles. */
+  rearWings?: { len: Range; reach: Range; sweep?: Range } & Optional;
+  /** One of these, picked per seed. */
+  stern: Stern | readonly Stern[];
 }
 
 export interface Silhouette {
@@ -51,6 +65,8 @@ export interface Silhouette {
 }
 
 const pick = (rng: Rng, r: Range): number => rng.int(r[0], r[1]);
+const one = <T>(rng: Rng, v: T | readonly T[]): T => (Array.isArray(v) ? rng.pick(v as readonly T[]) : (v as T));
+const has = (rng: Rng, o: Optional | undefined): boolean => o !== undefined && (o.chance === undefined || rng.chance(o.chance));
 
 /** A nose's half-width at step i of n, from its flat front out to the body's half-width h. */
 function noseHalf(style: NoseStyle, i: number, n: number, front: number, h: number): number {
@@ -63,94 +79,147 @@ function noseHalf(style: NoseStyle, i: number, n: number, front: number, h: numb
   }
 }
 
-export function drawSilhouette(rng: Rng, p: Profile): Silhouette {
+/** The body's half-widths bow to stern: nose or pod, then the sections joined by 2:1 tapers. */
+function body(rng: Rng, p: Profile): { outer: number[]; bodyStart: number } {
   const secs = p.sections.map((s) => ({ len: pick(rng, s.len), half: pick(rng, s.half) }));
   const H0 = (secs[0] as { half: number }).half;
   const outer: number[] = [];
-  // Bow: a nose from its flat front out to the first section, or a command pod and a 2:1 taper into the body.
   if (p.pod) {
     const len = pick(rng, p.pod.len), half = pick(rng, p.pod.half);
     for (let i = 0; i < len; i++) outer.push(half);
     for (let h = half + 1; h <= H0; h++) outer.push(h, h);
   } else if (p.nose) {
-    const len = pick(rng, p.nose.len), front = pick(rng, p.nose.front);
-    for (let i = 0; i < len; i++) outer.push(Math.min(H0, noseHalf(p.nose.style, i, len, front, H0)));
+    const len = pick(rng, p.nose.len), front = pick(rng, p.nose.front), style = one(rng, p.nose.style);
+    for (let i = 0; i < len; i++) outer.push(Math.min(H0, noseHalf(style, i, len, front, H0)));
   }
   const bodyStart = outer.length;
   let prev = H0;
   for (const s of secs) {
     const start = outer.length;
-    for (let h = prev; h !== s.half; h += s.half > prev ? 1 : -1) outer.push(h + (s.half > prev ? 1 : 0), h + (s.half > prev ? 1 : 0));
+    while (prev < s.half) { prev++; outer.push(prev, prev); }
+    while (prev > s.half) { outer.push(prev, prev); prev--; }
     while (outer.length - start < s.len) outer.push(s.half);
-    prev = s.half;
   }
-  const st = p.stern, sLen = pick(rng, st.len), sOut = pick(rng, st.out), rate = st.rate ?? 2;
-  // Flare and tail reshape the last stretch of the body itself.
-  if (st.kind === 'flare' || st.kind === 'tail') {
-    const L0 = outer.length;
+  return { outer, bodyStart };
+}
+
+/**
+ * Take out bumps and dents up to three columns wide (a run with both neighbours lower, or both higher), so no part
+ * leaves a lone tile or a one-tile ledge where it meets another. Embrasures are wider than this and stay.
+ */
+function smooth(e: number[], lo = 0, hi = e.length): void {
+  for (let pass = 0; pass < 3; pass++) {
+    for (let x = lo + 1; x < hi - 1; x++) {
+      const v = e[x] as number;
+      let end = x;
+      while (end + 1 < hi && e[end + 1] === v) end++;
+      if (end + 1 >= hi || end - x + 1 > 3) { x = end; continue; }
+      const a = e[x - 1] as number, c = e[end + 1] as number;
+      const to = v > a && v > c ? Math.max(a, c) : v < a && v < c ? Math.min(a, c) : v;
+      for (let k = x; k <= end; k++) e[k] = to;
+      x = end;
+    }
+  }
+}
+
+/** Columns [x0, x1) where the body's side is straight, with `margin` straight tiles either side. */
+const straight = (outer: number[], x0: number, x1: number, margin: number): boolean => {
+  const a = Math.max(0, x0 - margin), b = Math.min(outer.length, x1 + margin);
+  for (let x = a; x < b; x++) if (outer[x] !== outer[x0]) return false;
+  return true;
+};
+
+function addMounts(rng: Rng, p: Profile, outer: number[], top: number[], bodyStart: number, sternFrom: number): void {
+  const L = outer.length;
+  const pos = (f: number): number => bodyStart + Math.floor(f * (L - bodyStart));
+  for (const m of p.mounts ?? []) {
+    if (!has(rng, m)) continue;
+    const len = pick(rng, m.len);
+    const a = pos(m.span[0]), b = Math.min(pos(m.span[1]), sternFrom) - len;
+    if (b < a) continue;
+    if (m.kind === 'wing') {
+      const n = pick(rng, m.count), reach = pick(rng, m.reach), rake = m.rake ?? 2;
+      for (let i = 0; i < n; i++) {
+        const x0 = n === 1 ? Math.floor((a + b) / 2) : Math.round(a + ((b - a) * i) / (n - 1));
+        const side = Math.min(...outer.slice(x0, x0 + len));
+        for (let k = 0; k < len; k++) {
+          let r = Math.min(reach, Math.floor(k / rake) + 1);
+          // A cut trailing edge sweeps forward 2:1 from the tip, ending a full step out so no lone tile is left.
+          if (m.cut) r = Math.min(r, Math.floor((len - 1 - k) / 2) + 2);
+          const x = x0 + k;
+          top[x] = Math.max(top[x] as number, side + r);
+        }
+      }
+    } else {
+      // Embrasures: notches on a straight stretch, each blister between them at least a tooth long.
+      const depth = pick(rng, m.depth);
+      let n = pick(rng, m.count);
+      const fits = (k: number): number[] | null => {
+        const run = k * len + (k - 1) * m.tooth;
+        if (run > b + len - a) return null;
+        const x0 = a + Math.floor((b + len - a - run) / 2);
+        const xs = Array.from({ length: k }, (_, i) => x0 + i * (len + m.tooth));
+        return straight(outer, x0, x0 + run, 2) ? xs : null;
+      };
+      let xs = fits(n);
+      while (!xs && n > 1) xs = fits(--n);
+      for (const x0 of xs ?? []) for (let x = x0; x < x0 + len; x++) top[x] = (outer[x] as number) - depth;
+    }
+  }
+}
+
+export function drawSilhouette(rng: Rng, p: Profile): Silhouette {
+  const { outer, bodyStart } = body(rng, p);
+  const st = one(rng, p.stern), sLen = pick(rng, st.len), sOut = pick(rng, st.out), rate = st.rate ?? 2;
+  const L = outer.length;
+  // Flare and tail reshape the last stretch of the body itself; mounts stay clear of it.
+  const shaped = st.kind === 'flare' || st.kind === 'tail';
+  if (shaped) {
     for (let i = 0; i < sLen; i++) {
-      const x = L0 - sLen + i;
-      const d = Math.min(sOut, Math.floor(i / rate) + 1);
+      const x = L - sLen + i, d = Math.min(sOut, Math.floor(i / rate) + 1);
       outer[x] = (outer[x] as number) + (st.kind === 'flare' ? d : -d);
     }
   }
-  const L = outer.length;
+  const rw = has(rng, p.rearWings) ? p.rearWings : undefined;
+  const rwLen = rw ? pick(rng, rw.len) : 0;
+  const sternFrom = L - Math.max(shaped || st.kind !== 'bank' ? sLen : 0, rwLen) - 2;
+  const top = outer.slice();
+  addMounts(rng, p, outer, top, bodyStart, sternFrom);
+  if (rw) {
+    const reach = pick(rng, rw.reach), sweep = rw.sweep ? pick(rng, rw.sweep) : 0;
+    for (let k = 0; k < rwLen; k++) {
+      const x = L - rwLen + k, back = rwLen - 1 - k;
+      let r = Math.min(reach, Math.floor(k / 2) + 1);
+      if (back < sweep) r = Math.min(r, reach - (sweep - back) + 1);
+      top[x] = Math.max(top[x] as number, (outer[x] as number) + Math.max(1, r));
+    }
+  }
+  smooth(top, 1, L);
   const inner = Array<number>(L).fill(-1);
-  if (p.split) {
-    const x0 = bodyStart + Math.floor(((L - bodyStart) * pick(rng, [Math.round(p.split.at[0] * 100), Math.round(p.split.at[1] * 100)])) / 100);
-    const lane = pick(rng, p.split.lane);
+  if (p.split && has(rng, p.split)) {
+    const f = rng.int(Math.round(p.split.at[0] * 100), Math.round(p.split.at[1] * 100)) / 100;
+    const x0 = bodyStart + Math.floor((L - bodyStart) * f), lane = pick(rng, p.split.lane);
     for (let x = x0; x < L; x++) inner[x] = Math.min(lane, Math.floor((x - x0) / 2));
   }
-  const maxHalf = Math.max(...outer) + 12;
+
+  const aft = st.aft ? pick(rng, st.aft) : 2;
+  const maxHalf = Math.max(...top) + 12;
   const axis = maxHalf;
-  const grid = Array.from({ length: 2 * maxHalf + 1 }, () => Array<string>(L + 12).fill('.'));
+  const grid = Array.from({ length: 2 * maxHalf + 1 }, () => Array<string>(L + aft + 8).fill('.'));
   const put = (x: number, y: number, c = '#'): void => { const row = grid[axis + y]; if (row && x >= 0 && x < row.length && (c === '#' || row[x] === '.')) row[x] = c; };
-  const cut = (x: number, y: number): void => { const row = grid[axis + y]; if (row && x >= 0 && x < row.length) row[x] = '.'; };
   const both = (x: number, y: number, c = '#'): void => { put(x, y, c); put(x, -y, c); };
-  for (let x = 0; x < L; x++) for (let y = 0; y <= (outer[x] as number); y++) if (y > (inner[x] as number)) both(x, y);
-  // Mounts, along the body.
-  const at = (span: Range, n: number, len: number, i: number): number => {
-    const a = bodyStart + Math.floor(span[0] * (L - bodyStart)), b = bodyStart + Math.floor(span[1] * (L - bodyStart)) - len;
-    return n === 1 ? Math.floor((a + b) / 2) : Math.round(a + ((b - a) * i) / (n - 1));
-  };
-  for (const m of p.mounts ?? []) {
-    const n = pick(rng, m.count), len = pick(rng, m.len);
-    for (let i = 0; i < n; i++) {
-      const x0 = at(m.span, n, len, i);
-      const side = Math.min(...outer.slice(x0, x0 + len));
-      if (m.kind === 'wing') {
-        const reach = pick(rng, m.reach), rake = m.rake ?? 2;
-        for (let x = x0; x < x0 + len; x++) {
-          const k = x - x0;
-          let r = Math.min(reach, Math.floor(k / rake) + 1);
-          if (m.cut && k >= len - 2) r = Math.max(1, r - (k - (len - 3)));
-          for (let d = 1; d <= r; d++) both(x, side + d);
-        }
-      } else {
-        const depth = pick(rng, m.depth);
-        for (let x = x0; x < x0 + len; x++) for (let d = 0; d < depth; d++) { cut(x, side - d); cut(x, -(side - d)); }
-      }
-    }
-  }
-  // Swept wings at the rear: the leading edge raked 2:1, the trailing edge at the stern.
-  if (p.rearWings) {
-    const len = pick(rng, p.rearWings.len), reach = pick(rng, p.rearWings.reach);
-    for (let x = L - len; x < L; x++) {
-      const r = Math.min(reach, Math.floor((x - (L - len)) / 2) + 1);
-      for (let d = 1; d <= r; d++) both(x, (outer[x] as number) + d);
-    }
-  }
+  for (let x = 0; x < L; x++) for (let y = (inner[x] as number) + 1; y <= (top[x] as number); y++) both(x, y);
   // Quarter flares and pylon pods stand past the stern's sides.
-  const half = outer[L - 1] as number;
+  const half = top[L - 1] as number;
   if (st.kind === 'quarters') {
-    for (let x = L - sLen; x < L + 2; x++) {
+    for (let x = L - sLen; x < L + aft; x++) {
       const r = Math.min(sOut, Math.floor((x - (L - sLen)) / 2) + 1);
       for (let y = half - 3; y <= half + r; y++) both(x, y);
     }
   }
   if (st.kind === 'pylons') {
     const pod = 3, gap = 2, y0 = half + gap + 1;
-    for (let x = L - sLen; x < L + 2; x++) {
+    for (let x = L - sLen; x < L + aft; x++) {
       const t = Math.min(pod - 1, Math.floor((x - (L - sLen)) / 2) + 1);
       for (let y = y0 + (pod - 1 - t); y < y0 + pod; y++) both(x, y);
     }
@@ -164,6 +233,6 @@ export function drawSilhouette(rng: Rng, p: Profile): Silhouette {
   const used = grid.map((r) => r.join(''));
   const ys = used.flatMap((r, y) => (/[#=]/.test(r) ? [y] : []));
   const y0 = Math.min(...ys), y1 = Math.max(...ys);
-  const w = Math.max(...used.map((r) => r.search(/>?$/) >= 0 ? Math.max(r.lastIndexOf('#'), r.lastIndexOf('>')) : -1)) + 1;
+  const w = Math.max(...used.map((r) => Math.max(r.lastIndexOf('#'), r.lastIndexOf('>')))) + 1;
   return { rows: used.slice(y0, y1 + 1).map((r) => r.slice(0, w)), axis: axis - y0, length: w };
 }
