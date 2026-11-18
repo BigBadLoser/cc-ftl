@@ -1,9 +1,10 @@
 import type { Arrangement, RoomRecipe } from './types';
 
 /**
- * Recipes for rooms built around hull or roof mounts: shields, engines, docks and hangars. Their planned modules keep the
+ * Recipes for rooms built around hull or roof mounts: shields, docks and hangars. Their planned modules keep the
  * generic placer and its mount rules (no 'spec' steps here); recipes only furnish around them: lockers and racks on the
- * walls, with access and the door approach kept clear. Gun rooms have no recipe: they hold their guns and nothing else.
+ * walls, with access and the door approach kept clear. Gun and engine rooms have no recipe: they hold their guns or
+ * engines and nothing else.
  * No spare consoles and no battery banks here (batteries stand with the reactors).
  */
 const around = (name: string, weight: number, steps: Arrangement['steps']): Arrangement => ({ name, weight, steps });
@@ -15,17 +16,6 @@ export const shields = {
     around('stores', 1, [
       { mod: 'module.storage_rack', count: 1, wall: 'any' },
       { mod: 'module.storage_locker', count: 1, wall: 'any' },
-    ]),
-  ],
-} as const satisfies RoomRecipe;
-
-export const engines = {
-  fill: 0.6,
-  arrangements: [
-    around('lockers', 2, [{ mod: 'module.storage_locker', count: 2, wall: 'any', row: true }]),
-    around('workshop', 1, [
-      { mod: 'module.storage_rack', count: 1, wall: 'long' },
-      { mod: 'module.storage_locker', count: 2, wall: 'any', row: true },
     ]),
   ],
 } as const satisfies RoomRecipe;

@@ -246,6 +246,27 @@ const helmFits = (need: readonly string[], r: { w: number; h: number; defs: Reco
   return need.includes(HELM) && row.reduce((n, m) => n + (r.defs[m]?.footprint[0] ?? 2), 0) <= r.w && Math.max(...row.map((m) => r.defs[m]?.footprint[1] ?? 2)) + 1 <= r.h;
 };
 
+/**
+ * HS: the helm in the middle of the back wall, the consoles on the side walls facing in (the first beside the helm instead,
+ * with `beside`, where the back wall has room), stacked from the back; below the helm's row where they would crowd it.
+ */
+function helmSides(c: Ctx, beside: boolean): Piece[] {
+  const fp = (m: string): readonly [number, number] => c.defs[m]?.footprint ?? [2, 2];
+  const [hw, hd] = fp(HELM), hx = Math.floor((c.w - hw) / 2), ops = c.need.filter((m) => OPS.includes(m));
+  const out: Piece[] = [P(HELM, hx, 0, 0)];
+  let rest = ops;
+  const first = ops[0];
+  if (beside && first && hx + hw + 1 + fp(first)[0] <= c.w) { out.push(P(first, hx + hw + 1, 0, 0)); rest = ops.slice(1); }
+  // A side console stands its depth off the wall, its seat a tile further in: clear of the helm, or start below it.
+  const start = (d: number): number => (hx >= d + 1 ? 0 : hd);
+  let ly = -1, ry = -1;
+  rest.forEach((m, k) => {
+    const [len, d] = fp(m);
+    if (k % 2 === 0) { if (ly < 0) ly = start(d); out.push(P(m, 0, ly, 3)); ly += len; } else { if (ry < 0) ry = start(d); out.push(P(m, c.w - d, ry, 1)); ry += len; }
+  });
+  return out;
+}
+
 /** Consoles on the back wall from corner to corner, and the ops room's table between the outer two where it fits. */
 function consoleRow(c: Ctx, list: readonly string[]): Piece[] {
   const sizes = list.map((m) => size(c, m)), x0 = off(c, 0, 0, 0, 1), x1 = off(c, c.w - 1, 0, c.w - 1, -1);
@@ -299,6 +320,8 @@ export const RULES: Partial<Record<RoomRole, readonly RuleArrangement[]>> = {
     { name: 'OP ops room, consoles on the back wall, a table', weight: 1, when: (n, r) => !n.includes('module.helm') && n.some((m) => OPS.includes(m)) && r.w >= 5 && r.h >= 5, rule: op },
     // The helm amid the consoles, all facing the back wall: a ship's bridge has its door aft, so they face the bow.
     { name: 'HB helm bridge, the helm amid the consoles on the back wall', weight: 1, when: helmFits, rule: (c) => consoleRow(c, helmRow(c.need)).filter((p) => p.def !== T && p.def !== 'module.chair') },
+    { name: 'HS helm bridge, the consoles on the side walls', weight: 1, when: (n, r) => n.includes(HELM) && r.w >= 4 && r.h >= 4, rule: (c) => helmSides(c, false) },
+    { name: 'HS2 helm bridge, a console beside the helm, the rest on the side walls', weight: 1, when: (n, r) => n.includes(HELM) && r.w >= 7 && r.h >= 4, rule: (c) => helmSides(c, true) },
   ],
   cargo: [{
     name: 'PA pantry, cold stores along the back wall', weight: 1,
@@ -341,5 +364,7 @@ export const RULES: Partial<Record<RoomRole, readonly RuleArrangement[]>> = {
   reactor: [
     { name: 'R1 reactors, batteries between', weight: 1, rule: (c) => spread(c, powerUnits(c.need, c.defs), true) },
     { name: 'R2 reactors down both long walls', weight: 1, when: (n, r) => r.h > r.w && !across(r, powerUnits(n, r.defs)), rule: r2 },
+    // Packed flush from one corner along the back wall: no gap to leave a pocket of floor behind (a tight room's way).
+    { name: 'R3 reactors packed along the back wall', weight: 1, when: (n, r) => powerUnits(n, r.defs).reduce((t, m) => t + (r.defs[m]?.footprint[0] ?? 2), 0) <= r.w, rule: (c) => { let x = 0; return powerUnits(c.need, c.defs).map((m) => { const p = P(m, x, 0, 0); x += size(c, m); return p; }); } },
   ],
 };

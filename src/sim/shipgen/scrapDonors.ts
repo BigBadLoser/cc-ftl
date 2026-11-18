@@ -268,10 +268,12 @@ export function leftovers(c: Ctx, f: FactionDef, p: Pool): Block[] {
     const blk = bandBlock(c.rng, 'battery', specs.slice(0, half), specs.slice(half), { depth: Math.max(3, ...specs.map((s) => s.h)), hatchN: true, hatchS: true });
     if (blk) out.push({ ...blk, donor: 'navy', label: 'navy: equipment bay' });
   }
-  const rr = p.reactors > 0 ? reactorRoom(c.rng, p.reactors, c.plan.kit) : null;
-  if (rr) {
+  // Reactor rooms of two at most, as a station's: a room for each pair the donors left.
+  while (p.reactors > 0) {
+    const k = Math.min(2, p.reactors), rr = reactorRoom(c.rng, k, c.plan.kit);
+    if (!rr) break;
     out.push(freeze(rr, 'reactor', 'patched reactor', 'scrap'));
-    p.reactors = 0;
+    p.reactors -= k;
   }
   return out;
 }

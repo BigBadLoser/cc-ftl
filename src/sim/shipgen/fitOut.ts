@@ -103,15 +103,15 @@ export function fitOut(
   for (const j of jobs) planned.set(`${j.room} ${j.def}`, (planned.get(`${j.room} ${j.def}`) ?? 0) + 1);
   const done = new Map<string, number>();
   {
-    // Every room is furnished by rule where one fits. On a station no room recipe runs: a room no rule fits gets its
-    // planned modules set plainly. On a ship such a room falls back to its recipe (rooms/*.ts), until rules cover them all.
+    // Every room is furnished by rule where one fits; no room recipe runs. A room no rule fits gets its planned modules
+    // set plainly.
     // Halls and plazas have no spec (nothing planned in them): a rule may still dress them.
     roles.forEach((role, room) => {
       const spec = specs[room], mods = spec?.mods ?? [];
-      if (o.immobile) ruled.add(room);
+      ruled.add(room);
       if (spec?.sealed || (!spec && role !== 'hall' && role !== 'plaza') || !RULES[role]) return;
       const got = furnishByRule(lay, rng, room, role, mods, rots, spec?.bastion ? { bastion: true } : {});
-      if (got) { furnished.add(room); ruled.add(room); }
+      if (got) furnished.add(room);
       for (const idx of got ?? []) {
         const id = lay.modules[idx]?.def as string;
         placed[id] = (placed[id] ?? 0) + 1;
