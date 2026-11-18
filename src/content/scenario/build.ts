@@ -38,7 +38,8 @@ export interface BuildOpts {
 
 /** Attach `refs` to `sim` as live hooks (running `afterBuild` when `afterBuild` is set). */
 export function attachHooks(sim: Sim, refs: readonly { name: string; args?: unknown }[], afterBuild: boolean, base?: Partial<Built>): Built {
-  const requests: UiRequest[] = [];
+  // One buffer: requests a hook makes before the app listens (the URL's pre-frame ticks) must land in the array the app reads.
+  const requests: UiRequest[] = base?.requests ?? [];
   let dispatch: (cmd: Command) => void = (c) => sim.enqueue(c);
   let listener: ((req: UiRequest) => void) | undefined;
   const ui = (req: UiRequest): void => void (listener ? listener(req) : requests.push(req));
@@ -56,7 +57,7 @@ export function attachHooks(sim: Sim, refs: readonly { name: string; args?: unkn
     live.push({ hook, ctx });
   }
   const built: Built = {
-    sim, requests: base?.requests ?? requests, rejected: base?.rejected ?? {}, hookRefs: [...refs],
+    sim, requests, rejected: base?.rejected ?? {}, hookRefs: [...refs],
     setDispatch: (fn) => void (dispatch = fn),
     listen: (fn) => void (listener = fn),
     afterTick() {
