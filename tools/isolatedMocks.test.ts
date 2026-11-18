@@ -15,7 +15,9 @@ const EXCEPTIONS: Record<string, string> = {};
 const files = execFileSync('git', ['ls-files', 'src', 'tools', 'test'], { encoding: 'utf8' })
   .split('\n')
   .filter((f) => /\.test\.ts$/.test(f));
-const users = files.filter((f) => MOCKING.test(readFileSync(f, 'utf8')));
+// This file names the calls it looks for.
+const SELF = 'tools/isolatedMocks.test.ts';
+const users = files.filter((f) => f !== SELF && MOCKING.test(readFileSync(f, 'utf8')));
 const unisolated = users.filter((f) => !ISOLATED.includes(f));
 
 describe('mocking tests are isolated', () => {
