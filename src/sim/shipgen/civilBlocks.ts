@@ -154,7 +154,7 @@ export function podString(rng: Rng, crates: number, scrappy = false): Builder | 
 }
 
 /** Mining tug: a stubby hull with an ore hopper, a reactor and one big engine aft. */
-export function tug(rng: Rng, hopper: RoomSpec, reactors: number): Builder | null {
+export function tug(rng: Rng, hopper: RoomSpec, reactors: number, engine = 'module.engine'): Builder | null {
   const b = localBuilder(rng);
   const r = roomy(Math.max(1, reactors));
   const L = Math.max(r.w, hopper.w) + 3;
@@ -162,7 +162,7 @@ export function tug(rng: Rng, hopper: RoomSpec, reactors: number): Builder | nul
   if (!h) return null;
   b.strip(h, 'n', [r], 1);
   b.strip(h, 's', [{ ...hopper, h: Math.max(3, hopper.h) }], 1);
-  const e = engineSpec(1, 'w');
+  const e = engineSpec(1, 'w', engine);
   const eng = b.place({ x: L + 1, y: -3, w: e.w + 2, h: e.h + 2 }, 'engine', e);
   if (!eng || !b.door(h, eng)) return null;
   return b;
@@ -229,7 +229,7 @@ function level(a: RoomSpec[], b: RoomSpec[]): void {
  * at its end. `nozzle` one engine room holding every engine; `pair` two engine rooms stacked on a short rail;
  * `nacelles` two engine rooms out on the rail's ends with open space between them. One engine is always a nozzle.
  */
-export function drive(rng: Rng, engines: number, reactors: number, style: DriveStyle): Builder | null {
+export function drive(rng: Rng, engines: number, reactors: number, style: DriveStyle, engine = 'module.engine'): Builder | null {
   const b = localBuilder(rng);
   const E = Math.max(1, engines);
   const n: RoomSpec[] = reactors > 0 ? [reactorSpec(Math.ceil(reactors / 2))] : [];
@@ -241,14 +241,14 @@ export function drive(rng: Rng, engines: number, reactors: number, style: DriveS
   b.strip(sp, 'n', n, 0);
   b.strip(sp, 's', s, 0);
   if (style === 'nozzle' || E < 2) {
-    const e = engineSpec(E, 'w');
+    const e = engineSpec(E, 'w', engine);
     const eng = b.place({ x: W - 1, y: -2 - Math.floor((e.h - 1) / 2), w: e.w + 2, h: e.h + 2 }, 'engine', e);
     return eng && b.door(sp, eng) ? b : null;
   }
   // Two engine rooms on a rail: stacked (gap -1, a shared wall) or nacelles with open rows between.
   const gap = style === 'pair' ? -1 : rng.int(1, 3);
-  const top = engineSpec(Math.ceil(E / 2), 'w');
-  const bot = engineSpec(Math.floor(E / 2), 'w');
+  const top = engineSpec(Math.ceil(E / 2), 'w', engine);
+  const bot = engineSpec(Math.floor(E / 2), 'w', engine);
   const nb = -1 - Math.ceil(gap / 2);
   const a = nb - top.h - 1;
   const sb = nb + gap + 1;

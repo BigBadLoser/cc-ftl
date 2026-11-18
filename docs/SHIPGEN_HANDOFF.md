@@ -50,6 +50,8 @@ its engines after the fit-out is built again from the same attempt seed with the
 before that check reseeds it. Re-measure a family's number when its grammars or budgets change a lot: too low costs rebuilds, too high
 costs an unneeded engine.
 
+**Engine tier** (`engineFor` in `plan.ts`, #580): a ship carries one tier of engine, the highest whose blueprint `minDanger` the generation depth reaches (Mk II from 3, Mk III from 6; a faction's `maxEngineTier` caps it, drones stay Mk I for their sealed pods). `ShipPlan.engine` names it, `engineSpec` sizes the room to its footprint, and the budget's engine count (in Mk I) is divided by the tier's evasion ratio. `hullEngines` uses the tier's `hullCapacity`.
+
 ## File map
 
 `src/sim/shipgen/`:

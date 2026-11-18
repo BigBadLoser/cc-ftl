@@ -52,6 +52,7 @@ export const drones = {
     species: ['species.robot'],
   },
   doctrine: { targeting: 'shields' },
+  maxEngineTier: 1, // sealed 4x4 engine pods
   budget: {
     weapons: { base: 2, perDepth: 0.4, max: 6 },
     heavyPct: { base: 10, perDepth: 5, max: 50 },

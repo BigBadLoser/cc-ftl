@@ -107,8 +107,8 @@ export function enclosedBlock(rng: Rng, kind: string, centreIn: RoomSpec[], extr
 }
 
 /** Engines stacked mirrored about the axis on the east side of a rail at column x; returns the rail. */
-function engineColumn(b: Builder, x: number, engines: number): Part | null {
-  const e = engineSpec(1, 'w');
+function engineColumn(b: Builder, x: number, engines: number, engine: string): Part | null {
+  const e = engineSpec(1, 'w', engine);
   const rooms: { x: number; y: number; w: number; h: number }[] = [];
   let k = engines;
   let topY = 0;
@@ -127,14 +127,14 @@ function engineColumn(b: Builder, x: number, engines: number): Part | null {
 }
 
 /** Transverse engineering bank (the v3 stern): engines outboard, reactors inboard, on a transverse hall. */
-export function bankBlock(rng: Rng, engines: number, reactors: number): Block | null {
+export function bankBlock(rng: Rng, engines: number, reactors: number, engine = 'module.engine'): Block | null {
   const b = localBuilder(rng);
-  if (stern(b, 0, [], engines, reactors).length === 0) return null;
+  if (stern(b, 0, [], engines, reactors, engine).length === 0) return null;
   return blockFrom(b, 'drive', `bank ${engines}E`, 'human', [{ id: 'w', side: 'w', x: 0, y: -1, len: 2, access: 'human' }]);
 }
 
 /** Engine cluster on a stern spine: a hall aft with reactors either side, engines on a rail at its end. */
-export function clusterBlock(rng: Rng, engines: number, reactors: number): Block | null {
+export function clusterBlock(rng: Rng, engines: number, reactors: number, engine = 'module.engine'): Block | null {
   const b = localBuilder(rng);
   const r = Math.ceil(reactors / 2);
   const rs = reactorSpec(r);
@@ -144,7 +144,7 @@ export function clusterBlock(rng: Rng, engines: number, reactors: number): Block
   const at = 1 + rng.int(0, L - rs.w - 1);
   b.strip(spine, 'n', [rs], at);
   b.strip(spine, 's', [rs], at);
-  const rail = engineColumn(b, L + 1, engines);
+  const rail = engineColumn(b, L + 1, engines, engine);
   if (!rail) return null;
   b.door(spine, rail);
   return blockFrom(b, 'drive', `cluster ${engines}E`, 'human', [{ id: 'w', side: 'w', x: 0, y: -1, len: 2, access: 'human' }]);
@@ -157,9 +157,9 @@ export function powerBlock(rng: Rng, reactors: number): Block | null {
 }
 
 /** An engine pod (k engines) entered from below: a nacelle. Mirror it for the other side. */
-export function podBlock(rng: Rng, k: number): Block {
+export function podBlock(rng: Rng, k: number, engine = 'module.engine'): Block {
   const b = localBuilder(rng);
-  const e = engineSpec(k, 'ns');
+  const e = engineSpec(k, 'ns', engine);
   const p = b.place({ x: 0, y: 0, w: e.w + 2, h: e.h + 2 }, 'engine', e) as Part;
   return blockFrom(b, 'drive', `pod ${k}E`, 'human', [{ id: 's', side: 's', x: 1, y: p.h - 1, len: e.w, access: 'human' }]);
 }
