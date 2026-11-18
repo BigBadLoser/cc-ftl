@@ -12,7 +12,7 @@ or removes content. Before non-trivial work, read the index at the top of `docs/
 - `npm run dev`: dev server
 - `npm run build`: production build into `dist/`
 - `npm test`: Vitest
-- `npm run lint`: ESLint, including the import-boundary rules
+- `npm run lint`: ESLint, including the import-boundary rules, no test imports in `src`, and unused disable comments
 - `npm run typecheck`: `tsc` and `svelte-check`
 - `npm run check:fast`: lint, typecheck, and the near tests of uncommitted changes (untracked files included): the test
   files within two imports of what changed, plus edited test files; with nothing uncommitted, the branch against
@@ -66,6 +66,9 @@ or removes content. Before non-trivial work, read the index at the top of `docs/
 - Commands are the only way into the sim. Events are output only and are never used for sim logic.
 - Systems never import or call each other. Their order lives in `src/sim/pipeline.ts`.
 - No new import cycles in `src` (`tools/importCycles.test.ts`). When a change breaks one, lower the baseline in that test.
+- Enforced by checks, not just read (list in "Enforced rules", `docs/ARCHITECTURE.md`): file size (`tools/fileSize.test.ts`), systems not
+  importing each other, mocking tests isolated, duplication, and PR links/branch names/no model names (`pr-meta`). The ratchet
+  tests (size, cycles, duplication) fail when a number grows and when it shrinks: lower the baseline in the same change.
 - One answer per question. Each game question (can this crew member do this, is this tile breathable or passable, is this
   ship roofed, does this stock exist, may this job run) has one owning function. Systems, render and UI call it and never
   re-derive it with their own checks. When a caller needs a slightly different answer, extend the owner with a parameter;

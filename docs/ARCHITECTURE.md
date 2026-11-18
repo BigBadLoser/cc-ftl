@@ -23,6 +23,7 @@ One line per section; read the index, then only the sections your task touches.
 - [Lessons (tutorials), `src/ui/lessons/`](#lessons-tutorials-srcuilessons): UI layer only (design: DESIGN.md, "Lessons"). LessonHost.svelte builds a LessonCtx from the snapshots and...
 - [Keys, settings and the Esc menu](#keys-settings-and-the-esc-menu): Key map (src/ui/keymap/): every key the game answers to is an action in actions.ts (id, group, label,...
 - [Saves](#saves): A save is the serialized sim: ECS component stores, grid arrays (base64 typed arrays), RNG state,
+- [Enforced rules](#enforced-rules): which CLAUDE.md rules fail a check, and where (lint, ratchet tests, `pr-meta`).
 - [Quality rules](#quality-rules): Sim systems get unit tests, plus scenario tests, for example "a 1-tile breach vents a 4×4 room
 - [Milestones](#milestones): Each milestone ends with something playable or watchable in the browser.
 - [Working with Claude](#working-with-claude): Implementation uses Sonnet and Haiku subagents for well-scoped tasks: one system, one generator, one
@@ -1070,6 +1071,23 @@ renderer draws from the look alone (`api.lookPortrait`); no speaker keeps the pl
   galaxy seed, explored chunks, flags and a **format version**.
 - Migrations are written per version bump.
 - Content stays out of saves except as IDs.
+
+## Enforced rules
+
+Rules that fail a check rather than rely on being read. A ratchet is a baseline that may only go down: growth fails, and
+so does shrinking without lowering the baseline in the same change.
+
+| Rule | Check |
+| --- | --- |
+| Sim purity, dependency direction, pixi and bits-ui only where allowed | `npm run lint` (`eslint.config.js`) |
+| No `vitest` or `test/` imports in non-test `src` files; no unused `eslint-disable` | `npm run lint` |
+| Soft 400-line limit (ratchet) | `tools/fileSize.test.ts` |
+| No new import cycles (ratchet) | `tools/importCycles.test.ts` |
+| Systems never import each other; only `pipeline.ts` does (allow-list, empty) | `tools/systemImports.test.ts` |
+| Tests that mock or stub are isolated (list: `tools/isolatedTests.ts`) | `tools/isolatedMocks.test.ts` |
+| No new copy-paste (ratchet, slow tier, settings in `.jscpd.json`) | `tools/duplication.slow.test.ts` |
+| PR links an issue, branch prefix, no model names in commits or body | `pr-meta` job in `ci.yml` (`tools/prMeta.mjs`) |
+| Lint, typecheck and branch tests on agent work | `checks:` in `.harness.yml` |
 
 ## Quality rules
 
