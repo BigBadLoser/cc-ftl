@@ -3,7 +3,7 @@ import { atJob, clearPath, findJobAt, isIncapacitated, isSettled, isTileOccupied
 import { findPath } from '../crew/pathfind';
 import { isSuited } from '../eva/suit';
 import { performJob } from '../crew/jobWork';
-import { destroyJob } from '../items/stacks';
+import { destroyJob } from '../crew/jobEnd';
 import { shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { stat } from '../stats';

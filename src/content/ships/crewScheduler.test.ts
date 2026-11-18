@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { homeShip } from '../../sim/combat/ships';
+import { homeShip } from '../../sim/combat/shipQuery';
 import { AssignmentC, CrewC, type Job, JobC, PathC, PositionC, type Priorities, PrioritiesC, WORK_CATEGORIES } from '../../sim/crew/components';
 import { findPath } from '../../sim/crew/pathfind';
 import { ModuleC } from '../../sim/modules/components';
@@ -17,7 +17,7 @@ import { findSuitSource } from '../../sim/eva/errands';
 import { AirlockC } from '../../sim/modules/airlock';
 import { createCrew } from '../../sim/crew/spawn';
 import { planSiteWalk } from '../../sim/eva/route';
-import { destroyJob } from '../../sim/items/stacks';
+import { destroyJob } from '../../sim/crew/jobEnd';
 import { shipIdOf } from '../../sim/regions';
 import { DoorJam, Struct, isWalkable } from '../../sim/structure';
 import { SCHED_CADENCE, SCHED_DIJKSTRA_ABOVE } from '../../sim/tuning';

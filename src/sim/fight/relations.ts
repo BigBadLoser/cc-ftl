@@ -7,7 +7,7 @@ import { InertC } from '../robots/components';
 import { isBreaking, isIncapacitated } from '../crew/helpers';
 import type { Sim } from '../sim';
 import { AllegianceC, EquipOrderC, FighterC, SurrenderedC } from './components';
-import { shipById } from '../combat/ships';
+import { shipById } from '../combat/shipQuery';
 import type { Faction } from '../combat/components';
 import { AlienC } from '../aliens/components';
 import { StationCrewC, WantedC } from '../stations/components';

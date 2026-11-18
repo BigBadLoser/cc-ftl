@@ -2,7 +2,7 @@ import { AllegianceC, CrewC, DeadC, DraftedC, ModuleC, PositionC, Struct, Vehicl
 import { EggSacC } from '../sim/aliens/components';
 import { sacAlive } from '../sim/aliens/target';
 import { factionsHostile } from '../sim/combat/factions';
-import { shipById } from '../sim/combat/ships';
+import { shipById } from '../sim/combat/shipQuery';
 import { isTileWalkable } from '../sim/modules/walk';
 import { accessTile } from '../sim/modules/footprint';
 import { isJammedDoor } from '../sim/crew/helpers';

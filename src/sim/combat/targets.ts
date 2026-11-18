@@ -6,7 +6,7 @@ import { VehicleC } from '../vehicles/components';
 
 import { shipIdOf } from '../regions';
 import { weaponDefOf } from '../upgrades/stats';
-import { shipById } from './ships';
+import { shipById } from './shipQuery';
 import { shipWideAim } from './shipAim';
 
 /** True if the ship can still be shot at (exists, not a fled ship or a prize). Wrecks stay targetable but are not worth it for the AI. */

@@ -3,7 +3,8 @@ import {
   CrewC, DeadC, DownedC, HealthC, NeedsC, PathC, PositionC, PrioritiesC, type Priorities,
 } from '../crew/components';
 import type { SimEvent } from '../events';
-import { spawnShip, shipById } from '../combat/ships';
+import { spawnShip } from '../combat/ships';
+import { shipById } from '../combat/shipQuery';
 import { storageCount } from '../items/storage';
 import type { ContentRegistry, ModuleDef, ShipTemplate } from '../registry';
 import { deserialize, serialize } from '../save';

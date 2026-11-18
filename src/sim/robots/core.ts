@@ -6,7 +6,7 @@ import type { SpeciesDef } from '../registry';
 import type { Sim } from '../sim';
 import { HackedC, InertC, StunC } from './components';
 import { shipIdOf } from '../regions';
-import { shipById } from '../combat/ships';
+import { shipById } from '../combat/shipQuery';
 
 /** The species def of a crew member, if known. */
 export function speciesOf(sim: Sim, crew: number): SpeciesDef | undefined {

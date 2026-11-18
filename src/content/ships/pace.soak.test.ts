@@ -6,7 +6,7 @@ import { ModuleC } from '../../sim/modules/components';
 import { newGame } from '../../sim/newGame';
 import { content } from '../index';
 import { shipIdOf, shipIds } from '../../sim/regions';
-import { shipById } from '../../sim/combat/ships';
+import { shipById } from '../../sim/combat/shipQuery';
 import { WeaponC } from '../../sim/combat/components';
 import { ventError } from '../../sim/combat/heat';
 import { HEAT_MAX } from '../../sim/combat/heatTuning';

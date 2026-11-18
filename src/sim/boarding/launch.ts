@@ -1,6 +1,6 @@
 import { AwayC, AwaySiteC, SiteRunC, type AwaySite } from '../away/components';
 import { openSite } from '../away/handlers';
-import { shipById } from '../combat/ships';
+import { shipById } from '../combat/shipQuery';
 import { CrewC, DeadC } from '../crew/components';
 import { AllegianceC } from '../fight/components';
 import { FerryC } from '../ferry/components';

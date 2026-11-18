@@ -9,7 +9,7 @@ import { playerShip } from './player';
 import type { Sim } from '../sim';
 import { ForHireC, StationCrewC } from '../stations/components';
 import { bumpStat } from '../story/goals';
-import { logRecruit } from '../galaxy/recruit';
+import { logRecruit } from '../galaxy/recruitLog';
 import { AboardC, EmbarkOrderC, VehicleC, type Vehicle } from '../vehicles/components';
 import { bayAccessTile, boardingTile } from '../vehicles/geometry';
 import { unboardCrew } from '../vehicles/lifecycle';

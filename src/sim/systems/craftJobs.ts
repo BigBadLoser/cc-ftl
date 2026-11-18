@@ -4,7 +4,7 @@ import { ProductionC } from '../items/components';
 import { needsFrom } from '../items/materials';
 import { nextOrder, orderWantsMore, suppliableOrder } from '../items/production';
 import { refKey, reservations, totalStock, type Reservations } from '../items/stock';
-import { destroyJob } from '../items/stacks';
+import { destroyJob } from '../crew/jobEnd';
 import type { Sim } from '../sim';
 import { PLAN_INTERVAL } from '../tuning';
 import { moduleSite } from '../modules/footprint';

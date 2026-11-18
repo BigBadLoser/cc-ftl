@@ -1,7 +1,8 @@
 import { JobC } from '../crew/components';
 import { stowOrDrop } from '../items/deck';
 import { CarryingC, ItemStackC } from '../items/components';
-import { destroyJob, takeFromStack } from '../items/stacks';
+import { takeFromStack } from '../items/stacks';
+import { destroyJob } from '../crew/jobEnd';
 import { storageCount, storageTake } from '../items/storage';
 import { ModuleC } from '../modules/components';
 import { shipIdAt, shipIdOf } from '../regions';

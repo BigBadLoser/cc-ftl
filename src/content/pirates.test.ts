@@ -3,7 +3,7 @@ import { captureReady } from '../sim/capture/control';
 import { coreObjective, CoreRaidC, CoreRaiderC } from '../sim/capture/coreRaid';
 import { CombatC, ShipC } from '../sim/combat/components';
 import { neverSurrenders, rogueAlly } from '../sim/combat/factions';
-import { homeShip } from '../sim/combat/ships';
+import { homeShip } from '../sim/combat/shipQuery';
 import { crewSubdued } from '../sim/combat/subdued';
 import { CrewC, DeadC, DownedC, PositionC } from '../sim/crew/components';
 import { createCrew } from '../sim/crew/spawn';

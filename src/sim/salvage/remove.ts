@@ -3,7 +3,7 @@ import { ShipC } from '../combat/components';
 import { CrewC, DeadC, JobC, PositionC } from '../crew/components';
 import { dronesOf } from '../drones/bay';
 import { ItemStackC } from '../items/components';
-import { destroyJob } from '../items/stacks';
+import { destroyJob } from '../crew/jobEnd';
 import { SalvageWatchC, TransferC } from '../logistics/components';
 import { ModuleC } from '../modules/components';
 import { removeModule } from '../modules/spawn';

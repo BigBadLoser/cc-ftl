@@ -9,7 +9,7 @@ import { DEFAULT_CARRY_CAPACITY, PLAN_INTERVAL } from '../tuning';
 import { cargoSpace } from '../vehicles/cargo';
 import { VehicleC } from '../vehicles/components';
 import { boardingTile, cargoTile } from '../vehicles/geometry';
-import { shipById } from '../combat/ships';
+import { shipById } from '../combat/shipQuery';
 
 /** Units already promised to a vehicle's hold by pending hauls. */
 function promised(res: Reservations, vehicle: number): number {

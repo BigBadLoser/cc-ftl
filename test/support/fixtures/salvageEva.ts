@@ -1,6 +1,7 @@
 /** Shared setup for the salvage team tests: a new game with a small sealed derelict beside the home ship, and small run helpers. */
 import { ShipC } from '../../../src/sim/combat/components';
-import { homeShip, stampShip } from '../../../src/sim/combat/ships';
+import { stampShip } from '../../../src/sim/combat/ships';
+import { homeShip } from '../../../src/sim/combat/shipQuery';
 import type { SimEvent } from '../../../src/sim/events';
 import { ItemStackC, StorageC } from '../../../src/sim/items/components';
 import { newGame } from '../../../src/sim/newGame';

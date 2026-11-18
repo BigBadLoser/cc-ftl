@@ -2,7 +2,7 @@ import { IDBDatabase, IDBFactory } from 'fake-indexeddb';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { content } from '../content';
 import { ShipC } from '../sim/combat/components';
-import { homeShip } from '../sim/combat/ships';
+import { homeShip } from '../sim/combat/shipQuery';
 import { CrewC } from '../sim/crew/components';
 import { newGame, startingRoles } from '../sim/newGame';
 import { deserialize, SAVE_VERSION, serialize } from '../sim/save';

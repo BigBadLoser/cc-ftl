@@ -3,7 +3,7 @@ import { truceHolds } from '../blackmarket/truce';
 import { CombatC, ShipC, type Combat, type Ship } from '../combat/components';
 import { isDormant } from '../combat/dormant';
 import { factionsHostile, isAiFaction, rogueAlly } from '../combat/factions';
-import { shipCanAct } from '../combat/ships';
+import { shipCanAct } from '../combat/shipQuery';
 import { hostileVehicle, modulesOnGrid, randomModule } from '../combat/targets';
 import { ModuleC } from '../modules/components';
 import type { Sim } from '../sim';

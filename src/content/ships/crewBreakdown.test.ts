@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { InterruptC, PickupC, TaskC } from '../../sim/ai/components';
 import { ShipC } from '../../sim/combat/components';
-import { homeShip } from '../../sim/combat/ships';
+import { homeShip } from '../../sim/combat/shipQuery';
 import { BreakdownC, type BreakKind, BreakMemoryC } from '../../sim/crew/breakTypes';
 import { AssignmentC, CrewC, DraftedC, JobC, MoodC, NeedsC, PathC, PositionC, PrioritiesC } from '../../sim/crew/components';
 import { TraitsC } from '../../sim/crew/traits';

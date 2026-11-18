@@ -52,7 +52,7 @@ export function arrangeHull(
     }
     const grammar = k < candidates ? first : pickWeighted(rng, fam.grammars);
     const A = new Arranger(() => rng.next(), -1);
-    const c: Ctx = { rng, fam, plan: clonePlan(plan), A, depth, parts: [grammar], why: '', defs, variant };
+    const c: Ctx = { rng, fam, plan: clonePlan(plan), A, depth, parts: [grammar], why: '', defs, variant, arrange: arrangeHull };
     GRAMMARS ??= { ...NAVY, ...DRONE_GRAMMARS, ...SCRAP_GRAMMARS, ...CIVIL_GRAMMARS };
     const run = GRAMMARS[grammar];
     if (!run || !run(c, f)) { why ||= `${grammar}: ${c.why || 'no fit'}`; continue; }

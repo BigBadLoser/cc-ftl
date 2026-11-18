@@ -7,7 +7,7 @@ import { storageAdd } from '../sim/items/storage';
 import { type Sim } from '../sim/sim';
 import { InspectionC } from '../sim/inspect/types';
 import { liveInspection } from '../sim/inspect/start';
-import { inspectorsAboard } from '../sim/inspect/fight';
+import { inspectorsAboard } from '../sim/inspect/aboard';
 import { jumpWarnings } from '../sim/sector/members';
 import { AllegianceC } from '../sim/fight/components';
 import { playerStorages } from '../sim/story/world';

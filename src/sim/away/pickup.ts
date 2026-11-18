@@ -1,4 +1,4 @@
-import { shipById } from '../combat/ships';
+import { shipById } from '../combat/shipQuery';
 import { CrewC, DeadC, PositionC } from '../crew/components';
 import { PickupC } from '../ai/components';
 import { hasTank, vehicleAir } from '../eva/air';
@@ -6,7 +6,8 @@ import { shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { VehicleC } from '../vehicles/components';
 import { AwayC, AwaySiteC, SiteRunC } from './components';
-import { fetching, ofSide } from './crew';
+import { fetching } from './crew';
+import { ofSide } from './tripFit';
 import { partyOut } from './depart';
 import { siteShuttleOk } from './handlers';
 import { freeSeats } from './passage';

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { BodyC } from '../../sim/body';
-import { homeShip } from '../../sim/combat/ships';
+import { homeShip } from '../../sim/combat/shipQuery';
 import { CrewC, DraftedC, PositionC } from '../../sim/crew/components';
 import { MiningPodC } from '../../sim/mining/components';
 import { placementError, spawnModule } from '../../sim/modules/spawn';

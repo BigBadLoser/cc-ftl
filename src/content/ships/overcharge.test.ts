@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CombatC } from '../../sim/combat/components';
-import { homeShip } from '../../sim/combat/ships';
+import { homeShip } from '../../sim/combat/shipQuery';
 import { hullLoad } from '../../sim/ftl/capacity';
 import { applyOvercharge, riskOf } from '../../sim/ftl/overcharge';
 import { engineFuelFactor, fuelStock, jumpFuel } from '../../sim/galaxy/fuel';

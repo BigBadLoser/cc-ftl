@@ -1,6 +1,6 @@
 import { JobC } from '../crew/components';
 import { ModuleC } from '../modules/components';
-import { destroyJob } from '../items/stacks';
+import { destroyJob } from '../crew/jobEnd';
 import { shipIdOf } from '../regions';
 import { ResearchC } from '../research/components';
 import { isDone, labsOf, projectOf, researchJobs, startHead } from '../research/research';

@@ -1,5 +1,5 @@
 import { JobC } from '../crew/components';
-import { destroyJob } from '../items/stacks';
+import { destroyJob } from '../crew/jobEnd';
 import { shipGrid } from '../regions';
 import type { Sim } from '../sim';
 import { Struct } from '../structure';

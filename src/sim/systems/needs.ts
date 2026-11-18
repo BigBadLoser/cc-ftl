@@ -11,7 +11,7 @@ import { TICK_HZ } from '../time';
 import { stat } from '../stats';
 import { hungerDrainPerSec } from '../crew/eating';
 import { BED_REST_MULT, SLEEP_REST_MULT } from '../tuning';
-import { holdsSleep } from '../crew/schedule';
+import { holdsSleep } from '../crew/onCall';
 
 /**
  * Rest decays while awake and recovers while sleeping (BED_REST_MULT times faster again when

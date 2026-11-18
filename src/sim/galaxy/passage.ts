@@ -1,12 +1,7 @@
-import { abortTask } from '../ai/task';
 import { lodgingHere } from '../consent/guests';
-import { dropPassenger } from '../consent/passage';
-import { releaseBedOwner } from '../crew/beds';
 import { CrewC, DeadC, PositionC } from '../crew/components';
-import { firePersonFact } from '../scene/carried';
 import type { Sim } from '../sim';
-import { playerShip } from '../trade/player';
-import { AboardC, VehicleC } from '../vehicles/components';
+import { AboardC } from '../vehicles/components';
 import { nodesWithin } from './graph';
 import { hash32 } from './hash';
 import { portsAt } from './portIndex';
@@ -99,21 +94,3 @@ export function strand(sim: Sim, job: StationJob): void {
   post(sim, card);
 }
 
-/**
- * The passenger leaves the ship: handed over at their destination (`delivered`: the event's person rules fire it first) or set down at a port. Their
- * passage grant goes and they leave play (wherever they stood: on deck, or aboard the shuttle that took them).
- */
-export function passengerOff(sim: Sim, crew: number, delivered: boolean): void {
-  if (delivered) firePersonFact(sim, crew, 'delivered');
-  dropPassenger(sim, playerShip(sim), crew);
-  const aboard = sim.world.get(crew, AboardC)?.vehicle;
-  const v = aboard === undefined ? undefined : sim.world.get(aboard, VehicleC);
-  if (v) {
-    v.passengers = v.passengers.filter((c) => c !== crew);
-    if (v.pilot === crew) v.pilot = 0;
-  }
-  if (!sim.world.has(crew, CrewC)) return;
-  abortTask(sim, crew, 'removed');
-  releaseBedOwner(sim, crew);
-  sim.world.destroyEntity(crew);
-}

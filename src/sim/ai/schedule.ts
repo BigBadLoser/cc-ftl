@@ -10,7 +10,7 @@ import { idleTurn } from './machines/idle';
 import { leisureTurn } from './machines/leisure';
 import { navigateTurn } from './machines/navigate';
 import { endSleep, recoverTurn, sleepTurn } from './machines/sleep';
-import { wakesFromSleep } from '../crew/schedule';
+import { wakesFromSleep } from '../crew/wake';
 import { speciesOf } from '../robots/core';
 import { heldForMend } from '../robots/jobs';
 import { assignJobs } from './scheduler';

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { TaskC } from '../../sim/ai/components';
 import { ShipC } from '../../sim/combat/components';
-import { homeShip } from '../../sim/combat/ships';
+import { homeShip } from '../../sim/combat/shipQuery';
 import { CrewC, DownedC, HealthC, MoodC } from '../../sim/crew/components';
 import type { SimEvent } from '../../sim/events';
 import { StorageC } from '../../sim/items/components';

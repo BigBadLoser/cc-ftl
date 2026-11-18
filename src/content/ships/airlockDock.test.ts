@@ -19,7 +19,7 @@ import { boardingTile, cargoTile, dockPoint } from '../../sim/vehicles/geometry'
 import { content } from '../index';
 import { PLAYER_START as P0 } from '../../sim/tuning'; // the player ship's sector top-left
 import { shipIdOf, shipGrid } from '../../sim/regions';
-import { shipById } from '../../sim/combat/ships';
+import { shipById } from '../../sim/combat/shipQuery';
 import { shipIds } from '../../sim/regions';
 
 const def = content.modules['module.airlock'] as ModuleDef;

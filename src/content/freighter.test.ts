@@ -9,7 +9,7 @@ import { jobFits } from '../sim/crew/jobFit';
 import { AwayC, AwaySiteC } from '../sim/away/components';
 import { ModuleC } from '../sim/modules/components';
 import { shipGrid, shipIdOf } from '../sim/regions';
-import { playerStock } from '../sim/story/world';
+import { playerStock } from '../sim/items/held';
 import { ConsentC } from '../sim/consent/components';
 import { guestOn } from '../sim/consent/guests';
 import { content } from '.';

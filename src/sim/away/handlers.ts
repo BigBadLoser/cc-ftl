@@ -1,5 +1,5 @@
 import type { Command } from '../commands';
-import { homeShip, shipById } from '../combat/ships';
+import { homeShip, shipById } from '../combat/shipQuery';
 import { ferryFree } from '../ferry/pick';
 import { TransferC } from '../logistics/components';
 import type { Sim } from '../sim';
