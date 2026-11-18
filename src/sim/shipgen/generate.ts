@@ -10,8 +10,8 @@ import { RECIPES, drawRoom, hostCompanions, pruneDoors, reserveWalkway, furnish,
 import { furnishByRule, placeFeed } from './rooms/rules/place';
 import { RULES } from './rooms/rules/rules';
 import { Layout } from './layout';
+import { stockOf, toTemplate, type Fitted } from './fitted';
 import { placeGroundTurrets, type GroundPlan } from './groundTurrets';
-import { cableRows } from '../cable';
 import { accepts } from '../items/storage';
 import { hullChoices, pickWeighted, planShip, type RoomSpec, type ShipPlan } from './plan';
 import { clusters, hub, rails } from './topoDrone';
@@ -53,19 +53,6 @@ const rank = (id: string, d: ModuleDef): number => {
   if (d.bed) return 14;
   return 15;
 };
-
-interface Fitted {
-  /** Why the fit-out failed (the partial layout is kept for the viewer). */
-  error?: string;
-  lay: Layout;
-  stock: Map<number, { item: string; count: number }[]>;
-  /** Bays with a vehicle in them: the module index and the vehicle (the bay's own `builtWith`, else a shuttle). */
-  vehicles: Map<number, string>;
-  /** Drone defs docked in the bay at this module index. */
-  drones: Map<number, string[]>;
-  /** Modules standing on open ground outside the hull (module indices), and the cable that wires them to it (`FinishOpts.ground`). */
-  ground?: { placed: Set<number>; cable: Set<number>; unwired: number };
-}
 
 /** Place every room's planned modules in that room; a reason string when something essential does not fit. */
 function fitOut(
@@ -237,37 +224,6 @@ function fitOut(
   for (const m of lay.modules) draw -= Math.min(0, (defs[m.def] as ModuleDef).power);
   if (supply < draw) return { ...out, error: 'not enough power' };
   return out;
-}
-
-function toTemplate(f: FactionDef, role: ShipRoleDef, factionId: string, seed: number, plan: Pick<ShipPlan, 'crew'>, rows: string[], d: Fitted): ShipTemplate {
-  const tag = (seed >>> 0).toString(16).toUpperCase().padStart(8, '0').slice(-4);
-  const modules: NonNullable<ShipTemplate['modules']> = d.lay.modules.map((m, i) => {
-    const stock = d.stock.get(i);
-    return {
-      def: m.def, x: m.x, y: m.y, rot: m.rot,
-      ...(stock && stock.length > 0 ? { stock } : {}),
-      ...(d.vehicles.has(i) ? { vehicle: d.vehicles.get(i) } : {}),
-      ...(d.drones.has(i) ? { drones: d.drones.get(i) } : {}),
-      ...(d.ground?.placed.has(i) ? { ground: true as const } : {}),
-    };
-  });
-  return {
-    name: `${f.name} ${role.id} ${factionId.replace(/^faction\./, '').slice(0, 2).toUpperCase()}-${tag}`,
-    faction: 'hostile',
-    doctrine: f.doctrine.targeting,
-    crew: plan.crew,
-    rows,
-    modules,
-    ...(d.ground && d.ground.cable.size > 0 ? { cable: cableRows(d.lay.w, d.lay.h, d.ground.cable) } : {}),
-    ...(f.doctrine.boarding ? { boarding: { ...f.doctrine.boarding } } : {}),
-  };
-}
-
-/** A container's cargo: the faction's stock list, scaled up by the container's capacity (storage caps what fits). */
-function stockOf(rng: Rng, f: FactionDef, def: ModuleDef | undefined): { stock?: { item: string; count: number }[] } {
-  const k = Math.ceil((def?.storage?.capacity ?? 0) / 3);
-  const stock = f.stock.map((s) => ({ item: s.item, count: rng.int(s.min, s.max) * k })).filter((s) => s.count > 0);
-  return stock.length > 0 ? { stock } : {};
 }
 
 /** Pick a ship role (weights scaled by depth) and one of its archetypes. */
