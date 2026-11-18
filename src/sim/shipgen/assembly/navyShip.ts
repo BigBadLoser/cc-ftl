@@ -71,6 +71,9 @@ function roleOf(f: FactionDef, type: NavyType, shape: Shape): ShipRoleDef {
   return { id: type, weight: fam.weight, archetypes: [], bonus, ...(fam.bays ? { bays: fam.bays } : {}) };
 }
 
+/** The role a navy type plans with: its family's budget and the type's slant. */
+export const navyRole = (f: FactionDef, type: NavyType): ShipRoleDef => roleOf(f, type, NAVY_TYPES[type]);
+
 export function assembleNavy(
   f: FactionDef, factionId: string, seed: number, depth: number, defs: Record<string, ModuleDef>, type: NavyType, n = 0, extra = 0,
 ): GenResult {
