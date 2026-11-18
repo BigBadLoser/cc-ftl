@@ -117,6 +117,7 @@ def wire(m, sp):
             b = max(on, key=lambda p: sp._inner(*p))
             a = (a[0], a[1] + 0.5 / N) if edge == "x" else (a[0] + 0.5 / N, a[1])
             strip(m, (*a, zof(0.0)), (*b, zof(sp._inner(*b))), SEAM)
+            strip(m, (*a, 0.0), (*a, zof(0.0)), SEAM)                  # (and down the foot's front to the deck)
 
 
 def _to_wall(sp, a, b):
