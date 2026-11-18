@@ -38,6 +38,11 @@ export interface Inspection {
   bribe?: number;
   /** A patrol's inspection (inspect/patrol.ts): the fleet whose ship (`station`) sent it. What refusing it leads to is step 3. */
   patrol?: number;
+  /**
+   * The shuttle was made for this inspection (inspect/start.ts `standIn`): its ship has no shuttle of its own (a patrol corvette), so it leaves the
+   * world with the inspection. Absent: the ship's own real shuttle, which goes home and stays. Goes with #551 (such ships get a hangar at generation).
+   */
+  standIn?: true;
   /** A bribe was offered and turned down: it is not offered again. */
   bribeFailed?: true;
   /** How it ended: the player's answer, 'clean' (nothing found), 'fled' (the player left) or 'off' (a fight, the station gone). */

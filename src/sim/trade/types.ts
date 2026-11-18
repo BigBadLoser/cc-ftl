@@ -46,8 +46,6 @@ export interface TraderDef {
   match: { faction?: string; role?: string; side?: Faction };
   /** Added to the faction's relation (a liner is friendlier than a freighter's skeleton crew, say). */
   relation?: number;
-  /** Has its own shuttle: it flies goods to the player instead of the player fetching them. */
-  shuttle: boolean;
   /** Price multipliers of this kind of trader (default 1), and per item tag (multiplied in for every tag the item has). */
   sell?: number;
   buy?: number;
@@ -152,6 +150,8 @@ export interface Deal {
   tick: number;
   /** The agreed value of each `get` line (aligned with `get`, summing to the escrow), fixed when the trip opens: a part-delivered run is settled by it, not by later prices. */
   getValue?: number[];
+  /** The agreed value of each `give` line (aligned with `give`, at the trader's buying price when the trip opened): a sale cut short pays for exactly what was handed over (theirRun.ts `shortGiven`). */
+  giveValue?: number[];
   /** Why a failed deal failed. */
   reason?: string;
   /** How the goods change hands at the trader: docked at a station airlock, or the hover swap (no free station airlock). */

@@ -13,7 +13,7 @@
   const trips = $derived(tripsFor(s, route.cap));
   const MAX_TRIPS = 8;
   const REASONS: Record<string, string> = {
-    noCourier: 'No shuttle to carry it: fit one in a bay', courierBusy: 'Your shuttle is busy', noAirlock: 'No free working airlock to dock at', noShip: 'No ship',
+    noCourier: 'No shuttle to carry it on either side: fit one in a bay', courierBusy: 'Your shuttle is busy', theirBusy: 'Their shuttle is busy, and you have none', noAirlock: 'No free working airlock to dock at', noShip: 'No ship',
   };
   const problem = $derived.by(() => {
     if (empty) return 'Pick something to trade';

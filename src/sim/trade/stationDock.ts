@@ -62,14 +62,16 @@ export function stageGoods(sim: Sim, d: Deal): void {
 
 /**
  * One planning round of station crew hauling: the player's goods out of the shuttle into station storage, the bought
- * goods from station storage into the shuttle. True when both directions are complete.
+ * goods from station storage into the shuttle. True when both directions are complete. The shuttle is docked at the station
+ * (the player's), or stowed in its hangar or on its pad (the station's own, theirRun.ts: `dir` names the one direction it works
+ * there, loading before it leaves and unloading when it is back).
  */
-export function stationWork(sim: Sim, d: Deal, v: Vehicle): boolean {
+export function stationWork(sim: Sim, d: Deal, v: Vehicle, dir?: 'get' | 'give'): boolean {
   const res = reservations(sim);
   const stand = cargoTile(sim, d.vehicle);
-  if (dockDone(sim, d)) return true;
-  if (sim.tick % PLAN_INTERVAL !== 0 || v.state !== 'docked' || !stand) return false;
-  for (const l of d.give) {
+  if (dockDone(sim, d, dir)) return true;
+  if (sim.tick % PLAN_INTERVAL !== 0 || v.state === 'flying' || !stand) return false;
+  for (const l of dir === 'get' ? [] : d.give) {
     if (d.get.some((g) => g.item === l.item)) continue;
     const avail = cargoOf(sim, d.vehicle, l.item) - (res.out.get(refKey('vehicle', d.vehicle, l.item)) ?? 0);
     if (avail <= 0) continue;
@@ -78,7 +80,7 @@ export function stationWork(sim: Sim, d: Deal, v: Vehicle): boolean {
     const src = { ref: { kind: 'vehicle' as const, id: d.vehicle }, x: stand.x, y: stand.y, avail };
     makeHaul(sim, res, 'hauling', d.ship, src, dest.ref, l.item, Math.min(avail, dest.room, DEFAULT_CARRY_CAPACITY), [], [], { id: d.id, dir: 'give' });
   }
-  for (const l of d.get) {
+  for (const l of dir === 'give' ? [] : d.get) {
     let need = l.count - cargoOf(sim, d.vehicle, l.item) - (res.incoming.get(refKey('vehicle', d.vehicle, l.item)) ?? 0);
     for (let guard = 0; need > 0 && guard < 20; guard++) {
       const s = nearestSource(sim, d.ship, l.item, stand, res, true);

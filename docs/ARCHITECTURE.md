@@ -1789,13 +1789,16 @@ barter?}` (validated and priced, becomes a pending offer, `trade.offered`; one o
 accept adds the courier ones `noCourier noPilot courierBusy noAirlock tooBig dealOpen`. `bridge.dispatch` runs one tick for `trade.*`
 commands while paused so the window answers at once.
 
-**Delivery (who flies, decided and documented).** `planCourier` picks:
-1. Goods the **player hands over** always go on the **player's shuttle** (it flies itself, no pilot or crew needed: `Vehicle.autopilot` lifts the pilot rules for the run only; it needs an empty hold and a free working
-   airlock on the player's ship).
-2. Goods **from the trader** come on the **trader's own shuttle** if its kind has `shuttle: true` (a real `VehicleC` spawned at its ship,
-   no crew, `home: 0`, despawned when it is back); otherwise the **player's shuttle goes over** to fetch them.
-3. Stations are ships (an immobile `ShipC`, see "Stations" below). Station kinds have no shuttle, so the player's shuttle flies every
-   station run, and it **docks** (`trade/stationDock.ts`) instead of hovering: `out` -> `dockStation` (dock at a free working station
+**Delivery (who flies, decided and documented; one flow for every carrier, #548).** `planCourier` (trade/courier.ts) picks one carrier for both
+directions, by `freeShuttle` (the one answer to "which shuttle of this ship can carry now"):
+1. The **player's free shuttle** first (it flies itself, no pilot or crew needed: `Vehicle.autopilot` lifts the pilot rules for the run only; it needs an
+   empty hold and a free working airlock on the player's ship).
+2. Else the **trader's own real shuttle** (courier 'them'): a station's, stowed in its hangar or on its pad, free. Nothing is ever made up for a run. It flies
+   itself, nobody aboard, through the mirrored phases in `trade/theirRun.ts`: `dispatch` (stage the bought goods beside its bay) -> `load` (station crew,
+   suited out onto a pad) -> `out` (dock at the player's airlock) -> `stationWork` (the player's crew unload what was bought, then load what was sold, hold
+   sealed) -> `back` -> `unload` (station crew carry the player's goods in; they become trader stock) -> settle. `theirGiveUp` settles timeouts. Freighters
+   and liners have no shuttle (#551): they trade only through the player's. `sendHome` is the one rule for a station shuttle going home after any job.
+3. Stations are ships (an immobile `ShipC`, see "Stations" below). The player's shuttle **docks** at a station (`trade/stationDock.ts`) instead of hovering: `out` -> `dockStation` (dock at a free working station
    airlock; the dock order reserves it, `dockError` 'occupied' for anyone else) -> `stationWork` (the bought goods are staged from the
    trader's set-aside stock into the station storage nearest the airlock, station crew haul both ways between station storage and the
    shuttle, the player's goods pass from station storage into the trader's stock) -> undock -> `back`. No free station airlock, a
@@ -2765,7 +2768,7 @@ no floorless wall stubs. What the cap does not reach stays as truss (open scaffo
 (`yard/jobs.ts`, `YardOrder.stage`). The hull is priced by tile built, outline and floor alike (credits and metal x the tier's multiplier x 1 + `dangerStep` x node
 danger; station cap 40 tiles at 10 credits and 0.75 metal each, hub 100 at x1.4); the quote lists the planning fee on its own line and reports the size after
 against capacity. `yard.order { station }` pays the whole price into escrow (metal from storage), grows the `ShipC` rectangle, posts the truss jobs (`Job.yard`)
-and the station sends its shuttle. `yardSystem` (`yard/flow.ts`, after the trade system) runs it: `launch` (a courier-type shuttle made beside the station with
+and the station sends its shuttle. `yardSystem` (`yard/flow.ts`, after the trade system) runs it: `launch` (the station's own real shuttle, `freeShuttle`; it waits LAUNCH_WAIT_SEC while that is busy, with
 `YardDef.crew` contractors aboard, neutral allegiance, `YardCrewC`; since #287 it is an away site on the player's ship, owner 'yard', the contractors its party from
 the start: `dock` the order's airlock, `outside` (they land suited from the shuttle), `noLoot`, no demand; the site's run flies, lands them, takes the
 tired or hurt home to the station, and brings everyone home when the order closes the site), `fly` (until one has landed), `work` (they take the jobs through the normal crew AI;
@@ -2796,7 +2799,8 @@ Design: DESIGN.md "Pirate factions and the black market". Content: `content/blac
   them scans with the usual PASSING_ENCOUNTER_CHANCE (`galaxy/encounters.ts`). A scan that finds contraband carries `Encounter.scan` (`value`): the patrol hails the
   player to stop (Patrol hails, below); trade offers are refused meanwhile (`scanPending`).
 - **Inspections** (#138 step 1, `src/sim/inspect/`). The station's inspectors come aboard (design: DESIGN.md "Contraband inspections in the world").
-  - `InspectionC` sits on the inspectors' shuttle (the trade courier's type, made beside the station, its hold sealed with `Vehicle.outbound` so the player's
+  - `InspectionC` sits on the inspectors' shuttle (the station's own real one, `freeShuttle`, #548; only a ship with no shuttle at all, a patrol
+    corvette, gets a made-up stand-in, `Inspection.standIn`; its hold sealed with `Vehicle.outbound` so the player's
     airlock unloaders leave it alone). `start.ts` opens an away site on the player's ship (owner `inspect`, `noLoot`) served by it: the site's run docks at a free
     airlock or hovers, and the party goes out of the hatch in suits (EVA boarding). The inspectors (INSPECTORS of INSPECTOR_ROLE, neutral) are the party, aboard
     by an `inspect` consent grant; their only priority is `patrol`.

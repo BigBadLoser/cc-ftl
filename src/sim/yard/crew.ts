@@ -1,5 +1,3 @@
-import { reportLaunched } from '../vehicles/transitions';
-import { ALT, BodyC } from '../body';
 import { abortTask } from '../ai/task';
 import { AwayC, AwaySiteC, SiteRunC, type SiteRun } from '../away/components';
 import { endRun } from '../away/end';
@@ -8,9 +6,9 @@ import { ShipC } from '../combat/components';
 import { CrewC, DeadC, PrioritiesC, WORK_CATEGORIES, type Priorities } from '../crew/components';
 import { createCrew } from '../crew/spawn';
 import type { Sim } from '../sim';
-import { courierDef } from '../trade/courier';
+import { freeShuttle, sendHome } from '../trade/courier';
 import { VehicleC, type Vehicle } from '../vehicles/components';
-import { boardCrew } from '../vehicles/lifecycle';
+import { boardCrew, vehicleDefOf } from '../vehicles/lifecycle';
 import { YardCrewC, type YardOrder } from './types';
 import { grant, revoke } from '../consent/guests';
 
@@ -25,31 +23,26 @@ function builderPriorities(): Priorities {
 export const alive = (sim: Sim, id: number): boolean => sim.world.has(id, CrewC) && !sim.world.has(id, DeadC);
 
 /**
- * The yard shuttle and its crew (#287: an away site on the player's ship). The shuttle is the trade courier's type, made beside the station
- * (its home), with the crew already aboard: they are the site's party from the start. The site (owner 'yard') docks the shuttle at the
+ * The yard shuttle and its crew (#287: an away site on the player's ship). The shuttle is the station's own (a real one, stowed in its hangar or
+ * on its pad and free: trade/courier.ts `freeShuttle`, #548), with the crew already aboard: they are the site's party from the start. The site (owner 'yard') docks the shuttle at the
  * player's airlock the order chose, lands the party suited (`outside`: their work is on the hull), takes nothing home (`noLoot`) and has
  * no seats to offer (`demand` none); the site's run flies it, brings tired or hurt contractors home to the station, and brings everyone home
  * when the order closes the site. Contractors are the station's people but neutral to everyone, aboard the player's ship by its leave (a 'yard'
- * consent grant for the site's party and the named crew, working; revoked in `dismiss`). Returns false when it cannot be made.
+ * consent grant for the site's party and the named crew, working; revoked in `dismiss`). 'busy' while the station's shuttle is out on another job;
+ * 'none' when it cannot be sent at all.
  */
-export function launchShuttle(sim: Sim, o: YardOrder): boolean {
-  const cd = courierDef(sim);
+export function launchShuttle(sim: Sim, o: YardOrder): 'ok' | 'busy' | 'none' {
+  const free = freeShuttle(sim, o.station);
   const station = sim.world.get(o.station, ShipC);
   const spec = sim.content.yard?.crew;
-  if (!cd || !station || !spec) return false;
-  const vehicle = sim.world.createEntity();
-  sim.world.add(vehicle, VehicleC, {
-    def: cd.id, homeShip: o.station, home: 0, state: 'flying', hp: cd.def.maxHp, pilot: 0, passengers: [],
-    dest: null, hover: o.station, dock: 0, cargo: [], autopilot: true,
-  });
-  sim.world.add(vehicle, BodyC, { x: station.x + station.width / 2, y: station.y + station.height / 2, heading: 0, alt: ALT.cruise });
-  if (openSite(sim, o.ship, 'yard', vehicle) === 'noShuttle') {
-    sim.world.destroyEntity(vehicle);
-    return false;
-  }
-  reportLaunched(sim, vehicle, sim.world.get(vehicle, VehicleC) as Vehicle);
+  if ('error' in free) return free.error === 'courierBusy' ? 'busy' : 'none';
+  if (!station || !spec) return 'none';
+  const vehicle = free.vehicle;
+  if (openSite(sim, o.ship, 'yard', vehicle) === 'noShuttle') return 'none';
+  const v = sim.world.get(vehicle, VehicleC) as Vehicle;
+  v.autopilot = true;
   Object.assign(sim.world.get(o.ship, AwaySiteC)!, { demand: {}, dock: o.airlock, outside: true, noLoot: true });
-  const n = Math.min(spec.count, cd.def.capacity + 1);
+  const n = Math.min(spec.count, (vehicleDefOf(sim, v)?.capacity ?? 0) + 1);
   for (let i = 0; i < n; i++) {
     const id = createCrew(sim, o.station, spec.role, { x: station.x, y: station.y }, { faction: 'neutral', rest: 100 });
     if (!id) continue;
@@ -62,10 +55,10 @@ export function launchShuttle(sim: Sim, o: YardOrder): boolean {
   o.vehicle = vehicle;
   if (o.crew.length === 0) {
     dismiss(sim, o);
-    return false;
+    return 'none';
   }
   grant(sim, o.ship, { by: 'yard', faction: 'neutral', site: o.ship, crew: [...o.crew], from: o.station, work: true });
-  return true;
+  return 'ok';
 }
 
 /** The order's site run, if its shuttle still serves the player's ship. */
@@ -74,7 +67,7 @@ export function yardRun(sim: Sim, o: YardOrder): SiteRun | undefined {
   return r?.site === o.ship ? r : undefined;
 }
 
-/** The order's crew and shuttle leave the world (home again, or lost with the order); the site's run ends with them. */
+/** The order's crew leave the world (home again, or lost with the order) and the station's shuttle is its own again (flying home if it is out); the site's run ends with them. */
 export function dismiss(sim: Sim, o: YardOrder): void {
   const r = yardRun(sim, o);
   if (r) endRun(sim, o.vehicle, r, 'closed');
@@ -84,6 +77,6 @@ export function dismiss(sim: Sim, o: YardOrder): void {
   }
   o.crew = [];
   revoke(sim, o.ship, 'yard', { site: o.ship });
-  if (o.vehicle) sim.world.destroyEntity(o.vehicle);
+  if (o.vehicle) sendHome(sim, o.vehicle);
   o.vehicle = 0;
 }

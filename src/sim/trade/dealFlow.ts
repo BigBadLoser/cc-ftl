@@ -1,44 +1,25 @@
-import { shipById } from '../combat/ships';
-import { makeHaul } from '../items/plan';
-import { reservations, refKey } from '../items/stock';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
-import { DEFAULT_CARRY_CAPACITY, PLAN_INTERVAL } from '../tuning';
-import { cargoAdd, cargoCount, cargoOf, cargoTake } from '../vehicles/cargo';
+import { cargoAdd, cargoCount, cargoTake } from '../vehicles/cargo';
 import { VehicleC, type Vehicle } from '../vehicles/components';
-import { undock } from '../vehicles/lifecycle';
-import { addStock, cancelCourierHauls, closeCourier, failDeal, isLive, setPhase, settleDeal, touchMarket } from './deals';
-import type { ItemQty } from '../registry';
-import { spawnCourier } from './courier';
-import { holding } from './player';
+import { addStock, failDeal, isLive, setPhase, settleDeal, touchMarket } from './deals';
+import { BACK_SEC, DISPATCH_SEC, due, FLIGHT_SEC, LOAD_SEC, REPEAT, UNLOAD_SEC } from './dealTiming';
+import { gaveAll, haulAboard, stepTheirs, theirGiveUp } from './theirRun';
 import { settleDock } from './dockLedger';
 import { isStation, stageGoods, stationAirlock, stationWork, takeDelivery, unwindStation } from './stationDock';
 import { bayAccessTile } from '../vehicles/geometry';
+import { sendHome } from './courier';
 import { dockError } from '../vehicles/handlers';
 import { TraderC, type Deal } from './types';
 import { stepHandover } from '../galaxy/handover';
 import { boardRecruits, landRecruits, lostRecruit, recruitsAboard } from './recruitLand';
-import { addCredits } from './credits';
 import { stepQueued } from './queue';
-
-/** Ticks between repeats of a flight command a deal keeps asking for until the shuttle obeys. */
-const REPEAT = 20;
-/** Seconds a deal may wait for the shuttle to dock and for the crew to load it before it is called off. */
-const DISPATCH_SEC = 120;
-const LOAD_SEC = 300;
-const FLIGHT_SEC = 240;
-/** Seconds the shuttle gets to fly home and dock, and the crew to empty it, before the delivery is given up on (it must not block travel forever). */
-const BACK_SEC = 240;
-const UNLOAD_SEC = 300;
-
-const due = (d: Deal): boolean => d.timer % REPEAT === 1;
 
 /** Advance every live deal one tick, and send finished couriers home. */
 export function advanceDeals(sim: Sim): void {
   for (const d of [...sim.trade.deals]) {
     if (isLive(d)) step(sim, d);
-    else if (d.courier === 'them' && d.vehicle) dismissCourier(sim, d);
-    else if (d.courier === 'you' && d.vehicle && (d.phase === 'done' || d.reason === 'cancelled' || d.crew || d.handover)) parkCourier(sim, d);
+    else if (d.vehicle && (d.courier === 'them' || d.phase === 'done' || d.reason === 'cancelled' || d.crew || d.handover)) parkCourier(sim, d);
   }
 }
 
@@ -46,19 +27,22 @@ function step(sim: Sim, d: Deal): void {
   if (d.phase === 'queued') return stepQueued(sim, d);
   d.timer++;
   if (d.handover) return stepHandover(sim, d);
-  if (d.courier === 'them' && d.phase === 'dispatch') {
-    d.vehicle = spawnCourier(sim, d);
-    if (!d.vehicle) return failDeal(sim, d, 'noCourier');
-    setPhase(sim, d, 'back');
-  }
+  const theirs = d.courier === 'them';
+  // Past the exchange at the player's airlock, the trader's shuttle carries the player's goods home: what was traded stands.
+  const farDone = theirs && (d.phase === 'back' || d.phase === 'unload');
   const v = sim.world.get(d.vehicle, VehicleC);
-  if (!v) return failDeal(sim, d, 'lost', d.phase === 'back' || d.phase === 'unload' || d.phase === 'exchange');
+  if (!v) {
+    if (farDone) return lostAfterExchange(sim, d);
+    // Shot down with the goods aboard: the payer is refunded, the goods are gone.
+    return failDeal(sim, d, 'lost', theirs ? d.phase === 'out' || d.phase === 'stationWork' : d.phase === 'back' || d.phase === 'unload' || d.phase === 'exchange');
+  }
   if (!sim.world.get(d.ship, TraderC) && !(d.crew && (d.phase === 'back' || d.phase === 'unload'))) {
     // The seller vanished: what already reached the player is settled like any stuck delivery, never refunded on top of keeping it.
-    if (d.courier === 'them' && (d.phase === 'back' || d.phase === 'unload')) return reconcileDelivery(sim, d, v, 'traderGone');
+    if (theirs && (farDone || d.phase === 'stationWork')) return theirGiveUp(sim, d, v, 'traderGone');
     return failDeal(sim, d, 'traderGone');
   }
   if (d.crew && (d.phase === 'out' || d.phase === 'dockStation' || d.phase === 'stationWork') && lostRecruit(sim, d)) return failDeal(sim, d, 'recruitGone');
+  if (theirs) return stepTheirs(sim, d, v);
   switch (d.phase) {
     case 'dispatch': return dispatch(sim, d, v);
     case 'load': return load(sim, d, v);
@@ -84,19 +68,8 @@ function dispatch(sim: Sim, d: Deal, v: Vehicle): void {
 /** Step 2: crew haul the goods from storage and floor stacks into the docked shuttle through the airlock's unloaders. */
 function load(sim: Sim, d: Deal, v: Vehicle): void {
   if (d.timer > LOAD_SEC * TICK_HZ) return failDeal(sim, d, 'loadTimeout');
-  if (d.give.every((l) => cargoOf(sim, d.vehicle, l.item) >= l.count)) return setPhase(sim, d, 'out');
-  if (sim.tick % PLAN_INTERVAL !== 0 || v.state !== 'docked') return;
-  const res = reservations(sim);
-  for (const l of d.give) {
-    let need = l.count - cargoOf(sim, d.vehicle, l.item) - (res.incoming.get(refKey('vehicle', d.vehicle, l.item)) ?? 0);
-    for (const s of holding(sim, l.item)) {
-      const avail = s.count - (res.out.get(refKey(s.kind, s.id, l.item)) ?? 0);
-      const n = Math.min(need, avail, DEFAULT_CARRY_CAPACITY);
-      if (n <= 0) continue;
-      makeHaul(sim, res, 'hauling', s.shipId, { ref: { kind: s.kind, id: s.id }, x: s.x, y: s.y, avail }, { kind: 'vehicle', id: d.vehicle }, l.item, n);
-      need -= n;
-    }
-  }
+  if (gaveAll(sim, d)) return setPhase(sim, d, 'out');
+  haulAboard(sim, d, v);
 }
 
 /**
@@ -105,7 +78,7 @@ function load(sim: Sim, d: Deal, v: Vehicle): void {
  */
 function out(sim: Sim, d: Deal, v: Vehicle): void {
   if (d.timer > FLIGHT_SEC * TICK_HZ) return failDeal(sim, d, 'flightTimeout');
-  if (d.courier === 'you' && d.via !== 'hover' && isStation(sim, d.ship)) {
+  if (d.via !== 'hover' && isStation(sim, d.ship)) {
     const airlock = stationAirlock(sim, d.ship, d.vehicle);
     if (airlock) {
       d.via = 'dock';
@@ -184,51 +157,25 @@ function recruitWork(sim: Sim, d: Deal, v: Vehicle): void {
 }
 
 /**
- * Has the exchange happened by the time a deal is in `back` or `unload`, so that what the player paid for is physically theirs? One decision
- * for every timeout:
- * - the player's shuttle (`you`): yes. The give goods went to the trader and the get goods are in the shuttle's hold at the exchange, before
- *   `back`. The deal settles as done, the hold stays aboard (nothing is refunded or duplicated).
- * - the trader's shuttle (`them`): no. It only carries the trader's goods (a deal with give goods always uses the player's shuttle, see
- *   `planCourier`), which reach the player when they are unloaded; the shuttle is dismissed when the deal ends, so a stuck delivery fails
- *   and refunds, and the goods go back to the trader.
+ * Has the exchange happened by the time the player's shuttle is in `back` or `unload`, so that what the player paid for is physically theirs? One
+ * decision for every timeout (the trader's shuttle has its own: theirRun.ts `theirGiveUp`):
+ * - a trade run: yes. The give goods went to the trader and the get goods are in the shuttle's hold at the exchange, before `back`. The deal
+ *   settles as done, the hold stays aboard (nothing is refunded or duplicated).
  * - a hiring run: once a recruit is aboard (boarding is its exchange): yes. The shuttle brings them home, so the hire completes (they
  *   step out at the shuttle's home bay, the fee is paid once). Before anyone boards: no, it fails, refunds, and they stay at the station.
  */
-const exchanged = (sim: Sim, d: Deal): boolean => d.courier === 'you' && (!d.crew || recruitsAboard(sim, d));
+const exchanged = (sim: Sim, d: Deal): boolean => !d.crew || recruitsAboard(sim, d);
 
-/**
- * The trader's shuttle timed out: settle what actually reached the player and refund the rest. The shuttle's hold started as exactly `d.get`,
- * so what is missing from it was unloaded. The player pays for that part pro rata (by value) from the escrow (a barter counts it as delivered);
- * the unpaid share is refunded and only the undelivered goods go back to the trader's stock. Nothing delivered is a plain failure.
- */
-function reconcileDelivery(sim: Sim, d: Deal, v: Vehicle, reason: string): void {
-  cancelCourierHauls(sim, d); // before reading the hold: nothing more can leave it this tick
-  const delivered = d.get.map((l) => ({ item: l.item, count: l.count - Math.min(l.count, cargoOf(sim, d.vehicle, l.item)) }));
-  const got = delivered.filter((l) => l.count > 0);
-  if (got.length === 0) return failDeal(sim, d, reason);
-  const left = d.get.map((l, i) => ({ item: l.item, count: l.count - (delivered[i] as ItemQty).count })).filter((l) => l.count > 0);
-  const trader = sim.world.get(d.ship, TraderC);
-  if (left.length > 0) {
-    if (trader) for (const l of left) addStock(trader.stock, l.item, l.count);
-    if (!d.barter && d.balance > 0) {
-      // The agreed value of exactly what was delivered (shares fixed when the trip opened), not today's prices.
-      const share = d.get.reduce((n, l, i) => n + ((d.getValue?.[i] ?? 0) * (delivered[i] as ItemQty).count) / l.count, 0);
-      const pay = Math.min(d.held, Math.round(share));
-      addCredits(sim, d.held - pay); // the undelivered share is refunded
-      d.held = pay;
-      d.balance = pay;
-    }
-    d.get = got;
-    touchMarket(sim, trader);
-  }
-  if (d.trip) { d.trip.rest = []; d.trip.stopped = reason; }
-  closeCourier(sim, d); // what is left leaves with the shuttle (it went back to the trader's stock above)
+/** The trader's shuttle was lost on its way home after the exchange: the deal stands as traded (what the player sold was lost with it, the trader's loss). */
+function lostAfterExchange(sim: Sim, d: Deal): void {
+  if (d.trip) { d.trip.rest = []; d.trip.stopped = 'lost'; }
+  if (d.dock) settleDock(d);
+  d.vehicle = 0;
   settleDeal(sim, d);
 }
 
 /** A delivery that cannot be finished (no airlock to dock at, nobody or nowhere to unload): settle or refund by `exchanged`. */
 function giveUp(sim: Sim, d: Deal, v: Vehicle, reason: string): void {
-  if (d.courier === 'them' && !d.crew) return reconcileDelivery(sim, d, v, reason);
   if (!exchanged(sim, d)) return failDeal(sim, d, reason);
   if (d.crew) {
     if (!landRecruits(sim, d, true)) return; // nowhere to step out yet (no walkable ship): the deal stays pending and tries again next tick
@@ -266,24 +213,21 @@ function unload(sim: Sim, d: Deal, v: Vehicle): void {
     return void sim.enqueue({ type: 'vehicle.return', vehicle: d.vehicle });
   }
   if (cargoCount(v) > 0) return;
-  if (!settleDeal(sim, d) && d.courier === 'you') sim.enqueue({ type: 'vehicle.return', vehicle: d.vehicle });
+  if (!settleDeal(sim, d)) sim.enqueue({ type: 'vehicle.return', vehicle: d.vehicle });
 }
 
-/** A trader's own shuttle that has been unloaded leaves for home and disappears when it gets there. */
-function dismissCourier(sim: Sim, d: Deal): void {
-  const v = sim.world.get(d.vehicle, VehicleC);
-  if (!v) return void (d.vehicle = 0);
-  if (v.state === 'docked') undock(sim, d.vehicle, v);
-  const home = shipById(sim, d.ship);
-  if (!home || (v.hover === d.ship && !v.dest)) {
-    sim.world.destroyEntity(d.vehicle);
-    d.vehicle = 0;
-  } else if (!v.dest) v.dest = { type: 'hover', ship: d.ship };
-}
-
-/** The player's shuttle flies itself home after a run; once it is stowed (or gone) it is a normal crewed shuttle again. */
+/**
+ * After a run the shuttle flies itself home; once it is stowed (or gone) the deal lets it go. The player's is then a normal crewed shuttle again (its
+ * return was ordered when the run ended). The trader's is sent home here, whatever ended the run, and waits in its bay or on its pad for the next
+ * one (courier.ts `sendHome`).
+ */
 function parkCourier(sim: Sim, d: Deal): void {
   const v = sim.world.get(d.vehicle, VehicleC);
+  if (d.courier === 'them') {
+    if ((v?.state !== 'stowed' && (sim.tick + d.id) % REPEAT !== 0) || !sendHome(sim, d.vehicle)) return;
+    d.vehicle = 0;
+    return;
+  }
   if (v && v.state !== 'stowed') return;
   if (v) v.autopilot = false;
   d.vehicle = 0;

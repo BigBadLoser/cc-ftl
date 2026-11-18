@@ -48,10 +48,10 @@ export function handOf(sim: Sim, d: Deal, item: string): number {
 
 /**
  * Where the deal's units of an item are, in one answer: in the hold, on the shelf, on the deck, in hands. The station-work exchange is complete when
- * every bought line is in the hold and nothing given is in the hold or in hands (shelf and deck count as delivered).
+ * every bought line is in the hold and nothing given is in the hold or in hands (shelf and deck count as delivered). `only` asks about one direction.
  */
-export function dockDone(sim: Sim, d: Deal): boolean {
-  return lines(d).every(({ item, dir }) => {
+export function dockDone(sim: Sim, d: Deal, only?: 'get' | 'give'): boolean {
+  return lines(d).filter((l) => !only || l.dir === only).every(({ item, dir }) => {
     const u = unitsOf(d, item);
     if (dir === 'get') return u.hold >= (d.get.find((l) => l.item === item)?.count ?? 0) && handOf(sim, d, item) === 0;
     return u.hold <= 0 && handOf(sim, d, item) === 0;

@@ -189,7 +189,7 @@ export function hireCrew(sim: Sim, key: string): void {
   if (!fh || !sim.world.has(id, CrewC) || isIncapacitated(sim, id)) return reject(sim, 'noCandidate');
   if (liveDealWith(sim, fh.station)) return reject(sim, 'dealOpen');
   if (sim.trade.credits < fh.cost) return reject(sim, 'cantAfford');
-  const plan = planCourier(sim, fh.station, [], [], true);
+  const plan = planCourier(sim, fh.station, true);
   if ('error' in plan) return reject(sim, plan.error === 'noCourier' ? 'noShuttle' : plan.error);
   sim.trade.credits -= fh.cost;
   const deal: Deal = {
