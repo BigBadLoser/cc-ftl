@@ -13,7 +13,7 @@ import numpy as np
 from .crew_cache import ROOT, digest, files_digest  # noqa: F401  (re-exported)
 
 SRC = Path(__file__).resolve().parent
-RENDER_VERSION = 1
+RENDER_VERSION = 2
 """The render code's version. The cache keys on it instead of hashing the engine's files (ENGINE), so a change to them
 that leaves every sprite's pixels as they were re-renders nothing. Bump it in any change to ENGINE that can change a
 sprite's pixels (lighting, sampling, quantisation, cropping, the key's own inputs): a missed bump serves stale

@@ -51,8 +51,8 @@ def render_ghost(objs, W, H):
     plate.hide_render = False
     cov = post.blocks(a2 > 0.5, SS)
     cnt = cov.sum(-1)
-    lum = (post.blocks(rgb2.mean(-1), SS) * cov).sum(-1) / np.maximum(cnt, 1)
-    ga = np.where(cnt >= post.scaled(3, SS), np.clip(lum / 255.0 * 0.65, 0, 0.9), 0.0)    # low threshold: thin lines stay unbroken
+    lum = (post.blocks(rgb2.mean(-1), SS) * cov).sum(-1) / cov.shape[-1]      # (weighted by coverage: antialiased)
+    ga = np.clip(lum / 255.0 * 0.65, 0, 0.9)
     tint = np.array([200.0, 214.0, 232.0])
     out = np.where(op[..., None], c.astype(float), tint)
     mixed = np.where(op[..., None], c * (1 - ga[..., None]) + tint * ga[..., None], tint)

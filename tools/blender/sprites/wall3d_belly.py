@@ -30,7 +30,7 @@ from .wall3d_ext_t3 import CORNER_C
 
 ZG = W.ZG
 FAR_LOW = 0.5 / W.ZART              # walls down: the far sides' cut flush with the deck (half an art px over it)
-FAR_SEAM = (7 * TOP_PX, 7.75 * TOP_PX, TOP_SEAM[2])   # a far side's top seam (the cut hull, walls down): 7 art px in
+FAR_SEAM = (5 * TOP_PX, 5.75 * TOP_PX, TOP_SEAM[2])   # a far side's top seam (the cut hull, walls down): 5 art px in
 #   from its inside, clear of the floor's edge (Space Haven's far-side hull ghosts), not the exterior's 2
 ARMOUR = 0.77                       # tiles: the near armour's upright drop under the cut (hull 46 D3's: 31 px at 64
 SLOPE = (0.375, 0.638)              # px tiles; its Bottom draws 33, but the two meet), then its slope in (square to its

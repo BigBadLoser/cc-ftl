@@ -255,9 +255,10 @@ def _rise(m, mask, room, corners):
     seam (each tile draws its back corner), fading as they go: the hull it stands for, hinted (Space Haven's far-side
     hull ghosts, walls fully collapsed)."""
     from .walls import hull_top
-    pts = [(-0.5, -0.5)]
+    e = -0.5 + C                            # (a px in from the tile's back edges: on the cut hull's edge, not past it)
+    pts = [(e, e)]
     z0 = 0.02; z1 = hull_top() / 6          # (from the cut hull's back edge on the deck: short, as in the reference)
-    for a, b in ([((-0.5, -0.5), (0.5, -0.5))] if not mask & 1 else []) + ([((-0.5, 0.5), (-0.5, -0.5))] if not mask & 8 else []):
+    for a, b in ([((e, e), (0.5, e))] if not mask & 1 else []) + ([((e, 0.5), (e, e))] if not mask & 8 else []):
         m.poly([core.G(*a, z0), core.G(*b, z0), core.G(*b, z0 + DZ), core.G(*a, z0 + DZ)], "gW2")   # (that edge's line)
     for px, py in pts:
         a, b = (px, py), (px + C / 2, py - C / 2)      # (1 px wide on screen, on one side of the seam)
