@@ -110,7 +110,7 @@ const subPlan = (c: Ctx, over: Partial<ShipPlan>): ShipPlan => ({
 
 const navyBow: Build = (c, f, p) => {
   if (!p.command || p.commandBy !== 'navyBow') return null;
-  const blk = noseBlock(c.rng, pickNose(new Builder(c.rng), f, { ...c.plan, command: p.command, weapons: [] }));
+  const blk = noseBlock(c.rng, pickNose(c.rng, f, { ...c.plan, command: p.command, weapons: [] }));
   if (blk) p.command = null;
   return blk && { ...blk, donor: 'navy', label: 'navy: bow' };
 };

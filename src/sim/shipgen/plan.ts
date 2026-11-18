@@ -120,6 +120,20 @@ export function cargoSpec(n: number): RoomSpec {
 /** Power the plan books for each engine. */
 const ENGINE_DEMAND = 6;
 
+/** Tiles of a stacked engine room (`engineSpec`'s interior). */
+const ENGINE_ROOM_TILES = 20;
+
+/**
+ * Engines a hull of `perTile` hull tiles per room tile needs to carry the rooms (`specs`) and its own engine rooms (`hullCapacity`); 0
+ * with no estimate (`HullFamilyDef.hullPerRoomTile`). Solves `perTile * (rooms + 20 * engines) <= engines * capacity`.
+ */
+function hullEngines(defs: Record<string, ModuleDef>, perTile: number, specs: readonly RoomSpec[]): number {
+  const cap = defs['module.engine']?.engine?.hullCapacity ?? 0;
+  const room = perTile * ENGINE_ROOM_TILES;
+  if (perTile <= 0 || cap <= room) return 0;
+  return Math.ceil((perTile * specs.reduce((t, r) => t + r.w * r.h, 0)) / (cap - room));
+}
+
 /** Budget values for a ship of this role at this depth. */
 function budgetOf(f: FactionDef, role: ShipRoleDef, depth: number): Record<keyof ShipBudget, number> {
   const out = {} as Record<keyof ShipBudget, number>;
@@ -131,7 +145,7 @@ function budgetOf(f: FactionDef, role: ShipRoleDef, depth: number): Record<keyof
  * Plan the ship's contents: weapons, defences, engines, power, crew and stores, grouped into rooms. `extraEngines` are engines over the
  * budget, for a hull the budget's engines cannot carry (`generateAttempt`); the reactor cap grows with them, so they cost no guns.
  */
-export function planShip(rng: Rng, f: FactionDef, role: ShipRoleDef, depth: number, defs: Record<string, ModuleDef>, extraEngines = 0): ShipPlan {
+export function planShip(rng: Rng, f: FactionDef, role: ShipRoleDef, depth: number, defs: Record<string, ModuleDef>, extraEngines = 0, hullPerRoomTile = 0): ShipPlan {
   const b = budgetOf(f, role, depth);
   const arch = f.architecture;
   const guns: string[] = [];
@@ -182,8 +196,10 @@ export function planShip(rng: Rng, f: FactionDef, role: ShipRoleDef, depth: numb
   const hangars: RoomSpec[] = Array.from({ length: role.bays ?? (f.doctrine.boarding ? 1 : 0) }, () => ({
     role: 'hangar' as const, mods: ['module.vehicle_bay'], w: 5, h: 7, vehicle: true,
   }));
+  const budgetEngines = Math.max(1, b.engines);
+  const booked = Math.max(0, hullEngines(defs, hullPerRoomTile, [command, ...weapons, ...shields, ...(core ? [core] : []), ...pd, ...quarters, ...cargo, ...hangars, ...support]) - budgetEngines);
   const plan: ShipPlan = {
-    role, command, weapons, shields, engines: Math.max(1, b.engines) + extraEngines, reactors: 1, core, pd, quarters, cargo, hangars, support, crew,
+    role, command, weapons, shields, engines: budgetEngines + booked + extraEngines, reactors: 1, core, pd, quarters, cargo, hangars, support, crew,
     size: b.size,
   };
   // Power: enough reactors for the plan, or drop guns until the reactor cap covers it.
@@ -194,7 +210,7 @@ export function planShip(rng: Rng, f: FactionDef, role: ShipRoleDef, depth: numb
     return d;
   };
   const supply = defs['module.reactor']?.power ?? 50;
-  const cap = Math.max(1, b.reactors) + Math.ceil((extraEngines * ENGINE_DEMAND) / supply);
+  const cap = Math.max(1, b.reactors) + Math.ceil(((booked + extraEngines) * ENGINE_DEMAND) / supply);
   while (plan.weapons.length > 1 && Math.ceil(demandOf() / supply) > cap) plan.weapons.pop();
   plan.reactors = Math.max(1, Math.ceil(demandOf() / supply));
   return plan;

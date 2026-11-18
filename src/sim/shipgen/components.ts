@@ -1,7 +1,6 @@
 import { bands, jobs, no, propulsion, type Ctx, type SectionPlan } from './navyKit';
 import { mountGuns, type Cluster, type Host } from './navyMounts';
 import type { RoomSpec } from './plan';
-import { Builder } from './builder';
 import { bandBlock, noseBlock } from './navyBlocks';
 import { pickNose } from './topoNavy';
 import type { FactionDef } from './types';
@@ -49,7 +48,7 @@ export function hullSpine(c: Ctx, from: number, rooms: RoomSpec[], per: number, 
 }
 
 const nose = (c: Ctx, f: FactionDef): number | null => {
-  const front = noseBlock(c.rng, pickNose(new Builder(c.rng), f, c.plan));
+  const front = noseBlock(c.rng, pickNose(c.rng, f, c.plan));
   return front ? c.A.placeRoot(front) : null;
 };
 

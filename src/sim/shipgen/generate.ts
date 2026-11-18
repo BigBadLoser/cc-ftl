@@ -239,6 +239,9 @@ function pickRole(rng: Rng, f: FactionDef, depth: number): { role: ShipRoleDef; 
 export const previewHull = (f: FactionDef, seed: number, depth: number): string =>
   pickWeighted(new Rng(attemptSeed(seed, 0)), hullChoices(f, depth)).id;
 
+/** What a hull's problem begins with when its engines cannot carry it. */
+const CAPACITY_PROBLEM = 'engines carry';
+
 /** Times an attempt is built again with more engines when its hull came out bigger than its engines carry. */
 const ENGINE_TOP_UPS = 3;
 
@@ -281,7 +284,7 @@ function buildAttempt(
     const fam = pickWeighted(rng, hullChoices(f, depth)) as HullFamilyDef;
     role = { id: fam.id, weight: fam.weight, archetypes: [], ...(fam.bonus ? { bonus: fam.bonus } : {}), ...(fam.bays ? { bays: fam.bays } : {}) };
     archetype = 'sections';
-    plan = planShip(rng, f, role, depth, defs, extraEngines);
+    plan = planShip(rng, f, role, depth, defs, extraEngines, fam.hullPerRoomTile);
     const r = arrangeHull(rng, f, fam, plan, defs);
     if (typeof r === 'string') return `${fam.id}: ${r}`;
     comp = r.A;
@@ -296,12 +299,9 @@ function buildAttempt(
     topology = TOPOLOGIES[archetype as Exclude<ArchetypeId, 'sections'>](b, f, plan);
   }
   if (!topology) return `${archetype}: structure clash`;
-  // The hull as arranged, on the engines its rooms hold, checked before the fit-out (whose thinner walls barely change its size).
-  const engines = specsOf(b).flatMap((sp) => (sp?.mods ?? []).filter((m) => defs[m]?.engine).map((def) => ({ def, x: 0, y: 0, rot: 0 })));
-  const short = topUp ? enginesShort(defs, { rows: b.cv.crop().rows, modules: engines }) : 0;
-  if (short > 0) return short;
   const r = finishLayout(rng, f, factionId, seed, role, archetype, plan, b, topology, comp, profile, defs, n);
-  const after = topUp ? enginesShort(defs, r.template) : 0;
+  // Only a ship that failed on its engines alone is built again: any other problem reseeds it anyway.
+  const after = topUp && r.problems[0]?.startsWith(CAPACITY_PROBLEM) ? enginesShort(defs, r.template) : 0;
   return after > 0 ? after : r;
 }
 
@@ -402,7 +402,7 @@ export function fitShell(
   if (problems.length === 0 && opts.check) problems.push(...opts.check(template, defs));
   // A generated ship that jumps carries its hull on its engines (ftl/capacity.ts), as the player's does (#129). Hand-drawn hulls are not held to it.
   const load = opts.immobile ? null : templateHullLoad(defs, template);
-  if (problems.length === 0 && load && load.over > 0) problems.push(`engines carry ${load.capacity} of ${load.tiles} tiles`);
+  if (problems.length === 0 && load && load.over > 0) problems.push(`${CAPACITY_PROBLEM} ${load.capacity} of ${load.tiles} tiles`);
   const hall = (x: number, y: number): boolean => roles[roomOf[y * width + x] ?? -1] === 'hall' && !dockTile.has(y * width + x);
   const metrics = layoutMetrics(template, hall, defs);
   const bad = metricViolation(metrics, f.metrics);

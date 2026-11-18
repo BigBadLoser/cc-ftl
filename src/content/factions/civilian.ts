@@ -28,19 +28,19 @@ export const civilian = {
   // Civil families (assembly-driven): each its own construction, one grammar each.
   hullFamilies: [
     {
-      id: 'freighter', weight: { base: 4, perDepth: 0, max: 4 }, bonus: { crates: 8 }, grammars: [{ value: 'freighter', weight: 1 }],
+      id: 'freighter', hullPerRoomTile: 2.5, weight: { base: 4, perDepth: 0, max: 4 }, bonus: { crates: 8 }, grammars: [{ value: 'freighter', weight: 1 }],
       aspect: [3, 6], depth: {}, batteryCols: [1, 1], sponsonChance: 0, sectionRooms: 3, propulsion: ['bank'],
     },
     {
-      id: 'liner', weight: { base: 2, perDepth: 0, max: 2 }, bonus: { crew: 6, crates: -4 }, grammars: [{ value: 'liner', weight: 1 }],
+      id: 'liner', hullPerRoomTile: 4.9, weight: { base: 2, perDepth: 0, max: 2 }, bonus: { crew: 6, crates: -4 }, grammars: [{ value: 'liner', weight: 1 }],
       aspect: [3, 7], depth: {}, batteryCols: [1, 1], sponsonChance: 0, sectionRooms: 3, propulsion: ['bank'],
     },
     {
-      id: 'mining', weight: { base: 3, perDepth: 0, max: 3 }, bonus: { crates: 6 }, grammars: [{ value: 'mining', weight: 1 }],
+      id: 'mining', hullPerRoomTile: 3.1, weight: { base: 3, perDepth: 0, max: 3 }, bonus: { crates: 6 }, grammars: [{ value: 'mining', weight: 1 }],
       aspect: [2, 4], depth: {}, batteryCols: [1, 1], sponsonChance: 0, sectionRooms: 3, propulsion: ['bank'],
     },
     {
-      id: 'station', weight: { base: 1, perDepth: 0.2, max: 3 }, bonus: { crew: 2 }, grammars: [{ value: 'station', weight: 1 }],
+      id: 'station', hullPerRoomTile: 3.6, weight: { base: 1, perDepth: 0.2, max: 3 }, bonus: { crew: 2 }, grammars: [{ value: 'station', weight: 1 }],
       aspect: [1, 1.5], depth: {}, batteryCols: [1, 1], sponsonChance: 0, sectionRooms: 3, propulsion: ['bank'],
     },
   ],
