@@ -11,7 +11,7 @@ import { db, tr, traumaFits } from './bays';
 import { f1 } from './farm';
 import { rw } from './refinery';
 import { AC, B, seats, BT, OB, OBL, CD, DR, EX, FB, RF, G, GT, L, LS, MB, P, RK, RP, RS, SB, SP, SW, T, bunks, messSize, count, leftover, middle, range, rowsOf, sidePairs, tables, type Beds, type Run } from './parts';
-import { PB, VB, AI, CR, bank, core, crates, podsFit, pods, shuttle } from './plant';
+import { PB, VB, AI, CR, bank, core, crates, machines, machinesFit, podsFit, pods, shuttle } from './plant';
 import { laid, messTables, tablesClear } from './mess';
 import { co, cu, gy, hl, mk, pz } from './social';
 import { bg, ore, pa, qm, shelfSlots } from './stores';
@@ -291,7 +291,10 @@ export const RULES: Partial<Record<RoomRole, readonly RuleArrangement[]>> = {
     rule: ore,
   }],
   core: [{ name: 'CR core vault, the AI core between its point defence', weight: 1, when: (n, r) => count(n, AI) === 1 && r.w >= 3 * n.length - 1, rule: core }],
-  plant: [{ name: 'BA battery room, the cells in a bank round the console', weight: 1, when: (n, r) => n.includes(BT) && r.w >= 3 && r.h >= 3, rule: bank }],
+  plant: [
+    { name: 'BA battery room, the cells in a bank round the console', weight: 1, when: (n, r) => n.includes(BT) && r.w >= 3 && r.h >= 3, rule: bank },
+    { name: 'MR machine room, the machines on the back wall', weight: 1, when: machinesFit, rule: machines },
+  ],
   armoury: [
     { name: 'QM quartermaster, armoury lockers round a desk', weight: 1, when: (n, r) => !n.includes(SW) && r.w >= 7 && r.h >= 5, rule: qm },
     { name: 'BG brig, stasis wheel at the back', weight: 1, when: (n, r) => count(n, SW) === 1 && r.w >= 7 && r.h >= 6, rule: bg },

@@ -68,7 +68,7 @@ function settle(p: Pool, b: Builder, taken: { specs: RoomSpec[]; guns: string[];
   for (const s of taken.specs) {
     if (s.mods.every((m) => has(m))) continue;
     if (s === p.command || s.mods.includes('module.helm')) { p.command = s; p.commandBy = null; } else if (s.role === 'quarters') p.quarters.push(s);
-    else if (s.role === 'support') p.support.push(s);
+    else if (s.role === 'support' || s.role === 'plant') p.support.push(s);
     else if (s.role === 'hangar') p.hangars.push(s);
     else p.core.push(s);
   }

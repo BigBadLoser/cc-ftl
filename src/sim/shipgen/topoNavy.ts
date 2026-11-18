@@ -29,7 +29,7 @@ export function pairUp(specs: RoomSpec[]): [RoomSpec[], RoomSpec[]] {
 const stripLen = (specs: RoomSpec[]): number => specs.reduce((t, s) => t + s.w + 1, 1);
 
 /** Zoning order for side strips: guns forward, then defences, command support, crew, stores aft. */
-const ZONE = ['weapons', 'shields', 'core', 'dock', 'quarters', 'support', 'cargo', 'hangar', 'reactor'];
+const ZONE = ['weapons', 'shields', 'core', 'dock', 'quarters', 'support', 'plant', 'cargo', 'hangar', 'reactor'];
 const zoned = (specs: RoomSpec[]): RoomSpec[] => [...specs].sort((a, b) => ZONE.indexOf(a.role) - ZONE.indexOf(b.role));
 
 /**
@@ -152,7 +152,7 @@ export function ring(b: Builder, f: FactionDef, plan: ShipPlan, carrier = false)
   const outer = [...(carrier ? [...plan.weapons, ...plan.shields] : [...plan.weapons, ...plan.hangars]), dockSpec(), dockSpec()];
   // Balance the band against the outboard strips: crew and stores move outboard until the strips cover the band.
   for (let guard = 0; guard < 12 && !carrier; guard++) {
-    const i = inner.findIndex((r) => r.role === 'quarters' || r.role === 'support' || r.role === 'cargo');
+    const i = inner.findIndex((r) => r.role === 'quarters' || r.role === 'support' || r.role === 'plant' || r.role === 'cargo');
     if (i < 0 || bandLen(inner, 0) <= stripLen(pairUp(outer)[0]) + 4) break;
     outer.push(...inner.splice(i, 1));
   }

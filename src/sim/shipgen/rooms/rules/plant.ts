@@ -4,6 +4,7 @@
  * Stores place their planned modules first and then as many more of the same as the floor suits (place.ts keeps those
  * only where they fit and the room still works).
  */
+import type { ModuleDef } from '../../../registry';
 import type { Piece } from './check';
 import { BT, CN, P, count, range } from './parts';
 import type { Ctx } from './rules';
@@ -41,6 +42,20 @@ export function bank(c: Ctx): Piece[] {
   }
   return out;
 }
+
+/** MR: a machine room: its machines (life support, a fabricator) side by side on the back wall, facing the door, centred, a tile apart where the wall allows. */
+export function machines(c: Ctx): Piece[] {
+  const ws = c.need.map((m) => c.defs[m]?.footprint[0] ?? 1), total = ws.reduce((a, b) => a + b, 0);
+  const gap = total + c.need.length - 1 <= c.w ? 1 : 0;
+  let x = Math.floor((c.w - (total + gap * (c.need.length - 1))) / 2);
+  return c.need.map((m, i) => { const p = P(m, x, 0, 0); x += (ws[i] as number) + gap; return p; });
+}
+
+/** Whether a room's planned modules are machines that stand in a row on its back wall with a walkway before them. */
+export const machinesFit = (need: readonly string[], r: { w: number; h: number; defs: Record<string, ModuleDef> }): boolean =>
+  need.length > 0 && need.every((m) => !!r.defs[m] && m !== BT && m !== CN)
+  && need.reduce((n, m) => n + (r.defs[m]?.footprint[0] ?? 1), 0) <= r.w
+  && Math.max(...need.map((m) => r.defs[m]?.footprint[1] ?? 1)) + 1 <= r.h;
 
 /**
  * The crate places of a w x h hold, `clear` tiles ("x,y") left open, and `cut` ones (wall) neither stood on nor faced:

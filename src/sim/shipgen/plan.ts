@@ -1,4 +1,5 @@
 import type { Rng } from '../rng';
+import { barracksOf } from './assembly/quarters';
 import { ENEMY_DRONES_BASE, ENEMY_DRONE_MIN_DEPTH, ENEMY_DRONE_SECOND_DEPTH } from '../tuning';
 import type { ModuleDef } from '../registry';
 import type { FactionDef, HullFamilyDef, RoomRole, Scaled, ShipBudget, ShipRoleDef, Weighted } from './types';
@@ -227,12 +228,13 @@ export function planShip(rng: Rng, f: FactionDef, role: ShipRoleDef, depth: numb
   const quarters: RoomSpec[] = [];
   const support: RoomSpec[] = [];
   if (f.living) {
-    for (let i = 0; i < crew.length; i += 4) {
-      const beds = Math.min(4, crew.length - i);
-      quarters.push({ role: 'quarters', mods: [...Array<string>(beds).fill('module.bed'), 'module.lifeSupport'], w: 6, h: 3 });
-    }
+    // The crew sleeps in barracks of bunks along one wall (a ship's rooms are narrow), sized as the rule lays them.
+    quarters.push(...barracksOf(rng, { role: 'quarters', mods: [], w: 3, h: 3 }, crew.length, [4, 8], true));
+    // Life support stands in plant rooms, not where the crew sleeps (stations do the same): a unit, the fabricator
+    // beside the first on half the ships, and a tile to walk in front.
     for (let i = 0; i < 1 + Math.floor(crew.length / 6); i++) {
-      support.push({ role: 'support', mods: ['module.lifeSupport', ...(i === 0 && rng.chance(0.5) ? ['module.fabricator'] : [])], w: 4, h: 3 });
+      const fab = i === 0 && rng.chance(0.5);
+      support.push({ role: 'plant', mods: ['module.lifeSupport', ...(fab ? ['module.fabricator'] : [])], w: fab ? 4 : 3, h: 3 });
     }
   }
   const cargo: RoomSpec[] = [];
