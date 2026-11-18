@@ -129,6 +129,12 @@ export interface HullFamilyDef {
   weight: Scaled;
   bonus?: Partial<Record<keyof ShipBudget, number>>;
   bays?: number;
+  /**
+   * Hull tiles a built hull of this family takes per tile of the rooms it holds (engine rooms included), measured over generated ships: the
+   * planner books the engines that hull will need up front (`planShip`), so the engine top-up (`generateAttempt`) seldom has to build twice.
+   * Left out, no engines are booked ahead.
+   */
+  hullPerRoomTile?: number;
   /** Interior depth of each section's room band (per side), [min, max]. */
   depth: Partial<Record<SectionKind, readonly [number, number]>>;
   /** Gun columns per side in one battery section. */

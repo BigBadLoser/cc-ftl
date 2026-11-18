@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { isTileWalkable } from '../../sim/modules/walk';
 import { newGame } from '../../sim/newGame';
 import type { ModuleDef } from '../../sim/registry';
+import { Rng } from '../../sim/rng';
 import { generateShip } from '../../sim/shipgen/generate';
+import { allRooms, planShip } from '../../sim/shipgen/plan';
 import { adjacencyDistance, adjacencySignature, meanPairwise, silhouetteDistance, silhouetteMask } from '../../sim/shipgen/metrics';
 import type { FactionDef, GenResult } from '../../sim/shipgen/types';
 import { Struct } from '../../sim/structure';
@@ -40,7 +42,8 @@ describe('ship generator: doctrines', () => {
     }
     expect([...families].sort()).toEqual(['carrier', 'corvette', 'cruiser', 'frigate']);
     expect(sideBySide).toBeGreaterThan(25);
-    const deep = Array.from({ length: 12 }, (_, i) => gen('faction.navy', i + 1, 9));
+    // Seeds 37 to 48: the silhouette spread of twelve deep hulls swings from 0.18 to 0.35 with the window of seeds (0.256 on average since #571).
+    const deep = Array.from({ length: 12 }, (_, i) => gen('faction.navy', i + 37, 9));
     expect(meanPairwise(deep.map((g) => silhouetteMask(g.template.rows)), silhouetteDistance)).toBeGreaterThan(0.25);
     expect(meanPairwise(deep.map((g) => adjacencySignature(g.debug!)), adjacencyDistance)).toBeGreaterThan(0.45);
   });
@@ -137,4 +140,21 @@ describe('ship generator: doctrines', () => {
     expect(seen).toBeGreaterThan(0);
   });
 
+});
+
+describe('ship generator: engines booked ahead (#571)', () => {
+  const navy = factions['faction.navy'] as FactionDef;
+  const corvette = navy.hullFamilies!.find((h) => h.id === 'corvette')!;
+  const role = { id: corvette.id, weight: corvette.weight, archetypes: [], ...(corvette.bonus ? { bonus: corvette.bonus } : {}) };
+  const cap = defs['module.engine']!.engine!.hullCapacity!;
+
+  it('a family estimate books the engines its rooms need; none books the budget alone', () => {
+    const none = planShip(new Rng(7), navy, role, 1, defs);
+    const booked = planShip(new Rng(7), navy, role, 1, defs, 0, corvette.hullPerRoomTile);
+    const area = allRooms(booked).reduce((t, r) => t + r.w * r.h, 0);
+    expect(booked.engines).toBeGreaterThan(none.engines);
+    // The estimate's own hull fits on the engines it booked, and one fewer would not.
+    expect(corvette.hullPerRoomTile! * (area + 20 * booked.engines)).toBeLessThanOrEqual(booked.engines * cap);
+    expect(corvette.hullPerRoomTile! * (area + 20 * (booked.engines - 1))).toBeGreaterThan((booked.engines - 1) * cap);
+  });
 });

@@ -1,3 +1,4 @@
+import type { Rng } from '../rng';
 import { doorRows } from './canvas';
 import type { Builder, Part, Rect } from './builder';
 import { cargoSpec, dockSpec, engineSpec, reactorSpec, type RoomSpec, type ShipPlan } from './plan';
@@ -72,8 +73,8 @@ export function stern(b: Builder, x: number, joins: Rect[], engines: number, rea
 }
 
 /** Pick a nose chunk; if it has a gun deck, reserve the plan's first weapon room for it. */
-export function pickNose(b: Builder, f: FactionDef, plan: ShipPlan): { c: ChunkDef; specs: Record<string, RoomSpec> } {
-  const c = pickWeighted(b.rng, f.architecture.noses.map((n) => ({ value: n, weight: n.weight ?? 1 })));
+export function pickNose(rng: Rng, f: FactionDef, plan: ShipPlan): { c: ChunkDef; specs: Record<string, RoomSpec> } {
+  const c = pickWeighted(rng, f.architecture.noses.map((n) => ({ value: n, weight: n.weight ?? 1 })));
   const specs: Record<string, RoomSpec> = { b: plan.command };
   if (c.rows.some((r) => r.includes('w'))) {
     // The nose gun deck takes one mount; the rest of that battery goes back to the plan.
@@ -97,7 +98,7 @@ export function nose(b: Builder, n: { c: ChunkDef; specs: Record<string, RoomSpe
 export function spine(b: Builder, f: FactionDef, plan: ShipPlan): string | null {
   const cw = 2;
   b.axis2 = cw + 1;
-  const front = pickNose(b, f, plan);
+  const front = pickNose(b.rng, f, plan);
   const side = zoned([...plan.weapons, dockSpec(), dockSpec(), ...plan.shields, ...(plan.core ? [plan.core] : []), ...plan.quarters, ...plan.support, ...plan.cargo, ...plan.hangars]);
   const [n, s] = pairUp(side);
   // Hull profile: a flat run, a wedge deepening aft, or a waist deepest amidships (mirrored, so still symmetric).
@@ -144,7 +145,7 @@ const bandLen = (specs: RoomSpec[], crosses: number): number => specs.reduce((t,
 
 /** Warship: two corridors in a loop around a compartment band, mirrored gun strips outboard, nose, stern. */
 export function ring(b: Builder, f: FactionDef, plan: ShipPlan, carrier = false): string | null {
-  const front = pickNose(b, f, plan);
+  const front = pickNose(b.rng, f, plan);
   const inner = carrier
     ? [...plan.hangars, ...(plan.core ? [plan.core] : []), ...plan.quarters, ...plan.support, ...plan.cargo, ...Array.from({ length: plan.reactors }, () => reactorSpec(1))]
     : [...plan.shields, ...(plan.core ? [plan.core] : []), ...plan.quarters, ...plan.support, ...plan.cargo];
