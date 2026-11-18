@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { AsteroidC, MiningPodC, homeShip, isOreTile, newGame, placementError, shipGrid, spawnModule, spawnVehicle, type Sim } from '../sim';
+import { AsteroidC } from '../sim/asteroids/components';
+import { homeShip } from '../sim/combat/ships';
+import { MiningPodC } from '../sim/mining/components';
+import { isOreTile } from '../sim/mining/pick';
+import { placementError, spawnModule } from '../sim/modules/spawn';
+import { newGame } from '../sim/newGame';
+import { shipGrid } from '../sim/regions';
+import type { Sim } from '../sim/sim';
+import { spawnVehicle } from '../sim/vehicles/lifecycle';
 import { content } from '../content';
 import type { Renderer } from '../render/scene';
 import { createStore } from './store';

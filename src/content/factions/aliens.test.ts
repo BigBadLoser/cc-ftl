@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { ShipC, newGame, type RoleDef, type Sim, type SpeciesDef } from '../../sim';
+import { ShipC } from '../../sim/combat/components';
+import { newGame } from '../../sim/newGame';
+import type { RoleDef, SpeciesDef } from '../../sim/registry';
+import type { Sim } from '../../sim/sim';
 import { EggSacC, NestC } from '../../sim/aliens/components';
 import { content } from '../index';
 

@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { AboardC, PositionC, VehicleC, deserialize, serialize } from '../sim';
+import { PositionC } from '../sim/crew/components';
+import { deserialize, serialize } from '../sim/save';
+import { ForHireC } from '../sim/stations/components';
+import { AboardC, VehicleC } from '../sim/vehicles/components';
 import { AllegianceC } from '../sim/fight/components';
 import { shipGrid, shipIdOf } from '../sim/regions';
 import { isTileWalkable } from '../sim/modules/walk';
-import { ForHireC } from '../sim';
-import { atBack, playerCrew, run } from './recruitFixture';
+import { atBack, playerCrew, run } from '../../test/support/fixtures/recruit';
 import { content } from '.';
 
 // Slow tier: the natural-length version of the stuck-run test in recruit.test.ts (which starts a few seconds short of the give-up deadline).

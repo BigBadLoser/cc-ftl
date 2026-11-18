@@ -329,7 +329,7 @@ function flee(sim: Sim, grid: Grid, id: number, f: Fighter, pos: Position, threa
   if (holdWhenHidden && idle && hiddenFrom(sim, grid, pos, threats)) return;
   if (!idle && sim.tick - f.planned < FLEE_REPLAN_TICKS) return;
   f.planned = sim.tick;
-  const steps = fleePath(sim, grid, origin(pos), threats);
+  const steps = fleePath(sim, grid, origin(pos), threats, id);
   if (steps) {
     path.steps = steps;
   }

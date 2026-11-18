@@ -2,6 +2,7 @@ import { AssignmentC, CrewC, DraftedC, PathC, PositionC, type Position } from '.
 import { abortTask } from '../ai/task';
 import { clearPath, isBreaking, isIncapacitated, origin } from '../crew/helpers';
 import { findPath } from '../crew/pathfind';
+import { walkOpts } from '../eva/route';
 import { spillItems } from '../items/stacks';
 import { storageAdd, storageCount, storageTake } from '../items/storage';
 import { StorageC } from '../items/components';
@@ -94,7 +95,7 @@ export function equipOrders(sim: Sim): void {
       sim.events.emit({ type: 'crew.equipped', crew: id, item: order.item });
     } else if (path.steps.length === 0 && pos.toX === pos.x && pos.toY === pos.y) {
       const m = sim.world.get(order.storage, ModuleC);
-      const steps = m && findPath(sim, shipIdOf(sim, pos), origin(pos), { x: m.x, y: m.y, adjacent: true });
+      const steps = m && findPath(sim, shipIdOf(sim, pos), origin(pos), { x: m.x, y: m.y, adjacent: true }, walkOpts(sim, id));
       if (steps) path.steps = steps;
       else cancel();
     }

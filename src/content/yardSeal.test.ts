@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { brushPlan, type Sim } from '../sim';
+import type { Sim } from '../sim/sim';
+import { brushPlan } from '../sim/yard/brush';
 import { Struct } from '../sim/structure';
 import { sealProblem } from '../sim/shipgen/validate';
 import { outlineOf } from '../sim/yard/width';
-import { rect, yardGame } from './yardFixture';
+import { rect, yardGame } from '../../test/support/fixtures/yard';
 
 /** The hull starts one row below the ship's rectangle, so a block ending at row 0 touches it. */
 const top = (h: number): number => 1 - h;

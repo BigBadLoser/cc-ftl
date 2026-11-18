@@ -5,7 +5,8 @@ import { paint, type Layout } from './layout';
 import { DEFAULT_SOURCE, blankLayout, specOf } from './source';
 import { addWindow, removeWindowAt, windowIndexAt, windowsOf } from './windows';
 import { buildWorld, windowPlanAt } from './world';
-import { windowAt, windowCode } from '../../src/sim';
+import { shipGrid } from '../../src/sim/regions';
+import { windowAt, windowCode } from '../../src/sim/windows';
 import { ORIGIN } from './camera';
 
 /** A 12x8 ship: a room with a partition along y at x = 6 and a hull of walls (floor ringed by '#'). */
@@ -71,6 +72,5 @@ describe('layout windows (#516)', () => {
     expect(at(8, 8)).toBeNull();
   });
 });
-import { shipGrid } from '../../src/sim';
 import type { World } from './world';
 const shipOf = (w: World) => shipGrid(w.sim, w.ship) as NonNullable<ReturnType<typeof shipGrid>>;

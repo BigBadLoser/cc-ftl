@@ -1,13 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import { content } from '../content';
-import { ShipC, homeShip, newGame, type Sim, type SimEvent } from '../sim';
+import { ShipC } from '../sim/combat/components';
+import { homeShip } from '../sim/combat/ships';
+import { CrewC, PositionC } from '../sim/crew/components';
+import type { SimEvent } from '../sim/events';
+import { newGame } from '../sim/newGame';
+import type { Sim } from '../sim/sim';
 import { ALT, BodyC } from '../sim/body';
 import { DroneC, type Drone } from '../sim/drones/components';
 import { stunDrone } from '../sim/drones/bay';
 import { shipGrid, shipIdOf } from '../sim/regions';
 import { droneInReach } from '../sim/drones/target';
-import { CrewC, PositionC } from '../sim';
-import { droneScenarioCommands } from './droneScenario';
+import { droneScenarioCommands } from '../content/scenario/lib/drone';
 
 const drones = (sim: Sim): Drone[] => sim.world.query(DroneC).map((id) => sim.world.get(id, DroneC) as Drone);
 

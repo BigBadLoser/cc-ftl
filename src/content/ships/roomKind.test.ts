@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { ModuleC, homeShip, newGame, shipGrid, type ModuleDef } from '../../sim';
+import { homeShip } from '../../sim/combat/ships';
+import { ModuleC } from '../../sim/modules/components';
+import { newGame } from '../../sim/newGame';
+import { shipGrid } from '../../sim/regions';
+import type { ModuleDef } from '../../sim/registry';
 import { ROOM_KINDS, roomKind, roomKindOfModule } from '../../sim/roomKind';
 import { roomTiles } from '../../sim/roomIndex';
 import { content } from '../index';

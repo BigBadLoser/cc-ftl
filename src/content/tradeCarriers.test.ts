@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { ModuleC, ShipC, StorageC, storageTake, TraderC, VehicleC, newGame, playerItems, playerShip, planCourier, yardService, type Sim } from '../sim';
+import { ModuleC } from '../sim/modules/components';
+import { ShipC } from '../sim/combat/components';
+import { StorageC } from '../sim/items/components';
+import { storageTake } from '../sim/items/storage';
+import { TraderC } from '../sim/trade/types';
+import { VehicleC } from '../sim/vehicles/components';
+import { newGame } from '../sim/newGame';
+import { playerItems, playerShip } from '../sim/trade/player';
+import { planCourier } from '../sim/trade/courier';
+import { yardService } from '../sim/yard/rules';
+import { type Sim } from '../sim/sim';
 import { VehicleBayC } from '../sim/vehicles/components';
 import { shipIdOf } from '../sim/regions';
 import { giveItems } from '../sim/story/effects';
@@ -8,7 +18,7 @@ import { stowOrDrop } from '../sim/items/deck';
 import { cargoAdd, cargoOf, cargoTake } from '../sim/vehicles/cargo';
 import { endInspection, startInspection, liveInspection } from '../sim/inspect/start';
 import { content } from './index';
-import { outline, planHull, run as runYard, yardGame } from './yardFixture';
+import { outline, planHull, run as runYard, yardGame } from '../../test/support/fixtures/yard';
 
 /**
  * One deal flow for every carrier (#548): the player's free shuttle first, else the trader's real one (a station's, in its hangar or on its pad).

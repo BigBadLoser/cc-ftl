@@ -1,10 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { CombatC, ProjectileC, ShipC, WeaponC, ModuleC, newGame, type ContentRegistry, type Sim, type SimEvent } from '../../sim';
+import { CombatC, ProjectileC, ShipC, WeaponC } from '../../sim/combat/components';
+import type { SimEvent } from '../../sim/events';
+import { ModuleC } from '../../sim/modules/components';
+import { newGame } from '../../sim/newGame';
+import type { ContentRegistry } from '../../sim/registry';
+import type { Sim } from '../../sim/sim';
 import { content } from '../index';
-import { shipGrid, shipIds } from '../../sim/regions';
+import { shipGrid } from '../../sim/regions';
 import { Struct } from '../../sim/structure';
+import { nth } from '../../../test/support/sim';
 
-const nth = (sim: Sim, n: number): number => shipIds(sim)[n - 1] as number;
 /** A raider with no crew, shields or engines: it cannot repair, block or dodge, so every shot lands. */
 const target = {
   ...content.ships['ship.raider'], crew: [],

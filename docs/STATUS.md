@@ -22,7 +22,7 @@ upgrades) plugs into `UpgradeMods.weapon` (a patch over the fitted weapon's def)
 Flak is an ordinary ammo weapon (starts on HOLD); HOLD, or hold all, stops all fire. Its art (#357): turret `turret_flak.py`,
 bay `turret_bay_flak.py`, no `artTint` (turrets never take it). Drones are covered by point defence and defence drones, not flak.
 Combat: a left click on a foe weapon (not aiming) opens a read-only inspector (`app/foeModule.ts` is the place for a future
-scanner gate). Debug starts live in `app/scenarios/`. Save version 97.
+scanner gate). Debug starts are presets in `content/scenario/` (see ARCHITECTURE "Scenario builder"). Save version 97.
 Rules from its review: read a weapon module's def through `weaponDefOf` (or a shot's through `firedWeapon`), never `sim.content.weapons`
 directly; every job aimed at a placed module posts `moduleSite` (`modules/footprint.ts`, the rotated footprint) so crew work it from any side.
 Slice 2 (merged in #351): the seven behaviour upgrades in `content/upgradesBehaviour.ts`, all data over general fields: `WeaponDef.ammoPerShot`
@@ -71,7 +71,8 @@ under `tools/shipgen/starters` are stale against them (they were already behind 
 
 **Priority (user, 2026-11-15): the core loop.** "Make it playable first" (2026-11-08) is met: the playtest batch #384-#390 shipped
 in #392. Next is more to find per node (#171; danger bands #382 folded in: no visible bands, physical finds, plan in the #171 comment of 2026-11-15). #380 research,
-#383 story arcs and #172/#52 goals queue behind them. The test harness (#371) may run alongside.
+#383 story arcs and #172/#52 goals queue behind them. The test overhaul (#371) landed in #555 (harness, scenario builder, near-test
+`check:fast`, import-cycle ratchet); follow-ups: break the sim import cycle (#553), test-worker heap growth (#556), cheaper ticks (#65).
 
 - **Station generation: reviewed 2026-11-17** (stack #501, #527, #528, #529; design and file map in
   [STATION_ASSEMBLY.md](STATION_ASSEMBLY.md)).

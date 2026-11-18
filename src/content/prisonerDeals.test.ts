@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { AllegianceC, CrewC, NeedsC, PositionC, ShipC, newGame, placementError, playerShip, spawnModule, type Sim, type SimEvent } from '../sim';
+import { ShipC } from '../sim/combat/components';
+import { CrewC, NeedsC, PositionC } from '../sim/crew/components';
+import type { SimEvent } from '../sim/events';
+import { AllegianceC } from '../sim/fight/components';
+import { placementError, spawnModule } from '../sim/modules/spawn';
+import { newGame } from '../sim/newGame';
+import type { Sim } from '../sim/sim';
+import { playerShip } from '../sim/trade/player';
 import { heldPrisoners, handOverPrisoner, prisonerOffer, prisonerWorth, stationWants } from '../sim/capture/offers';
 import { PRISONER_DEALS } from '../sim/capture/tuning';
 import { PrisonerC } from '../sim/fight/components';
@@ -23,6 +30,7 @@ import { TICK_HZ } from '../sim/time';
 import type { Deal } from '../sim/trade/types';
 import { VehicleC } from '../sim/vehicles/components';
 import { deserialize, serialize } from '../sim/save';
+import { cachedWorld } from '../../test/support/world';
 
 /** Prisoner deals at stations (#116): ransom, bounty, black market; only a sealed slab aboard a ship of the player's (not a prize) is handed over. */
 
@@ -68,34 +76,47 @@ function game(owner: string, from: string, sealed = true, kind = 'station.tradin
   return { sim, station, prisoner, wheel };
 }
 
+type G = { sim: Sim; station: number; prisoner: number; wheel: number };
+const idsOf = (sim: Sim): Omit<G, 'sim'> => ({
+  station: sim.world.query(TraderC).find((id) => sim.world.get(id, TraderC)?.station)!,
+  prisoner: sim.world.query(PrisonerC)[0]!,
+  wheel: sim.world.query(StasisWheelC)[0]!,
+});
+/** `game`, built once per file and cloned: most cases only read or change a little of it. */
+function cachedGame(owner: string, from: string, sealed = true): G {
+  const sim = cachedWorld(`pd:${owner}:${from}:${sealed}`, () => game(owner, from, sealed).sim);
+  return { sim, ...idsOf(sim) };
+}
+
 describe('prisoner deals at stations', () => {
   it('a station of their own faction ransoms them: credits by their worth, standing with that faction', () => {
-    const { sim, station, prisoner } = game('navy', 'navy');
+    const { sim, station, prisoner } = cachedGame('navy', 'navy');
     expect(heldPrisoners(sim)).toEqual([prisoner]);
     const credits = PRISONER_DEALS.ransom.base + PRISONER_DEALS.ransom.perLevel * prisonerWorth(sim, prisoner);
     expect(prisonerOffer(sim, station, prisoner)).toEqual({ ok: true, kind: 'ransom', credits, faction: 'navy', standing: PRISONER_DEALS.ransom.standing });
   });
 
   it('a navy station pays a bounty for a pirate, and refuses anyone else\'s', () => {
-    const { sim, station, prisoner } = game('navy', 'raiders');
+    const { sim, station, prisoner } = cachedGame('navy', 'navy');
+    sim.world.get(prisoner, PrisonerC)!.from = 'raiders';
     expect(prisonerOffer(sim, station, prisoner)).toMatchObject({ ok: true, kind: 'bounty', faction: 'navy' });
     sim.world.get(prisoner, PrisonerC)!.from = 'meridian';
     expect(prisonerOffer(sim, station, prisoner)).toEqual({ ok: false, reason: 'noBuyer' });
   });
 
   it('a pirate at a station that pays no bounty is refused noBounty', () => {
-    const { sim, station, prisoner } = game('pirates', 'raiders');
+    const { sim, station, prisoner } = cachedGame('pirates', 'raiders');
     expect(prisonerOffer(sim, station, prisoner)).toMatchObject({ ok: false, reason: 'noBounty' });
   });
 
   it('a black market takes anyone, for its owner\'s standing', () => {
-    const { sim, station, prisoner } = game('pirates', 'navy');
+    const { sim, station, prisoner } = cachedGame('pirates', 'navy');
     sim.world.get(station, TraderC)!.services = ['bm.lesser'];
     expect(prisonerOffer(sim, station, prisoner)).toMatchObject({ ok: true, kind: 'market', faction: 'pirates' });
   });
 
   it('only a sealed slab is handed over: an unsealed prisoner is refused with the deal they would get', () => {
-    const { sim, station, prisoner } = game('navy', 'navy', false);
+    const { sim, station, prisoner } = cachedGame('navy', 'navy', false);
     expect(prisonerOffer(sim, station, prisoner)).toMatchObject({ ok: false, reason: 'notSealed', kind: 'ransom' });
     sim.enqueue({ type: 'prisoner.handOver', crew: prisoner, station });
     expect(step(sim).find((e) => e.type === 'command.rejected')).toMatchObject({ command: 'prisoner.handOver', reason: 'notSealed' });
@@ -124,9 +145,25 @@ function accept(sim: Sim, station: number, prisoner: number): Deal {
 const inShuttle = (sim: Sim, prisoner: number): boolean => sim.world.get(prisoner, StasisC)?.at === 'vehicle';
 const failed = (ev: SimEvent[]): string | undefined => (ev.find((e) => e.type === 'trade.failed') as { reason?: string } | undefined)?.reason;
 
+/**
+ * The run's stages as cached worlds (the natural way there is the first case's): just accepted, the slab in the shuttle, the shuttle out
+ * on its way. A case about what happens from there on starts from the stage instead of stepping to it again.
+ */
+function cachedStage(stage: 'accepted' | 'inShuttle' | 'out'): G & { run: Deal } {
+  const sim = cachedWorld(`pd:stage:${stage}`, () => {
+    const g = game('navy', 'navy');
+    const run = accept(g.sim, g.station, g.prisoner);
+    if (stage !== 'accepted') until(g.sim, () => inShuttle(g.sim, g.prisoner), 120);
+    if (stage === 'out') until(g.sim, () => run.phase === 'out', 180);
+    return g.sim;
+  });
+  const ids = idsOf(sim);
+  return { sim, ...ids, run: prisonerRun(sim, ids.prisoner)! };
+}
+
 describe('prisoner deals: the slab is delivered for real', () => {
   it('your shuttle takes the slab over: nothing is paid at the click, all of it when the slab reaches the station', () => {
-    const { sim, station, prisoner, wheel } = game('navy', 'navy');
+    const { sim, station, prisoner, wheel } = cachedGame('navy', 'navy');
     const credits = PRISONER_DEALS.ransom.base + PRISONER_DEALS.ransom.perLevel * prisonerWorth(sim, prisoner);
     const before = { credits: sim.trade.credits, rep: reputationOf(sim.story, repKey(sim, 'navy')) };
     const run = accept(sim, station, prisoner);
@@ -150,7 +187,7 @@ describe('prisoner deals: the slab is delivered for real', () => {
   });
 
   it("with no shuttle of yours the station sends its own (a real one, from its hangar), and pays once it is home with the slab", () => {
-    const { sim, station, prisoner } = game('navy', 'navy');
+    const { sim, station, prisoner } = cachedGame('navy', 'navy');
     const me = playerShip(sim)!;
     for (const id of [...sim.world.query(VehicleC)]) if (sim.world.get(id, VehicleC)!.homeShip === me) sim.world.destroyEntity(id);
     const before = sim.trade.credits;
@@ -171,8 +208,7 @@ describe('prisoner deals: the slab is delivered for real', () => {
   });
 
   it('the wheel turns the slot to the hatch and the slab comes out over the unload (the load backwards), onto the cart before the hatch shuts', () => {
-    const { sim, station, prisoner, wheel } = game('navy', 'navy');
-    accept(sim, station, prisoner);
+    const { sim, prisoner, wheel } = cachedStage('accepted');
     until(sim, () => stowStage(sim.world, wheel)?.out === true, 120);
     const start = sim.tick;
     const turns = stowStage(sim.world, wheel)!.turns;
@@ -188,10 +224,9 @@ describe('prisoner deals: the slab is delivered for real', () => {
   });
 
   it("a slab on its way out to a station takes no wheel room: neither on the cart nor in your shuttle's rack (not inbound)", () => {
-    const { sim, station, prisoner, wheel } = game('navy', 'navy');
+    const { sim, prisoner, wheel } = cachedStage('accepted');
     const ship = playerShip(sim)!;
     const free = (): number => sim.world.get(wheel, StasisWheelC)!.slots.filter((x) => x <= 0).length;
-    accept(sim, station, prisoner);
     until(sim, () => sim.world.get(prisoner, StasisC)?.at === 'carried', 120);
     expect(stasisRoom(sim, ship)).toBe(free());
     until(sim, () => inShuttle(sim, prisoner), 120);
@@ -199,10 +234,8 @@ describe('prisoner deals: the slab is delivered for real', () => {
   });
 
   it('cancelled while collecting: the slab comes back out and goes back into a wheel, nothing paid', () => {
-    const { sim, station, prisoner } = game('navy', 'navy');
+    const { sim, station, prisoner, run } = cachedStage('inShuttle');
     const before = sim.trade.credits;
-    const run = accept(sim, station, prisoner);
-    until(sim, () => inShuttle(sim, prisoner), 120);
     const t = rackTile(sim, run.vehicle)!;
     const spot = floorSpot(sim, prisoner, t.shipId, t); // the free floor by the airlock it comes out onto
     sim.enqueue({ type: 'trade.cancel', id: run.id });
@@ -218,9 +251,7 @@ describe('prisoner deals: the slab is delivered for real', () => {
   });
 
   it('a fight calls the run off; the slab is never lost', () => {
-    const { sim, station, prisoner } = game('navy', 'navy');
-    const run = accept(sim, station, prisoner);
-    until(sim, () => inShuttle(sim, prisoner), 120);
+    const { sim, prisoner, run } = cachedStage('inShuttle');
     sim.sector.inCombat = true; // read by the trade system before the combat state is worked out again this tick
     expect(failed(step(sim))).toBe('combat');
     expect(sim.world.has(prisoner, StasisC)).toBe(true);
@@ -229,9 +260,7 @@ describe('prisoner deals: the slab is delivered for real', () => {
   });
 
   it('a fight with the slab out in your shuttle: it flies home and sets the slab down by its bay', () => {
-    const { sim, station, prisoner } = game('navy', 'navy');
-    const run = accept(sim, station, prisoner);
-    until(sim, () => run.phase === 'out', 180);
+    const { sim, prisoner } = cachedStage('out');
     step(sim, 20); // away from the airlock
     sim.sector.inCombat = true;
     expect(failed(step(sim))).toBe('combat');
@@ -242,14 +271,13 @@ describe('prisoner deals: the slab is delivered for real', () => {
   });
 
   it('a prisoner who thaws before the hand-over calls it off; a shuttle lost with the slab loses them, logged', () => {
-    const a = game('navy', 'navy');
-    const run = accept(a.sim, a.station, a.prisoner);
+    const a = cachedStage('accepted');
+    const run = a.run;
     thawPrisoner(a.sim, a.prisoner);
     expect(failed(step(a.sim))).toBe('prisonerGone');
     expect(run.phase).toBe('failed');
-    const b = game('navy', 'navy');
-    const run2 = accept(b.sim, b.station, b.prisoner);
-    until(b.sim, () => run2.phase === 'out', 180);
+    const b = cachedStage('out');
+    const run2 = b.run;
     const before = b.sim.trade.credits;
     b.sim.world.destroyEntity(run2.vehicle);
     const ev = step(b.sim, 2);
@@ -259,16 +287,14 @@ describe('prisoner deals: the slab is delivered for real', () => {
   });
 
   it('no shuttle at all: no deal is offered to accept, and the click is refused', () => {
-    const { sim, station, prisoner } = game('navy', 'navy');
+    const { sim, station, prisoner } = cachedGame('navy', 'navy');
     for (const v of sim.world.query(VehicleC)) sim.world.destroyEntity(v);
     expect(prisonerOffer(sim, station, prisoner)).toMatchObject({ ok: false, reason: 'noWay', kind: 'ransom' });
     expect(handOverPrisoner(sim, prisoner, station)).toBe('noWay');
   });
 
   it('a save mid-delivery loads and the delivery finishes and pays', () => {
-    const { sim, station, prisoner } = game('navy', 'navy');
-    const run = accept(sim, station, prisoner);
-    until(sim, () => inShuttle(sim, prisoner), 120);
+    const { sim, prisoner, run } = cachedStage('inShuttle');
     const back = deserialize(serialize(sim), content);
     const run2 = prisonerRun(back, prisoner)!;
     expect(run2.handover?.prisoner).toEqual(run.handover?.prisoner);
@@ -277,8 +303,7 @@ describe('prisoner deals: the slab is delivered for real', () => {
     expect(ev.some((e) => e.type === 'prisoner.handedOver')).toBe(true);
     expect(back.trade.credits).toBe(before + run.handover!.prisoner!.credits);
     // Saved while the crew were still loading: they carry on.
-    const c = game('navy', 'navy');
-    accept(c.sim, c.station, c.prisoner);
+    const c = cachedStage('accepted');
     step(c.sim, 30);
     const back2 = deserialize(serialize(c.sim), content);
     until(back2, () => !back2.world.has(c.prisoner, CrewC), 360);
@@ -287,7 +312,8 @@ describe('prisoner deals: the slab is delivered for real', () => {
 
 describe('prisoner deals: the Prisoners service', () => {
   it('shows only where this station has a deal for a prisoner held, ready or not', () => {
-    const { sim, station, prisoner } = game('navy', 'meridian', false);
+    const { sim, station, prisoner } = cachedGame('navy', 'navy', false);
+    sim.world.get(prisoner, PrisonerC)!.from = 'meridian';
     expect(stationWants(sim, station, prisoner)).toBe(false); // nothing for a Meridian prisoner at a navy station
     sim.world.get(prisoner, PrisonerC)!.from = 'navy';
     expect(stationWants(sim, station, prisoner)).toBe(true); // a ransom once they are sealed

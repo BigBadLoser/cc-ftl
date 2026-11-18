@@ -1,8 +1,18 @@
 import { describe, expect, it } from 'vitest';
-import {
-  destroyVehicle, AirlockC, CarryingC, CrewC, JobC, ModuleC, PositionC, ShipC, StorageC, TraderC, VehicleC, deserialize, newGame, playerItems, serialize,
-  storageCount, storageAdd, storageSpace, storageTake, type Deal, type Sim, type SimEvent,
-} from '../../sim';
+import { ShipC } from '../../sim/combat/components';
+import { CrewC, JobC, PositionC } from '../../sim/crew/components';
+import type { SimEvent } from '../../sim/events';
+import { CarryingC, StorageC } from '../../sim/items/components';
+import { storageAdd, storageCount, storageSpace, storageTake } from '../../sim/items/storage';
+import { AirlockC } from '../../sim/modules/airlock';
+import { ModuleC } from '../../sim/modules/components';
+import { newGame } from '../../sim/newGame';
+import { deserialize, serialize } from '../../sim/save';
+import type { Sim } from '../../sim/sim';
+import { playerItems } from '../../sim/trade/player';
+import { type Deal, TraderC } from '../../sim/trade/types';
+import { VehicleC } from '../../sim/vehicles/components';
+import { destroyVehicle } from '../../sim/vehicles/lifecycle';
 import { content } from '../index';
 import { shipIdOf } from '../../sim/regions';
 import { shipIds } from '../../sim/regions';

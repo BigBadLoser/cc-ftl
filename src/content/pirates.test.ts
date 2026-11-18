@@ -1,15 +1,36 @@
 import { describe, expect, it } from 'vitest';
-import {
-  AllegianceC, BoarderC, CORE_RAID_HOLD_TICKS, CombatC, DeadC, DownedC, isHostile, rogueAlly, CoreRaidC, CoreRaiderC, CrewC, coreObjective, PositionC, ShipC, TerritoryField, augmentedCrew, captureReady, createCrew, crewSubdued,
-  encounterKind, hailVerdict, hasLiveCore, homeShip, newGame, neverSurrenders, nodeOf, shipIdOf, spillSources, stanceBetween, standing, tierOf,
-  type Fleet, type GalaxyContent, type Sim,
-} from '../sim';
+import { captureReady } from '../sim/capture/control';
+import { coreObjective, CoreRaidC, CoreRaiderC } from '../sim/capture/coreRaid';
+import { CombatC, ShipC } from '../sim/combat/components';
+import { neverSurrenders, rogueAlly } from '../sim/combat/factions';
+import { homeShip } from '../sim/combat/ships';
+import { crewSubdued } from '../sim/combat/subdued';
+import { CrewC, DeadC, DownedC, PositionC } from '../sim/crew/components';
+import { createCrew } from '../sim/crew/spawn';
+import { AllegianceC } from '../sim/fight/components';
+import { isHostile } from '../sim/fight/relations';
+import type { GalaxyContent } from '../sim/galaxy/defs';
+import { encounterKind } from '../sim/galaxy/encounters';
+import { spillSources, stanceBetween } from '../sim/galaxy/relations';
+import { standing, tierOf } from '../sim/galaxy/standing';
+import { nodeOf } from '../sim/galaxy/state';
+import { TerritoryField } from '../sim/galaxy/territory';
+import type { Fleet } from '../sim/galaxy/types';
+import { newGame } from '../sim/newGame';
+import { shipIdOf } from '../sim/regions';
+import { hasLiveCore } from '../sim/robots/core';
+import type { Sim } from '../sim/sim';
+import { augmentedCrew } from '../sim/trade/augmentation';
+import { hailVerdict } from '../sim/trade/traders';
+import { CORE_RAID_HOLD_TICKS } from '../sim/tuning';
+import { BoarderC } from '../sim/vehicles/components';
 import { EquipC } from '../sim/fight/components';
 import { ModuleC } from '../sim/modules/components';
 import { firstFoe } from '../sim/systems/enemyAi';
 import { spawnContact } from '../sim/galaxy/arrivals';
 import { portsAt } from '../sim/galaxy/portIndex';
 import { content } from '.';
+import { contentEdited } from '../../test/support/content';
 
 const galaxy = content.galaxy as unknown as GalaxyContent;
 const PIRATES = ['pirates', 'raiders', 'cartel', 'zealots', 'mercenaries'];
@@ -141,16 +162,15 @@ describe('pirate factions: territory and fleets', () => {
 
 describe('the cartel guards its routes', () => {
   it('interdicts in its own space and only hails elsewhere, unless it was sent to hunt the player', () => {
-    const sim = newGame(1, content);
-    const node = nodeOf(sim, sim.galaxy.current)!;
-    const fleet = { id: 1, faction: 'cartel', role: 'pirate', node: node.id, ships: [], hunt: undefined } as unknown as Fleet;
-    node.faction = 'cartel';
+    const owned = (faction: string): Sim => newGame(1, contentEdited(1, `owner:${faction}`, (c) => { for (const n of c.nodes) n.faction = faction; }));
+    const sim = owned('cartel');
+    const navy = owned('navy');
+    const fleet = { id: 1, faction: 'cartel', role: 'pirate', node: nodeOf(sim, sim.galaxy.current)!.id, ships: [], hunt: undefined } as unknown as Fleet;
     expect(encounterKind(sim, fleet)).toBe('interdict');
-    node.faction = 'navy';
-    expect(encounterKind(sim, fleet)).toBe('hail');
-    expect(encounterKind(sim, { ...fleet, hunt: { until: 99 } } as unknown as Fleet)).toBe('interdict');
+    expect(encounterKind(navy, fleet)).toBe('hail');
+    expect(encounterKind(navy, { ...fleet, hunt: { until: 99 } } as unknown as Fleet)).toBe('interdict');
     // A raider has no such manners.
-    expect(encounterKind(sim, { ...fleet, faction: 'raiders' })).toBe('interdict');
+    expect(encounterKind(navy, { ...fleet, faction: 'raiders' })).toBe('interdict');
   });
 });
 

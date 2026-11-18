@@ -8,9 +8,9 @@ import { deserialize, serialize } from './save';
 import { shipGrid } from './regions';
 import { Sim } from './sim';
 import { Struct, writeStruct } from './structure';
-import type { SimEvent } from './events';
 import type { ContentRegistry } from './registry';
 import { decodeWindow, windowAt, windowCode, windowPiece, windowRunError } from './windows';
+import { run } from '../../test/support/sim';
 
 const item = { name: 'i', tags: [], stackSize: 100 };
 const content: ContentRegistry = {
@@ -44,14 +44,6 @@ function addCrew(sim: Sim): void {
   sim.world.add(id, PathC, { steps: [] });
   sim.world.add(id, PrioritiesC, prio(4));
   sim.world.add(id, NeedsC, { rest: 100 });
-}
-function run(sim: Sim, n: number): SimEvent[] {
-  const out: SimEvent[] = [];
-  for (let i = 0; i < n; i++) {
-    sim.step();
-    out.push(...sim.events.drain());
-  }
-  return out;
 }
 const grid = (sim: Sim, ship: number) => shipGrid(sim, ship)!;
 

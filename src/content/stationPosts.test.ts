@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { ShipC, newGame, shipGrid } from '../sim';
+import { ShipC } from '../sim/combat/components';
+import { newGame } from '../sim/newGame';
+import { shipGrid } from '../sim/regions';
 import { isTileWalkable } from '../sim/modules/walk';
 import { StationC } from '../sim/stations/components';
 import { content } from './index';

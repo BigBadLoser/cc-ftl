@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { galaxyIndex, newGame, portsAt, type Sim } from '../sim';
+import { portsAt } from '../sim/galaxy/portIndex';
+import { galaxyIndex } from '../sim/galaxy/state';
+import { newGame } from '../sim/newGame';
+import type { Sim } from '../sim/sim';
 import { ensureChunk } from '../sim/galaxy/state';
 import { arrive } from '../sim/galaxy/travel';
 import { FLEET_AREA_HOPS } from '../sim/galaxy/tuning';

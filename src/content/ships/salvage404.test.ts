@@ -1,6 +1,10 @@
 /** Regressions of the salvage playtest (#404): passages, the site's shuttle, seals on the wreck, suits, the helmet lamp (Call off and strain: app/salvageRun.test.ts). */
 import { describe, expect, it } from 'vitest';
-import { AboardC, JobC, NeedsC, PositionC, ShipC, Struct, shipGrid, type Job } from '../../sim';
+import { ShipC } from '../../sim/combat/components';
+import { type Job, JobC, NeedsC, PositionC } from '../../sim/crew/components';
+import { shipGrid } from '../../sim/regions';
+import { Struct } from '../../sim/structure';
+import { AboardC } from '../../sim/vehicles/components';
 import { SiteRunC } from '../../sim/away/components';
 import { passageFits, staySec } from '../../sim/away/crew';
 import { siteShuttleOk } from '../../sim/away/handlers';
@@ -14,11 +18,11 @@ import { spillItems } from '../../sim/items/stacks';
 import { TransferC } from '../../sim/logistics/components';
 import { writeStruct } from '../../sim/structure';
 import { AWAY_GO_STAY_SEC, AWAY_HOME_HUNGER, AWAY_HOME_REST } from '../../sim/tuning';
-import { shuttleOf } from './ferryFixture';
-import { setup } from './salvageEvaFixture';
-import { crewOn, landed, play } from './awayFixture';
+import { shuttleOf } from '../../../test/support/fixtures/ferry';
+import { setup } from '../../../test/support/fixtures/salvageEva';
+import { crewOn, landed, play } from '../../../test/support/fixtures/away';
 import { content } from '../index';
-import { boarding } from './salvage404Fixture';
+import { boarding } from '../../../test/support/fixtures/salvage404';
 
 describe('salvage playtest (#404)', () => {
   it('a passage takes crew who can stay a while, not only those at 60 rest and hunger', () => {

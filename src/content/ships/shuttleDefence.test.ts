@@ -1,20 +1,20 @@
 import { describe, expect, it } from 'vitest';
-import { BodyC, CombatC, CrewC, ShipC, ModuleC, PositionC, VehicleC, newGame, type ModuleDef, type Sim, type SimEvent, type Vehicle } from '../../sim';
+import { BodyC } from '../../sim/body';
+import { CombatC, ShipC } from '../../sim/combat/components';
+import { CrewC } from '../../sim/crew/components';
+import type { SimEvent } from '../../sim/events';
+import { ModuleC } from '../../sim/modules/components';
+import type { ModuleDef } from '../../sim/registry';
+import { vehicleDefOf } from '../../sim/vehicles/lifecycle';
+import { VEHICLE_PD_DAMAGE, VEHICLE_PD_FLOOR } from '../../sim/tuning';
+import type { Sim } from '../../sim/sim';
+import { type Vehicle, VehicleC } from '../../sim/vehicles/components';
 import { content } from '../index';
-import { shipIdOf, shipIds } from '../../sim/regions';
-import { missileRaiderId, shuttleContent } from './shuttleFixture';
+import { shipIdOf } from '../../sim/regions';
+import { missileRaiderId, shuttleContent, shuttleSetup } from '../../../test/support/fixtures/shuttle';
+import { cachedWorld } from '../../../test/support/world';
+import { crewOn, nth, run } from '../../../test/support/sim';
 
-/** The ship with ordinal `n` (1 = the player's, 2 = the first enemy). */
-const nth = (sim: Sim, n: number): number => shipIds(sim)[n - 1] as number;
-const run = (sim: Sim, n: number): SimEvent[] => {
-  const out: SimEvent[] = [];
-  for (let i = 0; i < n; i++) {
-    sim.step();
-    out.push(...sim.events.drain());
-  }
-  return out;
-};
-const crewOn = (sim: Sim, n: number): number[] => sim.world.query(CrewC).filter((i) => shipIdOf(sim, sim.world.get(i, PositionC)) === nth(sim, n));
 const shuttleOf = (sim: Sim, n: number): number => sim.world.query(VehicleC).find((i) => sim.world.get(i, VehicleC)!.homeShip === nth(sim, n))!;
 const airlockOf = (sim: Sim, n: number): number =>
   sim.world.query(ModuleC).find((i) => shipIdOf(sim, sim.world.get(i, ModuleC)) === nth(sim, n) && sim.world.get(i, ModuleC)!.def === 'module.airlock')!;
@@ -32,18 +32,27 @@ function disarm(sim: Sim, n: number): void {
 
 const reg = shuttleContent;
 
-function setup(seed: number, enemy = 'ship.raider'): Sim {
-  const sim = newGame(seed, reg);
-  sim.enqueue({ type: 'debug.spawnEnemy', template: enemy, x: 100, y: 50 });
-  run(sim, 5);
-  return sim;
+const setup = (seed: number, enemy = 'ship.raider'): Sim => shuttleSetup(seed, reg, enemy);
+
+/** `from`'s pilot embarked in its shuttle (400 ticks) after `disarmed` grids were switched off: built once per worker, cloned per call. */
+function embarkedScene(seed: number, enemy: string, from: 1 | 2, disarmed: number[]): Sim {
+  return cachedWorld(`shuttleDefence:${seed}:${enemy}:${from}:${disarmed.join()}`, () => {
+    const sim = setup(seed, enemy);
+    for (const n of disarmed) disarm(sim, n);
+    embark(sim, from);
+    return sim;
+  });
+}
+
+function embark(sim: Sim, from: 1 | 2): void {
+  sim.enqueue({ type: 'vehicle.embark', crew: crewOn(sim, from).find((c) => sim.world.get(c, CrewC)!.role === 'role.pilot')!, vehicle: shuttleOf(sim, from) });
+  run(sim, 400);
 }
 
 /** The foe's shuttle (from the enemy) flown by its pilot, in flight with `dest`. */
-function launch(sim: Sim, from: 1 | 2, dest: (sim: Sim) => VehicleDest): number {
+function launch(sim: Sim, from: 1 | 2, dest: (sim: Sim) => VehicleDest, embarked = false): number {
   const shuttle = shuttleOf(sim, from);
-  sim.enqueue({ type: 'vehicle.embark', crew: crewOn(sim, from).find((c) => sim.world.get(c, CrewC)!.role === 'role.pilot')!, vehicle: shuttle });
-  run(sim, 400);
+  if (!embarked) embark(sim, from);
   sim.enqueue({ type: 'vehicle.launch', vehicle: shuttle });
   run(sim, 2);
   sim.world.get(shuttle, VehicleC)!.dest = dest(sim);
@@ -52,23 +61,27 @@ function launch(sim: Sim, from: 1 | 2, dest: (sim: Sim) => VehicleDest): number 
 type VehicleDest = NonNullable<Vehicle['dest']>;
 
 describe('point defence against shuttles', () => {
+  // The natural run (the shuttle chipped from full hp down to the floor) is in shuttleDefence.slow.test.ts; here it starts one chip above it.
+  const nearFloor = (sim: Sim, shuttle: number): void => {
+    const v = sim.world.get(shuttle, VehicleC)!;
+    v.hp = Math.ceil((vehicleDefOf(sim, v)?.maxHp ?? 0) * VEHICLE_PD_FLOOR) + VEHICLE_PD_DAMAGE;
+  };
+
   it('two turrets chip a docked shuttle down to the floor and no further', () => {
-    const sim = setup(1);
-    disarm(sim, 1);
-    disarm(sim, 2);
-    const shuttle = launch(sim, 2, (s) => ({ type: 'dock', airlock: airlockOf(s, 1) }));
-    const out = run(sim, 20 * 200);
+    const sim = embarkedScene(1, 'ship.raider', 2, [1, 2]);
+    const shuttle = launch(sim, 2, (s) => ({ type: 'dock', airlock: airlockOf(s, 1) }), true);
+    nearFloor(sim, shuttle);
+    const out = run(sim, 20 * 60);
     expect(sim.world.get(shuttle, VehicleC)!.state).toBe('docked');
     expect(out.filter((e) => e.type === 'vehicle.destroyed')).toHaveLength(0);
     expect(sim.world.get(shuttle, VehicleC)!.hp).toBe(27);
   });
 
   it('two turrets chip a hovering shuttle down to the floor and no further', () => {
-    const sim = setup(2);
-    disarm(sim, 1);
-    disarm(sim, 2);
-    const shuttle = launch(sim, 2, (s) => ({ type: 'hover', ship: nth(s, 1) }));
-    const out = run(sim, 20 * 200);
+    const sim = embarkedScene(2, 'ship.raider', 2, [1, 2]);
+    const shuttle = launch(sim, 2, (s) => ({ type: 'hover', ship: nth(s, 1) }), true);
+    nearFloor(sim, shuttle);
+    const out = run(sim, 20 * 60);
     expect(sim.world.get(shuttle, VehicleC)!.state).toBe('flying');
     expect(out.filter((e) => e.type === 'vehicle.destroyed')).toHaveLength(0);
     expect(sim.world.get(shuttle, VehicleC)!.hp).toBe(27);
@@ -77,9 +90,8 @@ describe('point defence against shuttles', () => {
 
 describe('shuttles and weapons', () => {
   it('a player missile launcher shoots down an incoming hostile shuttle; lasers never touch it', () => {
-    const sim = setup(1);
-    disarm(sim, 2);
-    const shuttle = launch(sim, 2, (s) => ({ type: 'dock', airlock: airlockOf(s, 1) }));
+    const sim = embarkedScene(1, 'ship.raider', 2, [2]);
+    const shuttle = launch(sim, 2, (s) => ({ type: 'dock', airlock: airlockOf(s, 1) }), true);
     const out = run(sim, 20 * 90);
     expect(out.filter((e) => e.type === 'vehicle.destroyed' && e.vehicle === shuttle)).toHaveLength(1);
     expect(out.filter((e) => e.type === 'vehicle.damaged' && e.source === 'weapon').length).toBeGreaterThan(0);
@@ -91,9 +103,8 @@ describe('shuttles and weapons', () => {
   });
 
   it('rejects a shuttle target on a laser, accepts one on a missile launcher', () => {
-    const sim = setup(1);
-    disarm(sim, 2);
-    const shuttle = launch(sim, 2, (s) => ({ type: 'hover', ship: nth(s, 1) }));
+    const sim = embarkedScene(1, 'ship.raider', 2, [2]);
+    const shuttle = launch(sim, 2, (s) => ({ type: 'hover', ship: nth(s, 1) }), true);
     const aim = (weaponId: number): SimEvent[] => {
       sim.enqueue({ type: 'combat.setTarget', ship: nth(sim, 1), weaponId, targetShip: 0, targetModuleId: 0, targetVehicle: shuttle });
       return run(sim, 1);
@@ -118,9 +129,8 @@ describe('shuttles and weapons', () => {
   });
 
   it('the enemy keeps its lasers on the ship while its missile launcher hunts a shuttle', () => {
-    const sim = setup(3, missileRaiderId);
-    disarm(sim, 1);
-    const shuttle = launch(sim, 1, (s) => ({ type: 'hover', ship: nth(s, 2) }));
+    const sim = embarkedScene(3, missileRaiderId, 1, [1]);
+    const shuttle = launch(sim, 1, (s) => ({ type: 'hover', ship: nth(s, 2) }), true);
     const out = run(sim, 20 * 60);
     expect(sim.world.get(nth(sim, 2), CombatC)!.target?.vehicle).toBeUndefined();
     const fired = out.filter((e) => e.type === 'weapon.fired' && e.ship === nth(sim, 2));
@@ -136,9 +146,8 @@ describe('shuttles and weapons', () => {
 
 describe('shuttle targets after a capture', () => {
   it("drops the automatic target when the shuttle's home ship is captured", () => {
-    const sim = setup(1);
-    disarm(sim, 2);
-    const shuttle = launch(sim, 2, (s) => ({ type: 'hover', ship: nth(s, 1) }));
+    const sim = embarkedScene(1, 'ship.raider', 2, [2]);
+    const shuttle = launch(sim, 2, (s) => ({ type: 'hover', ship: nth(s, 1) }), true);
     run(sim, 3);
     const combat = sim.world.get(nth(sim, 1), CombatC)!;
     expect(combat.vehicleTarget).toBe(shuttle);
