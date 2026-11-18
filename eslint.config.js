@@ -115,6 +115,21 @@ export default tseslint.config(
     },
   },
   {
+    // No test code in src: non-test source files never import vitest or anything under the repo's test/ directory. Same rule name as the
+    // block above (a later block replaces it for these files), so it repeats that block's pattern.
+    files: ['src/**/*.ts', 'src/**/*.svelte'],
+    ignores: ['src/**/*.test.ts'],
+    rules: {
+      '@typescript-eslint/no-restricted-imports': ['error', {
+        paths: [{ name: 'vitest', message: 'No test code in src: vitest is for *.test.ts files only.' }],
+        patterns: [
+          { group: ['vitest/*', '@vitest/*'], message: 'No test code in src: vitest is for *.test.ts files only.' },
+          { group: ['**/test', '**/test/**'], message: 'No test code in src: the repo test/ directory is for test files only.' },
+        ],
+      }],
+    },
+  },
+  {
     // The sim-only test helpers serve src/sim tests, so they follow the sim's import boundary; only content.ts and the scenario fixtures in
     // test/support/fixtures (used by content tests) may reach content.
     files: ['test/support/**/*.ts'],
