@@ -88,12 +88,11 @@ def _variant(fn, tr):
 def _belly(k, layer):
     """Every look of a key's belly layer: the plain one, then each other look that differs from it."""
     from . import wall3d_belly as B
-    from . import walls as W
     lv = "under" if layer == "under" else "over"
     out, plain = [], None
     for lk in LOOKS:
         sid = f"tile.hull.belly.{layer}.{HO.name(k)}" + ("" if lk == LOOKS[0] else f".l{lk}")
-        items = _items(sid, "wide", lambda lk=lk: B.wide(k, W.ZG, lv, look=lk), B.TINT, False)
+        items = _items(sid, "wide", lambda lk=lk: B.wide(k, B.FAR_LOW, lv, look=lk), B.TINT, False)
         if not items:
             break
         if plain is None:

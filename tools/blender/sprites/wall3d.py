@@ -28,7 +28,7 @@ RAMPS = {"wall": (("wK", "wD", "wM", "wS", "wL", "wH"), ("wK", "wXD", "wXM", "wX
          "rose": (("rK", "rD", "rM", "rM", "rL", "rH"), ("rK", "rXD", "rXM", "rXM", "rXL", "rL")),  # factions: 2nd tone
          "steel": (("hsK", "hsD", "hsM", "hsS", "hsL", "hsH"),                                     # the hull from
                    ("hsXK", "hsXD", "hsXM", "hsXS", "hsXL", "hsL"))}                               # outside
-CUT = "wK"                                    # a sliced top (cutaway level)
+CUT = "cutK"                                  # a sliced top (cutaway level): a neutral black, not the walls' dark teal
 HARD = True                                   # hard edges: no chamfers, so an edge is one crisp line
 SHADE = 2                                     # how many ramp levels darker the shade (+x) side sits
 
