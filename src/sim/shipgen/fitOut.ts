@@ -25,6 +25,8 @@ export interface FinishOpts {
   ground?: GroundPlan;
   /** Rooms where a module standing apart on open ground is entered: the fit-out checks its walk from there (a prefab farm's greenhouses). */
   entries?: ReadonlySet<number>;
+  /** Corridors stay bare (no benches, planters or vending on a small warship's walls). */
+  bareHalls?: boolean;
 }
 
 /** Rooms, in order, that take a piece of the plan's equipment its own room had no space for (`fitOut`, #577). */
@@ -55,7 +57,7 @@ const rank = (id: string, d: ModuleDef): number => {
 /** Place every room's planned modules in that room; a reason string when something essential does not fit. */
 export function fitOut(
   rng: Rng, f: FactionDef, rows: string[], roomOf: Int16Array, roles: RoomRole[], specs: (RoomSpec | undefined)[], defs: Record<string, ModuleDef>,
-  o: Pick<FinishOpts, 'immobile' | 'ground' | 'entries'> = {},
+  o: Pick<FinishOpts, 'immobile' | 'ground' | 'entries' | 'bareHalls'> = {},
 ): Fitted {
   const lay = new Layout(rows, roomOf, roles, defs);
   for (const e of o.entries ?? []) lay.entries.add(e);
@@ -91,7 +93,7 @@ export function fitOut(
     // still dress them.
     roles.forEach((role, room) => {
       const spec = specs[room], mods = spec?.mods ?? [];
-      if (spec?.sealed || (!spec && role !== 'hall' && role !== 'plaza') || !RULES[role]) return;
+      if (spec?.sealed || (!spec && role !== 'hall' && role !== 'plaza') || !RULES[role] || (o.bareHalls && role === 'hall')) return;
       const got = furnishByRule(lay, rng, room, role, mods, rots, spec?.bastion ? { bastion: true } : {});
       if (got) furnished.add(room);
       for (const idx of got ?? []) {

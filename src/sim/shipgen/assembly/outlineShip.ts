@@ -3,7 +3,7 @@ import { Rng } from '../../rng';
 import { drawSilhouette, type Silhouette } from '../hull/silhouette';
 import { NAVY_PROFILES } from '../hull/navyProfiles';
 import { enginesShort, fitShell, seedOf } from '../generate';
-import { cargoSpec, dockSpec, engineSpec, planShip, reactorSpec, weaponSpec, type RoomSpec, type ShipPlan } from '../plan';
+import { REACTOR_TIERS, cargoSpec, dockSpec, engineSpec, planShip, reactorSpec, weaponSpec, type RoomSpec, type ShipPlan } from '../plan';
 import { pairUp } from '../topoNavy';
 import type { FactionDef, GenResult } from '../types';
 import { NAVY_TYPES, navyRole, type NavyType } from './navyShip';
@@ -235,7 +235,10 @@ export function assembleOutline(
 ): GenResult {
   const rng = new Rng(seedOf(seed, n));
   const role = navyRole(f, type);
-  const plan = planShip(rng, f, role, depth, defs, extra);
+  const planned = planShip(rng, f, role, depth, defs, extra);
+  // A reactor a tier up where the plan's is Mk I: the power the fit-out would otherwise squeeze into stores as extra reactors.
+  const up = REACTOR_TIERS[Math.min(REACTOR_TIERS.length - 1, REACTOR_TIERS.indexOf(planned.kit.reactor as (typeof REACTOR_TIERS)[number]) + 1)] as string;
+  const plan: ShipPlan = planned.kit.reactor === REACTOR_TIERS[0] && defs[up] ? { ...planned, kit: { ...planned.kit, reactor: up } } : planned;
   const profiles = NAVY_PROFILES[type] ?? [];
   const profile = rng.pick(profiles);
   const sil = drawSilhouette(rng, profile);
@@ -252,7 +255,7 @@ export function assembleOutline(
   return fitShell(
     rng, f, factionId, seed, role, 'sections', { crew: plan.crew } as Pick<ShipPlan, 'crew'>,
     { rows, roomOf: snap.roomOf, width: snap.width, height: snap.height, roles: g.regions.map((r) => r.role), specs: g.regions.map((r) => r.spec) },
-    `outline ${type}`, defs, n,
+    `outline ${type}`, defs, n, { bareHalls: type === 'corvette' },
   );
 }
 
