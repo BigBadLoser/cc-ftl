@@ -266,7 +266,7 @@ def _rise(m, mask, room, corners):
             m.poly([core.G(*a, za), core.G(*b, za), core.G(*b, zb), core.G(*a, zb)], tone)
 
 
-BACK = (FILL, "gFillB1", "gFillB2", "gFillB3", "gFillB4", "gFillB5")   # the back face's fill, bottom up
+BACK = ("gFillB0", "gFillB1", "gFillB2", "gFillB3", "gFillB4", "gFillB5")   # the back face's fill, bottom up
 
 
 def _back_fill(f, mask):

@@ -25,7 +25,7 @@ def _screen(p):
 
 
 def strip(m, p, q, tone=TONE):
-    """Segment p -> q (x, y, z) as a strip 1 px wide on screen, one-sided (up, or right for an upright line): its pixels
+    """Segment p -> q (x, y, z) as a strip 1 px wide on screen, one-sided (up, or left for an upright line, the side the walls' own edges take): its pixels
     line up with the grid instead of splitting over two."""
     (ax, ay), (bx, by) = _screen(p), _screen(q)
     dx, dy = bx - ax, by - ay
@@ -35,9 +35,9 @@ def strip(m, p, q, tone=TONE):
     if abs(dx) >= 0.3 * ln:                      # (off upright: widen it up, in z)
         k = ln / (ZART * abs(dx))
         o = (0.0, 0.0, k)
-    else:                                       # (upright on screen: widen it right, along +x -y)
+    else:                                       # (upright on screen: widen it left, along -x +y)
         h = ln / (32 * abs(dy))                 # (screen x of (h/2, -h/2): 32 h)
-        o = (h / 2, -h / 2, 0.0)
+        o = (-h / 2, h / 2, 0.0)
     pts = [p, q, tuple(a + b for a, b in zip(q, o)), tuple(a + b for a, b in zip(p, o))]
     m.poly([core.G(x, y, z + LIFT) for x, y, z in pts], tone)
 
