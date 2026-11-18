@@ -18,6 +18,7 @@ import { content } from '../index';
 import { shipIdOf, shipGrid } from '../../sim/regions';
 import { shipIds } from '../../sim/regions';
 import { crewOn, eventsOf, nth } from '../../../test/support/sim';
+import { expectReplayable } from '../../../test/support/world';
 import { run as harnessRun } from '../../../test/support/sim';
 
 
@@ -294,12 +295,9 @@ describe('determinism and saves', () => {
   }
 
   it('same seed, same robot fight', () => {
-    const a = fight(7);
-    const b = fight(7);
-    const ea = run(a, 900);
-    run(b, 900);
-    expect(serialize(a)).toBe(serialize(b));
-    expect(eventsOf(ea, 'crew.hit').length).toBeGreaterThan(0);
+    const events: SimEvent[] = [];
+    expectReplayable(() => fight(7), 900, { every: 100, events });
+    expect(eventsOf(events, 'crew.hit').length).toBeGreaterThan(0);
   });
 
   it('save and load mid-fight continues identically', () => {

@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import { CrewC } from '../../sim/crew/components';
 import { ModuleC } from '../../sim/modules/components';
 import { newGame } from '../../sim/newGame';
-import { deserialize, serialize } from '../../sim/save';
 import type { Sim } from '../../sim/sim';
 import { Struct } from '../../sim/structure';
 import { PLAYER_START } from '../../sim/tuning';
@@ -10,6 +9,7 @@ import { content } from '../index';
 import { shipGrid } from '../../sim/regions';
 import { shipIds } from '../../sim/regions';
 import { nth, step } from '../../../test/support/sim';
+import { expectReplayable } from '../../../test/support/world';
 
 
 /** Sector tile of a starter-ship tile (the player ship is stamped at PLAYER_START). */
@@ -70,27 +70,22 @@ describe('starter ship', () => {
   });
 
   it('is deterministic: same seed and commands give the same save', () => {
-    const go = (): string => {
+    expectReplayable(() => {
       const sim = newGame(42, content);
       sim.enqueue({ type: 'debug.ignite', ship: nth(sim, 1), ...at(10, 6) });
       step(sim, 400);
       sim.enqueue({ type: 'debug.setStruct', ship: nth(sim, 1), ...at(11, 1), kind: Struct.Floor });
-      step(sim, 800);
-      return serialize(sim);
-    };
-    expect(go()).toBe(go());
+      return sim;
+    }, 800, { every: 100 });
   });
 
   it('round-trips a save taken mid-fire and keeps simulating identically', () => {
-    const sim = newGame(7, content);
-    sim.enqueue({ type: 'debug.ignite', ship: nth(sim, 1), ...at(10, 6) });
-    step(sim, 160);
-    const json = serialize(sim);
-    const loaded = deserialize(json, content);
-    expect(serialize(loaded)).toBe(json);
-    step(sim, 300);
-    step(loaded, 300);
-    expect(serialize(loaded)).toBe(serialize(sim));
+    expectReplayable(() => {
+      const sim = newGame(7, content);
+      sim.enqueue({ type: 'debug.ignite', ship: nth(sim, 1), ...at(10, 6) });
+      step(sim, 160);
+      return sim;
+    }, 300, { every: 50, saveAt: 50 }); // saved and reloaded at tick 50 of the replay, compared right after the load and every 50 ticks on
   });
 
   it('steps 1000 ticks of a burning ship without stalling (speed itself is the profiler\'s job)', () => {

@@ -11,6 +11,7 @@ import { FTL_CHARGE_SEC } from '../sim/tuning';
 import { ensureAround } from '../sim/galaxy/state';
 import { giveItems, takeItems } from '../sim/story/effects';
 import { content } from '.';
+import { expectReplayable } from '../../test/support/world';
 import { run as step } from '../../test/support/sim';
 
 /** Deploy at the first of a few spots the gap rule accepts (a node's own ships may be in the way of some). */
@@ -278,14 +279,12 @@ describe('hyperspace travel', () => {
     });
 
     it('is deterministic', () => {
-      const run = (): string => {
+      expectReplayable(() => {
         const sim = fled(20);
         step(sim, 100);
         jump(sim, [neighbour(sim, START_NODE)]);
-        step(sim, 200);
-        return JSON.stringify(serialize(sim));
-      };
-      expect(run()).toBe(run());
+        return sim;
+      }, 200, { every: 20 });
     });
   });
 
