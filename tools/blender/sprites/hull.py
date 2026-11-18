@@ -14,7 +14,7 @@ import math
 
 from . import core
 from . import wallart as A
-from .walls import BEV, CURVE, DROP, DZ, GN, ZG, Spec, emit, half_cell
+from .walls import BEV, CURVE, DROP, DZ, FOOT_PX, GN, RAMP_CELLS, RAMP_PX, ZART, ZG, Spec, emit, half_cell
 
 C = 1 / GN
 ZB = DROP - CURVE          # straight part of the belly below the deck
@@ -23,8 +23,8 @@ CH = 0.07                  # that chamfer's size
 STEP_DEPTH = (0.0, 0.12, 0.2, 0.05)   # extra depth per quarter tile: a broken lower silhouette
 
 
-ZGR = ZG                  # rear ghost crest height: the same as the front rim, so the two meet flush at corners
-RUNG = ZGR / math.tan(math.radians(55))   # its slope toward the room at 55 deg (13.webp: an ~19 px band)
+# The rear ghost (o 0) traces a partition's low stub (walls.py: the skirt on the pixel grid): an upright foot at the room
+# side, the ramp up from it RAMP_CELLS cells to the skirt's top, flat behind its crest to the hull's back.
 
 
 class Out(Spec):
@@ -81,7 +81,8 @@ class Out(Spec):
 
     def topz(self, x, y):
         if not self.o:
-            return ZGR * min(1.0, max(0.0, self._inner(x, y)) / RUNG)
+            d = self._inner(x, y)
+            return 0.0 if d <= 0 else (FOOT_PX + RAMP_PX * min(RAMP_CELLS, d * GN)) / ZART
         return ZG - max(0.0, BEV - self.dist(x, y))
 
     def _s(self, x, y):
@@ -142,7 +143,7 @@ class Out(Spec):
                     if self.o and self.dist(x, y) - BEV < C and k == "flat":
                         v = 2                                          # the front rim's outer crest
                     if not self.o and k != "flat" and self._inner(x, y) < C:
-                        v = max(v, 1)                                  # the rear slope's toe
+                        v = max(v, 1)                                  # the rear slope's toe (the foot's top)
                     if self.o in (1, 2, 3) and k == "flat" and (
                             (a == 0 and self.o != 2 and self.mask & 8) or (b == 0 and self.o != 1 and self.mask & 1)):
                         v = max(v, 1)                                  # front rim: its seam across the rim top
@@ -169,6 +170,8 @@ class Out(Spec):
     def col_face(self, face, x, y, z):
         s = self._fs(face, x, y)
         if self.part == "rim":
+            if not self.o and (z < DZ * 1.5 or s < C or s > 1 - C):
+                return A.ghost_line(1)                                 # the rear foot: its line on the deck, its ends
             return A.ghost_line(0)                                     # the rim's own faces are see-through
         f = (self.foot - z) / (self.foot + self.drop_at(x, y))
         return A.hull_out_face(face, s, min(max(f, 0.0), 1.0), self.variant)
