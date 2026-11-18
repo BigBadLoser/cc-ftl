@@ -3,7 +3,7 @@ import { lifeSupportActs, lifeSupportTick } from '../modules/lifeSupport';
 import { regions } from '../regions';
 import type { Sim } from '../sim';
 import { Struct, isAirless, isSolidRock } from '../structure';
-import { GAS_DIFFUSION, GAS_EPSILON, GAS_EVERY, GAS_SUBSTEPS, GAS_VENT } from '../tuning';
+import { GAS_DIFFUSION, GAS_EPSILON, GAS_EVERY, GAS_SUBSTEPS, GAS_VENT } from '../tuningGas';
 
 /** Every field the solve reads. */
 const INPUTS = ['o2', 'co2', 'struct', 'door'] as const
@@ -34,13 +34,16 @@ export function atmosphereSystem(sim: Sim): void {
     const o2 = scratchOf(grid, 'gas.o2'), co2 = scratchOf(grid, 'gas.co2');
     o2.set(o2Before);
     co2.set(co2Before);
-    for (const i of tilesOf(frame, holdsNoGas)) {
-      o2[i] = 0;
-      co2[i] = 0;
-    }
+    const noGas = tilesOf(frame, holdsNoGas);
     // The ticks this solve covers, one at a time: that tick's life support, then its substeps (so a top-up capped at NORMAL_O2 spreads before the next).
     for (let t = 0; t < GAS_EVERY; t++) {
       lifeSupportTick(sim, ship, grid, o2, co2);
+      // Tiles that hold no gas are emptied after life support, which may stand on airless ground with no room (it would add oxygen to
+      // its own tile), and before the substeps, where an airless tile is a fixed sink (#570 review).
+      for (const i of noGas) {
+        o2[i] = 0;
+        co2[i] = 0;
+      }
       for (let s = 0; s < GAS_SUBSTEPS; s++) diffuseStep(frame, cond, [o2, co2], GAS_DIFFUSION, GAS_VENT, true);
     }
     const wrote = writeBackMirror(grid, 'o2', o2, o2Before, GAS_EPSILON) + writeBackMirror(grid, 'co2', co2, co2Before, GAS_EPSILON);

@@ -14,7 +14,8 @@ import { lightingSystem } from './lighting';
 import { roomsSystem } from './rooms';
 import { smokeSystem } from './smoke';
 import { temperatureSystem } from './temperature';
-import { GAS_EVERY, TEMP_EVERY } from '../tuning';
+import { TEMP_EVERY } from '../tuning';
+import { GAS_EVERY } from '../tuningGas';
 
 /**
  * Change tracking of the environment solvers: once a region has settled, a solve is skipped, and every kind of edit to what
