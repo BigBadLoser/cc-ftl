@@ -1,0 +1,507 @@
+"""Station hull look (#524; family `station_hull`): the hull of a base standing on asteroid ground (render/hullArt.ts
+`HullLook` "station"), from outside (roofed); no belly under it, a rock berm against its foot (station_berm).
+After the user's station hull reference (design reference only: our own geometry here). Built as the ship hull is
+(wall3d_ext: the shell block, its outer faces dressed through wall3d_ext_geom's Face), on a section of its own
+(RoundSection): upright from the floor, then rounded over into the top in a big bullnose, lit in bands from its top
+edge down. Two seams a tile run up the face, plumb on screen up to the bullnose's lower bands and following it over
+into the top, to a seam across the top; a groove near the foot with tabs where the seams cross it, a line under the
+bullnose from seam to seam, a bright ledge over a step running along the foot, a line along the top's
+back. Its own palette set (`station`).
+
+Ids follow the faction looks' scheme (structure.py: tile.<fam>.<look>.<rest of the default id>), look `station`:
+
+  tile.hull.station.ext.o<o>.m<mask>[.a<d>|.w<n>]   the run set (as tile.hull.ext.o<o>.m<mask>: o 1 space at +y, 2 at +x, 3
+                                       both, the outer corner; mask the hull ring's neighbours), a straight run also in each
+                                       design (station_hull_designs) and window piece (station_hull_window)
+  tile.hull.station.ext.g.<key>        every catalog key's generic piece (station_hull_diag), tile.roof.station.g.<key> its roof
+  tile.hull.station.berm.<key>.v<n>[.e<a><b>]   the rock berm (station_berm)
+  <id>.tint                            a piece's livery mask (`masked`: its TINT parts), drawn in the station's deco paint; the
+                                       piece itself is not painted"""
+import math
+
+from mathutils import Vector
+
+from . import core
+from . import wall3d as T
+from .wall3d_ext import STRAIGHT, ext_shell
+from .wall3d_ext_geom import D, E, F, LINE, Face, Section
+
+R_D, R_Z = 0.32, 0.46               # the bullnose: this far in along the top, this far down the face (tiles)
+ROUND = 16                          # its facets
+CORNER_C = 16 / 32                  # the outer corner's chamfer along each axis (the ship hull's)
+SEAMS = (0.25, 0.75)                # seams across a tile, as fractions of it
+GROOVE = 0.40 + 3 / core.ZPX        # the groove's height over the deck
+UNDER = 7                           # the line under the bullnose: this many px under its foot
+RAIL = 4 / 32                       # the line along the top's back: this far in from the back
+TOP_SEAM = 5 / 32                   # the seam across the top this far in past the bullnose's top edge (the seams end on it)
+FOOT_OUT = 3 / 32                   # the step along the foot: how far proud
+FOOT_H = 4 / core.ZPX               # its top over the deck: its front (STEP_FRONT px) stands on the deck
+FOOT_BLOCKS = (6, 7, 6, 7, 6)       # the step's two blocks across a tile: gap, block, gap, block, gap (px); a px proud
+                                    # of its top and front
+CHAMFER_SEAM = 1                    # the corner's seams down its chamfer, this many px in from its edges
+
+FACE, FACE_LO, END, TOP = "stS", "stPLo", "stE", "stL"    # the face, its band under the groove, the shell, the top
+# the bullnose's bands from its top edge down to the face: colour, share of the arc (the lightest the widest)
+BANDS = (("stW", 0.36), ("stB", 0.26), ("stH", 0.18), ("stL", 0.12), ("stS", 0.08))
+# the livery (the reference's topDeco): the face's band up from the step to BAND_Z, and the top from its back to the
+# seam behind the bullnose; their tones the plain ones' (FACE, FACE_LO, TOP), named apart so the mask (core.TINT,
+# the `.tint` layer drawn in the station's deco colour) follows the part, not the tone; the lines over them stay out
+FACE_P, TOP_P, SEAM_P = "stPS", "stPT", "stPM"         # (SEAM_P: a design's dark panel in the livery)
+TINT = {FACE_P, FACE_LO, TOP_P, SEAM_P}
+BAND_Z = 0.80                       # the face's band's top over the deck (tiles; the reference's: about 0.44 of the
+                                    # upright face)
+PLUMB_BAND = 3                      # the seams stand plumb on screen from this band's top down (stL)
+SEAM, GROOVE_D, GROOVE_L, UNDER_L = "stM", "stD", "stH", "stH"
+TAB, TAB_TOP, TAB_SIDE = "stB", "stW", "stH"
+PLATE_Z = lambda s, zt: (s.z_at(zt, 3), s.z_at(zt, -3))   # noqa: E731  the plate on the line under the bullnose:
+                                    # its foot and top on screen, px under / over zt (6 px, centred on the line and
+                                    # its lit px under it)
+TAB_W, TAB_IN = 3, 4                # the tabs on the groove: px wide, px in from their seam toward the tile's middle
+FOOT, FOOT_TOP = "stL", "stW"      # the step: its front the face's lower band's tone (unpainted)
+STEP_FRONT = 4                      # its front px tall, flat under (its blocks' a px more)
+BLOCK, BLOCK_LIT = FACE, "stB"      # its blocks: the face's tone, lit along their front's top edge
+
+DESIGN = [0]                        # the design a straight piece is built in (0 the base; station_hull_designs)
+
+
+def _band(t):
+    """The bullnose's colour at t along its arc from its top edge (0) to the face (1)."""
+    for col, w in BANDS:
+        if t < w:
+            return col
+        t -= w
+    return BANDS[-1][0]
+
+
+class RoundSection(Section):
+    """wall3d_ext_geom's Section with a bullnose for its lean: upright to the bend zb, then a quarter ellipse R_D in
+    and R_Z up to the top (the armour's front d out from its own face, D on the upright)."""
+
+    def __init__(self, H):
+        super().__init__(H)
+        self.zb = H - R_Z
+        self.levels = [self.zb + R_Z * math.sin(math.pi / 2 * i / ROUND) for i in range(ROUND + 1)]
+
+    def _angle(self, z):
+        return math.asin(min(1.0, max(0.0, (z - self.zb) / R_Z)))
+
+    def lean_d(self, z):
+        return D - R_D * (1 - math.cos(self._angle(z)))
+
+    def lean(self, z0=0.0):
+        z = max(z0, self.zb)
+        return [(self.lean_d(v), v) for v in [z] + [v for v in self.levels if v > z + 1e-9]]
+
+    def front(self, z0, z1, off=0.0):
+        """The front from z0 to z1 (across the bend and over the bullnose: its facets' levels between)."""
+        lo, hi = min(z0, z1), max(z0, z1)
+        mid = [v for v in [self.zb] + self.levels if lo + 1e-9 < v < hi - 1e-9]
+        zs = [z0] + (mid if z1 >= z0 else mid[::-1]) + [z1]
+        return [(self.lean_d(z) - off, z) for z in zs]
+
+    def band_z(self, i):
+        """The height of the bullnose's band i's top edge (0 the top)."""
+        t = sum(w for _, w in BANDS[:i])
+        return self.zb + R_Z * math.sin(math.pi / 2 * (1 - t))
+
+    def chamfer(self, c):
+        """The outer corner's chamfer by height (as the hull's Section.chamfer): c on the upright part, to nothing over
+        the bullnose by how far it has turned in (its face a triangle there: a clean tip at the top's square corner)."""
+        return lambda z: c if z <= self.zb + 1e-6 else c * (self.lean_d(z) - D + R_D) / R_D
+
+    def cols(self, prof, role):
+        """Edge tones by facing and height: the top TOP, the bullnose its bands, the face FACE (FACE_P under BAND_Z,
+        FACE_LO under the groove: the livery band, unless role is "bare"); faces turned back or down unseen."""
+        n = len(prof)
+        dc, zc = sum(p[0] for p in prof) / n, sum(p[1] for p in prof) / n
+        out = []
+        for i in range(n):
+            (d0, z0), (d1, z1) = prof[i], prof[(i + 1) % n]
+            pd, pz = z1 - z0, d0 - d1
+            if pd * ((d0 + d1) / 2 - dc) + pz * ((z0 + z1) / 2 - zc) < 0:
+                pd, pz = -pd, -pz
+            h = math.hypot(pd, pz) or 1.0
+            pd, pz, zm = pd / h, pz / h, (z0 + z1) / 2
+            if pz > 0.85 and min(z0, z1) >= self.H - 1e-6:      # (the top itself: the bullnose's flat
+                                                                # facets under it keep their band)
+                out.append(TOP)
+            elif pd < 0.3 and pz < 0.3:
+                out.append(None)
+            elif zm > self.zb + 1e-6:
+                a = (self._angle(z0) + self._angle(z1)) / 2      # (by angle, not height: the top facets are flat)
+                out.append(_band(1 - a / (math.pi / 2)))
+            else:
+                bare = role == "bare"
+                out.append(FACE if zm > BAND_Z else (FACE if bare else FACE_P) if zm > GROOVE else
+                           ("stL" if bare else FACE_LO))
+        return out
+
+
+class RoundFace(Face):
+    def block(self, u0, u1, z0, z1, role="face", off=0.0):
+        """Face.block, split at BAND_Z (the livery band's top: its tones by height, RoundSection.cols)."""
+        if z0 + 1e-6 < BAND_Z < z1 - 1e-6:
+            super().block(u0, u1, z0, BAND_Z, role, off)
+            z0 = BAND_Z
+        super().block(u0, u1, z0, z1, role, off)
+
+    def livery(self, u0, u1, z0, z1, zk):
+        """The livery on a band [u0, u1] up the front from z0 to z1 (plumb on screen under zk, as plumb's), in the mask
+        pass only (the art keeps its own shading: the bullnose's bands), a hair under the lines painted over it."""
+        if core.TINT is None:
+            return
+        if z1 > zk:
+            pf = self.on(zk, z1, -0.01, 0.0005)
+            self.part(u0, u1, pf, [FACE_P] * len(pf), FACE_P, end=False)
+        dk = self.sec.lean_d(zk)
+        pts = self.sec.front(z0, min(z1, zk))
+        o, up = T.OUT(self.ax), Vector((0, 0, 1))
+        for (da, za), (db, zb) in zip(pts, pts[1:]):
+            sa, sb = da - dk, db - dk
+            q = [T.P(self.ax, self.plane, u + s, z, d + 0.0005) for u, s, z, d in
+                 ((u0, sa, za, da), (u1, sa, za, da), (u1, sb, zb, db), (u0, sb, zb, db))]
+            self.k.poly(q, F, 3, o * (zb - za) + up * (da - db), fixed=FACE_P)
+
+    def top_band(self, u0, u1, d0, d1, col):
+        """Face.top_line's band, a hair under the lines painted on the top (they draw over it)."""
+        m0 = self.mt[0] if abs(u0 - self.a) < 1e-6 else 0.0
+        m1 = 1.0 if self.ch or self.mt[1] else 0.0
+        m1 = m1 if abs(u1 - self.b) < 1e-6 else 0.0
+        pts = ((u0 - d0 * m0, d0), (u1 + d0 * m1, d0), (u1 + d1 * m1, d1), (u0 - d1 * m0, d1))
+        self.k.poly([T.P(self.ax, self.plane, u, self.sec.H + T.PAINT / 2, d) for u, d in pts],
+                    F, 3, Vector((0, 0, 1)), fixed=T.SEAM_PASS or col)
+
+    def plumb(self, u0, u1, z0, z1, zk, col):
+        """A band [u0, u1] up the front from z0 to z1, a line with no lit edge (as Face.line's with bevel=False: its
+        core a px, not LINE_W, which goes with a lit edge): over zk it follows the front (Face.line), under it it
+        stands plumb on screen under where it is at zk (screen x goes as u - d: it moves along the face as far as the
+        front stands out)."""
+        if z1 > zk:
+            self.line(u0, u1, zk, z1, col, bevel=False)
+        dk = self.sec.lean_d(zk)
+        pts = self.sec.front(z0, min(z1, zk))
+        col = T.SEAM_PASS or col
+        o, up = T.OUT(self.ax), Vector((0, 0, 1))
+        for (da, za), (db, zb) in zip(pts, pts[1:]):
+            sa, sb = da - dk, db - dk
+            q = [T.P(self.ax, self.plane, u + s, z, d + 0.001) for u, s, z, d in
+                 ((u0, sa, za, da), (u1, sa, za, da), (u1, sb, zb, db), (u0, sb, zb, db))]
+            self.k.poly(q, F, 3, o * (zb - za) + up * (da - db), fixed=col)
+
+    def at_face(self, u, zk):
+        """Where a plumb band at u (plumb under zk) stands on the upright face."""
+        return u + D - self.sec.lean_d(zk)
+
+
+def stripe(f, s0, zk):
+    """The livery down the middle slot (the ref's T3-4 and T3-7): from the top's band over the bullnose and down the
+    face to the groove, between the seams."""
+    s = f.sec
+    u0, u1 = s0 + SEAMS[0] + LINE / 2, s0 + SEAMS[1] - LINE / 2
+    f.livery(u0, u1, s.z_at(GROOVE, -1), s.H, zk)
+    f.top_band(u0, u1, E - round((R_D + TOP_SEAM) * 32) / 32, s.lean_d(s.H), TOP_P)
+
+
+def _part(f, u0, u1, z0, z1, out, face, top, side, end=False):
+    """A block on the upright face over [u0, u1] x [z0, z1], out proud: its front `face`, its top `top`, its ends
+    `side`."""
+    pf = f.on(z0, z1, -0.01, out, hang=False)
+    f.part(u0, u1, pf, [None, top, face, None], side, end=end)
+
+
+def _step_prof(s):
+    """The step's section: its top and a front STEP_FRONT px tall, flat under."""
+    zf = s.z_at(FOOT_H, STEP_FRONT)
+    return [(D - 0.01, zf), (D - 0.01, FOOT_H), (D + FOOT_OUT, FOOT_H), (D + FOOT_OUT, zf)]
+
+
+STEP_COLS = [None, FOOT_TOP, FOOT, None]
+
+
+def _block_prof(s, up=0, fwd=0):
+    """A foot block's section: the step's, a px proud of its top and front; its front's top px a lit edge; the back of its
+    top (a px out from the face: its px on screen in line with the face's seam a px over the step) carries on the
+    seam where the step meets the face, through the block on screen."""
+    zt, out = s.z_at(FOOT_H, -1 - up), FOOT_OUT + (1 + fwd) * LINE      # (`up` px higher still, its front `fwd` px
+                                                                        # further out)
+    zf = s.z_at(FOOT_H, STEP_FRONT + 1)                         # (its front a px under the step's, flat under)
+    zo = s.z_at(zt, fwd % 2 / 2)                                # (an odd px further out lands its front between screen
+    zf = s.z_at(zf, fwd % 2 / 2)                                # rows: down half a px onto them)
+    return [(D - 0.01, zf), (D - 0.01, zt), (D + LINE, zt), (D + out, zo), (D + out, s.z_at(zo, 1)), (D + out, zf)]
+
+
+BLOCK_COLS = [None, GROOVE_D, BLOCK, BLOCK_LIT, BLOCK, None]
+
+
+def _chamfer_part(f, t0, t1, z0, z1, out, face, top, side):
+    pf = f.on(z0, z1, -0.01, out, hang=False)
+    f.on_chamfer(t0, t1, pf, [None, top, face, None], side)
+
+
+def build(k, ax, plane, a, b, ends, H):
+    """The station's armour over [a, b] of a face (wall3d's face arguments)."""
+    s = RoundSection(H)
+    f = RoundFace(k, ax, plane, a, b, ends, s, CORNER_C)
+    back = min((r[0][2] if ax == "y" else r[0][0]) for r in T.SHELL.rects if r[1] == "hull") - plane
+    zk = s.band_z(PLUMB_BAND)
+    zt = s.z_at(s.zb, UNDER)
+    g0, g1 = s.z_at(GROOVE, 3), s.z_at(GROOVE, -2)          # a tab on the groove
+    ts = E - round((R_D + TOP_SEAM) * 32) / 32               # (the top's lines on the art px grid: clean iso lines)
+    rail = back + RAIL
+    for s0, s1 in T.spans(a, b):
+        whole = s1 - s0 > 1 - 1e-6
+        bay = whole and DESIGN[0] == SD.BAY
+        win = whole and SW.PART[0]                       # (a window piece: station_hull_window)
+        if win:
+            SW.span(f, s, s0, s1, zt)
+        elif whole and DESIGN[0] == SD.MODULE:
+            SD.blocks(f, s0, s1)
+        elif bay:
+            SB.blocks(f, s0, s1)
+        else:
+            for z0, z1 in ((0.0, GROOVE), (GROOVE, H)):
+                f.block(s0, s1, z0, z1)
+        f.line(s0, s1, GROOVE, s.z_at(GROOVE, -1), GROOVE_D, bevel=False)
+        cut = SD.recess(s0) if whole and DESIGN[0] == SD.MODULE else None    # (the recess breaks its lit px and the
+        for u0, u1 in (((s0, cut[0]), (cut[1], s1)) if cut else ((s0, s1),)):   # step's seam)
+            f.line(u0, u1, s.z_at(GROOVE, 1), GROOVE, GROOVE_L, bevel=False)
+        for u0, u1 in (((s0, cut[0]), (cut[1], s1)) if cut else ((s0, s1),)):
+            f.line(u0, u1, FOOT_H, s.z_at(FOOT_H, -1), GROOVE_D, bevel=False)   # a seam where the step meets the face
+        f.top_band(s0, s1, back, ts - LINE, TOP_P)
+        f.top_line(s0, s1, ts - LINE, ts, SEAM)
+        f.top_line(s0, s1, rail - LINE, rail, SEAM)
+        if whole and not win:
+            for fr, sg in zip(SEAMS, (1, -1)):
+                u = s0 + fr - LINE / 2
+                if DESIGN[0] == SD.MODULE:                               # (from the groove up; a break in a design)
+                    z0, z1 = SD.gap(s)
+                    f.plumb(u, u + LINE, s.z_at(GROOVE, -1), z0, zk, SEAM)
+                    f.plumb(u, u + LINE, z1, H, zk, SEAM)
+                else:                                                   # (a bay's cut is its own rim on the
+                    f.plumb(u, u + LINE, s.z_at(GROOVE, -1), s.zb if bay else H, zk, SEAM)   # bullnose)
+                f.top_line(u, u + LINE, ts, D - R_D, SEAM)
+                g = f.at_face(u + LINE / 2, zk) + sg * TAB_IN * LINE     # (a tab on the groove, in from the seam)
+                if DESIGN[0] not in SD.NO_TABS:
+                    _part(f, g - TAB_W / 2 * LINE, g + TAB_W / 2 * LINE, g0, g1, LINE, TAB, TAB_TOP, TAB_SIDE)
+            v0, v1 = (f.at_face(s0 + fr, zk) for fr in SEAMS)
+            if not bay:
+                f.line(v0 + LINE / 2, v1 - LINE / 2, zt, s.z_at(zt, -1), GROOVE_D, bevel=False)
+            if DESIGN[0] not in SD.NO_TABS:
+                f.line(v0 + LINE / 2, v1 - LINE / 2, s.z_at(zt, 1), zt, UNDER_L, bevel=False)
+            m, hw = (v0 + v1) / 2, (TAB_W / 2 + 1) * LINE           # a plate on it, in the middle, a px wider
+            if DESIGN[0] not in SD.NO_TABS:
+                _part(f, m - hw, m + hw, *PLATE_Z(s, zt), LINE, TAB, TAB_TOP, TAB_SIDE)
+        f.part(s0, s1, _step_prof(s), STEP_COLS, False)          # the step along the foot, one piece (open
+                                                                # ends: it runs on; round an outer corner)
+        if whole and DESIGN[0]:
+            SD.dress(f, s0, DESIGN[0], zk)
+        if whole and DESIGN[0] in SD.ONE_BLOCK:                  # (one block over both, its middle `up` px higher)
+            u, up = s0 + FOOT_BLOCKS[0] * LINE, SD.ONE_BLOCK[DESIGN[0]]
+            for i, w in enumerate(FOOT_BLOCKS[1:-1]):
+                f.part(u, u + w * LINE, _block_prof(s, (i % 2) * up), BLOCK_COLS, GROOVE_D)
+                u += w * LINE
+        elif win:                                                # (a window's: station_hull_window's blocks)
+            for u0, u1, fwd, caps in SW.step_blocks(s0, s1):
+                f.part(u0, u1, _block_prof(s, 0, fwd), BLOCK_COLS, tuple(GROOVE_D if c else None for c in caps))
+        elif whole:
+            u = s0
+            for i, w in enumerate(FOOT_BLOCKS):
+                if i % 2:
+                    f.part(u, u + w * LINE, _block_prof(s), BLOCK_COLS, GROOVE_D)    # (its sides the seam's)
+                u += w * LINE
+    if f.ch:
+        _corner(f, zt, g0, g1)
+
+
+def _corner(f, zt, g0, g1):
+    """The outer corner's chamfer: a seam down each edge, CHAMFER_SEAM px in, with a tab on the groove in from it; the
+    line under the bullnose across between them, a plate on it in the middle; the step's two blocks."""
+    t, s = f.chamfer_t, f.sec
+    W = f.c * core.TILE_W
+    sf = f.on(s.z_at(GROOVE, -1), s.H, -0.01, 0.001)
+    for e, sg in ((CHAMFER_SEAM, 1), (W - CHAMFER_SEAM - 1, -1)):
+        f.on_chamfer(t(e), t(e + 1), sf, [SEAM] * len(sf), SEAM)
+        c = e + 0.5 + sg * TAB_IN
+        _chamfer_part(f, t(c - TAB_W / 2), t(c + TAB_W / 2), g0, g1, LINE, TAB, TAB_TOP, TAB_SIDE)
+    for z0, z1, col in ((zt, s.z_at(zt, -1), GROOVE_D), (s.z_at(zt, 1), zt, UNDER_L)):
+        pf = f.on(z0, z1, -0.01, 0.001)
+        f.on_chamfer(t(CHAMFER_SEAM + 1), t(W - CHAMFER_SEAM - 1), pf, [col] * len(pf), col)
+    u = (W - sum(FOOT_BLOCKS)) / 2                           # the step's blocks across it, as a tile's
+    for i, w in enumerate(FOOT_BLOCKS):
+        if i % 2:
+            f.on_chamfer(t(u), t(u + w), _block_prof(s), BLOCK_COLS, GROOVE_D)
+        u += w
+    hw = TAB_W / 2 + 1
+    _chamfer_part(f, t(W / 2 - hw), t(W / 2 + hw), *PLATE_Z(s, zt), LINE, TAB, TAB_TOP, TAB_SIDE)
+
+
+def _shell(o):
+    """The ship hull's exterior shell (its block, cut a cell short of the outline), the armour's own face at the
+    tile's middle (no BACK), in the station's tones."""
+    base = ext_shell(o)
+
+    class StationShell(base):
+        def __init__(self, *args, **kw):
+            T.Shell.__init__(self, *args, **kw)
+            f = E - D
+            out = []
+            for (x0, x1, y0, y1), fam, tp, top in self.rects:
+                if fam == "hull":
+                    x1 = f if o & 2 else x1
+                    y1 = f if o & 1 else y1
+                out.append(((x0, x1, y0, y1), fam, tp, top))
+            self.rects, self.keep, self.f = out, None, f
+
+        def col_top(self, i, j, kind, x, y):
+            return TOP
+
+        def col_face(self, face, x, y, z):
+            if abs((y if face == "y" else x) - self.f) < 1e-6:
+                return None                             # (the armour covers its outer face)
+            return END
+    return StationShell
+
+
+def _dress(k, ax, plane, a, b, ends, zs, top, full, variant=0):
+    build(k, ax, plane, a, b, ends, top)
+
+
+def _block(mask, o):
+    return T.block(mask, "hull", 0, level="up", shell=_shell(o), dress=_dress)
+
+
+def _wide(mask, o, design=0):
+    """(own, wide): a straight run with a copy a tile either way along it (its edge px resolve as mid-run; the copies in
+    the base design: the designs share the tile's edges)."""
+    DESIGN[0] = design
+    try:
+        own = _block(mask, o)
+    finally:
+        DESIGN[0] = 0
+    more = []
+    if (mask, o) in STRAIGHT:
+        dx, dy = STRAIGHT[(mask, o)]
+        for sg in (-1, 1):
+            for ob in _block(mask, o):
+                ob.location = ob.location + core.G(sg * dx, sg * dy, 0.0)
+                more.append(ob)
+    return own, own + more
+
+
+OUT_MASK = {1: 4, 2: 2, 3: 6}       # the ship hull's run set (hulltiles.OUT_MASK): mask bits clear for each side out
+PIECES = tuple((m, o) for o, clear in OUT_MASK.items() for m in range(16) if not m & clear)
+PALETTE = "only:station"
+
+
+def _item(sid, build_fn):
+    return masked(sid, "wide", build_fn)
+
+
+def masked(sid, kind, build_fn, render=None):
+    """The piece's item and its `.tint` mask's (hulltiles._items' layout: the piece's own px under the mask, its anchor
+    shifted by the crop); [] if it builds nothing. render(sid, objs) renders the piece (env_build.render_sprite's by
+    default); the mask pass renders the piece's own objects alone (no glass)."""
+    import numpy as np
+    from . import env_build, post
+    core.clear_scene_meshes()
+    post.select(PALETTE)
+    objs = build_fn()
+    if not (objs[0] if kind == "wide" else objs):
+        return []
+    r = render(sid, objs) if render else env_build.render_sprite(sid, kind, objs)
+    it = env_build.crop_item(sid, (1, 1), *r)
+    if it is None:
+        return []
+    core.clear_scene_meshes()
+    post.select("hull")                                 # (its tintW / tintK)
+    core.TINT = TINT
+    try:
+        objs = build_fn()
+        m = env_build.render_sprite(sid, kind, objs[:2] if render else objs)
+    finally:
+        core.TINT = None
+    if m[1].shape != r[1].shape:
+        return [it]
+    m = m[1] & (m[0].min(-1) > 240) & r[1]
+    if not m.any():
+        return [it]
+    ys, xs = np.where(m)
+    y0, y1, x0, x1 = ys.min(), ys.max() + 1, xs.min(), xs.max() + 1
+    rgba = np.zeros((y1 - y0, x1 - x0, 4), np.uint8)
+    keep = m[y0:y1, x0:x1]
+    rgba[..., :3][keep] = r[0][y0:y1, x0:x1][keep]
+    rgba[..., 3][keep] = 255
+    return [it, {"id": sid + ".tint", "fp": (1, 1), "rgba": rgba, "g": np.zeros_like(rgba), "ax": r[3] - x0,
+                 "ay": r[4] - y0}]
+
+
+
+
+def _unname(n):
+    return n.replace("~", ";").replace("+", "|").replace("_", ",").replace("m", "-")
+
+
+def _generic(n):
+    from . import env_build, post
+    from . import station_hull_diag as SG
+    from . import wall3d_ext_diag as DG
+    k = _unname(n)
+    out = []
+    sid = f"tile.hull.station.ext.g.{n}"
+    out += masked(sid, "block" if DG.uses_art(k) else "wide",
+                  (lambda: SG.piece(k)) if DG.uses_art(k) else (lambda: (SG.piece(k), SG.piece(k, margin=DG.WIDE))))
+    for sid, kind, fn in ((f"tile.roof.station.g.{n}", "block", lambda: SG.roof(k)),):
+        core.clear_scene_meshes()
+        post.select(PALETTE)
+        objs = fn()
+        if not (objs[0] if kind == "wide" else objs):
+            continue                                    # (nothing faces the camera: no sprite)
+        it = env_build.crop_item(sid, (1, 1), *env_build.render_sprite(sid, kind, objs))
+        out += [it] if it else []
+    return out
+
+
+def _berm(n, v, ends=None):
+    from . import env_build, post
+    from . import station_berm as BM
+    from . import station_hull_diag as SG
+    k = _unname(n)
+    core.clear_scene_meshes()
+    post.select("only:berm")
+    own = BM.berm(k, v, ends or (0, 0))
+    if not own:
+        return []
+    sid = f"tile.hull.station.berm.{n}.v{v}" + (f".e{ends[0]}{ends[1]}" if ends else "")
+    it = env_build.crop_item(sid, (1, 1), *env_build.render_sprite(sid, "wide", (own, own + SG.piece(k))))
+    return [it] if it else []
+
+
+def jobs():
+    """The run set (each straight run in each design too: tile.hull.station.ext.o<o>.m<mask>[.a<design>], and its windows), every
+    catalog key's generic piece and roof (hull_catalog, as the ship hull's), and every key's berm in each variant and end type.
+    Each job logs FAIL and yields nothing if it raises (a degenerate key: its tiles keep the ship's art)."""
+    from . import hull_catalog as HC
+    from . import hull_outline as HO
+    from . import station_berm as BM
+    from .hulltiles import _guard
+    # (each a lambda with its inputs as defaults, guarded inside: the render cache keys on them)
+    out = [lambda m=m, o=o: _guard((m, o), lambda: _item(f"tile.hull.station.ext.o{o}.m{m}", lambda: _wide(m, o)))()
+           for m, o in PIECES]
+    out += [lambda m=m, o=o, v=v: _guard((m, o, v), lambda: _item(f"tile.hull.station.ext.o{o}.m{m}.a{v}",
+                                                                  lambda: _wide(m, o, v)))() for (m, o) in STRAIGHT for v in SD.DESIGNS]
+    out += SW.jobs()                                    # (the window: w1, w2, w3 along x and y)
+    for k in HC.keys():
+        if not k:
+            continue
+        n = HO.name(k)
+        out.append(lambda n=n: _guard(n, lambda: _generic(n))())
+        run = BM.along(k) is not None                   # (a straight run's berm in each pair of end types, a turning
+        ends = [(a, b) for a in (0, 1) for b in (0, 1)] if run or BM.turn_key(k) else [None]    # diagonal's too)
+        out += [lambda n=n, v=v, e=e: _guard((n, v, e), lambda: _berm(n, v, e))() for v in range(BM.RUN if run else BM.VARIANTS)
+                for e in ends]
+    return out
+
+
+from . import station_hull_designs as SD  # noqa: E402  (its designs build on this module)
+from . import station_hull_bay as SB  # noqa: E402
+from . import station_hull_window as SW  # noqa: E402

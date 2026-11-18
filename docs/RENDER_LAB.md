@@ -62,6 +62,7 @@ move in a browser).
   front layer over them; `stand=2.8,3.4` places them (tiles from the first; the near door is the tile after the last).
   `hide=tube.hull,tube.port` leaves out the pieces whose ids start with those prefixes. The panel spaces tiles as the game does
   (`TILE_W`, `TILE_H`).
+- `station-hull`: the ground base's station hull (#524): a straight run in the base design and each design `.a1`-`.a6`, an outer corner, the diagonal generic pieces, the berm on a run, and the walls-up cap and foot, the `.tint` livery in a sample paint (`designs=a1,a3` limits the designs).
 - `windows-tool`: the Window build tool (#516) as the game draws it, on a ship section (an interior wall along x and one along y meeting in a
   T, the hull around them). A DOM page like `build`: one renderer over the layout lab's stamped world, and the game's own `createPaintTools`
   put on build > window at each size and hovered over a tile, so the preview tint and the hint (the build menu's own element) are the game's.

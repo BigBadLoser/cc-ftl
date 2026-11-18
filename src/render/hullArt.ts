@@ -16,6 +16,21 @@ import { tileHash, type KindAt } from "./tiles";
  * covers the outlines ships are built to (3 tiles wide at least), damage and odd shapes can make others.
  */
 
+/**
+ * A grid's hull look: `ship` (the hull family's pieces, on the belly) or `station` (a base standing on asteroid ground,
+ * sim/outposts/state.ts `standsOnGround`: the station_hull family's pieces where it has them, no belly, the rock berm, stationHull.ts).
+ */
+export type HullLook = "ship" | "station";
+
+/** The station look's id for a ship look piece (tile.hull.station.ext.*, tile.roof.station.g.*). */
+export const stationId = (id: string): string => id.replace("tile.hull.ext.", "tile.hull.station.ext.").replace("tile.roof.g.", "tile.roof.station.g.");
+
+/** Whether a sprite is one of the station look's (drawn in its own grey, not painted: only its `.tint` livery takes paint). */
+export const isStationPiece = (id: string): boolean => id.startsWith("tile.hull.station.") || id.startsWith("tile.roof.station.");
+
+/** Straight-run designs .a1 .. .aN past the base piece: the ship's (hulltiles.EXT_PAIRS), the station's (station_hull_designs.DESIGNS). */
+const DESIGNS: Record<HullLook, number> = { ship: 3, station: 6 };
+
 /** The ship's tiles: the outline runs round them. */
 const shipTile = (k: number) => k === Struct.Floor || k === Struct.Wall || k === Struct.Door;
 /** Tiles that make a region a base in rock, not a ship: no exterior hull there. */
@@ -104,8 +119,18 @@ export function windowExteriorId(h: HullKeys, x: number, y: number, has: (id: st
  * The exterior sprites of a hull tile (the ship roofed), back to front: a near run or corner the run set's piece (a
  * straight run in one of its designs), anything else the generic piece and its roof over the rest of the tile. Null
  * for no key (plain roof) or no art. `win`: the tile's window (sim/windows.ts), drawn instead of the design on a straight near run.
+ * In the station look a tile takes the station's pieces where they all exist, else the ship's.
  */
-export function exteriorIds(h: HullKeys, x: number, y: number, has: (id: string) => boolean, base = false, win: WindowTile | null = null): string[] | null {
+export function exteriorIds(h: HullKeys, x: number, y: number, has: (id: string) => boolean, base = false, win: WindowTile | null = null, look: HullLook = "ship"): string[] | null {
+  if (look === "station") {
+    const ids = lookIds(h, x, y, (id) => has(stationId(id)), base, win, DESIGNS.station);
+    if (ids) return ids.map(stationId);
+  }
+  return lookIds(h, x, y, has, base, win, DESIGNS.ship);
+}
+
+/** exteriorIds in one look's designs (ids in the ship look's names: `has` maps them). */
+function lookIds(h: HullKeys, x: number, y: number, has: (id: string) => boolean, base: boolean, win: WindowTile | null, designs: number): string[] | null {
   const k = h.at(x, y);
   if (!k) return null;
   if (!hullKeyGeneric(k)) {
@@ -113,7 +138,8 @@ export function exteriorIds(h: HullKeys, x: number, y: number, has: (id: string)
     // A window tile of a straight near run: its window piece, else the design pick.
     const w = base ? null : windowExteriorId(h, x, y, has, win);
     if (w) return [w];
-    const v = STRAIGHT.has(id) && !base ? ["", ".a1", ".a2", ".a3"][pickDesign(x, y, 4, 1)] : "";
+    const d = STRAIGHT.has(id) && !base ? pickDesign(x, y, designs + 1, 1) : 0;
+    const v = d ? `.a${d}` : "";
     for (const c of [id + v, id]) if (has(c)) return [c];
   }
   const n = hullKeyName(k);
@@ -128,8 +154,8 @@ export const tileLook = (x: number, y: number) => BELLY_LOOKS[pickDesign(x, y, B
  * look where that differs from the plain one. A near hull wall or door (`hull`) whose key has no art takes the catch-all
  * (`fallbackBelly`); a floor never does (its edge on a breach has no belly). Null if the tile shows no belly.
  */
-export function bellyIds(h: HullKeys, x: number, y: number, has: (id: string) => boolean, hull = false): { under?: string; low?: string } | null {
-  if (!h.ship(x, y)) return null;
+export function bellyIds(h: HullKeys, x: number, y: number, has: (id: string) => boolean, hull = false, look: HullLook = "ship"): { under?: string; low?: string } | null {
+  if (look === "station" || !h.ship(x, y)) return null; // (a base on the ground: no belly)
   const k = h.at(x, y);
   return (k ? keyBelly(hullKeyName(k), x, y, has) : null) ?? (hull ? keyBelly(fallbackBelly(h, x, y), x, y, has) : null);
 }

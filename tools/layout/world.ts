@@ -14,6 +14,7 @@ import { powerSystem } from '../../src/sim/systems/power';
 import { ORIGIN } from './camera';
 import { addModule, clampAt, newModule, PAD, removeModule, toTemplate, type Layout, type Tile } from './layout';
 import { AsteroidC } from '../../src/sim/asteroids/components';
+import { ShipC } from '../../src/sim/combat/components';
 import { layCable, templateCable } from '../../src/sim/cable';
 
 export interface World { sim: Sim; ship: number }
@@ -58,6 +59,9 @@ function groundUnder(sim: Sim, l: Layout, ship: number): void {
       g.set('ship', tx, ty, rock);
     }
   for (const c of templateCable(toTemplate(l))) if (layCable(g, ORIGIN + c.x, ORIGIN + c.y)) g.set('ship', ORIGIN + c.x, ORIGIN + c.y, ship);
+  // a surface outpost's record (stamp.ts), so the renderer draws it as the game does a base on the ground (outposts/state.ts standsOnGround)
+  const s = sim.world.get(ship, ShipC);
+  if (s) s.outpost = { style: 'surface', kind: l.origin?.gen.faction.replace(/^station\./, '') ?? 'trading', hidden: false };
 }
 
 /** Write each window's per-tile codes (the game's `windowCode`) into the ship's `window` field; a tile that is not a wall in the stamped ship keeps none. */

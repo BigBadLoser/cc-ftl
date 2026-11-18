@@ -1,4 +1,4 @@
-import { Container, type Sprite, type Texture } from "pixi.js";
+import { Container, Sprite, type Texture } from "pixi.js";
 import { animNow } from './animClock';
 import type { Atlas, StaticSprite } from "./assets/loader";
 import { CHUNK_SIZE, type Grid } from "../sim/grid";
@@ -26,7 +26,8 @@ import { HullSprite } from "./hullPaint";
 import { keepsOldPiece } from "./jobHull";
 import type { BuildGate } from "./buildBudget";
 import { iso } from "./iso";
-import { bellyIds, engineHullTiles, exteriorIds, gridHullKeys, PLAIN_PAINT, type HullKeys, type HullPaint } from "./hullArt";
+import { bellyIds, engineHullTiles, exteriorIds, gridHullKeys, isStationPiece, PLAIN_PAINT, type HullKeys, type HullLook, type HullPaint } from "./hullArt";
+import { bermId, lowId } from "./stationHull";
 
 export type { CutawayMode };
 
@@ -53,6 +54,8 @@ export interface GridViewHost {
   beamLook?(): BeamLook;
   /** The ship's hull colours; default plain. */
   hullPaint?(): HullPaint;
+  /** The grid's hull look (hullArt `HullLook`); default the ship's. */
+  hullLook?(): HullLook;
   /** Asked before each chunk (re)build (buildBudget.ts); a refused chunk is built on a later update. Default: always. */
   gate?: BuildGate;
   /** True: draw no tiles at all (floor, walls, hull, markings); the modules on the grid still show. For a ship that is only a seat (`ShipC.unseen`). */
@@ -315,7 +318,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
           if (k === Struct.Floor) continue;
           // The engine's hull row (walls up or roofed) is the engine's own bulkhead sprite: no hull wall on it.
           if (special) continue;
-          for (const piece of wallPieces(pieceAt, x, y, stone ? Struct.RockWall : k, mode, ghosts, gapAt, decodeWindow(windows?.[ci] ?? 0))) {
+          for (const piece of wallPieces(pieceAt, x, y, stone ? Struct.RockWall : k, mode, ghosts, gapAt, decodeWindow(windows?.[ci] ?? 0), host.hullLook?.() ?? "ship")) {
             if (drew && !keepsOldPiece(k, ghosts, piece.under)) continue; // (a door stays, without its old belly)
             const s = atlas.firstOf(piece.chain);
             if (!s) continue;
@@ -332,6 +335,14 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
             // A door is lit like a wall (the brightest light round it): its own tile is dark while it is closed (light stops at a
             // closed door) and takes its neighbours' light once open, which made the sprite change colour as it swung.
             tinted.push({ spr: made[0] as Sprite, x, y, ci, wall: true, solid: true });
+            // A station piece's livery (`<id>.tint`) in the deco paint.
+            const pid = piece.chain.find((id) => isStationPiece(id) && atlas.stat(id) === s);
+            const tint = pid ? atlas.stat(`${pid}.tint`) : undefined;
+            if (tint) {
+              const spr = addPaintSprite(tint, x, y, depthKey(x, y) + piece.order * 0.001 + 0.0005, L.sorted, HullSprite);
+              owned.push(spr);
+              tinted.push({ spr, x, y, ci, wall: true, solid: true, paint: host.hullPaint?.().deco ?? PLAIN_PAINT.deco });
+            }
           }
         }
     if (ghosts && !hull) {
@@ -397,37 +408,54 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
    */
   function drawHull(h: HullKeys, x: number, y: number, k: number, ci: number, v: TileChunk, bellyOnly = false, base = false, win: WindowTile | null = null, behind = false): boolean {
     const paint = host.hullPaint?.() ?? PLAIN_PAINT;
+    const look = host.hullLook?.() ?? "ship";
     const put = (id: string, z: number, parent: Container, solid: boolean) => {
       const s = atlas.stat(id);
       if (!s) return;
       for (const [pid, col] of [[id, paint.armour], [`${id}.tint`, paint.deco]] as const) {
         const ps = pid === id ? s : atlas.stat(pid);
         if (!ps) continue;
-        const spr = addPaintSprite(ps, x, y, z + (pid === id ? 0 : 0.0005), parent, HullSprite);
+        // A station piece keeps its own grey (lit only, no armour paint); its `.tint` livery takes the deco paint.
+        const bare = pid === id && isStationPiece(id);
+        const spr = addPaintSprite(ps, x, y, z + (pid === id ? 0 : 0.0005), parent, bare ? Sprite : HullSprite);
         v.owned.push(spr);
-        v.tinted.push({ spr, x, y, ci, wall: true, solid, paint: col });
+        v.tinted.push({ spr, x, y, ci, wall: true, solid, paint: bare ? undefined : col });
       }
+    };
+    // A ground base's berm (stationHull.ts) heaps against the hull's foot, over the tile's piece.
+    const berm = () => {
+      const id = look === "station" ? bermId(h, x, y, has, !ghosts) : null;
+      if (id) put(id, z + 0.002, L.sorted, solid);
+      return !!id;
     };
     const solid = k !== Struct.Floor;
     const z = depthKey(x, y);
     if (bellyOnly) {
-      const b = bellyIds(h, x, y, has, k !== Struct.Floor);
+      const b = bellyIds(h, x, y, has, k !== Struct.Floor, look);
       if (b?.under) put(b.under, z, L.under, solid);
       return !!b?.under;
     }
     if (!ghosts) {
-      const ext = exteriorIds(h, x, y, has, base, win);
+      const ext = exteriorIds(h, x, y, has, base, win, look);
       if (!ext) return false;
       // The roof stand-in at the roof plating's depth: over the tile's piece, under the hull of the tiles in front. `behind`: a
       // tube's hull row or far door, sorted (roof and all) under the tube's art, whose first tile shares the row's front tile's depth.
       ext.forEach((id) => put(id, z + (id.startsWith("tile.roof.") ? (behind ? -0.04 : 0.9) : behind ? -0.05 : 0), L.sorted, solid));
-      const b = bellyIds(h, x, y, has);
+      const b = bellyIds(h, x, y, has, false, look);
       if (b?.under) put(b.under, z, L.under, solid);
+      berm();
       return true;
     }
     if (k !== Struct.Floor && hullSide(wallAt, x, y) !== HullSide.Near) return false;
-    const b = bellyIds(h, x, y, has, k !== Struct.Floor);
-    if (!b) return false;
+    if (look === "station") {
+      // A ground base's near hull: the station's foot (no belly), the berm against it.
+      const foot = lowId(h, x, y, has);
+      if (foot) put(foot, z + 0.001, L.sorted, solid);
+      return berm() || !!foot;
+    }
+    const heaped = berm();
+    const b = bellyIds(h, x, y, has, k !== Struct.Floor, look);
+    if (!b) return heaped;
     if (b.under) put(b.under, z, L.under, solid);
     // Behind the thruster block the engine's hull sprite carries the wall's lower section: the belly's cut top would cover it.
     // Beside a camera-facing airlock's door its hull sprite carries the outer half of the cut hull (the inner half is
@@ -500,7 +528,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
     grid,
     tintAt,
     tintKey: () => `${grid.revision("light")}|${grid.revision("o2")}|${pulseNow()}`,
-    hullDrawn: (gx, gy) => !!hull && !!exteriorIds(hull, gx - grid.x0, gy - grid.y0, has),
+    hullDrawn: (gx, gy) => !!hull && !!exteriorIds(hull, gx - grid.x0, gy - grid.y0, has, false, null, host.hullLook?.() ?? "ship"),
     update() {
       if (host.bare?.()) return;
       const mr = grid.revision("module");
@@ -512,7 +540,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
       }
       const look = host.beamLook?.() ?? DEFAULT_BEAM_LOOK;
       const paint = host.hullPaint?.() ?? PLAIN_PAINT;
-      const base = `${mode}|${ghosts}|${look}|${paint.armour}/${paint.deco}/${paint.carpet}/${paint.walkway}`;
+      const base = `${mode}|${ghosts}|${look}|${host.hullLook?.() ?? "ship"}|${paint.armour}/${paint.deco}/${paint.carpet}/${paint.walkway}`;
       // Per-chunk keys only when something in the region moved (tiles outside it read as Space, so its revision covers
       // every input). One chunk ring past the region: ghost verts sit a tile outside its -x / -y edges.
       const built = `${base}|${grid.revision("struct")}|${mr}|${grid.revision("floor")}|${grid.revision("window")}|${grid.has("tube") ? grid.revision("tube") : 0}|${DRAWN_MARKINGS.map((kind) => grid.revision(MARK_FIELDS[kind])).join(",")}`;
