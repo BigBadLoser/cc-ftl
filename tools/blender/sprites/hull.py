@@ -142,8 +142,9 @@ class Out(Spec):
                         v = max(v, 1)                                  # rear slope: a fall line at every tile seam
                     if self.o and self.dist(x, y) - BEV < C and k == "flat":
                         v = 2                                          # the front rim's outer crest
-                    if not self.o and k != "flat" and self._inner(x, y) < C:
-                        v = max(v, 1)                                  # the rear slope's toe (the foot's top)
+                    if not self.o and k != "flat" and C < self._inner(x, y) < 2 * C:
+                        v = max(v, 1)                                  # the foot's top (its first cell, the foot
+                        #   itself, a steep face over one cell: see-through like the rest, not a solid band)
                     if self.o in (1, 2, 3) and k == "flat" and (
                             (a == 0 and self.o != 2 and self.mask & 8) or (b == 0 and self.o != 1 and self.mask & 1)):
                         v = max(v, 1)                                  # front rim: its seam across the rim top
