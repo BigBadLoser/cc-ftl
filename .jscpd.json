@@ -1,0 +1,9 @@
+{
+  "path": ["src"],
+  "pattern": "**/*.{ts,svelte}",
+  "ignore": ["**/*.test.ts", "**/*.slow.test.ts", "**/*.soak.test.ts"],
+  "minLines": 6,
+  "minTokens": 50,
+  "reporters": ["json"],
+  "silent": true
+}

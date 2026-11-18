@@ -49,6 +49,7 @@ const simSyntax = [
 ];
 
 export default tseslint.config(
+  { linterOptions: { reportUnusedDisableDirectives: 'error' } },
   { ignores: ['dist', 'coverage', 'node_modules', 'spikes', 'docs', 'wiki/**', 'tools/layout/lib/**', '.claude/**'] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
@@ -112,6 +113,21 @@ export default tseslint.config(
     ignores: ['**/*.test.ts', '**/*.slow.test.ts', '**/*.soak.test.ts', 'test/support/**'],
     rules: {
       '@typescript-eslint/no-restricted-imports': ['error', { patterns: [{ group: ['**/test/support', '**/test/support/**'], message: 'test/support is for test files only.' }] }],
+    },
+  },
+  {
+    // No test code in src: non-test source files never import vitest or anything under the repo's test/ directory. Same rule name as the
+    // block above (a later block replaces it for these files), so it repeats that block's pattern.
+    files: ['src/**/*.ts', 'src/**/*.svelte'],
+    ignores: ['src/**/*.test.ts'],
+    rules: {
+      '@typescript-eslint/no-restricted-imports': ['error', {
+        paths: [{ name: 'vitest', message: 'No test code in src: vitest is for *.test.ts files only.' }],
+        patterns: [
+          { group: ['vitest/*', '@vitest/*'], message: 'No test code in src: vitest is for *.test.ts files only.' },
+          { group: ['**/test', '**/test/**'], message: 'No test code in src: the repo test/ directory is for test files only.' },
+        ],
+      }],
     },
   },
   {
