@@ -7,6 +7,7 @@ import type { PacketEntity } from './packet';
 import { cutLeaving } from './refs';
 import { endSplitRuns } from '../away/end';
 import { translated } from './translate';
+import { nodeSize } from './size';
 
 /**
  * A sector the player left, frozen: its node, the tick it was frozen at, its size, every tile chunk and every entity that was
@@ -57,8 +58,7 @@ export function restoreArchive(sim: Sim, node: string): boolean {
   const archive = archiveOf(sim, node);
   if (!archive) return false;
   sim.sector.grid = SectorGrid.deserialize(0, archive.grid);
-  sim.sector.width = archive.width;
-  sim.sector.height = archive.height;
+  Object.assign(sim.sector, nodeSize(archive));
   for (const e of archive.entities) sim.world.restore(e.id, translated(e.c, 0, 0));
   restoreTasks(sim); // a task the archive's cut dropped
   sim.archives = sim.archives.filter((a) => a !== archive);

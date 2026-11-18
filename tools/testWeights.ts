@@ -11,6 +11,7 @@ export default {
  "src/content/yardCrew.slow.test.ts": 63.8,
  "src/app/ambushScene.test.ts": 60.7,
  "src/content/inspections.slow.test.ts": 55.2,
+ "src/content/factions/shipgen.capacity.slow.test.ts": 50,
  "src/content/scenario/stasis.test.ts": 49.9,
  "src/content/recruit.slow.test.ts": 47.4,
  "src/content/scenario/presets.slow.test.ts": 46.7,

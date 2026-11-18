@@ -61,6 +61,7 @@ Player-facing changes, newest first. Each dated entry is a deploy of the live ga
 
 ### Changed
 
+- Enemy engines: generated ships now carry enough engines to move their hull, as your ship must, so most NPC ships have more engines than before and are harder to hit, early raiders most of all. Every node is now at least 200 tiles tall (older saves too), so big arrivals have room to appear, and stations sit a little lower in their node. ([#568](https://github.com/BigBadLoser/cc-ftl/pull/568))
 - Ship shapes: navy warships no longer have a notch beside their drive bank, island carriers get a pointed nose and a longer hull, the smallest scrapper raiders come out smaller, and drone swarms and forked drones hold their pods more neatly. ([#564](https://github.com/BigBadLoser/cc-ftl/pull/564))
 - Smoother play on busy ships: ship temperature and crew mood cost less to simulate each moment, so large ships and stations run lighter. ([#565](https://github.com/BigBadLoser/cc-ftl/pull/565))
 - Crew called out of bed during their Sleep hours (a fire, battle stations) are no longer sent on an away trip: the trip still counts those hours as Sleep. ([#560](https://github.com/BigBadLoser/cc-ftl/pull/560))
