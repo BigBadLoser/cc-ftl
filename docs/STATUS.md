@@ -71,7 +71,8 @@ under `tools/shipgen/starters` are stale against them (they were already behind 
 
 **Priority (user, 2026-11-15): the core loop.** "Make it playable first" (2026-11-08) is met: the playtest batch #384-#390 shipped
 in #392. Next is more to find per node (#171; danger bands #382 folded in: no visible bands, physical finds, plan in the #171 comment of 2026-11-15). #380 research,
-#383 story arcs and #172/#52 goals queue behind them. The test harness (#371) may run alongside.
+#383 story arcs and #172/#52 goals queue behind them. The test overhaul (#371) landed in #555 (harness, scenario builder, near-test
+`check:fast`, import-cycle ratchet); follow-ups: break the sim import cycle (#553), test-worker heap growth (#556), cheaper ticks (#65).
 
 - **Station generation: reviewed 2026-11-17** (stack #501, #527, #528, #529; design and file map in
   [STATION_ASSEMBLY.md](STATION_ASSEMBLY.md)).

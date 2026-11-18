@@ -13,8 +13,8 @@ One line per section; read the index, then only the sections your task touches.
 - [Cross-cutting mechanisms](#cross-cutting-mechanisms): Stat resolver; effects; materials; hauling; one answer per question.
 - [Content](#content): Content is TypeScript files exporting objects checked with satisfies WeaponDef (and so on): the
 - [Rendering](#rendering): Two-way contract.
-- [Test tiers](#test-tiers): Fast tier (npm run check:fast, before every commit): lint, typecheck, then VITESTFAST=1 vitest run...
-- [Test harness](#test-harness): `test/support/`: `run`, `nth`, `fixtureShip`, `expectReplayable`, `cachedWorld`; who may import it.
+- [Test tiers](#test-tiers): fast (`check:fast`: near tests of the change), branch (`check:push`), slow, soak, full CI; `test:why` and `TICK_STATS` to see what a change selects and where time goes.
+- [Test harness](#test-harness): `test/support/`: `run`, `nth`, `fixtureShip`, `expectReplayable`, `cachedWorld`, fixtures; who may import it; [writing a test](#writing-a-test) (start near the moment, no weakening, cost rules).
 - [Scenario builder](#scenario-builder): `src/content/scenario/`: parts, presets and hooks found by glob; one builder for tests, `?scenario=` and the profiler.
 - [Asset pipeline](#asset-pipeline): Asset creation is decoupled from asset rendering. Models are built as 3D in Blender, then
 - [Crew AI](#crew-ai): The planned crew AI architecture (interrupts, utility AI, job scheduler, HFSM executor) is in...
@@ -90,6 +90,9 @@ src/
 - `render` and `ui` read sim state and never mutate it.
 - `app` is the only place that knows about everything.
 - Enforced by ESLint `no-restricted-imports`; a violation fails the build.
+- No new import cycles in `src`: `tools/importCycles.test.ts` is a ratchet on the largest cycle, the files in cycles and the number of
+  groups. It fails when a cycle appears or grows, and when one shrinks without its baseline being lowered in the same change. The plan to
+  break the large feature-module cycle is #553.
 
 ## Simulation core
 
@@ -373,10 +376,17 @@ and the draw-call count is the number of times the batch has to break. Keep that
 
 ## Test tiers
 
-- **Fast tier** (`npm run check:fast`, before every commit): lint, typecheck, then `VITEST_FAST=1 vitest run --changed`, which runs only the
-  test files that import an uncommitted file, directly or transitively. A render or UI change runs its own tests in seconds.
-  A `src/sim` change still selects most content tests, because they build a full game through `newGame` and so depend on every
-  system. That is correct, not noise.
+- **Fast tier, commit check** (`npm run check:fast`, before every commit): lint, typecheck, then the *near tests* of uncommitted changes
+  (`tools/testFast.mjs`): test files within two imports of a changed file, plus edited test files, slow ones included only when edited. A
+  `power.ts` edit runs about 6 files instead of about 300. With nothing uncommitted it checks the branch against `origin/main`, never zero
+  tests. A change to `vite.config.ts`, `src/sim/testSetup.ts` or the lockfile runs the whole fast tier.
+- **Branch check** (`npm run check:push` = lint, typecheck, `test:branch`, before pushing a work branch): every fast test Vitest's import graph
+  links to a change since the merge base with `origin/main`. Most sim edits select about two thirds of the fast tier, because most tests step a
+  game through `newGame` and the pipeline (#553). `git add` new files first.
+- **What a change selects:** `npm run test:why -- <file>` lists the selected test files by import chain (`--top` lists the files most tests
+  reach). `tools/importGraph.mjs` is the shared graph (value imports, dynamic `import()`, `import.meta.glob`, the `$lib` alias).
+- **Where time goes:** 73% of fast-tier time is `Sim.step` (#371 measurement), so a test's cost is mostly its ticks. `TICK_STATS=1` with
+  `node tools/tickStats.mjs` lists ticks, step time and ms per tick per file (instructions at the top of that file).
 - **Slow tier** (`*.slow.test.ts`): sweeps and long runs. The fast tier skips them; `npm run check` and CI
   always run them. Today: the shipgen seed and depth sweeps, the end-to-end trade runs (`content/trade`, `ships/trade`), and the cheap
   guards of the soak tests (one seed or a short horizon asserting the same claim, e.g. `ships/pace`, `ships/balance`, `galaxyGrace`).
@@ -396,7 +406,7 @@ and the draw-call count is the number of times the batch has to break. Keep that
 Shared test helpers live in `test/support/` (repo root); use them instead of a local copy of `run`, `nth` or `fixtureShip`.
 
 - `sim.ts` (sim-only; imports only `src/sim`, narrowly, so a test that uses it does not pull the whole pipeline into its import graph):
-  - `run(sim, ticks, { until?, stopBefore? })` steps and drains events, returns the events. `until` is checked after each step,
+  - `run(sim, ticks = 1, { until?, stopBefore? })` (from `run.ts`) steps and drains events, returns the events; `step` steps without collecting. `until` is checked after each step,
     `stopBefore` before it (the first too). `runLog` returns them as strings (`command.rejected:<command>:<reason>` for a rejection),
     `runSim` returns `{ ticks, events, log }` when the tick count matters.
   - `nth(sim, n)` (ship by creation order, 1-based), `crewOn(sim, n)`, `eventsOf(events, type)`,
@@ -425,6 +435,30 @@ Shared test helpers live in `test/support/` (repo root); use them instead of a l
 - Turn systems off only in a focused unit test with an explicit list; never in a gameplay-outcome test.
 - Where a branch case only needs the moment it tests (party aboard, reactor near its deadline), start there (set the timer, deploy
   from a cached scene) and keep one natural signal-to-rescue test on the production pipeline (`content/freighter.test.ts`).
+
+### Writing a test
+
+The rules the #371 migration followed; new tests follow them too.
+
+- **Start near the moment tested.** Set the timer, crop or deadline just short of its end (`debug.*` commands, a scenario preset), stop at
+  the first event the test checks (`run(..., { until })`), and build expensive starts once with `cachedWorld` / `cachedScenario`. Keep one
+  natural end-to-end run of a flow on the production pipeline; branch cases start near their moment.
+- **Never weaken to save time.** A shortened fast test keeps its claim; the original (natural wait, every seed, every-tick comparison) moves
+  verbatim to a `*.slow.test.ts` beside it, never away. Count `expect(` and cases across the fast file, its slow file and its fixture: they
+  may not drop, except for an exact duplicate folded into `expectReplayable`. Typical splits: one seed fast, the rest slow; saved states
+  compared every 5–10 ticks fast, every tick slow.
+- **Determinism and save round trips** go through `expectReplayable`, not a hand-written pair of runs, unless the test asserts more than
+  it checks (several reload points, the saved JSON's shape); say why in the test.
+- **Keep rule tests small.** Test a rule on a `World` or `Grid` by calling its owning function where practical; reach for `newGame` and
+  `Sim.step` only for behaviour that needs the pipeline. Import the owning module, not `src/sim/index.ts`.
+- **Fresh state per test.** Each test gets its own world (a `cachedWorld` clone or a fresh build); one that edits a generated node uses
+  `contentEdited` / `contentAtDanger`. A new module-level cache in a test or fixture is a `fileCache()`.
+- **Shared setup** goes in `test/support/fixtures/<name>.ts`, a run loop is the shared `run` (a local copy only when it returns or stops
+  differently, and then as a thin wrapper), a scene a preset is likely to want is a scenario preset.
+- **Isolation:** a test that mocks or spies, or changes shared or cached data, goes on `ISOLATED` in `vite.config.ts`. So does one that
+  needs a lot of heap by itself (`researchReach`, about 1.4 GB).
+- **New or reshaped heavy files** get an estimate in `tools/testWeights.ts` (about 2.5 × the local time) until the next
+  `npm run test:weights:ci`.
 
 ## Scenario builder
 

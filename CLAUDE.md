@@ -39,7 +39,10 @@ or removes content. Before non-trivial work, read the index at the top of `docs/
   one on `main` by default). `npm run test:weights` does the same from a local full run; prefer the CI one. The weights are per-file
   times that order the run and balance the CI shards
   after adding or reshaping heavy tests.
-- Shared test helpers (`run`, `nth`, `fixtureShip`, `expectReplayable`, `cachedWorld`) live in `test/support/`; use them instead of local copies (see "Test harness" in `docs/ARCHITECTURE.md`).
+- Shared test helpers (`run`, `nth`, `fixtureShip`, `expectReplayable`, `cachedWorld`, `cachedScenario`, `fixtures/`) live in `test/support/`;
+  use them instead of local copies. Read "Writing a test" in `docs/ARCHITECTURE.md` before adding or reshaping tests: start near the moment
+  tested, never weaken to save time (a shortened fast test keeps its original verbatim in `*.slow.test.ts`), import owning modules, not
+  the sim index.
 - Tests share one module graph (`isolate: false`) except the files listed as isolated in `vite.config.ts`. A test that
   mocks or spies, or changes shared or cached data (the component registry, generated nodes cached per seed), goes on that list.
 - `npm run lab -- --panel <id>`: screenshot a render lab panel, any visual drawn on its own as a grid of stills (dev page
@@ -62,6 +65,7 @@ or removes content. Before non-trivial work, read the index at the top of `docs/
   - `app` wires everything together.
 - Commands are the only way into the sim. Events are output only and are never used for sim logic.
 - Systems never import or call each other. Their order lives in `src/sim/pipeline.ts`.
+- No new import cycles in `src` (`tools/importCycles.test.ts`). When a change breaks one, lower the baseline in that test.
 - One answer per question. Each game question (can this crew member do this, is this tile breathable or passable, is this
   ship roofed, does this stock exist, may this job run) has one owning function. Systems, render and UI call it and never
   re-derive it with their own checks. When a caller needs a slightly different answer, extend the owner with a parameter;
