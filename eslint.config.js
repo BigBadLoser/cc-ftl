@@ -49,6 +49,7 @@ const simSyntax = [
 ];
 
 export default tseslint.config(
+  { linterOptions: { reportUnusedDisableDirectives: 'error' } },
   { ignores: ['dist', 'coverage', 'node_modules', 'spikes', 'docs', 'wiki/**', 'tools/layout/lib/**', '.claude/**'] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
