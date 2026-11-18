@@ -14,7 +14,7 @@ export type StationId = keyof typeof stations;
 export const stationIds = Object.keys(stations) as StationId[];
 export const defs = content.modules as Record<string, ModuleDef>;
 
-const cache = workerCache<StationResult>('stations.gen', 80);
+const cache = workerCache<StationResult>('stations.gen', 80, defs);
 /** A built station, once per (kind, size, seed) per worker (shared by the test files it runs). Read-only: never mutate the result. */
 export function gen(id: StationId, size: StationSize, seed: number): StationResult {
   return cache.get(`${id} ${size} ${seed}`, () => buildStation(stations[id] as StationDef, id, size, seed, defs));

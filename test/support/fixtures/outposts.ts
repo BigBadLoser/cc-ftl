@@ -12,7 +12,7 @@ export const outpostCtx = { ores: Object.values(content.ores) as OreDef[], modul
 const MODS: Record<string, ModuleDef> = content.modules;
 
 type Outpost = NonNullable<ReturnType<typeof generateOutpost>>;
-const built = workerCache<{ o: Outpost | null }>('outposts', 40);
+const built = workerCache<{ o: Outpost | null }>('outposts', 40, content.modules);
 
 /** A generated outpost, once per (style, seed, kind) per worker (shared by the test files it runs). Read-only: never mutate the result. */
 export function cachedOutpost(style: 'surface' | 'dug', seed: number, kind?: string): Outpost | null {

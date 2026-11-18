@@ -20,17 +20,20 @@ export function clearFileCaches(): void {
 }
 
 const SHARED = Symbol.for('cc-ftl.workerCaches');
-const w = globalThis as unknown as { [SHARED]?: Map<string, Map<string, unknown>> };
+const w = globalThis as unknown as { [SHARED]?: WeakMap<object, Map<string, Map<string, unknown>>> };
 
 /**
  * A read-only cache that lasts the worker, not one file: for expensive pure builds many files make from the same inputs (a station
- * of a kind, size and seed). `name` separates caches; at most `max` entries stay (the least recently used goes first), so the
- * heap is bounded. Never mutate what it returns. A file that changes shared data goes on ISOLATED (own module graph, own cache).
+ * of a kind, size and seed). Entries are kept per `scope`, the content the builds read (the module defs object): an isolated file
+ * imports its own content, which it may change, so it never shares entries with the shared files. `name` separates caches; at most
+ * `max` entries stay per scope (the least recently used goes first), so the heap is bounded. Never mutate what it returns.
  */
-export function workerCache<V>(name: string, max: number): { get(key: string, make: () => V): V } {
+export function workerCache<V>(name: string, max: number, scope: object): { get(key: string, make: () => V): V } {
   return {
     get(key, make) {
-      const all = (w[SHARED] ??= new Map());
+      const scopes = (w[SHARED] ??= new WeakMap());
+      let all = scopes.get(scope);
+      if (!all) scopes.set(scope, (all = new Map()));
       let m = all.get(name);
       if (!m) all.set(name, (m = new Map()));
       let v = m.get(key) as V | undefined;
