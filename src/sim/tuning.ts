@@ -10,14 +10,7 @@ export const NORMAL_CO2 = 0.04;
 export const NORMAL_TEMP = 20;
 /** Space is a fixed sink; clamped to a gameplay-sane floor rather than 3 K. */
 export const SPACE_TEMP = -100;
-/** Explicit diffusion substeps per tick. */
-export const GAS_SUBSTEPS = 2;
-/** Fraction of the pressure difference moved per substep across a fully open link (stable at <= 0.25). */
-export const GAS_DIFFUSION = 0.2;
-/** Same, for a link into Space (a breach). */
-export const GAS_VENT = 0.25;
-/** Writes smaller than this are skipped so idle rooms don't churn field revisions. */
-export const GAS_EPSILON = 1e-4;
+// Gas solver: tuningGas.ts.
 
 // --- Temperature ---
 export const TEMP_DIFFUSION = 0.04;
