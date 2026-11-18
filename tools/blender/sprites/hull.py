@@ -233,6 +233,7 @@ def out_block(mask, o, variant=0, part="rim", room=0, corners=0):
         emit(f, sp)                                                         #   rendered on their own; of the faces
                                                                             #   only the foot's on the room side: the
                                                                             #   rest are cut ends no line bounds)
+        _back_fill(f, mask)
         fill = [f.build()] if f.f else []
     else:
         emit(m, sp)
@@ -263,6 +264,21 @@ def _rise(m, mask, room, corners):
         for k, tone in enumerate(FADE):
             za, zb = z0 + (z1 - z0) * k / len(FADE), z0 + (z1 - z0) * (k + 1) / len(FADE)
             m.poly([core.G(*a, za), core.G(*b, za), core.G(*b, zb), core.G(*a, zb)], tone)
+
+
+BACK = (FILL, "gFillB1", "gFillB2", "gFillB3", "gFillB4", "gFillB5")   # the back face's fill, bottom up
+
+
+def _back_fill(f, mask):
+    """The rear ghost's back face (the ship's outer hull, where _rise's lines stand) as a faint fill, fading out as it
+    rises over the lines' height."""
+    from .walls import hull_top
+    e = -0.5 + C
+    z0, z1 = 0.02, hull_top() / 6
+    for a, b in ([((e, e), (0.5, e))] if not mask & 1 else []) + ([((e, 0.5), (e, e))] if not mask & 8 else []):
+        for k, tone in enumerate(BACK):
+            za, zb = z0 + (z1 - z0) * k / len(BACK), z0 + (z1 - z0) * (k + 1) / len(BACK)
+            f.poly([core.G(*a, za), core.G(*b, za), core.G(*b, zb), core.G(*a, zb)], tone)
 
 
 def drop(side):

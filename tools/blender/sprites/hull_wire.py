@@ -98,7 +98,8 @@ def wire(m, sp):
     d = [[sp._inner(x, y) for y in xs] for x in xs]
     # the crest: a level set, at its height
     for a, b in _level(d, CD):
-        strip(m, (*a, zof(CD)), (*b, zof(CD)))
+        if not _stem_back(sp, a, b):
+            strip(m, (*a, zof(CD)), (*b, zof(CD)))
     # the foot's top: along the tile's edges where the room side is (distance 0 there)
     for edge in range(4):
         ts = [i / N - 0.5 for i in range(N + 1)]
@@ -132,6 +133,18 @@ def wire(m, sp):
             b = max(on, key=lambda p: sp._inner(*p))
             a = (a[0], a[1] + 0.5 / N) if edge == "x" else (a[0] + 0.5 / N, a[1])
             strip(m, (*a, zof(0.0)), (*b, zof(sp._inner(*b))))
+
+
+def _stem_back(sp, a, b):
+    """A T's stem crest on its far side (the slope falling away from the camera, toward -x or -y): seen through the
+    arm's slope in front of it, so left unlined (the fill there runs to the arm's own outline)."""
+    (ax, ay), (bx, by) = a, b
+    t = 1.0 / N
+    if sp.mask & 14 == 14 and not sp.corners & 4 and abs(ax - bx) < t and abs(ax + 0.5 - CD) < t:
+        return min(ay, by) >= 0.5 - CD - t
+    if sp.mask & 7 == 7 and not sp.corners & 1 and abs(ay - by) < t and abs(ay + 0.5 - CD) < t:
+        return min(ax, bx) >= 0.5 - CD - t
+    return False
 
 
 def _clusters(pts, gap=4 / N):

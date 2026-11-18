@@ -32,7 +32,7 @@
   "hex": "#586e8c"
  },
  "gFill": {
-  "hex": "#121416"
+  "hex": "#0c0d0f"
  },
  "wXL": {
   "hex": "#3e6868"
@@ -4093,5 +4093,20 @@
   "stPT": {"hex": "#8699a4", "set": "station"},
   "stPS": {"hex": "#6e8694", "set": "station"},
   "stPLo": {"hex": "#8699a4", "set": "station"},
-  "stPM": {"hex": "#5c7585", "set": "station"}
+  "stPM": {"hex": "#5c7585", "set": "station"},
+ "gFillB1": {
+  "hex": "#0a0a0c"
+ },
+ "gFillB2": {
+  "hex": "#070809"
+ },
+ "gFillB3": {
+  "hex": "#050607"
+ },
+ "gFillB4": {
+  "hex": "#040404"
+ },
+ "gFillB5": {
+  "hex": "#020202"
+ }
 }
