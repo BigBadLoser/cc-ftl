@@ -1,20 +1,23 @@
-import { CrewC } from '../crew/components';
+import { CrewC, PositionC } from '../crew/components';
 import { isIncapacitated } from '../crew/helpers';
 import { ensureMood, hasCompany, hasMood, moodFactors, moodScore } from '../crew/mood';
 import { advanceStress } from '../crew/stress';
 import { advanceTraitMemory } from '../crew/traitMood';
+import { shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { MOOD_INTERVAL, MOOD_LOW, MOOD_VERY_LOW } from '../tuning';
 
 /**
- * Mood for crew with moods: every MOOD_INTERVAL ticks (staggered by id) the factors are recomputed from needs, room
+ * Mood for crew with moods: every MOOD_INTERVAL ticks (staggered by the ship they stand on, so a ship's crew share one room-quality
+ * pass, roomQuality.ts; #65) the factors are recomputed from needs, room
  * conditions and company, and the score is their sum around MOOD_BASE. The memory counters (hot meal, last sleep, time
  * alone) count down or up here. `crew.moodLow` fires once when the score drops under MOOD_VERY_LOW.
  * Low mood slows work through the stat resolver (crew/mood.ts moodModifiers); nothing else reads it yet.
  */
 export function moodSystem(sim: Sim): void {
   for (const id of sim.world.query(CrewC)) {
-    if ((sim.tick + id) % MOOD_INTERVAL !== 0 || !hasMood(sim, id) || isIncapacitated(sim, id)) continue;
+    const pos = sim.world.get(id, PositionC);
+    if ((sim.tick + (pos ? shipIdOf(sim, pos) : id)) % MOOD_INTERVAL !== 0 || !hasMood(sim, id) || isIncapacitated(sim, id)) continue;
     const m = ensureMood(sim, id);
     const dt = MOOD_INTERVAL / 20;
     m.meal = Math.max(0, m.meal - dt);

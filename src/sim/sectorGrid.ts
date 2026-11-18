@@ -165,10 +165,26 @@ export class SectorGrid implements GridLike {
     return Number.isInteger(x) && Number.isInteger(y) && x >= -lim && y >= -lim && x < lim && y < lim;
   }
 
+  /** The last field and chunk `get` looked up: tile reads come in runs over one field and one chunk (#65). Any change to `dir` clears the chunk. */
+  private lastName = '';
+  private lastF = -1;
+  private lastKey = -1;
+  private lastChunk: Chunk | undefined;
+
   get(field: string, x: number, y: number): number {
-    const f = this.field(field);
+    let f = this.lastF;
+    if (field !== this.lastName) {
+      f = this.field(field);
+      this.lastName = field;
+      this.lastF = f;
+    }
     this.check(x, y);
-    const chunk = this.dir.get(chunkKey(x >> CHUNK_SHIFT, y >> CHUNK_SHIFT));
+    const key = chunkKey(x >> CHUNK_SHIFT, y >> CHUNK_SHIFT);
+    if (key !== this.lastKey) {
+      this.lastKey = key;
+      this.lastChunk = this.dir.get(key);
+    }
+    const chunk = this.lastChunk;
     if (!chunk) return this.empties[f] as number;
     return (chunk.arrays[f] as FieldArray)[((y & CHUNK_MASK) << CHUNK_SHIFT) + (x & CHUNK_MASK)] as number;
   }
@@ -183,6 +199,7 @@ export class SectorGrid implements GridLike {
       if (value === this.empties[f]) return;
       chunk = this.allocChunk();
       this.dir.set(key, chunk);
+      this.lastKey = -1;
       this.sorted = null;
     }
     const arr = chunk.arrays[f] as FieldArray;
@@ -342,6 +359,7 @@ export class SectorGrid implements GridLike {
   private release(key: number): void {
     this.released++;
     this.dir.delete(key);
+    this.lastKey = -1;
     this.sorted = null;
     // The data changed (to empty): bump every field so revision sums never go backwards.
     for (let f = 0; f < this.names.length; f++) this.bump(key, f);
