@@ -34,7 +34,8 @@ export function spawnStation(sim: Sim, kind: string, size: StationSize, seed: nu
   let gen: StationResult;
   try {
     gen = builtStation(sim, kind, size, seed) as StationResult; // the kind is known, so never null; made ahead on a worker when it could be (#538)
-  } catch {
+  } catch (e) {
+    sim.events.emit({ type: 'station.unbuilt', kind, size, seed: seed >>> 0, reasons: e instanceof Error ? e.message : String(e) });
     return 'noLayout'; // no recipe of the kind stood on any try: a typed failure, not an exception out of the tick
   }
   let { x, y } = at ? placeAt(at, gen.width, gen.height) : { x: 0, y: 0 };

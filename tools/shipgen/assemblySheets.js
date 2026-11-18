@@ -17,7 +17,16 @@ const arg = (f, d) => { const i = args.indexOf(`--${f}`); return i < 0 ? d : arg
 const seeds = arg('seeds', '1,2,3,4').split(',').map(Number);
 const out = resolve(arg('out', 'tools/shipgen/out/assembly'));
 mkdirSync(out, { recursive: true });
-const PROGRAM = { tree: ['station.pirate', 'hub'], spine: ['station.mining', 'station'], compound: ['station.mining', 'station'], bazaar: ['station.trading', 'station'], crescent: ['station.trading', 'station'] };
+// A family's default program is derived from the data: the first station kind whose `assembly` (or, for asteroid outposts,
+// `outpostAssembly`) holds one of its recipes. Station kinds' recipe arrays share the recipe objects of stationRecipes.
+const BIG = { tree: 'hub' };
+function programOf(family, recipes, content) {
+  for (const [kind, def] of Object.entries(content.stations)) {
+    if ((def.assembly ?? []).some((fam) => fam.some((r) => recipes.includes(r)))) return [kind, BIG[family] ?? 'station'];
+    if ((def.outpostAssembly ?? []).some((fam) => fam.some((r) => recipes.includes(r)))) return [kind, 'outpost'];
+  }
+  return null;
+}
 const only = arg('family', '');
 
 function crc32(buf) {
@@ -87,7 +96,9 @@ try {
   };
   for (const [family, recipes] of Object.entries(stationRecipes)) {
     if (only && family !== only) continue;
-    const [kind, size] = arg('program') ? arg('program').split(':') : PROGRAM[family];
+    const prog = arg('program') ? arg('program').split(':') : programOf(family, recipes, content);
+    if (!prog) { console.log(`${family}: no station kind uses this family, skipped (pass --program kind:size to draw it)`); continue; }
+    const [kind, size] = prog;
     const rows = [];
     for (const recipe of recipes) {
       const row = [];
