@@ -25,9 +25,10 @@ def _screen(p):
     return (x - y) * 32, (x + y) * 16 - z * ZART
 
 
-def strip(m, p, q, tone=TONE):
-    """Segment p -> q (x, y, z) as a strip 1 px wide on screen, one-sided (up, or left for an upright line, the side the walls' own edges take): its pixels
-    line up with the grid instead of splitting over two."""
+def strip(m, p, q, tone=TONE, left=False):
+    """Segment p -> q (x, y, z) as a strip 1 px wide on screen, one-sided (up, or for an upright line right, or left
+    with `left`: the side a wall's own edge takes, at a T): its pixels line up with the grid instead of splitting over
+    two."""
     (ax, ay), (bx, by) = _screen(p), _screen(q)
     dx, dy = bx - ax, by - ay
     ln = math.hypot(dx, dy)
@@ -36,9 +37,9 @@ def strip(m, p, q, tone=TONE):
     if abs(dx) >= 0.3 * ln:                      # (off upright: widen it up, in z)
         k = ln / (ZART * abs(dx))
         o = (0.0, 0.0, k)
-    else:                                       # (upright on screen: widen it left, along -x +y)
-        h = ln / (32 * abs(dy))                 # (screen x of (h/2, -h/2): 32 h)
-        o = (-h / 2, h / 2, 0.0)
+    else:                                       # (upright on screen: widen it right, along +x -y, or left)
+        h = ln / (32 * abs(dy)) * (-1 if left else 1)     # (screen x of (h/2, -h/2): 32 h)
+        o = (h / 2, -h / 2, 0.0)
     pts = [p, q, tuple(a + b for a, b in zip(q, o)), tuple(a + b for a, b in zip(p, o))]
     m.poly([core.G(x, y, z + LIFT) for x, y, z in pts], tone)
 
@@ -126,7 +127,7 @@ def wire(m, sp):
             lo = min(cl, key=lambda p: sp._inner(*p))
             hi = max(cl, key=lambda p: sp._inner(*p))
             a, b = _extend(sp, lo, hi)
-            strip(m, (*a, zof(sp._inner(*a))), (*b, zof(sp._inner(*b))))
+            strip(m, (*a, zof(sp._inner(*a))), (*b, zof(sp._inner(*b))), left=sp.tee)
     # the fall line on the tile's -x and -y edges (a seam, or a run's free end)
     for edge in ("x", "y"):
         pts = [((-0.5, t) if edge == "x" else (t, -0.5)) for t in xs]
@@ -150,15 +151,15 @@ def _stem_crease(sp, cl):
 
 
 def _to_wall(sp, a, b):
-    """A T's far-side stem crest runs on a pixel past the tile edge, under the wall, so it meets the wall's top edge."""
+    """A T's far-side stem crest runs on two px past the tile edge, under the wall, so it meets the wall's top edge."""
     t, e = 1.0 / N, 1.0 / 32
     tw = (sp.mask & 14 == 14 and not sp.corners & 4, sp.mask & 7 == 7 and not sp.corners & 1)
     if tw[0] and abs(a[0] - b[0]) < t and abs(a[0] + 0.5 - CD) < t:            # (and a px in: on the wall's edge)
         a, b = (a[0] + e, a[1]), (b[0] + e, b[1])
-        return (a, (b[0], b[1] + e)) if b[1] > a[1] else ((a[0], a[1] + e), b)
+        return (a, (b[0], b[1] + 2 * e)) if b[1] > a[1] else ((a[0], a[1] + 2 * e), b)
     if tw[1] and abs(a[1] - b[1]) < t and abs(a[1] + 0.5 - CD) < t:
         a, b = (a[0], a[1] + e), (b[0], b[1] + e)
-        return (a, (b[0] + e, b[1])) if b[0] > a[0] else ((a[0] + e, a[1]), b)
+        return (a, (b[0] + 2 * e, b[1])) if b[0] > a[0] else ((a[0] + 2 * e, a[1]), b)
     if tw[0] and abs(a[1] - b[1]) < t and abs(a[1] - 0.5 + CD) < t and max(a[0], b[0]) < 0:   # (the arm's crest
         return (a, (b[0] + e, b[1])) if b[0] > a[0] else ((a[0] + e, a[1]), b)                #   on to meet it)
     if tw[1] and abs(a[0] - b[0]) < t and abs(a[0] - 0.5 + CD) < t and max(a[1], b[1]) < 0:
