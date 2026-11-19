@@ -7,9 +7,9 @@ import { DARK, DOOR, HALL, INK, LAMP, NAMES, WALL, roleTint } from '../shipgen/l
 import { scaleOf, type Box, type View } from './camera';
 import type { Design } from './design';
 
-export interface Layers { rooms: boolean; names: boolean; furniture: boolean; lamps: boolean; gridLines: boolean; shields: boolean; roof: boolean }
-export const DEFAULT_LAYERS: Layers = { rooms: true, names: true, furniture: true, lamps: true, gridLines: false, shields: false, roof: false };
-export const LAYER_LABELS: Record<keyof Layers, string> = { rooms: 'Rooms', names: 'Room names', furniture: 'Furniture codes', lamps: 'Lamps', gridLines: 'Tile grid', shields: 'Shields (preview)', roof: 'Roof (preview)' };
+export interface Layers { rooms: boolean; names: boolean; furniture: boolean; lamps: boolean; gridLines: boolean; shields: boolean; roof: boolean; wallsUp: boolean }
+export const DEFAULT_LAYERS: Layers = { rooms: true, names: true, furniture: true, lamps: true, gridLines: false, shields: false, roof: false, wallsUp: false };
+export const LAYER_LABELS: Record<keyof Layers, string> = { rooms: 'Rooms', names: 'Room names', furniture: 'Furniture codes', lamps: 'Lamps', gridLines: 'Tile grid', shields: 'Shields (preview)', roof: 'Roof (preview)', wallsUp: 'Walls up (preview)' };
 export interface Mark { tiles: readonly [number, number][]; color: string; /** false: an outline only. */ fill?: boolean; /** 'square': a dashed square in each tile (where crew stand). */ shape?: 'square' }
 /** The side of a module that must sit on the hull: its tiles along that side and the step pointing out of the ship. */
 export interface HullEdge { tiles: readonly [number, number][]; out: readonly [number, number]; color: string }

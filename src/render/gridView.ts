@@ -28,6 +28,7 @@ import type { BuildGate } from "./buildBudget";
 import { iso } from "./iso";
 import { bellyIds, engineHullTiles, nearGhostId, exteriorIds, gridHullKeys, isStationPiece, PLAIN_PAINT, type HullKeys, type HullLook, type HullPaint } from "./hullArt";
 import { bermId, lowId } from "./stationHull";
+import { diagWallPieces } from "./diagWall";
 
 export type { CutawayMode };
 
@@ -295,7 +296,9 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
           // Behind a tube (its far door's row, its near door and their neighbours) the hull takes its base piece too: a design's
           // relief would show round the tube's port and junction.
           const base = own || tube.row.has(idx) || tube.junction.has(idx);
-          const drew = hull && (!lockDoor(idx) || !ghosts) ? drawHull(hull, x, y, k, ci, v, false, base, decodeWindow(windows?.[ci] ?? 0), tube.row.has(idx) || tube.port.has(idx)) : false;
+          // A far hull diagonal with the walls standing (#561): its own wall and cap, in place of the hull's cut pieces.
+          const diag = hull && ghosts && mode !== "down" && k !== Struct.Floor ? diagWallPieces(hull, x, y, host.hullLook?.() ?? "ship") : null;
+          const drew = hull && !diag && (!lockDoor(idx) || !ghosts) ? drawHull(hull, x, y, k, ci, v, false, base, decodeWindow(windows?.[ci] ?? 0), tube.row.has(idx) || tube.port.has(idx)) : false;
           const special = own && !drew;
           // Under an airlock's door tile the near hull's belly still runs below the deck (its own sprite is the wall above).
           if (hull && ghosts && lockDoor(idx)) drawHull(hull, x, y, k, ci, v, true);
@@ -320,7 +323,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
           if (special) continue;
           // With the walls down the far hull's ghost (its outline) stays, over its cut hull.
           const outline = drew && ghosts && hullSide(wallAt, x, y) === HullSide.Far;
-          for (const piece of wallPieces(pieceAt, x, y, stone ? Struct.RockWall : k, mode, ghosts, gapAt, decodeWindow(windows?.[ci] ?? 0), host.hullLook?.() ?? "ship")) {
+          for (const piece of diag ?? wallPieces(pieceAt, x, y, stone ? Struct.RockWall : k, mode, ghosts, gapAt, decodeWindow(windows?.[ci] ?? 0), host.hullLook?.() ?? "ship")) {
             if (drew && !keepsOldPiece(k, ghosts, piece.under) && !(outline && !piece.under)) continue; // (a door stays, without its old belly)
             const s = atlas.firstOf(piece.chain);
             if (!s) continue;
