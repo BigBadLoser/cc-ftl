@@ -42,24 +42,28 @@ SNAP = {"y": 0.25, "x": 0.75}   # per face axis: the phase (in px of height) of 
 YD = 64 / 4                  # screen px down per unit a part stands proud of a straight face
 
 
-def _row(z, d):
-    """z on the screen's row grid for a part d proud of a straight face (NUDGE; SNAP's phase)."""
+def _row(z, d, half=0.0):
+    """z on the screen's row grid for a part d proud of a straight face (NUDGE; SNAP's phase, moved half a row with
+    half=0.5: the other way a 1 px line's two-px steps can pair up)."""
     if not NUDGE or _AX[0] is None:
         return z
-    ph = SNAP[_AX[0]] + YD * d
+    ph = SNAP[_AX[0]] + YD * d + half
     return (round(z * W.ZART - ph) + ph) / W.ZART
 
 
 _AX = [None]
 
 
-def _paint(k, ax, plane, u0, u1, z0, z1, d, fam, tone):
-    """T.paint, its top and foot on the screen's px rows on a straight face (_row)."""
+def _paint(k, ax, plane, u0, u1, z0, z1, d, fam, tone, foot=0.0, top=None):
+    """T.paint, its top and foot on the screen's px rows on a straight face (_row; foot: the foot's half-row choice,
+    top: the top's own, snapped alone, else the height kept)."""
     _AX[0] = ax
     dd = d + T.PAINT
     h = z1 - z0                                         # (its foot on a row, its height whole px as near as can be:
-    z0 = _row(z0, dd)                                   #   snapping both ends alone could take or add a px)
-    if NUDGE and _AX[0] is not None:
+    z0 = _row(z0, dd, foot)                             #   snapping both ends alone could take or add a px)
+    if top is not None:
+        z1 = _row(z1, dd, top)
+    elif NUDGE and _AX[0] is not None:
         z1 = z0 + max(1, round(h * W.ZART)) / W.ZART
     else:
         z1 = z0 + h
@@ -202,8 +206,13 @@ def wall_face(k, ax, plane, a, b, ends, zs, top, full):
         b0 = q0                                          # (the raised bar and fine lines placed as before ...)
         b1 = q1
         q0, q1 = q0 - 2 * PZ, q1 - 2 * PZ                # (... the panel's top and foot 2 px down, the slot with it)
-        _paint(k, ax, plane, p0, p1, q0, q1, PAINT, F, 1)                                        # panel outline
-        _paint(k, ax, plane, _u(n0 + 1, 2 * PAINT), _u(n1 - 1, 2 * PAINT), q0 + 0.026, q1 - 0.026, 2 * PAINT, F, 2)
+        _AX[0] = ax                                      # (its foot's steps paired from its sides' feet, its top's
+        o0, o1 = _row(q0, 2 * PAINT, 0.5), _row(q1, 2 * PAINT, 0.5)            # from their tops; a px wide all round)
+        if NUDGE:
+            q0, q1 = o0, o1
+        e = 1 / W.ZART if NUDGE else 0.026
+        T.paint(k, ax, plane, p0, p1, q0, q1, PAINT, F, 1)                                       # panel outline
+        T.paint(k, ax, plane, _u(n0 + 1, 2 * PAINT), _u(n1 - 1, 2 * PAINT), q0 + e, q1 - e, 2 * PAINT, F, 2)
         if T.VARIANT[0]:                                 # (a straight run's top design in the panel)
             from . import wall3d_variants as V
             V.wall_top(k, ax, plane, p0 + LINE, p1 - LINE, q0 + 0.026, q1 - 0.026, F, T.VARIANT[0])
