@@ -14,7 +14,7 @@ export const CABIN_TIER = CABIN_ROWS + 1;
 
 /** A rectangle of the block: columns [c0, c1), rows [r0, r1] (inclusive; `Infinity` runs to the hull). */
 export interface Rect { c0: number; c1: number; r0: number; r1: number }
-/** `rest`: the floor beyond the last row of cabins either side of a corridor, rooms of their own on it. */
+/** `rest`: the floor beyond the last row of cabins, a unit's full width: one room the corridor ends at. */
 export interface CabinBlock { stubs: Rect[]; cabins: Rect[]; rest: Rect[] }
 
 /**
@@ -47,13 +47,14 @@ export function cabinBlock(len: number, rows: number, want = Infinity): CabinBlo
     // be wider than roomy).
     const w = b - a, side = Math.floor((w - 1) / 2) - 1 > ROOMY ? Math.floor((w - 3) / 2) : Math.floor((w - 1) / 2);
     const sw = w - 2 * side, s0 = a + side;
-    // Out to the hull, as the last row of cabins runs (a corridor stopping short would leave plating: a thick hull).
-    stubs.push({ c0: s0, c1: s0 + sw, r0: 0, r1: Infinity });
+    // Out to the hull, as the last row of cabins runs (a corridor stopping short would leave plating: a thick hull), or
+    // to the room past the cabins, which spans the unit.
+    stubs.push({ c0: s0, c1: s0 + sw, r0: 0, r1: back ? start(tiers - 1) + CABIN_ROWS - 1 : Infinity });
     for (let t = 0; t < tiers; t++) {
       cabins.push({ c0: a, c1: s0, r0: start(t), r1: end(t) });
       cabins.push({ c0: s0 + sw, c1: b, r0: start(t), r1: end(t) });
     }
-    if (back) rest.push({ c0: a, c1: s0, r0: start(tiers), r1: Infinity }, { c0: s0 + sw, c1: b, r0: start(tiers), r1: Infinity });
+    if (back) rest.push({ c0: a, c1: b, r0: start(tiers), r1: Infinity });
   }
   return { stubs, cabins, rest };
 }

@@ -4,7 +4,7 @@ import { pairUp } from '../topoNavy';
 import { MESS, NAVY_TYPES, type NavyType } from './navyShip';
 import { RegionGrid, SOLID, SPACE } from './regions';
 import { CABIN_TIER, cabinsFor } from './cabinBlock';
-import { FILL_MAX, fillerFor, fillerSpec, maxArea, type Filler } from './roomSize';
+import { FILL_MAX, crewRoom, fillerFor, fillerSpec, maxArea, type Filler } from './roomSize';
 import { onHall, opensThrough, roomKind, type RoomKind } from './roomAccess';
 
 /**
@@ -93,7 +93,7 @@ function split(band: Band, pairs: readonly Pair[], vary: readonly number[], spar
       const deep = Math.max(MIN_DEPTH, area(a));
       // As many as keep each within the fillers' size, none narrower than its depth allows.
       const most = Math.max(1, Math.floor((b - a + 1) / (Math.max(MIN_DEPTH, Math.ceil(deep / DEEP)) + 1)));
-      const n = Math.min(most, Math.max(1, Math.round((b - a + 1) / (1.5 * deep + 1)), Math.ceil(floor / FILL_MAX)));
+      const n = Math.min(most, Math.max(1, Math.round((b - a + 1) / (2.5 * deep + 1)), Math.ceil(floor / FILL_MAX)));
       for (let k = 0, x0 = a; k < n; k++) {
         const x1 = k === n - 1 ? b : a + Math.round(((k + 1) * (b - a + 1)) / n) - 1;
         let f = 0;
@@ -110,7 +110,7 @@ function split(band: Band, pairs: readonly Pair[], vary: readonly number[], spar
       s++; x = band.segs[s]?.[0] ?? 0; first = out.length;
     };
     for (const [i, pair] of pairs.entries()) {
-      const len = Math.max(minLen(pair[0]), minLen(pair[1])), cap = capOf(pair), goal = Math.min(cap, areaOf(pair) * Math.max(1, vary[i % vary.length] ?? 1));
+      const len = Math.max(minLen(pair[0]), minLen(pair[1])), cap = capOf(pair), goal = Math.min(cap, 1.25 * areaOf(pair) * Math.max(1, vary[i % vary.length] ?? 1));
       // A room takes columns until its share is met, but no longer than three times its depth once it has its planned
       // floor; one that a run cannot hold moves on to the next run.
       for (;;) {
@@ -305,7 +305,7 @@ export function layoutBlocks(plan: ShipPlan, m: Mask, type: NavyType, vary: read
     }
     // Fillers past the default holds: one of each a side, a farm only where the type carries one.
     const has = (k: RoomKind): boolean => [...innerPairs, ...outerPairs].some((p) => roomKind(p[0]) === k || roomKind(p[1]) === k);
-    const fills: Fills = { left: [...(has('workshop') ? [] : ['workshop' as const]), 'lounge', 'gym', ...((NAVY_TYPES[type].rooms ?? []).includes('farm') ? ['farm' as const] : [])] };
+    const fills: Fills = { left: [...(has('workshop') ? [] : ['workshop' as const]), 'lounge', 'armoury', 'gym', ...((NAVY_TYPES[type].rooms ?? []).includes('farm') ? ['farm' as const] : [])] };
     innerCut = split(inner, innerPairs, vary, false, fills);
     if (innerCut && claim) innerCut = [...innerCut, claim].sort((p, q) => p.x0 - q.x0);
     fillsLeft = fills.left;
@@ -419,12 +419,13 @@ export function layoutBlocks(plan: ShipPlan, m: Mask, type: NavyType, vary: read
           paint(id, x0 + c.c0, x0 + c.c1, (y) => d(y) >= BAND + c.r0 && d(y) <= BAND + c.r1);
           return id;
         });
-        // The floor past the cabins: a hold each side of the corridor, opening onto it.
+        // The floor past the cabins: one crew room across the unit, the corridor ending at it.
         for (const c of b.rest) {
-          const own = stubs.find(({ st }) => st.c0 === c.c1 || st.c1 === c.c0)?.id ?? hall;
+          const own = stubs.find(({ st }) => st.c0 >= c.c0 && st.c1 <= c.c1)?.id ?? hall;
           let f = 0;
           for (let tx = x0 + c.c0; tx < x0 + c.c1; tx++) for (let ty = -H; ty <= H; ty++) if (inside(tx, ty) && d(ty) >= BAND + c.r0) f++;
-          paint(g.room('cargo', { spec: fillerSpec('hold', f), access: [own] }), x0 + c.c0, x0 + c.c1, (y) => d(y) >= BAND + c.r0 && d(y) <= BAND + c.r1);
+          const spec = crewRoom(fillsLeft, f);
+          paint(g.room(spec.role, { spec, access: [own] }), x0 + c.c0, x0 + c.c1, (y) => d(y) >= BAND + c.r0 && d(y) <= BAND + c.r1);
         }
         return rooms[0] as number;
       }) as [number, number];
