@@ -1,11 +1,12 @@
 import type { ModuleDef } from '../../registry';
-import { cargoSpec, dockSpec, engineSpec, reactorSpec, weaponSpec, type RoomSpec, type ShipPlan } from '../plan';
+import { cargoSpec, dockSpec, reactorSpec, weaponSpec, type RoomSpec, type ShipPlan } from '../plan';
 import { pairUp } from '../topoNavy';
 import { MESS, NAVY_TYPES, type NavyType } from './navyShip';
 import { RegionGrid, SOLID, SPACE } from './regions';
 import { CABIN_TIER, cabinsFor } from './cabinBlock';
 import { FILL_MAX, crewRoom, fillerFor, fillerSpec, maxArea, type Filler } from './roomSize';
 import { onHall, opensThrough, roomKind, type RoomKind } from './roomAccess';
+import { BAND, MIN_DEPTH, outlineFrame } from './frame';
 
 /**
  * Rooms cut into a navy outline by corridors, blocks and one splitter (SHIPGEN_V4, "Room layout"): the spine and the
@@ -14,10 +15,6 @@ import { onHall, opensThrough, roomKind, type RoomKind } from './roomAccess';
  * every band into rooms by planned area. Laid out on the north side (y < 0) and mirrored, a room pair per slot.
  */
 
-/** Side rows out from the axis: the spine is rows -1..1, its wall row 2, room floor from row 3 (room row 1). */
-const BAND = 2;
-/** Floor rows a room has at least, and so a tier. */
-const MIN_DEPTH = 3;
 /** Columns a cabin takes at least, its wall included; floor a cabin takes. */
 const CABIN = 4, CABIN_AREA = 14;
 /** A room at most this many times as long as it is deep, and at most `DEEP` times as deep as it is long (no thin strips). */
@@ -145,40 +142,9 @@ function split(band: Band, pairs: readonly Pair[], vary: readonly number[], spar
 
 /** Rooms cut into the outline, or null when they do not fit at this scale. */
 export function layoutBlocks(plan: ShipPlan, m: Mask, type: NavyType, vary: readonly number[], defs: Record<string, ModuleDef>): { g: RegionGrid } | null {
-  const { W, H, inside } = m;
-  if (2 * H + 4 > 120 || W + 4 > 240) return null;
-  const top = (x: number): number => { let y = 0; while (inside(x, y + 1)) y++; return inside(x, 0) ? y : -1; };
-  const depth = (x: number): number => top(x) - BAND - 1;
-  const rowEnd = (y: number): number => { let x = W - 1; while (x > 0 && !inside(x, y)) x--; return x; };
-  let xEnd = W - 1;
-  while (xEnd > 0 && !inside(xEnd, 0)) xEnd--;
-
-  // Engines claim the aft hull: out from the spine, each run of rows sharing an aft wall (a row beside one reaching
-  // further aft has wall, not space, behind its hull tile) takes the engines it is deep enough for, a walk column ahead.
-  const one = engineSpec(1, 'w', plan.kit);
-  const xS = Math.min(xEnd, rowEnd(-(BAND + 1))) - one.w - 1;
-  let sternMax = 0;
-  for (let tx = xS + 1; tx <= xEnd; tx++) sternMax = Math.max(sternMax, depth(tx));
-  const need = Math.ceil(plan.engines / 2), most = Math.max(need, 3);
-  let perSide = 0, used = 0;
-  for (let r = 0; r < sternMax && perSide < most;) {
-    let run = 1;
-    while (r + run < sternMax && rowEnd(-(BAND + 1 + r + run)) === rowEnd(-(BAND + 1 + r))) run++;
-    const end = rowEnd(-(BAND + 1 + r)), longer = (y: number): number => (rowEnd(y) > end ? 1 : 0);
-    const k = Math.min(Math.floor((run - (r > 0 ? longer(-(BAND + r)) : 0) - longer(-(BAND + 1 + r + run))) / one.h), most - perSide);
-    if (k > 0) { perSide += k; used = r + run; }
-    r += run;
-  }
-  if (perSide < need || perSide === 0) return null;
-  const engine = engineSpec(perSide, 'w', plan.kit);
-
-  // The bridge takes the bow, sized to its plan and at least four columns.
-  const bridge = plan.command;
-  let xBr = 0, area = 0;
-  while (xBr < xS && (area < 1.3 * bridge.w * bridge.h || top(xBr) < 2 || xBr <= MIN_DEPTH + 1)) { area += Math.max(0, 2 * top(xBr) - 1); xBr++; }
-  let xBand = xBr + 1;
-  while (xBand < xS && depth(xBand) < 1) xBand++;
-  if (xBand >= xS - 6) return null;
+  const fr = outlineFrame(plan, m);
+  if (!fr) return null;
+  const { W, H, inside, top, depth, xS, sternMax, used, engine, xBr, xBand, CW, dockAt } = fr, bridge = plan.command;
 
   // The inner tier: as deep as the shallower part of the side (its lower quartile), at most a room and a half; a column
   // deep enough for a second tier beyond it splits.
@@ -188,13 +154,6 @@ export function layoutBlocks(plan: ShipPlan, m: Mask, type: NavyType, vary: read
   const di = Math.min(low, MIN_DEPTH + 2);
   const tiered = (x: number): boolean => depth(x) >= di + 1 + MIN_DEPTH;
 
-  // The cross corridor: out to the airlocks at the hull's widest flat stretch (an airlock needs a flat outer wall), in the
-  // forward three quarters, leaving a room's length either side. Outer rooms elsewhere open into the room in front.
-  const CW = dockSpec().w;
-  const flat = (x0: number): boolean => { for (let k = -1; k <= CW; k++) if (top(x0 + k) !== top(x0)) return false; return true; };
-  let dockAt = -1;
-  for (let x = xBand + MIN_DEPTH + 1; x <= Math.min(xS - MIN_DEPTH - CW - 1, xBand + 0.75 * (xS - xBand)); x++) if (flat(x) && (dockAt < 0 || depth(x) > depth(dockAt))) dockAt = x;
-  if (dockAt < 0) return null;
   // A second, plain cross corridor only where the hull aft is deep enough for a back room as deep as the front one
   // (rooms there would else open through others), along a stretch with a room's length either side of it.
   let aft = -1;
