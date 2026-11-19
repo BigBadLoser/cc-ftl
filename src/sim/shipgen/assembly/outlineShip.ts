@@ -36,7 +36,7 @@ function scaled(sil: Silhouette, sx: number, sy: number): Mask {
   // PROTOTYPE (#581): the gun battery on the widest straight stretch, lengthened (its middle column repeated) until it
   // holds it: a blister a tile proud per gun (its room's floor and a wall either side), the airlock amid them, a few
   // columns of maintenance corridor between.
-  const bat = sil.battery, k = Math.min(bat?.guns ?? 0, 2), run = bat?.runs[0], GW = (bat?.w ?? 4) + 2, GAP = 3, AIR = 3;
+  const bat = sil.battery, k = Math.min(bat?.guns ?? 0, 2), run = bat?.runs[0], GW = (bat?.w ?? 4) + 2, GAP = 5, AIR = 3;
   const sites: [number, number][] = [];
   let E = 0, mid = W0, air = -1, a0 = 0, b0 = 0;
   if (k > 0 && run) {
