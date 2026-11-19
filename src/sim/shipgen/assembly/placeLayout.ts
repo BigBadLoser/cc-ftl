@@ -25,9 +25,11 @@ export interface Stub { x: number }
 export interface Layout { blocks: Block[]; stern: Part | null; stubs: Stub[]; /** Program pairs placed out of turn (stacked with another). */ done: number[] }
 export interface Placed { fr: Frame; lay: Layout; score: number; viable: number; nodes: number; why: Map<string, number>; /** Gun pairs pinned to the outline's gun sites, of how many sites. */ pins: number; sites: number; /** The battery's gun pairs, a blister each (prototype). */ battery: Pair[] }
 
-const ASPECT = 3, DEEP = 2;
+const ASPECT = 3, DEEP = 1.25;
 /** Floor any room may take, past its own cap: the least room a deep hull can cut (three columns by seven rows, about). */
 const SMALL = 24;
+/** A free stretch narrower than this is a strip: the room beside it takes it rather than a filler. */
+const THIN = 6;
 /** Filler rooms' specs (for the score and the prototype's metrics). */
 export const fillers = new WeakSet<RoomSpec>(), repeats = new WeakSet<RoomSpec>();
 const clone = (l: Layout): Layout => ({
@@ -247,10 +249,20 @@ export function placeLayout(plan: ShipPlan, m: Mask, defs: Record<string, Module
     const add = (b: Block, x0: number, x1: number, r0: number, r1: number, s: RoomSpec): void => { b.pieces.push({ x0, x1, parts: [{ x0, x1, r0, r1, spec: [s, s], fill: true }] }); };
     // Fillers cut along a tier, as many as keep each within the fillers' size and no narrower than a room.
     const row = (b: Block, x0: number, x1: number, r0: number, r1: number): void => {
-      const n = Math.max(1, Math.min(Math.floor((x1 - x0 + 1) / (MIN_DEPTH + 1)), Math.ceil(area(x0, x1, r0, r1) / FILL_MAX)));
+      const n = Math.max(1, Math.min(Math.floor((x1 - x0 + 1) / (THIN + 1)), Math.ceil(area(x0, x1, r0, r1) / FILL_MAX)));
       for (const [c0, c1] of cut(x0, x1, n)) add(b, c0, c1, r0, r1, pick(() => true, area(c0, c1, r0, r1)) ?? fillerSpec('hold', 9));
     };
     const deepCol = (x: number): boolean => depth(x) >= 2 * MIN_DEPTH + 1;
+    // A free stretch too narrow for a filler that isn't a strip: the room beside it grows over it (the plating column
+    // between moves to its far side).
+    for (const b of lay.blocks) b.free = b.free.filter(([L, R]) => {
+      if (R - L >= THIN) return true;
+      const free = (pc: Piece): boolean => !pc.cabins;
+      const lp = b.pieces.find((pc) => pc.x1 === L - 1 && free(pc)), rp = b.pieces.find((pc) => pc.x0 === R + 1 && free(pc));
+      if (lp) { for (const q of lp.parts) if (q.x1 === lp.x1) q.x1 = R; lp.x1 = R; return false; }
+      if (rp) { for (const q of rp.parts) if (q.x0 === rp.x0) q.x0 = L; rp.x0 = L; return false; }
+      return true;
+    });
     for (const [bi, b] of lay.blocks.entries()) for (const [L, R] of b.free) {
       const w = R - L;
       if (w < MIN_DEPTH) { note(`sliver b${bi}`); return null; }
@@ -269,7 +281,7 @@ export function placeLayout(plan: ShipPlan, m: Mask, defs: Record<string, Module
       for (const [k, [s0, e0, dp]] of runs.entries()) {
         const x0 = s0, x1 = k < runs.length - 1 ? e0 - 1 : e0, dMin = least(x0, x1, 1, Infinity);
         const r = Math.max(MIN_DEPTH, Math.min(dMin - MIN_DEPTH - 1, Math.round(dMin / 2)));
-        const wide = Math.ceil(area(x0, x1, 1, Infinity) / FILL_MAX) <= Math.floor((x1 - x0 + 1) / (MIN_DEPTH + 1));
+        const wide = Math.ceil(area(x0, x1, 1, Infinity) / FILL_MAX) <= Math.floor((x1 - x0 + 1) / (THIN + 1));
         if (!dp || dMin - r - 1 < MIN_DEPTH || wide) { row(b, x0, x1, 1, Infinity); continue; }
         if (crossEdge(b, x0, x1) && area(x0, x1, r + 2, Infinity) <= 1.3 * FILL_MAX) { row(b, x0, x1, 1, r); add(b, x0, x1, r + 2, Infinity, pick(() => true, area(x0, x1, r + 2, Infinity)) as RoomSpec); continue; }
         // A stub: amid a run wide enough for a room each side, else at its end farther from other corridors (none
