@@ -149,8 +149,9 @@ def _rail(k, ax, plane, a, b, ends, top, fam):
     mit = _mitres(ends)
     z0 = rail_foot(top)
     z1 = z0 + RAIL_H                                    # (under the cap's black)
-    bl = (T.RAIL_LAYOUT(a, b) if T.RAIL_LAYOUT else [(a, b, POSTS == "none")] if POSTS != "tile"
-          else _blocks(a, b, _nudge(ax)[0]))           # (over a join's post an end block, over a fill a middle one)
+    bl = (T.RAIL_LAYOUT(a, b) if T.RAIL_LAYOUT else [(a, b, POSTS == "none" and not GAP)] if POSTS != "tile"
+          else _blocks(a, b, _nudge(ax)[0]))           # (over a join's post an end block, over a fill a middle one;
+    #                                                   over a diagonal's gap column, GAP, an end block: solid on)
     for i, (u0, u1, mid) in enumerate(bl):
         d = MID_D if mid else RAIL_D
         zb = z0 - PZ if mid else z0
