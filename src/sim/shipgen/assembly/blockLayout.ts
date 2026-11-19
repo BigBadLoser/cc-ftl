@@ -217,6 +217,10 @@ export function layoutBlocks(plan: ShipPlan, m: Mask, type: NavyType, vary: read
     if (to > a) out.push([a, to]);
     return out;
   };
+  const paintFill = (v: Fill, tx: number, d: (y: number) => number, upper: number): void => {
+    paint(v.id, tx, tx + 1, (y) => d(y) >= BAND && d(y) <= Math.min(upper, v.annex === undefined ? Infinity : BAND + v.at - 2));
+    if (v.annex !== undefined) paint(v.annex, tx, tx + 1, (y) => d(y) >= BAND + v.at && d(y) <= upper);
+  };
   // The cabin blocks claim deep floor first, as guns the side hull: every bed a cabin, two cabins a row either side of
   // a corridor of their own, the beds made even and shared over both sides. One corridor's width where the floor is
   // deep enough, else two; the aftmost stretch deep enough, leaving no run too short for a room beside it.
@@ -361,18 +365,23 @@ export function layoutBlocks(plan: ShipPlan, m: Mask, type: NavyType, vary: read
   const innerIds = new Map<number, [number, number]>();
   // The floor opposite a room with no partner its size, columns x0 to x1: filler rooms within the fillers' size, a
   // plating column between them (column to room).
-  const fillCols = (x0: number, x1: number, rows: (tx: number) => number): Map<number, number> => {
-    const out = new Map<number, number>(), L1 = x1 - x0 + 1, deep = Math.max(MIN_DEPTH, rows(x0));
+  // A filler deep enough for two rooms past the fillers' size: a hold or workshop on the corridor rows and a hold behind
+  // it from row `at` (opening through it).
+  type Fill = { id: number; annex?: number; at: number };
+  const fillCols = (x0: number, x1: number, rows: (tx: number) => number): Map<number, Fill> => {
+    const out = new Map<number, Fill>(), L1 = x1 - x0 + 1, deep = Math.max(MIN_DEPTH, rows(x0));
     let f = 0;
     for (let tx = x0; tx < x1; tx++) f += rows(tx);
     const most = Math.max(1, Math.floor(L1 / (Math.max(MIN_DEPTH, Math.ceil(deep / DEEP)) + 1)));
     const n = Math.min(most, Math.max(1, Math.ceil(f / FILL_MAX)));
     for (let c = 0; c < n; c++) {
       const c0 = x0 + Math.round((L1 * c) / n), c1 = x0 + Math.round((L1 * (c + 1)) / n) - 1;
-      let a = 0;
-      for (let tx = c0; tx < c1; tx++) a += rows(tx);
-      const spec = fillerFor(fillsLeft, a, deep, false), id = g.room(spec.role, { spec });
-      for (let tx = c0; tx < c1; tx++) out.set(tx, id);
+      let a = 0, low = Infinity;
+      for (let tx = c0; tx < c1; tx++) { a += rows(tx); low = Math.min(low, rows(tx)); }
+      const spec = fillerFor(fillsLeft, a, low, low >= 2 * MIN_DEPTH + 1), id = g.room(spec.role, { spec });
+      const at = Math.max(MIN_DEPTH, Math.min(low - MIN_DEPTH, Math.round(low / 2))) + 1;
+      const annex = spec.annex ? g.room(spec.annex.role, { spec: spec.annex, access: [id] }) : undefined;
+      for (let tx = c0; tx < c1; tx++) out.set(tx, { id, at, ...(annex !== undefined ? { annex } : {}) });
     }
     return out;
   };
@@ -395,8 +404,8 @@ export function layoutBlocks(plan: ShipPlan, m: Mask, type: NavyType, vary: read
         const b = blocks[side], d = (y: number): number => sign * y;
         if (!b && h.fill) {
           const m = fillCols(x0, x1, (tx) => inner.hi(tx));
-          for (const [tx, id] of m) paint(id, tx, tx + 1, (y) => d(y) >= BAND);
-          return m.get(x0) ?? hall;
+          for (const [tx, v] of m) paintFill(v, tx, d, Infinity);
+          return m.get(x0)?.id ?? hall;
         }
         if (!b) { const id = g.room(h.role, { spec: h }); paint(id, x0, x1, (y) => d(y) >= BAND); return id; }
         // Each corridor a hall of its own, so its cabins' doors face it (not the spine).
@@ -439,16 +448,25 @@ export function layoutBlocks(plan: ShipPlan, m: Mask, type: NavyType, vary: read
     const two = [r, sr].map((h, side) => {
       if (cr < 0 || k !== 1 || h.annex || h.fill || h.block || capped.size > 0 || dTwo < 2 * MIN_DEPTH + 1 || f2 <= 1.15 * maxArea(h)) return null;
       const len = x1 - x0, keep = Math.min(dTwo - MIN_DEPTH - 1, Math.max(MIN_DEPTH, Math.ceil(maxArea(h) / len))), out = roomKind(h) === 'guns';
-      const via = [cr === dockAt ? docks[side] as number : hall], filler = fillerFor(fillsLeft, f2 - (keep + 1) * len, dTwo - keep - 1, false);
-      const room = g.room(h.role, { spec: h, ...(out ? { access: via } : {}) }), fid = g.room(filler.role, { spec: filler, ...(out ? {} : { access: via }) });
-      return { front: out ? fid : room, back: out ? room : fid, rows: out ? dTwo - keep - 2 : keep - 1 };
+      const via = [cr === dockAt ? docks[side] as number : hall], rows = out ? dTwo - keep - 2 : keep - 1;
+      const room = g.room(h.role, { spec: h, ...(out ? { access: via } : {}) });
+      // The filler part within the fillers' size: on the spine, cut along its length; behind, cut by rows (each on the
+      // cross corridor). Columns or row bands to rooms.
+      if (out) return { room, rows, cols: fillCols(x0, x1, () => rows + 1), bands: [] as [number, number, number][] };
+      const back = dTwo - rows - 2, m = Math.max(1, Math.min(Math.floor((back + 1) / (MIN_DEPTH + 1)), Math.ceil((back * len) / FILL_MAX)));
+      const bands = Array.from({ length: m }, (_, j): [number, number, number] => {
+        const r0 = rows + 2 + Math.round((j * (back + 1)) / m), r1 = j === m - 1 ? Infinity : rows + 2 + Math.round(((j + 1) * (back + 1)) / m) - 2;
+        const spec = fillerFor(fillsLeft, len * Math.min(back, r1 - r0 + 1), Math.min(back, r1 - r0 + 1), false);
+        return [g.room(spec.role, { spec, access: via }), r0, r1];
+      });
+      return { room, rows, cols: null, bands };
     });
     for (let c = 0; c < k; c++) {
       const c0 = x0 + Math.round(((x1 - x0 + 1) * c) / k), c1 = x0 + Math.round(((x1 - x0 + 1) * (c + 1)) / k) - 1;
       // A cabin block too shallow for two rows of cabins: a row of cabins on the spine, its beds shared out.
       const part = (spec: RoomSpec): RoomSpec => (!spec.block ? spec
         : { ...spec, mods: [...spec.mods.filter((_, j) => j % k === c), 'module.storage_locker'], w: c1 - c0, cabin: true, block: false });
-      const one = (spec: RoomSpec, side: 0 | 1): number => (two[side] ? (two[side]?.front as number) : spec.fill ? (fm[side]?.get(c0) ?? hall) : spec.block ? g.room(spec.role, { spec: part(spec) }) : (whole[side] ??= g.room(spec.role, { spec })));
+      const one = (spec: RoomSpec, side: 0 | 1): number => (two[side] ? (two[side]?.cols?.get(c0)?.id ?? two[side]?.room as number) : spec.fill ? (fm[side]?.get(c0)?.id ?? hall) : spec.block ? g.room(spec.role, { spec: part(spec) }) : (whole[side] ??= g.room(spec.role, { spec })));
       const n = one(r, 0), s = one(sr, 1);
       for (let tx = c0; tx < c1; tx++) innerIds.set(tx, [n, s]);
       // An annex (a trauma room, a pantry) stands behind its host, the host keeping the corridor rows, a wall row
@@ -466,9 +484,19 @@ export function layoutBlocks(plan: ShipPlan, m: Mask, type: NavyType, vary: read
         ([[r, n, -1], [sr, s, 1]] as const).forEach(([h, id, sign], side) => {
           const annex = ids[side] as number, rows = hostRows(h), d = (y: number): number => sign * y;
           const own = fm[side];
-          if (own) { const f = own.get(tx); if (f !== undefined) paint(f, tx, tx + 1, (y) => d(y) >= BAND && d(y) <= deep); return; }
+          if (own) { const f = own.get(tx); if (f !== undefined) paintFill(f, tx, d, deep); return; }
           const t = two[side];
-          if (t) { paint(t.front, tx, tx + 1, (y) => d(y) >= BAND && d(y) <= BAND + t.rows); paint(t.back, tx, tx + 1, (y) => d(y) >= BAND + t.rows + 2); return; }
+          if (t?.cols) {
+            const f = t.cols.get(tx);
+            if (f !== undefined) paintFill(f, tx, d, BAND + t.rows);
+            paint(t.room, tx, tx + 1, (y) => d(y) >= BAND + t.rows + 2);
+            return;
+          }
+          if (t) {
+            paint(t.room, tx, tx + 1, (y) => d(y) >= BAND && d(y) <= BAND + t.rows);
+            for (const [id, r0, r1] of t.bands) paint(id, tx, tx + 1, (y) => d(y) >= BAND + r0 && d(y) <= BAND + r1);
+            return;
+          }
           paint(tx < annexAt(h) ? id : annex, tx, tx + 1, (y) => d(y) >= BAND && d(y) <= Math.min(deep, BAND + rows));
           if (rows < Infinity) paint(annex, tx, tx + 1, (y) => d(y) >= BAND + rows + 2 && d(y) <= deep);
         });
