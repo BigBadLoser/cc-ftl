@@ -36,15 +36,14 @@ export function outlineFrame(plan: ShipPlan, m: Mask): Frame | null {
   const { W, H, inside } = m;
   if (2 * H + 4 > 120 || W + 4 > 240) return null;
   const top = (x: number): number => { let y = 0; while (inside(x, y + 1)) y++; return inside(x, 0) ? y : -1; };
-  // A battery chains along the hull: each gun room reaches in `rows` from its blister, a maintenance corridor a row in
-  // from the hull links each to the next and to the dock. `hallY` is the battery's innermost row per column (the
-  // gun room's inner row, else the corridor); rooms on the spine stop a wall short of it.
+  // A battery chains along the hull: a maintenance corridor two rows wide inside the hull links each gun room to the
+  // next and to the dock, and each gun room's blister stands proud enough that its inner wall is the corridor's: one
+  // flat wall row (`hallY`) the length of the battery, rooms on the spine stopping at it.
   const bt = m.battery, reg = bt ? top(bt.a) : 0;
-  const gun = (x: number): boolean => !!bt?.guns.some(([s0, s1]) => x >= s0 && x < s1);
-  const hallY = (x: number): number => (gun(x) ? reg - (bt?.rows ?? 0) : reg - 1);
+  const hallY = (): number => reg - 3;
   const g0 = bt?.guns[0]?.[0] ?? 0, g1 = bt?.guns[bt.guns.length - 1]?.[1] ?? 0;
   const inBt = (x: number): boolean => !!bt && x >= g0 && x < g1 && !(x >= bt.air && x < bt.air + dockSpec().w);
-  const depth = (x: number): number => (inBt(x) ? hallY(x) - (gun(x) ? 1 : 2) - BAND : top(x) - BAND - 1);
+  const depth = (x: number): number => (inBt(x) ? hallY() - 1 - BAND : top(x) - BAND - 1);
   const rowEnd = (y: number): number => { let x = W - 1; while (x > 0 && !inside(x, y)) x--; return x; };
   let xEnd = W - 1;
   while (xEnd > 0 && !inside(xEnd, 0)) xEnd--;

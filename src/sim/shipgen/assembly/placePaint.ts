@@ -59,7 +59,7 @@ export function paintPlaced(plan: ShipPlan, { fr, lay, battery }: Placed): Regio
     paint(g.room(h.role, { spec: h, access: [engines[side]] }), st.x0, st.x1, (y) => sign * y >= BAND + st.r0);
   }
   // PROTOTYPE: the battery: each gun room from its blister in, chained to the next and to the dock by the maintenance
-  // corridor along the hull between them (a door each side). A gun room gives way to its neighbours, so its walls are
+  // corridor along the hull between them (a door on each side the corridor reaches). A gun room gives way to its neighbours, so its walls are
   // its own and it stays a rectangle.
   const mt = fr.maint;
   if (mt) {
@@ -67,15 +67,15 @@ export function paintPlaced(plan: ShipPlan, { fr, lay, battery }: Placed): Regio
     const gun = (x: number): boolean => mt.guns.some(([s0, s1]) => x >= s0 && x < s1);
     // The corridor's row, plating outboard of it to the hull.
     for (let x = mt.a; x < mt.b; x++) if (!gun(x) && !(x >= fr.dockAt && x < fr.dockAt + fr.CW)) {
-      paint(maint, x, x + 1, (y) => Math.abs(y) === mt.hallY(x));
-      paint(SOLID, x, x + 1, (y) => Math.abs(y) > mt.hallY(x));
+      paint(maint, x, x + 1, (y) => Math.abs(y) > mt.hallY(x) && Math.abs(y) <= mt.hallY(x) + 2);
+      paint(SOLID, x, x + 1, (y) => Math.abs(y) > mt.hallY(x) + 2);
     }
     mt.guns.forEach(([s0, s1], i) => {
       const pair = battery[i];
       if (!pair) return;
       ([0, 1] as const).forEach((side) => {
         const h = pair[side], sign = side === 0 ? -1 : 1;
-        paint(g.room(h.role, { spec: h, access: [maint], doors: 2, rank: -1 }), s0, s1, (y) => sign * y >= mt.hallY(s0) && sign * y <= topAt(s0));
+        paint(g.room(h.role, { spec: h, access: [maint], doors: i === 0 || i === mt.guns.length - 1 ? 1 : 2, rank: -1 }), s0, s1, (y) => sign * y >= mt.hallY(s0) && sign * y <= topAt(s0));
       });
     });
     // A doubled column: the next gun pair inboard of the outer gun, the rest of the column, onto the spine.

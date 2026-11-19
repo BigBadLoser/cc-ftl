@@ -54,10 +54,12 @@ function scaled(sil: Silhouette, sx: number, sy: number): Mask {
   const from = (x: number): number => (x < mid ? x : x < mid + E ? mid : x - E);
   const hull = (x: number, y: number): boolean => base(from(x), y);
   const topOf = (x: number): number => { let y = 0; while (hull(x, y + 1)) y++; return y; };
-  const proud = (x: number, y: number): boolean => (sites.some(([s0, s1]) => x >= s0 && x < s1) || (air >= 0 && x >= air && x < air + AIR)) && Math.abs(y) === topOf(x) + 1;
+  // Proud enough that a gun room's floor rows end where the two-row corridor's do (its inner wall the corridor's).
+  const P = Math.max(1, (bat?.h ?? 3) - 2);
+  const proud = (x: number, y: number): boolean => (sites.some(([s0, s1]) => x >= s0 && x < s1) || (air >= 0 && x >= air && x < air + AIR)) && Math.abs(y) > topOf(x) && Math.abs(y) <= topOf(x) + P;
   const inside = (x: number, y: number): boolean => hull(x, y) || proud(x, y);
   const battery = sites.length > 0 ? { battery: { a: a0, b: b0, guns: sites, rows: bat?.h ?? 3, air, inner: guns > k ? [k - 1] : [] } } : {};
-  return { W: W0 + E, H: H0 + (sites.length > 0 ? 1 : 0), inside, ...battery };
+  return { W: W0 + E, H: H0 + (sites.length > 0 ? P : 0), inside, ...battery };
 }
 
 /**
