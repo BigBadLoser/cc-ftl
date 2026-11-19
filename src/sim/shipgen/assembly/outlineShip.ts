@@ -22,14 +22,25 @@ import { SPACE, type RegionGrid } from './regions';
  * the scaled body's edge.
  */
 /** Notch columns either side of a gun site's blister. */
-const NOTCH = 2;
+const NOTCH = 2, BLISTER = 6;
 
 function scaled(sil: Silhouette, sx: number, sy: number): Mask {
   const W = Math.round(sil.length * sx);
   const bodyAt = (c: number): number => sil.body[Math.min(c, sil.body.length - 1)] as number;
   const H = Math.max(...sil.body.map((b) => Math.round(b * sy) + sil.axis - b));
-  // PROTOTYPE (#581): gun sites in tiles: a blister a gun bay long between two notches a tile deep.
-  const sites = (sil.sites ?? []).map(([a, b]): [number, number] => { const c = Math.round(((a + b) / 2) * sx); return [c - 2, c + 3]; });
+  // PROTOTYPE (#581): the gun battery in tiles: blisters a room wide between notches, a gun on every other one (a
+  // plain room between), centred on the best straight stretch that holds it (the rest on the next stretches).
+  const sites: [number, number][] = [], STEP = BLISTER + NOTCH;
+  let left = sil.battery?.guns ?? 0;
+  for (const [a, b] of sil.battery?.runs ?? []) {
+    if (left <= 0) break;
+    const A = Math.ceil(a * sx) + 1, B = Math.floor(b * sx) - 1, k = Math.min(left, Math.floor((B - A - NOTCH + STEP) / (2 * STEP)));
+    if (k <= 0) continue;
+    const x0 = A + Math.floor((B - A - ((2 * k - 1) * STEP + NOTCH)) / 2);
+    for (let i = 0; i < k; i++) sites.push([x0 + NOTCH + 2 * i * STEP, x0 + NOTCH + 2 * i * STEP + BLISTER]);
+    left -= k;
+  }
+  sites.sort((p, q) => p[0] - q[0]);
   const notch = (x: number): boolean => sites.some(([s0, s1]) => (x >= s0 - NOTCH && x < s0) || (x >= s1 && x < s1 + NOTCH));
   const hull = (x: number, y: number): boolean => {
     if (x < 0 || x >= W || Math.abs(y) > H) return false;

@@ -41,6 +41,8 @@ export function placeLayout(plan: ShipPlan, m: Mask, defs: Record<string, Module
   const floor = (x: number, r0: number, r1: number): number => Math.max(0, Math.min(r1, depth(x)) - r0 + 1);
   const area = (x0: number, x1: number, r0: number, r1: number): number => { let a = 0; for (let x = x0; x < x1; x++) a += floor(x, r0, r1); return a; };
   const least = (x0: number, x1: number, r0: number, r1: number): number => { let a = Infinity; for (let x = x0; x < x1; x++) a = Math.min(a, floor(x, r0, r1)); return a; };
+  /** A room's rows for its modules: its average depth (a notch or a step at one end takes a row off a column or two). */
+  const rowsOf = (x0: number, x1: number, r0: number, r1: number): number => Math.max(least(x0, x1, r0, r1), Math.round(area(x0, x1, r0, r1) / Math.max(1, x1 - x0)));
   const fits = (r: RoomSpec, len: number, rows: number): boolean => (len >= r.w && rows >= r.h) || (len >= r.h && rows >= r.w);
   const shapely = (len: number, a: number): boolean => { const rows = a / Math.max(1, len); return len <= ASPECT * rows + 1 && rows <= DEEP * len + 1; };
   const kinds = (p: Pair | Part['spec']): RoomKind[] => p.map((r) => (r ? roomKind(r) : 'other'));
@@ -79,16 +81,16 @@ export function placeLayout(plan: ShipPlan, m: Mask, defs: Record<string, Module
   /** Placements of a pair: a piece at a block's free end (full depth, or one tier with the other open), or an open tier. */
   /** Whether pair `q` fits columns x0..x1, rows r0..r1: its floor within its range, its modules, no strip. */
   const sized = (q: Pair, x0: number, x1: number, r0: number, r1: number): boolean => {
-    const plan = areaOf(q), cap = Math.max(SMALL, Math.ceil(1.2 * plan), capOf(q)), a = area(x0, x1, r0, r1), rows = least(x0, x1, r0, r1);
+    const plan = areaOf(q), cap = Math.max(SMALL, Math.ceil(1.2 * plan), capOf(q)), a = area(x0, x1, r0, r1), rows = rowsOf(x0, x1, r0, r1);
     return a >= plan && a <= cap && q.every((r) => fits(r, x1 - x0, rows)) && shapely(x1 - x0, a);
   };
-  function cands(lay: Layout, p: Pair, i: number, extra: [number, 'L' | 'R', number?][] = []): Cand[] {
+  function cands(lay: Layout, p: Pair, i: number, extra: [number, 'L' | 'R', number?][] = [], capAt = 0): Cand[] {
     const out: Cand[] = [];
     const ks = kinds(p), gun = ks.includes('guns'), spine = ks.includes('reactor'), annex = !!(p[0].annex || p[1].annex);
     const block = p[0].block ? p : null;
     const hostPlan = Math.max(p[0].w * p[0].h, p[1].w * p[1].h), plan0 = annex ? hostPlan : areaOf(p);
     // Some room to grow past the plan even where a pair's caps disagree (a brig opposite a med bay).
-    const cap = Math.max(SMALL, Math.ceil(1.2 * plan0), annex ? Math.min(maxArea(p[0]), maxArea(p[1])) : capOf(p));
+    const cap = Math.max(capAt, SMALL, Math.ceil(1.2 * plan0), annex ? Math.min(maxArea(p[0]), maxArea(p[1])) : capOf(p));
     // The annexes share a shape: the larger one's cap holds for both.
     const annexCap = Math.max(SMALL, ...p.map((h) => (h.annex ? maxArea(h.annex) * 1.3 : 0)));
     const good = (a: number): boolean => a >= plan0 && a <= cap;
@@ -125,13 +127,13 @@ export function placeLayout(plan: ShipPlan, m: Mask, defs: Record<string, Module
         if (!annex) for (const len of lens) {
           const x0 = x0of(len), a = area(x0, x0 + len, 1, Infinity);
           if (a > cap) break;
-          if (good(a) && ok(len, least(x0, x0 + len, 1, Infinity)) && shapely(len, a)) { put(len, [{ r0: 1, r1: Infinity, spec: [p[0], p[1]] }], a / plan0 - 1); break; }
+          if (good(a) && ok(len, rowsOf(x0, x0 + len, 1, Infinity)) && shapely(len, a)) { put(len, [{ r0: 1, r1: Infinity, spec: [p[0], p[1]] }], a / plan0 - 1); break; }
         }
         // A room with an annex too shallow for it behind: the annex beside it, opening only into it.
         if (annex) for (let lh = Math.max(MIN_DEPTH, ...p.map((h) => Math.min(h.w, h.h))); lh <= w; lh++) {
           const x0 = end === 'L' ? at : at - lh, ah = area(x0, x0 + lh, 1, Infinity);
           if (ah > cap) break;
-          if (!good(ah) || !ok(lh, least(x0, x0 + lh, 1, Infinity)) || !shapely(lh, ah)) continue;
+          if (!good(ah) || !ok(lh, rowsOf(x0, x0 + lh, 1, Infinity)) || !shapely(lh, ah)) continue;
           let la = MIN_DEPTH;
           const ax = (l: number): number => (end === 'L' ? x0 + lh + 1 : x0 - 1 - l);
           const enough = (l: number): boolean => p.every((h) => !h.annex || (area(ax(l), ax(l) + l, 1, Infinity) >= h.annex.w * h.annex.h && fits(h.annex, l, least(ax(l), ax(l) + l, 1, Infinity))));
@@ -152,7 +154,7 @@ export function placeLayout(plan: ShipPlan, m: Mask, defs: Record<string, Module
               if (least(x0, x1, 1, Infinity) - r - 1 < MIN_DEPTH) break;
               const [r0, r1] = front ? [1, r] : [r + 2, Infinity], a = area(x0, x1, r0, r1);
               if (a > cap) break;
-              if (!good(a) || !ok(len, least(x0, x1, r0, r1)) || !shapely(len, a)) continue;
+              if (!good(a) || !ok(len, rowsOf(x0, x1, r0, r1)) || !shapely(len, a)) continue;
               const self: Omit<Part, 'x0' | 'x1'> = { r0, r1, spec: [p[0], p[1]] }, rest: Omit<Part, 'x0' | 'x1'> = { r0: front ? r + 2 : 1, r1: front ? Infinity : r, spec: [null, null] };
               if (annex && !(p[0].annex && p[1].annex) && !crossEdge(b, x0, x1)) break;
               if (annex) {
@@ -203,7 +205,7 @@ export function placeLayout(plan: ShipPlan, m: Mask, defs: Record<string, Module
       if ((gun && !back) || (spine && back)) continue;
       for (const [x0, x1] of [[q.x0, q.x1], ...[...Array(Math.max(0, q.x1 - q.x0 - MIN_DEPTH - 1)).keys()].flatMap((k) => { const l = k + MIN_DEPTH; return [[q.x0, q.x0 + l], [q.x1 - l, q.x1]]; })] as [number, number][]) {
         const a = area(x0, x1, q.r0, q.r1), len = x1 - x0;
-        if (!good(a) || !ok(len, least(x0, x1, q.r0, q.r1)) || !shapely(len, a)) continue;
+        if (!good(a) || !ok(len, rowsOf(x0, x1, q.r0, q.r1)) || !shapely(len, a)) continue;
         if (x1 - x0 < q.x1 - q.x0 && q.x1 - q.x0 - len - 1 < MIN_DEPTH) continue;
         // Its way in: the spine (in front), a cross corridor it touches, the room in front (or the engines astern).
         const ins = !b ? ks.every((k) => opensThrough(k, 'engine'))
@@ -340,15 +342,16 @@ export function placeLayout(plan: ShipPlan, m: Mask, defs: Record<string, Module
   // take a tile, reaching the hull), while one is left; other rooms never stack a gun outside one.
   // Sites on the band only (none in the bridge or the drive).
   const sites = (m.sites ?? []).filter(([s0, s1]) => s0 > xBand + MIN_DEPTH && s1 < xS - 1);
-  // The whole blister, spilling over a notch by at most a room's width (where a short gap would else be left beside it).
-  const inSite = (q: Part, [s0, s1]: [number, number]): boolean => q.r1 === Infinity && q.x0 <= s0 && q.x1 >= s1 && q.x0 >= s0 - MIN_DEPTH - 1 && q.x1 <= s1 + MIN_DEPTH + 1;
+  // The blister exactly, the room in front of it small (at most six rows): the gun grows toward the spine instead.
+  const inSite = (q: Part, [s0, s1]: [number, number]): boolean => q.r1 === Infinity && q.x0 === s0 && q.x1 === s1 && q.r0 <= 8;
   const guns = (l: Layout): Part[] => l.blocks.flatMap((b) => b.pieces.flatMap((pc) => pc.parts)).filter((q) => q.spec.some((h) => h && roomKind(h) === 'guns'));
   function candsAt(lay: Layout, k: number): Cand[] {
     const p = order[k] as Pair, had = guns(lay);
     const free = sites.filter((st) => !had.some((q) => q.x0 < st[1] && st[0] < q.x1));
     const isGun = kinds(p).includes('guns');
-    const spans = free.flatMap(([s0, s1]) => Array.from({ length: MIN_DEPTH + 2 }, (_, d) => [[s0 - d, 'L', s1 - s0 + d], [s0, 'L', s1 - s0 + d]] as [number, 'L', number][]).flat());
-    const cs = cands(lay, p, k, isGun ? spans : []);
+    const spans = free.flatMap(([s0, s1]) => [[s0, 'L', s1 - s0] as [number, 'L', number]]);
+    // A gun on a site may grow past its cap (it fills the blister toward the spine).
+    const cs = cands(lay, p, k, isGun ? spans : [], isGun && free.length > 0 ? 60 : 0);
     if (sites.length === 0) return cs;
     return cs.filter((c) => {
       const added = guns(c.lay).filter((q) => !had.some((h) => h.x0 === q.x0 && h.r0 === q.r0 && h.spec[0] === q.spec[0]));
@@ -363,7 +366,10 @@ export function placeLayout(plan: ShipPlan, m: Mask, defs: Record<string, Module
   // Whether the layout got past its next pair (a placement that strands a later pair at once is not counted a try).
   const dfs = (lay: Layout): boolean => {
     if (nodes++ > budget) return true;
-    const todo = order.map((_, k) => k).filter((k) => !lay.done.includes(k));
+    let todo = order.map((_, k) => k).filter((k) => !lay.done.includes(k));
+    // With gun sites, the guns first (they take their sites), the rest filled round them.
+    const gunsLeft = todo.filter((k) => kinds(order[k] as Pair).includes('guns'));
+    if (sites.length > 0 && gunsLeft.length > 0 && sites.some((st) => !guns(lay).some((q) => q.x0 < st[1] && st[0] < q.x1))) todo = gunsLeft;
     if (todo.length === 0) {
       const done = finish(lay);
       if (!done) last = lay;

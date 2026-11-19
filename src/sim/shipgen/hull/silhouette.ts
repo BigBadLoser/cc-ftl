@@ -71,8 +71,8 @@ export interface Silhouette {
   length: number;
   /** The body's half-width per column, before the stern's flare, wings and pods: what an outline scales (the rest keeps its size in tiles). */
   body: number[];
-  /** Gun sites (with `drawSilhouette`'s `guns`): each blister's columns [x0, x1), a notch either side of it. */
-  sites?: [number, number][];
+  /** A gun battery (with `drawSilhouette`'s `guns`): how many sites, and the straight stretches it may stand on, best first. */
+  battery?: { guns: number; runs: [number, number][] };
 }
 
 const pick = (rng: Rng, r: Range): number => rng.int(r[0], r[1]);
@@ -147,31 +147,20 @@ const straight = (outer: number[], x0: number, x1: number, margin: number): bool
   return true;
 };
 
-/** A gun site: a notch, the blister a gun bay stands behind, a notch (silhouette columns, before scaling). */
-const NOTCH = 2, BLISTER = 5, SITE = 2 * NOTCH + BLISTER;
-
 /**
- * PROTOTYPE (#581): `n` gun sites on the widest straight stretches of the side, spread apart (the widest first). Returns
- * the sites' columns; the notches are cut at the outline's scale (`outlineShip`), so a blister is a gun bay's length.
+ * PROTOTYPE (#581): where a battery of `guns` gun sites may stand: the side's straight stretches clear of the stern by a
+ * drive's length, the widest first (the longer of a width first). The sites and their notches are cut at the outline's
+ * scale (`outlineShip`), so a blister is a gun bay's length.
  */
-function gunSites(n: number, outer: number[], bodyStart: number, sternFrom: number): [number, number][] {
-  // (Clear of the stern by a drive's length: the engines take it.)
-  const ok = (x0: number): boolean => x0 >= bodyStart && x0 + SITE <= sternFrom - 6 && straight(outer, x0, x0 + SITE, 1);
-  const widths = [...new Set(outer.slice(bodyStart, sternFrom))].sort((a, b) => b - a);
-  const taken: number[] = [];
-  // Widest first: each straight run of site starts holds as many sites as fit a tooth apart, spread evenly along it.
-  for (const wd of widths) {
-    const xs = Array.from({ length: sternFrom - bodyStart }, (_, k) => bodyStart + k).filter((x) => ok(x) && outer[x] === wd && taken.every((t) => Math.abs(t - x) >= SITE + 2));
-    for (let i = 0; i < xs.length && taken.length < n;) {
-      let j = i;
-      while (j + 1 < xs.length && xs[j + 1] === (xs[j] as number) + 1) j++;
-      const a = xs[i] as number, b = xs[j] as number, k = Math.min(n - taken.length, Math.floor((b - a) / (SITE + 2)) + 1);
-      for (let q = 0; q < k; q++) taken.push(k === 1 ? Math.floor((a + b) / 2) : Math.round(a + ((b - a) * q) / (k - 1)));
-      i = j + 1;
-    }
+function batteryRuns(outer: number[], bodyStart: number, sternFrom: number): [number, number][] {
+  const runs: [number, number][] = [];
+  for (let x = bodyStart; x < sternFrom - 6;) {
+    let e = x;
+    while (e < sternFrom - 6 && outer[e] === outer[x]) e++;
+    if (e - x >= 4) runs.push([x, e]);
+    x = e;
   }
-  taken.sort((a, b) => a - b);
-  return taken.map((x0) => [x0 + NOTCH, x0 + NOTCH + BLISTER]);
+  return runs.sort((p, q) => (outer[q[0]] as number) - (outer[p[0]] as number) || (q[1] - q[0]) - (p[1] - p[0]));
 }
 
 function addMounts(rng: Rng, p: Profile, outer: number[], top: number[], bodyStart: number, sternFrom: number, sites = false): void {
@@ -247,7 +236,7 @@ export function drawSilhouette(rng: Rng, p: Profile, guns?: number): Silhouette 
     }
   }
   smooth(top, 1, L);
-  const sites = guns !== undefined ? gunSites(guns, outer, bodyStart, sternFrom) : undefined;
+  const battery = guns !== undefined ? { guns, runs: batteryRuns(outer, bodyStart, sternFrom) } : undefined;
   const inner = Array<number>(L).fill(-1);
   if (p.split && has(rng, p.split)) {
     const f = rng.int(Math.round(p.split.at[0] * 100), Math.round(p.split.at[1] * 100)) / 100;
@@ -294,5 +283,5 @@ export function drawSilhouette(rng: Rng, p: Profile, guns?: number): Silhouette 
   const y0 = Math.min(...ys), y1 = Math.max(...ys);
   const w = Math.max(...used.map((r) => Math.max(r.lastIndexOf('#'), r.lastIndexOf('>')))) + 1;
   const bodyHalf = top.map((t, x) => (x < sternFrom ? t : (pre[x] as number)));
-  return { rows: used.slice(y0, y1 + 1).map((r) => r.slice(0, w)), axis: axis - y0, length: w, body: bodyHalf, ...(sites ? { sites } : {}) };
+  return { rows: used.slice(y0, y1 + 1).map((r) => r.slice(0, w)), axis: axis - y0, length: w, body: bodyHalf, ...(battery ? { battery } : {}) };
 }
