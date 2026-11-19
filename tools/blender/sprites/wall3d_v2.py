@@ -211,6 +211,9 @@ def wall_face(k, ax, plane, a, b, ends, zs, top, full):
               else T.posts(k, ax, plane, a, b, ends, zlt, zh, F, groove=False))
     for f0, f1 in fields:    # (the posts plain, on down to the
         _paint(k, ax, plane, f0, f1, zb, zh, 0.0, F, 2)                          # lip's top) ... the field
+        if POSTS == "none" and GAP and not NUDGE:
+            _gap(k, ax, plane, f0, f1, zb, zh)           # (a diagonal's gap between panels: stacked boxes)
+            continue
         if f1 - f0 < 0.3 or PLAIN or (T.OPEN and ax == "y" and f0 < T.OPEN[1] and f1 > T.OPEN[0]):
             continue
         w = f1 - f0
@@ -251,6 +254,36 @@ def wall_face(k, ax, plane, a, b, ends, zs, top, full):
         for zz in (zr - 0.07 - gap, zr - 0.07 - 2 * gap):  # back cut a px short at its right end ... the two lines
             _paint(k, ax, plane, _u((nc - nl) / 2, 3 * PAINT), _u((nc + nl) / 2, 3 * PAINT), zz - 0.026, zz,
                     3 * PAINT, F, 1)                                                            # evenly under it
+
+
+GAP = False                                     # a diagonal's gaps between panels get columns of stacked boxes
+
+
+def _gap(k, ax, plane, f0, f1, zb, zh):
+    """A gap between a diagonal's panels (square on): a dark recess the panels' height, a column of three stacked
+    boxes in it for every 14 px or so of its width, each box lit along its top, a short slot in the lowest."""
+    F, PAINT, PZ_ = "wall", T.PAINT, PZ
+    n0, n1 = round(_px(f0, PAINT)), round(_px(f1, PAINT))
+    q0, q1 = zb + 0.1 - 2 * PZ_, zh - 0.06 - 2 * PZ_            # (the panels' outline, top and foot)
+    _AX[0] = ax
+    nc = max(1, round((n1 - n0) / 14))
+    cw = (n1 - n0 - 2) // nc                                  # (each column's px, a px margin each side)
+    x = n0 + (n1 - n0 - nc * cw) // 2
+    row = 1 / W.ZART
+    for c in range(nc):
+        c0, c1 = x + c * cw + 1, x + (c + 1) * cw - 1
+        _paint(k, ax, plane, _u(c0, PAINT), _u(c1, PAINT), q0, q1, PAINT, F, 1, top=0.5)          # the recess
+        h = (q1 - q0 - 4 * row) / 3
+        for j in range(3):
+            z1 = q1 - row - j * (h + row)
+            z0 = z1 - h
+            _paint(k, ax, plane, _u(c0 + 1, 2 * PAINT), _u(c1 - 1, 2 * PAINT), z0, z1, 2 * PAINT, F, 2, top=0.5)
+            _paint(k, ax, plane, _u(c0 + 1, 3 * PAINT), _u(c1 - 1, 3 * PAINT), z1 - row, z1, 3 * PAINT, F, 3,
+                   foot=0.5, top=0.5)                                                              # its lit top
+            if j == 2:
+                m = (c0 + c1) // 2
+                _paint(k, ax, plane, _u(m - 2, 3 * PAINT), _u(m + 2, 3 * PAINT), z0 + 2 * row, z0 + 3 * row,
+                       3 * PAINT, F, 1, foot=0.5, top=0.5)                                         # a short slot
 
 
 def skirt(k, sp, ax, plane, a, b, fam, ends=None):
