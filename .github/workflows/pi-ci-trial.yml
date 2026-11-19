@@ -1,0 +1,32 @@
+name: Pi CI trial
+
+# TEMPORARY, never merged: times cc-ftl's CI (lint, typecheck, build, every test with the slow tier, as a ready PR runs it)
+# on the self-hosted `pi` runner, to judge moving CI off GitHub's machines (BigBadLoser/agent-harness#144). One job, no
+# shards: there is one runner. Runs on push to this branch only.
+on:
+  push:
+    branches: [tools/pi-ci-trial]
+
+jobs:
+  trial:
+    runs-on: [self-hosted, pi]
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: Memory sampler
+        run: |
+          nohup bash -c 'while true; do free -m | awk "/Mem:/{print \$3}" >> "$RUNNER_TEMP/mem.log"; sleep 5; done' >/dev/null 2>&1 &
+          free -m
+      - run: npm ci --no-audit --no-fund
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run build
+      - name: Test (full, slow tier included)
+        run: npx vitest run --passWithNoTests --reporter=dot
+      - name: Peak memory
+        if: always()
+        run: |
+          free -m
+          echo "peak used MB: $(sort -n "$RUNNER_TEMP/mem.log" | tail -1) of $(free -m | awk '/Mem:/{print $2}')"
