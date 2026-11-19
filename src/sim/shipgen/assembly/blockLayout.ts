@@ -50,6 +50,8 @@ function mirrorPairs(specs: RoomSpec[]): Pair[] {
 /** A room's least length along the band: a reactor lies along a wall its full length, others at least their short side. */
 const minLen = (r: RoomSpec): number => (r.role === 'reactor' ? r.w : Math.min(r.w, r.h));
 const areaOf = ([r]: Pair): number => r.w * r.h;
+/** A store pair for a stretch of band `len` long: floor no room was planned for. */
+const store = (len: number): Pair => [cargoSpec(Math.max(1, Math.floor(len / 2))), cargoSpec(Math.max(1, Math.floor(len / 2)))];
 
 /**
  * The splitter: pairs in order along a band's runs, each taking columns until its share of the band is met (the band's
@@ -66,22 +68,31 @@ function split(band: Band, pairs: readonly Pair[], vary: readonly number[], spar
   const tryShare = (share: number): Piece[] | null => {
     const out: Piece[] = [];
     let s = 0, x = band.segs[0]?.[0] ?? 0, first = out.length;
-    const close = (): void => { const last = out[out.length - 1]; if (last && out.length > first) last.x1 = (band.segs[s] as [number, number])[1]; };
+    // A run's end: what is left from `x` on, long enough for a room, is a store (an outer tier leaves it to the inner
+    // rooms); else the run's last room takes it. Then the next run.
+    const next = (): void => {
+      const last = out.length > first ? out[out.length - 1] : undefined, end = (band.segs[s] as [number, number])[1];
+      if (end - x >= MIN_DEPTH) { if (!sparse) out.push({ pair: store(end - x), x0: x, x1: end }); } else if (last) last.x1 = end;
+      s++; x = band.segs[s]?.[0] ?? 0; first = out.length;
+    };
     for (const [i, pair] of pairs.entries()) {
       const r = pair[0], len = minLen(r), goal = areaOf(pair) * share * (vary[i % vary.length] ?? 1);
-      // Too little of this run left for the room: the run's last room takes it, the room starts the next run.
-      while (s < band.segs.length && (band.segs[s] as [number, number])[1] - x < len) { if (!sparse && out.length === first) return null; close(); s++; x = band.segs[s]?.[0] ?? 0; first = out.length; }
-      if (s >= band.segs.length) return null;
-      const end = (band.segs[s] as [number, number])[1], x0 = x;
-      let a = 0, deep = 0;
-      for (; x < end && (a < goal || x - x0 < len || (x - x0) * ASPECT < deep); x++) { a += area(x); deep = Math.max(deep, area(x)); }
-      if (a < r.w * r.h) return null;
-      out.push({ pair, x0, x1: x });
-      x++;
+      // A room takes columns until its share is met, but no longer than three times its depth once it has its planned
+      // floor; one that a run cannot hold moves on to the next run.
+      for (;;) {
+        if (s >= band.segs.length) return null;
+        const end = (band.segs[s] as [number, number])[1], x0 = x;
+        let a = 0, deep = 0;
+        const long = (): boolean => a >= r.w * r.h && (x - x0) >= ASPECT * (a / Math.max(1, x - x0));
+        for (; x < end && ((a < goal && !long()) || x - x0 < len || (x - x0) * ASPECT < deep); x++) { a += area(x); deep = Math.max(deep, area(x)); }
+        if (a >= r.w * r.h && x - x0 >= len) { out.push({ pair, x0, x1: x }); x++; break; }
+        x = x0;
+        next();
+      }
     }
-    close();
+    if (s < band.segs.length && x < (band.segs[s] as [number, number])[1]) next(); else s++;
     // Runs of an inner band the rooms did not reach hold stores (no floor stands empty).
-    if (!sparse) for (const [a, b] of band.segs.slice(s + 1)) out.push({ pair: [cargoSpec(Math.max(1, Math.floor((b - a) / 2))), cargoSpec(Math.max(1, Math.floor((b - a) / 2)))], x0: a, x1: b });
+    if (!sparse) for (const [a, b] of band.segs.slice(s)) out.push({ pair: store(b - a), x0: a, x1: b });
     return out;
   };
   return tryShare(full) ?? tryShare((1 + full) / 2) ?? tryShare(1);

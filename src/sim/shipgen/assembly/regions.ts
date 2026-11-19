@@ -2,6 +2,7 @@ import type { Builder } from '../builder';
 import { letterOf } from '../canvas';
 import type { RoomSpec } from '../plan';
 import type { RoomRole } from '../types';
+import { addDoors } from './regionDoors';
 
 /**
  * A station floor as owner regions on a tile grid, and the one wall writer that turns them into tiles.
@@ -33,7 +34,7 @@ export interface Region {
   dept?: string;
 }
 
-interface Shape { x0: number; y0: number; x1: number; y1: number; n: number }
+export interface Shape { x0: number; y0: number; x1: number; y1: number; n: number }
 
 export class RegionGrid {
   readonly size: number;
@@ -307,7 +308,7 @@ export class RegionGrid {
       }
       cell[(y + half) * size + x + half] = wall ? '#' : '_';
     }
-    this.regions.forEach((rg, id) => { if (!rg.hall && rg.doors > 0) this.addDoors(cell, id, rg); });
+    this.regions.forEach((rg, id) => { const sh = this.shapes[id]; if (!rg.hall && rg.doors > 0 && sh) addDoors(cell, id, rg, sh, this); });
     for (const [x, y] of this.gates) {
       const k = this.idx(x, y);
       if (k >= 0 && cell[k] === '#') cell[k] = 'D';
@@ -414,29 +415,7 @@ export class RegionGrid {
     return out;
   }
 
-  /** Doors for one room: straight wall tiles with its floor on one side and an allowed region's floor opposite, spread along the frontage. */
-  private addDoors(cell: string[], id: number, rg: Region): void {
-    const { size, half } = this;
-    const c = (x: number, y: number): string => (this.idx(x, y) < 0 ? '.' : (cell[(y + half) * size + x + half] as string));
-    const floor = (x: number, y: number): number => (c(x, y) === '_' ? this.at(x, y) : -3);
-    const ok = (b: number): boolean => b >= 0 && b !== id && (rg.access ? rg.access.includes(b) : (this.regions[b] as Region).hall);
-    const cands: [number, number][] = [];
-    const sh = this.shapes[id];
-    if (!sh) return;
-    // Wall beside this room's floor lies within a tile of its painted extent.
-    const ya = Math.max(-half + 1, sh.y0 - 1), yb = Math.min(half - 2, sh.y1 + 1), xa = Math.max(-half + 1, sh.x0 - 1), xb = Math.min(half - 2, sh.x1 + 1);
-    for (let y = ya; y <= yb; y++) for (let x = xa; x <= xb; x++) {
-      if (c(x, y) !== '#') continue;
-      const n = floor(x, y - 1), s = floor(x, y + 1), e = floor(x + 1, y), w = floor(x - 1, y);
-      const alongX = c(x - 1, y) === '#' && c(x + 1, y) === '#', alongY = c(x, y - 1) === '#' && c(x, y + 1) === '#';
-      if ((alongX && ((n === id && ok(s)) || (s === id && ok(n)))) || (alongY && ((e === id && ok(w)) || (w === id && ok(e))))) cands.push([x, y]);
-    }
-    for (let k = 0; k < Math.min(rg.doors, cands.length); k++) {
-      // The middle of the frontage for one door; evenly spread for more.
-      const [x, y] = (rg.doorFirst ? cands.reduce((a, b) => (b[0] < a[0] || (b[0] === a[0] && b[1] < a[1]) ? b : a)) : cands[Math.floor(((k + 0.5) * cands.length) / Math.min(rg.doors, cands.length))]) as [number, number];
-      cell[(y + half) * size + x + half] = 'D';
-    }
-  }
+
 
   /**
    * Floor that cannot be walked to from the first hall, as [x, y, region] of one tile a stranded region: a room with no

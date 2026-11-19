@@ -3,7 +3,7 @@ import { Rng } from '../../rng';
 import { drawSilhouette, type Silhouette } from '../hull/silhouette';
 import { NAVY_PROFILES } from '../hull/navyProfiles';
 import { enginesShort, fitShell, seedOf } from '../generate';
-import { REACTOR_TIERS, planShip, type ShipPlan } from '../plan';
+import { ENGINE_TIERS, REACTOR_TIERS, planShip, type ShipPlan } from '../plan';
 import type { FactionDef, GenResult } from '../types';
 import { layoutBlocks, type Mask } from './blockLayout';
 import { navyRole, type NavyType } from './navyShip';
@@ -57,10 +57,14 @@ export function assembleOutline(
 ): GenResult {
   const rng = new Rng(seedOf(seed, n));
   const role = navyRole(f, type);
-  const planned = planShip(rng, f, role, depth, defs, extra);
+  // A drive short of thrust gets engines a tier up before it gets more of them (more need a deeper stern, so a bigger hull).
+  const engineUp = ENGINE_TIERS[ENGINE_TIERS.indexOf(planShip(new Rng(seedOf(seed, n)), f, role, depth, defs).kit.engine as (typeof ENGINE_TIERS)[number]) + 1];
+  const tierUp = extra > 0 && !!engineUp && !!defs[engineUp];
+  const planned = planShip(rng, f, role, depth, defs, tierUp ? extra - 1 : extra);
   // A reactor a tier up where the plan's is Mk I: the power the fit-out would otherwise squeeze into stores as extra reactors.
   const up = REACTOR_TIERS[Math.min(REACTOR_TIERS.length - 1, REACTOR_TIERS.indexOf(planned.kit.reactor as (typeof REACTOR_TIERS)[number]) + 1)] as string;
-  const plan: ShipPlan = planned.kit.reactor === REACTOR_TIERS[0] && defs[up] ? { ...planned, kit: { ...planned.kit, reactor: up } } : planned;
+  const kit = { ...planned.kit, ...(planned.kit.reactor === REACTOR_TIERS[0] && defs[up] ? { reactor: up } : {}), ...(tierUp ? { engine: engineUp } : {}) };
+  const plan: ShipPlan = { ...planned, kit };
   const profiles = NAVY_PROFILES[type] ?? [];
   const profile = rng.pick(profiles);
   const sil = drawSilhouette(rng, profile);
