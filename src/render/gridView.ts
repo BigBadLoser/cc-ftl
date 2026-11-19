@@ -19,7 +19,7 @@ import { addStatic } from "./sprites";
 import { haloTex } from "./haloTex";
 import { beamIds, DEFAULT_BEAM_LOOK, type BeamLook } from "./beamArt";
 import { createChunkViews, regionTiles, type ChunkRef } from "./regionTiles";
-import { artKind, doorShownOpen, floorChain, ghostVertsIn, HULL_REACH, HullSide, hullSide, replacesFloor, wallPieces, type CutawayMode } from "./tiles";
+import { artKind, doorShownOpen, floorChain, ghostVertsIn, HULL_REACH, HullSide, hullSide, replacesFloor, wallLevel, wallPieces, type CutawayMode } from "./tiles";
 import { CarpetSprite } from "./carpetPaint";
 import { DRAWN_MARKINGS, markPieces, WALKWAY_PAINT } from "./deckMarks";
 import { HullSprite } from "./hullPaint";
@@ -450,23 +450,28 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
     }
     // A wall tile shows its cut hull where its ghost replaces the floor: the near hull, and the far hull with the walls down.
     if (k !== Struct.Floor && !replacesFloor(wallAt, x, y, mode)) return false;
-    if (look === "station") {
+    // With the walls down a ground base's hull is cut as a ship's is (the same cut top, seam and ghosts), only no belly
+    // under the deck: it stands on the ground.
+    const station = look === "station";
+    const down = wallLevel(mode) === "low";
+    if (station && !down) {
       // A ground base's near hull: the station's foot (no belly), the berm against it.
       const foot = lowId(h, x, y, has);
       if (foot) put(foot, z + 0.001, L.sorted, solid);
       return berm() || !!foot;
     }
+    const cutLook: HullLook = station ? "ship" : look;
     const heaped = berm();
-    const b = bellyIds(h, x, y, has, k !== Struct.Floor, look);
+    const b = bellyIds(h, x, y, has, k !== Struct.Floor, cutLook);
     if (!b) return heaped;
-    if (b.under) put(b.under, z, L.under, solid);
+    if (b.under && !station) put(b.under, z, L.under, solid);
     // Behind the thruster block the engine's hull sprite carries the wall's lower section: the belly's cut top would cover it.
     // Beside a camera-facing airlock's door its hull sprite carries the outer half of the cut hull (the inner half is
     // inside its full-height row and would show through the row's end cut).
     if (b.low && !blockHull.has(y * width + x) && !lockRow.has(y * width + x) && !tube.row.has(y * width + x)) {
       put(b.low, z + 0.001, L.sorted, solid);
       // The near hull's ghost over its cut top: an upright on its outer edge (unpainted, unlit).
-      const g = nearGhostId(h, x, y, has, k !== Struct.Floor, look);
+      const g = nearGhostId(h, x, y, has, k !== Struct.Floor, cutLook);
       const gs = g ? atlas.stat(g) : undefined;
       if (gs) v.owned.push(...addStatic(L, gs, x, y, z + 0.002, L.sorted));
     }
