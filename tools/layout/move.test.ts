@@ -198,4 +198,29 @@ describe('review fixes', () => {
     lab.undo();
     expect(lab.drawRoom({ x: 20, y: 2, w: 3, h: 3 }, 'cabin')).not.toBe(split);
   });
+  it('a piece set down with open tiles over part of a module grows the box round it, so the next nudge carries the module', () => {
+    const l = start();
+    const cells = l.cells.map((r, y) => (y === 6 ? `${r.slice(0, 13)}#${r.slice(14)}` : r)); // a lone wall out in space
+    lab.hist = { past: [], present: { ...l, cells }, future: [] };
+    move.box = { x: 13, y: 6, w: 2, h: 2 };
+    move.nudge(-8, 1); // the wall lands at (5, 7); the open tile beside it over the bed's lower half
+    expect(move.box).toEqual({ x: 5, y: 6, w: 2, h: 3 });
+    move.nudge(0, -1);
+    expect((lab.layout as Layout).modules).toHaveLength(1);
+    expect((lab.layout as Layout).modules[0]).toMatchObject({ x: 6, y: 5 });
+  });
+  it('a turn or paste that would not fit on the grid does nothing', () => {
+    start();
+    const { layout } = addRoom(blankLayout(30, 20), { x: 1, y: 1, w: 25, h: 2 }, 'cargo');
+    lab.hist = { past: [], present: layout, future: [] };
+    move.box = { x: 0, y: 0, w: 27, h: 4 };
+    move.turn('cw');
+    expect(lab.layout).toBe(layout);
+    expect(lab.canUndo).toBe(false);
+    expect(move.copy()).toBe(true);
+    lab.hist = { past: [], present: blankLayout(20, 20), future: [] };
+    move.paste();
+    expect(move.float).toBeNull();
+    expect(lab.canUndo).toBe(false);
+  });
 });

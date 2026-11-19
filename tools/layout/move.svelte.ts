@@ -69,7 +69,7 @@ class Move {
     const f = this.float;
     if (!f) return;
     const at = fitPiece(f.base, f.piece, t[0] - f.grab[0], t[1] - f.grab[1]);
-    if (at[0] === f.at[0] && at[1] === f.at[1]) return;
+    if (!at || at[0] === f.at[0] && at[1] === f.at[1]) return;
     this.place({ ...f, at });
   }
   private place(f: Float): void {
@@ -87,6 +87,7 @@ class Move {
     lab.step(() => s.layout);
     lab.marks = s.marks;
     lab.end();
+    if (this.box) this.settle(this.box);
   }
   /** Esc: put the design back as it was before the piece was picked up. */
   cancelFloat(): void {
@@ -103,6 +104,8 @@ class Move {
     lab.edit(() => s.layout);
     lab.marks = s.marks;
   }
+  /** The box after a placement: grown round any module or window it now cuts (the piece's open tiles can land over one, which stays), so the next extract and lift take whole things. */
+  private settle(b: Rect): void { const l = lab.layout; this.box = l ? wholeRect(l, b) : b; }
   private atHome(f: Float): boolean { return !!f.home && !f.turned && f.at[0] === f.home.x && f.at[1] === f.home.y; }
   private stamped(f: Float) { return stamp(f.base, f.piece, f.at[0], f.at[1], f.keep, lab.marks); }
 
@@ -113,9 +116,9 @@ class Move {
     if (!l || !b || this.float || lab.compare) return;
     const piece = extract(l, b), base = lift(l, b);
     const at = fitPiece(base, piece, b.x + dx, b.y + dy);
-    if (at[0] === b.x && at[1] === b.y) return;
+    if (!at || (at[0] === b.x && at[1] === b.y)) return;
     this.commit(base, piece, at);
-    this.box = { ...b, x: at[0], y: at[1] };
+    this.settle({ ...b, x: at[0], y: at[1] });
   }
   /** R / Shift+R turn, H / Shift+H mirror: the piece in flight, else the box's contents in place (about its centre). */
   turn(t: Turn): void {
@@ -125,14 +128,16 @@ class Move {
       const piece = turnPiece(f.piece, t);
       const c: Tile = [f.at[0] + f.grab[0], f.at[1] + f.grab[1]];
       const grab: Tile = [piece.w >> 1, piece.h >> 1];
-      this.place({ ...f, piece, grab, turned: true, at: fitPiece(f.base, piece, c[0] - grab[0], c[1] - grab[1]) });
+      const at = fitPiece(f.base, piece, c[0] - grab[0], c[1] - grab[1]);
+      if (at) this.place({ ...f, piece, grab, turned: true, at }); // a turn that would not fit on the grid does nothing
       return;
     }
     if (!l || !b) return;
     const piece = turnPiece(extract(l, b), t), base = lift(l, b);
     const at = fitPiece(base, piece, b.x + ((b.w - piece.w) >> 1), b.y + ((b.h - piece.h) >> 1));
+    if (!at) return;
     this.commit(base, piece, at);
-    this.box = { x: at[0], y: at[1], w: piece.w, h: piece.h };
+    this.settle({ x: at[0], y: at[1], w: piece.w, h: piece.h });
   }
   /** Delete: clear the box. */
   clear(): void {
@@ -164,7 +169,7 @@ class Move {
     if (!p || lab.compare) return;
     this.cancelFloat(); // a piece still in flight goes first: the new one starts from the design without its preview
     const l = lab.layout;
-    if (!l) return;
+    if (!l || !fitPiece(l, p, 0, 0)) return; // bigger than this grid: it would be cropped
     lab.setTool('move');
     const t = this.pointer ?? [Math.round(lab.view.cx), Math.round(lab.view.cy)];
     lab.begin();

@@ -75,6 +75,7 @@ describe('region pieces', () => {
     const l = ship();
     const p = extract(l, box);
     expect(fitPiece(l, p, 27, -3)).toEqual([22, 0]);
+    expect(fitPiece({ ...l, width: p.w - 1 }, p, 0, 0)).toBeNull(); // bigger than the grid: no place that does not crop it
     expect(clipRect(l, { x: -2, y: 18, w: 5, h: 5 })).toEqual({ x: 0, y: 18, w: 3, h: 2 });
     expect(isEmpty(extract(l, { x: 20, y: 0, w: 3, h: 3 }))).toBe(true);
     expect(isEmpty(p)).toBe(false);

@@ -190,8 +190,9 @@ export function stamp(l: Layout, p: Piece, x: number, y: number, keep: boolean, 
   return { layout: out, marks: { module: mMark, room: rMark } };
 }
 
-/** The top-left a piece is stamped at, kept on the grid. */
-export function fitPiece(l: Layout, p: Piece, x: number, y: number): Tile {
+/** The top-left a piece is stamped at, kept on the grid; null when the piece is bigger than the grid (it would be cropped). */
+export function fitPiece(l: Layout, p: Piece, x: number, y: number): Tile | null {
+  if (p.w > l.width || p.h > l.height) return null;
   return [Math.max(0, Math.min(l.width - p.w, x)), Math.max(0, Math.min(l.height - p.h, y))];
 }
 
