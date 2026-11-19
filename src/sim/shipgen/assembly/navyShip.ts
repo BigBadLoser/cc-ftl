@@ -28,15 +28,26 @@ interface Shape {
   family: string;
   /** Shuttle bays, where the type's size calls for one (over its hull family's). */
   bays?: number;
+  /** Rooms a ship this size has room for beyond the plan's (`SHIP_ROOMS`); a pantry comes off the mess. */
+  rooms?: readonly ShipRoom[];
   bonus?: Partial<Record<'weapons' | 'engines' | 'crew' | 'crates' | 'shields' | 'pointDefense' | 'reactors', number>>;
 }
+
+export type ShipRoom = 'medbay' | 'brig' | 'farm' | 'pantry';
+/** The bigger ships' extra rooms: a med bay with its trauma room behind, a brig round a stasis wheel, a small farm, the mess's pantry. */
+export const SHIP_ROOMS: Record<ShipRoom, RoomSpec> = {
+  medbay: { role: 'medbay', mods: ['module.med_bed', 'module.med_bed'], w: 5, h: 4, annex: { role: 'medbay', mods: ['module.recovery', 'module.med_bed'], w: 5, h: 4 } },
+  brig: { role: 'armoury', mods: ['module.stasis_wheel'], w: 7, h: 6 },
+  farm: { role: 'farm', mods: Array<string>(4).fill('module.hydroponics'), w: 4, h: 5 },
+  pantry: { role: 'cargo', dept: 'commons', mods: ['module.storage_rack', 'module.storage_rack'], w: 4, h: 3 },
+};
 
 export const NAVY_TYPES: Record<NavyType, Shape> = {
   corvette: { centre: 'none', bow: 'bridge', guns: 'forward', family: 'corvette', bonus: { shields: 1 } },
   frigate: { centre: 'none', bow: 'bridge', guns: 'spread', family: 'frigate' },
   destroyer: { centre: 'none', bow: 'battery', guns: 'forward', family: 'frigate', bonus: { weapons: 4, reactors: 1, engines: 1, crew: -1, crates: -1 } },
-  cruiser: { centre: 'citadel', bow: 'bridge', guns: 'spread', family: 'cruiser', bays: 1, bonus: { weapons: 3, reactors: 2 } },
-  carrier: { centre: 'deck', bow: 'bridge', guns: 'spread', family: 'carrier' },
+  cruiser: { centre: 'citadel', bow: 'bridge', guns: 'spread', family: 'cruiser', bays: 1, rooms: ['medbay', 'brig', 'farm', 'pantry'], bonus: { weapons: 3, reactors: 2 } },
+  carrier: { centre: 'deck', bow: 'bridge', guns: 'spread', family: 'carrier', rooms: ['medbay', 'brig', 'farm', 'pantry'] },
 };
 
 /** Floor depth of an ordinary strip room. */
