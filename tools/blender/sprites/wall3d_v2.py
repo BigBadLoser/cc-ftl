@@ -362,8 +362,14 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
         x = su(e0)
         for f0, f1 in cuts + [(su(e1), None)]:
             poly = clip([(x, hz), (f0, hz), (f0, hz + pdd), (x, hz + pdd)])
+            if len(poly) >= 3:                  # (a px on past a corner's mitre: over the slanted seam's end, no
+                lo_u, hi_u = min(p[0] for p in poly), max(p[0] for p in poly)   # break where the two meet)
+                cut0, cut1 = lo_u > x + 1e-6, hi_u < f0 - 1e-6       # (an end the mitre clipped)
+                poly = [(p[0] - (lw if cut0 and p[0] - lo_u < 1e-6 else 0.0)
+                         + (lw if cut1 and hi_u - p[0] < 1e-6 else 0.0), p[1]) for p in poly]
             if f0 - x > 1e-6 and len(poly) >= 3:
-                T.plate(k, poly, pt, nrm, 0.0, rise + T.PAINT, fam, 1, base=rise, fixed=DLINE)
+                T.plate(k, poly, pt, nrm, 0.0, rise + 6 * T.PAINT, fam, 1, base=rise, fixed=DLINE)   # (proud
+                #   enough to stay over the slanted ramp past the mitre)
             x = f1
 
 
