@@ -1,32 +1,31 @@
 name: Pi CI trial
 
-# TEMPORARY, never merged: times cc-ftl's CI (lint, typecheck, build, every test with the slow tier, as a ready PR runs it)
-# on the self-hosted `pi` runner, to judge moving CI off GitHub's machines (BigBadLoser/agent-harness#144). One job, no
-# shards: there is one runner. Runs on push to this branch only.
+# TEMPORARY, never merged: times cc-ftl's CI on self-hosted runners, to judge moving CI off GitHub's machines
+# (BigBadLoser/agent-harness#144). Runs on push to this branch only.
+# This round: `affected` mode (the fast tests a PR's change can reach, as PR_TESTS: affected runs them) for three real
+# PRs of different sizes, each replayed at its merge commit on the Orange Pi.
 on:
   push:
     branches: [tools/pi-ci-trial]
 
 jobs:
-  trial:
+  affected:
     runs-on: [self-hosted, pi]
-    timeout-minutes: 240
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
       - uses: actions/setup-node@v4
         with: { node-version: 22 }
-      - name: Memory sampler
+      - name: Replay three PRs in affected mode
         run: |
-          nohup bash -c 'while true; do free -m | awk "/Mem:/{print \$3}" >> "$RUNNER_TEMP/mem.log"; sleep 5; done' >/dev/null 2>&1 &
-          free -m
-      - run: npm ci --no-audit --no-fund
-      - run: npm run lint
-      - run: npm run typecheck
-      - run: npm run build
-      - name: Test (full, slow tier included)
-        run: npx vitest run --passWithNoTests --reporter=dot
-      - name: Peak memory
-        if: always()
-        run: |
-          free -m
-          echo "peak used MB: $(sort -n "$RUNNER_TEMP/mem.log" | tail -1) of $(free -m | awk '/Mem:/{print $2}')"
+          # merge commit: #568 NPC engine capacity (sim feature), #570 gas solver (sim perf), #576 shipgen speed
+          for m in ab4706334 4d26efbbf 701b66b79; do
+            git checkout -q --detach "$m"
+            npm ci --no-audit --no-fund --loglevel=error >/dev/null
+            start=$(date +%s)
+            VITEST_FAST=1 npx vitest run --changed "$m^1" --passWithNoTests --reporter=dot > "$RUNNER_TEMP/v.log" 2>&1 || echo "FAILED"
+            end=$(date +%s)
+            files=$(grep -E "Test Files" "$RUNNER_TEMP/v.log" | tail -1)
+            echo "RESULT $m: $((end - start))s | $files"
+          done
