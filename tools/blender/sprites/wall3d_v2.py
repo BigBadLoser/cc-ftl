@@ -20,7 +20,7 @@ LIP_D, LIP_H = PX, 3 * PZ           # the lip at the face's foot: its depth (2 p
 MID_DROP = 3 * PZ                   # the middle block's top: its front edge this far under its back
 SHELF = 4 / 32                      # the ramp's top a flat step this deep against the wall (4 px)
 POSTS = "tile"  # a face's posts while a piece builds: "tile" (at each tile edge), "none" (a diagonal wall's fill),
-#   "all" (its join: one post the face's length); either of the last two with no lip or rail seams
+#   "all" (its join: one post the face's length); either of the last two with no lip or rail seams, nor a ramp panel
 PLAIN = False   # every field plain (no panel) while a piece builds: a diagonal wall's fill and joins
 NUDGE = True    # the px nudges that centre a face's parts between its posts on screen (_nudge); off for a face seen
 #   square on (a diagonal wall), where depth moves nothing sideways
@@ -305,7 +305,7 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
             T.plate(k, poly, pt, nrm, 0.0, rise + T.PAINT, fam, 5, base=rise)
     for u0, u1, field in segs:
         poly = clip([(u0 + g, d0), (u1 - g, d0), (u1 - g, d1), (u0 + g, d1)])
-        if len(poly) >= 3 and field and u1 - u0 >= 0.36 and T.style().skirt == "panel":
+        if len(poly) >= 3 and field and u1 - u0 >= 0.36 and T.style().skirt == "panel" and POSTS == "tile":
             panel(k, pt, nrm, clip, u0, u1, a, b, off, g, d0, run_, ft, fam, rise)
 
 
