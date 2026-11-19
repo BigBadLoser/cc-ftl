@@ -430,10 +430,6 @@ class Lab {
     this.view = view;
     return done;
   }
-  async listCases(): Promise<string[]> {
-    const res = await fetch('/__layout/cases');
-    return res.ok ? ((await res.json()) as string[]) : [];
-  }
   async loadCaseNamed(slug: string): Promise<void> {
     const res = await fetch(`/__layout/cases/${slug}`);
     if (!res.ok) throw new Error(`no case ${slug}`);
