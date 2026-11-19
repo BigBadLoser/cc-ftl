@@ -94,7 +94,8 @@ export function tablesClear(c: Ctx, most: number, least: number, lay: (m: number
 export function laid(c: Ctx, pieces: readonly Piece[]): Piece[] {
   const clear = doorways(c);
   const tiles = (p: Piece): { x: number; y: number }[] => { const d = c.defs[p.def]; return d ? footprintTiles(d, p.x, p.y, p.rot) : [{ x: p.x, y: p.y }]; };
-  let out = pieces.filter((p) => tiles(p).every((t) => !clear.has(key(t.x, t.y))));
+  // Life support only where the plan put it (a ship's stands in its plant room): an arrangement's own unit goes when the room asked for none.
+  let out = pieces.filter((p) => tiles(p).every((t) => !clear.has(key(t.x, t.y))) && (p.def !== LS || c.need.includes(LS)));
   // A pair of galleys at most; its tables (`messTables`), those nearest the galleys (the dining end).
   const galleys = out.filter((p) => p.def === G).slice(0, 2), n = messTables(c), planned = Math.max(1, count(c.need, T));
   const [cx, cy] = galleys.length > 0 ? [galleys.reduce((t, p) => t + p.x, 0) / galleys.length, galleys.reduce((t, p) => t + p.y, 0) / galleys.length] : [(c.w - 1) / 2, (c.h - 1) / 2];
