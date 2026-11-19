@@ -23,7 +23,8 @@ concurrency:
 jobs:
   report:
     runs-on: [self-hosted, npu]
-    timeout-minutes: 30
+    # The first run embeds every function (the cache is empty, and jscpd saves it only at the end); later runs take seconds.
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
       # No `cache: npm`: the runner keeps ~/.npm between runs, and jscpd keeps its embedding cache by checkout path.
