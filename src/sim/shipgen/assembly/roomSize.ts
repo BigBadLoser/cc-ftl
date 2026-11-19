@@ -44,10 +44,15 @@ export function fillerSpec(kind: Filler, area: number): RoomSpec {
  * workshop on the corridor with a hold behind it, opening through it (cargo's access rule).
  */
 export function fillerFor(left: Filler[], area: number, deep: number, behind: boolean): RoomSpec {
+  // A hold never opens through another hold: a deep leftover is a workshop with a hold behind it, else one hold.
   if (area > FILL_MAX && behind) {
-    const k = left.indexOf('workshop'), kind: Filler = k >= 0 ? (left.splice(k, 1)[0] as Filler) : 'hold';
+    const k = left.indexOf('workshop');
+    if (k < 0) return fillerSpec('hold', area);
+    left.splice(k, 1);
     const front = Math.round(area / 2);
-    return { ...fillerSpec(kind, front), annex: fillerSpec('hold', area - front) };
+    return { ...fillerSpec('workshop', front), annex: fillerSpec('hold', area - front) };
   }
-  return fillerSpec(area >= 12 && deep >= 3 ? (left.shift() ?? 'hold') : 'hold', area);
+  // The lounge takes a larger leftover (the crew's commons), the rest in turn.
+  const k = area < 12 || deep < 3 ? -1 : area >= 24 && left.includes('lounge') ? left.indexOf('lounge') : left.findIndex((f) => f !== 'lounge');
+  return fillerSpec(k >= 0 ? (left.splice(k, 1)[0] as Filler) : 'hold', area);
 }
