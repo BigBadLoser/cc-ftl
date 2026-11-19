@@ -386,6 +386,8 @@ def panel(k, pt, nrm, clip, u0, u1, a, b, off, g, d0, run_, ft, fam, rise):
               (fu1 - LINE, fu1, fd0, fd1)):
         T.plate(k, rect(q), pt, nrm, 0.0, rise + PAINT, fam, 1, base=rise, fixed=None if NUDGE else DLINE)
     iu0, iu1 = su(u0 + im) + LINE, su(u1 - im) - LINE   # the light plate (a px in at its top and sides, a px down)
+    if not NUDGE:
+        iu0, iu1 = iu0 - LINE, iu1 + LINE       # (square on: a px wider each side)
     id0, id1 = sd(0.3 * run_ + dn + 2 * pd), sd(0.52 * run_ + dn + pd)
     if T.VARIANT[1]:                                # (a straight run's ramp design: its own drawing in the frame)
         from . import wall3d_variants as V
