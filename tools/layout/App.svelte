@@ -4,8 +4,6 @@
 	import Undo from '@lucide/svelte/icons/undo-2';
 	import GitCompare from '@lucide/svelte/icons/git-compare';
 	import Maximize from '@lucide/svelte/icons/maximize';
-	import PopOut from '@lucide/svelte/icons/picture-in-picture-2';
-	import { popOut } from './popout.svelte';
 	import RotateCcw from '@lucide/svelte/icons/rotate-ccw';
 	import { Badge } from '$lib/components/ui/badge/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
@@ -35,8 +33,8 @@
 		lab.view = { cx: v[0] as number, cy: v[1] as number, zoom: levels[Math.min(levels.length - 1, v[2] as number)] as number };
 	};
 	if (q.has('case')) void lab.loadCaseNamed(q.get('case') as string).then(() => setTimeout(at, 1500));
-	else if (q.has('station') || q.has('faction') || q.has('starter')) {
-		const kind = q.has('station') ? 'station' : q.has('faction') ? 'faction' : 'starter';
+	else if (q.has('station') || q.has('outpost') || q.has('faction') || q.has('starter')) {
+		const kind = q.has('station') ? 'station' : q.has('outpost') ? 'outpost' : q.has('faction') ? 'faction' : 'starter';
 		lab.import({ ...lab.source, kind, id: q.get(kind) as string, size: q.get('size') ?? 'station', layout: q.get('layout') ?? '', family: q.get('family') ?? '', seed: Number(q.get('seed') ?? 1), depth: Number(q.get('depth') ?? 4) });
 	}
 </script>
@@ -63,7 +61,6 @@
 				<Popover.Content align="end" class="w-auto"><SourcePicker done={() => (open = false)} /></Popover.Content>
 			</Popover.Root>
 			<SaveCase />
-			<Button variant="outline" size="sm" disabled={!lab.design} onclick={popOut} title="Open the preview in a window of its own (a second monitor)"><PopOut /> Pop out preview</Button>
 			<Button variant="ghost" size="icon-sm" aria-label="Undo" disabled={!lab.canUndo} onclick={() => lab.undo()}><Undo /></Button>
 			<Button variant="ghost" size="icon-sm" aria-label="Redo" disabled={!lab.canRedo} onclick={() => lab.redo()}><Redo /></Button>
 			<Tooltip.Root>
