@@ -8,6 +8,9 @@ on:
   schedule:
     - cron: '23 8 * * *'
   workflow_dispatch:
+  # TEMPORARY: trial run from this branch before the workflow is on main. Remove before the PR.
+  push:
+    branches: [tools/semantic-nightly-569]
 
 permissions:
   contents: read
