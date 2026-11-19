@@ -97,8 +97,10 @@ for _s in ("s", "e"):
     for _lv, _pre in PRE.items():
         for _c in END_CORNERS[_s]:
             _cs = f".c{_c}" if _c else ""
+            _end = (lambda s=_s, lv=_lv, c=_c: end_face("wall", s, lv, c))
             SPRITES.append((f"tile.wall.{_pre}end.{_s}{_cs}", (1, 1), "block",
-                            lambda s=_s, lv=_lv, c=_c: end_face("wall", s, lv, c)))
+                            _plain(_end) if _lv == "low" else _end))   # (walls down: traced from the wall's piece,
+            #   so built in its look: wall3d_end_low)
     for _c in END_CORNERS[_s]:                      # the far hull's end over tile.wall.full.end.* (wall3d.hull_cap_end)
         SPRITES.append((f"tile.hull.cap.end.{_s}{f'.c{_c}' if _c else ''}", (1, 1), "block",
                         lambda s=_s, c=_c: hull_cap_end(s, c)))

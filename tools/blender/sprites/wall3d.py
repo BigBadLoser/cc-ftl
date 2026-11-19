@@ -763,6 +763,9 @@ def end_face(fam, side, level="up", corners=0):
     walls.end_face does) left the floor showing through the wall's open end. It takes in the raised frame on the
     wall's visible face: one smooth face with a lit lip under the cap and a dark outline round its silhouette, down
     the wall's edges and on along the slope of the skirts' cut sections (in the plates' tone)."""
+    if fam == "wall" and level == "low":     # (walls down: the near hull cut flush with the deck shows it all)
+        from .wall3d_end_low import low_end
+        return low_end(side, corners)
     t, top, zs = W.profile(fam, level)
     run_ = W.skirt_run()
     hi = W.wall_back() + W.TW
