@@ -431,12 +431,24 @@ export function layoutBlocks(plan: ShipPlan, m: Mask, type: NavyType, vary: read
     // The side that is no cabin block is one room the row's length.
     const whole: (number | undefined)[] = [undefined, undefined];
     const fm = [r, sr].map((h) => (h.fill ? fillCols(x0, x1, (tx) => (capped.has(tx) ? Math.min(inner.hi(tx), di) : inner.hi(tx))) : null));
+    // A room run out to the hull past its cap, on a cross corridor: cut along its depth, the far part opening onto that
+    // corridor and a filler taking the rest (guns keep the hull side, a filler on the spine; others the spine side).
+    const cr = crossAt({ x0, x1 });
+    let dTwo = Infinity, f2 = 0;
+    for (let tx = x0; tx < x1; tx++) { dTwo = Math.min(dTwo, inner.hi(tx)); f2 += inner.hi(tx); }
+    const two = [r, sr].map((h, side) => {
+      if (cr < 0 || k !== 1 || h.annex || h.fill || h.block || capped.size > 0 || dTwo < 2 * MIN_DEPTH + 1 || f2 <= 1.15 * maxArea(h)) return null;
+      const len = x1 - x0, keep = Math.min(dTwo - MIN_DEPTH - 1, Math.max(MIN_DEPTH, Math.ceil(maxArea(h) / len))), out = roomKind(h) === 'guns';
+      const via = [cr === dockAt ? docks[side] as number : hall], filler = fillerFor(fillsLeft, f2 - (keep + 1) * len, dTwo - keep - 1, false);
+      const room = g.room(h.role, { spec: h, ...(out ? { access: via } : {}) }), fid = g.room(filler.role, { spec: filler, ...(out ? {} : { access: via }) });
+      return { front: out ? fid : room, back: out ? room : fid, rows: out ? dTwo - keep - 2 : keep - 1 };
+    });
     for (let c = 0; c < k; c++) {
       const c0 = x0 + Math.round(((x1 - x0 + 1) * c) / k), c1 = x0 + Math.round(((x1 - x0 + 1) * (c + 1)) / k) - 1;
       // A cabin block too shallow for two rows of cabins: a row of cabins on the spine, its beds shared out.
       const part = (spec: RoomSpec): RoomSpec => (!spec.block ? spec
         : { ...spec, mods: [...spec.mods.filter((_, j) => j % k === c), 'module.storage_locker'], w: c1 - c0, cabin: true, block: false });
-      const one = (spec: RoomSpec, side: 0 | 1): number => (spec.fill ? (fm[side]?.get(c0) ?? hall) : spec.block ? g.room(spec.role, { spec: part(spec) }) : (whole[side] ??= g.room(spec.role, { spec })));
+      const one = (spec: RoomSpec, side: 0 | 1): number => (two[side] ? (two[side]?.front as number) : spec.fill ? (fm[side]?.get(c0) ?? hall) : spec.block ? g.room(spec.role, { spec: part(spec) }) : (whole[side] ??= g.room(spec.role, { spec })));
       const n = one(r, 0), s = one(sr, 1);
       for (let tx = c0; tx < c1; tx++) innerIds.set(tx, [n, s]);
       // An annex (a trauma room, a pantry) stands behind its host, the host keeping the corridor rows, a wall row
@@ -455,6 +467,8 @@ export function layoutBlocks(plan: ShipPlan, m: Mask, type: NavyType, vary: read
           const annex = ids[side] as number, rows = hostRows(h), d = (y: number): number => sign * y;
           const own = fm[side];
           if (own) { const f = own.get(tx); if (f !== undefined) paint(f, tx, tx + 1, (y) => d(y) >= BAND && d(y) <= deep); return; }
+          const t = two[side];
+          if (t) { paint(t.front, tx, tx + 1, (y) => d(y) >= BAND && d(y) <= BAND + t.rows); paint(t.back, tx, tx + 1, (y) => d(y) >= BAND + t.rows + 2); return; }
           paint(tx < annexAt(h) ? id : annex, tx, tx + 1, (y) => d(y) >= BAND && d(y) <= Math.min(deep, BAND + rows));
           if (rows < Infinity) paint(annex, tx, tx + 1, (y) => d(y) >= BAND + rows + 2 && d(y) <= deep);
         });
