@@ -48,31 +48,41 @@ def _pass(build, tint, seam):
     return run
 
 
-def _items(sid, kind, build, tint=None, seams=False):
-    """The piece's item and its mask's ([] if it is empty; no mask without `tint`)."""
+def _items(sid, kind, build, tint=None, seams=False, own=None):
+    """The piece's item and its mask's ([] if it is empty; no mask without `tint`), and with `own` (palette names) a
+    layer `<sid>.own` of just those tones' px, which the renderer draws unpainted over the painted piece (the cut
+    hull's blue seam keeps its blue under any armour paint)."""
     from . import env_build
     r = _render(sid, kind, build)
     if r is None:
         return []
     it = env_build.crop_item(sid, (1, 1), *r)
-    if it is None or tint is None:
-        return [it] if it else []
-    m = _white(_render(sid, kind, _pass(build, tint, False)))
-    if m is not None and seams:
-        s = _white(_render(sid, kind, _pass(build, None, True)))
-        if s is not None and s.shape == m.shape:
-            m &= ~s
+    if it is None:
+        return []
+    out = [it]
+    if tint is not None:
+        m = _white(_render(sid, kind, _pass(build, tint, False)))
+        if m is not None and seams:
+            s = _white(_render(sid, kind, _pass(build, None, True)))
+            if s is not None and s.shape == m.shape:
+                m &= ~s
+        out += _layer(sid + ".tint", m, r)
+    if own:
+        out += _layer(sid + ".own", _white(_render(sid, kind, _pass(build, set(own), False))), r)
+    return out
+
+
+def _layer(lid, m, r):
+    """The render r's px under mask m as an item of its own ([] if none)."""
     if m is None or m.shape != r[1].shape or not (m := m & r[1]).any():
-        return [it]
+        return []
     ys, xs = np.where(m)
     y0, y1, x0, x1 = ys.min(), ys.max() + 1, xs.min(), xs.max() + 1
     rgba = np.zeros((y1 - y0, x1 - x0, 4), np.uint8)
     keep = m[y0:y1, x0:x1]
     rgba[..., :3][keep] = r[0][y0:y1, x0:x1][keep]
     rgba[..., 3][keep] = 255
-    mask = {"id": sid + ".tint", "fp": (1, 1), "rgba": rgba, "g": np.zeros_like(rgba), "ax": r[3] - x0,
-            "ay": r[4] - y0}
-    return [it, mask]
+    return [{"id": lid, "fp": (1, 1), "rgba": rgba, "g": np.zeros_like(rgba), "ax": r[3] - x0, "ay": r[4] - y0}]
 
 
 def _variant(fn, tr):
@@ -92,7 +102,8 @@ def _belly(k, layer):
     out, plain = [], None
     for lk in LOOKS:
         sid = f"tile.hull.belly.{layer}.{HO.name(k)}" + ("" if lk == LOOKS[0] else f".l{lk}")
-        items = _items(sid, "wide", lambda lk=lk: B.wide(k, B.FAR_LOW, lv, look=lk, top=B.FAR_LOW), B.TINT, False)
+        items = _items(sid, "wide", lambda lk=lk: B.wide(k, B.FAR_LOW, lv, look=lk, top=B.FAR_LOW), B.TINT, False,
+                       own=(B.FAR_SEAM[2],) if lv == "over" else None)
         if not items:
             break
         if plain is None:

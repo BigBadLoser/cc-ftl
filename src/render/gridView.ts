@@ -470,6 +470,9 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
     // inside its full-height row and would show through the row's end cut).
     if (b.low && !blockHull.has(y * width + x) && !lockRow.has(y * width + x) && !tube.row.has(y * width + x)) {
       put(b.low, z + 0.001, L.sorted, solid);
+      // Its unpainted layer (`.own`, hulltiles._items): the blue seam keeps its blue under the armour paint.
+      const own = atlas.stat(`${b.low}.own`);
+      if (own) v.owned.push(...addStatic(L, own, x, y, z + 0.0015, L.sorted));
       // The near hull's ghost over its cut top: an upright on its outer edge (unpainted, unlit).
       const g = nearGhostId(h, x, y, has, k !== Struct.Floor, cutLook);
       const gs = g ? atlas.stat(g) : undefined;
