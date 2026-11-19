@@ -3,8 +3,8 @@ import { cargoSpec, dockSpec, engineSpec, reactorSpec, weaponSpec, type RoomSpec
 import { pairUp } from '../topoNavy';
 import { MESS, NAVY_TYPES, type NavyType } from './navyShip';
 import { RegionGrid, SOLID, SPACE } from './regions';
-import { cabinsFor } from './cabinBlock';
-import { FILL_MAX, fillerFor, maxArea, type Filler } from './roomSize';
+import { CABIN_TIER, cabinsFor } from './cabinBlock';
+import { FILL_MAX, fillerFor, fillerSpec, maxArea, type Filler } from './roomSize';
 import { onHall, opensThrough, roomKind, type RoomKind } from './roomAccess';
 
 /**
@@ -40,19 +40,21 @@ function mirrorPairs(specs: RoomSpec[]): Pair[] {
   const rest = [...specs], out: Pair[] = [];
   const push = (a: RoomSpec, b: RoomSpec): void => { const w = Math.max(a.w, b.w), h = Math.max(a.h, b.h); out.push([{ ...a, w, h }, { ...b, w, h }]); };
   for (let i = 0; i < rest.length; i++) {
-    const a = rest[i] as RoomSpec, j = rest.findIndex((r, k) => k > i && r.role === a.role);
+    const a = rest[i] as RoomSpec, j = rest.findIndex((r, k) => k > i && r.role === a.role && (!a.block || r.mods.length === a.mods.length));
     if (j > 0) { push(a, rest[j] as RoomSpec); rest.splice(j, 1); rest.splice(i, 1); i--; }
   }
   rest.sort((a, b) => full(b) - full(a));
-  // Unlike rooms pair when near a size; a room much bigger than the next gets a store opposite.
+  // Unlike rooms pair when near a size; a room much bigger than the next gets filler rooms opposite.
   while (rest.length > 1) {
     const a = rest.shift() as RoomSpec;
-    push(a, full(rest[0] as RoomSpec) * 1.5 >= full(a) ? (rest.shift() as RoomSpec) : cargoSpec(2));
+    push(a, full(rest[0] as RoomSpec) * 1.5 >= full(a) ? (rest.shift() as RoomSpec) : fillOpposite(a));
   }
   if (rest.length === 1) push(rest[0] as RoomSpec, specs.some((r) => r.role === 'support' && r.mods.includes('module.galley')) ? cargoSpec(2) : MESS);
   return out;
 }
 
+/** The floor opposite a room with no partner its size: as big, cut into fillers when painted. */
+const fillOpposite = (a: RoomSpec): RoomSpec => ({ role: 'cargo', mods: [], w: a.w, h: a.h, fill: true });
 /** A room's floor with its annex. */
 const full = (r: RoomSpec): number => r.w * r.h + (r.annex ? r.annex.w * r.annex.h : 0);
 /**
@@ -119,6 +121,16 @@ function split(band: Band, pairs: readonly Pair[], vary: readonly number[], spar
         const plan = areaOf(pair);
         const long = (): boolean => a >= plan && ((x - x0) >= ASPECT * (a / Math.max(1, x - x0)) || a + area(x) > cap);
         for (; x < end && ((a < goal && !long()) || x - x0 < len || (x - x0) * DEEP < deep); x++) { a += area(x); deep = Math.max(deep, area(x)); }
+        // A cabin block: as long as its cabins ask at the depth it gets (two rows of cabins off a corridor of its own
+        // where the floor is deep enough, else a row of cabins three wide on the spine), so they cut evenly.
+        const blk = pair[0].block ? pair[0] : pair[1].block ? pair[1] : null;
+        if (blk) {
+          x = x0;
+          const want = area(x0) >= 2 * CABIN_TIER - 1 ? blk.w : 4 * blk.mods.length - 1;
+          if (x0 + want <= end) { out.push({ pair, x0, x1: x0 + want }); x = x0 + want + 1; break; }
+          next();
+          continue;
+        }
         if (a >= plan && x - x0 >= len) { out.push({ pair, x0, x1: x }); x++; break; }
         x = x0;
         next();
@@ -243,7 +255,7 @@ export function layoutBlocks(plan: ShipPlan, m: Mask, type: NavyType, vary: read
   };
   let outerPairs: Pair[] = [];
   for (const p of [...outerGuns, ...byArea]) if (!byKind(p, (k) => !onHall(k) || !canBack(k)) && !p[0].block && !p[1].block && outerPairs.reduce((t, q) => t + areaOf(q), 0) + areaOf(p) <= outerArea * 0.9) outerPairs.push(p);
-  let outerCut: Piece[] = [], innerCut: Piece[] | null = null;
+  let outerCut: Piece[] = [], innerCut: Piece[] | null = null, fillsLeft: Filler[] = [];
   const inner: Band = { segs: runs(xBand, xS), lo: () => 1, hi: (x) => (outerOf(x) ? di : depth(x)) };
   // Two-tier columns: under an outer room, and the plating column between two of them.
   function outerOf(x: number): boolean { return outerCut.some((p) => x >= p.x0 && (x < p.x1 || (x === p.x1 && outerCut.some((q) => q.x0 === x + 1)))); }
@@ -264,6 +276,7 @@ export function layoutBlocks(plan: ShipPlan, m: Mask, type: NavyType, vary: read
     const has = (k: RoomKind): boolean => [...innerPairs, ...outerPairs].some((p) => roomKind(p[0]) === k || roomKind(p[1]) === k);
     const fills: Fills = { left: [...(has('workshop') ? [] : ['workshop' as const]), 'lounge', 'gym', ...((NAVY_TYPES[type].rooms ?? []).includes('farm') ? ['farm' as const] : [])] };
     innerCut = split(inner, innerPairs, vary, false, fills);
+    fillsLeft = fills.left;
     if (!innerCut) return null;
     const slots = [...outerCut], left = [...outerPairs], placed: Piece[] = [];
     for (const slot of slots) {
@@ -319,6 +332,23 @@ export function layoutBlocks(plan: ShipPlan, m: Mask, type: NavyType, vary: read
   while (xNose < xBr - MIN_DEPTH && top(xNose) < 2) xNose++;
   paint(g.room(bridge.role, { spec: bridge }), xNose, xBr, () => true);
   const innerIds = new Map<number, [number, number]>();
+  // The floor opposite a room with no partner its size, columns x0 to x1: filler rooms within the fillers' size, a
+  // plating column between them (column to room).
+  const fillCols = (x0: number, x1: number, rows: (tx: number) => number): Map<number, number> => {
+    const out = new Map<number, number>(), L1 = x1 - x0 + 1, deep = Math.max(MIN_DEPTH, rows(x0));
+    let f = 0;
+    for (let tx = x0; tx < x1; tx++) f += rows(tx);
+    const most = Math.max(1, Math.floor(L1 / (Math.max(MIN_DEPTH, Math.ceil(deep / DEEP)) + 1)));
+    const n = Math.min(most, Math.max(1, Math.ceil(f / FILL_MAX)));
+    for (let c = 0; c < n; c++) {
+      const c0 = x0 + Math.round((L1 * c) / n), c1 = x0 + Math.round((L1 * (c + 1)) / n) - 1;
+      let a = 0;
+      for (let tx = c0; tx < c1; tx++) a += rows(tx);
+      const spec = fillerFor(fillsLeft, a, deep, false), id = g.room(spec.role, { spec });
+      for (let tx = c0; tx < c1; tx++) out.set(tx, id);
+    }
+    return out;
+  };
   for (const { pair: [r, sr], x0, x1 } of innerCut) {
     // Columns of the piece capped at the inner tier: under an outer room, and a sliver between outer rooms too narrow
     // for a room (it would make a strip), left plating behind.
@@ -336,6 +366,11 @@ export function layoutBlocks(plan: ShipPlan, m: Mask, type: NavyType, vary: read
     if (blocks.some((b) => b)) {
       const ids = ([[r, -1], [sr, 1]] as const).map(([h, sign], side) => {
         const b = blocks[side], d = (y: number): number => sign * y;
+        if (!b && h.fill) {
+          const m = fillCols(x0, x1, (tx) => inner.hi(tx));
+          for (const [tx, id] of m) paint(id, tx, tx + 1, (y) => d(y) >= BAND);
+          return m.get(x0) ?? hall;
+        }
         if (!b) { const id = g.room(h.role, { spec: h }); paint(id, x0, x1, (y) => d(y) >= BAND); return id; }
         // Each corridor a hall of its own, so its cabins' doors face it (not the spine).
         const stubs = b.stubs.map((st) => { const id = g.hall('hall'); paint(id, x0 + st.c0, x0 + st.c1, (y) => d(y) >= BAND + st.r0 && d(y) <= BAND + st.r1); return { id, st }; });
@@ -345,6 +380,13 @@ export function layoutBlocks(plan: ShipPlan, m: Mask, type: NavyType, vary: read
           paint(id, x0 + c.c0, x0 + c.c1, (y) => d(y) >= BAND + c.r0 && d(y) <= BAND + c.r1);
           return id;
         });
+        // The floor past the cabins: a hold each side of the corridor, opening onto it.
+        for (const c of b.rest) {
+          const own = stubs.find(({ st }) => st.c0 === c.c1 || st.c1 === c.c0)?.id ?? hall;
+          let f = 0;
+          for (let tx = x0 + c.c0; tx < x0 + c.c1; tx++) for (let ty = -H; ty <= H; ty++) if (inside(tx, ty) && d(ty) >= BAND + c.r0) f++;
+          paint(g.room('cargo', { spec: fillerSpec('hold', f), access: [own] }), x0 + c.c0, x0 + c.c1, (y) => d(y) >= BAND + c.r0 && d(y) <= BAND + c.r1);
+        }
         return rooms[0] as number;
       }) as [number, number];
       for (let tx = x0; tx < x1; tx++) innerIds.set(tx, ids);
@@ -354,13 +396,21 @@ export function layoutBlocks(plan: ShipPlan, m: Mask, type: NavyType, vary: read
     for (let tx = x0; tx < x1; tx++) a += Math.max(0, inner.hi(tx));
     // Cabins no thinner than the rule for any room: at most `DEEP` times as deep as long.
     const cabinLen = Math.max(CABIN, Math.ceil(a / Math.max(1, x1 - x0) / DEEP) + 1);
-    const k = r.block ? Math.max(1, Math.min(r.mods.length, Math.floor(a / CABIN_AREA), Math.floor((x1 - x0 + 1) / cabinLen))) : 1;
+    // A row of cabins all one width (three to five floor columns, the length divides evenly), as many as near its beds.
+    const L1 = x1 - x0 + 1, beds = Math.max(r.block ? r.mods.length : 0, sr.block ? sr.mods.length : 0);
+    const even = Array.from({ length: L1 }, (_, i) => i + 1).filter((q) => L1 % q === 0 && L1 / q - 1 >= Math.max(3, cabinLen - 1) && L1 / q - 1 <= 5);
+    const k = beds === 0 ? 1 : (even.sort((p, q) => Math.abs(p - beds) - Math.abs(q - beds))[0]
+      ?? Math.max(1, Math.min(beds, Math.floor(a / CABIN_AREA), Math.floor(L1 / cabinLen))));
+    // The side that is no cabin block is one room the row's length.
+    const whole: (number | undefined)[] = [undefined, undefined];
+    const fm = [r, sr].map((h) => (h.fill ? fillCols(x0, x1, (tx) => (capped.has(tx) ? Math.min(inner.hi(tx), di) : inner.hi(tx))) : null));
     for (let c = 0; c < k; c++) {
       const c0 = x0 + Math.round(((x1 - x0 + 1) * c) / k), c1 = x0 + Math.round(((x1 - x0 + 1) * (c + 1)) / k) - 1;
       // A cabin block too shallow for two rows of cabins: a row of cabins on the spine, its beds shared out.
       const part = (spec: RoomSpec): RoomSpec => (!spec.block ? spec
         : { ...spec, mods: [...spec.mods.filter((_, j) => j % k === c), 'module.storage_locker'], w: c1 - c0, cabin: true, block: false });
-      const n = g.room(r.role, { spec: part(r) }), s = g.room(sr.role, { spec: part(sr) });
+      const one = (spec: RoomSpec, side: 0 | 1): number => (spec.fill ? (fm[side]?.get(c0) ?? hall) : spec.block ? g.room(spec.role, { spec: part(spec) }) : (whole[side] ??= g.room(spec.role, { spec })));
+      const n = one(r, 0), s = one(sr, 1);
       for (let tx = c0; tx < c1; tx++) innerIds.set(tx, [n, s]);
       // An annex (a trauma room, a pantry) stands behind its host, the host keeping the corridor rows, a wall row
       // between and a door only into the host; where the piece is too shallow for two rooms, at its stern end instead.
@@ -376,6 +426,8 @@ export function layoutBlocks(plan: ShipPlan, m: Mask, type: NavyType, vary: read
         const deep = capped.has(tx) ? BAND + Math.min(inner.hi(tx), di) : Infinity;
         ([[r, n, -1], [sr, s, 1]] as const).forEach(([h, id, sign], side) => {
           const annex = ids[side] as number, rows = hostRows(h), d = (y: number): number => sign * y;
+          const own = fm[side];
+          if (own) { const f = own.get(tx); if (f !== undefined) paint(f, tx, tx + 1, (y) => d(y) >= BAND && d(y) <= deep); return; }
           paint(tx < annexAt(h) ? id : annex, tx, tx + 1, (y) => d(y) >= BAND && d(y) <= Math.min(deep, BAND + rows));
           if (rows < Infinity) paint(annex, tx, tx + 1, (y) => d(y) >= BAND + rows + 2 && d(y) <= deep);
         });
@@ -391,8 +443,9 @@ export function layoutBlocks(plan: ShipPlan, m: Mask, type: NavyType, vary: read
     const front = x0 > xS ? engines : (innerIds.get(slot.at ?? Math.floor((x0 + x1) / 2)) ?? engines);
     const lo = (x: number): number => BAND + outer.lo(x);
     const access = (side: 0 | 1): number[] => (crossAt(slot) < 0 ? [front[side]] : crossAt(slot) === dockAt ? [docks[side]] : [hall]);
-    paint(g.room(r.role, { spec: r, access: access(0), doorFirst: x0 > xS }), x0, x1, (y) => y <= -lo(x0));
-    paint(g.room(sr.role, { spec: sr, access: access(1), doorFirst: x0 > xS }), x0, x1, (y) => y >= lo(x0));
+    const as = (h: RoomSpec): RoomSpec => (h.fill ? fillerSpec('hold', (x1 - x0) * Math.max(1, outer.hi(x0) - outer.lo(x0) + 1)) : h);
+    paint(g.room(r.role, { spec: as(r), access: access(0), doorFirst: x0 > xS }), x0, x1, (y) => y <= -lo(x0));
+    paint(g.room(sr.role, { spec: as(sr), access: access(1), doorFirst: x0 > xS }), x0, x1, (y) => y >= lo(x0));
   }
   for (let tx = 0; tx < W; tx++) for (let ty = -H; ty <= H; ty++) if (inside(tx, ty) && g.at(ox + tx, ty) === SPACE) g.set(ox + tx, ty, SOLID);
   for (let tx = xBr; tx < W; tx++) for (let ty = -1; ty <= 1; ty++) if (inside(tx, ty)) g.set(ox + tx, ty, hall);

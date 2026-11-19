@@ -287,8 +287,6 @@ export function generateNavy(f: FactionDef, factionId: string, seed: number, dep
   return last as GenResult;
 }
 
-/** Floor a cabin of a cabin block takes in the plan, its share of the walls and its corridor included. */
-const BLOCK_CABIN = 18;
 /**
  * The crew's quarters for a navy type: the plan's barracks (bunks, or single beds), or every bed a cabin in a pair of
  * cabin blocks (one each side, cut by the layout: cabinBlock.ts). `spare` beds past the crew's.
@@ -296,8 +294,10 @@ const BLOCK_CABIN = 18;
 export function shipQuarters(type: NavyType, planned: readonly RoomSpec[], crew: number, spare: number): RoomSpec[] {
   const sleep = NAVY_TYPES[type].sleep;
   if (sleep === 'cabins') {
-    const beds = crew + spare, half = [Math.ceil(beds / 2), Math.floor(beds / 2)];
-    return half.map((n) => ({ role: 'quarters', mods: Array<string>(n).fill('module.bed'), w: Math.ceil((n * BLOCK_CABIN) / 7), h: 7, block: true, cabins: false }));
+    // Blocks of four beds (two cabins each side of the corridor, two rows deep), so every cabin has its bed and a block
+    // fits a short run. Blocks pair across the spine, a lone one with fillers opposite.
+    const blocks = Math.ceil((crew + spare) / 4);
+    return Array.from({ length: blocks }, () => ({ role: 'quarters', mods: Array<string>(4).fill('module.bed'), w: 11, h: 7, block: true, cabins: false }));
   }
   // Barracks: the spare beds shared out, a bunk sleeping two (single beds where the type has them, a piece each).
   const per = sleep === 'beds' ? 1 : SLEEPER.sleepers;

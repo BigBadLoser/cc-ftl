@@ -60,6 +60,8 @@ export interface RoomSpec {
   dept?: StationDept;
   /** What a `support` room is for when its modules do not say (a navy ship's filler lounge or gym: assembly/roomSize.ts). */
   use?: 'lounge' | 'gym';
+  /** A navy ship's floor opposite a room with no partner its size: cut into filler rooms (assembly/roomSize.ts). */
+  fill?: boolean;
   /** A navy ship's cabin block: quarters the layout cuts into cabins, a bed each, off a corridor of their own. */
   block?: boolean;
   /** Station assembly: a one-bed cabin cut from a quarters room. */
