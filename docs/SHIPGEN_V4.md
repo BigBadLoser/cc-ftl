@@ -176,3 +176,33 @@ Settled one part at a time on option sheets (the same body, one part varied), be
   | Carrier | Launcher | Few guns; shuttles, defence drones, point defence | Broad, the split hull with a launch lane, an open hangar |
 - **Corridors three wide**, so the hull is odd-wide about a centre row and rooms centre on it.
 - **Carriers:** an open hangar with the bays spread inside it, not a walled room a bay.
+
+## Room layout (outline ships): corridors, blocks, one splitter
+
+The first outline assembler sliced paired rooms into a band along each side and grew a rule for every hull feature
+(guns wait for the wing, docks at the widest stretch, plants tucked beside the dock, a store behind the engines, slack to
+the quarters...). Each fixed one sheet and made the next case harder. It is replaced by three generic steps; no step
+names a room type except through its needs.
+
+1. **Corridors cut the hull into blocks.** The spine (three wide) runs from behind the bridge to the stern. A cross
+   corridor (three wide) runs from the spine out to the hull wherever the side is too deep for one room (deeper than
+   two rooms' minimum, so a room on either tier is at least three deep), one for each such stretch, at its deepest flat
+   point. There is always at least one cross corridor pair, at the widest flat stretch, because the airlocks stand at the
+   hull ends of cross corridors (an airlock needs a flat outer wall). The bridge, the spine and the cross corridors leave
+   blocks: on each side, the floor between two cross corridors, or between one and the bridge or the stern. Blocks are
+   laid out on one side and mirrored.
+2. **Rooms that need a wall claim it first.** A need is a property of the room's equipment, not of its role:
+   - an engine needs the aft hull: the stern block's rows that end at one aft wall take engines four rows each, with a
+     walk column ahead of them; the stern block's other rows are ordinary floor for step 3;
+   - an airlock needs a flat hull end of a cross corridor;
+   - a gun needs the side hull (the outer tier), the wing first where there is one;
+   - the bridge takes the bow.
+3. **One splitter fills every block.** A block next to a cross corridor and deep enough for two tiers splits into an
+   inner tier (doors on the spine) and an outer tier (doors on the cross corridor; only as many outer rooms as touch it).
+   Each tier is cut along its length into rooms in zone order (guns forward, stores aft), each taking columns until its
+   planned area is met; the outer tier takes the smallest rooms left. Slack is shared out over the block's rooms in
+   proportion to their planned areas, so no one room takes it. A room is at least three deep and at most three times as
+   deep as it is long.
+
+Every room touches a corridor, every wall is one tile thick (plating between blocks and tiers), and nothing in the
+three steps knows what a plant, a store or a barracks is: a small room lands in a small slot because it is small.
