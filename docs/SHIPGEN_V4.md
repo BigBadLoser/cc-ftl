@@ -236,12 +236,18 @@ rows from the corridor out. The room takes the front of it (the rows on its corr
 asks) up to its max; what is left, along the band or behind, is cut into filler rooms. A filler is a room the plan did not
 ask for, from a ranked list, each kind with its own size range and access rule (roomAccess.ts, unchanged):
 
-1. **Cabins**: three rows by three to four floor columns, a bed and a locker. Where a filler block is deep enough for two
-   rows of cabins it is a cabin block: cabins either side of a corridor of their own (one to three wide, so both sides
-   are equal), every cabin's door on that corridor. A cabin is never under nine floor tiles.
-2. **Storeroom**: crates, 9 to 30 tiles, opens off a workshop or a hold (cargo's access rule) or a corridor.
-3. **Small farm**: hydroponics, 12 to 24 tiles, on ships that carry a farm (cruisers and up).
-4. **Workshop**: a fabricator, 12 to 30 tiles, on a corridor.
+1. **Cargo hold**: crates, 9 to 30 tiles, opens off a workshop or a hold (cargo's access rule) or a corridor.
+2. **Small farm**: hydroponics, 12 to 24 tiles, on ships that carry a farm (cruisers and up).
+3. **Workshop**: a fabricator, 12 to 30 tiles, on a corridor.
+4. **Cabin**: while the ship's spare beds allow (below).
+
+**Crew sleep in a barracks or cabins, with a few spare beds.** The plan gives every crew member a bed, plus two to four
+spare (seeded, more on bigger ships). The beds are laid out by the space they get: a slot the barracks fits as one room
+stays a barracks; a barracks slot well past its max becomes a cabin block, one bed a cabin (bunks only where cabins are
+fewer than sleepers). A cabin block is cabins either side of a corridor of its own (one to three wide, so both sides
+are equal), every door on that corridor, each cabin three rows by three to four floor columns (nine tiles at least). A
+filler cabin, or a cabin block's extra cabins, adds a bed only within the spare allowance; past it, leftover goes to
+the other fillers.
 
 The filler kind for a leftover is the first one whose size range and access fit it (a cabin block needs a corridor stub
 from a hall; a storeroom behind a workshop or hold needs none). Leftover too small for any filler joins the room in
@@ -249,7 +255,8 @@ front up to that room's max, else the neighbour along the band; only a sliver un
 a max.
 
 **What this replaces in blockLayout.ts:** `GROW` and the slack sharing in `split()` (a room takes its target, the rest
-is filler), `stores()` (storerooms are a filler), the cabin-block path (cabins are a filler), the empty back slot merge
+is filler), `stores()` (small holds are a filler), the cabin-block special case (cabins are the barracks' form for a
+large slot), the empty back slot merge
 and the L-shape extension (a back slot is filler, or joins the room in front within its max). What stays: corridors and
 blocks (steps 1 and 2 above), zone order, mirror pairs, the scale search, room access, the furnishing rules, power
 planning (fillers are added to the plan before reactors are sized, as the ship commons are).
@@ -257,4 +264,4 @@ planning (fillers are added to the plan before reactors are sized, as the ship c
 **Measured by:** the sheet of eight seeds per navy type, and a test over seeds 1-16 per type that every room is within
 its kind's max (fillers within theirs) and its aspect.
 
-Open: whether fillers should be weighted by the ship's crew (cabins only while beds are short of crew, then stores).
+Later: officers in cabins and ratings in a barracks on bigger ships.
