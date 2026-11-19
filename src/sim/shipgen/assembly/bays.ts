@@ -9,8 +9,8 @@ import { MIN_DEPTH, type Frame } from './frame';
  */
 export interface Bay { x0: number; x1: number; tiers: [number, number][] }
 
-/** A bay's columns, its plating column aside: about a planned room's width. */
-export const BAY = 6;
+/** A bay's columns, its plating column aside: seven or eight. */
+export const BAY = 7.5;
 
 export function bayLayout(fr: Frame): Bay[] {
   const { xBand, dockAt, CW, xS, depth, maint } = fr;
