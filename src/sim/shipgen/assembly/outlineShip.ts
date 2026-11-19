@@ -21,8 +21,6 @@ import { SPACE, type RegionGrid } from './regions';
  * axis. Only the body scales across; what stands beyond it (a stern flare, wings, pods) keeps its size in tiles, out from
  * the scaled body's edge.
  */
-/** PROTOTYPE (#581): a gun blister's columns, and a gun site's step (its blister, then a room's width or the dock's). */
-const BLISTER = 6, STEP = 16;
 
 function scaled(sil: Silhouette, sx: number, sy: number): Mask {
   const W0 = Math.round(sil.length * sx);
@@ -36,22 +34,30 @@ function scaled(sil: Silhouette, sx: number, sy: number): Mask {
     return sil.rows[sil.axis + Math.sign(y) * raw]?.[c] === '#';
   };
   // PROTOTYPE (#581): the gun battery on the widest straight stretch, lengthened (its middle column repeated) until it
-  // holds every gun: a blister a tile proud of the hull per gun, a room's width (or the dock) between them.
-  const k = sil.battery?.guns ?? 0, run = sil.battery?.runs[0];
-  let E = 0, mid = W0, sites: [number, number][] = [];
+  // holds it: a blister a tile proud per gun (its room's floor and a wall either side), the airlock amid them, a few
+  // columns of maintenance corridor between.
+  const bat = sil.battery, k = bat?.guns ?? 0, run = bat?.runs[0], GW = (bat?.w ?? 4) + 2, GAP = 3, AIR = 3;
+  const sites: [number, number][] = [];
+  let E = 0, mid = W0, air = -1, a0 = 0, b0 = 0;
   if (k > 0 && run) {
-    const A = Math.ceil(run[0] * sx) + 1, B = Math.floor(run[1] * sx) - 1, need = (k - 1) * STEP + BLISTER;
+    const A = Math.ceil(run[0] * sx) + 1, B = Math.floor(run[1] * sx) - 1, need = k * GW + AIR + (k + 2) * GAP;
     E = Math.max(0, need - (B - A));
     mid = Math.floor((A + B) / 2);
-    const x0 = A + Math.floor((B + E - A - need) / 2);
-    sites = Array.from({ length: k }, (_, i): [number, number] => [x0 + i * STEP, x0 + i * STEP + BLISTER]);
+    a0 = A + Math.floor((B + E - A - need) / 2);
+    let x = a0 + GAP;
+    for (let i = 0; i <= k; i++) {
+      if (i === Math.ceil(k / 2)) { air = x; x += AIR + GAP; }
+      if (i < k) { sites.push([x, x + GW]); x += GW + GAP; }
+    }
+    b0 = x;
   }
   const from = (x: number): number => (x < mid ? x : x < mid + E ? mid : x - E);
   const hull = (x: number, y: number): boolean => base(from(x), y);
   const topOf = (x: number): number => { let y = 0; while (hull(x, y + 1)) y++; return y; };
   const proud = (x: number, y: number): boolean => sites.some(([s0, s1]) => x >= s0 && x < s1) && Math.abs(y) === topOf(x) + 1;
   const inside = (x: number, y: number): boolean => hull(x, y) || proud(x, y);
-  return { W: W0 + E, H: H0 + (sites.length > 0 ? 1 : 0), inside, ...(sites.length > 0 ? { sites } : {}) };
+  const battery = sites.length > 0 ? { battery: { a: a0, b: b0, guns: sites, rows: bat?.h ?? 3, air } } : {};
+  return { W: W0 + E, H: H0 + (sites.length > 0 ? 1 : 0), inside, ...battery };
 }
 
 /**
@@ -131,7 +137,9 @@ export function outlineInputs(
   const plan: ShipPlan = { ...planned, kit, quarters, support: [...planned.support, ...shipCommons(type, planned.crew.length)] };
   plan.reactors = reactorsFor(plan, defs);
   // PROTOTYPE (#581): with `sites`, a notched gun site per gun pair in place of the profile's embrasures.
-  const sil = drawSilhouette(rng, rng.pick(NAVY_PROFILES[type] ?? []), sites ? gunsAndReactors(plan, defs).gunPairs.length : undefined);
+  const gp = gunsAndReactors(plan, defs).gunPairs;
+  const sil = drawSilhouette(rng, rng.pick(NAVY_PROFILES[type] ?? []), sites ? gp.length : undefined);
+  if (sil.battery) Object.assign(sil.battery, { w: Math.max(...gp.flat().map((r) => r.w)), h: Math.max(3, ...gp.flat().map((r) => r.h)) });
   const vary = Array.from({ length: 24 }, () => rng.int(80, 135) / 100);
   return { rng, role, plan, sil, vary, maxBeam: NAVY_TYPES[type].maxBeam };
 }

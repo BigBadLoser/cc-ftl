@@ -1,6 +1,11 @@
 import { dockSpec, engineSpec, type RoomSpec, type ShipPlan } from '../plan';
 /** A scaled silhouette about its axis: `inside(x, y)` with y = 0 the axis. */
-export interface Mask { W: number; H: number; inside: (x: number, y: number) => boolean; /** Gun sites' blister columns [x0, x1), scaled (prototype). */ sites?: [number, number][] }
+export interface Mask {
+  W: number; H: number; inside: (x: number, y: number) => boolean;
+  /** Gun sites' blister columns [x0, x1), scaled (prototype). */ sites?: [number, number][];
+  /** PROTOTYPE (#581): a gun battery on a maintenance corridor along the hull: its columns [a, b), its guns' blisters, its gun rooms' floor rows, and the airlock's first column (the dock). */
+  battery?: { a: number; b: number; guns: [number, number][]; rows: number; air: number };
+}
 
 /**
  * The fixed frame of a navy outline both layouts build on (SHIPGEN_V4, "Room layout"): the drive's engine rows at the
@@ -23,13 +28,20 @@ export interface Frame {
   xBr: number; xBand: number;
   /** The cross corridor's width and its first column (the dock). */
   CW: number; dockAt: number;
+  /** PROTOTYPE (#581): the battery's maintenance corridor, its row out from the axis per column (rooms stop short of it). */
+  maint?: { a: number; b: number; guns: [number, number][]; rows: number; hallY: (x: number) => number };
 }
 
 export function outlineFrame(plan: ShipPlan, m: Mask): Frame | null {
   const { W, H, inside } = m;
   if (2 * H + 4 > 120 || W + 4 > 240) return null;
   const top = (x: number): number => { let y = 0; while (inside(x, y + 1)) y++; return inside(x, 0) ? y : -1; };
-  const depth = (x: number): number => top(x) - BAND - 1;
+  // A battery's maintenance corridor runs a row in from the hull, round each gun room (the gun on the hull, the
+  // corridor inboard of it): rooms on the spine stop a wall short of it.
+  const bt = m.battery, reg = bt ? top(bt.a) : 0;
+  const hallY = (x: number): number => (bt?.guns.some(([s0, s1]) => x >= s0 - 1 && x <= s1) ? reg - bt.rows - 1 : reg - 1);
+  const inBt = (x: number): boolean => !!bt && x >= bt.a && x < bt.b && !(x >= bt.air && x < bt.air + dockSpec().w);
+  const depth = (x: number): number => (inBt(x) ? hallY(x) - 2 - BAND : top(x) - BAND - 1);
   const rowEnd = (y: number): number => { let x = W - 1; while (x > 0 && !inside(x, y)) x--; return x; };
   let xEnd = W - 1;
   while (xEnd > 0 && !inside(xEnd, 0)) xEnd--;
@@ -70,8 +82,8 @@ export function outlineFrame(plan: ShipPlan, m: Mask): Frame | null {
     for (let k = -1; k <= CW; k++) if (top(x0 + k) !== top(x0)) return false;
     return true;
   };
-  let dockAt = -1;
-  for (let x = xBand + MIN_DEPTH + 1; x <= Math.min(xS - MIN_DEPTH - CW - 1, xBand + 0.75 * (xS - xBand)); x++) if (flat(x) && (dockAt < 0 || depth(x) > depth(dockAt))) dockAt = x;
+  let dockAt = bt ? bt.air : -1;
+  if (!bt) for (let x = xBand + MIN_DEPTH + 1; x <= Math.min(xS - MIN_DEPTH - CW - 1, xBand + 0.75 * (xS - xBand)); x++) if (flat(x) && (dockAt < 0 || depth(x) > depth(dockAt))) dockAt = x;
   if (dockAt < 0) return null;
-  return { W, H, inside, top, depth, xS, xEnd, sternMax, perSide, used, engine, xBr, xBand, CW, dockAt };
+  return { W, H, inside, top, depth, xS, xEnd, sternMax, perSide, used, engine, xBr, xBand, CW, dockAt, ...(bt ? { maint: { a: bt.a, b: bt.b, guns: bt.guns, rows: bt.rows, hallY } } : {}) };
 }

@@ -72,7 +72,7 @@ export interface Silhouette {
   /** The body's half-width per column, before the stern's flare, wings and pods: what an outline scales (the rest keeps its size in tiles). */
   body: number[];
   /** A gun battery (with `drawSilhouette`'s `guns`): how many sites, and the straight stretches it may stand on, best first. */
-  battery?: { guns: number; runs: [number, number][] };
+  battery?: { guns: number; runs: [number, number][]; /** A gun room's floor columns and rows (set by the outline). */ w?: number; h?: number };
 }
 
 const pick = (rng: Rng, r: Range): number => rng.int(r[0], r[1]);

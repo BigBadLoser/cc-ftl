@@ -22,7 +22,7 @@ export interface Block { a: number; b: number; crossL: boolean; crossR: boolean;
 /** A corridor stub: a hall column from the spine to the hull. */
 export interface Stub { x: number }
 export interface Layout { blocks: Block[]; stern: Part | null; stubs: Stub[]; /** Program pairs placed out of turn (stacked with another). */ done: number[] }
-export interface Placed { fr: Frame; lay: Layout; score: number; viable: number; nodes: number; why: Map<string, number>; /** Gun pairs pinned to the outline's gun sites, of how many sites. */ pins: number; sites: number }
+export interface Placed { fr: Frame; lay: Layout; score: number; viable: number; nodes: number; why: Map<string, number>; /** Gun pairs pinned to the outline's gun sites, of how many sites. */ pins: number; sites: number; /** The battery's gun pairs, a blister each (prototype). */ battery: Pair[] }
 
 const ASPECT = 3, DEEP = 2;
 /** Floor any room may take, past its own cap: the least room a deep hull can cut (three columns by seven rows, about). */
@@ -64,7 +64,9 @@ export function placeLayout(plan: ShipPlan, m: Mask, defs: Record<string, Module
     const spec = (n: number): RoomSpec => ({ role: 'quarters', mods: Array<string>(n).fill('module.bed'), w: 0, h: 0, block: true, cabins: false });
     cabinPairs.push([spec(north), spec(south)]);
   }
-  const order = [...cabinPairs, ...[...others.filter(hard), ...gunPairs].sort((a, b) => areaOf(b) - areaOf(a)), ...others.filter((p) => !hard(p)).sort((a, b) => areaOf(b) - areaOf(a))];
+  // With a battery the gun pairs stand in its blisters, out of the search.
+  const searched = fr.maint ? [] : gunPairs;
+  const order = [...cabinPairs, ...[...others.filter(hard), ...searched].sort((a, b) => areaOf(b) - areaOf(a)), ...others.filter((p) => !hard(p)).sort((a, b) => areaOf(b) - areaOf(a))];
 
   const blocks: Block[] = [
     { a: xBand, b: dockAt - 1, crossL: false, crossR: true, free: [[xBand, dockAt - 1]], pieces: [] },
@@ -395,8 +397,9 @@ export function placeLayout(plan: ShipPlan, m: Mask, defs: Record<string, Module
   };
   dfs(start);
   const gunAt = (l: Layout, [s0, s1]: [number, number]): boolean => l.blocks.some((b) => b.pieces.some((pc) => pc.parts.some((q) => q.spec.some((h) => h && roomKind(h) === 'guns') && q.x0 < s1 && s0 < q.x1)));
-  const pins = best ? (m.sites ?? []).filter((st) => gunAt(best as Layout, st)).length : 0;
-  const nSites = sites.length;
-  if (!best) return { fr, lay: last, score: Infinity, viable: 0, nodes, why, pins, sites: nSites };
-  return { fr, lay: best, score: bestScore, viable, nodes, why, pins, sites: nSites };
+  const bat = fr.maint ? gunPairs.slice(0, fr.maint.guns.length) : [];
+  const pins = fr.maint ? bat.length : best ? (m.sites ?? []).filter((st) => gunAt(best as Layout, st)).length : 0;
+  const nSites = fr.maint ? fr.maint.guns.length : sites.length;
+  if (!best) return { fr, lay: last, score: Infinity, viable: 0, nodes, why, pins, sites: nSites, battery: bat };
+  return { fr, lay: best, score: bestScore, viable, nodes, why, pins, sites: nSites, battery: bat };
 }
