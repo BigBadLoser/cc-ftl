@@ -66,9 +66,10 @@ const areaOf = ([r, s]: Pair): number => Math.max(full(r), full(s));
 const capOf = ([r, s]: Pair): number => Math.max(areaOf([r, s]), Math.min(maxArea(r), maxArea(s)));
 /** Which fillers a ship has used (one workshop, lounge and gym a side at most; a farm where the ship carries one). */
 export interface Fills { left: Filler[] }
+// One of a kind a ship (the room opposite a hold of the same shape), holds in pairs.
 const fillPair = (fills: Fills, area: number, deep: number): Pair => {
   const r = fillerFor(fills.left, area, deep, deep >= 2 * MIN_DEPTH + 1);
-  return [r, r];
+  return roomKind(r) === 'cargo' ? [r, r] : [r, fillerFor([], area, deep, deep >= 2 * MIN_DEPTH + 1)];
 };
 
 /**
@@ -207,7 +208,9 @@ export function layoutBlocks(plan: ShipPlan, m: Mask, type: NavyType, vary: read
     ? [weaponSpec(defs, r.mods.slice(0, Math.ceil(r.mods.length / 2))), weaponSpec(defs, r.mods.slice(Math.ceil(r.mods.length / 2)))]
     : [r]));
   const lone = guns.length % 2 === 1 ? [guns.pop() as RoomSpec] : [];
-  const reactors = Array.from({ length: plan.reactors }, () => reactorSpec(1, plan.kit));
+  // Reactors two a room past a pair (a room each for one or two), so no reactor room stands mostly bare.
+  const reactors = plan.reactors <= 2 ? Array.from({ length: plan.reactors }, () => reactorSpec(1, plan.kit))
+    : Array.from({ length: Math.ceil(plan.reactors / 2) }, (_, i) => reactorSpec(Math.min(2, plan.reactors - 2 * i), plan.kit));
   const rest = [...lone, ...reactors, ...plan.shields, ...(plan.core ? [plan.core] : []), ...plan.quarters, ...plan.support, ...plan.cargo, ...plan.hangars];
   const [gn, gs] = pairUp(guns);
   const gunPairs: Pair[] = gn.map((r, i) => [r, gs[i] as RoomSpec] as const);
@@ -258,7 +261,8 @@ export function layoutBlocks(plan: ShipPlan, m: Mask, type: NavyType, vary: read
       innerPairs.splice(0, innerPairs.length, ...gp.flatMap((p, i) => [p, ...o.slice(i * every, (i + 1) * every)]), ...o.slice(gp.length * every));
     }
     // Fillers past the default holds: one of each a side, a farm only where the type carries one.
-    const fills: Fills = { left: ['workshop', 'lounge', 'gym', ...((NAVY_TYPES[type].rooms ?? []).includes('farm') ? ['farm' as const] : [])] };
+    const has = (k: RoomKind): boolean => [...innerPairs, ...outerPairs].some((p) => roomKind(p[0]) === k || roomKind(p[1]) === k);
+    const fills: Fills = { left: [...(has('workshop') ? [] : ['workshop' as const]), 'lounge', 'gym', ...((NAVY_TYPES[type].rooms ?? []).includes('farm') ? ['farm' as const] : [])] };
     innerCut = split(inner, innerPairs, vary, false, fills);
     if (!innerCut) return null;
     const slots = [...outerCut], left = [...outerPairs], placed: Piece[] = [];
