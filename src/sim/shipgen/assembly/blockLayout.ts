@@ -448,14 +448,19 @@ export function layoutBlocks(plan: ShipPlan, m: Mask, type: NavyType, vary: read
     let dTwo = Infinity, f2 = 0;
     for (let tx = x0; tx < x1; tx++) { dTwo = Math.min(dTwo, inner.hi(tx)); f2 += inner.hi(tx); }
     const two = [r, sr].map((h, side) => {
-      if (k !== 1 || h.annex || h.fill || h.block || capped.size > 0 || dTwo < 2 * MIN_DEPTH + 1 || f2 <= 1.15 * maxArea(h)) return null;
+      if (k !== 1 || h.annex || h.fill || h.block || capped.size > 0 || dTwo < 2 * MIN_DEPTH + 1 || f2 <= 1.5 * maxArea(h)) return null;
       // Off a cross corridor, a corridor stub of its own down the piece's end column farther from other corridors (none
       // nearer than two rooms' width), spine to hull, for the far part.
       const near = (c: number): number => Math.min(...cross.map((q) => Math.min(Math.abs(c - q), Math.abs(c - q - CW + 1))), ...stubCols.map((q) => Math.abs(c - q)));
       const at = near(x0) > near(x1 - 1) ? x0 : x1 - 1;
       if (cr < 0 && (x1 - x0 < MIN_DEPTH + 3 || near(at) < 2 * MIN_DEPTH + 4)) return null;
+      const len = x1 - x0 - (cr < 0 ? 2 : 0), from = cr < 0 && at === x0 ? x0 + 2 : x0, out = roomKind(h) === 'guns';
+      const need = Math.max(MIN_DEPTH, len >= h.w ? h.h + 1 : Math.ceil((h.w * h.h) / len) + 2);
+      const keep = Math.min(dTwo - MIN_DEPTH - 1, Math.max(need, Math.ceil(maxArea(h) / len)));
+      // Too short or shallow to keep what the room holds and still leave a room behind: whole.
+      if (need > dTwo - MIN_DEPTH - 1) return null;
       if (cr < 0 && side === 0) stubCols.push(at);
-      const stub = cr < 0 ? g.hall('hall') : -1, len = x1 - x0 - (cr < 0 ? 2 : 0), from = cr < 0 && at === x0 ? x0 + 2 : x0, keep = Math.min(dTwo - MIN_DEPTH - 1, Math.max(MIN_DEPTH, Math.ceil(maxArea(h) / len))), out = roomKind(h) === 'guns';
+      const stub = cr < 0 ? g.hall('hall') : -1;
       const via = [cr < 0 ? stub : cr === dockAt ? docks[side] as number : hall], rows = out ? dTwo - keep - 2 : keep - 1;
       const room = g.room(h.role, { spec: h, ...(out ? { access: via } : {}) });
       // The filler part within the fillers' size: on the spine, cut along its length; behind, cut by rows (each on the
