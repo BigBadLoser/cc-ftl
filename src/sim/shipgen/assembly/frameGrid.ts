@@ -24,7 +24,8 @@ export function frameGrid(fr: Frame, plan: ShipPlan): FrameGrid {
   // From the first column three floor rows deep: a nose spike or tip narrower than the helm is plating.
   let xNose = 0;
   while (xNose < xBr - MIN_DEPTH && top(xNose) < 2) xNose++;
-  paint(g.room(plan.command.role, { spec: plan.command }), xNose, xBr, () => true);
+  // Through the plating column before the band, so its aft wall is one wall with the spine's end on it.
+  paint(g.room(plan.command.role, { spec: plan.command }), xNose, xBr + 1, () => true);
   return { g, hall, docks, paint };
 }
 
@@ -32,7 +33,7 @@ export function frameGrid(fr: Frame, plan: ShipPlan): FrameGrid {
 export function closeFrame(fr: Frame, { g, hall, docks, paint }: FrameGrid): void {
   const { W, H, inside, xBr, dockAt, CW } = fr, ox = -Math.floor(W / 2);
   for (let tx = 0; tx < W; tx++) for (let ty = -H; ty <= H; ty++) if (inside(tx, ty) && g.at(ox + tx, ty) === SPACE) g.set(ox + tx, ty, SOLID);
-  for (let tx = xBr; tx < W; tx++) for (let ty = -1; ty <= 1; ty++) if (inside(tx, ty)) g.set(ox + tx, ty, hall);
+  for (let tx = xBr + 1; tx < W; tx++) for (let ty = -1; ty <= 1; ty++) if (inside(tx, ty)) g.set(ox + tx, ty, hall);
   paint(docks[0], dockAt, dockAt + CW, (y) => y <= -BAND);
   paint(docks[1], dockAt, dockAt + CW, (y) => y >= BAND);
 }
