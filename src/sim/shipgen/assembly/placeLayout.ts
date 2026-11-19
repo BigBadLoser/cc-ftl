@@ -2,7 +2,7 @@ import type { ModuleDef } from '../../registry';
 import type { RoomSpec, ShipPlan } from '../plan';
 import { MIN_DEPTH, outlineFrame, type Frame, type Mask } from './frame';
 import { areaOf, capOf, gunsAndReactors, minLen, mirrorPairs, type Pair } from './pairs';
-import { CABIN_TIER } from './cabinBlock';
+import { CABIN_TIER, cabinsFor } from './cabinBlock';
 import { SLEEPER } from './quarters';
 import { FILL_MAX, fillerSpec, maxArea, type Filler } from './roomSize';
 import { opensThrough, roomKind, type RoomKind } from './roomAccess';
@@ -29,7 +29,7 @@ const ASPECT = 3, DEEP = 1.25;
 /** Floor any room may take, past its own cap: the least room a deep hull can cut (three columns by seven rows, about). */
 const SMALL = 24;
 /** A free stretch narrower than this is a strip: the room beside it takes it rather than a filler. */
-const THIN = 6;
+const THIN = 6, CABIN_LEN = 11;
 /** Filler rooms' specs (for the score and the prototype's metrics). */
 export const fillers = new WeakSet<RoomSpec>(), repeats = new WeakSet<RoomSpec>();
 const clone = (l: Layout): Layout => ({
@@ -120,7 +120,7 @@ export function placeLayout(plan: ShipPlan, m: Mask, defs: Record<string, Module
           // A cabin block: one unit (11 columns), a column of cabins each side of its corridor (bunks when the beds
           // outnumber the cabins); never more, two units is a sprawl of cabins.
           const per = Math.max(p[0].mods.length, p[1].mods.length);
-          for (const [units, len] of [[1, 11]] as const) {
+          for (const [units, len] of [[1, CABIN_LEN]] as const) {
             const rows = CABIN_TIER * Math.max(2, Math.ceil(per / (2 * units * SLEEPER.sleepers))) - 1, x0 = x0of(len);
             if (len > w || !room(x0, x0 + len) || least(x0, x0 + len, 1, Infinity) < rows) continue;
             put(len, [{ r0: 1, r1: Infinity, spec: [{ ...p[0], w: len, h: rows }, { ...p[1], w: len, h: rows }] }], x0 + len === b.b ? 0 : 0.5, true);
@@ -253,14 +253,20 @@ export function placeLayout(plan: ShipPlan, m: Mask, defs: Record<string, Module
       for (const [c0, c1] of cut(x0, x1, n)) add(b, c0, c1, r0, r1, pick(() => true, area(c0, c1, r0, r1)) ?? fillerSpec('hold', 9));
     };
     const deepCol = (x: number): boolean => depth(x) >= 2 * MIN_DEPTH + 1;
-    // A free stretch too narrow for a filler that isn't a strip: the room beside it grows over it (the plating column
-    // between moves to its far side).
+    // A free stretch too narrow for a filler that isn't a strip: the rooms beside it share it (the plating column between
+    // them moves), or the one that can take it alone; a cabin block widens its cabins up to five columns more.
     for (const b of lay.blocks) b.free = b.free.filter(([L, R]) => {
       if (R - L >= THIN) return true;
-      const free = (pc: Piece): boolean => !pc.cabins;
-      const lp = b.pieces.find((pc) => pc.x1 === L - 1 && free(pc)), rp = b.pieces.find((pc) => pc.x0 === R + 1 && free(pc));
-      if (lp) { for (const q of lp.parts) if (q.x1 === lp.x1) q.x1 = R; lp.x1 = R; return false; }
-      if (rp) { for (const q of rp.parts) if (q.x0 === rp.x0) q.x0 = L; rp.x0 = L; return false; }
+      const ok = (pc: Piece | undefined, x0: number, x1: number): pc is Piece => !!pc && (!pc.cabins || pc.parts.every((q) => q.spec.every((h) => !h || cabinsFor(h, x1 - x0, least(x0, x1, 1, Infinity))?.stubs.length === 1)));
+      const lp0 = b.pieces.find((pc) => pc.x1 === L - 1), rp0 = b.pieces.find((pc) => pc.x0 === R + 1);
+      const to = (pc: Piece, x0: number, x1: number): void => {
+        for (const q of pc.parts) { if (q.x0 === pc.x0) q.x0 = x0; if (q.x1 === pc.x1) q.x1 = x1; }
+        pc.x0 = x0; pc.x1 = x1;
+      };
+      const m = (L - 1 + R) >> 1;
+      if (ok(lp0, lp0?.x0 ?? 0, m) && ok(rp0, m + 1, rp0?.x1 ?? 0) && !lp0.cabins && !rp0.cabins) { to(lp0, lp0.x0, m); to(rp0, m + 1, rp0.x1); return false; }
+      if (ok(lp0, lp0?.x0 ?? 0, R)) { to(lp0, lp0.x0, R); return false; }
+      if (ok(rp0, L, rp0?.x1 ?? 0)) { to(rp0, L, rp0.x1); return false; }
       return true;
     });
     for (const [bi, b] of lay.blocks.entries()) for (const [L, R] of b.free) {
@@ -348,6 +354,8 @@ export function placeLayout(plan: ShipPlan, m: Mask, defs: Record<string, Module
     let fill = 0, grow = 0;
     for (const q of roomsOf(l)) {
       const a = area(q.x0, q.x1, q.r0, q.r1);
+      // A strip: narrower than a filler may be and deeper than wide.
+      if (q.x1 - q.x0 < THIN - 1 && a > (q.x1 - q.x0) ** 2 && !q.spec.some((h) => h?.block)) fill += 40;
       for (const r of q.spec) if (r && fillers.has(r)) fill += a / 2; else if (r && !r.block) grow += Math.max(0, a / Math.max(1, r.w * r.h) - 1) / 2;
     }
     return fill + 4 * l.stubs.reduce((t, s) => t + depth(s.x), 0) + 15 * grow;
