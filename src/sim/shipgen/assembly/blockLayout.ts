@@ -178,7 +178,16 @@ export function layoutBlocks(plan: ShipPlan, m: Mask, type: NavyType, vary: read
   let dockAt = -1;
   for (let x = xBand + MIN_DEPTH + 1; x <= Math.min(xS - MIN_DEPTH - CW - 1, xBand + 0.75 * (xS - xBand)); x++) if (flat(x) && (dockAt < 0 || depth(x) > depth(dockAt))) dockAt = x;
   if (dockAt < 0) return null;
-  const cross = [dockAt];
+  // A second, plain cross corridor only where the hull aft is deep enough for a back room as deep as the front one
+  // (rooms there would else open through others), along a stretch with a room's length either side of it.
+  let aft = -1;
+  for (let x = dockAt + CW + 1, run = 0, best = 0; x < xS; x++) {
+    run = depth(x) >= 2 * di + 2 ? run + 1 : 0;
+    if (run > best && run >= 2 * (MIN_DEPTH + 2) + CW) { best = run; aft = x - Math.floor((run + CW) / 2); }
+  }
+  const cross = aft > 0 ? [dockAt, aft] : [dockAt];
+  /** The corridor a slot opens onto at its end (the airlock bay or the plain cross corridor), if any. */
+  const crossAt = (slot: { x0: number; x1: number }): number => cross.find((c) => slot.x1 === c - 1 || slot.x0 === c + CW + 1) ?? -1;
 
   // Runs of band columns between the bridge, the cross corridors and the drive (a plating column each side of a corridor).
   const runs = (from: number, to: number): [number, number][] => {
@@ -218,10 +227,9 @@ export function layoutBlocks(plan: ShipPlan, m: Mask, type: NavyType, vary: read
   const byKind = (p: Pair, f: (k: RoomKind) => boolean): boolean => f(roomKind(p[0])) || f(roomKind(p[1]));
   // A room that may stand behind another at all (not a corridor-only one).
   const canBack = (k: RoomKind): boolean => (['guns', 'engine', 'reactor', 'shields', 'core', 'plant', 'cargo', 'barracks', 'pantry', 'trauma', 'hangar', 'farm', 'other'] as RoomKind[]).some((f) => opensThrough(k, f));
-  const touchesDock = (slot: Piece): boolean => slot.x1 === dockAt - 1 || slot.x0 === dockAt + CW + 1;
   const frontOf = (slot: Piece): Pair | null => (slot.x0 > xS ? [engine, engine] : innerCut?.find((q) => q.x0 <= (slot.x0 + slot.x1) >> 1 && (slot.x0 + slot.x1) >> 1 < q.x1)?.pair ?? null);
   const entersFrom = (p: Pair, slot: Piece): boolean => {
-    if (touchesDock(slot)) return onHall(roomKind(p[0])) && onHall(roomKind(p[1]));
+    if (crossAt(slot) >= 0) return onHall(roomKind(p[0])) && onHall(roomKind(p[1]));
     const f = frontOf(slot);
     return !!f && opensThrough(roomKind(p[0]), roomKind(f[0])) && opensThrough(roomKind(p[1]), roomKind(f[1]));
   };
@@ -271,6 +279,15 @@ export function layoutBlocks(plan: ShipPlan, m: Mask, type: NavyType, vary: read
   paint(g.room(bridge.role, { spec: bridge }), 0, xBr, () => true);
   const innerIds = new Map<number, [number, number]>();
   for (const { pair: [r, sr], x0, x1 } of innerCut) {
+    // Columns of the piece capped at the inner tier: under an outer room, and a sliver between outer rooms too narrow
+    // for a room (it would make a strip), left plating behind.
+    const capped = new Set<number>();
+    for (let tx = x0; tx < x1;) {
+      let e = tx;
+      while (e < x1 && outerOf(e) === outerOf(tx)) e++;
+      if (outerOf(tx) || (e - tx < MIN_DEPTH && (tx > x0 || e < x1) && [tx - 1, e].some((q) => outerOf(q)))) for (let q = tx; q < e; q++) capped.add(q);
+      tx = e;
+    }
     let a = 0;
     for (let tx = x0; tx < x1; tx++) a += Math.max(0, inner.hi(tx));
     const k = r.role === 'quarters' ? Math.max(1, Math.min(r.mods.length, Math.floor(a / CABIN_AREA), Math.floor((x1 - x0 + 1) / CABIN))) : 1;
@@ -283,14 +300,14 @@ export function layoutBlocks(plan: ShipPlan, m: Mask, type: NavyType, vary: read
       // between and a door only into the host; where the piece is too shallow for two rooms, at its stern end instead.
       // (Columns under an outer room are the host's alone: the annex stands behind it on the rest.)
       let dMin = Infinity, all = Infinity;
-      for (let tx = c0; tx < c1; tx++) { all = Math.min(all, inner.hi(tx)); if (!outerOf(tx)) dMin = Math.min(dMin, inner.hi(tx)); }
+      for (let tx = c0; tx < c1; tx++) { all = Math.min(all, inner.hi(tx)); if (!capped.has(tx)) dMin = Math.min(dMin, inner.hi(tx)); }
       if (dMin === Infinity) dMin = all;
       const behind = dMin >= 2 * MIN_DEPTH + 1;
       const hostRows = (h: RoomSpec): number => (h.annex && k === 1 && behind ? dMin - 1 - Math.min(dMin - MIN_DEPTH - 1, Math.max(MIN_DEPTH, Math.round((dMin * h.annex.w * h.annex.h) / full(h)))) : Infinity);
       const annexAt = (h: RoomSpec): number => (h.annex && k === 1 && !behind ? c1 - Math.min(c1 - c0 - MIN_DEPTH - 1, Math.max(MIN_DEPTH, Math.round(((c1 - c0) * h.annex.w * h.annex.h) / full(h)))) : c1);
       const ids = [n, s].map((id, side) => { const h = side === 0 ? r : sr; return h.annex && k === 1 ? g.room(h.annex.role, { spec: h.annex, access: [id] }) : id; });
       for (let tx = c0; tx < c1; tx++) {
-        const deep = outerOf(tx) ? BAND + inner.hi(tx) : Infinity;
+        const deep = capped.has(tx) ? BAND + Math.min(inner.hi(tx), di) : Infinity;
         ([[r, n, -1], [sr, s, 1]] as const).forEach(([h, id, sign], side) => {
           const annex = ids[side] as number, rows = hostRows(h), d = (y: number): number => sign * y;
           paint(tx < annexAt(h) ? id : annex, tx, tx + 1, (y) => d(y) >= BAND && d(y) <= Math.min(deep, BAND + rows));
@@ -307,7 +324,7 @@ export function layoutBlocks(plan: ShipPlan, m: Mask, type: NavyType, vary: read
     const { pair: [r, sr], x0, x1 } = slot;
     const front = x0 > xS ? engines : (innerIds.get(Math.floor((x0 + x1) / 2)) ?? engines);
     const lo = (x: number): number => BAND + outer.lo(x);
-    const access = (side: 0 | 1): number[] => (touchesDock(slot) ? [docks[side]] : [front[side]]);
+    const access = (side: 0 | 1): number[] => (crossAt(slot) < 0 ? [front[side]] : crossAt(slot) === dockAt ? [docks[side]] : [hall]);
     paint(g.room(r.role, { spec: r, access: access(0), doorFirst: x0 > xS }), x0, x1, (y) => y <= -lo(x0));
     paint(g.room(sr.role, { spec: sr, access: access(1), doorFirst: x0 > xS }), x0, x1, (y) => y >= lo(x0));
   }
@@ -316,5 +333,6 @@ export function layoutBlocks(plan: ShipPlan, m: Mask, type: NavyType, vary: read
   // The cross corridor out to the airlocks.
   paint(docks[0], dockAt, dockAt + CW, (y) => y <= -BAND);
   paint(docks[1], dockAt, dockAt + CW, (y) => y >= BAND);
+  if (aft > 0) paint(hall, aft, aft + CW, (y) => Math.abs(y) >= BAND);
   return { g };
 }
