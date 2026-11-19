@@ -276,13 +276,21 @@ export function layoutBlocks(plan: ShipPlan, m: Mask, type: NavyType, vary: read
       const part = (spec: RoomSpec): RoomSpec => (k === 1 ? spec : { ...spec, mods: spec.mods.filter((_, j) => j % k === c), w: c1 - c0 });
       const n = g.room(r.role, { spec: part(r) }), s = g.room(sr.role, { spec: part(sr) });
       for (let tx = c0; tx < c1; tx++) innerIds.set(tx, [n, s]);
-      // An annex (a trauma room, a pantry) takes the stern end of its host's floor, a door only into the host.
-      const annexAt = (h: RoomSpec): number => (h.annex && k === 1 ? c1 - Math.max(MIN_DEPTH, Math.round(((c1 - c0) * h.annex.w * h.annex.h) / full(h))) : c1);
+      // An annex (a trauma room, a pantry) stands behind its host, the host keeping the corridor rows, a wall row
+      // between and a door only into the host; where the piece is too shallow for two rooms, at its stern end instead.
+      let dMin = Infinity;
+      for (let tx = c0; tx < c1; tx++) dMin = Math.min(dMin, inner.hi(tx));
+      const behind = dMin >= 2 * MIN_DEPTH + 1;
+      const hostRows = (h: RoomSpec): number => (h.annex && k === 1 && behind ? dMin - 1 - Math.min(dMin - MIN_DEPTH - 1, Math.max(MIN_DEPTH, Math.round((dMin * h.annex.w * h.annex.h) / full(h)))) : Infinity);
+      const annexAt = (h: RoomSpec): number => (h.annex && k === 1 && !behind ? c1 - Math.max(MIN_DEPTH, Math.round(((c1 - c0) * h.annex.w * h.annex.h) / full(h))) : c1);
       const ids = [n, s].map((id, side) => { const h = side === 0 ? r : sr; return h.annex && k === 1 ? g.room(h.annex.role, { spec: h.annex, access: [id] }) : id; });
       for (let tx = c0; tx < c1; tx++) {
-        const deep = BAND + inner.hi(tx);
-        paint(tx < annexAt(r) ? n : (ids[0] as number), tx, tx + 1, (y) => y <= -BAND && y >= -(outerOf(tx) ? deep : Infinity));
-        paint(tx < annexAt(sr) ? s : (ids[1] as number), tx, tx + 1, (y) => y >= BAND && y <= (outerOf(tx) ? deep : Infinity));
+        const deep = outerOf(tx) ? BAND + inner.hi(tx) : Infinity;
+        ([[r, n, -1], [sr, s, 1]] as const).forEach(([h, id, sign], side) => {
+          const annex = ids[side] as number, rows = hostRows(h), d = (y: number): number => sign * y;
+          paint(tx < annexAt(h) ? id : annex, tx, tx + 1, (y) => d(y) >= BAND && d(y) <= Math.min(deep, BAND + rows));
+          if (rows < Infinity) paint(annex, tx, tx + 1, (y) => d(y) >= BAND + rows + 2 && d(y) <= deep);
+        });
       }
     }
   }
