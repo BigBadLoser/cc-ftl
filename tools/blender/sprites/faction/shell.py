@@ -180,7 +180,6 @@ class LookShell(T.Shell):
                "slope": R[1 if jt is None else jt] if (ax != "x" or jt is not None) else R[0],
                "shelf": R[T.style().shelf_lvl], "shelf_edge": R[4],       # (a flat step at its top: Style.shelf;
                **{f"shelf_back{n}": R[v] for n, v in enumerate(T.style().shelf_back)},   # its front edge lit)
-               **self._shelf_cut(),
                "foot": self.col_face(ax, *mid, 0.0) if self.foot else R[0]}
         mt = {"cont": 0.0, "end": 0.0, "out": 1.0, "in": -1.0}
         if self.hole_tone:                              # (a ramp design draws its hole's inside: its walls' tones)
@@ -292,21 +291,13 @@ class LookShell(T.Shell):
             pts = [(-d, z) for d, z in pts]             # (out from the face is -d here)
             endc = self._end_tone(fam, "x" if ax == "y" else "y")
             shelf = {"shelf": R[T.style().shelf_lvl], "shelf_edge": R[4],      # (its back px the shelf's tone:
-                     **{f"shelf_back{n}": R[T.style().shelf_lvl] for n in range(len(T.style().shelf_back))},
-                     **self._shelf_cut()}
+                     **{f"shelf_back{n}": R[T.style().shelf_lvl] for n in range(len(T.style().shelf_back))}}
             #   no face's lip over them round the corner, so the front's dark back px would show as a pit there)
             cols = [False if q in ("bottom", "back") else shelf.get(q, R[0]) for q in parts]
             prism(k, ax, T.snap(plane), a, b, pts, fam, 2, cols=cols,
                   cap=tuple(endc if t == "end" else False if t == "cont" else R[0] for t in (lo, hi)),
                   mitre=(mt[lo], mt[hi]))
 
-
-    def _shelf_cut(self):
-        """Walls down the cut runs at the shelf's height (walls.shelf_top): the shelf is part of the cut, in its black, so
-        the stub's cut top does not sit sunk between two lit steps."""
-        if self.level != "low":
-            return {}
-        return {"shelf": T.CUT, "shelf_edge": T.CUT, **{f"shelf_back{n}": T.CUT for n in range(len(T.style().shelf_back))}}
 
     def cap_clip(self, q):                              # the far hull's armour plates cut on the corner's chamfer
         return self.line[0] + self.line[1] - self.clip - q[0] - q[1]
