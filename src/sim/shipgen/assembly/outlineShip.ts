@@ -15,14 +15,21 @@ import { SPACE, type RegionGrid } from './regions';
  * is the outline's own edge. The rooms are cut by `layoutBlocks` (corridors, blocks, one splitter).
  */
 
-/** The silhouette at `sx` times its length and `sy` its beam, as a mask about the centre row: `inside(x, y)` with y = 0 the axis. */
+/**
+ * The silhouette at `sx` times its length and `sy` its beam, as a mask about the centre row: `inside(x, y)` with y = 0 the
+ * axis. Only the body scales across; what stands beyond it (a stern flare, wings, pods) keeps its size in tiles, out from
+ * the scaled body's edge.
+ */
 function scaled(sil: Silhouette, sx: number, sy: number): Mask {
-  const W = Math.round(sil.length * sx), H = Math.round(sil.axis * sy);
+  const W = Math.round(sil.length * sx);
+  const bodyAt = (c: number): number => sil.body[Math.min(c, sil.body.length - 1)] as number;
+  const H = Math.max(...sil.body.map((b) => Math.round(b * sy) + sil.axis - b));
   const inside = (x: number, y: number): boolean => {
     if (x < 0 || x >= W || Math.abs(y) > H) return false;
+    const c = Math.floor(x / sx), b = bodyAt(c), hb = Math.round(b * sy), d = Math.abs(y);
     // Rounded by distance from the axis, so the two sides mirror (Math.round takes -2.5 to -2 but 2.5 to 3).
-    const row = sil.rows[sil.axis + Math.sign(y) * Math.round(Math.abs(y) / sy)];
-    return row?.[Math.floor(x / sx)] === '#';
+    const raw = d <= hb ? Math.round(d / sy) : b + d - hb;
+    return sil.rows[sil.axis + Math.sign(y) * raw]?.[c] === '#';
   };
   return { W, H, inside };
 }

@@ -69,6 +69,8 @@ export interface Silhouette {
   rows: string[];
   axis: number;
   length: number;
+  /** The body's half-width per column, before the stern's flare, wings and pods: what an outline scales (the rest keeps its size in tiles). */
+  body: number[];
 }
 
 const pick = (rng: Rng, r: Range): number => rng.int(r[0], r[1]);
@@ -192,6 +194,7 @@ export function drawSilhouette(rng: Rng, p: Profile): Silhouette {
   const L = outer.length;
   // Flare and tail reshape the last stretch of the body itself; mounts stay clear of it.
   const shaped = st.kind === 'flare' || st.kind === 'tail';
+  const pre = outer.slice();
   if (shaped) {
     for (let i = 0; i < sLen; i++) {
       const x = L - sLen + i, d = Math.min(sOut, Math.floor(i / rate) + 1);
@@ -258,5 +261,6 @@ export function drawSilhouette(rng: Rng, p: Profile): Silhouette {
   const ys = used.flatMap((r, y) => (/[#=]/.test(r) ? [y] : []));
   const y0 = Math.min(...ys), y1 = Math.max(...ys);
   const w = Math.max(...used.map((r) => Math.max(r.lastIndexOf('#'), r.lastIndexOf('>')))) + 1;
-  return { rows: used.slice(y0, y1 + 1).map((r) => r.slice(0, w)), axis: axis - y0, length: w };
+  const bodyHalf = top.map((t, x) => (x < sternFrom ? t : (pre[x] as number)));
+  return { rows: used.slice(y0, y1 + 1).map((r) => r.slice(0, w)), axis: axis - y0, length: w, body: bodyHalf };
 }
