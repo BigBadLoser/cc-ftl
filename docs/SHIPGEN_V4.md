@@ -271,3 +271,84 @@ planning (fillers are added to the plan before reactors are sized, as the ship c
 its kind's max (fillers within theirs) and its aspect.
 
 Later: officers in cabins and ratings in a barracks on bigger ships.
+
+## Layout by candidates and a score (outline ships, #581)
+
+The size ranges and fillers above were built as passes on the greedy splitter: slots cut first, rooms handed out in
+zone order, then repairs (growth caps, back-row matching, merges, L-shape extension, filler cuts, depth cuts, stubs).
+Every decision is final and every rule lives in a different pass, so each fix moved a problem into another pass:
+
+| Issue seen | Cause |
+| --- | --- |
+| Gun, cargo, plant, brig rooms oversized; reactor rooms squeezed to strips | a room's depth is its slot's, whatever it holds |
+| L-shapes, thin strips, rooms reached through unrelated ones | slots cut before the rooms are matched to them |
+| Hull two thick | a later pass leaves floor unpainted |
+| Too many fillers, too much cargo, over-cutting | leftover floor handled by five mechanisms, each choosing kinds |
+| Cabins unequal, too many, scattered | a barracks' shape fixed before it became cabins |
+| Stubs beside corridors, reactors split tiny | each cut sees only its own piece |
+| Hull size jumps with every change | the scale search takes the first hull that fits, not the best |
+
+Nothing looked at the finished ship. The layout is replaced by generate and score: many candidate layouts, each legal
+by construction, one score over the whole ship, the best kept.
+
+### What stays
+
+The hull and silhouette (outline first), the spine and the cross corridors (the dock at the widest flat stretch, an
+aft one where the hull is deep), the engine rows at the stern, the bridge at the bow, mirroring across the spine, the
+cabin block's geometry (cabinBlock.ts), the fit-out and power planning. Furnishing does not run on candidates: they are
+scored on room outlines alone, and only the winner is furnished (a winner whose fit-out fails falls to the next best).
+
+### One rules table per room kind
+
+`roomAccess.ts` and `roomSize.ts` fold into one table, data only, the one answer for every question below:
+
+| Field | Meaning |
+| --- | --- |
+| `size` | floor tiles: least (its modules fit), target, most |
+| `minSide` | least floor width either way (a reactor row's length, a farm's beds) |
+| `aspect` | longest side over shortest, at most (3 unless a kind says otherwise) |
+| `opensOnto` | `hall` (corridor only), or the kinds it may open through (THROUGH, HOST_ONLY, guns, machines) |
+| `wants` | `hull` (guns), `spine` (reactors), `stern` (engines), `bow` (bridge), or none: a score term, not a rule |
+| `filler` | may be made from spare floor, and at most how many a ship |
+
+### Candidates
+
+Each block (one side's floor between corridors, mirrored) is cut by a random series of guillotine cuts into
+rectangles of floor, a wall row or column between:
+
+- a **length cut** splits a block along the spine (both parts keep their spine edge);
+- a **depth cut** splits off the back part, allowed only where the back part reaches a corridor: a cross corridor
+  edge, or a **stub** (a corridor one wide from the spine to the hull) cut in the same step down one end column;
+- a cabin block is a cut of its own: its geometry from its bed count at the depth it gets.
+
+The rectangles are then assigned rooms: the planned rooms first (each to a rectangle within its size range, best
+`wants` first), the rest fillers by the table's limits. A candidate is legal when every room is within its least size
+and `minSide`, every door reaches a hall by its `opensOnto`, and every tile inside the hull is floor, hall or a single
+wall: these are checked on the outline before scoring, so a thick hull or an unreachable room never scores at all.
+
+### The score
+
+One function over the outline (lower is better), its weights in one table:
+
+- each room outside its target: by how far, more past its most;
+- aspect past the kind's limit;
+- each filler room (count, not area), more past a kind's limit, more again for cargo past four rooms a ship;
+- `wants` unmet: a gun room not on the hull, a reactor room not on the spine;
+- floor in fillers over the plan's floor (the hull is bigger than the rooms need);
+- stubs, and a stub within two rooms' width of another corridor;
+- asymmetry where mirrored halves differ in kind.
+
+The scale search scores the best candidate at each hull scale tried and keeps the best overall, so the hull is the one
+the rooms fit best, not the first they fit. The seed test asserts the score's terms (no room past its most, cargo
+rooms at most four, no stub near a corridor) on seeds 1 to 16 of each type.
+
+### Files
+
+`blockLayout.ts` becomes three: `blocks.ts` (hull, spine, cross corridors, engine rows, bridge: the blocks), `cuts.ts`
+(the candidate generator) and `score.ts` (the score and the legality check), with the rules table in `roomRules.ts`.
+The greedy layout stays on the branch behind a flag until the new one beats it on the same sheets.
+
+### Open
+
+- How many candidates a scale (start at a few hundred, measure the time per ship).
+- Weights: tuned on the eight-seed sheets per type, then fixed in the table.
