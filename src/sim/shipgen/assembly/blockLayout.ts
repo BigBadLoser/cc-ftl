@@ -319,7 +319,9 @@ export function layoutBlocks(plan: ShipPlan, m: Mask, type: NavyType, vary: read
     }
     let a = 0;
     for (let tx = x0; tx < x1; tx++) a += Math.max(0, inner.hi(tx));
-    const k = r.role === 'quarters' ? Math.max(1, Math.min(r.mods.length, Math.floor(a / CABIN_AREA), Math.floor((x1 - x0 + 1) / CABIN))) : 1;
+    // Cabins no thinner than the rule for any room: at most `DEEP` times as deep as long.
+    const cabinLen = Math.max(CABIN, Math.ceil(a / Math.max(1, x1 - x0) / DEEP) + 1);
+    const k = r.role === 'quarters' ? Math.max(1, Math.min(r.mods.length, Math.floor(a / CABIN_AREA), Math.floor((x1 - x0 + 1) / cabinLen))) : 1;
     for (let c = 0; c < k; c++) {
       const c0 = x0 + Math.round(((x1 - x0 + 1) * c) / k), c1 = x0 + Math.round(((x1 - x0 + 1) * (c + 1)) / k) - 1;
       const part = (spec: RoomSpec): RoomSpec => (k === 1 ? spec : { ...spec, mods: spec.mods.filter((_, j) => j % k === c), w: c1 - c0 });
