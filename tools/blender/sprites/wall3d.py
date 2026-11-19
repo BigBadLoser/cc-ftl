@@ -43,6 +43,8 @@ def tone(fam, lvl, n, side=None):
     if DIAG and fam == "wall" and abs(n.z) < 0.3 and n.y > 0.7:   # (a diagonal wall's front, between the lit and
         ys = RAMPS["wallQ"][0]                                     # shade sides' ramps)
         return ys[max(0, min(5, lvl))]
+    if DIAG and fam == "wall" and 0.3 < n.z <= 0.85 and n.y > 0.3:  # (... and its ramp's slope: in between too)
+        return RAMPS["wallQ"][0][max(0, min(5, lvl + 1))]
     if n.z > 0.85:
         step = 1                              # a ledge's top: one step lighter (Space Haven's soft highlights)
     elif n.z > 0.3:

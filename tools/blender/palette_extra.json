@@ -35,19 +35,19 @@
   "hex": "#060709"
  },
  "wQH": {
-  "hex": "#5e9791", "set": "walls"
+  "hex": "#5e9791", "set": "walls", "flat": true, "aa": "teal"
  },
  "wQL": {
-  "hex": "#487877", "set": "walls"
+  "hex": "#487877", "set": "walls", "flat": true, "aa": "teal"
  },
  "wQS": {
-  "hex": "#3a6463", "set": "walls"
+  "hex": "#3a6463", "set": "walls", "flat": true, "aa": "teal"
  },
  "wQM": {
-  "hex": "#2c5051", "set": "walls"
+  "hex": "#2c5051", "set": "walls", "flat": true, "aa": "teal"
  },
  "wQD": {
-  "hex": "#1c3638", "set": "walls"
+  "hex": "#1c3638", "set": "walls", "flat": true, "aa": "teal"
  },
  "wXL": {
   "hex": "#3e6868"
@@ -63,11 +63,11 @@
  },
  "wHW": {
   "hex": "#80bcae", "aa": "teal", "set": "window",
-  "aa_join": ["wH", "wL", "wS", "wM", "wD", "wXL", "wXS", "wXM", "wXD", "wQH", "wQL", "wQS", "wQM", "wQD"]
+  "aa_join": ["wH", "wL", "wS", "wM", "wD", "wXL", "wXS", "wXM", "wXD"]
  },
  "wallsTealAA": {
   "set": "walls_aa", "aa": "teal",
-  "aa_join": ["wH", "wL", "wS", "wM", "wD", "wXL", "wXS", "wXM", "wXD", "wQH", "wQL", "wQS", "wQM", "wQD"]
+  "aa_join": ["wH", "wL", "wS", "wM", "wD", "wXL", "wXS", "wXM", "wXD"]
  },
  "winBlue": {
   "hex": "#4994f8", "set": "window_src"

@@ -360,7 +360,7 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
             x = f1
 
 
-DLINE = "wQS"                                   # the ramp's seam lines' tone, square on (crisp, so between its own
+DLINE = "wM"                                    # the ramp's seam lines' tone, square on (crisp, so between its own
 #                                                 line tone and the next up: a slanted face's anti-aliased ones read so)
 _SK = [None, 0.4 / 32, None, T.LINE]              # the slope's grid, as skirt last set it (_slope_grid)
 
