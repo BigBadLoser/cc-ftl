@@ -68,11 +68,20 @@ function split(band: Band, pairs: readonly Pair[], vary: readonly number[], spar
   const tryShare = (share: number): Piece[] | null => {
     const out: Piece[] = [];
     let s = 0, x = band.segs[0]?.[0] ?? 0, first = out.length;
+    // Leftover floor from a to b as storerooms, none much longer than it is deep (a plating column between them).
+    const stores = (a: number, b: number): void => {
+      const n = Math.max(1, Math.round((b - a + 1) / (1.5 * Math.max(MIN_DEPTH, area(a)) + 1)));
+      for (let k = 0, x0 = a; k < n; k++) {
+        const x1 = k === n - 1 ? b : a + Math.round(((k + 1) * (b - a + 1)) / n) - 1;
+        out.push({ pair: store(x1 - x0), x0, x1 });
+        x0 = x1 + 1;
+      }
+    };
     // A run's end: what is left from `x` on, long enough for a room, is a store (an outer tier leaves it to the inner
     // rooms); else the run's last room takes it. Then the next run.
     const next = (): void => {
       const last = out.length > first ? out[out.length - 1] : undefined, end = (band.segs[s] as [number, number])[1];
-      if (end - x >= MIN_DEPTH) { if (!sparse) out.push({ pair: store(end - x), x0: x, x1: end }); } else if (last) last.x1 = end;
+      if (end - x >= MIN_DEPTH) { if (!sparse) stores(x, end); } else if (last) last.x1 = end;
       s++; x = band.segs[s]?.[0] ?? 0; first = out.length;
     };
     for (const [i, pair] of pairs.entries()) {
@@ -83,7 +92,8 @@ function split(band: Band, pairs: readonly Pair[], vary: readonly number[], spar
         if (s >= band.segs.length) return null;
         const end = (band.segs[s] as [number, number])[1], x0 = x;
         let a = 0, deep = 0;
-        const long = (): boolean => a >= r.w * r.h && (x - x0) >= ASPECT * (a / Math.max(1, x - x0));
+        // Past its planned floor, a room stops at three times its depth or 1.6 times that floor.
+        const long = (): boolean => a >= r.w * r.h && ((x - x0) >= ASPECT * (a / Math.max(1, x - x0)) || a >= 1.6 * r.w * r.h);
         for (; x < end && ((a < goal && !long()) || x - x0 < len || (x - x0) * ASPECT < deep); x++) { a += area(x); deep = Math.max(deep, area(x)); }
         if (a >= r.w * r.h && x - x0 >= len) { out.push({ pair, x0, x1: x }); x++; break; }
         x = x0;
@@ -92,7 +102,7 @@ function split(band: Band, pairs: readonly Pair[], vary: readonly number[], spar
     }
     if (s < band.segs.length && x < (band.segs[s] as [number, number])[1]) next(); else s++;
     // Runs of an inner band the rooms did not reach hold stores (no floor stands empty).
-    if (!sparse) for (const [a, b] of band.segs.slice(s)) out.push({ pair: store(b - a), x0: a, x1: b });
+    if (!sparse) for (const [a, b] of band.segs.slice(s)) stores(a, b);
     return out;
   };
   return tryShare(full) ?? tryShare((1 + full) / 2) ?? tryShare(1);

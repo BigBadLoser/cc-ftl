@@ -26,6 +26,8 @@ interface Shape {
   guns: 'forward' | 'spread';
   /** The family whose budget it plans with (a destroyer is a frigate with more guns and drives, fewer crew). */
   family: string;
+  /** Shuttle bays, where the type's size calls for one (over its hull family's). */
+  bays?: number;
   bonus?: Partial<Record<'weapons' | 'engines' | 'crew' | 'crates' | 'shields' | 'pointDefense' | 'reactors', number>>;
 }
 
@@ -33,7 +35,7 @@ export const NAVY_TYPES: Record<NavyType, Shape> = {
   corvette: { centre: 'none', bow: 'bridge', guns: 'forward', family: 'corvette', bonus: { shields: 1 } },
   frigate: { centre: 'none', bow: 'bridge', guns: 'spread', family: 'frigate' },
   destroyer: { centre: 'none', bow: 'battery', guns: 'forward', family: 'frigate', bonus: { weapons: 4, reactors: 1, engines: 1, crew: -1, crates: -1 } },
-  cruiser: { centre: 'citadel', bow: 'bridge', guns: 'spread', family: 'cruiser', bonus: { weapons: 3, reactors: 2 } },
+  cruiser: { centre: 'citadel', bow: 'bridge', guns: 'spread', family: 'cruiser', bays: 1, bonus: { weapons: 3, reactors: 2 } },
   carrier: { centre: 'deck', bow: 'bridge', guns: 'spread', family: 'carrier' },
 };
 
@@ -68,7 +70,7 @@ function roleOf(f: FactionDef, type: NavyType, shape: Shape): ShipRoleDef {
   const fam = (f.hullFamilies ?? []).find((h) => h.id === shape.family) as HullFamilyDef;
   const bonus = { ...(fam.bonus ?? {}) } as Record<string, number>;
   for (const [k, v] of Object.entries(shape.bonus ?? {})) bonus[k] = (bonus[k] ?? 0) + v;
-  return { id: type, weight: fam.weight, archetypes: [], bonus, ...(fam.bays ? { bays: fam.bays } : {}) };
+  return { id: type, weight: fam.weight, archetypes: [], bonus, ...((shape.bays ?? fam.bays) ? { bays: shape.bays ?? fam.bays } : {}) };
 }
 
 /** The role a navy type plans with: its family's budget and the type's slant. */

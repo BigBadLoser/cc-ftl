@@ -121,7 +121,7 @@ export function assembleOutline(
   return fitShell(
     rng, f, factionId, seed, role, 'sections', { crew: plan.crew } as Pick<ShipPlan, 'crew'>,
     { rows, roomOf: snap.roomOf, width: snap.width, height: snap.height, roles: g.regions.map((r) => r.role), specs: g.regions.map((r) => r.spec) },
-    `outline ${type}`, defs, n, { bareHalls: type !== 'cruiser' && type !== 'carrier' },
+    `outline ${type}`, defs, n, { bareHalls: true },
   );
 }
 
