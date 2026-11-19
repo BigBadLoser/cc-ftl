@@ -34,6 +34,38 @@ def plain_relief():
     return _STYLE[0]
 
 
+
+SNAP = {"y": 0.25, "x": 0.75}   # per face axis: the phase (in px of height) of the screen's px rows on a straight face
+#   (_paint); thin bands sit on whole rows there so a 1 px line runs in clean pairs, not dots
+
+
+YD = 64 / 4                  # screen px down per unit a part stands proud of a straight face
+
+
+def _row(z, d):
+    """z on the screen's row grid for a part d proud of a straight face (NUDGE; SNAP's phase)."""
+    if not NUDGE or _AX[0] is None:
+        return z
+    ph = SNAP[_AX[0]] + YD * d
+    return (round(z * W.ZART - ph) + ph) / W.ZART
+
+
+_AX = [None]
+
+
+def _paint(k, ax, plane, u0, u1, z0, z1, d, fam, tone):
+    """T.paint, its top and foot on the screen's px rows on a straight face (_row)."""
+    _AX[0] = ax
+    dd = d + T.PAINT
+    h = z1 - z0                                         # (its foot on a row, its height whole px as near as can be:
+    z0 = _row(z0, dd)                                   #   snapping both ends alone could take or add a px)
+    if NUDGE and _AX[0] is not None:
+        z1 = z0 + max(1, round(h * W.ZART)) / W.ZART
+    else:
+        z1 = z0 + h
+    if z1 - z0 > 1e-6:
+        T.paint(k, ax, plane, u0, u1, z0, z1, d, fam, tone)
+
 def _nudge(ax):
     """The px a face's rail and lip seams move along u to sit centred between its posts on screen (a part's depth moves
     it a px sideways per LINE, one way on each axis's faces): (rail, lip)."""
@@ -83,9 +115,9 @@ def _lip(k, ax, plane, a, b, ends, zs, top, fam):
     zf = zg if room else min(zg, top)                   # seams up to it, no seam over it)
     if not room and top - zl - LIP_H < 0.01:
         return zg, zl + LIP_H
-    T.paint(k, ax, plane, a, b, zl + LIP_H, zg + PZ if room else top, 0.0, fam, 2)             # (the face over it)
+    _paint(k, ax, plane, a, b, zl + LIP_H, zg + PZ if room else top, 0.0, fam, 2)             # (the face over it)
     if room:
-        T.paint(k, ax, plane, a, b, zg, zg + PZ, T.PAINT, fam, 1)
+        _paint(k, ax, plane, a, b, zg, zg + PZ, T.PAINT, fam, 1)
     for u in _thirds(a, b, _nudge(ax)[1]):
         op, out = T.OPEN, T.LIP_OUT
         if op and out and (op[0] < u < op[0] + out * T.LINE or op[1] - out * T.LINE < u < op[1]):
@@ -95,7 +127,7 @@ def _lip(k, ax, plane, a, b, ends, zs, top, fam):
         dq, zq = LIP_D + T.PAINT, zl + LIP_H + T.PAINT
         prism(k, ax, plane, q0, q1, [(0.0, zh), (dq, zh), (dq, zq), (0.0, zq)], fam, 2,
               cols=[False, None, None, False])
-        T.paint(k, ax, plane, q0, q1, zl + LIP_H, zf, T.PAINT, fam, 1)
+        _paint(k, ax, plane, q0, q1, zl + LIP_H, zf, T.PAINT, fam, 1)
     return (zg + PZ if room else zg), zl + LIP_H
 
 
@@ -121,7 +153,7 @@ def _rail(k, ax, plane, a, b, ends, top, fam):
         prism(k, ax, plane, u0, u1, prof, fam, 3, mitre=m,       # (no end where it runs on into another set-back
               cap=tuple(False if jn else None for jn in joins))  # block: a window's rail, RAIL_LAYOUT)
         zt = z1 - MID_DROP if mid else z1
-        T.paint(k, ax, plane, u0, u1, zt - PZ, zt, d, fam, 5)                                    # its top edge lit
+        _paint(k, ax, plane, u0, u1, zt - PZ, zt, d, fam, 5)                                    # its top edge lit
         nxt = bl[i + 1][2] if i + 1 < len(bl) else False
         if mid and u1 < b - 1e-6 and not nxt and NUDGE:  # (a seam where it meets the end block on its right, as the
             e = RAIL_D + 2 * T.PAINT                    # end block's side shows on its left: a sheet the px left of
@@ -155,7 +187,7 @@ def wall_face(k, ax, plane, a, b, ends, zs, top, full):
         return
     zh = _rail(k, ax, plane, a, b, ends, top, F)                                                 # the rail
     for f0, f1 in T.posts(k, ax, plane, a, b, ends, zlt, zh, F, groove=False):    # (the posts plain, on down to the
-        T.paint(k, ax, plane, f0, f1, zb, zh, 0.0, F, 2)                          # lip's top) ... the field
+        _paint(k, ax, plane, f0, f1, zb, zh, 0.0, F, 2)                          # lip's top) ... the field
         if f1 - f0 < 0.3 or (T.OPEN and ax == "y" and f0 < T.OPEN[1] and f1 > T.OPEN[0]):
             continue
         w = f1 - f0
@@ -170,8 +202,8 @@ def wall_face(k, ax, plane, a, b, ends, zs, top, full):
         b0 = q0                                          # (the raised bar and fine lines placed as before ...)
         b1 = q1
         q0, q1 = q0 - 2 * PZ, q1 - 2 * PZ                # (... the panel's top and foot 2 px down, the slot with it)
-        T.paint(k, ax, plane, p0, p1, q0, q1, PAINT, F, 1)                                        # panel outline
-        T.paint(k, ax, plane, _u(n0 + 1, 2 * PAINT), _u(n1 - 1, 2 * PAINT), q0 + 0.026, q1 - 0.026, 2 * PAINT, F, 2)
+        _paint(k, ax, plane, p0, p1, q0, q1, PAINT, F, 1)                                        # panel outline
+        _paint(k, ax, plane, _u(n0 + 1, 2 * PAINT), _u(n1 - 1, 2 * PAINT), q0 + 0.026, q1 - 0.026, 2 * PAINT, F, 2)
         if T.VARIANT[0]:                                 # (a straight run's top design in the panel)
             from . import wall3d_variants as V
             V.wall_top(k, ax, plane, p0 + LINE, p1 - LINE, q0 + 0.026, q1 - 0.026, F, T.VARIANT[0])
@@ -179,18 +211,18 @@ def wall_face(k, ax, plane, a, b, ends, zs, top, full):
         bw, nc = 0.42 * w, n0 + n1                       # (centred on the panel: twice its centre, in px)
         ns = _odd(bw / LINE + 2, nc % 2)                 # the slot's width in px (a px round the bars)
         nl = _odd(0.5 * w / LINE, nc % 2)                # the fine lines'
-        T.paint(k, ax, plane, _u((nc - ns) / 2, 3 * PAINT), _u((nc + ns) / 2, 3 * PAINT), q1 - 0.27 - PZ, q1 - 0.07,
+        _paint(k, ax, plane, _u((nc - ns) / 2, 3 * PAINT), _u((nc + ns) / 2, 3 * PAINT), q1 - 0.27 - PZ, q1 - 0.07,
                 3 * PAINT, F, 0)                         # (its foot a px further down)
         for j in range(2):                                                                       # ochre bars
             bz = q1 - 0.09 - j * 0.085 - PZ              # (a px down, in the slot)
-            T.paint(k, ax, plane, _u((nc - ns) / 2 + 1, 4 * PAINT), _u((nc + ns) / 2 - 1, 4 * PAINT), bz - 0.05, bz,
+            _paint(k, ax, plane, _u((nc - ns) / 2 + 1, 4 * PAINT), _u((nc + ns) / 2 - 1, 4 * PAINT), bz - 0.05, bz,
                     4 * PAINT, "ochre", 3)
         zr = b1 - 0.5
         prism(k, ax, plane, _u(n0 + 1, FR), _u(n1 - 1, FR), [(0.0, zr - 0.07), (FR, zr - 0.07), (FR, zr), (0.0, zr)],
               F, 3, cols=[False, None, None, False], cap=False, mitre=(0.0, lambda d, z: d - FR))  # raised bar: its
         gap = (zr - 0.07 - b0) / 3                       # front the panel's full width between its seams, its top's
         for zz in (zr - 0.07 - gap, zr - 0.07 - 2 * gap):  # back cut a px short at its right end ... the two lines
-            T.paint(k, ax, plane, _u((nc - nl) / 2, 3 * PAINT), _u((nc + nl) / 2, 3 * PAINT), zz - 0.026, zz,
+            _paint(k, ax, plane, _u((nc - nl) / 2, 3 * PAINT), _u((nc + nl) / 2, 3 * PAINT), zz - 0.026, zz,
                     3 * PAINT, F, 1)                                                            # evenly under it
 
 
