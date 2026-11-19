@@ -70,21 +70,23 @@ export function paintPlaced(plan: ShipPlan, { fr, lay, battery }: Placed): Regio
       paint(maint, x, x + 1, (y) => Math.abs(y) > mt.hallY(x) && Math.abs(y) <= mt.hallY(x) + 2);
       paint(SOLID, x, x + 1, (y) => Math.abs(y) > mt.hallY(x) + 2);
     }
+    const outer: [number, number][] = [];
     mt.guns.forEach(([s0, s1], i) => {
       const pair = battery[i];
       if (!pair) return;
+      outer[i] = [-1, -1];
       ([0, 1] as const).forEach((side) => {
         const h = pair[side], sign = side === 0 ? -1 : 1;
-        paint(g.room(h.role, { spec: h, access: [maint], doors: i === 0 || i === mt.guns.length - 1 ? 1 : 2, rank: -1 }), s0, s1, (y) => sign * y >= mt.hallY(s0) && sign * y <= topAt(s0));
+        paint((outer[i] as [number, number])[side] = g.room(h.role, { spec: h, access: [maint], doors: i === 0 || i === mt.guns.length - 1 ? 1 : 2, rank: -1 }), s0, s1, (y) => sign * y >= mt.hallY(s0) && sign * y <= topAt(s0));
       });
     });
-    // A doubled column: the next gun pair inboard of the outer gun, the rest of the column, onto the spine.
+    // A doubled column: the next gun pair inboard of the outer gun, the rest of the column, a door between them.
     mt.inner.forEach((site, j) => {
-      const pair = battery[mt.guns.length + j], st = mt.guns[site];
-      if (!pair || !st) return;
+      const pair = battery[mt.guns.length + j], st = mt.guns[site], out = outer[site];
+      if (!pair || !st || !out) return;
       ([0, 1] as const).forEach((side) => {
         const h = pair[side], sign = side === 0 ? -1 : 1;
-        paint(g.room(h.role, { spec: h, rank: -1 }), st[0], st[1], (y) => sign * y >= BAND && sign * y < mt.hallY(st[0]));
+        paint(g.room(h.role, { spec: h, rank: -2, access: [out[side]] }), st[0], st[1], (y) => sign * y >= BAND && sign * y < mt.hallY(st[0]));
       });
     });
   }
