@@ -3,6 +3,7 @@ import { cargoSpec, dockSpec, engineSpec, reactorSpec, weaponSpec, type RoomSpec
 import { pairUp } from '../topoNavy';
 import { NAVY_TYPES, SHIP_ROOMS, type NavyType } from './navyShip';
 import { RegionGrid, SOLID, SPACE } from './regions';
+import { cabinsFor } from './cabinBlock';
 import { onHall, opensThrough, roomKind, type RoomKind } from './roomAccess';
 
 /**
@@ -316,6 +317,21 @@ export function layoutBlocks(plan: ShipPlan, m: Mask, type: NavyType, vary: read
       while (e < x1 && outerOf(e) === outerOf(tx)) e++;
       if (outerOf(tx) || (e - tx < MIN_DEPTH && (tx > x0 || e < x1) && [tx - 1, e].some((q) => outerOf(q)))) for (let q = tx; q < e; q++) capped.add(q);
       tx = e;
+    }
+    // A barracks deep enough for two rows of cabins: a cabin block off a corridor of its own.
+    let rowsMin = Infinity;
+    for (let tx = x0; tx < x1; tx++) rowsMin = capped.has(tx) ? -1 : Math.min(rowsMin, inner.hi(tx));
+    const blocks = [r, sr].map((h) => (h.role === 'quarters' && !r.annex && !sr.annex && rowsMin > 0 ? cabinsFor(h, x1 - x0, rowsMin) : null));
+    if (blocks.some((b) => b)) {
+      const ids = ([[r, -1], [sr, 1]] as const).map(([h, sign], side) => {
+        const b = blocks[side], d = (y: number): number => sign * y;
+        if (!b) { const id = g.room(h.role, { spec: h }); paint(id, x0, x1, (y) => d(y) >= BAND); return id; }
+        for (const st of b.stubs) paint(hall, x0 + st.c0, x0 + st.c1, (y) => d(y) >= BAND + st.r0 && d(y) <= BAND + st.r1);
+        const rooms = b.cabins.map(({ rect: c, spec }) => { const id = g.room('quarters', { spec }); paint(id, x0 + c.c0, x0 + c.c1, (y) => d(y) >= BAND + c.r0 && d(y) <= BAND + c.r1); return id; });
+        return rooms[0] as number;
+      }) as [number, number];
+      for (let tx = x0; tx < x1; tx++) innerIds.set(tx, ids);
+      continue;
     }
     let a = 0;
     for (let tx = x0; tx < x1; tx++) a += Math.max(0, inner.hi(tx));
