@@ -19,6 +19,9 @@ END_W = 0.25                        # its end blocks along a tile (the middle bl
 LIP_D, LIP_H = PX, 3 * PZ           # the lip at the face's foot: its depth (2 px), its height
 MID_DROP = 3 * PZ                   # the middle block's top: its front edge this far under its back
 SHELF = 4 / 32                      # the ramp's top a flat step this deep against the wall (4 px)
+POSTS = "tile"  # a face's posts while a piece builds: "tile" (at each tile edge), "none" (a diagonal wall's fill),
+#   "all" (its join: one post the face's length); either of the last two with no lip or rail seams
+PLAIN = False   # every field plain (no panel) while a piece builds: a diagonal wall's fill and joins
 NUDGE = True    # the px nudges that centre a face's parts between its posts on screen (_nudge); off for a face seen
 #   square on (a diagonal wall), where depth moves nothing sideways
 PX0 = 0.875     # where the camera's px boundaries fall along the default wall's front (in px, off u's own grid)
@@ -122,7 +125,7 @@ def _lip(k, ax, plane, a, b, ends, zs, top, fam):
     _paint(k, ax, plane, a, b, zl + LIP_H, zg + PZ if room else top, 0.0, fam, 2)             # (the face over it)
     if room:
         _paint(k, ax, plane, a, b, zg, zg + PZ, T.PAINT, fam, 1)
-    for u in _thirds(a, b, _nudge(ax)[1]):
+    for u in (_thirds(a, b, _nudge(ax)[1]) if POSTS == "tile" else []):
         op, out = T.OPEN, T.LIP_OUT
         if op and out and (op[0] < u < op[0] + out * T.LINE or op[1] - out * T.LINE < u < op[1]):
             u += out * T.LINE * (-1 if u < (op[0] + op[1]) / 2 else 1)   # (a window's seam by its post, the opening
@@ -146,7 +149,8 @@ def _rail(k, ax, plane, a, b, ends, top, fam):
     mit = _mitres(ends)
     z0 = rail_foot(top)
     z1 = z0 + RAIL_H                                    # (under the cap's black)
-    bl = T.RAIL_LAYOUT(a, b) if T.RAIL_LAYOUT else _blocks(a, b, _nudge(ax)[0])
+    bl = (T.RAIL_LAYOUT(a, b) if T.RAIL_LAYOUT else [(a, b, POSTS == "none")] if POSTS != "tile"
+          else _blocks(a, b, _nudge(ax)[0]))           # (over a join's post an end block, over a fill a middle one)
     for i, (u0, u1, mid) in enumerate(bl):
         d = MID_D if mid else RAIL_D
         zb = z0 - PZ if mid else z0
@@ -190,9 +194,13 @@ def wall_face(k, ax, plane, a, b, ends, zs, top, full):
     if not full:
         return
     zh = _rail(k, ax, plane, a, b, ends, top, F)                                                 # the rail
-    for f0, f1 in T.posts(k, ax, plane, a, b, ends, zlt, zh, F, groove=False):    # (the posts plain, on down to the
+    if POSTS == "all":                                   # (a diagonal wall's join: one post the face's length)
+        T.slab(k, ax, plane, a, b, zlt, zh, FR, F, 3, ends=(False, False))
+    fields = ([] if POSTS == "all" else [(a, b)] if POSTS == "none"
+              else T.posts(k, ax, plane, a, b, ends, zlt, zh, F, groove=False))
+    for f0, f1 in fields:    # (the posts plain, on down to the
         _paint(k, ax, plane, f0, f1, zb, zh, 0.0, F, 2)                          # lip's top) ... the field
-        if f1 - f0 < 0.3 or (T.OPEN and ax == "y" and f0 < T.OPEN[1] and f1 > T.OPEN[0]):
+        if f1 - f0 < 0.3 or PLAIN or (T.OPEN and ax == "y" and f0 < T.OPEN[1] and f1 > T.OPEN[0]):
             continue
         w = f1 - f0
         p0, p1, q0, q1 = f0 + 0.04, f1 - 0.04 - LINE, zb + 0.1, zh - 0.06    # (its right side a px further in,
