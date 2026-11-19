@@ -82,10 +82,13 @@ def wall_top(fam, level):
     skirt-high stubs (the hull is a ghost there, see hull.py)."""
     if fam == "hull":
         return hull_top() if level != "low" else ZG
-    return {"up": HF, "cut": skirt_top() + CUT, "low": shelf_top()}[level]
+    return {"up": HF, "cut": skirt_top() + CUT, "low": shelf_top() + LOW_OVER}[level]
 
 
 SHELF_CELLS = 4    # the ramp's top: a flat step this many cells deep against the wall (wall3d_v2.SHELF)
+
+
+LOW_OVER = 3 / ZART     # walls down: the stub cut this far over the shelf (3 art px), so the step shows under the cut
 
 
 def shelf_top():
