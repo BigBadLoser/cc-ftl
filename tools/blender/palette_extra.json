@@ -34,6 +34,21 @@
  "gFill": {
   "hex": "#060709"
  },
+ "wQH": {
+  "hex": "#5e9791", "set": "walls"
+ },
+ "wQL": {
+  "hex": "#487877", "set": "walls"
+ },
+ "wQS": {
+  "hex": "#3a6463", "set": "walls"
+ },
+ "wQM": {
+  "hex": "#2c5051", "set": "walls"
+ },
+ "wQD": {
+  "hex": "#1c3638", "set": "walls"
+ },
  "wXL": {
   "hex": "#3e6868"
  },
