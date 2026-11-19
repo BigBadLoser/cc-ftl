@@ -12,6 +12,8 @@
 	import { windowTilesOf } from './windows';
 	import { move as region } from './move.svelte';
 	import { rectTiles } from './region';
+	import { enclosedAt } from './fill';
+	import { roomTypes } from './palette';
 
 	type Edge = 'n' | 's' | 'e' | 'w';
 	type Mode =
@@ -38,6 +40,15 @@
 	/** The shape a stroke in progress will apply on release (nothing is committed before). */
 	let shape = $state.raw<Tile[] | null>(null);
 
+	/** The Room tool over a walled-in open space: the area a click there would make a room (shown before the click, any shape). */
+	const fillArea = $derived.by((): Tile[] | null => {
+		const l = lab.layout, r = lab.drag;
+		if (lab.tool !== 'room' || lab.compare || !l) return null;
+		const t: Tile | null = r ? (r.w === 1 && r.h === 1 ? [r.x, r.y] : null) : pointer;
+		return t ? enclosedAt(l, t[0], t[1]) : null;
+	});
+	const roleName = $derived(roomTypes.find((t) => t.role === lab.role)?.name ?? lab.role);
+
 	const marks = $derived.by((): Mark[] => {
 		const d = lab.design, l = lab.layout;
 		if (!d || !l) return [];
@@ -49,7 +60,8 @@
 			{ tiles: lab.flag, color: 'rgba(255,70,70,1)' },
 		];
 		// the tile the active tool will affect under the pointer (a room drag shows its rectangle instead; a module its ghost)
-		if ((shape || pointer) && lab.tool !== 'select' && lab.tool !== 'move' && lab.tool !== 'note' && lab.tool !== 'window' && !lab.drag && (shape || lab.tool !== 'module')) out.push({ tiles: shape ?? [pointer as Tile], color: erasing ? 'rgba(255,90,90,1)' : 'rgba(255,255,255,1)', fill: false });
+		if (fillArea) out.push({ tiles: fillArea, color: 'rgba(80,220,255,1)' });
+		else if ((shape || pointer) && lab.tool !== 'select' && lab.tool !== 'move' && lab.tool !== 'note' && lab.tool !== 'window' && !lab.drag && (shape || lab.tool !== 'module')) out.push({ tiles: shape ?? [pointer as Tile], color: erasing ? 'rgba(255,90,90,1)' : 'rgba(255,255,255,1)', fill: false });
 		const wg = lab.tool === 'window' ? lab.windowGhost : null;
 		if (wg) out.push({ tiles: wg.tiles, color: wg.error ? 'rgba(255,70,70,1)' : 'rgba(90,255,120,1)' });
 		const wt = windowTilesOf(l);
@@ -61,7 +73,7 @@
 		if (region.marquee) out.push({ tiles: rectTiles(region.marquee), color: 'rgba(80,220,255,1)' });
 		if (region.box) out.push({ tiles: rectTiles(region.box), color: region.float ? 'rgba(90,255,120,1)' : 'rgba(255,255,255,1)', fill: false });
 		const r = lab.drag;
-		if (r) {
+		if (r && !fillArea) {
 			const t: Tile[] = [];
 			for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) t.push([x, y]);
 			out.push({ tiles: t, color: r.ok ? 'rgba(80,220,255,1)' : 'rgba(255,70,70,1)' });
@@ -345,5 +357,6 @@
 	<div class="absolute top-2 left-3"><ShipSettings /></div>
 	<div class="pointer-events-none absolute right-3 bottom-2 text-xs text-muted-foreground tabular-nums" aria-label="Grid zoom">{percentOf(lab.view.zoom, dpr())}%</div>
 	{#if lab.tool === 'window' && lab.windowGhost?.error && !lab.compare}<div class="pointer-events-none absolute bottom-2 left-3 rounded bg-destructive/85 px-2 py-1 text-xs text-white">Cannot go here: {lab.windowGhost.error}</div>{/if}
+	{#if fillArea}<div class="pointer-events-none absolute bottom-2 left-3 rounded bg-background/85 px-2 py-1 text-xs">Click to fill this area: {roleName}, {fillArea.length} tiles</div>{/if}
 	{#if lab.ghost?.error && !lab.compare}<div class="pointer-events-none absolute bottom-2 left-3 rounded bg-destructive/85 px-2 py-1 text-xs text-white">Cannot go here: {lab.ghost.error}</div>{/if}
 </div>
