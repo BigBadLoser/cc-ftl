@@ -43,9 +43,10 @@ export function entriesOf(lay: Layout, room: number): Entry[] {
  * The frame of a room seen from one door: the largest rectangle of floor whose bottom row holds the door's approach
  * tile, the door below it. `mirror` flips it left to right. `floor` says which layout tiles are the room's. With
  * `notched` the rectangle's corner tiles may be wall (a room with cut or round corners keeps its full width and depth:
- * the rules keep off the missing corners).
+ * the rules keep off the missing corners). With `deep` the deepest rectangle at least that wide instead (the largest of
+ * those), its back wall as far from the door as the room runs.
  */
-export function frameOf(floor: (x: number, y: number) => boolean, e: Entry, mirror: boolean, notched = false): Frame {
+export function frameOf(floor: (x: number, y: number) => boolean, e: Entry, mirror: boolean, notched = false, deep = 0): Frame {
   const u = { x: -e.out.x, y: -e.out.y };
   const r = mirror ? { x: u.y, y: -u.x } : { x: -u.y, y: u.x };
   const at = (a: number, b: number): Tile => ({ x: e.at.x + a * r.x + b * u.x, y: e.at.y + a * r.y + b * u.y });
@@ -60,7 +61,8 @@ export function frameOf(floor: (x: number, y: number) => boolean, e: Entry, mirr
     while (a1 < 64 && ok(a1 + 1, rows)) a1++;
     if (notched && edge(a0 - 1, rows)) a0--;
     if (notched && edge(a1 + 1, rows)) a1++;
-    if ((a1 - a0 + 1) * rows > best.area) best = { a0, a1, h: rows, area: (a1 - a0 + 1) * rows };
+    const area = (a1 - a0 + 1) * rows;
+    if (deep > 0 ? a1 - a0 + 1 >= deep && (rows > best.h || area > best.area) : area > best.area) best = { a0, a1, h: rows, area };
   }
   const { a0, a1, h } = best;
   const map = (x: number, y: number): Tile => at(x + a0, h - 1 - y);
@@ -121,7 +123,8 @@ export function furnishByRule(
   const start = lay.modules.length;
   const undo = (): void => { while (lay.modules.length > start) lay.pop(); };
   for (const arr of order(rng, list, need, { ...(frames[0] as Frame), defs: lay.defs })) {
-    for (const f of frames) {
+    const deep = arr.deep ? entries.flatMap((e) => [frameOf(floor, e, flip, false, arr.deep), frameOf(floor, e, !flip, false, arr.deep)]).filter((f) => f.w >= (arr.deep as number)) : [];
+    for (const f of [...deep.sort((a, b) => b.h - a.h), ...frames]) {
       if (arr.when && !arr.when(need, { ...f, defs: lay.defs })) continue;
       const doors: { x: number; y: number }[] = [];
       for (let y = 0; y < f.h; y++) for (let x = 0; x < f.w; x++) {

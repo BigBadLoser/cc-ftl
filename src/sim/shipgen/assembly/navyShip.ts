@@ -36,6 +36,8 @@ interface Shape {
 }
 
 export type ShipRoom = 'medbay' | 'brig' | 'farm' | 'pantry';
+/** A mess: a galley and tables down a long narrow room, the crew's commons. */
+export const MESS: RoomSpec = { role: 'support', dept: 'commons', mods: ['module.galley', 'module.mess_table'], w: 6, h: 3 };
 /** The bigger ships' extra rooms: a med bay with its trauma room behind, a brig round a stasis wheel, a small farm, the mess's pantry. */
 export const SHIP_ROOMS: Record<ShipRoom, RoomSpec> = {
   medbay: { role: 'medbay', mods: ['module.med_bed', 'module.med_bed'], w: 5, h: 4, annex: { role: 'medbay', mods: ['module.recovery', 'module.med_bed'], w: 5, h: 4 } },
@@ -43,6 +45,13 @@ export const SHIP_ROOMS: Record<ShipRoom, RoomSpec> = {
   farm: { role: 'farm', mods: Array<string>(4).fill('module.hydroponics'), w: 4, h: 5 },
   pantry: { role: 'cargo', dept: 'commons', mods: ['module.storage_rack', 'module.storage_rack'], w: 4, h: 3 },
 };
+
+/** The commons a navy ship of `type` adds to its plan: a mess for three crew or more (its pantry off it where the type has one), the type's extra rooms. */
+export function shipCommons(type: NavyType, crew: number): RoomSpec[] {
+  const extra = NAVY_TYPES[type].rooms ?? [];
+  const mess: RoomSpec = extra.includes('pantry') ? { ...MESS, annex: SHIP_ROOMS.pantry } : MESS;
+  return [...(crew >= 3 ? [mess] : []), ...extra.filter((k) => k !== 'pantry').map((k) => SHIP_ROOMS[k])];
+}
 
 export const NAVY_TYPES: Record<NavyType, Shape> = {
   corvette: { maxBeam: 27, centre: 'none', bow: 'bridge', guns: 'forward', family: 'corvette', bonus: { shields: 1 } },

@@ -261,12 +261,7 @@ export function planShip(rng: Rng, f: FactionDef, role: ShipRoleDef, depth: numb
     size: b.size,
   };
   // Power: enough reactors for the plan, or drop guns until the reactor cap covers it.
-  const demandOf = (): number => {
-    const rooms = allRooms(plan);
-    let d = plan.engines * -(defs[engine]?.power ?? -6) + 2 + rooms.length * 3;
-    for (const r of rooms) for (const m of r.mods) d += Math.max(0, -(defs[m]?.power ?? 0));
-    return d;
-  };
+  const demandOf = (): number => planDemand(plan, defs);
   // The budget's reactors are Mk I units of power (`mk1`); the ship then fits as few of its own tier as cover the demand.
   const mk1 = defs['module.reactor']?.power ?? 50;
   const cap = Math.max(1, b.reactors) + Math.ceil(((booked + extraEngines) * -(defs[engine]?.power ?? -6)) / mk1);
@@ -282,6 +277,20 @@ export function planShip(rng: Rng, f: FactionDef, role: ShipRoleDef, depth: numb
   kit.reactor = reactorTier(defs, demand, REACTOR_TIERS.slice(0, REACTOR_TIERS.indexOf(kit.reactor as (typeof REACTOR_TIERS)[number]) + 1));
   plan.reactors = Math.max(1, Math.ceil(demand / (defs[kit.reactor]?.power ?? mk1)));
   return plan;
+}
+
+/** The power a plan's engines and room modules draw, rooms' small loads included; not its lamps (`LAMP_AREA`). */
+export function planDemand(plan: ShipPlan, defs: Record<string, ModuleDef>): number {
+  const rooms = allRooms(plan);
+  let d = plan.engines * -(defs[plan.kit.engine]?.power ?? -6) + 2 + rooms.length * 3;
+  for (const r of rooms) for (const m of r.mods) d += Math.max(0, -(defs[m]?.power ?? 0));
+  return d;
+}
+
+/** Reactors of the plan's tier that power it, its planned rooms' lamps included (`LAMP_AREA`). */
+export function reactorsFor(plan: ShipPlan, defs: Record<string, ModuleDef>): number {
+  const floor = allRooms(plan).reduce((n, r) => n + r.w * r.h, 0);
+  return Math.max(1, Math.ceil((planDemand(plan, defs) + Math.ceil(floor / LAMP_AREA)) / (defs[plan.kit.reactor]?.power ?? 50)));
 }
 
 /** Every room spec of a plan (except engines and reactors, which topologies size themselves). */

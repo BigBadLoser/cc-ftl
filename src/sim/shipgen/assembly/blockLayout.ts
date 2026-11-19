@@ -1,7 +1,7 @@
 import type { ModuleDef } from '../../registry';
 import { cargoSpec, dockSpec, engineSpec, reactorSpec, weaponSpec, type RoomSpec, type ShipPlan } from '../plan';
 import { pairUp } from '../topoNavy';
-import { NAVY_TYPES, SHIP_ROOMS, type NavyType } from './navyShip';
+import { MESS, NAVY_TYPES, type NavyType } from './navyShip';
 import { RegionGrid, SOLID, SPACE } from './regions';
 import { cabinsFor } from './cabinBlock';
 import { onHall, opensThrough, roomKind, type RoomKind } from './roomAccess';
@@ -25,12 +25,10 @@ const ASPECT = 3, DEEP = 2;
 const ZONE = ['weapons', 'bridge', 'shields', 'core', 'reactor', 'plant', 'farm', 'cargo', 'hangar', 'armoury', 'support', 'medbay', 'quarters'];
 /** How far past its planned floor a room of each kind grows to take up spare floor (stores take the rest). */
 const GROW: Partial<Record<RoomKind, number>> = {
-  cargo: 2.5, hangar: 2, mess: 2, medbay: 1.8, farm: 1.5, barracks: 1.4, guns: 1.3, workshop: 1.3, brig: 1.2, pantry: 1.2, trauma: 1.2,
+  cargo: 1.5, hangar: 2, mess: 2, medbay: 1.8, farm: 1.5, barracks: 2.5, guns: 1.3, workshop: 1.3, brig: 1.2, pantry: 1.2, trauma: 1.2,
   reactor: 1.2, shields: 1.2, core: 1.2, plant: 1,
 };
 const growOf = (r: RoomSpec): number => GROW[roomKind(r)] ?? 1.5;
-/** A mess: a galley and tables down a long narrow room, the crew's commons. */
-const MESS: RoomSpec = { role: 'support', dept: 'commons', mods: ['module.galley', 'module.mess_table'], w: 6, h: 3 };
 
 export interface Mask { W: number; H: number; inside: (x: number, y: number) => boolean }
 type Pair = readonly [RoomSpec, RoomSpec];
@@ -205,9 +203,7 @@ export function layoutBlocks(plan: ShipPlan, m: Mask, type: NavyType, vary: read
     : [r]));
   const lone = guns.length % 2 === 1 ? [guns.pop() as RoomSpec] : [];
   const reactors = Array.from({ length: plan.reactors }, () => reactorSpec(1, plan.kit));
-  const extra = NAVY_TYPES[type].rooms ?? [];
-  const mess: RoomSpec = extra.includes('pantry') ? { ...MESS, annex: SHIP_ROOMS.pantry } : MESS;
-  const rest = [...lone, ...(plan.crew.length >= 3 ? [mess] : []), ...extra.filter((k) => k !== 'pantry').map((k) => SHIP_ROOMS[k]), ...reactors, ...plan.shields, ...(plan.core ? [plan.core] : []), ...plan.quarters, ...plan.support, ...plan.cargo, ...plan.hangars];
+  const rest = [...lone, ...reactors, ...plan.shields, ...(plan.core ? [plan.core] : []), ...plan.quarters, ...plan.support, ...plan.cargo, ...plan.hangars];
   const [gn, gs] = pairUp(guns);
   const gunPairs: Pair[] = gn.map((r, i) => [r, gs[i] as RoomSpec] as const);
   const zone = (p: Pair): number => ZONE.indexOf(p[0].role);
@@ -306,7 +302,10 @@ export function layoutBlocks(plan: ShipPlan, m: Mask, type: NavyType, vary: read
   const hall = g.hall('hall');
   // The airlock bays: the cross corridor's halls, with their fixture.
   const docks: [number, number] = [g.hall('dock', undefined, dockSpec()), g.hall('dock', undefined, dockSpec())];
-  paint(g.room(bridge.role, { spec: bridge }), 0, xBr, () => true);
+  // From the first column three floor rows deep: a nose spike or tip narrower than the helm is plating.
+  let xNose = 0;
+  while (xNose < xBr - MIN_DEPTH && top(xNose) < 2) xNose++;
+  paint(g.room(bridge.role, { spec: bridge }), xNose, xBr, () => true);
   const innerIds = new Map<number, [number, number]>();
   for (const { pair: [r, sr], x0, x1 } of innerCut) {
     // Columns of the piece capped at the inner tier: under an outer room, and a sliver between outer rooms too narrow
@@ -326,8 +325,14 @@ export function layoutBlocks(plan: ShipPlan, m: Mask, type: NavyType, vary: read
       const ids = ([[r, -1], [sr, 1]] as const).map(([h, sign], side) => {
         const b = blocks[side], d = (y: number): number => sign * y;
         if (!b) { const id = g.room(h.role, { spec: h }); paint(id, x0, x1, (y) => d(y) >= BAND); return id; }
-        for (const st of b.stubs) paint(hall, x0 + st.c0, x0 + st.c1, (y) => d(y) >= BAND + st.r0 && d(y) <= BAND + st.r1);
-        const rooms = b.cabins.map(({ rect: c, spec }) => { const id = g.room('quarters', { spec }); paint(id, x0 + c.c0, x0 + c.c1, (y) => d(y) >= BAND + c.r0 && d(y) <= BAND + c.r1); return id; });
+        // Each corridor a hall of its own, so its cabins' doors face it (not the spine).
+        const stubs = b.stubs.map((st) => { const id = g.hall('hall'); paint(id, x0 + st.c0, x0 + st.c1, (y) => d(y) >= BAND + st.r0 && d(y) <= BAND + st.r1); return { id, st }; });
+        const rooms = b.cabins.map(({ rect: c, spec }) => {
+          const own = stubs.find(({ st }) => st.c0 === c.c1 || st.c1 === c.c0)?.id ?? hall;
+          const id = g.room('quarters', { spec, access: [own] });
+          paint(id, x0 + c.c0, x0 + c.c1, (y) => d(y) >= BAND + c.r0 && d(y) <= BAND + c.r1);
+          return id;
+        });
         return rooms[0] as number;
       }) as [number, number];
       for (let tx = x0; tx < x1; tx++) innerIds.set(tx, ids);

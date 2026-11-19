@@ -7,8 +7,8 @@ import { SLEEPER } from './quarters';
  * from the spine's wall row (0 is the wall row a room shares with the spine, floor from 1).
  */
 
-/** Floor rows of a cabin; floor columns a cabin takes at least (a station cabin's two). */
-const CABIN_ROWS = 3, CABIN_COLS = 2;
+/** Floor rows of a cabin; floor columns a cabin takes at least (a station cabin's two), and as wide as a cabin is cut. */
+const CABIN_ROWS = 3, CABIN_COLS = 2, ROOMY = 4;
 
 /** A rectangle of the block: columns [c0, c1), rows [r0, r1] (inclusive; `Infinity` runs to the hull). */
 export interface Rect { c0: number; c1: number; r0: number; r1: number }
@@ -22,9 +22,11 @@ export interface CabinBlock { stubs: Rect[]; cabins: Rect[] }
 export function cabinBlock(len: number, rows: number): CabinBlock | null {
   // Rows of cabins: the first (its wall row against the spine, then its floor), the rest a plating row apart.
   const tiers = 1 + Math.floor((rows - CABIN_ROWS) / (CABIN_ROWS + 1));
-  // A unit: cabin floor, wall, corridor, wall, cabin floor; units a plating column apart.
-  const unit = 2 * (CABIN_COLS + 1) + 1;
-  const units = len < unit ? 0 : 1 + Math.floor((len - unit) / (unit + 1));
+  // A unit: cabin floor, wall, corridor, wall, cabin floor; units a plating column apart, as many as keep cabins near
+  // `ROOMY` wide and none under `CABIN_COLS`.
+  const unit = 2 * (CABIN_COLS + 1) + 1, roomy = 2 * (ROOMY + 1) + 1;
+  const most = len < unit ? 0 : 1 + Math.floor((len - unit) / (unit + 1));
+  const units = Math.min(most, Math.max(1, Math.round((len + 1) / (roomy + 1))));
   if (tiers < 2 || units < 1) return null;
   const stubs: Rect[] = [], cabins: Rect[] = [];
   const start = (t: number): number => (t === 0 ? 0 : CABIN_ROWS + 2 + (t - 1) * (CABIN_ROWS + 1));
@@ -32,8 +34,10 @@ export function cabinBlock(len: number, rows: number): CabinBlock | null {
   const end = (t: number): number => (t === tiers - 1 ? Infinity : t === 0 ? CABIN_ROWS : start(t) + CABIN_ROWS - 1);
   for (let u = 0; u < units; u++) {
     const a = Math.round(((len + 1) * u) / units), b = Math.round(((len + 1) * (u + 1)) / units) - 1;
-    // A corridor two wide where the unit has the columns for it, cabins either side.
-    const sw = b - a >= unit + 4 ? 2 : 1, left = Math.floor((b - a - sw) / 2), s0 = a + left;
+    // Cabins either side the same width: the corridor takes the odd column (one or two wide, three where cabins would
+    // be wider than roomy).
+    const w = b - a, side = Math.floor((w - 1) / 2) - 1 > ROOMY ? Math.floor((w - 3) / 2) : Math.floor((w - 1) / 2);
+    const sw = w - 2 * side, s0 = a + side;
     stubs.push({ c0: s0, c1: s0 + sw, r0: 0, r1: start(tiers - 1) + CABIN_ROWS - 1 });
     for (let t = 0; t < tiers; t++) {
       cabins.push({ c0: a, c1: s0, r0: start(t), r1: end(t) });

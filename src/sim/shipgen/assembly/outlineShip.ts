@@ -3,10 +3,10 @@ import { Rng } from '../../rng';
 import { drawSilhouette, type Silhouette } from '../hull/silhouette';
 import { NAVY_PROFILES } from '../hull/navyProfiles';
 import { enginesShort, fitShell, seedOf } from '../generate';
-import { ENGINE_TIERS, REACTOR_TIERS, planShip, type ShipPlan } from '../plan';
+import { ENGINE_TIERS, REACTOR_TIERS, planShip, reactorsFor, type ShipPlan } from '../plan';
 import type { FactionDef, GenResult } from '../types';
 import { layoutBlocks, type Mask } from './blockLayout';
-import { NAVY_TYPES, navyRole, type NavyType } from './navyShip';
+import { NAVY_TYPES, navyRole, shipCommons, type NavyType } from './navyShip';
 import { SPACE, type RegionGrid } from './regions';
 
 /**
@@ -103,7 +103,9 @@ export function assembleOutline(
   // A reactor a tier up where the plan's is Mk I: the power the fit-out would otherwise squeeze into stores as extra reactors.
   const up = REACTOR_TIERS[Math.min(REACTOR_TIERS.length - 1, REACTOR_TIERS.indexOf(planned.kit.reactor as (typeof REACTOR_TIERS)[number]) + 1)] as string;
   const kit = { ...planned.kit, ...(planned.kit.reactor === REACTOR_TIERS[0] && defs[up] ? { reactor: up } : {}), ...(tierUp ? { engine: engineUp } : {}) };
-  const plan: ShipPlan = { ...planned, kit };
+  // The type's commons join the plan (their power counted), and reactors cover the planned floor's lamps.
+  const plan: ShipPlan = { ...planned, kit, support: [...planned.support, ...shipCommons(type, planned.crew.length)] };
+  plan.reactors = reactorsFor(plan, defs);
   const profiles = NAVY_PROFILES[type] ?? [];
   const profile = rng.pick(profiles);
   const sil = drawSilhouette(rng, profile);

@@ -34,6 +34,8 @@ export interface RuleArrangement {
   /** Whether the arrangement suits a room planned with these modules (default: any). */
   when?: (need: readonly string[], c: { w: number; h: number; defs: Record<string, ModuleDef> }) => boolean;
   rule: (c: Ctx) => Piece[];
+  /** Tried in the room's deepest frames first (at least this wide), back wall farthest from the door: a helm to the bow. */
+  deep?: number;
 }
 
 /** The room's sleeper piece (the first planned module that is a bed, not a med bed) and how many of it. */
@@ -235,36 +237,43 @@ function op(c: Ctx): Piece[] {
 }
 
 const HELM = 'module.helm';
-/** The helm and the consoles in the order a helm bridge stands them: half the consoles, the helm, the rest. */
-const helmRow = (need: readonly string[]): string[] => {
-  const ops = need.filter((m) => OPS.includes(m)), half = Math.floor(ops.length / 2);
-  return [...ops.slice(0, half), HELM, ...ops.slice(half)];
-};
-/** Whether a room fits its helm and consoles side by side on the back wall, with a tile to walk before them. */
+/** Whether a room fits its helm on the back wall with a row behind it to walk. */
 const helmFits = (need: readonly string[], r: { w: number; h: number; defs: Record<string, ModuleDef> }): boolean => {
-  const row = helmRow(need);
-  return need.includes(HELM) && row.reduce((n, m) => n + (r.defs[m]?.footprint[0] ?? 2), 0) <= r.w && Math.max(...row.map((m) => r.defs[m]?.footprint[1] ?? 2)) + 1 <= r.h;
+  const [hw, hd] = r.defs[HELM]?.footprint ?? [2, 2];
+  return need.includes(HELM) && hw <= r.w && hd + 1 <= r.h;
 };
 
 /**
- * HS: the helm in the middle of the back wall, the consoles on the side walls facing in (the first beside the helm instead,
- * with `beside`, where the back wall has room), stacked from the back; below the helm's row where they would crowd it.
+ * HF: the helm the frontmost module, on the back wall (the bow, on a ship) and centred on the door. Each console beside it
+ * on the back wall where the corner has room, else on a side wall facing in, stacked back from the helm's row (only
+ * where the back wall is closed off beside the helm, so no corner is walled in). A console with no spot is left to the
+ * plain placer, which keeps the room walkable.
  */
-function helmSides(c: Ctx, beside: boolean): Piece[] {
+function helmFront(c: Ctx): Piece[] {
   const fp = (m: string): readonly [number, number] => c.defs[m]?.footprint ?? [2, 2];
-  const [hw, hd] = fp(HELM), hx = Math.floor((c.w - hw) / 2), ops = c.need.filter((m) => OPS.includes(m));
+  const [hw, hd] = fp(HELM), hx = Math.max(0, Math.min(c.w - hw, c.d - Math.floor(hw / 2)));
   const out: Piece[] = [P(HELM, hx, 0, 0)];
-  let rest = ops;
-  const first = ops[0];
-  if (beside && first && hx + hw + 1 + fp(first)[0] <= c.w) { out.push(P(first, hx + hw + 1, 0, 0)); rest = ops.slice(1); }
-  // A side console stands its depth off the wall, its seat a tile further in: clear of the helm, or start below it.
-  const start = (d: number): number => (hx >= d + 1 ? 0 : hd);
-  let ly = -1, ry = -1;
-  rest.forEach((m, k) => {
+  const ops = c.need.filter((m) => OPS.includes(m)), deep = Math.max(0, ...ops.map((m) => fp(m)[1]));
+  // Room on the back wall each side of the helm; side walls in use behind it (both only where a walk is left between).
+  const gap = [hx, c.w - hx - hw], closed = [hx === 0, c.w - hx - hw === 0], y = [hd, hd];
+  const sides = 2 * deep + 1 <= c.w ? [0, 1] : [0];
+  ops.forEach((m) => {
     const [len, d] = fp(m);
-    if (k % 2 === 0) { if (ly < 0) ly = start(d); out.push(P(m, 0, ly, 3)); ly += len; } else { if (ry < 0) ry = start(d); out.push(P(m, c.w - d, ry, 1)); ry += len; }
+    const back = [0, 1].find((s) => (gap[s] as number) >= len && !(s === 0 ? out.some((p) => p.x === 0 && p.y === 0 && p.def !== HELM) : out.some((p) => p.y === 0 && p.x + fp(p.def)[0] === c.w && p.def !== HELM)));
+    if (back !== undefined) {
+      out.push(P(m, back === 0 ? 0 : c.w - len, 0, 0));
+      closed[back] = true;
+      y[back] = Math.max(y[back] as number, d);
+      return;
+    }
+    // Clear of the door's row.
+    const s = sides.filter((k) => closed[k] && (y[k] as number) + len <= c.h - 1).sort((a, b) => (y[a] as number) - (y[b] as number))[0];
+    if (s === undefined) return;
+    out.push(s === 0 ? P(m, 0, y[s] as number, 3) : P(m, c.w - d, y[s] as number, 1));
+    y[s] = (y[s] as number) + len;
   });
-  return out;
+  // A kind all there or none (the placer takes the rest of a kind).
+  return out.filter((p) => out.filter((q) => q.def === p.def).length === c.need.filter((m) => m === p.def).length);
 }
 
 /** Consoles on the back wall from corner to corner, and the ops room's table between the outer two where it fits. */
@@ -319,9 +328,7 @@ export const RULES: Partial<Record<RoomRole, readonly RuleArrangement[]>> = {
     { name: "CO chief's office, desk and planters", weight: 1, when: (n, r) => !n.includes('module.helm') && !n.some((m) => OPS.includes(m)) && r.w >= 5 && r.w <= 10 && r.h >= 4 && r.h <= 6, rule: co },
     { name: 'OP ops room, consoles on the back wall, a table', weight: 1, when: (n, r) => !n.includes('module.helm') && n.some((m) => OPS.includes(m)) && r.w >= 5 && r.h >= 5, rule: op },
     // The helm amid the consoles, all facing the back wall: a ship's bridge has its door aft, so they face the bow.
-    { name: 'HB helm bridge, the helm amid the consoles on the back wall', weight: 1, when: helmFits, rule: (c) => consoleRow(c, helmRow(c.need)).filter((p) => p.def !== T && p.def !== 'module.chair') },
-    { name: 'HS helm bridge, the consoles on the side walls', weight: 1, when: (n, r) => n.includes(HELM) && r.w >= 4 && r.h >= 4, rule: (c) => helmSides(c, false) },
-    { name: 'HS2 helm bridge, a console beside the helm, the rest on the side walls', weight: 1, when: (n, r) => n.includes(HELM) && r.w >= 7 && r.h >= 4, rule: (c) => helmSides(c, true) },
+    { name: 'HF helm bridge, the helm forward on the door\'s line, the consoles on the side walls behind it', weight: 1, when: helmFits, rule: helmFront, deep: 3 },
   ],
   cargo: [{
     name: 'PA pantry, cold stores along the back wall', weight: 1,

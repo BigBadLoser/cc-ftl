@@ -13,7 +13,7 @@ import type { FactionDef, RoomRole } from './types';
 
 /**
  * The fit-out: every room furnished by rule where one fits (rooms/rules), a room no rule fits given its planned modules
- * plainly, then lights and extra reactors (split from generate.ts). Ships and stations alike.
+ * plainly, then lights and extra reactors in reactor rooms (split from generate.ts). Ships and stations alike.
  */
 
 /** Extra validation of a finished template (stations add their own rules), returning problems. */
@@ -164,16 +164,13 @@ export function fitOut(
   let supply = 0;
   let demand = 0;
   for (const m of lay.modules) { const p = (defs[m.def] as ModuleDef).power; if (p > 0) supply += p; else demand -= p; }
-  // Short of power after lighting: squeeze extra reactors into engineering or stores (never a mess or other living room).
-  // A station plans its reactors (assembly/program.ts) and squeezes one in only where reactors stand.
-  const spare = roles.map((r, i) => (r === 'reactor' || r === 'engine' || (r === 'cargo' && !o.immobile) ? i : -1)).filter((i) => i >= 0);
-  // Courts (lit to scale, so lamp-hungry) can take a reactor on their open floor as a last resort; not on a station.
-  const courts = o.immobile ? [] : roles.map((r, i) => (r === 'plaza' || r === 'garden' || r === 'drill' ? i : -1)).filter((i) => i >= 0);
+  // Short of power after lighting: an extra reactor, only in a reactor room (never cargo, an engine room or open floor).
+  const spare = roles.map((r, i) => (r === 'reactor' ? i : -1)).filter((i) => i >= 0);
   // An extra reactor: the ship's own tier (the one its plan asked for) where one fits, else the smaller tiers down to Mk I.
   const own = REACTOR_TIERS.findIndex((id) => (wanted[id] ?? 0) > 0);
   const extras = REACTOR_TIERS.slice(0, Math.max(0, own) + 1).reverse().filter((id) => defs[id]);
-  for (let k = 0; k < (courts.length > 0 ? 6 : 3) && supply < demand; k++) {
-    const id = extras.find((x) => (k < 3 && placeOne(lay, rng, x, spare)) || (courts.length > 0 && placeOne(lay, rng, x, courts)));
+  for (let k = 0; k < 3 && supply < demand; k++) {
+    const id = extras.find((x) => placeOne(lay, rng, x, spare));
     if (!id) break;
     supply += (defs[id] as ModuleDef).power;
   }
