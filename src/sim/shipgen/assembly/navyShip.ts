@@ -294,10 +294,12 @@ export function generateNavy(f: FactionDef, factionId: string, seed: number, dep
 export function shipQuarters(type: NavyType, planned: readonly RoomSpec[], crew: number, spare: number): RoomSpec[] {
   const sleep = NAVY_TYPES[type].sleep;
   if (sleep === 'cabins') {
-    // Blocks of four beds (two cabins each side of the corridor, two rows deep), so every cabin has its bed and a block
-    // fits a short run. Blocks pair across the spine, a lone one with fillers opposite.
-    const blocks = Math.ceil((crew + spare) / 4);
-    return Array.from({ length: blocks }, () => ({ role: 'quarters', mods: Array<string>(4).fill('module.bed'), w: 11, h: 7, block: true, cabins: false }));
+    // The beds made even, in blocks of four (two cabins each side of the corridor, two rows deep), the last of two where
+    // that is all that is left: the layout claims deep floor for them as one block a side (blockLayout.ts), or lays
+    // these as rows of cabins where no floor is deep enough.
+    const beds = 2 * Math.ceil((crew + spare) / 2);
+    return Array.from({ length: Math.ceil(beds / 4) }, (_, i) => Math.min(4, beds - 4 * i))
+      .map((n) => ({ role: 'quarters', mods: Array<string>(n).fill('module.bed'), w: 4 * n - 5, h: 7, block: true, cabins: false }));
   }
   // Barracks: the spare beds shared out, a bunk sleeping two (single beds where the type has them, a piece each).
   const per = sleep === 'beds' ? 1 : SLEEPER.sleepers;

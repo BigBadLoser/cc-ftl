@@ -206,14 +206,40 @@ export function layoutBlocks(plan: ShipPlan, m: Mask, type: NavyType, vary: read
   /** The corridor a slot opens onto at its end (the airlock bay or the plain cross corridor), if any. */
   const crossAt = (slot: { x0: number; x1: number }): number => cross.find((c) => slot.x1 === c - 1 || slot.x0 === c + CW + 1) ?? -1;
 
-  // Runs of band columns between the bridge, the cross corridors and the drive (a plating column each side of a corridor).
+  // Runs of band columns between the bridge, the cross corridors, the cabin block and the drive (a plating column each
+  // side of a corridor or the block).
+  let claim: Piece | null = null;
   const runs = (from: number, to: number): [number, number][] => {
     const out: [number, number][] = [];
     let a = from;
-    for (const c of cross) { if (c - 1 > a) out.push([a, c - 1]); a = c + CW + 1; }
+    const stops = [...cross.map((c) => [c, c + CW] as const), ...(claim ? [[claim.x0, claim.x1] as const] : [])].sort((p, q) => p[0] - q[0]);
+    for (const [c0, c1] of stops) { if (c0 - 1 > a) out.push([a, c0 - 1]); a = Math.max(a, c1 + 1); }
     if (to > a) out.push([a, to]);
     return out;
   };
+  // The cabin blocks claim deep floor first, as guns the side hull: every bed a cabin, two cabins a row either side of
+  // a corridor of their own, the beds made even and shared over both sides. One corridor's width where the floor is
+  // deep enough, else two; the aftmost stretch deep enough, leaving no run too short for a room beside it.
+  const blockBeds = plan.quarters.filter((q) => q.block).reduce((n, q) => n + q.mods.length, 0);
+  if (blockBeds > 0) {
+    // Each side's cabins even (two a row), the larger share north: 10 beds are 6 and 4.
+    const north = 2 * Math.ceil(blockBeds / 4), south = blockBeds - north, per = north;
+    for (const [units, len] of [[1, 11], [2, 23]] as const) {
+      const rows = CABIN_TIER * Math.max(2, Math.ceil(per / (2 * units))) - 1;
+      for (const [a, b] of runs(xBand, xS).reverse()) {
+        for (let x0 = b - len; x0 >= a && !claim; x0--) {
+          const gl = x0 - a, gr = b - x0 - len;
+          if ((gl > 0 && gl < MIN_DEPTH + 2) || (gr > 0 && gr < MIN_DEPTH + 2)) continue;
+          let ok = true;
+          for (let x = x0; x < x0 + len; x++) if (depth(x) < rows) ok = false;
+          const spec = (n: number): RoomSpec => ({ role: 'quarters', mods: Array<string>(n).fill('module.bed'), w: len, h: rows, block: true, cabins: false });
+          if (ok) claim = { pair: [spec(north), spec(south)], x0, x1: x0 + len };
+        }
+        if (claim) break;
+      }
+      if (claim) break;
+    }
+  }
 
   // The rooms, paired to mirror: guns (a lone room of several guns splits, a gun each side), then the rest by zone.
   const guns = plan.weapons.flatMap((r) => (r.mods.length > 1 && plan.weapons.length % 2 === 1 && r === plan.weapons[plan.weapons.length - 1]
@@ -223,7 +249,7 @@ export function layoutBlocks(plan: ShipPlan, m: Mask, type: NavyType, vary: read
   // Reactors two a room past a pair (a room each for one or two), so no reactor room stands mostly bare.
   const reactors = plan.reactors <= 2 ? Array.from({ length: plan.reactors }, () => reactorSpec(1, plan.kit))
     : Array.from({ length: Math.ceil(plan.reactors / 2) }, (_, i) => reactorSpec(Math.min(2, plan.reactors - 2 * i), plan.kit));
-  const rest = [...lone, ...reactors, ...plan.shields, ...(plan.core ? [plan.core] : []), ...plan.quarters, ...plan.support, ...plan.cargo, ...plan.hangars];
+  const rest = [...lone, ...reactors, ...plan.shields, ...(plan.core ? [plan.core] : []), ...plan.quarters.filter((q) => !claim || !q.block), ...plan.support, ...plan.cargo, ...plan.hangars];
   const [gn, gs] = pairUp(guns);
   const gunPairs: Pair[] = gn.map((r, i) => [r, gs[i] as RoomSpec] as const);
   const zone = (p: Pair): number => ZONE.indexOf(p[0].role);
@@ -276,6 +302,7 @@ export function layoutBlocks(plan: ShipPlan, m: Mask, type: NavyType, vary: read
     const has = (k: RoomKind): boolean => [...innerPairs, ...outerPairs].some((p) => roomKind(p[0]) === k || roomKind(p[1]) === k);
     const fills: Fills = { left: [...(has('workshop') ? [] : ['workshop' as const]), 'lounge', 'gym', ...((NAVY_TYPES[type].rooms ?? []).includes('farm') ? ['farm' as const] : [])] };
     innerCut = split(inner, innerPairs, vary, false, fills);
+    if (innerCut && claim) innerCut = [...innerCut, claim].sort((p, q) => p.x0 - q.x0);
     fillsLeft = fills.left;
     if (!innerCut) return null;
     const slots = [...outerCut], left = [...outerPairs], placed: Piece[] = [];
@@ -398,7 +425,7 @@ export function layoutBlocks(plan: ShipPlan, m: Mask, type: NavyType, vary: read
     const cabinLen = Math.max(CABIN, Math.ceil(a / Math.max(1, x1 - x0) / DEEP) + 1);
     // A row of cabins all one width (three to five floor columns, the length divides evenly), as many as near its beds.
     const L1 = x1 - x0 + 1, beds = Math.max(r.block ? r.mods.length : 0, sr.block ? sr.mods.length : 0);
-    const even = Array.from({ length: L1 }, (_, i) => i + 1).filter((q) => L1 % q === 0 && L1 / q - 1 >= Math.max(3, cabinLen - 1) && L1 / q - 1 <= 5);
+    const even = Array.from({ length: L1 }, (_, i) => i + 1).filter((q) => q <= beds && L1 % q === 0 && L1 / q - 1 >= Math.max(3, cabinLen - 1) && L1 / q - 1 <= 5);
     const k = beds === 0 ? 1 : (even.sort((p, q) => Math.abs(p - beds) - Math.abs(q - beds))[0]
       ?? Math.max(1, Math.min(beds, Math.floor(a / CABIN_AREA), Math.floor(L1 / cabinLen))));
     // The side that is no cabin block is one room the row's length.
