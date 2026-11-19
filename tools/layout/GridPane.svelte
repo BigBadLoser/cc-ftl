@@ -180,7 +180,7 @@
 		if (tool === 'move') {
 			// a paste in flight lands on a click; inside the box a drag carries its contents; elsewhere a drag selects a new box
 			if (region.float) region.drop();
-			else if (region.inBox(tile)) { region.grab(tile); mode = { k: 'carry' }; }
+			else if (region.inBox(tile)) { region.grab(tile, e.altKey); mode = { k: 'carry' }; } // Alt: drag a duplicate
 			else { region.startMarquee(tile); mode = { k: 'marquee', a: tile, moved: false }; }
 			return;
 		}

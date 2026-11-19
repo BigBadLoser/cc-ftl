@@ -90,3 +90,39 @@ describe('lifting a box out of a ship', () => {
     expect(out.moduleIds).toEqual([0]);
   });
 });
+
+describe('turning a piece', () => {
+  it('a quarter turn moves tiles, rooms and modules the way the game turns a module, and four turns are none', async () => {
+    const { turnPiece } = await import('./pieceTurn');
+    const { moduleTiles } = await import('./layout');
+    const l = ship();
+    const p = extract(l, box);
+    const q = turnPiece(p, 'cw');
+    expect([q.w, q.h]).toEqual([6, 8]);
+    // every module footprint tile maps to where the tile under it went
+    p.modules.forEach(({ m }, i) => {
+      const turned = moduleTiles((q.modules[i] as { m: typeof m }).m).map(([x, y]) => `${x},${y}`).sort();
+      expect(turned).toEqual(moduleTiles(m).map(([x, y]) => `${p.h - 1 - y},${x}`).sort());
+    });
+    expect(q.cells[1]?.[p.h - 1 - 2]).toBe(p.cells[2]?.[1]);
+    let r = p;
+    for (let i = 0; i < 4; i++) r = turnPiece(r, 'cw');
+    expect(r).toEqual(p);
+    expect(turnPiece(turnPiece(p, 'cw'), 'ccw')).toEqual(p);
+  });
+  it('a mirror flips tiles and windows and lands each module on its mirrored tiles', async () => {
+    const { turnPiece } = await import('./pieceTurn');
+    const { moduleTiles } = await import('./layout');
+    const l = addWindow(ship(), { x: 5, y: 4, axis: 'x', size: 2 });
+    const p = extract(l, box);
+    const q = turnPiece(p, 'mirror-x');
+    expect(q.cells.map((r) => [...r].reverse().join(''))).toEqual(p.cells);
+    expect(q.windows).toEqual([{ x: 5, y: 0, axis: 'x', size: 2 }]);
+    p.modules.forEach(({ m }, i) => {
+      const flipped = moduleTiles((q.modules[i] as { m: typeof m }).m).map(([x, y]) => `${x},${y}`).sort();
+      expect(flipped).toEqual(moduleTiles(m).map(([x, y]) => `${p.w - 1 - x},${y}`).sort());
+    });
+    expect(turnPiece(q, 'mirror-x')).toEqual(p);
+    expect(turnPiece(turnPiece(p, 'mirror-y'), 'mirror-y')).toEqual(p);
+  });
+});

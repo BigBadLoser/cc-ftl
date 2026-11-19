@@ -3,7 +3,7 @@ import { fitRect, fitted, previewView, type Box, type View } from './camera';
 import { designFromLayout, exists, retarget, sameTarget, type Design, type Target } from './design';
 import { DEFAULT_LAYERS, type Layers } from './gridDraw';
 import { commit, fresh, live, redo, undo, type History } from './history';
-import { addModule, contentBounds, deleteRoom, moduleDef, moduleIndex, moduleTiles, newModule, removeModule, rotateModule, takeModuleId, takeRoomId, addRoom, splitRoom, type Rect, type Layout, type Tile } from './layout';
+import { addModule, contentBounds, deleteRoom, moduleDef, moduleIndex, moduleTiles, moveModule, newModule, removeModule, takeModuleId, takeRoomId, addRoom, splitRoom, type Rect, type Layout, type Tile } from './layout';
 import { problemsOf, type Problem } from './problems';
 import { placementProblem, windowPlanAt } from './world';
 import { addWindow, removeWindowAt, windowIndexAt } from './windows';
@@ -272,23 +272,32 @@ class Lab {
     const shown = this.previewDesign, edited = this.design;
     return shown && edited ? retarget(shown, edited, t) : t;
   }
-  /** R: turn the ghost, else the selected module, a quarter turn. */
-  rotate(): void {
+  /** R: turn the ghost, else the selected module, a quarter turn (clockwise; `dir` -1, Shift+R: back). */
+  rotate(dir: 1 | -1 = 1): void {
     const g = this.ghost;
     if (g) {
-      this.rot = (g.rot + 1) % 4;
+      this.rot = (g.rot + dir + 4) % 4;
       this.aim(g.def, g.x, g.y, this.rot);
-    } else this.rotateSelected();
+    } else this.rotateSelected(dir);
+  }
+  /** Arrows with the select tool: move the selected module, if the game's placement owner accepts it there (the module itself set aside). */
+  nudgeSelected(dx: number, dy: number): boolean {
+    const s = this.selected, l = this.layout;
+    if (s?.kind !== 'module' || !l || this.compare) return false;
+    const i = moduleIndex(l, s.id), m = l.modules[i];
+    if (!m || placementProblem(l, m.def, m.x + dx, m.y + dy, m.rot, i)) return true;
+    this.edit((cur) => { const k = moduleIndex(cur, s.id); return k >= 0 ? moveModule(cur, k, m.x + dx, m.y + dy, m.rot) : cur; });
+    return true;
   }
   /** Turn the selected module a quarter turn, if the game's placement owner accepts the turned footprint (the module itself set aside); else nothing changes and nothing is undoable. */
-  rotateSelected(): void {
+  rotateSelected(dir: 1 | -1 = 1): void {
     const s = this.selected, l = this.layout;
     if (s?.kind !== 'module' || !l || this.compare) return;
     const i = moduleIndex(l, s.id), m = l.modules[i];
     if (!m) return;
-    const rot = (m.rot + 1) % 4;
+    const rot = (m.rot + dir + 4) % 4;
     if (placementProblem(l, m.def, m.x, m.y, rot, i)) return;
-    this.edit((cur) => { const k = moduleIndex(cur, s.id); return k >= 0 ? rotateModule(cur, k) : cur; });
+    this.edit((cur) => { const k = moduleIndex(cur, s.id); return k >= 0 ? moveModule(cur, k, m.x, m.y, rot) : cur; });
   }
   ghostTiles(): Tile[] {
     const g = this.ghost;

@@ -102,14 +102,15 @@ function writeRows(rows: readonly string[] | undefined, height: number, put: (x:
 }
 
 /**
- * Clear a rectangle: its tiles become open space, except a tile beside something left outside it (eight neighbours), which becomes wall,
+ * Clear a rectangle: its tiles become open space, except a tile beside floor or a door left outside it (eight neighbours), which becomes wall,
  * so a room the box cut through or stood against stays sealed. The modules, windows and template rows in it go.
  */
 export function lift(l: Layout, r: Rect): Layout {
   const tiles = rectTiles(r).filter(([x, y]) => inBounds(l, x, y));
   if (!tiles.length) return l;
   const cells = l.cells.map((row) => [...row]), roomOf = [...l.roomOf];
-  const solid = (x: number, y: number): boolean => !inRect(r, x, y) && inBounds(l, x, y) && !['.', '='].includes(l.cells[y]?.[x] ?? EMPTY);
+  // only floor and doors need closing in (a wall left beside open space is already a wall)
+  const solid = (x: number, y: number): boolean => !inRect(r, x, y) && inBounds(l, x, y) && ['_', 'D'].includes(l.cells[y]?.[x] ?? EMPTY);
   const edge = (x: number, y: number): boolean => [-1, 0, 1].some((dy) => [-1, 0, 1].some((dx) => solid(x + dx, y + dy)));
   for (const [x, y] of tiles) { (cells[y] as string[])[x] = edge(x, y) ? '#' : EMPTY; roomOf[y * l.width + x] = -1; }
   const keep = l.modules.map((m) => !moduleTiles(m).some(([x, y]) => inRect(r, x, y)));
