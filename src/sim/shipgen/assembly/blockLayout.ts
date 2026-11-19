@@ -363,6 +363,8 @@ export function layoutBlocks(plan: ShipPlan, m: Mask, type: NavyType, vary: read
   while (xNose < xBr - MIN_DEPTH && top(xNose) < 2) xNose++;
   paint(g.room(bridge.role, { spec: bridge }), xNose, xBr, () => true);
   const innerIds = new Map<number, [number, number]>();
+  // Columns of the corridor stubs cut so far (blockLayout's deep rooms off the cross corridors).
+  const stubCols: number[] = [];
   // The floor opposite a room with no partner its size, columns x0 to x1: filler rooms within the fillers' size, a
   // plating column between them (column to room).
   // A filler deep enough for two rooms past the fillers' size: a hold or workshop on the corridor rows and a hold behind
@@ -447,21 +449,25 @@ export function layoutBlocks(plan: ShipPlan, m: Mask, type: NavyType, vary: read
     for (let tx = x0; tx < x1; tx++) { dTwo = Math.min(dTwo, inner.hi(tx)); f2 += inner.hi(tx); }
     const two = [r, sr].map((h, side) => {
       if (k !== 1 || h.annex || h.fill || h.block || capped.size > 0 || dTwo < 2 * MIN_DEPTH + 1 || f2 <= 1.15 * maxArea(h)) return null;
-      // Off a cross corridor, a corridor stub of its own down the piece's aft column, spine to hull, for the far part.
-      if (cr < 0 && x1 - x0 < MIN_DEPTH + 3) return null;
-      const stub = cr < 0 ? g.hall('hall') : -1, len = x1 - x0 - (cr < 0 ? 2 : 0), keep = Math.min(dTwo - MIN_DEPTH - 1, Math.max(MIN_DEPTH, Math.ceil(maxArea(h) / len))), out = roomKind(h) === 'guns';
+      // Off a cross corridor, a corridor stub of its own down the piece's end column farther from other corridors (none
+      // nearer than two rooms' width), spine to hull, for the far part.
+      const near = (c: number): number => Math.min(...cross.map((q) => Math.min(Math.abs(c - q), Math.abs(c - q - CW + 1))), ...stubCols.map((q) => Math.abs(c - q)));
+      const at = near(x0) > near(x1 - 1) ? x0 : x1 - 1;
+      if (cr < 0 && (x1 - x0 < MIN_DEPTH + 3 || near(at) < 2 * MIN_DEPTH + 4)) return null;
+      if (cr < 0 && side === 0) stubCols.push(at);
+      const stub = cr < 0 ? g.hall('hall') : -1, len = x1 - x0 - (cr < 0 ? 2 : 0), from = cr < 0 && at === x0 ? x0 + 2 : x0, keep = Math.min(dTwo - MIN_DEPTH - 1, Math.max(MIN_DEPTH, Math.ceil(maxArea(h) / len))), out = roomKind(h) === 'guns';
       const via = [cr < 0 ? stub : cr === dockAt ? docks[side] as number : hall], rows = out ? dTwo - keep - 2 : keep - 1;
       const room = g.room(h.role, { spec: h, ...(out ? { access: via } : {}) });
       // The filler part within the fillers' size: on the spine, cut along its length; behind, cut by rows (each on the
       // cross corridor). Columns or row bands to rooms.
-      if (out) return { room, rows, stub, cols: fillCols(x0, x0 + len, () => rows + 1), bands: [] as [number, number, number][] };
+      if (out) return { room, rows, stub, at, cols: fillCols(from, from + len, () => rows + 1), bands: [] as [number, number, number][] };
       const back = dTwo - rows - 2, m = Math.max(1, Math.min(Math.floor((back + 1) / (MIN_DEPTH + 1)), Math.ceil((back * len) / FILL_MAX)));
       const bands = Array.from({ length: m }, (_, j): [number, number, number] => {
         const r0 = rows + 2 + Math.round((j * (back + 1)) / m), r1 = j === m - 1 ? Infinity : rows + 2 + Math.round(((j + 1) * (back + 1)) / m) - 2;
         const spec = fillerFor(fillsLeft, len * Math.min(back, r1 - r0 + 1), Math.min(back, r1 - r0 + 1), false);
         return [g.room(spec.role, { spec, access: via }), r0, r1];
       });
-      return { room, rows, stub, cols: null, bands };
+      return { room, rows, stub, at, cols: null, bands };
     });
     for (let c = 0; c < k; c++) {
       const c0 = x0 + Math.round(((x1 - x0 + 1) * c) / k), c1 = x0 + Math.round(((x1 - x0 + 1) * (c + 1)) / k) - 1;
@@ -488,7 +494,10 @@ export function layoutBlocks(plan: ShipPlan, m: Mask, type: NavyType, vary: read
           const own = fm[side];
           if (own) { const f = own.get(tx); if (f !== undefined) paintFill(f, tx, d, deep); return; }
           const t = two[side];
-          if (t && t.stub >= 0 && tx >= x1 - 2) { if (tx === x1 - 1) paint(t.stub, tx, tx + 1, (y) => d(y) >= BAND); return; }
+          if (t && t.stub >= 0 && Math.abs(tx - t.at) <= 1 && tx >= x0 && tx < x1 && (tx === t.at || tx === (t.at === x0 ? x0 + 1 : x1 - 2))) {
+            if (tx === t.at) paint(t.stub, tx, tx + 1, (y) => d(y) >= BAND);
+            return;
+          }
           if (t?.cols) {
             const f = t.cols.get(tx);
             if (f !== undefined) paintFill(f, tx, d, BAND + t.rows);
