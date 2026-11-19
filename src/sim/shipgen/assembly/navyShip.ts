@@ -5,6 +5,7 @@ import { dockSpec, engineSpec, planShip, reactorSpec, type RoomSpec, type ShipPl
 import { pairUp } from '../topoNavy';
 import type { FactionDef, GenResult, HullFamilyDef, ShipRoleDef } from '../types';
 import { RegionGrid, SOLID, SPACE } from './regions';
+import { SLEEPER, barracksSize, sleepersIn } from './quarters';
 
 /**
  * Navy hulls on the region grid (SHIPGEN_V4 step 2, prototype). Every type is mirrored about a long axis and built from
@@ -32,6 +33,8 @@ interface Shape {
   bays?: number;
   /** Rooms a ship this size has room for beyond the plan's (`SHIP_ROOMS`); a pantry comes off the mess. */
   rooms?: readonly ShipRoom[];
+  /** How the crew sleeps: barracks of bunks, barracks of single beds, or every bed a cabin in cabin blocks. */
+  sleep: 'bunks' | 'beds' | 'cabins';
   bonus?: Partial<Record<'weapons' | 'engines' | 'crew' | 'crates' | 'shields' | 'pointDefense' | 'reactors', number>>;
 }
 
@@ -54,11 +57,11 @@ export function shipCommons(type: NavyType, crew: number): RoomSpec[] {
 }
 
 export const NAVY_TYPES: Record<NavyType, Shape> = {
-  corvette: { maxBeam: 27, centre: 'none', bow: 'bridge', guns: 'forward', family: 'corvette', bonus: { shields: 1 } },
-  frigate: { maxBeam: 31, centre: 'none', bow: 'bridge', guns: 'spread', family: 'frigate' },
-  destroyer: { maxBeam: 33, centre: 'none', bow: 'battery', guns: 'forward', family: 'frigate', bonus: { weapons: 4, reactors: 1, engines: 1, crew: -1, crates: -1 } },
-  cruiser: { maxBeam: 41, centre: 'citadel', bow: 'bridge', guns: 'spread', family: 'cruiser', bays: 1, rooms: ['medbay', 'brig', 'farm', 'pantry'], bonus: { weapons: 3, reactors: 2 } },
-  carrier: { maxBeam: 51, centre: 'deck', bow: 'bridge', guns: 'spread', family: 'carrier', rooms: ['medbay', 'brig', 'farm', 'pantry'] },
+  corvette: { maxBeam: 27, centre: 'none', bow: 'bridge', guns: 'forward', family: 'corvette', sleep: 'bunks', bonus: { shields: 1 } },
+  frigate: { maxBeam: 31, centre: 'none', bow: 'bridge', guns: 'spread', family: 'frigate', sleep: 'bunks' },
+  destroyer: { maxBeam: 33, centre: 'none', bow: 'battery', guns: 'forward', family: 'frigate', sleep: 'beds', bonus: { weapons: 4, reactors: 1, engines: 1, crew: -1, crates: -1 } },
+  cruiser: { maxBeam: 41, centre: 'citadel', bow: 'bridge', guns: 'spread', family: 'cruiser', sleep: 'cabins', bays: 1, rooms: ['medbay', 'brig', 'farm', 'pantry'], bonus: { weapons: 3, reactors: 2 } },
+  carrier: { maxBeam: 51, centre: 'deck', bow: 'bridge', guns: 'spread', family: 'carrier', sleep: 'cabins', rooms: ['medbay', 'brig', 'farm', 'pantry'] },
 };
 
 /** Floor depth of an ordinary strip room. */
@@ -282,4 +285,24 @@ export function generateNavy(f: FactionDef, factionId: string, seed: number, dep
     failures.push(r.problems[0] as string);
   }
   return last as GenResult;
+}
+
+/** Floor a cabin of a cabin block takes in the plan, its share of the walls and its corridor included. */
+const BLOCK_CABIN = 18;
+/**
+ * The crew's quarters for a navy type: the plan's barracks (bunks, or single beds), or every bed a cabin in a pair of
+ * cabin blocks (one each side, cut by the layout: cabinBlock.ts). `spare` beds past the crew's.
+ */
+export function shipQuarters(type: NavyType, planned: readonly RoomSpec[], crew: number, spare: number): RoomSpec[] {
+  const sleep = NAVY_TYPES[type].sleep;
+  if (sleep === 'cabins') {
+    const beds = crew + spare, half = [Math.ceil(beds / 2), Math.floor(beds / 2)];
+    return half.map((n) => ({ role: 'quarters', mods: Array<string>(n).fill('module.bed'), w: Math.ceil((n * BLOCK_CABIN) / 7), h: 7, block: true, cabins: false }));
+  }
+  // Barracks: the spare beds shared out, a bunk sleeping two (single beds where the type has them, a piece each).
+  const per = sleep === 'beds' ? 1 : SLEEPER.sleepers;
+  return planned.map((r, i) => {
+    const n = Math.ceil((sleepersIn(r.mods) + Math.floor(spare / planned.length) + (i < spare % planned.length ? 1 : 0)) / per);
+    return { ...r, mods: Array<string>(n).fill(sleep === 'beds' ? 'module.bed' : SLEEPER.def), ...barracksSize(n, true) };
+  });
 }

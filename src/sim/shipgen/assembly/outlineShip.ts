@@ -6,7 +6,7 @@ import { enginesShort, fitShell, seedOf } from '../generate';
 import { ENGINE_TIERS, REACTOR_TIERS, planShip, reactorsFor, type ShipPlan } from '../plan';
 import type { FactionDef, GenResult } from '../types';
 import { layoutBlocks, type Mask } from './blockLayout';
-import { NAVY_TYPES, navyRole, shipCommons, type NavyType } from './navyShip';
+import { NAVY_TYPES, navyRole, shipCommons, shipQuarters, type NavyType } from './navyShip';
 import { SPACE, type RegionGrid } from './regions';
 
 /**
@@ -104,7 +104,9 @@ export function assembleOutline(
   const up = REACTOR_TIERS[Math.min(REACTOR_TIERS.length - 1, REACTOR_TIERS.indexOf(planned.kit.reactor as (typeof REACTOR_TIERS)[number]) + 1)] as string;
   const kit = { ...planned.kit, ...(planned.kit.reactor === REACTOR_TIERS[0] && defs[up] ? { reactor: up } : {}), ...(tierUp ? { engine: engineUp } : {}) };
   // The type's commons join the plan (their power counted), and reactors cover the planned floor's lamps.
-  const plan: ShipPlan = { ...planned, kit, support: [...planned.support, ...shipCommons(type, planned.crew.length)] };
+  // The type's commons and quarters (a few spare beds past the crew's) join the plan, their power counted.
+  const quarters = shipQuarters(type, planned.quarters, planned.crew.length, rng.int(2, 4));
+  const plan: ShipPlan = { ...planned, kit, quarters, support: [...planned.support, ...shipCommons(type, planned.crew.length)] };
   plan.reactors = reactorsFor(plan, defs);
   const profiles = NAVY_PROFILES[type] ?? [];
   const profile = rng.pick(profiles);

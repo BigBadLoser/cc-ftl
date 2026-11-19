@@ -242,7 +242,7 @@ export function layoutBlocks(plan: ShipPlan, m: Mask, type: NavyType, vary: read
     return !!f && opensThrough(roomKind(p[0]), roomKind(f[0])) && opensThrough(roomKind(p[1]), roomKind(f[1]));
   };
   let outerPairs: Pair[] = [];
-  for (const p of [...outerGuns, ...byArea]) if (!byKind(p, (k) => !onHall(k) || !canBack(k)) && outerPairs.reduce((t, q) => t + areaOf(q), 0) + areaOf(p) <= outerArea * 0.9) outerPairs.push(p);
+  for (const p of [...outerGuns, ...byArea]) if (!byKind(p, (k) => !onHall(k) || !canBack(k)) && !p[0].block && !p[1].block && outerPairs.reduce((t, q) => t + areaOf(q), 0) + areaOf(p) <= outerArea * 0.9) outerPairs.push(p);
   let outerCut: Piece[] = [], innerCut: Piece[] | null = null;
   const inner: Band = { segs: runs(xBand, xS), lo: () => 1, hi: (x) => (outerOf(x) ? di : depth(x)) };
   // Two-tier columns: under an outer room, and the plating column between two of them.
@@ -332,7 +332,7 @@ export function layoutBlocks(plan: ShipPlan, m: Mask, type: NavyType, vary: read
     // A barracks deep enough for two rows of cabins: a cabin block off a corridor of its own.
     let rowsMin = Infinity;
     for (let tx = x0; tx < x1; tx++) rowsMin = capped.has(tx) ? -1 : Math.min(rowsMin, inner.hi(tx));
-    const blocks = [r, sr].map((h) => (h.role === 'quarters' && !r.annex && !sr.annex && rowsMin > 0 ? cabinsFor(h, x1 - x0, rowsMin) : null));
+    const blocks = [r, sr].map((h) => (h.block && !r.annex && !sr.annex && rowsMin > 0 ? cabinsFor(h, x1 - x0, rowsMin) : null));
     if (blocks.some((b) => b)) {
       const ids = ([[r, -1], [sr, 1]] as const).map(([h, sign], side) => {
         const b = blocks[side], d = (y: number): number => sign * y;
@@ -354,10 +354,12 @@ export function layoutBlocks(plan: ShipPlan, m: Mask, type: NavyType, vary: read
     for (let tx = x0; tx < x1; tx++) a += Math.max(0, inner.hi(tx));
     // Cabins no thinner than the rule for any room: at most `DEEP` times as deep as long.
     const cabinLen = Math.max(CABIN, Math.ceil(a / Math.max(1, x1 - x0) / DEEP) + 1);
-    const k = r.role === 'quarters' ? Math.max(1, Math.min(r.mods.length, Math.floor(a / CABIN_AREA), Math.floor((x1 - x0 + 1) / cabinLen))) : 1;
+    const k = r.block ? Math.max(1, Math.min(r.mods.length, Math.floor(a / CABIN_AREA), Math.floor((x1 - x0 + 1) / cabinLen))) : 1;
     for (let c = 0; c < k; c++) {
       const c0 = x0 + Math.round(((x1 - x0 + 1) * c) / k), c1 = x0 + Math.round(((x1 - x0 + 1) * (c + 1)) / k) - 1;
-      const part = (spec: RoomSpec): RoomSpec => (k === 1 ? spec : { ...spec, mods: spec.mods.filter((_, j) => j % k === c), w: c1 - c0 });
+      // A cabin block too shallow for two rows of cabins: a row of cabins on the spine, its beds shared out.
+      const part = (spec: RoomSpec): RoomSpec => (!spec.block ? spec
+        : { ...spec, mods: [...spec.mods.filter((_, j) => j % k === c), 'module.storage_locker'], w: c1 - c0, cabin: true, block: false });
       const n = g.room(r.role, { spec: part(r) }), s = g.room(sr.role, { spec: part(sr) });
       for (let tx = c0; tx < c1; tx++) innerIds.set(tx, [n, s]);
       // An annex (a trauma room, a pantry) stands behind its host, the host keeping the corridor rows, a wall row
