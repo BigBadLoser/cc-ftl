@@ -9,6 +9,8 @@
 	import { Separator } from '$lib/components/ui/separator/index.js';
 	import { growOf, TITLES, type Dock, type PanelId } from './dock';
 	import { docks } from './dock.svelte';
+	import { lab } from './lab.svelte';
+	import { popOut } from './popout.svelte';
 
 	let { id, children, drag }: { id: PanelId; children: Snippet; drag?: (e: PointerEvent) => void } = $props();
 	const p = $derived(docks.state.panels[id]);
@@ -45,6 +47,10 @@
 						{o.label}
 					</DropdownMenu.Item>
 				{/each}
+				{#if id === 'preview'}
+					<DropdownMenu.Separator />
+					<DropdownMenu.Item disabled={!lab.design} onclick={popOut} title="Open the preview in a window of its own (a second monitor)">Pop out</DropdownMenu.Item>
+				{/if}
 			</DropdownMenu.Content>
 		</DropdownMenu.Root>
 	</header>

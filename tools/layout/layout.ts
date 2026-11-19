@@ -182,11 +182,24 @@ function soleRoom(w: Work, x: number, y: number): number {
   return rooms.size === 1 ? ([...rooms][0] as number) : NONE;
 }
 
+/** Open tiles (space, beams) joined to the grid's edge through open tiles: outside the ship. An enclosed hole is not outside. */
+export function outsideOf(l: Layout): Set<number> {
+  const out = new Set<number>(), todo: number[] = [];
+  const push = (x: number, y: number): void => { const i = idx(l, x, y); if (inBounds(l, x, y) && !out.has(i) && (at(l, x, y) === '.' || at(l, x, y) === '=')) { out.add(i); todo.push(i); } };
+  for (let x = 0; x < l.width; x++) { push(x, 0); push(x, l.height - 1); }
+  for (let y = 0; y < l.height; y++) { push(0, y); push(l.width - 1, y); }
+  while (todo.length) { const i = todo.pop() as number, x = i % l.width, y = Math.floor(i / l.width); push(x + 1, y); push(x - 1, y); push(x, y + 1); push(x, y - 1); }
+  return out;
+}
+
 /**
- * Floor painted outward: the old hull that is now inside the floor becomes floor (the new outer edge is the hull). Walls that were
- * never hull stay. A freed tile joins a room only when every room beside it is the same one; between two rooms it belongs to none.
+ * Floor painted outward: the old hull that is now inside the floor becomes floor (the new outer edge is the hull). Only hull that faced
+ * outside space goes: walls round an enclosed hole are partitions, and stay when the hole is floored. Walls that were never hull stay.
+ * A freed tile joins a room only when every room beside it is the same one; between two rooms it belongs to none.
  */
 function absorbHull(w: Work, was: ReadonlySet<number>): void {
+  const outside = outsideOf(w.l);
+  const facedOut = (i: number): boolean => [1, -1, w.l.width, -w.l.width].some((d) => outside.has(i + d) && (d === 1 || d === -1 ? Math.floor((i + d) / w.l.width) === Math.floor(i / w.l.width) : true));
   const now = hullOf(done(w));
   // Never one with open space among its eight neighbours: floor there would leak to space through the corner (the game's outline looks at four).
   const open = (x: number, y: number): boolean => { const c = w.cells[y]?.[x]; return c === undefined || c === '.' || c === '='; };
@@ -195,7 +208,7 @@ function absorbHull(w: Work, was: ReadonlySet<number>): void {
     for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if ((dx || dy) && open(x + dx, y + dy)) return false;
     return true;
   };
-  const inner = [...was].filter((i) => !now.has(i) && w.cells[Math.floor(i / w.l.width)]?.[i % w.l.width] === '#' && sealed(i));
+  const inner = [...was].filter((i) => facedOut(i) && !now.has(i) && w.cells[Math.floor(i / w.l.width)]?.[i % w.l.width] === '#' && sealed(i));
   const rooms = inner.map((i) => soleRoom(w, i % w.l.width, Math.floor(i / w.l.width)));
   inner.forEach((i, k) => set(w, i % w.l.width, Math.floor(i / w.l.width), '_', rooms[k] as number));
 }

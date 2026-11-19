@@ -10,6 +10,10 @@
 	import PinMarkers from './PinMarkers.svelte';
 	import { moduleCues, moduleIndex, moveModule, PAINT_CHAR, resizeRoom, roomRect, shapeTiles, stroke, type Layout, type PaintTool, type Rect, type StrokeTool, type Tile } from './layout';
 	import { windowTilesOf } from './windows';
+	import { move as region } from './move.svelte';
+	import { rectTiles } from './region';
+	import { enclosedAt } from './fill';
+	import { roomTypes } from './palette';
 
 	type Edge = 'n' | 's' | 'e' | 'w';
 	type Mode =
@@ -17,7 +21,9 @@
 		| { k: 'paint'; a: Tile; tool: StrokeTool; erase: boolean; room: number | undefined }
 		| { k: 'room'; a: Tile }
 		| { k: 'edge'; id: number; edge: Edge; base: Layout; rect: Rect }
-		| { k: 'move'; id: number; grab: Tile; x: number; y: number; moved: boolean };
+		| { k: 'move'; id: number; grab: Tile; x: number; y: number; moved: boolean }
+		| { k: 'marquee'; a: Tile; moved: boolean }
+		| { k: 'carry' };
 
 	let canvas: HTMLCanvasElement;
 	let box = $state<Box>({ w: 800, h: 500 });
@@ -34,6 +40,15 @@
 	/** The shape a stroke in progress will apply on release (nothing is committed before). */
 	let shape = $state.raw<Tile[] | null>(null);
 
+	/** The Room tool over a walled-in open space: the area a click there would make a room (shown before the click, any shape). */
+	const fillArea = $derived.by((): Tile[] | null => {
+		const l = lab.layout, r = lab.drag;
+		if (lab.tool !== 'room' || lab.compare || !l) return null;
+		const t: Tile | null = r ? (r.w === 1 && r.h === 1 ? [r.x, r.y] : null) : pointer;
+		return t ? enclosedAt(l, t[0], t[1]) : null;
+	});
+	const roleName = $derived(roomTypes.find((t) => t.role === lab.role)?.name ?? lab.role);
+
 	const marks = $derived.by((): Mark[] => {
 		const d = lab.design, l = lab.layout;
 		if (!d || !l) return [];
@@ -45,7 +60,8 @@
 			{ tiles: lab.flag, color: 'rgba(255,70,70,1)' },
 		];
 		// the tile the active tool will affect under the pointer (a room drag shows its rectangle instead; a module its ghost)
-		if ((shape || pointer) && lab.tool !== 'select' && lab.tool !== 'note' && lab.tool !== 'window' && !lab.drag && (shape || lab.tool !== 'module')) out.push({ tiles: shape ?? [pointer as Tile], color: erasing ? 'rgba(255,90,90,1)' : 'rgba(255,255,255,1)', fill: false });
+		if (fillArea) out.push({ tiles: fillArea, color: 'rgba(80,220,255,1)' });
+		else if ((shape || pointer) && lab.tool !== 'select' && lab.tool !== 'move' && lab.tool !== 'note' && lab.tool !== 'window' && !lab.drag && (shape || lab.tool !== 'module')) out.push({ tiles: shape ?? [pointer as Tile], color: erasing ? 'rgba(255,90,90,1)' : 'rgba(255,255,255,1)', fill: false });
 		const wg = lab.tool === 'window' ? lab.windowGhost : null;
 		if (wg) out.push({ tiles: wg.tiles, color: wg.error ? 'rgba(255,70,70,1)' : 'rgba(90,255,120,1)' });
 		const wt = windowTilesOf(l);
@@ -53,8 +69,11 @@
 		if (lab.ghost) out.push({ tiles: lab.ghostTiles(), color: lab.ghost.error ? 'rgba(255,70,70,1)' : 'rgba(90,255,120,1)' });
 		const cue = cues();
 		if (cue) out.push({ tiles: cue.access, color: 'rgba(240,177,58,1)', shape: 'square' });
+		// the Move tool's box: dragged out (filled), selected (outline), a piece in flight (green)
+		if (region.marquee) out.push({ tiles: rectTiles(region.marquee), color: 'rgba(80,220,255,1)' });
+		if (region.box) out.push({ tiles: rectTiles(region.box), color: region.float ? 'rgba(90,255,120,1)' : 'rgba(255,255,255,1)', fill: false });
 		const r = lab.drag;
-		if (r) {
+		if (r && !fillArea) {
 			const t: Tile[] = [];
 			for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) t.push([x, y]);
 			out.push({ tiles: t, color: r.ok ? 'rgba(80,220,255,1)' : 'rgba(255,70,70,1)' });
@@ -164,12 +183,19 @@
 		const l = lab.layout;
 		const tool = lab.tool;
 		// the right button erases what the active tool paints (a note: the one under the pointer); the select tool pans with it
-		const erase = e.button === 2 && tool !== 'select';
+		const erase = e.button === 2 && tool !== 'select' && tool !== 'move';
 		// the middle button pans on a drag and, on a click, picks the brush that paints what is under it
 		if (e.button === 1 && l && !lab.compare) { e.preventDefault(); mode = { k: 'pan', x: e.clientX, y: e.clientY, pick: tile, moved: false }; return; }
 		if ((e.button !== 0 && !erase) || space || !l || lab.compare) { mode = { k: 'pan', x: e.clientX, y: e.clientY }; return; }
 		erasing = erase;
 		if (erase && tool === 'note') { lab.erasePinAt(fx, fy); return; }
+		if (tool === 'move') {
+			// a paste in flight lands on a click; inside the box a drag carries its contents; elsewhere a drag selects a new box
+			if (region.float) region.drop();
+			else if (region.inBox(tile)) { region.grab(tile, e.altKey); mode = { k: 'carry' }; } // Alt: drag a duplicate
+			else { region.startMarquee(tile); mode = { k: 'marquee', a: tile, moved: false }; }
+			return;
+		}
 		if (isPaint(tool) || (erase && (tool === 'room' || tool === 'module'))) {
 			mode = { k: 'paint', a: tile, tool: tool as StrokeTool, erase, room: room() };
 			shape = shapeTiles(mode.tool, tile, tile);
@@ -199,6 +225,13 @@
 		const { tile, fx, fy } = at(e);
 		const m = mode;
 		pointer = !lab.compare && (!m || m.k === 'paint') ? tile : null;
+		if (!lab.compare) region.pointer = tile;
+		if (region.float && (!m || m.k === 'carry')) { region.drag(tile); return; }
+		if (m?.k === 'marquee') {
+			if (tile[0] !== m.a[0] || tile[1] !== m.a[1]) m.moved = true;
+			region.dragMarquee(tile);
+			return;
+		}
 		if (m?.k === 'pan') {
 			if (Math.abs(e.clientX - m.x) + Math.abs(e.clientY - m.y) > 0) m.moved = true;
 			lab.view = panned('grid', lab.view, dpr(), e.clientX - m.x, e.clientY - m.y);
@@ -239,7 +272,7 @@
 		if (lab.tool === 'module') lab.aim(lab.armed, tile[0], tile[1]);
 		if (lab.tool === 'window') lab.aimWindow(tile[0], tile[1]);
 		lab.setHover(pick(tile));
-		cursor = lab.tool !== 'select' ? 'crosshair' : edgeAt(fx, fy)?.edge === 'e' || edgeAt(fx, fy)?.edge === 'w' ? 'ew-resize' : edgeAt(fx, fy) ? 'ns-resize' : 'default';
+		cursor = lab.tool === 'move' ? (region.inBox(tile) ? 'move' : 'crosshair') : lab.tool !== 'select' ? 'crosshair' : edgeAt(fx, fy)?.edge === 'e' || edgeAt(fx, fy)?.edge === 'w' ? 'ew-resize' : edgeAt(fx, fy) ? 'ns-resize' : 'default';
 	}
 	function up() {
 		const m = mode;
@@ -251,15 +284,16 @@
 			const { tool, erase, room: first } = m;
 			if (tiles) lab.edit((cur) => stroke(cur, tool, erase, tiles, first)); // one undo step per stroke
 		} else if (m?.k === 'pan' && m.pick && !m.moved) lab.pickBrush(m.pick);
+		else if (m?.k === 'carry') region.drop();
+		else if (m?.k === 'marquee') region.endMarquee(m.moved);
 		else if (m?.k === 'edge') lab.end();
 		else if (m?.k === 'room') {
 			const r = lab.drag;
 			lab.drag = null;
 			const l = lab.layout;
-			if (r?.ok && l) {
-				const id = lab.drawRoom(r, lab.role);
-				if (id !== null) lab.select({ kind: 'room', id });
-			}
+			// a click (no drag) inside an enclosed area fills it, whatever its shape; a drag draws a rectangle
+			const id = r && r.w === 1 && r.h === 1 ? lab.fillRoomAt(r.x, r.y, lab.role) : r?.ok && l ? lab.drawRoom(r, lab.role) : null;
+			if (id !== null) lab.select({ kind: 'room', id });
 		} else if (m?.k === 'move') {
 			const g = lab.ghost;
 			if (m.moved && g && !g.error) lab.edit((cur) => { const i = moduleIndex(cur, m.id); return i >= 0 ? moveModule(cur, i, g.x, g.y, g.rot) : cur; });
@@ -272,6 +306,9 @@
 		erasing = false;
 		shape = null;
 		if (mode?.k === 'edge') lab.end();
+		if (mode?.k === 'carry') region.drop();
+		if (mode?.k === 'marquee') region.endMarquee(mode.moved);
+		region.pointer = null;
 		mode = null;
 		lab.drag = null;
 		lab.ghost = null;
@@ -320,5 +357,6 @@
 	<div class="absolute top-2 left-3"><ShipSettings /></div>
 	<div class="pointer-events-none absolute right-3 bottom-2 text-xs text-muted-foreground tabular-nums" aria-label="Grid zoom">{percentOf(lab.view.zoom, dpr())}%</div>
 	{#if lab.tool === 'window' && lab.windowGhost?.error && !lab.compare}<div class="pointer-events-none absolute bottom-2 left-3 rounded bg-destructive/85 px-2 py-1 text-xs text-white">Cannot go here: {lab.windowGhost.error}</div>{/if}
+	{#if fillArea}<div class="pointer-events-none absolute bottom-2 left-3 rounded bg-background/85 px-2 py-1 text-xs">Click to fill this area: {roleName}, {fillArea.length} tiles</div>{/if}
 	{#if lab.ghost?.error && !lab.compare}<div class="pointer-events-none absolute bottom-2 left-3 rounded bg-destructive/85 px-2 py-1 text-xs text-white">Cannot go here: {lab.ghost.error}</div>{/if}
 </div>
