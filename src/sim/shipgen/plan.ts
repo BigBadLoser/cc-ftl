@@ -58,6 +58,8 @@ export interface RoomSpec {
   items?: readonly { item: string; min: number; max: number }[];
   /** Station assembly: the department the room belongs to, when not its role's own (`assembly/dept.ts`). */
   dept?: StationDept;
+  /** What a `support` room is for when its modules do not say (a navy ship's filler lounge or gym: assembly/roomSize.ts). */
+  use?: 'lounge' | 'gym';
   /** Station assembly: a one-bed cabin cut from a quarters room. */
   cabin?: boolean;
   /** Station assembly: false keeps a quarters room whole (a barracks); otherwise it may be cut into cabins. */

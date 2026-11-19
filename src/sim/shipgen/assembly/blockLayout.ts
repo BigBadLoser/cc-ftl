@@ -4,6 +4,7 @@ import { pairUp } from '../topoNavy';
 import { MESS, NAVY_TYPES, type NavyType } from './navyShip';
 import { RegionGrid, SOLID, SPACE } from './regions';
 import { cabinsFor } from './cabinBlock';
+import { FILL_MAX, fillerFor, maxArea, type Filler } from './roomSize';
 import { onHall, opensThrough, roomKind, type RoomKind } from './roomAccess';
 
 /**
@@ -23,12 +24,6 @@ const CABIN = 4, CABIN_AREA = 14;
 const ASPECT = 3, DEEP = 2;
 /** Rooms bow to stern within a band: guns forward, then defences, works and stores, the crew aft. */
 const ZONE = ['weapons', 'bridge', 'shields', 'core', 'reactor', 'plant', 'farm', 'cargo', 'hangar', 'armoury', 'support', 'medbay', 'quarters'];
-/** How far past its planned floor a room of each kind grows to take up spare floor (stores take the rest). */
-const GROW: Partial<Record<RoomKind, number>> = {
-  cargo: 1.5, hangar: 2, mess: 2, medbay: 1.8, farm: 1.5, barracks: 2.5, guns: 1.3, workshop: 1.3, brig: 1.2, pantry: 1.2, trauma: 1.2,
-  reactor: 1.2, shields: 1.2, core: 1.2, plant: 1,
-};
-const growOf = (r: RoomSpec): number => GROW[roomKind(r)] ?? 1.5;
 
 export interface Mask { W: number; H: number; inside: (x: number, y: number) => boolean }
 type Pair = readonly [RoomSpec, RoomSpec];
@@ -67,7 +62,14 @@ const full = (r: RoomSpec): number => r.w * r.h + (r.annex ? r.annex.w * r.annex
 const minLen = (r: RoomSpec): number => (r.annex ? 2 * MIN_DEPTH + 1 : r.role === 'reactor' ? r.w : Math.min(r.w, r.h));
 const areaOf = ([r, s]: Pair): number => Math.max(full(r), full(s));
 /** A store pair for a stretch of band `len` long: floor no room was planned for. */
-const store = (len: number): Pair => [cargoSpec(Math.max(1, Math.floor(len / 2))), cargoSpec(Math.max(1, Math.floor(len / 2)))];
+/** The most floor a pair takes: the smaller of its rooms' caps, its planned floor at least. */
+const capOf = ([r, s]: Pair): number => Math.max(areaOf([r, s]), Math.min(maxArea(r), maxArea(s)));
+/** Which fillers a ship has used (one workshop, lounge and gym a side at most; a farm where the ship carries one). */
+export interface Fills { left: Filler[] }
+const fillPair = (fills: Fills, area: number, deep: number): Pair => {
+  const r = fillerFor(fills.left, area, deep, deep >= 2 * MIN_DEPTH + 1);
+  return [r, r];
+};
 
 /**
  * The splitter: pairs in order along a band's runs, each taking columns until its share of the band is met (the band's
@@ -75,21 +77,25 @@ const store = (len: number): Pair => [cargoSpec(Math.max(1, Math.floor(len / 2))
  * left of a run moves to the next, the room before it taking the rest. Null when the pairs do not fit; with `sparse`,
  * runs may stay empty (an outer tier: the inner rooms keep the full depth there).
  */
-function split(band: Band, pairs: readonly Pair[], vary: readonly number[], sparse: boolean): Piece[] | null {
+function split(band: Band, pairs: readonly Pair[], vary: readonly number[], sparse: boolean, fills: Fills): Piece[] | null {
   const area = (x: number): number => Math.max(0, band.hi(x) - band.lo(x) + 1);
-  let avail = 0;
-  for (const [a, b] of band.segs) for (let x = a; x < b; x++) avail += area(x);
-  const want = pairs.reduce((t, p) => t + areaOf(p), 0);
-  const full = Math.max(1, avail / Math.max(1, want) - 0.15);
-  const tryShare = (share: number): Piece[] | null => {
+  {
     const out: Piece[] = [];
     let s = 0, x = band.segs[0]?.[0] ?? 0, first = out.length;
-    // Leftover floor from a to b as storerooms, none much longer than it is deep (a plating column between them).
+    // Leftover floor from a to b as filler rooms, each within the fillers' size and none much longer than it is deep
+    // (a plating column between them).
     const stores = (a: number, b: number): void => {
-      const n = Math.max(1, Math.round((b - a + 1) / (1.5 * Math.max(MIN_DEPTH, area(a)) + 1)));
+      let floor = 0;
+      for (let x = a; x < b; x++) floor += area(x);
+      const deep = Math.max(MIN_DEPTH, area(a));
+      // As many as keep each within the fillers' size, none narrower than its depth allows.
+      const most = Math.max(1, Math.floor((b - a + 1) / (Math.max(MIN_DEPTH, Math.ceil(deep / DEEP)) + 1)));
+      const n = Math.min(most, Math.max(1, Math.round((b - a + 1) / (1.5 * deep + 1)), Math.ceil(floor / FILL_MAX)));
       for (let k = 0, x0 = a; k < n; k++) {
         const x1 = k === n - 1 ? b : a + Math.round(((k + 1) * (b - a + 1)) / n) - 1;
-        out.push({ pair: store(x1 - x0), x0, x1 });
+        let f = 0;
+        for (let x = x0; x < x1; x++) f += area(x);
+        out.push({ pair: fillPair(fills, f, deep), x0, x1 });
         x0 = x1 + 1;
       }
     };
@@ -101,16 +107,16 @@ function split(band: Band, pairs: readonly Pair[], vary: readonly number[], spar
       s++; x = band.segs[s]?.[0] ?? 0; first = out.length;
     };
     for (const [i, pair] of pairs.entries()) {
-      const len = Math.max(minLen(pair[0]), minLen(pair[1])), goal = areaOf(pair) * share * (vary[i % vary.length] ?? 1);
+      const len = Math.max(minLen(pair[0]), minLen(pair[1])), cap = capOf(pair), goal = Math.min(cap, areaOf(pair) * Math.max(1, vary[i % vary.length] ?? 1));
       // A room takes columns until its share is met, but no longer than three times its depth once it has its planned
       // floor; one that a run cannot hold moves on to the next run.
       for (;;) {
         if (s >= band.segs.length) return null;
         const end = (band.segs[s] as [number, number])[1], x0 = x;
         let a = 0, deep = 0;
-        // Past its planned floor, a room stops at three times its depth or as far as its kind grows.
-        const plan = areaOf(pair), grow = Math.max(growOf(pair[0]), growOf(pair[1]));
-        const long = (): boolean => a >= plan && ((x - x0) >= ASPECT * (a / Math.max(1, x - x0)) || a >= grow * plan);
+        // Past its planned floor, a room stops at three times its depth or at its cap.
+        const plan = areaOf(pair);
+        const long = (): boolean => a >= plan && ((x - x0) >= ASPECT * (a / Math.max(1, x - x0)) || a + area(x) > cap);
         for (; x < end && ((a < goal && !long()) || x - x0 < len || (x - x0) * DEEP < deep); x++) { a += area(x); deep = Math.max(deep, area(x)); }
         if (a >= plan && x - x0 >= len) { out.push({ pair, x0, x1: x }); x++; break; }
         x = x0;
@@ -121,8 +127,7 @@ function split(band: Band, pairs: readonly Pair[], vary: readonly number[], spar
     // Runs of an inner band the rooms did not reach hold stores (no floor stands empty).
     if (!sparse) for (const [a, b] of band.segs.slice(s)) stores(a, b);
     return out;
-  };
-  return tryShare(full) ?? tryShare((1 + full) / 2) ?? tryShare(1);
+  }
 }
 
 /** Rooms cut into the outline, or null when they do not fit at this scale. */
@@ -243,7 +248,7 @@ export function layoutBlocks(plan: ShipPlan, m: Mask, type: NavyType, vary: read
   // rooms go to the slots whose front rooms let them in; one with no such slot moves to the inner band.
   for (let round = 0; round < 6; round++) {
     let cut: Piece[] | null = null;
-    while (outerPairs.length > 0 && !(cut = split(outer, [...outerPairs].sort((a, b) => zone(a) - zone(b)), vary, true))) outerPairs = outerPairs.slice(0, -1);
+    while (outerPairs.length > 0 && !(cut = split(outer, [...outerPairs].sort((a, b) => zone(a) - zone(b)), vary, true, { left: [] }))) outerPairs = outerPairs.slice(0, -1);
     outerCut = cut ?? [];
     const innerPairs = [...gunPairs, ...others].filter((p) => !outerPairs.includes(p));
     if (NAVY_TYPES[type].guns === 'spread') {
@@ -252,7 +257,9 @@ export function layoutBlocks(plan: ShipPlan, m: Mask, type: NavyType, vary: read
       const every = Math.max(1, Math.floor(o.length / Math.max(1, gp.length - 1)));
       innerPairs.splice(0, innerPairs.length, ...gp.flatMap((p, i) => [p, ...o.slice(i * every, (i + 1) * every)]), ...o.slice(gp.length * every));
     }
-    innerCut = split(inner, innerPairs, vary, false);
+    // Fillers past the default holds: one of each a side, a farm only where the type carries one.
+    const fills: Fills = { left: ['workshop', 'lounge', 'gym', ...((NAVY_TYPES[type].rooms ?? []).includes('farm') ? ['farm' as const] : [])] };
+    innerCut = split(inner, innerPairs, vary, false, fills);
     if (!innerCut) return null;
     const slots = [...outerCut], left = [...outerPairs], placed: Piece[] = [];
     for (const slot of slots) {
@@ -266,7 +273,8 @@ export function layoutBlocks(plan: ShipPlan, m: Mask, type: NavyType, vary: read
       grew = false;
       for (const slot of slots) {
         if (placed.some((q) => q.x0 <= slot.x0 && slot.x1 <= q.x1) || annexBehind(slot.x0, slot.x1)) continue;
-        const q = placed.find((o) => (o.x1 + 1 === slot.x0 || slot.x1 + 1 === o.x0) && (o.x0 > xS) === (slot.x0 > xS));
+        const span = (o: Piece): number => (Math.max(o.x1, slot.x1) - Math.min(o.x0, slot.x0)) * Math.max(1, outer.hi(o.x0) - outer.lo(o.x0) + 1);
+        const q = placed.find((o) => (o.x1 + 1 === slot.x0 || slot.x1 + 1 === o.x0) && (o.x0 > xS) === (slot.x0 > xS) && span(o) <= capOf(o.pair));
         if (q) { q.x0 = Math.min(q.x0, slot.x0); q.x1 = Math.max(q.x1, slot.x1); grew = true; }
       }
     }

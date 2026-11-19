@@ -6,15 +6,15 @@ import type { RoomSpec } from '../plan';
  */
 export type RoomKind =
   | 'bridge' | 'engine' | 'reactor' | 'shields' | 'core' | 'plant' | 'workshop' | 'guns' | 'cargo' | 'pantry' | 'hangar'
-  | 'mess' | 'barracks' | 'cabin' | 'medbay' | 'trauma' | 'brig' | 'farm' | 'other';
+  | 'mess' | 'barracks' | 'cabin' | 'medbay' | 'trauma' | 'brig' | 'farm' | 'lounge' | 'gym' | 'other';
 
 /** What a room is, by its role and what it holds. */
-export function roomKind(r: Pick<RoomSpec, 'role' | 'mods' | 'dept' | 'cabin'>): RoomKind {
+export function roomKind(r: Pick<RoomSpec, 'role' | 'mods' | 'dept' | 'cabin' | 'use'>): RoomKind {
   const has = (m: string): boolean => r.mods.includes(m);
   switch (r.role) {
     case 'medbay': return has('module.recovery') ? 'trauma' : 'medbay';
     case 'quarters': return r.cabin ? 'cabin' : 'barracks';
-    case 'support': return has('module.galley') ? 'mess' : has('module.fabricator') ? 'workshop' : 'other';
+    case 'support': return r.use ?? (has('module.galley') ? 'mess' : has('module.fabricator') ? 'workshop' : 'other');
     case 'plant': return has('module.fabricator') ? 'workshop' : 'plant';
     case 'cargo': return r.dept === 'commons' ? 'pantry' : 'cargo';
     case 'weapons': return 'guns';
@@ -25,13 +25,13 @@ export function roomKind(r: Pick<RoomSpec, 'role' | 'mods' | 'dept' | 'cabin'>):
 }
 
 /** Rooms whose only way in is a corridor. */
-const HALL_ONLY: ReadonlySet<RoomKind> = new Set(['medbay', 'mess', 'cabin', 'workshop', 'bridge', 'brig']);
+const HALL_ONLY: ReadonlySet<RoomKind> = new Set(['medbay', 'mess', 'cabin', 'workshop', 'bridge', 'brig', 'lounge', 'gym']);
 /** Rooms reached only through their host, never a corridor (annexes). */
 const HOST_ONLY: Partial<Record<RoomKind, readonly RoomKind[]>> = { trauma: ['medbay'], pantry: ['mess'] };
 /** Rooms that may also open off these. */
-const THROUGH: Partial<Record<RoomKind, readonly RoomKind[]>> = { barracks: ['mess'], cargo: ['workshop', 'cargo'] };
+const THROUGH: Partial<Record<RoomKind, readonly RoomKind[]>> = { barracks: ['mess', 'lounge'], cargo: ['workshop', 'cargo'] };
 /** Guns open off anything but the bridge, the crew's rooms and the stores. */
-const NOT_GUNS: ReadonlySet<RoomKind> = new Set(['bridge', 'mess', 'barracks', 'cabin', 'medbay', 'trauma', 'pantry', 'cargo']);
+const NOT_GUNS: ReadonlySet<RoomKind> = new Set(['bridge', 'mess', 'barracks', 'cabin', 'medbay', 'trauma', 'pantry', 'cargo', 'lounge', 'gym']);
 /** The machinery: opens off its own kind. */
 const MACHINES: ReadonlySet<RoomKind> = new Set(['engine', 'reactor', 'shields', 'core', 'plant']);
 
