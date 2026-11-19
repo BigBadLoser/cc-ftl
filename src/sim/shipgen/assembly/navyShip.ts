@@ -269,22 +269,29 @@ export function assembleNavy(
   );
 }
 
-/** Attempts until one passes (as `generateShip`), the last otherwise. `type` defaults to the seed's (`navyTypeOf`). */
-export function generateNavy(f: FactionDef, factionId: string, seed: number, depth: number, defs: Record<string, ModuleDef>, type = navyTypeOf(f, seed, depth)): GenResult {
+/**
+ * Attempts until one passes (as `generateShip`), the last otherwise: `assemble(n, extra)` is attempt `n`, built again
+ * with `extra` engines where its hull's engines cannot carry it (as `generateAttempt`).
+ */
+export function navyAttempts(defs: Record<string, ModuleDef>, assemble: (n: number, extra: number) => GenResult): GenResult {
   const failures: string[] = [];
   let last: GenResult | null = null;
   for (let n = 0; n < 24; n++) {
-    // A hull its engines cannot carry is built again with the engines it lacks (as `generateAttempt`).
-    let r = assembleNavy(f, factionId, seed, depth, defs, type, n);
+    let r = assemble(n, 0);
     for (let k = 0, extra = 0; k < 3 && r.problems[0]?.startsWith('engines carry'); k++) {
       extra += Math.max(1, enginesShort(defs, r.template));
-      r = assembleNavy(f, factionId, seed, depth, defs, type, n, extra);
+      r = assemble(n, extra);
     }
     last = { ...r, failures: [...failures] };
     if (r.problems.length === 0) return last;
     failures.push(r.problems[0] as string);
   }
   return last as GenResult;
+}
+
+/** A navy ship by attempts. `type` defaults to the seed's (`navyTypeOf`). */
+export function generateNavy(f: FactionDef, factionId: string, seed: number, depth: number, defs: Record<string, ModuleDef>, type = navyTypeOf(f, seed, depth)): GenResult {
+  return navyAttempts(defs, (n, extra) => assembleNavy(f, factionId, seed, depth, defs, type, n, extra));
 }
 
 /**

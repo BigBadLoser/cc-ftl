@@ -1,5 +1,6 @@
 import { dockSpec, engineSpec, type RoomSpec, type ShipPlan } from '../plan';
-import type { Mask } from './blockLayout';
+/** A scaled silhouette about its axis: `inside(x, y)` with y = 0 the axis. */
+export interface Mask { W: number; H: number; inside: (x: number, y: number) => boolean }
 
 /**
  * The fixed frame of a navy outline both layouts build on (SHIPGEN_V4, "Room layout"): the drive's engine rows at the

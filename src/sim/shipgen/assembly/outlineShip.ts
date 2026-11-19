@@ -6,7 +6,7 @@ import { enginesShort, fitShell, seedOf } from '../generate';
 import { ENGINE_TIERS, REACTOR_TIERS, planShip, reactorsFor, type ShipPlan } from '../plan';
 import type { FactionDef, GenResult } from '../types';
 import { layoutBlocks, type Mask } from './blockLayout';
-import { NAVY_TYPES, navyRole, shipCommons, shipQuarters, type NavyType } from './navyShip';
+import { NAVY_TYPES, navyAttempts, navyRole, shipCommons, shipQuarters, type NavyType } from './navyShip';
 import { SPACE, type RegionGrid } from './regions';
 
 /**
@@ -91,9 +91,12 @@ function dropIslands(g: RegionGrid): boolean {
   return dropped;
 }
 
-export function assembleOutline(
-  f: FactionDef, factionId: string, seed: number, depth: number, defs: Record<string, ModuleDef>, type: NavyType, n = 0, extra = 0,
-): GenResult {
+/** What an outline is built from: the plan with the type's commons and quarters, the drawn silhouette, the rooms' size draws. */
+export interface OutlineInputs { rng: Rng; role: ReturnType<typeof navyRole>; plan: ShipPlan; sil: Silhouette; vary: number[]; maxBeam: number }
+
+export function outlineInputs(
+  f: FactionDef, seed: number, depth: number, defs: Record<string, ModuleDef>, type: NavyType, n = 0, extra = 0,
+): OutlineInputs {
   const rng = new Rng(seedOf(seed, n));
   const role = navyRole(f, type);
   // A drive short of thrust gets engines a tier up before it gets more of them (more need a deeper stern, so a bigger hull).
@@ -103,30 +106,42 @@ export function assembleOutline(
   // A reactor a tier up where the plan's is Mk I: the power the fit-out would otherwise squeeze into stores as extra reactors.
   const up = REACTOR_TIERS[Math.min(REACTOR_TIERS.length - 1, REACTOR_TIERS.indexOf(planned.kit.reactor as (typeof REACTOR_TIERS)[number]) + 1)] as string;
   const kit = { ...planned.kit, ...(planned.kit.reactor === REACTOR_TIERS[0] && defs[up] ? { reactor: up } : {}), ...(tierUp ? { engine: engineUp } : {}) };
-  // The type's commons join the plan (their power counted), and reactors cover the planned floor's lamps.
   // The type's commons and quarters (a few spare beds past the crew's) join the plan, their power counted.
   const quarters = shipQuarters(type, planned.quarters, planned.crew.length, rng.int(2, 4));
   const plan: ShipPlan = { ...planned, kit, quarters, support: [...planned.support, ...shipCommons(type, planned.crew.length)] };
   plan.reactors = reactorsFor(plan, defs);
-  const profiles = NAVY_PROFILES[type] ?? [];
-  const profile = rng.pick(profiles);
-  const sil = drawSilhouette(rng, profile);
+  const sil = drawSilhouette(rng, rng.pick(NAVY_PROFILES[type] ?? []));
   const vary = Array.from({ length: 24 }, () => rng.int(80, 135) / 100);
-  const maxBeam = NAVY_TYPES[type].maxBeam;
-  // The smallest beam the rooms fit, at a length from three quarters of it up: near the silhouette's proportions. No
-  // wider than the type's beam (its hull walls included): at the widest, the hull grows longer.
-  const fit = (sx: number, sy: number): { g: RegionGrid } | null => { const m = scaled(sil, sx, sy); return 2 * m.H + 3 > maxBeam ? null : layoutBlocks(plan, m, type, vary, defs); };
-  const search = (): { g: RegionGrid } | null => {
-    let widest = 1;
-    for (let sy = 1; sy <= 3.6 && 2 * scaled(sil, 1, sy).H + 3 <= maxBeam; sy += 0.1) {
-      widest = sy;
-      for (let sx = Math.max(1, 0.75 * sy); sx <= 1.15 * sy; sx += 0.1) { const l = fit(sx, sy); if (l) return l; }
-    }
-    for (let sx = 1.15 * widest + 0.1; sx <= 3 * widest; sx += 0.1) { const l = fit(sx, widest); if (l) return l; }
-    return null;
+  return { rng, role, plan, sil, vary, maxBeam: NAVY_TYPES[type].maxBeam };
+}
+
+/**
+ * The smallest beam the rooms fit, at a length from three quarters of it up: near the silhouette's proportions. No
+ * wider than the type's beam (its hull walls included): at the widest, the hull grows longer.
+ */
+export function scaleSearch<T>(sil: Silhouette, maxBeam: number, fit: (m: Mask) => T | null): { m: Mask; l: T } | null {
+  const at = (sx: number, sy: number): { m: Mask; l: T } | null => {
+    const m = scaled(sil, sx, sy);
+    if (2 * m.H + 3 > maxBeam) return null;
+    const l = fit(m);
+    return l ? { m, l } : null;
   };
-  const lay = search();
-  if (!lay) throw new Error(`outline ${type}: rooms do not fit`);
+  let widest = 1;
+  for (let sy = 1; sy <= 3.6 && 2 * scaled(sil, 1, sy).H + 3 <= maxBeam; sy += 0.1) {
+    widest = sy;
+    for (let sx = Math.max(1, 0.75 * sy); sx <= 1.15 * sy; sx += 0.1) { const l = at(sx, sy); if (l) return l; }
+  }
+  for (let sx = 1.15 * widest + 0.1; sx <= 3 * widest; sx += 0.1) { const l = at(sx, widest); if (l) return l; }
+  return null;
+}
+
+export function assembleOutline(
+  f: FactionDef, factionId: string, seed: number, depth: number, defs: Record<string, ModuleDef>, type: NavyType, n = 0, extra = 0,
+): GenResult {
+  const { rng, role, plan, sil, vary, maxBeam } = outlineInputs(f, seed, depth, defs, type, n, extra);
+  const found = scaleSearch(sil, maxBeam, (m) => layoutBlocks(plan, m, type, vary, defs));
+  if (!found) throw new Error(`outline ${type}: rooms do not fit`);
+  const lay = found.l;
   const { g } = lay;
   thinHull(g);
   if (dropIslands(g)) thinHull(g);
@@ -140,19 +155,7 @@ export function assembleOutline(
   );
 }
 
-/** Attempts until one passes (as `generateNavy`), the last otherwise; a hull its engines cannot carry is built again with more. */
+/** An outline navy ship by attempts (as `generateNavy`). */
 export function generateOutline(f: FactionDef, factionId: string, seed: number, depth: number, defs: Record<string, ModuleDef>, type: NavyType): GenResult {
-  const failures: string[] = [];
-  let last: GenResult | null = null;
-  for (let n = 0; n < 24; n++) {
-    let r = assembleOutline(f, factionId, seed, depth, defs, type, n);
-    for (let k = 0, extra = 0; k < 3 && r.problems[0]?.startsWith('engines carry'); k++) {
-      extra += Math.max(1, enginesShort(defs, r.template));
-      r = assembleOutline(f, factionId, seed, depth, defs, type, n, extra);
-    }
-    last = { ...r, failures: [...failures] };
-    if (r.problems.length === 0) return last;
-    failures.push(r.problems[0] as string);
-  }
-  return last as GenResult;
+  return navyAttempts(defs, (n, extra) => assembleOutline(f, factionId, seed, depth, defs, type, n, extra));
 }

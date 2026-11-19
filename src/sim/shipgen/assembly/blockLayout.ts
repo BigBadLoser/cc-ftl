@@ -1,12 +1,13 @@
 import type { ModuleDef } from '../../registry';
-import { cargoSpec, dockSpec, reactorSpec, weaponSpec, type RoomSpec, type ShipPlan } from '../plan';
-import { pairUp } from '../topoNavy';
-import { MESS, NAVY_TYPES, type NavyType } from './navyShip';
-import { RegionGrid, SOLID, SPACE } from './regions';
+import type { RoomSpec, ShipPlan } from '../plan';
+import { NAVY_TYPES, type NavyType } from './navyShip';
+import { areaOf, capOf, full, gunsAndReactors, minLen, mirrorPairs, type Pair } from './pairs';
+import type { RegionGrid } from './regions';
 import { CABIN_TIER, cabinsFor } from './cabinBlock';
 import { FILL_MAX, crewRoom, fillerFor, fillerSpec, maxArea, type Filler } from './roomSize';
 import { onHall, opensThrough, roomKind, type RoomKind } from './roomAccess';
-import { BAND, MIN_DEPTH, outlineFrame } from './frame';
+import { BAND, MIN_DEPTH, outlineFrame, type Mask } from './frame';
+import { closeFrame, frameGrid } from './frameGrid';
 
 /**
  * Rooms cut into a navy outline by corridors, blocks and one splitter (SHIPGEN_V4, "Room layout"): the spine and the
@@ -22,47 +23,10 @@ const ASPECT = 3, DEEP = 2;
 /** Rooms bow to stern within a band: guns forward, then defences, works and stores, the crew aft. */
 const ZONE = ['weapons', 'bridge', 'shields', 'core', 'reactor', 'plant', 'farm', 'cargo', 'hangar', 'armoury', 'support', 'medbay', 'quarters'];
 
-export interface Mask { W: number; H: number; inside: (x: number, y: number) => boolean }
-type Pair = readonly [RoomSpec, RoomSpec];
-/** A band: runs of columns (end exclusive) and each column's floor rows (room rows, from 1 at the spine's wall). */
+export type { Mask } from './frame';
 interface Band { segs: [number, number][]; lo: (x: number) => number; hi: (x: number) => number }
 interface Piece { pair: Pair; x0: number; x1: number; /** An outer room's column in front of its own room (it keeps that door when it widens). */ at?: number }
 
-/**
- * Rooms paired across the axis: the same role where there are two, then unlike rooms of a size together (the shape
- * mirrors, the use need not), and the one left over gets a mess opposite it (a store when there is one). An annex counts
- * in its host's size.
- */
-function mirrorPairs(specs: RoomSpec[]): Pair[] {
-  const rest = [...specs], out: Pair[] = [];
-  const push = (a: RoomSpec, b: RoomSpec): void => { const w = Math.max(a.w, b.w), h = Math.max(a.h, b.h); out.push([{ ...a, w, h }, { ...b, w, h }]); };
-  for (let i = 0; i < rest.length; i++) {
-    const a = rest[i] as RoomSpec, j = rest.findIndex((r, k) => k > i && r.role === a.role && (!a.block || r.mods.length === a.mods.length));
-    if (j > 0) { push(a, rest[j] as RoomSpec); rest.splice(j, 1); rest.splice(i, 1); i--; }
-  }
-  rest.sort((a, b) => full(b) - full(a));
-  // Unlike rooms pair when near a size; a room much bigger than the next gets filler rooms opposite.
-  while (rest.length > 1) {
-    const a = rest.shift() as RoomSpec;
-    push(a, full(rest[0] as RoomSpec) * 1.5 >= full(a) ? (rest.shift() as RoomSpec) : fillOpposite(a));
-  }
-  if (rest.length === 1) push(rest[0] as RoomSpec, specs.some((r) => r.role === 'support' && r.mods.includes('module.galley')) ? cargoSpec(2) : MESS);
-  return out;
-}
-
-/** The floor opposite a room with no partner its size: as big, cut into fillers when painted. */
-const fillOpposite = (a: RoomSpec): RoomSpec => ({ role: 'cargo', mods: [], w: a.w, h: a.h, fill: true });
-/** A room's floor with its annex. */
-const full = (r: RoomSpec): number => r.w * r.h + (r.annex ? r.annex.w * r.annex.h : 0);
-/**
- * A room's least length along the band: a reactor lies along a wall its full length, a room with an annex room for both
- * side by side (where it is too shallow for the annex behind), others at least their short side.
- */
-const minLen = (r: RoomSpec): number => (r.annex ? 2 * MIN_DEPTH + 1 : r.role === 'reactor' ? r.w : Math.min(r.w, r.h));
-const areaOf = ([r, s]: Pair): number => Math.max(full(r), full(s));
-/** A store pair for a stretch of band `len` long: floor no room was planned for. */
-/** The most floor a pair takes: the smaller of its rooms' caps, its planned floor at least. */
-const capOf = ([r, s]: Pair): number => Math.max(areaOf([r, s]), Math.min(maxArea(r), maxArea(s)));
 /** Which fillers a ship has used (one workshop, lounge and gym a side at most; a farm where the ship carries one). */
 export interface Fills { left: Filler[] }
 // One of a kind a ship (the room opposite a hold of the same shape), holds in pairs.
@@ -144,7 +108,7 @@ function split(band: Band, pairs: readonly Pair[], vary: readonly number[], spar
 export function layoutBlocks(plan: ShipPlan, m: Mask, type: NavyType, vary: readonly number[], defs: Record<string, ModuleDef>): { g: RegionGrid } | null {
   const fr = outlineFrame(plan, m);
   if (!fr) return null;
-  const { W, H, inside, top, depth, xS, sternMax, used, engine, xBr, xBand, CW, dockAt } = fr, bridge = plan.command;
+  const { W, H, inside, depth, xS, sternMax, used, engine, xBand, CW, dockAt } = fr;
 
   // The inner tier: as deep as the shallower part of the side (its lower quartile), at most a room and a half; a column
   // deep enough for a second tier beyond it splits.
@@ -204,17 +168,9 @@ export function layoutBlocks(plan: ShipPlan, m: Mask, type: NavyType, vary: read
     }
   }
 
-  // The rooms, paired to mirror: guns (a lone room of several guns splits, a gun each side), then the rest by zone.
-  const guns = plan.weapons.flatMap((r) => (r.mods.length > 1 && plan.weapons.length % 2 === 1 && r === plan.weapons[plan.weapons.length - 1]
-    ? [weaponSpec(defs, r.mods.slice(0, Math.ceil(r.mods.length / 2))), weaponSpec(defs, r.mods.slice(Math.ceil(r.mods.length / 2)))]
-    : [r]));
-  const lone = guns.length % 2 === 1 ? [guns.pop() as RoomSpec] : [];
-  // Reactors two a room past a pair (a room each for one or two), so no reactor room stands mostly bare.
-  const reactors = plan.reactors <= 2 ? Array.from({ length: plan.reactors }, () => reactorSpec(1, plan.kit))
-    : Array.from({ length: Math.ceil(plan.reactors / 2) }, (_, i) => reactorSpec(Math.min(2, plan.reactors - 2 * i), plan.kit));
+  // The rooms, paired to mirror: guns, then the rest by zone.
+  const { gunPairs, lone, reactors } = gunsAndReactors(plan, defs);
   const rest = [...lone, ...reactors, ...plan.shields, ...(plan.core ? [plan.core] : []), ...plan.quarters.filter((q) => !claim || !q.block), ...plan.support, ...plan.cargo, ...plan.hangars];
-  const [gn, gs] = pairUp(guns);
-  const gunPairs: Pair[] = gn.map((r, i) => [r, gs[i] as RoomSpec] as const);
   const zone = (p: Pair): number => ZONE.indexOf(p[0].role);
   const others = mirrorPairs(rest).sort((a, b) => zone(a) - zone(b));
 
@@ -310,18 +266,7 @@ export function layoutBlocks(plan: ShipPlan, m: Mask, type: NavyType, vary: read
   if (!innerCut) return null;
 
   // Paint: the bridge, the band rooms (barracks long enough become cabins), the outer tier, the drive, the corridors.
-  const g = new RegionGrid(128);
-  const ox = -Math.floor(W / 2);
-  const paint = (id: number, x0: number, x1: number, yIn: (y: number) => boolean): void => {
-    for (let tx = x0; tx < x1; tx++) for (let ty = -H; ty <= H; ty++) if (inside(tx, ty) && yIn(ty)) g.set(ox + tx, ty, id);
-  };
-  const hall = g.hall('hall');
-  // The airlock bays: the cross corridor's halls, with their fixture.
-  const docks: [number, number] = [g.hall('dock', undefined, dockSpec()), g.hall('dock', undefined, dockSpec())];
-  // From the first column three floor rows deep: a nose spike or tip narrower than the helm is plating.
-  let xNose = 0;
-  while (xNose < xBr - MIN_DEPTH && top(xNose) < 2) xNose++;
-  paint(g.room(bridge.role, { spec: bridge }), xNose, xBr, () => true);
+  const fg = frameGrid(fr, plan), { g, hall, docks, paint } = fg;
   const innerIds = new Map<number, [number, number]>();
   // Columns of the corridor stubs cut so far (blockLayout's deep rooms off the cross corridors).
   const stubCols: number[] = [];
@@ -494,11 +439,7 @@ export function layoutBlocks(plan: ShipPlan, m: Mask, type: NavyType, vary: read
     paint(g.room(r.role, { spec: as(r), access: access(0), doorFirst: x0 > xS }), x0, x1, (y) => y <= -lo(x0));
     paint(g.room(sr.role, { spec: as(sr), access: access(1), doorFirst: x0 > xS }), x0, x1, (y) => y >= lo(x0));
   }
-  for (let tx = 0; tx < W; tx++) for (let ty = -H; ty <= H; ty++) if (inside(tx, ty) && g.at(ox + tx, ty) === SPACE) g.set(ox + tx, ty, SOLID);
-  for (let tx = xBr; tx < W; tx++) for (let ty = -1; ty <= 1; ty++) if (inside(tx, ty)) g.set(ox + tx, ty, hall);
-  // The cross corridor out to the airlocks.
-  paint(docks[0], dockAt, dockAt + CW, (y) => y <= -BAND);
-  paint(docks[1], dockAt, dockAt + CW, (y) => y >= BAND);
+  closeFrame(fr, fg);
   if (aft > 0) paint(hall, aft, aft + CW, (y) => Math.abs(y) >= BAND);
   return { g };
 }
