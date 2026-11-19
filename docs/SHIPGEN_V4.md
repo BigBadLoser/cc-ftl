@@ -206,3 +206,55 @@ names a room type except through its needs.
 
 Every room touches a corridor, every wall is one tile thick (plating between blocks and tiers), and nothing in the
 three steps knows what a plant, a store or a barracks is: a small room lands in a small slot because it is small.
+
+## Room sizes and fillers (outline ships, #581)
+
+The splitter above shares slack over a block's rooms, so spare floor goes to whatever room is nearest: gun rooms the
+size of a hangar, cargo holds taking half a side, cabins squeezed beside them. Each patch for it (growth caps by kind,
+storerooms cut from the leftover, cabin blocks cut from a long barracks, back slots merged into a neighbour) was its own
+special case. The hull cannot give the floor back either: hull and interior walls are one tile thick and continuous, so
+every tile inside the hull is floor of some room or corridor (plating left over is trimmed off the outline, which costs
+silhouette). The hull stays first and keeps its shape; spare floor becomes more rooms, never bigger ones.
+
+**One rule: every room is within its size range.** Each room kind has, as data:
+
+- `min`: the planned area (its modules fit, the furnishing rules hold), and a minimum length and depth;
+- `max`: how far past its plan it may grow (a factor of the plan, and an absolute cap in tiles);
+- `aspect`: the longest side over the shortest, at most (one value for all, three today; no strips).
+
+| Kind | Grows to | Cap (tiles) | Note |
+| --- | --- | --- | --- |
+| guns, shields, core, reactor, plant | 1.3x plan | 48 | equipment rooms stay tight |
+| bridge | 1.3x plan | 60 | the bow's taper takes the rest |
+| barracks, mess, medbay | 1.6x plan | 60 | |
+| hangar | 1.5x plan | 120 | |
+| cargo (a planned hold) | 1.5x plan | 60 | |
+| trauma, pantry, brig | 1.3x plan | 40 | |
+
+**A slot over its room's max is cut, the rest goes to fillers.** A slot is a piece of a tier: columns along the band,
+rows from the corridor out. The room takes the front of it (the rows on its corridor, the columns its planned length
+asks) up to its max; what is left, along the band or behind, is cut into filler rooms. A filler is a room the plan did not
+ask for, from a ranked list, each kind with its own size range and access rule (roomAccess.ts, unchanged):
+
+1. **Cabins**: three rows by three to four floor columns, a bed and a locker. Where a filler block is deep enough for two
+   rows of cabins it is a cabin block: cabins either side of a corridor of their own (one to three wide, so both sides
+   are equal), every cabin's door on that corridor. A cabin is never under nine floor tiles.
+2. **Storeroom**: crates, 9 to 30 tiles, opens off a workshop or a hold (cargo's access rule) or a corridor.
+3. **Small farm**: hydroponics, 12 to 24 tiles, on ships that carry a farm (cruisers and up).
+4. **Workshop**: a fabricator, 12 to 30 tiles, on a corridor.
+
+The filler kind for a leftover is the first one whose size range and access fit it (a cabin block needs a corridor stub
+from a hall; a storeroom behind a workshop or hold needs none). Leftover too small for any filler joins the room in
+front up to that room's max, else the neighbour along the band; only a sliver under three rows or columns does so past
+a max.
+
+**What this replaces in blockLayout.ts:** `GROW` and the slack sharing in `split()` (a room takes its target, the rest
+is filler), `stores()` (storerooms are a filler), the cabin-block path (cabins are a filler), the empty back slot merge
+and the L-shape extension (a back slot is filler, or joins the room in front within its max). What stays: corridors and
+blocks (steps 1 and 2 above), zone order, mirror pairs, the scale search, room access, the furnishing rules, power
+planning (fillers are added to the plan before reactors are sized, as the ship commons are).
+
+**Measured by:** the sheet of eight seeds per navy type, and a test over seeds 1-16 per type that every room is within
+its kind's max (fillers within theirs) and its aspect.
+
+Open: whether fillers should be weighted by the ship's crew (cabins only while beds are short of crew, then stores).
