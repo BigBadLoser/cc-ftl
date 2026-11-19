@@ -1,9 +1,9 @@
 /**
- * Dev-server endpoint for the layout lab's feedback cases (never part of the build: `apply: 'serve'`). It lists, reads and writes
+ * Dev-server endpoint for the layout lab's feedback cases (never part of the build: `apply: 'serve'`). It reads and writes
  * `tools/layout/cases/<slug>.json`; a slug is letters, digits and dashes only (the mock cases keep their camel-case file names), so no request can leave that folder.
  */
 import { Buffer } from 'node:buffer';
-import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const DIR = join(import.meta.dirname, 'cases');
@@ -24,10 +24,7 @@ export function layoutCases() {
           res.end(typeof body === 'string' ? body : JSON.stringify(body));
         };
         const slug = (req.url ?? '/').replace(/^\//, '').split('?')[0] ?? '';
-        if (req.method === 'GET' && slug === '') {
-          const names = existsSync(DIR) ? readdirSync(DIR).filter((f) => f.endsWith('.json')).map((f) => f.slice(0, -5)).sort() : [];
-          send(200, names);
-        } else if (req.method === 'GET' && SLUG.test(slug)) {
+        if (req.method === 'GET' && SLUG.test(slug)) {
           const file = join(DIR, `${slug}.json`);
           if (existsSync(file)) send(200, readFileSync(file, 'utf8'));
           else send(404, { error: 'no such case' });

@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
 	import { Label } from '$lib/components/ui/label/index.js';
@@ -34,12 +33,7 @@
 		if (s.kind === 'station' && s.layout && !layouts.some((l) => l.value === s.layout)) s.layout = '';
 	});
 	const num = (e: Event, min: number): number => Math.max(min, Math.floor(Number((e.currentTarget as HTMLInputElement).value) || 0));
-	let cases = $state<string[]>([]);
 	let caseError = $state('');
-	onMount(() => { lab.listCases().then((l) => (cases = l)).catch(() => (caseError = 'The case list needs the dev server.')); });
-	async function open(slug: string) {
-		try { await lab.loadCaseNamed(slug); done(); } catch (e) { caseError = e instanceof Error ? e.message : String(e); }
-	}
 	async function openFile(e: Event) {
 		const f = (e.currentTarget as HTMLInputElement).files?.[0];
 		if (!f) return;
@@ -89,12 +83,6 @@
 			Open a case file...
 			<input type="file" accept=".json,application/json" class="hidden" onchange={openFile} />
 		</label>
-		<div class="flex max-h-40 flex-col gap-0.5 overflow-y-auto">
-			{#each cases as c (c)}
-				<button class="rounded-md px-1.5 py-1 text-left font-mono text-xs break-all hover:bg-muted" onclick={() => open(c)}>{c}</button>
-			{:else}
-				<span class="text-xs text-muted-foreground">{caseError || 'None saved yet.'}</span>
-			{/each}
-		</div>
+		{#if caseError}<span class="text-xs text-destructive">{caseError}</span>{/if}
 	</div>
 </div>

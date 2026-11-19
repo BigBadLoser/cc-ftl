@@ -24,3 +24,13 @@ describe('asteroid outposts in the import', () => {
     expect(layout.modules.length).toBeGreaterThan(0);
   });
 });
+
+describe('the ground a base stands on', () => {
+  it('is the same rectangle for the grid and the preview, and none for a design in space', async () => {
+    const { groundRect } = await import('./ground');
+    const { PAD } = await import('./layout');
+    const { layout } = buildLayout({ ...DEFAULT_SOURCE, kind: 'outpost', id: 'trading', seed: 1 });
+    expect(groundRect(layout)).toEqual({ x: PAD - 3, y: PAD - 3, w: layout.width - 2 * (PAD - 3), h: layout.height - 2 * (PAD - 3) });
+    expect(groundRect({ ...layout, ground: undefined } as typeof layout)).toBeNull();
+  });
+});

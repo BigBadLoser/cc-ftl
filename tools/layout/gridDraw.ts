@@ -6,10 +6,12 @@ import type { RGB } from '../shipgen/draw';
 import { DARK, DOOR, HALL, INK, LAMP, NAMES, WALL, roleTint } from '../shipgen/labels';
 import { scaleOf, type Box, type View } from './camera';
 import type { Design } from './design';
+import { groundRect } from './ground';
+import type { Rect } from './layout';
 
-export interface Layers { rooms: boolean; names: boolean; furniture: boolean; lamps: boolean; gridLines: boolean; shields: boolean; roof: boolean }
-export const DEFAULT_LAYERS: Layers = { rooms: true, names: true, furniture: true, lamps: true, gridLines: false, shields: false, roof: false };
-export const LAYER_LABELS: Record<keyof Layers, string> = { rooms: 'Rooms', names: 'Room names', furniture: 'Furniture codes', lamps: 'Lamps', gridLines: 'Tile grid', shields: 'Shields (preview)', roof: 'Roof (preview)' };
+export interface Layers { ground: boolean; rooms: boolean; names: boolean; furniture: boolean; lamps: boolean; gridLines: boolean; shields: boolean; roof: boolean }
+export const DEFAULT_LAYERS: Layers = { ground: true, rooms: true, names: true, furniture: true, lamps: true, gridLines: false, shields: false, roof: false };
+export const LAYER_LABELS: Record<keyof Layers, string> = { ground: 'Asteroid ground', rooms: 'Rooms', names: 'Room names', furniture: 'Furniture codes', lamps: 'Lamps', gridLines: 'Tile grid', shields: 'Shields (preview)', roof: 'Roof (preview)' };
 export interface Mark { tiles: readonly [number, number][]; color: string; /** false: an outline only. */ fill?: boolean; /** 'square': a dashed square in each tile (where crew stand). */ shape?: 'square' }
 /** The side of a module that must sit on the hull: its tiles along that side and the step pointing out of the ship. */
 export interface HullEdge { tiles: readonly [number, number][]; out: readonly [number, number]; color: string }
@@ -17,6 +19,9 @@ export interface HullEdge { tiles: readonly [number, number][]; out: readonly [n
 const css = (c: RGB, a = 1): string => `rgba(${c[0]},${c[1]},${c[2]},${a})`;
 const BG = '#0a0c10';
 const BEAM: RGB = [90, 96, 108];
+/** Asteroid ground: a shade off the background, so it reads as the site without competing with what stands on it. */
+const GROUND = '#13141a';
+const GROUND_SPECK = 'rgba(200,190,170,0.07)';
 const HATCH = 'rgba(170,178,192,0.75)';
 
 /** Draw one frame into `ctx` (already scaled to css px). */
@@ -43,6 +48,8 @@ export function drawGrid(ctx: CanvasRenderingContext2D, d: Design, v: View, dpr:
   const x0 = Math.max(0, Math.floor(-ox / s)), x1 = Math.min(d.width, Math.ceil((box.w - ox) / s));
   const y0 = Math.max(0, Math.floor(-oy / s)), y1 = Math.min(d.height, Math.ceil((box.h - oy) / s));
   const pad = s >= 6 ? 0 : -0.25; // a hairline overlap at small scales hides seams
+  const gr = layers.ground ? groundRect(d.layout) : null;
+  if (gr) drawGround(ctx, gr, ox, oy, s);
   for (let y = y0; y < y1; y++) {
     const row = d.rows[y] ?? '';
     for (let x = x0; x < x1; x++) {
@@ -117,6 +124,19 @@ export function drawGrid(ctx: CanvasRenderingContext2D, d: Design, v: View, dpr:
   for (const e of edges) hullEdge(ctx, e, ox, oy, s);
 }
 
+/** The levelled ground a base stands on: a flat shade with a sparse speck per tile (fixed per tile, so it does not swim when panning). */
+function drawGround(ctx: CanvasRenderingContext2D, r: Rect, ox: number, oy: number, s: number): void {
+  ctx.fillStyle = GROUND;
+  ctx.fillRect(ox + r.x * s, oy + r.y * s, r.w * s, r.h * s);
+  if (s < 8) return;
+  ctx.fillStyle = GROUND_SPECK;
+  const d = Math.max(1, Math.round(s * 0.08));
+  for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) {
+    const h = (Math.imul(x, 73856093) ^ Math.imul(y, 19349663)) >>> 0;
+    ctx.fillRect(ox + (x + ((h & 7) + 1) / 9) * s, oy + (y + (((h >> 3) & 7) + 1) / 9) * s, d, d);
+  }
+}
+
 /** A dashed square outline filling each tile, with a faint fill (where crew stand). */
 function squares(ctx: CanvasRenderingContext2D, m: Mark, _d: Design, ox: number, oy: number, s: number): void {
   ctx.strokeStyle = m.color;
@@ -186,6 +206,7 @@ export function keyOf(d: Design): { rooms: KeyRoom[]; extras: KeyExtra[] } {
   const rooms = roles.map((role) => ({ role, name: NAMES[role] ?? role, color: css(roleTint(role)) }));
   rooms.push({ role: 'hall', name: 'corridor', color: css(HALL) });
   const extras: KeyExtra[] = [{ name: 'wall / hull', color: css(WALL) }, { name: 'door', color: css(DOOR) }];
+  if (d.layout.ground) extras.push({ name: 'asteroid ground', color: GROUND });
   if (d.rows.some((r) => r.includes('='))) extras.push({ name: 'beam', color: css(BEAM), hatch: true });
   if (d.modules.some((m) => m.lamp)) extras.push({ name: 'lamp', color: css(DARK), dot: true });
   return { rooms, extras };
