@@ -30,7 +30,7 @@ function scaled(sil: Silhouette, sx: number, sy: number): Mask {
   const H = Math.max(...sil.body.map((b) => Math.round(b * sy) + sil.axis - b));
   // PROTOTYPE (#581): the gun battery in tiles: blisters a room wide between notches, a gun on every other one (a
   // plain room between), centred on the best straight stretch that holds it (the rest on the next stretches).
-  const sites: [number, number][] = [], STEP = BLISTER + NOTCH;
+  const sites: [number, number][] = [], low: [number, number][] = [], STEP = BLISTER + NOTCH;
   let left = sil.battery?.guns ?? 0;
   for (const [a, b] of sil.battery?.runs ?? []) {
     if (left <= 0) break;
@@ -38,10 +38,13 @@ function scaled(sil: Silhouette, sx: number, sy: number): Mask {
     if (k <= 0) continue;
     const x0 = A + Math.floor((B - A - ((2 * k - 1) * STEP + NOTCH)) / 2);
     for (let i = 0; i < k; i++) sites.push([x0 + NOTCH + 2 * i * STEP, x0 + NOTCH + 2 * i * STEP + BLISTER]);
+    low.push([Math.floor(a * sx) - 2, Math.ceil(b * sx) + 2]);
     left -= k;
   }
   sites.sort((p, q) => p[0] - q[0]);
-  const notch = (x: number): boolean => sites.some(([s0, s1]) => (x >= s0 - NOTCH && x < s0) || (x >= s1 && x < s1 + NOTCH));
+  // The stretch a battery stands on drops a tile; only the guns' blisters stand out of it.
+  // (Its top row only: the row the blisters stand on, so a taper beside the stretch keeps its shape.)
+  const notch = (x: number): boolean => low.some(([a, b]) => x >= a && x < b) && !sites.some(([s0, s1]) => x >= s0 && x < s1);
   const hull = (x: number, y: number): boolean => {
     if (x < 0 || x >= W || Math.abs(y) > H) return false;
     const c = Math.floor(x / sx), b = bodyAt(c), hb = Math.round(b * sy), d = Math.abs(y);
@@ -49,7 +52,9 @@ function scaled(sil: Silhouette, sx: number, sy: number): Mask {
     const raw = d <= hb ? Math.round(d / sy) : b + d - hb;
     return sil.rows[sil.axis + Math.sign(y) * raw]?.[c] === '#';
   };
-  const inside = (x: number, y: number): boolean => hull(x, y) && !(notch(x) && !hull(x, Math.abs(y) + 1) && !hull(x, -Math.abs(y) - 1));
+  const topOf = (x: number): number => { let y = 0; while (hull(x, y + 1)) y++; return y; };
+  const tops = sites.map(([s0]) => topOf(s0));
+  const inside = (x: number, y: number): boolean => hull(x, y) && !(notch(x) && tops.includes(Math.abs(y)) && !hull(x, Math.abs(y) + 1));
   return { W, H, inside, ...(sites.length > 0 ? { sites } : {}) };
 }
 
