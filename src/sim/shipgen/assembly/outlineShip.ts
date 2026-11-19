@@ -189,7 +189,7 @@ function layout(plan: ShipPlan, sil: Silhouette, sx: number, sy: number, type: N
     for (let tx = x0; tx < x1; tx++) area += Math.max(0, depth(tx));
     const k = r.role === 'quarters' ? Math.max(1, Math.min(r.mods.length, Math.floor(area / CABIN_AREA), Math.floor((x1 - x0 + 1) / CABIN))) : 1;
     for (let c = 0; c < k; c++) {
-      const c0 = x0 + Math.round(((x1 - x0 + 1) * c) / k), c1 = x0 + Math.round(((x1 - x0 + 1) * (c + 1)) / k) - (c < k - 1 ? 1 : 0);
+      const c0 = x0 + Math.round(((x1 - x0 + 1) * c) / k), c1 = x0 + Math.round(((x1 - x0 + 1) * (c + 1)) / k) - 1;
       const part = (spec: RoomSpec): RoomSpec => (k === 1 ? spec : { ...spec, mods: spec.mods.filter((_, m) => m % k === c), w: c1 - c0 });
       paint(make(part(r)), c0, c1, (y) => y < -from);
       paint(make(part(sr)), c0, c1, (y) => y > from);
