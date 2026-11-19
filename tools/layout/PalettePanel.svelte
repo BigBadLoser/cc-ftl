@@ -38,7 +38,7 @@
 		{ id: 'window', name: 'Window', tip: 'Add a window to a wall; click one to remove it; [ ] size (X)', icon: PanelTop },
 		{ id: 'beam', name: 'Beam', tip: 'Paint frame beams for containers (B)', icon: Equal },
 		{ id: 'space', name: 'Erase', tip: 'Erase to open space (E)', icon: Eraser },
-		{ id: 'room', name: 'Room', tip: 'Draw a room; [ ] room type (G)', icon: SquareDashed },
+		{ id: 'room', name: 'Room', tip: 'Drag to draw a room; click inside a walled-in space to fill it; [ ] room type (G)', icon: SquareDashed },
 		{ id: 'module', name: 'Module', tip: 'Place a module; R turns, [ ] steps through the list (M)', icon: Box },
 		{ id: 'note', name: 'Pin', tip: 'Pin a note (N; Alt: free)', icon: StickyNote },
 	];

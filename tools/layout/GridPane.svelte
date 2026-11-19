@@ -279,10 +279,9 @@
 			const r = lab.drag;
 			lab.drag = null;
 			const l = lab.layout;
-			if (r?.ok && l) {
-				const id = lab.drawRoom(r, lab.role);
-				if (id !== null) lab.select({ kind: 'room', id });
-			}
+			// a click (no drag) inside an enclosed area fills it, whatever its shape; a drag draws a rectangle
+			const id = r && r.w === 1 && r.h === 1 ? lab.fillRoomAt(r.x, r.y, lab.role) : r?.ok && l ? lab.drawRoom(r, lab.role) : null;
+			if (id !== null) lab.select({ kind: 'room', id });
 		} else if (m?.k === 'move') {
 			const g = lab.ghost;
 			if (m.moved && g && !g.error) lab.edit((cur) => { const i = moduleIndex(cur, m.id); return i >= 0 ? moveModule(cur, i, g.x, g.y, g.rot) : cur; });

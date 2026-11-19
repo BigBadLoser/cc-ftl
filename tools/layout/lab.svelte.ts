@@ -5,6 +5,7 @@ import { DEFAULT_LAYERS, type Layers } from './gridDraw';
 import { commit, fresh, live, redo, undo, type History } from './history';
 import { addModule, contentBounds, deleteRoom, moduleDef, moduleIndex, moduleTiles, moveModule, newModule, removeModule, takeModuleId, takeRoomId, addRoom, splitRoom, type Rect, type Layout, type Tile } from './layout';
 import { problemsOf, type Problem } from './problems';
+import { enclosedAt, fillRoom } from './fill';
 import { placementProblem, windowPlanAt } from './world';
 import { addWindow, removeWindowAt, windowIndexAt } from './windows';
 import { rejectionMessage } from '../../src/app/messages';
@@ -254,6 +255,16 @@ class Lab {
     const { id, mark } = takeRoomId(l, this.roomMark);
     this.roomMark = mark;
     this.edit((cur) => addRoom(cur, r, role, id).layout);
+    return id;
+  }
+  /** A click with the Room tool: floor the enclosed open area under (x, y) as a new room of `role`. Returns its id, or null when the tile is not inside an enclosed area. */
+  fillRoomAt(x: number, y: number, role: string): number | null {
+    const l = this.layout;
+    const tiles = l && !this.compare ? enclosedAt(l, x, y) : null;
+    if (!l || !tiles) return null;
+    const { id, mark } = takeRoomId(l, this.roomMark);
+    this.roomMark = mark;
+    this.edit((cur) => fillRoom(cur, tiles, role, id));
     return id;
   }
   /** Split a room; the new half's id never repeats this session. Returns it, or null when the room cannot be split. */
