@@ -6,7 +6,7 @@ import { enginesShort, fitShell, seedOf } from '../generate';
 import { ENGINE_TIERS, REACTOR_TIERS, planShip, type ShipPlan } from '../plan';
 import type { FactionDef, GenResult } from '../types';
 import { layoutBlocks, type Mask } from './blockLayout';
-import { navyRole, type NavyType } from './navyShip';
+import { NAVY_TYPES, navyRole, type NavyType } from './navyShip';
 import { SPACE, type RegionGrid } from './regions';
 
 /**
@@ -108,9 +108,20 @@ export function assembleOutline(
   const profile = rng.pick(profiles);
   const sil = drawSilhouette(rng, profile);
   const vary = Array.from({ length: 24 }, () => rng.int(80, 135) / 100);
-  let lay: { g: RegionGrid } | null = null;
-  // The smallest beam the rooms fit, at a length from three quarters of it up: near the silhouette's proportions.
-  for (let sy = 1; sy <= 3.6 && !lay; sy += 0.1) for (let sx = Math.max(1, 0.75 * sy); sx <= 1.15 * sy && !lay; sx += 0.1) lay = layoutBlocks(plan, scaled(sil, sx, sy), type, vary, defs);
+  const maxBeam = NAVY_TYPES[type].maxBeam;
+  // The smallest beam the rooms fit, at a length from three quarters of it up: near the silhouette's proportions. No
+  // wider than the type's beam (its hull walls included): at the widest, the hull grows longer.
+  const fit = (sx: number, sy: number): { g: RegionGrid } | null => { const m = scaled(sil, sx, sy); return 2 * m.H + 3 > maxBeam ? null : layoutBlocks(plan, m, type, vary, defs); };
+  const search = (): { g: RegionGrid } | null => {
+    let widest = 1;
+    for (let sy = 1; sy <= 3.6 && 2 * scaled(sil, 1, sy).H + 3 <= maxBeam; sy += 0.1) {
+      widest = sy;
+      for (let sx = Math.max(1, 0.75 * sy); sx <= 1.15 * sy; sx += 0.1) { const l = fit(sx, sy); if (l) return l; }
+    }
+    for (let sx = 1.15 * widest + 0.1; sx <= 3 * widest; sx += 0.1) { const l = fit(sx, widest); if (l) return l; }
+    return null;
+  };
+  const lay = search();
   if (!lay) throw new Error(`outline ${type}: rooms do not fit`);
   const { g } = lay;
   thinHull(g);
