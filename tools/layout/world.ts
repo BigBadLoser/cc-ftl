@@ -2,6 +2,7 @@
  * A sim built from a layout and never stepped: the preview renders it and the game's owners answer about it (placement, power).
  * Built once per layout and kept; building a big station takes about 60 ms.
  */
+import { groundRect } from './ground';
 import { content } from '../../src/content';
 import { windowPlan } from '../../src/app/windowTool';
 import { windowCode, windowRun, ModuleC, Sim, Struct, removeModule as despawn, shipGrid, spawnModule, spawnShip, validateTemplate, type ModuleDef, type ShipTemplate, type WindowAxis } from '../../src/sim';
@@ -12,7 +13,7 @@ import { roomsSystem } from '../../src/sim/systems/rooms';
 import { lightingSystem } from '../../src/sim/systems/lighting';
 import { powerSystem } from '../../src/sim/systems/power';
 import { ORIGIN } from './camera';
-import { addModule, clampAt, newModule, PAD, removeModule, toTemplate, type Layout, type Tile } from './layout';
+import { addModule, clampAt, newModule, removeModule, toTemplate, type Layout, type Tile } from './layout';
 import { AsteroidC } from '../../src/sim/asteroids/components';
 import { ShipC } from '../../src/sim/combat/components';
 import { layCable, templateCable } from '../../src/sim/cable';
@@ -35,9 +36,6 @@ export function stampLayout(sim: Sim, l: Layout): number | null {
   return grid ? ship : null;
 }
 
-/** Open ground round a prefab base's rectangle: the cliff ring the preview leaves past the template's own margin. */
-const RING = 3;
-
 /**
  * A prefab base's site as the game's outpost stamp leaves it (outposts/stamp.ts): levelled rock ground under every open tile of the
  * base's rectangle and a ring round it, one flat asteroid of its own (the renderer's asteroid view draws it), and the template's ground
@@ -45,7 +43,9 @@ const RING = 3;
  * Written straight through the grid (the base is already stamped, so the asteroid's gap rule does not apply); a restamp reuses it.
  */
 function groundUnder(sim: Sim, l: Layout, ship: number): void {
-  const x = ORIGIN + PAD - RING, y = ORIGIN + PAD - RING, w = l.width - 2 * (PAD - RING), h = l.height - 2 * (PAD - RING);
+  const r = groundRect(l);
+  if (!r) return;
+  const x = ORIGIN + r.x, y = ORIGIN + r.y, { w, h } = r;
   const g = sim.sector.grid;
   let rock = [...sim.world.query(AsteroidC)][0];
   if (rock === undefined) {

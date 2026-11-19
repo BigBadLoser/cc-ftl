@@ -117,7 +117,7 @@ function tileChanges(a: Layout, b: Layout, rooms: readonly RoomBox[]): Change[] 
 function moduleName(m: TemplateModule): string {
   const def = defs[m.def];
   if (!def) return m.def;
-  return isLamp(def) ? 'lamp' : `${def.name.toLowerCase()} ${moduleCode(def.name)}`;
+  return isLamp(def) ? def.name.toLowerCase() : `${def.name.toLowerCase()} ${moduleCode(def.name)}`;
 }
 const at = (m: TemplateModule): string => `(${m.x},${m.y})`;
 
