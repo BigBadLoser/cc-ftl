@@ -43,7 +43,7 @@ export function paintPlaced(plan: ShipPlan, { fr, lay, battery }: Placed): Regio
         const cross = (b.crossL && q.x0 === b.a) || (b.crossR && q.x1 === b.b) ? (dockAt < q.x0 ? docks[side] : docks[side]) : undefined;
         const host = parts.find((o) => o.spec[side]?.annex === h) ?? parts.find((o) => o.r0 < q.r0 && o.x0 <= q.x0 && q.x1 <= o.x1);
         const annexOf = parts.find((o) => o.spec[side]?.annex === h);
-        const ahead = q.via === 'front' ? allParts.find((o) => o !== q && o.r0 < q.r0 && o.x0 <= q.x0 && q.x1 <= o.x1) : undefined;
+        const ahead = q.via === 'front' ? allParts.find((o) => o !== q && !!o.spec[side] && o.r0 < q.r0 && o.x0 <= q.x0 && q.x1 <= o.x1) : undefined;
         const fixed = q.via === 'dock' ? [docks[side]] : q.via === 'maint' ? [maint] : ahead ? [frontOf.get(ahead)?.[side] as number] : undefined;
         const access = fixed ?? (annexOf ? [front.get(annexOf)?.[side] as number] : q.r0 === 1 ? undefined : stub !== undefined ? [stub] : cross !== undefined ? [cross] : host ? [front.get(host)?.[side] as number] : undefined);
         const id = g.room(h.role, { spec: h, ...(access ? { access } : {}) });

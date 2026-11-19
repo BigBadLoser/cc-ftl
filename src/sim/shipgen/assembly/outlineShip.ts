@@ -150,17 +150,17 @@ export function outlineInputs(
  * The smallest beam the rooms fit, at a length from three quarters of it up: near the silhouette's proportions. No
  * wider than the type's beam (its hull walls included): at the widest, the hull grows longer.
  */
-export function scaleSearch<T>(sil: Silhouette, maxBeam: number, fit: (m: Mask) => T | null): { m: Mask; l: T } | null {
+export function scaleSearch<T>(sil: Silhouette, maxBeam: number, fit: (m: Mask) => T | null, least = 1): { m: Mask; l: T } | null {
   const at = (sx: number, sy: number): { m: Mask; l: T } | null => {
     const m = scaled(sil, sx, sy);
     if (2 * m.H + 3 > maxBeam) return null;
     const l = fit(m);
     return l ? { m, l } : null;
   };
-  let widest = 1;
-  for (let sy = 1; sy <= 3.6 && 2 * scaled(sil, 1, sy).H + 3 <= maxBeam; sy += 0.1) {
+  let widest = least;
+  for (let sy = least; sy <= 3.6 && 2 * scaled(sil, 1, sy).H + 3 <= maxBeam; sy += 0.1) {
     widest = sy;
-    for (let sx = Math.max(1, 0.75 * sy); sx <= 1.15 * sy; sx += 0.1) { const l = at(sx, sy); if (l) return l; }
+    for (let sx = Math.max(least, 0.75 * sy); sx <= 1.15 * sy; sx += 0.1) { const l = at(sx, sy); if (l) return l; }
   }
   for (let sx = 1.15 * widest + 0.1; sx <= 3 * widest; sx += 0.1) { const l = at(sx, widest); if (l) return l; }
   return null;
