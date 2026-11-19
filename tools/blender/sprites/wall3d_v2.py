@@ -131,6 +131,9 @@ def _lip(k, ax, plane, a, b, ends, zs, top, fam):
             u += out * T.LINE * (-1 if u < (op[0] + op[1]) / 2 else 1)   # (a window's seam by its post, the opening
             #   widened past it: moved out with the opening's end)
         q0, q1 = u, u + 0.7 * T.LINE
+        if not NUDGE:                                   # (square on: one whole screen px)
+            n = round(_px(u, 0.0))
+            q0, q1 = _u(n, 0.0), _u(n + 1, 0.0)
         dq, zq = LIP_D + T.PAINT, zl + LIP_H + T.PAINT
         prism(k, ax, plane, q0, q1, [(0.0, zh), (dq, zh), (dq, zq), (0.0, zq)], fam, 2,
               cols=[False, None, None, False])
@@ -173,7 +176,7 @@ def _rail(k, ax, plane, a, b, ends, top, fam):
 
 
 USCALE = 1.0                    # a square-on piece built a tile long to be drawn this long (the px grid kept whole)
-SNAPD = 0.375                     # the row phase on a face seen square on (_row)
+SNAPD = 0.125                     # the row phase on a face seen square on (_row)
 SQ = 2 ** -0.5                  # a screen px along a face seen square on (a diagonal wall), in LINEs
 PX0D = 0.0                      # where its px boundaries fall (in px, off u's grid) on a piece centred on its tile
 
@@ -273,15 +276,18 @@ def _gap(k, ax, plane, f0, f1, zb, zh):
     row = 1 / W.ZART
     for c in range(nc):
         c0, c1 = x + c * cw + 1, x + (c + 1) * cw - 1
-        _paint(k, ax, plane, _u(c0, PAINT), _u(c1, PAINT), q0, q1, PAINT, F, 1, top=0.5)          # the recess
+        _paint(k, ax, plane, _u(c0, PAINT), _u(c1, PAINT), q0, q1, PAINT, F, 1, foot=0.5, top=0.5)  # the recess
         h = (q1 - q0 - 4 * row) / 3
         for j in range(3):
             z1 = q1 - row - j * (h + row)
             z0 = z1 - h
-            _paint(k, ax, plane, _u(c0 + 1, 2 * PAINT), _u(c1 - 1, 2 * PAINT), z0, z1, 2 * PAINT, F, 2, top=0.5)
+            _paint(k, ax, plane, _u(c0 + 1, 2 * PAINT), _u(c1 - 1, 2 * PAINT), z0, z1, 2 * PAINT, F, 2, foot=0.5,
+                   top=0.5)
             _paint(k, ax, plane, _u(c0 + 1, 3 * PAINT), _u(c1 - 1, 3 * PAINT), z1 - row, z1, 3 * PAINT, F, 3,
                    foot=0.5, top=0.5)                                                              # its lit top
             if j == 2:
+                _paint(k, ax, plane, _u(c0, 4 * PAINT), _u(c1, 4 * PAINT), q1 - row, q1, 4 * PAINT, F, 1,
+                       foot=0.5, top=0.5)                                                          # the recess's top
                 m = (c0 + c1) // 2
                 _paint(k, ax, plane, _u(m - 2, 3 * PAINT), _u(m + 2, 3 * PAINT), z0 + 2 * row, z0 + 3 * row,
                        3 * PAINT, F, 1, foot=0.5, top=0.5)                                         # a short slot
@@ -373,7 +379,7 @@ def _slope_grid(zsurf, zs, ft, run_):
         return (lambda dd: dd), 0.4 / 32, (lambda u: u), T.LINE
     f = lambda dd: zsurf(dd) * W.ZART - YD * dd / SQ                        # noqa: E731
     kk = -(zs - ft) / run_ * W.ZART - YD / SQ
-    ph = SNAPD + 0.25                            # (the slope's plates a quarter row off the face's: whole rows)
+    ph = SNAPD + 0.5                             # (the slope's plates half a row off the face's: whole rows)
     sd = lambda dd: dd + (round(f(dd) - ph) + ph - f(dd)) / kk               # noqa: E731
     su = lambda u: _u(round(_px(u, 0.0)), 0.0)                               # noqa: E731
     return sd, 1 / abs(kk), su, SQ * T.LINE / USCALE
