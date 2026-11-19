@@ -16,24 +16,31 @@
 	import { docks } from './dock.svelte';
 	import { ladder } from './camera';
 	import { dpr, lab, type Tool } from './lab.svelte';
+	import { move } from './move.svelte';
 	import SaveCase from './SaveCase.svelte';
 	import SourcePicker from './SourcePicker.svelte';
 	import Workspace from './Workspace.svelte';
 
 	let open = $state(false);
-	const TOOLS: Record<string, Tool> = { v: 'select', f: 'floor', w: 'wall', d: 'door', b: 'beam', e: 'space', g: 'room', m: 'module', n: 'note', x: 'window' };
-	/** Shortcuts: tools by letter, 0 fits the design, R turns the ghost or the selected module, Delete removes the selection, Esc drops the tool, Ctrl+Z undoes (with Shift: redoes). */
+	const TOOLS: Record<string, Tool> = { v: 'select', f: 'floor', w: 'wall', d: 'door', b: 'beam', e: 'space', g: 'room', m: 'module', n: 'note', x: 'window', s: 'move' };
+	const ARROWS: Record<string, [number, number]> = { arrowleft: [-1, 0], arrowright: [1, 0], arrowup: [0, -1], arrowdown: [0, 1] };
+	/** Shortcuts: tools by letter, 0 fits the design, R turns the ghost or the selected module, Delete removes the selection, Esc drops the tool, Ctrl+Z undoes (with Shift: redoes).
+	 * With the Move tool's box: Ctrl+C / Ctrl+X copy and cut it, arrows nudge it, Delete clears it, Esc drops it (or a piece in flight); Ctrl+V pastes anywhere. */
 	function keys(e: KeyboardEvent) {
 		if ((e.target as HTMLElement | null)?.closest('input, textarea, [role=combobox]')) return;
 		const k = e.key.toLowerCase();
 		if ((e.ctrlKey || e.metaKey) && k === 'z') { e.preventDefault(); if (e.shiftKey) lab.redo(); else lab.undo(); }
 		else if ((e.ctrlKey || e.metaKey) && k === 'y') { e.preventDefault(); lab.redo(); }
+		else if ((e.ctrlKey || e.metaKey) && !lab.compare && (k === 'c' || k === 'x' || k === 'v')) { e.preventDefault(); if (k === 'c') move.copy(); else if (k === 'x') move.cut(); else move.paste(); }
 		else if (e.ctrlKey || e.metaKey || e.altKey) return;
 		else if (k === 'c') lab.toggleCompare();
 		else if (lab.compare && k !== 'c' && k !== '0' && k !== 'escape') return;
 		else if (k === 'r') lab.rotate();
 		else if (k === '0') lab.fit();
+		else if (lab.tool === 'move' && ARROWS[k] && move.box) { e.preventDefault(); move.nudge(...(ARROWS[k] as [number, number])); }
+		else if ((k === 'delete' || k === 'backspace') && lab.tool === 'move') move.clear();
 		else if (k === 'delete' || k === 'backspace') lab.removeSelected();
+		else if (k === 'escape' && (move.float || move.box)) { if (move.float) move.cancelFloat(); else move.reset(); }
 		else if (k === 'escape') { lab.setTool('select'); lab.armed = null; lab.ghost = null; }
 		else if (TOOLS[k]) lab.setTool(TOOLS[k] as Tool);
 	}

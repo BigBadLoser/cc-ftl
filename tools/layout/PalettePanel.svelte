@@ -11,6 +11,9 @@
 	import StickyNote from '@lucide/svelte/icons/sticky-note';
 	import PanelTop from '@lucide/svelte/icons/panel-top';
 	import BrickWall from '@lucide/svelte/icons/brick-wall';
+	import Move from '@lucide/svelte/icons/move';
+	import { Button } from '$lib/components/ui/button/index.js';
+	import { move } from './move.svelte';
 	import type { Component } from 'svelte';
 	import { Badge } from '$lib/components/ui/badge/index.js';
 	import * as Collapsible from '$lib/components/ui/collapsible/index.js';
@@ -29,6 +32,7 @@
 
 	const tools: { id: string; name: string; tip: string; icon: Component }[] = [
 		{ id: 'select', name: 'Select', tip: 'Select and move (V)', icon: MousePointer2 },
+		{ id: 'move', name: 'Move', tip: 'Drag a box, then drag what is in it; arrows nudge, Delete clears, Ctrl+C / X / V copy, cut, paste (S)', icon: Move },
 		{ id: 'floor', name: 'Floor', tip: 'Paint floor (F)', icon: Grid2x2 },
 		{ id: 'wall', name: 'Wall', tip: 'Paint an interior wall (W)', icon: BrickWall },
 		{ id: 'door', name: 'Door', tip: 'Place a door (D)', icon: DoorOpen },
@@ -90,6 +94,14 @@
 				<ToggleGroup.Root type="single" value={String(lab.windowSize)} onValueChange={(v) => v && (lab.windowSize = Number(v))} variant="outline" size="sm" spacing={1}>
 					{#each [2, 3, 4] as n (n)}<ToggleGroup.Item value={String(n)} aria-label="{n} tiles">{n}</ToggleGroup.Item>{/each}
 				</ToggleGroup.Root>
+			</div>
+		{/if}
+		{#if lab.tool === 'move'}
+			<div class="flex items-center gap-1">
+				<Button variant="outline" size="sm" disabled={!move.box || !!move.float} onclick={() => move.copy()}>Copy</Button>
+				<Button variant="outline" size="sm" disabled={!move.box || !!move.float} onclick={() => move.cut()}>Cut</Button>
+				<Button variant="outline" size="sm" disabled={!move.clip} onclick={() => move.paste()}>Paste</Button>
+				{#if move.clip}<span class="ml-auto text-xs text-muted-foreground tabular-nums">{move.clip.w} x {move.clip.h}</span>{/if}
 			</div>
 		{/if}
 		<Separator />

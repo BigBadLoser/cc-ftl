@@ -16,6 +16,7 @@ export const ISOLATED = [
   'src/content/ships/envSkip.slow.test.ts',
   'src/render/moduleMemo.test.ts', // switches the module-level memo off and back
   'tools/layout/lab.test.ts', // stubs `window` for the lab's state
+  'tools/layout/move.test.ts', // the same
   'src/render/animClock.test.ts',
   'src/render/assets/compose.test.ts',
   'src/render/assets/gpuKeep.test.ts',

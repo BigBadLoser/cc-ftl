@@ -19,7 +19,7 @@ import { anchorFor, newPin, rebase, type Pin } from './pins';
 /** What generated the designs: the generators have no version, so the commit the dev server runs on. */
 const GENERATOR = `commit ${typeof __COMMIT__ === 'string' ? __COMMIT__ : 'dev'}`;
 export const dpr = (): number => window.devicePixelRatio || 1;
-export type Tool = 'select' | 'floor' | 'wall' | 'door' | 'beam' | 'space' | 'room' | 'module' | 'note' | 'window';
+export type Tool = 'select' | 'move' | 'floor' | 'wall' | 'door' | 'beam' | 'space' | 'room' | 'module' | 'note' | 'window';
 export interface Ghost { def: string; x: number; y: number; rot: number; error: string | null }
 
 class Lab {
@@ -70,6 +70,11 @@ class Lab {
   private idMark = 0;
   /** For tests: set both marks. */
   idMarkForTest(module: number, room: number): void { this.idMark = module; this.roomMark = room; }
+  /** The session's id marks (a paste takes new ids from them); setting only ever raises them. */
+  get marks(): { module: number; room: number } { return { module: this.idMark, room: this.roomMark }; }
+  set marks(m: { module: number; room: number }) { this.idMark = Math.max(this.idMark, m.module); this.roomMark = Math.max(this.roomMark, m.room); }
+  /** Set by the Move tool: drop its box and any piece in flight (a tool change, undo, compare, a new design). */
+  leave: (() => void) | null = null;
   /** The same for rooms. */
   private roomMark = 0;
   private timer = 0;
@@ -96,6 +101,7 @@ class Lab {
   }
 
   import(s: Source): void {
+    this.leave?.();
     try {
       const { layout, label } = buildLayout(s);
       this.source = { ...s };
@@ -152,8 +158,8 @@ class Lab {
     if (this.hist && this.from) this.hist = commit(this.hist, this.from);
     this.from = null;
   }
-  undo(): void { if (this.hist && !this.compare) { this.hist = undo(this.hist); this.afterJump(); } }
-  redo(): void { if (this.hist && !this.compare) { this.hist = redo(this.hist); this.afterJump(); } }
+  undo(): void { this.leave?.(); if (this.hist && !this.compare) { this.hist = undo(this.hist); this.afterJump(); } }
+  redo(): void { this.leave?.(); if (this.hist && !this.compare) { this.hist = redo(this.hist); this.afterJump(); } }
   private afterJump(): void {
     if (!this.hist) return;
     this.show(this.hist.present);
@@ -175,6 +181,7 @@ class Lab {
     this.flag = [];
   }
   setTool(t: Tool): void {
+    if (t !== 'move') this.leave?.();
     this.tool = t;
     if (t !== 'module') this.ghost = null;
     if (t !== 'room') this.drag = null;
@@ -292,6 +299,7 @@ class Lab {
   /** The design the preview shows: the original on the Generated tab, the edited one otherwise. */
   get previewDesign(): Design | null { return this.compare && this.tab === 'generated' ? this.originalDesign : this.design; }
   toggleCompare(): void {
+    this.leave?.();
     this.compare = !this.compare;
     if (this.compare) {
       this.diff = this.original && this.layout ? diffLayouts(this.original, this.layout) : null;
@@ -424,6 +432,7 @@ class Lab {
   }
   /** Open a case: its original and its edited design, with the notes. */
   loadCase(c: CaseFile): void {
+    this.leave?.();
     const original = decodeLayout(c.original), edited = decodeLayout(c.edited);
     this.source = { ...DEFAULT_SOURCE, ...c.source };
     this.label = `${c.name} (case)`;
