@@ -13,9 +13,10 @@ export interface DesignModule {
   id: number;
   def: string;
   name: string;
-  /** The two-letter code (the labelled view's), empty for lamps. */
+  /** The two-letter code (the labelled view's), empty for lights (drawn by their kind's mark). */
   code: string;
-  lamp: boolean;
+  /** A light, by kind (the grid draws each its own mark); null for any other module. */
+  lamp: LampKind | null;
   x: number;
   y: number;
   rot: number;
@@ -102,6 +103,15 @@ export function labelSpot(l: Layout, id: number, covered: ReadonlySet<number>, c
   return pick;
 }
 
+/** The game's lights: a floor light (a lit grate crew walk over), a cage lamp and a light mast (both solid, reaching further). */
+export type LampKind = 'floor' | 'cage' | 'mast';
+const LAMPS: Record<string, LampKind> = { 'module.light': 'floor', 'module.light_cage': 'cage', 'module.light_mast': 'mast' };
+/** Which light a module is (null for any other); a light the table does not name is a cage lamp when solid, else a floor light. */
+export function lampKind(id: string, def: ModuleDef | undefined): LampKind | null {
+  if (!isLamp(def)) return null;
+  return LAMPS[id] ?? (def?.solid ? 'cage' : 'floor');
+}
+
 /** A design from a layout: the template with the derived hull, the rooms read off it. */
 export function designFromLayout(l: Layout, label: string): Design {
   const template = toTemplate(l);
@@ -113,7 +123,8 @@ export function designFromLayout(l: Layout, label: string): Design {
     if (m) { m[0] += i % width; m[1] += Math.floor(i / width); m[2]++; }
   }
   const covered = new Set<number>();
-  for (const m of l.modules) if (!isLamp(defs[m.def] as ModuleDef | undefined)) for (const [x, y] of moduleTiles(m)) covered.add(y * width + x);
+  // a name may sit over a floor light (a grate in the deck), not over anything standing up, a solid lamp included
+  for (const m of l.modules) if (lampKind(m.def, defs[m.def] as ModuleDef | undefined) !== 'floor') for (const [x, y] of moduleTiles(m)) covered.add(y * width + x);
   // What each room holds (by the tile a module stands on), for its name.
   const held: string[][] = l.rooms.map(() => []);
   for (const m of l.modules) held[roomOf[m.y * width + m.x] ?? -1]?.push(m.def);
@@ -128,7 +139,7 @@ export function designFromLayout(l: Layout, label: string): Design {
     const def = defs[m.def] as ModuleDef | undefined;
     const tiles = moduleTiles(m);
     const name = def?.name ?? m.def;
-    const lamp = isLamp(def);
+    const lamp = lampKind(m.def, def);
     const xs = tiles.map((t) => t[0]), ys = tiles.map((t) => t[1]);
     return {
       index, id: l.moduleIds[index] as number, def: m.def, name, code: lamp ? '' : moduleCode(name), lamp, x: m.x, y: m.y, rot: m.rot, tiles,

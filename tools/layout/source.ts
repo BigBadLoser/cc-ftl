@@ -4,15 +4,15 @@
  */
 import { content } from '../../src/content';
 import { starterShips } from '../../src/content/ships/starterShips';
-import type { StationDef } from '../../src/sim';
+import { generateOutpost, OUTPOST_KINDS, type OreDef, type OutpostKind, type StationDef } from '../../src/sim';
 import { assemblyLayouts, factionIds, gen, stationIds } from '../shipgen/draw';
 import { templateResult } from '../shipgen/templates';
 import { layoutOfGen, type Layout } from './layout';
 
-export type SourceKind = 'faction' | 'station' | 'starter' | 'blank';
+export type SourceKind = 'faction' | 'station' | 'outpost' | 'starter' | 'blank';
 export interface Source {
   kind: SourceKind;
-  /** faction: `faction.navy`; station: `station.trading`; starter: its template id; blank: ''. */
+  /** faction: `faction.navy`; station: `station.trading`; outpost: its kind (`trading`); starter: its template id; blank: ''. */
   id: string;
   /** Faction hull family ('' any). */
   family: string;
@@ -28,6 +28,8 @@ export const DEFAULT_SOURCE: Source = { kind: 'station', id: 'station.trading', 
 export const SIZES = ['outpost', 'station', 'hub'] as const;
 export const factions = (): string[] => factionIds();
 export const stations = (): string[] => stationIds();
+/** Asteroid outpost kinds: the surface ones (trading, farming, mining) stand on levelled rock, the dug ones are cut into it. */
+export const outposts = (): string[] => [...OUTPOST_KINDS.surface, ...OUTPOST_KINDS.dug];
 export const starters = (): { id: string; name: string }[] => starterShips.map((s) => ({ id: s.id, name: `${s.name} (${s.title})` }));
 
 export function familiesOf(faction: string): string[] {
@@ -51,6 +53,7 @@ export function specOf(s: Source): string {
   if (s.kind === 'blank') return '';
   if (s.kind === 'faction') return `${s.id}${s.family ? `:${s.family}` : ''}`;
   if (s.kind === 'station') return `${s.id}:${s.size}${s.layout ? `@${s.layout}` : ''}`;
+  if (s.kind === 'outpost') return `outpost.${s.id}`;
   return s.id;
 }
 
@@ -65,6 +68,7 @@ export function buildLayout(s: Source): { layout: Layout; label: string } {
     const st = starterShips.find((x) => x.id === s.id) ?? (starterShips[0] as (typeof starterShips)[number]);
     return { layout: layoutOfGen(templateResult(st.name, st.template), `${st.name} (starter)`, false), label: `${st.name} (starter)` };
   }
+  if (s.kind === 'outpost') return outpostLayout(s);
   // A station's size is picked by the seed (size list, seed 1 the first): one size, so seed only varies the layout.
   const spec = specOf(s);
   const label = s.kind === 'faction' ? `${spec.replace('faction.', '')} seed ${s.seed} depth ${s.depth}` : `${spec.replace('station.', '')} seed ${s.seed}`;
@@ -76,4 +80,21 @@ export function buildLayout(s: Source): { layout: Layout; label: string } {
     : { faction: s.id, seed: s.seed, depth: s.depth, ...(made.role ? { role: made.role } : {}) };
   // a prefab base (its result has a site: pads on open ground) stands on asteroid ground, as the game's outpost stamp puts it
   return { layout: { ...layout, origin: { gen: origin, side: sideOf(s.id) }, ...('site' in made ? { ground: true as const } : {}) }, label };
+}
+
+/**
+ * An asteroid outpost as the game builds one (`generateOutpost`: the station kind's outpost assembly, a prefab base for the trading
+ * outpost, turned until its dock faces the rock's edge, buried airlocks dropped): the base without its asteroid. A surface base stands on
+ * levelled ground, which the preview lays round it.
+ */
+function outpostLayout(s: Source): { layout: Layout; label: string } {
+  const kind = s.id as OutpostKind;
+  const style = (OUTPOST_KINDS.dug as readonly string[]).includes(kind) ? 'dug' : 'surface';
+  const o = generateOutpost(style, s.seed >>> 0, { ores: Object.values(content.ores ?? {}) as OreDef[], modules: content.modules, stations: content.stations as Record<string, StationDef> }, kind);
+  if (!o) throw new Error(`no ${kind} outpost fits an asteroid at seed ${s.seed}; try another seed`);
+  const label = `${kind} outpost seed ${s.seed}`;
+  const layout = layoutOfGen({ ...o.station, template: o.template }, label, true);
+  // as the game stamps it (outposts/stamp.ts): an outpost of its station kind, neutral on the surface, hostile dug in
+  const origin = { gen: { faction: o.stationKind, seed: o.seed >>> 0, depth: 0, role: 'outpost' }, side: style === 'surface' ? 'neutral' : 'hostile' };
+  return { layout: { ...layout, origin, ...(style === 'surface' ? { ground: true as const } : {}) }, label };
 }
