@@ -22,7 +22,7 @@ export interface Block { a: number; b: number; crossL: boolean; crossR: boolean;
 /** A corridor stub: a hall column from the spine to the hull. */
 export interface Stub { x: number }
 export interface Layout { blocks: Block[]; stern: Part | null; stubs: Stub[]; /** Program pairs placed out of turn (stacked with another). */ done: number[] }
-export interface Placed { fr: Frame; lay: Layout; score: number; viable: number; nodes: number; why: Map<string, number> }
+export interface Placed { fr: Frame; lay: Layout; score: number; viable: number; nodes: number; why: Map<string, number>; /** Gun pairs pinned to the outline's gun sites, of how many sites. */ pins: number; sites: number }
 
 const ASPECT = 3, DEEP = 2;
 /** Floor any room may take, past its own cap: the least room a deep hull can cut (three columns by seven rows, about). */
@@ -82,20 +82,22 @@ export function placeLayout(plan: ShipPlan, m: Mask, defs: Record<string, Module
     const plan = areaOf(q), cap = Math.max(SMALL, Math.ceil(1.2 * plan), capOf(q)), a = area(x0, x1, r0, r1), rows = least(x0, x1, r0, r1);
     return a >= plan && a <= cap && q.every((r) => fits(r, x1 - x0, rows)) && shapely(x1 - x0, a);
   };
-  function cands(lay: Layout, p: Pair, i: number): Cand[] {
+  function cands(lay: Layout, p: Pair, i: number, extra: [number, 'L' | 'R'][] = []): Cand[] {
     const out: Cand[] = [];
     const ks = kinds(p), gun = ks.includes('guns'), spine = ks.includes('reactor'), annex = !!(p[0].annex || p[1].annex);
     const block = p[0].block ? p : null;
     const hostPlan = Math.max(p[0].w * p[0].h, p[1].w * p[1].h), plan0 = annex ? hostPlan : areaOf(p);
     // Some room to grow past the plan even where a pair's caps disagree (a brig opposite a med bay).
     const cap = Math.max(SMALL, Math.ceil(1.2 * plan0), annex ? Math.min(maxArea(p[0]), maxArea(p[1])) : capOf(p));
+    // The annexes share a shape: the larger one's cap holds for both.
+    const annexCap = Math.max(SMALL, ...p.map((h) => (h.annex ? maxArea(h.annex) * 1.3 : 0)));
     const good = (a: number): boolean => a >= plan0 && a <= cap;
     const ok = (len: number, rows: number): boolean => p.every((r) => fits(r, len, rows));
     lay.blocks.forEach((b, bi) => b.free.forEach(([L, R], fi) => {
       // Anchors: a room starts or ends at a free run's end or where the hull steps (a wing root, a taper), leaving no
       // run too short for a room beside it.
       const steps = Array.from({ length: R - L }, (_, k) => L + k).filter((x) => x > L && depth(x) !== depth(x - 1));
-      const anchors: [number, 'L' | 'R'][] = [[L, 'L'], [R, 'R'], ...steps.flatMap((x): [number, 'L' | 'R'][] => [[x, 'L'], [x, 'R']])];
+      const anchors: [number, 'L' | 'R'][] = [[L, 'L'], [R, 'R'], ...steps.flatMap((x): [number, 'L' | 'R'][] => [[x, 'L'], [x, 'R']]), ...extra.filter(([x]) => x >= L && x <= R)];
       for (const [at, end] of anchors) {
         const w = end === 'L' ? R - at : at - L;
         const x0of = (len: number): number => (end === 'L' ? at : at - len);
@@ -134,7 +136,7 @@ export function placeLayout(plan: ShipPlan, m: Mask, defs: Record<string, Module
           const enough = (l: number): boolean => p.every((h) => !h.annex || (area(ax(l), ax(l) + l, 1, Infinity) >= h.annex.w * h.annex.h && fits(h.annex, l, least(ax(l), ax(l) + l, 1, Infinity))));
           while (lh + 1 + la <= w && !enough(la)) la++;
           const len = lh + 1 + la;
-          if (!enough(la) || !lens.includes(len) || x0of(len) !== Math.min(x0, ax(la)) || p.some((h) => h.annex && area(ax(la), ax(la) + la, 1, Infinity) > Math.max(SMALL, maxArea(h.annex) * 1.3))) break;
+          if (!enough(la) || !lens.includes(len) || x0of(len) !== Math.min(x0, ax(la)) || p.some((h) => h.annex && area(ax(la), ax(la) + la, 1, Infinity) > annexCap)) break;
           put(len, [{ r0: 1, r1: Infinity, spec: [p[0], p[1]], x0, x1: x0 + lh }, { r0: 1, r1: Infinity, spec: [p[0].annex ?? null, p[1].annex ?? null], x0: ax(la), x1: ax(la) + la }], ah / plan0 - 1 + 0.4);
           break;
         }
@@ -161,7 +163,7 @@ export function placeLayout(plan: ShipPlan, m: Mask, defs: Record<string, Module
                 while (la < len && !need(la, at(la))) la++;
                 if (!need(la, at(la))) continue;
                 if (len - la - 1 < MIN_DEPTH) la = len;
-                if (p.some((h) => h.annex && area(at(la), at(la) + la, r + 2, Infinity) > Math.max(SMALL, maxArea(h.annex) * 1.3))) continue;
+                if (p.some((h) => h.annex && area(at(la), at(la) + la, r + 2, Infinity) > annexCap)) continue;
                 const an = { r0: r + 2, r1: Infinity, spec: [p[0].annex ?? null, p[1].annex ?? null] as Part['spec'], x0: at(la), x1: at(la) + la };
                 const more = la < len ? [{ r0: r + 2, r1: Infinity, spec: [null, null] as Part['spec'], x0: toL ? x0 + la + 1 : x0, x1: toL ? x1 : x1 - la - 1 }] : [];
                 put(len, [self, an, ...more], a / plan0 - 1 + 0.3);
@@ -333,6 +335,26 @@ export function placeLayout(plan: ShipPlan, m: Mask, defs: Record<string, Module
   };
 
   let last: Layout = start, nodes = 0, viable = 0, best: Layout | null = null, bestScore = Infinity, deepest = -1;
+  // PROTOTYPE: with gun sites on the outline, a gun pair goes only on a free site (its room within the blister, give or
+  // take a tile, reaching the hull), while one is left; other rooms never stack a gun outside one.
+  const sites = m.sites ?? [];
+  const inSite = (q: Part, [s0, s1]: [number, number]): boolean => q.r1 === Infinity && q.x0 >= s0 - 1 && q.x1 <= s1 + 1;
+  const guns = (l: Layout): Part[] => l.blocks.flatMap((b) => b.pieces.flatMap((pc) => pc.parts)).filter((q) => q.spec.some((h) => h && roomKind(h) === 'guns'));
+  function candsAt(lay: Layout, k: number): Cand[] {
+    const p = order[k] as Pair, had = guns(lay);
+    const free = sites.filter((st) => !had.some((q) => q.x0 < st[1] && st[0] < q.x1));
+    const isGun = kinds(p).includes('guns');
+    const cs = cands(lay, p, k, isGun ? free.flatMap(([s0, s1]): [number, 'L' | 'R'][] => [[s0, 'L'], [s1, 'R']]) : []);
+    if (sites.length === 0) return cs;
+    return cs.filter((c) => {
+      const added = guns(c.lay).filter((q) => !had.some((h) => h.x0 === q.x0 && h.r0 === q.r0 && h.spec[0] === q.spec[0]));
+      if (!added.every((q) => (isGun && q.spec[0] === p[0] && free.length === 0) || free.some((st) => inSite(q, st)))) return false;
+      // A free site's hull side is kept for a gun: no other room reaches the hull across it.
+      const left = free.filter((st) => !added.some((q) => q.x0 < st[1] && st[0] < q.x1));
+      const parts = c.lay.blocks.flatMap((b) => b.pieces.flatMap((pc) => pc.parts)).filter((q) => q.r1 === Infinity && q.spec.some((h) => h && roomKind(h) !== 'guns'));
+      return !parts.some((q) => left.some(([s0, s1]) => q.x0 < s1 && s0 < q.x1));
+    });
+  }
   // The most constrained pair next (fewest placements left; the program's order breaks ties), its best few tried in turn.
   // Whether the layout got past its next pair (a placement that strands a later pair at once is not counted a try).
   const dfs = (lay: Layout): boolean => {
@@ -346,7 +368,7 @@ export function placeLayout(plan: ShipPlan, m: Mask, defs: Record<string, Module
     }
     let i = -1, cs: Cand[] = [];
     for (const k of todo) {
-      const c = cands(lay, order[k] as Pair, k);
+      const c = candsAt(lay, k);
       if (i < 0 || c.length < cs.length) { i = k; cs = c; }
       if (cs.length === 0) break;
     }
@@ -363,6 +385,9 @@ export function placeLayout(plan: ShipPlan, m: Mask, defs: Record<string, Module
     return true;
   };
   dfs(start);
-  if (!best) return { fr, lay: last, score: Infinity, viable: 0, nodes, why };
-  return { fr, lay: best, score: bestScore, viable, nodes, why };
+  const gunAt = (l: Layout, [s0, s1]: [number, number]): boolean => l.blocks.some((b) => b.pieces.some((pc) => pc.parts.some((q) => q.spec.some((h) => h && roomKind(h) === 'guns') && q.x0 < s1 && s0 < q.x1)));
+  const pins = best ? (m.sites ?? []).filter((st) => gunAt(best as Layout, st)).length : 0;
+  const nSites = sites.length;
+  if (!best) return { fr, lay: last, score: Infinity, viable: 0, nodes, why, pins, sites: nSites };
+  return { fr, lay: best, score: bestScore, viable, nodes, why, pins, sites: nSites };
 }

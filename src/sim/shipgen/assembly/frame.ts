@@ -1,6 +1,6 @@
 import { dockSpec, engineSpec, type RoomSpec, type ShipPlan } from '../plan';
 /** A scaled silhouette about its axis: `inside(x, y)` with y = 0 the axis. */
-export interface Mask { W: number; H: number; inside: (x: number, y: number) => boolean }
+export interface Mask { W: number; H: number; inside: (x: number, y: number) => boolean; /** Gun sites' blister columns [x0, x1), scaled (prototype). */ sites?: [number, number][] }
 
 /**
  * The fixed frame of a navy outline both layouts build on (SHIPGEN_V4, "Room layout"): the drive's engine rows at the
@@ -53,17 +53,22 @@ export function outlineFrame(plan: ShipPlan, m: Mask): Frame | null {
   if (perSide < need || perSide === 0) return null;
   const engine = engineSpec(perSide, 'w', plan.kit);
 
-  // The bridge takes the bow, sized to its plan and at least four columns.
+  // The bridge takes the bow, about twice its plan and at least four columns.
   const bridge = plan.command;
   let xBr = 0, area = 0;
-  while (xBr < xS && (area < 1.3 * bridge.w * bridge.h || top(xBr) < 2 || xBr <= MIN_DEPTH + 1)) { area += Math.max(0, 2 * top(xBr) - 1); xBr++; }
+  while (xBr < xS && (area < 2.6 * bridge.w * bridge.h || top(xBr) < 2 || xBr <= MIN_DEPTH + 1)) { area += Math.max(0, 2 * top(xBr) - 1); xBr++; }
   let xBand = xBr + 1;
   while (xBand < xS && depth(xBand) < 1) xBand++;
   if (xBand >= xS - 6) return null;
   // The cross corridor: out to the airlocks at the hull's widest flat stretch (an airlock needs a flat outer wall), in the
   // forward three quarters, leaving a room's length either side. Outer rooms elsewhere open into the room in front.
   const CW = dockSpec().w;
-  const flat = (x0: number): boolean => { for (let k = -1; k <= CW; k++) if (top(x0 + k) !== top(x0)) return false; return true; };
+  // (Not on a gun site's blister: the guns have it.)
+  const flat = (x0: number): boolean => {
+    if ((m.sites ?? []).some(([a, b]) => x0 + CW + 1 >= a && x0 - 1 < b)) return false;
+    for (let k = -1; k <= CW; k++) if (top(x0 + k) !== top(x0)) return false;
+    return true;
+  };
   let dockAt = -1;
   for (let x = xBand + MIN_DEPTH + 1; x <= Math.min(xS - MIN_DEPTH - CW - 1, xBand + 0.75 * (xS - xBand)); x++) if (flat(x) && (dockAt < 0 || depth(x) > depth(dockAt))) dockAt = x;
   if (dockAt < 0) return null;

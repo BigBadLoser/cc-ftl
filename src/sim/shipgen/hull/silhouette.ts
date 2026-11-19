@@ -71,6 +71,8 @@ export interface Silhouette {
   length: number;
   /** The body's half-width per column, before the stern's flare, wings and pods: what an outline scales (the rest keeps its size in tiles). */
   body: number[];
+  /** Gun sites (with `drawSilhouette`'s `guns`): each blister's columns [x0, x1), a notch either side of it. */
+  sites?: [number, number][];
 }
 
 const pick = (rng: Rng, r: Range): number => rng.int(r[0], r[1]);
@@ -145,7 +147,34 @@ const straight = (outer: number[], x0: number, x1: number, margin: number): bool
   return true;
 };
 
-function addMounts(rng: Rng, p: Profile, outer: number[], top: number[], bodyStart: number, sternFrom: number): void {
+/** A gun site: a notch, the blister a gun bay stands behind, a notch (silhouette columns, before scaling). */
+const NOTCH = 2, BLISTER = 5, SITE = 2 * NOTCH + BLISTER;
+
+/**
+ * PROTOTYPE (#581): `n` gun sites on the widest straight stretches of the side, each its own two notches, spread apart
+ * (the widest first, then as far from the sites taken as the stretch allows). Returns the blisters' columns.
+ */
+function gunSites(n: number, outer: number[], top: number[], bodyStart: number, sternFrom: number): [number, number][] {
+  const ok = (x0: number): boolean => x0 >= bodyStart && x0 + SITE <= sternFrom && straight(outer, x0, x0 + SITE, 1);
+  const widths = [...new Set(outer.slice(bodyStart, sternFrom))].sort((a, b) => b - a);
+  const taken: number[] = [];
+  // Widest first: each straight run of site starts holds as many sites as fit a tooth apart, spread evenly along it.
+  for (const wd of widths) {
+    const xs = Array.from({ length: sternFrom - bodyStart }, (_, k) => bodyStart + k).filter((x) => ok(x) && outer[x] === wd && taken.every((t) => Math.abs(t - x) >= SITE + 2));
+    for (let i = 0; i < xs.length && taken.length < n;) {
+      let j = i;
+      while (j + 1 < xs.length && xs[j + 1] === (xs[j] as number) + 1) j++;
+      const a = xs[i] as number, b = xs[j] as number, k = Math.min(n - taken.length, Math.floor((b - a) / (SITE + 2)) + 1);
+      for (let q = 0; q < k; q++) taken.push(k === 1 ? Math.floor((a + b) / 2) : Math.round(a + ((b - a) * q) / (k - 1)));
+      i = j + 1;
+    }
+  }
+  taken.sort((a, b) => a - b);
+  for (const x0 of taken) for (const x of [x0, x0 + 1, x0 + NOTCH + BLISTER, x0 + NOTCH + BLISTER + 1]) top[x] = (outer[x] as number) - 1;
+  return taken.map((x0) => [x0 + NOTCH, x0 + NOTCH + BLISTER]);
+}
+
+function addMounts(rng: Rng, p: Profile, outer: number[], top: number[], bodyStart: number, sternFrom: number, sites = false): void {
   const L = outer.length;
   const pos = (f: number): number => bodyStart + Math.floor(f * (L - bodyStart));
   for (const m of p.mounts ?? []) {
@@ -154,6 +183,7 @@ function addMounts(rng: Rng, p: Profile, outer: number[], top: number[], bodySta
     const a = pos(m.span[0]);
     let b = Math.min(pos(m.span[1]), sternFrom) - len;
     if (b < a) { if (a + len > sternFrom) continue; b = a; }
+    if (sites && m.kind === 'embrasure') continue;
     if (m.kind === 'wing') {
       const n = pick(rng, m.count), reach = pick(rng, m.reach), rake = m.rake ?? 2;
       for (let i = 0; i < n; i++) {
@@ -188,7 +218,8 @@ function addMounts(rng: Rng, p: Profile, outer: number[], top: number[], bodySta
   }
 }
 
-export function drawSilhouette(rng: Rng, p: Profile): Silhouette {
+/** With `guns`, that many gun sites stand in place of the profile's embrasures (PROTOTYPE, #581). */
+export function drawSilhouette(rng: Rng, p: Profile, guns?: number): Silhouette {
   const { outer, bodyStart } = body(rng, p);
   const st = one(rng, p.stern), sLen = pick(rng, st.len), sOut = pick(rng, st.out), rate = st.rate ?? 2;
   const L = outer.length;
@@ -205,7 +236,7 @@ export function drawSilhouette(rng: Rng, p: Profile): Silhouette {
   const rwLen = rw ? pick(rng, rw.len) : 0;
   const sternFrom = L - Math.max(shaped || st.kind !== 'bank' ? sLen : 0, rwLen) - 2;
   const top = outer.slice();
-  addMounts(rng, p, outer, top, bodyStart, sternFrom);
+  addMounts(rng, p, outer, top, bodyStart, sternFrom, guns !== undefined);
   if (rw) {
     const reach = pick(rng, rw.reach), sweep = rw.sweep ? pick(rng, rw.sweep) : 0;
     for (let k = 0; k < rwLen; k++) {
@@ -216,6 +247,8 @@ export function drawSilhouette(rng: Rng, p: Profile): Silhouette {
     }
   }
   smooth(top, 1, L);
+  // Gun sites after the smoothing (their notches are narrower than a dent it takes out).
+  const sites = guns !== undefined ? gunSites(guns, outer, top, bodyStart, sternFrom) : undefined;
   const inner = Array<number>(L).fill(-1);
   if (p.split && has(rng, p.split)) {
     const f = rng.int(Math.round(p.split.at[0] * 100), Math.round(p.split.at[1] * 100)) / 100;
@@ -262,5 +295,5 @@ export function drawSilhouette(rng: Rng, p: Profile): Silhouette {
   const y0 = Math.min(...ys), y1 = Math.max(...ys);
   const w = Math.max(...used.map((r) => Math.max(r.lastIndexOf('#'), r.lastIndexOf('>')))) + 1;
   const bodyHalf = top.map((t, x) => (x < sternFrom ? t : (pre[x] as number)));
-  return { rows: used.slice(y0, y1 + 1).map((r) => r.slice(0, w)), axis: axis - y0, length: w, body: bodyHalf };
+  return { rows: used.slice(y0, y1 + 1).map((r) => r.slice(0, w)), axis: axis - y0, length: w, body: bodyHalf, ...(sites ? { sites } : {}) };
 }

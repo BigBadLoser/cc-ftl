@@ -6,6 +6,7 @@ import { enginesShort, fitShell, seedOf } from '../generate';
 import { ENGINE_TIERS, REACTOR_TIERS, planShip, reactorsFor, type ShipPlan } from '../plan';
 import type { FactionDef, GenResult } from '../types';
 import { layoutBlocks, type Mask } from './blockLayout';
+import { gunsAndReactors } from './pairs';
 import { NAVY_TYPES, navyAttempts, navyRole, shipCommons, shipQuarters, type NavyType } from './navyShip';
 import { SPACE, type RegionGrid } from './regions';
 
@@ -31,7 +32,7 @@ function scaled(sil: Silhouette, sx: number, sy: number): Mask {
     const raw = d <= hb ? Math.round(d / sy) : b + d - hb;
     return sil.rows[sil.axis + Math.sign(y) * raw]?.[c] === '#';
   };
-  return { W, H, inside };
+  return { W, H, inside, ...(sil.sites ? { sites: sil.sites.map(([a, b]): [number, number] => [Math.ceil(a * sx), Math.ceil(b * sx)]) } : {}) };
 }
 
 /**
@@ -95,7 +96,7 @@ function dropIslands(g: RegionGrid): boolean {
 export interface OutlineInputs { rng: Rng; role: ReturnType<typeof navyRole>; plan: ShipPlan; sil: Silhouette; vary: number[]; maxBeam: number }
 
 export function outlineInputs(
-  f: FactionDef, seed: number, depth: number, defs: Record<string, ModuleDef>, type: NavyType, n = 0, extra = 0,
+  f: FactionDef, seed: number, depth: number, defs: Record<string, ModuleDef>, type: NavyType, n = 0, extra = 0, sites = false,
 ): OutlineInputs {
   const rng = new Rng(seedOf(seed, n));
   const role = navyRole(f, type);
@@ -110,7 +111,8 @@ export function outlineInputs(
   const quarters = shipQuarters(type, planned.quarters, planned.crew.length, rng.int(2, 4));
   const plan: ShipPlan = { ...planned, kit, quarters, support: [...planned.support, ...shipCommons(type, planned.crew.length)] };
   plan.reactors = reactorsFor(plan, defs);
-  const sil = drawSilhouette(rng, rng.pick(NAVY_PROFILES[type] ?? []));
+  // PROTOTYPE (#581): with `sites`, a notched gun site per gun pair in place of the profile's embrasures.
+  const sil = drawSilhouette(rng, rng.pick(NAVY_PROFILES[type] ?? []), sites ? gunsAndReactors(plan, defs).gunPairs.length : undefined);
   const vary = Array.from({ length: 24 }, () => rng.int(80, 135) / 100);
   return { rng, role, plan, sil, vary, maxBeam: NAVY_TYPES[type].maxBeam };
 }
