@@ -323,10 +323,12 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
         for f0, f1 in cuts + [(su(e1), None)]:
             poly = clip([(x, hz), (f0, hz), (f0, hz + pdd), (x, hz + pdd)])
             if f0 - x > 1e-6 and len(poly) >= 3:
-                T.plate(k, poly, pt, nrm, 0.0, rise + T.PAINT, fam, 1, base=rise)
+                T.plate(k, poly, pt, nrm, 0.0, rise + T.PAINT, fam, 1, base=rise, fixed=DLINE)
             x = f1
 
 
+DLINE = "wQS"                                   # the ramp's seam lines' tone, square on (crisp, so between its own
+#                                                 line tone and the next up: a slanted face's anti-aliased ones read so)
 _SK = [None, 0.4 / 32, None, T.LINE]              # the slope's grid, as skirt last set it (_slope_grid)
 
 
@@ -382,7 +384,7 @@ def panel(k, pt, nrm, clip, u0, u1, a, b, off, g, d0, run_, ft, fam, rise):
         return
     for q in ((fu0, fu1, fd0, fd0 + ed), (fu0, fu1, fd1 - ed, fd1), (fu0, fu0 + LINE, fd0, fd1),
               (fu1 - LINE, fu1, fd0, fd1)):
-        T.plate(k, rect(q), pt, nrm, 0.0, rise + PAINT, fam, 1, base=rise)
+        T.plate(k, rect(q), pt, nrm, 0.0, rise + PAINT, fam, 1, base=rise, fixed=None if NUDGE else DLINE)
     iu0, iu1 = su(u0 + im) + LINE, su(u1 - im) - LINE   # the light plate (a px in at its top and sides, a px down)
     id0, id1 = sd(0.3 * run_ + dn + 2 * pd), sd(0.52 * run_ + dn + pd)
     if T.VARIANT[1]:                                # (a straight run's ramp design: its own drawing in the frame)
