@@ -3,6 +3,7 @@ import type { RoomSpec, ShipPlan } from '../plan';
 import { MIN_DEPTH, outlineFrame, type Frame, type Mask } from './frame';
 import { areaOf, capOf, gunsAndReactors, minLen, mirrorPairs, type Pair } from './pairs';
 import { CABIN_TIER } from './cabinBlock';
+import { SLEEPER } from './quarters';
 import { FILL_MAX, fillerSpec, maxArea, type Filler } from './roomSize';
 import { opensThrough, roomKind, type RoomKind } from './roomAccess';
 
@@ -114,10 +115,11 @@ export function placeLayout(plan: ShipPlan, m: Mask, defs: Record<string, Module
           out.push({ lay: nl, cost });
         };
         if (block) {
-          // A cabin block: one unit (11 columns) where the floor is deep enough for its rows of cabins, else two.
+          // A cabin block: one unit (11 columns), a column of cabins each side of its corridor (bunks when the beds
+          // outnumber the cabins); never more, two units is a sprawl of cabins.
           const per = Math.max(p[0].mods.length, p[1].mods.length);
-          for (const [units, len] of [[1, 11], [2, 23]] as const) {
-            const rows = CABIN_TIER * Math.max(2, Math.ceil(per / (2 * units))) - 1, x0 = x0of(len);
+          for (const [units, len] of [[1, 11]] as const) {
+            const rows = CABIN_TIER * Math.max(2, Math.ceil(per / (2 * units * SLEEPER.sleepers))) - 1, x0 = x0of(len);
             if (len > w || !room(x0, x0 + len) || least(x0, x0 + len, 1, Infinity) < rows) continue;
             put(len, [{ r0: 1, r1: Infinity, spec: [{ ...p[0], w: len, h: rows }, { ...p[1], w: len, h: rows }] }], x0 + len === b.b ? 0 : 0.5, true);
           }
