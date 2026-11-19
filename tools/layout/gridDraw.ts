@@ -19,9 +19,9 @@ export interface HullEdge { tiles: readonly [number, number][]; out: readonly [n
 const css = (c: RGB, a = 1): string => `rgba(${c[0]},${c[1]},${c[2]},${a})`;
 const BG = '#0a0c10';
 const BEAM: RGB = [90, 96, 108];
-/** Asteroid ground: a shade off the background, so it reads as the site without competing with what stands on it. */
-const GROUND = '#13141a';
-const GROUND_SPECK = 'rgba(200,190,170,0.07)';
+/** Asteroid ground: a shade off the background with a touch of the rock's sand, so it reads as the site without competing with what stands on it. */
+const GROUND = '#18160f';
+const GROUND_SPECK = 'rgba(220,190,140,0.09)';
 const HATCH = 'rgba(170,178,192,0.75)';
 
 /** Draw one frame into `ctx` (already scaled to css px). */
