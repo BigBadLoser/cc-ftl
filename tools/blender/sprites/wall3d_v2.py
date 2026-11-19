@@ -171,6 +171,7 @@ def _rail(k, ax, plane, a, b, ends, top, fam):
     return z0
 
 
+USCALE = 1.0                    # a square-on piece built a tile long to be drawn this long (the px grid kept whole)
 SNAPD = 0.375                     # the row phase on a face seen square on (_row)
 SQ = 2 ** -0.5                  # a screen px along a face seen square on (a diagonal wall), in LINEs
 PX0D = 0.0                      # where its px boundaries fall (in px, off u's grid) on a piece centred on its tile
@@ -180,14 +181,14 @@ def _px(u, d):
     """u on the default wall's front, d proud of it, in screen px (a depth shifts it a px left per LINE; square on, a
     px is SQ of a LINE and depth moves nothing)."""
     if not NUDGE:
-        return u / (SQ * T.LINE) + PX0D
+        return u * USCALE / (SQ * T.LINE) + PX0D
     return u / T.LINE + PX0 - d / T.LINE
 
 
 def _u(n, d):
     """The u that falls on px boundary n at depth d (_px's inverse)."""
     if not NUDGE:
-        return (n - PX0D) * SQ * T.LINE
+        return (n - PX0D) * SQ * T.LINE / USCALE
     return (n - PX0 + d / T.LINE) * T.LINE
 
 
@@ -234,7 +235,7 @@ def wall_face(k, ax, plane, a, b, ends, zs, top, full):
             V.wall_top(k, ax, plane, p0 + LINE, p1 - LINE, q0 + 0.026, q1 - 0.026, F, T.VARIANT[0])
             continue
         bw, nc = 0.42 * w, n0 + n1                       # (centred on the panel: twice its centre, in px)
-        lw = LINE if NUDGE else SQ * LINE                # (a screen px along the face)
+        lw = LINE if NUDGE else SQ * LINE / USCALE       # (a screen px along the face)
         ns = _odd(bw / lw + 2, nc % 2)                   # the slot's width in px (a px round the bars)
         nl = _odd(0.5 * w / lw, nc % 2)                  # the fine lines'
         _paint(k, ax, plane, _u((nc - ns) / 2, 3 * PAINT), _u((nc + ns) / 2, 3 * PAINT), q1 - 0.27 - PZ, q1 - 0.07,
