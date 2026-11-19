@@ -68,7 +68,7 @@ export function placeLayout(plan: ShipPlan, m: Mask, defs: Record<string, Module
     cabinPairs.push([spec(north), spec(south)]);
   }
   // With a battery its gun pairs stand in its blisters, out of the search; any more are placed as usual.
-  const searched = fr.maint ? gunPairs.slice(fr.maint.guns.length) : gunPairs;
+  const searched = fr.maint ? gunPairs.slice(fr.maint.guns.length + fr.maint.inner.length) : gunPairs;
   const order = [...cabinPairs, ...[...others.filter(hard), ...searched].sort((a, b) => areaOf(b) - areaOf(a)), ...others.filter((p) => !hard(p)).sort((a, b) => areaOf(b) - areaOf(a))];
 
   const blocks: Block[] = [
@@ -419,7 +419,7 @@ export function placeLayout(plan: ShipPlan, m: Mask, defs: Record<string, Module
   };
   dfs(start);
   const gunAt = (l: Layout, [s0, s1]: [number, number]): boolean => l.blocks.some((b) => b.pieces.some((pc) => pc.parts.some((q) => q.spec.some((h) => h && roomKind(h) === 'guns') && q.x0 < s1 && s0 < q.x1)));
-  const bat = fr.maint ? gunPairs.slice(0, fr.maint.guns.length) : [];
+  const bat = fr.maint ? gunPairs.slice(0, fr.maint.guns.length + fr.maint.inner.length) : [];
   const pins = fr.maint ? bat.length : best ? (m.sites ?? []).filter((st) => gunAt(best as Layout, st)).length : 0;
   const nSites = fr.maint ? fr.maint.guns.length : sites.length;
   if (!best) return { fr, lay: last, score: Infinity, viable: 0, nodes, why, pins, sites: nSites, battery: bat };

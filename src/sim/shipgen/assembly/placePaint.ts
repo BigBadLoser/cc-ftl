@@ -78,6 +78,15 @@ export function paintPlaced(plan: ShipPlan, { fr, lay, battery }: Placed): Regio
         paint(g.room(h.role, { spec: h, access: [maint], doors: 2, rank: -1 }), s0, s1, (y) => sign * y >= mt.hallY(s0) && sign * y <= topAt(s0));
       });
     });
+    // A doubled column: the next gun pair inboard of the outer gun, the rest of the column, onto the spine.
+    mt.inner.forEach((site, j) => {
+      const pair = battery[mt.guns.length + j], st = mt.guns[site];
+      if (!pair || !st) return;
+      ([0, 1] as const).forEach((side) => {
+        const h = pair[side], sign = side === 0 ? -1 : 1;
+        paint(g.room(h.role, { spec: h, rank: -1 }), st[0], st[1], (y) => sign * y >= BAND && sign * y < mt.hallY(st[0]));
+      });
+    });
   }
   closeFrame(fr, fg);
   for (const s of stubs) paint(s.id, s.x, s.x + 1, (y) => Math.abs(y) >= BAND);

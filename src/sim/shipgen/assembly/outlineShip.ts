@@ -34,9 +34,9 @@ function scaled(sil: Silhouette, sx: number, sy: number): Mask {
     return sil.rows[sil.axis + Math.sign(y) * raw]?.[c] === '#';
   };
   // PROTOTYPE (#581): the gun battery on the widest straight stretch, lengthened (its middle column repeated) until it
-  // holds it: a blister a tile proud per gun (its room's floor and a wall either side), the airlock amid them, a few
-  // columns of maintenance corridor between.
-  const bat = sil.battery, k = Math.min(bat?.guns ?? 0, 3), run = bat?.runs[0], GW = (bat?.w ?? 4) + 2, GAP = 5, AIR = 3;
+  // holds it: two blisters a tile proud (a gun room's floor and a wall either side), the airlock between, maintenance
+  // corridor between them. A third gun stands inboard of the aft one, the column doubled.
+  const bat = sil.battery, guns = bat?.guns ?? 0, k = Math.min(guns, 2), run = bat?.runs[0], GW = (bat?.w ?? 4) + 2, GAP = 7, AIR = 3;
   const sites: [number, number][] = [];
   let E = 0, mid = W0, air = -1, a0 = 0, b0 = 0;
   if (k > 0 && run) {
@@ -56,7 +56,7 @@ function scaled(sil: Silhouette, sx: number, sy: number): Mask {
   const topOf = (x: number): number => { let y = 0; while (hull(x, y + 1)) y++; return y; };
   const proud = (x: number, y: number): boolean => (sites.some(([s0, s1]) => x >= s0 && x < s1) || (air >= 0 && x >= air && x < air + AIR)) && Math.abs(y) === topOf(x) + 1;
   const inside = (x: number, y: number): boolean => hull(x, y) || proud(x, y);
-  const battery = sites.length > 0 ? { battery: { a: a0, b: b0, guns: sites, rows: bat?.h ?? 3, air } } : {};
+  const battery = sites.length > 0 ? { battery: { a: a0, b: b0, guns: sites, rows: bat?.h ?? 3, air, inner: guns > k ? [k - 1] : [] } } : {};
   return { W: W0 + E, H: H0 + (sites.length > 0 ? 1 : 0), inside, ...battery };
 }
 

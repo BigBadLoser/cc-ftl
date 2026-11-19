@@ -4,7 +4,7 @@ export interface Mask {
   W: number; H: number; inside: (x: number, y: number) => boolean;
   /** Gun sites' blister columns [x0, x1), scaled (prototype). */ sites?: [number, number][];
   /** PROTOTYPE (#581): a gun battery on a maintenance corridor along the hull: its columns [a, b), its guns' blisters, its gun rooms' floor rows, and the airlock's first column (the dock). */
-  battery?: { a: number; b: number; guns: [number, number][]; rows: number; air: number };
+  battery?: { a: number; b: number; guns: [number, number][]; rows: number; air: number; /** Sites whose column holds a second gun inboard. */ inner: number[] };
 }
 
 /**
@@ -29,7 +29,7 @@ export interface Frame {
   /** The cross corridor's width and its first column (the dock). */
   CW: number; dockAt: number;
   /** PROTOTYPE (#581): the battery's maintenance corridor, its row out from the axis per column (rooms stop short of it). */
-  maint?: { a: number; b: number; guns: [number, number][]; rows: number; hallY: (x: number) => number };
+  maint?: { a: number; b: number; guns: [number, number][]; rows: number; inner: number[]; hallY: (x: number) => number };
 }
 
 export function outlineFrame(plan: ShipPlan, m: Mask): Frame | null {
@@ -88,5 +88,5 @@ export function outlineFrame(plan: ShipPlan, m: Mask): Frame | null {
   let dockAt = bt ? bt.air : -1;
   if (!bt) for (let x = xBand + MIN_DEPTH + 1; x <= Math.min(xS - MIN_DEPTH - CW - 1, xBand + 0.75 * (xS - xBand)); x++) if (flat(x) && (dockAt < 0 || depth(x) > depth(dockAt))) dockAt = x;
   if (dockAt < 0) return null;
-  return { W, H, inside, top, depth, xS, xEnd, sternMax, perSide, used, engine, xBr, xBand, CW, dockAt, ...(bt ? { maint: { a: g0, b: g1, guns: bt.guns, rows: bt.rows, hallY } } : {}) };
+  return { W, H, inside, top, depth, xS, xEnd, sternMax, perSide, used, engine, xBr, xBand, CW, dockAt, ...(bt ? { maint: { a: g0, b: g1, guns: bt.guns, rows: bt.rows, inner: bt.inner, hallY } } : {}) };
 }

@@ -28,6 +28,8 @@ export function bayLayout(fr: Frame): Bay[] {
       const n = inBattery ? 1 : Math.max(1, Math.round((s1 - s0 + 1) / (BAY + 1)));
       for (let j = 0; j < n; j++) {
         const x0 = s0 + Math.round(((s1 - s0 + 1) * j) / n), x1 = s0 + Math.round(((s1 - s0 + 1) * (j + 1)) / n) - 1;
+        // (Under a doubled gun the column is the inboard gun's.)
+        if (maint?.inner.some((i) => { const g = maint.guns[i]; return !!g && x0 >= g[0] && x1 <= g[1]; })) continue;
         out.push({ x0, x1, tiers: tiersOf(x0, x1, depth) });
       }
     }
