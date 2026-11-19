@@ -2,7 +2,7 @@ import type { ModuleDef } from '../../registry';
 import { Rng } from '../../rng';
 import { drawSilhouette, type Silhouette } from '../hull/silhouette';
 import { NAVY_PROFILES } from '../hull/navyProfiles';
-import { enginesShort, fitShell, seedOf } from '../generate';
+import { fitShell, seedOf } from '../generate';
 import { ENGINE_TIERS, REACTOR_TIERS, planShip, reactorsFor, type ShipPlan } from '../plan';
 import type { FactionDef, GenResult } from '../types';
 import { layoutBlocks, type Mask } from './blockLayout';
@@ -21,18 +21,25 @@ import { SPACE, type RegionGrid } from './regions';
  * axis. Only the body scales across; what stands beyond it (a stern flare, wings, pods) keeps its size in tiles, out from
  * the scaled body's edge.
  */
+/** Notch columns either side of a gun site's blister. */
+const NOTCH = 2;
+
 function scaled(sil: Silhouette, sx: number, sy: number): Mask {
   const W = Math.round(sil.length * sx);
   const bodyAt = (c: number): number => sil.body[Math.min(c, sil.body.length - 1)] as number;
   const H = Math.max(...sil.body.map((b) => Math.round(b * sy) + sil.axis - b));
-  const inside = (x: number, y: number): boolean => {
+  // PROTOTYPE (#581): gun sites in tiles: a blister a gun bay long between two notches a tile deep.
+  const sites = (sil.sites ?? []).map(([a, b]): [number, number] => { const c = Math.round(((a + b) / 2) * sx); return [c - 2, c + 3]; });
+  const notch = (x: number): boolean => sites.some(([s0, s1]) => (x >= s0 - NOTCH && x < s0) || (x >= s1 && x < s1 + NOTCH));
+  const hull = (x: number, y: number): boolean => {
     if (x < 0 || x >= W || Math.abs(y) > H) return false;
     const c = Math.floor(x / sx), b = bodyAt(c), hb = Math.round(b * sy), d = Math.abs(y);
     // Rounded by distance from the axis, so the two sides mirror (Math.round takes -2.5 to -2 but 2.5 to 3).
     const raw = d <= hb ? Math.round(d / sy) : b + d - hb;
     return sil.rows[sil.axis + Math.sign(y) * raw]?.[c] === '#';
   };
-  return { W, H, inside, ...(sil.sites ? { sites: sil.sites.map(([a, b]): [number, number] => [Math.ceil(a * sx), Math.ceil(b * sx)]) } : {}) };
+  const inside = (x: number, y: number): boolean => hull(x, y) && !(notch(x) && !hull(x, Math.abs(y) + 1) && !hull(x, -Math.abs(y) - 1));
+  return { W, H, inside, ...(sites.length > 0 ? { sites } : {}) };
 }
 
 /**

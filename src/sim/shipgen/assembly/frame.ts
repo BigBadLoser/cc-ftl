@@ -65,7 +65,7 @@ export function outlineFrame(plan: ShipPlan, m: Mask): Frame | null {
   const CW = dockSpec().w;
   // (Not on a gun site's blister: the guns have it.)
   const flat = (x0: number): boolean => {
-    if ((m.sites ?? []).some(([a, b]) => x0 + CW + 1 >= a && x0 - 1 < b)) return false;
+    if ((m.sites ?? []).some(([a, b]) => x0 + CW + 2 * MIN_DEPTH + 3 >= a && x0 - 2 * MIN_DEPTH - 3 < b)) return false;
     for (let k = -1; k <= CW; k++) if (top(x0 + k) !== top(x0)) return false;
     return true;
   };

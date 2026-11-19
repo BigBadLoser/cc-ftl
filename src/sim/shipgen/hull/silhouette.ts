@@ -151,11 +151,12 @@ const straight = (outer: number[], x0: number, x1: number, margin: number): bool
 const NOTCH = 2, BLISTER = 5, SITE = 2 * NOTCH + BLISTER;
 
 /**
- * PROTOTYPE (#581): `n` gun sites on the widest straight stretches of the side, each its own two notches, spread apart
- * (the widest first, then as far from the sites taken as the stretch allows). Returns the blisters' columns.
+ * PROTOTYPE (#581): `n` gun sites on the widest straight stretches of the side, spread apart (the widest first). Returns
+ * the sites' columns; the notches are cut at the outline's scale (`outlineShip`), so a blister is a gun bay's length.
  */
-function gunSites(n: number, outer: number[], top: number[], bodyStart: number, sternFrom: number): [number, number][] {
-  const ok = (x0: number): boolean => x0 >= bodyStart && x0 + SITE <= sternFrom && straight(outer, x0, x0 + SITE, 1);
+function gunSites(n: number, outer: number[], bodyStart: number, sternFrom: number): [number, number][] {
+  // (Clear of the stern by a drive's length: the engines take it.)
+  const ok = (x0: number): boolean => x0 >= bodyStart && x0 + SITE <= sternFrom - 6 && straight(outer, x0, x0 + SITE, 1);
   const widths = [...new Set(outer.slice(bodyStart, sternFrom))].sort((a, b) => b - a);
   const taken: number[] = [];
   // Widest first: each straight run of site starts holds as many sites as fit a tooth apart, spread evenly along it.
@@ -170,7 +171,6 @@ function gunSites(n: number, outer: number[], top: number[], bodyStart: number, 
     }
   }
   taken.sort((a, b) => a - b);
-  for (const x0 of taken) for (const x of [x0, x0 + 1, x0 + NOTCH + BLISTER, x0 + NOTCH + BLISTER + 1]) top[x] = (outer[x] as number) - 1;
   return taken.map((x0) => [x0 + NOTCH, x0 + NOTCH + BLISTER]);
 }
 
@@ -247,8 +247,7 @@ export function drawSilhouette(rng: Rng, p: Profile, guns?: number): Silhouette 
     }
   }
   smooth(top, 1, L);
-  // Gun sites after the smoothing (their notches are narrower than a dent it takes out).
-  const sites = guns !== undefined ? gunSites(guns, outer, top, bodyStart, sternFrom) : undefined;
+  const sites = guns !== undefined ? gunSites(guns, outer, bodyStart, sternFrom) : undefined;
   const inner = Array<number>(L).fill(-1);
   if (p.split && has(rng, p.split)) {
     const f = rng.int(Math.round(p.split.at[0] * 100), Math.round(p.split.at[1] * 100)) / 100;

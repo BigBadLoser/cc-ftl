@@ -82,7 +82,7 @@ export function placeLayout(plan: ShipPlan, m: Mask, defs: Record<string, Module
     const plan = areaOf(q), cap = Math.max(SMALL, Math.ceil(1.2 * plan), capOf(q)), a = area(x0, x1, r0, r1), rows = least(x0, x1, r0, r1);
     return a >= plan && a <= cap && q.every((r) => fits(r, x1 - x0, rows)) && shapely(x1 - x0, a);
   };
-  function cands(lay: Layout, p: Pair, i: number, extra: [number, 'L' | 'R'][] = []): Cand[] {
+  function cands(lay: Layout, p: Pair, i: number, extra: [number, 'L' | 'R', number?][] = []): Cand[] {
     const out: Cand[] = [];
     const ks = kinds(p), gun = ks.includes('guns'), spine = ks.includes('reactor'), annex = !!(p[0].annex || p[1].annex);
     const block = p[0].block ? p : null;
@@ -97,8 +97,8 @@ export function placeLayout(plan: ShipPlan, m: Mask, defs: Record<string, Module
       // Anchors: a room starts or ends at a free run's end or where the hull steps (a wing root, a taper), leaving no
       // run too short for a room beside it.
       const steps = Array.from({ length: R - L }, (_, k) => L + k).filter((x) => x > L && depth(x) !== depth(x - 1));
-      const anchors: [number, 'L' | 'R'][] = [[L, 'L'], [R, 'R'], ...steps.flatMap((x): [number, 'L' | 'R'][] => [[x, 'L'], [x, 'R']]), ...extra.filter(([x]) => x >= L && x <= R)];
-      for (const [at, end] of anchors) {
+      const anchors: [number, 'L' | 'R', number?][] = [[L, 'L'], [R, 'R'], ...steps.flatMap((x): [number, 'L' | 'R'][] => [[x, 'L'], [x, 'R']]), ...extra.filter(([x]) => x >= L && x <= R)];
+      for (const [at, end, fixed] of anchors) {
         const w = end === 'L' ? R - at : at - L;
         const x0of = (len: number): number => (end === 'L' ? at : at - len);
         const room = (x0: number, x1: number): boolean => x0 >= L && x1 <= R && (x0 === L || x0 - 1 - L >= MIN_DEPTH) && (x1 === R || R - x1 - 1 >= MIN_DEPTH);
@@ -119,7 +119,8 @@ export function placeLayout(plan: ShipPlan, m: Mask, defs: Record<string, Module
           }
           continue;
         }
-        for (let len = Math.max(...p.map(minLen), MIN_DEPTH); len <= w; len++) if (room(x0of(len), x0of(len) + len)) lens.push(len);
+        // (A fixed length: a gun site's span.)
+        for (let len = Math.max(...p.map(minLen), MIN_DEPTH); len <= w; len++) if ((fixed === undefined || len === fixed) && room(x0of(len), x0of(len) + len)) lens.push(len);
         // Full depth: the shortest length that holds the room (and the free end exactly, when that is in range).
         if (!annex) for (const len of lens) {
           const x0 = x0of(len), a = area(x0, x0 + len, 1, Infinity);
@@ -337,14 +338,17 @@ export function placeLayout(plan: ShipPlan, m: Mask, defs: Record<string, Module
   let last: Layout = start, nodes = 0, viable = 0, best: Layout | null = null, bestScore = Infinity, deepest = -1;
   // PROTOTYPE: with gun sites on the outline, a gun pair goes only on a free site (its room within the blister, give or
   // take a tile, reaching the hull), while one is left; other rooms never stack a gun outside one.
-  const sites = m.sites ?? [];
-  const inSite = (q: Part, [s0, s1]: [number, number]): boolean => q.r1 === Infinity && q.x0 >= s0 - 1 && q.x1 <= s1 + 1;
+  // Sites on the band only (none in the bridge or the drive).
+  const sites = (m.sites ?? []).filter(([s0, s1]) => s0 > xBand + MIN_DEPTH && s1 < xS - 1);
+  // The whole blister, spilling over a notch by at most a room's width (where a short gap would else be left beside it).
+  const inSite = (q: Part, [s0, s1]: [number, number]): boolean => q.r1 === Infinity && q.x0 <= s0 && q.x1 >= s1 && q.x0 >= s0 - MIN_DEPTH - 1 && q.x1 <= s1 + MIN_DEPTH + 1;
   const guns = (l: Layout): Part[] => l.blocks.flatMap((b) => b.pieces.flatMap((pc) => pc.parts)).filter((q) => q.spec.some((h) => h && roomKind(h) === 'guns'));
   function candsAt(lay: Layout, k: number): Cand[] {
     const p = order[k] as Pair, had = guns(lay);
     const free = sites.filter((st) => !had.some((q) => q.x0 < st[1] && st[0] < q.x1));
     const isGun = kinds(p).includes('guns');
-    const cs = cands(lay, p, k, isGun ? free.flatMap(([s0, s1]): [number, 'L' | 'R'][] => [[s0, 'L'], [s1, 'R']]) : []);
+    const spans = free.flatMap(([s0, s1]) => Array.from({ length: MIN_DEPTH + 2 }, (_, d) => [[s0 - d, 'L', s1 - s0 + d], [s0, 'L', s1 - s0 + d]] as [number, 'L', number][]).flat());
+    const cs = cands(lay, p, k, isGun ? spans : []);
     if (sites.length === 0) return cs;
     return cs.filter((c) => {
       const added = guns(c.lay).filter((q) => !had.some((h) => h.x0 === q.x0 && h.r0 === q.r0 && h.spec[0] === q.spec[0]));
