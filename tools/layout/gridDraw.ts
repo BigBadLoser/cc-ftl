@@ -5,13 +5,13 @@
 import type { RGB } from '../shipgen/draw';
 import { DARK, DOOR, HALL, INK, LAMP, NAMES, WALL, roleTint } from '../shipgen/labels';
 import { scaleOf, type Box, type View } from './camera';
-import type { Design } from './design';
+import type { Design, LampKind } from './design';
 import { groundRect } from './ground';
 import type { Rect } from './layout';
 
 export interface Layers { ground: boolean; rooms: boolean; names: boolean; furniture: boolean; lamps: boolean; gridLines: boolean; shields: boolean; roof: boolean }
 export const DEFAULT_LAYERS: Layers = { ground: true, rooms: true, names: true, furniture: true, lamps: true, gridLines: false, shields: false, roof: false };
-export const LAYER_LABELS: Record<keyof Layers, string> = { ground: 'Asteroid ground', rooms: 'Rooms', names: 'Room names', furniture: 'Furniture codes', lamps: 'Lamps', gridLines: 'Tile grid', shields: 'Shields (preview)', roof: 'Roof (preview)' };
+export const LAYER_LABELS: Record<keyof Layers, string> = { ground: 'Asteroid ground', rooms: 'Rooms', names: 'Room names', furniture: 'Furniture codes', lamps: 'Lights', gridLines: 'Tile grid', shields: 'Shields (preview)', roof: 'Roof (preview)' };
 export interface Mark { tiles: readonly [number, number][]; color: string; /** false: an outline only. */ fill?: boolean; /** 'square': a dashed square in each tile (where crew stand). */ shape?: 'square' }
 /** The side of a module that must sit on the hull: its tiles along that side and the step pointing out of the ship. */
 export interface HullEdge { tiles: readonly [number, number][]; out: readonly [number, number]; color: string }
@@ -107,12 +107,7 @@ export function drawGrid(ctx: CanvasRenderingContext2D, d: Design, v: View, dpr:
   const line = Math.max(1, Math.round(k));
   for (const m of d.modules) {
     if (m.lamp) {
-      if (!layers.lamps) continue;
-      const [tx, ty] = m.tiles[0] as [number, number];
-      ctx.fillStyle = css(LAMP);
-      ctx.beginPath();
-      ctx.arc((n.X(tx) + n.X(tx + 1)) / 2, (n.Y(ty) + n.Y(ty + 1)) / 2, Math.max(1.5, s * 0.12) * k, 0, Math.PI * 2);
-      ctx.fill();
+      if (layers.lamps) drawLamp(ctx, m.lamp, m.tiles[0] as [number, number], n, line);
       continue;
     }
     if (!layers.furniture) continue;
@@ -151,6 +146,29 @@ export function drawGrid(ctx: CanvasRenderingContext2D, d: Design, v: View, dpr:
   for (const m of marks) (m.shape === 'square' ? squares : outline)(ctx, m, d, n);
   ctx.restore();
   for (const e of edges) hullEdge(ctx, e, ox, oy, s);
+}
+
+/**
+ * A light's mark: a yellow dot (its glow) on the tile, alone for a floor light (crew walk over it), in a square for a cage lamp and in a
+ * ring for a light mast (both solid; the mast reaches furthest). The marks are small, so they never hide what stands round them.
+ */
+function drawLamp(ctx: CanvasRenderingContext2D, kind: LampKind, [tx, ty]: [number, number], n: Snap, line: number): void {
+  const L = n.X(tx), T = n.Y(ty), R = n.X(tx + 1), B = n.Y(ty + 1), cx = (L + R) / 2, cy = (T + B) / 2;
+  ctx.fillStyle = css(LAMP);
+  ctx.beginPath();
+  ctx.arc(cx, cy, Math.max(1.5, n.s * 0.12) * n.k, 0, Math.PI * 2);
+  ctx.fill();
+  if (kind === 'floor' || n.s < 8) return;
+  ctx.strokeStyle = css(LAMP);
+  ctx.lineWidth = line;
+  if (kind === 'cage') {
+    const h = Math.round((R - L) * 0.28);
+    ctx.strokeRect(Math.round(cx) - h + line / 2, Math.round(cy) - h + line / 2, 2 * h - line, 2 * h - line);
+  } else {
+    ctx.beginPath();
+    ctx.arc(cx, cy, (R - L) * 0.32, 0, Math.PI * 2);
+    ctx.stroke();
+  }
 }
 
 /** A rectangle's border, `w` device px wide, inside (L, T, R, B): four filled strips, so it is the same width on every side at any position. */
@@ -234,7 +252,7 @@ function outline(ctx: CanvasRenderingContext2D, m: Mark, d: Design, n: Snap): vo
 }
 
 export interface KeyRoom { role: string; name: string; color: string }
-export interface KeyExtra { name: string; color: string; dot?: boolean; hatch?: boolean }
+export interface KeyExtra { name: string; color: string; dot?: boolean; hatch?: boolean; /** A light: its mark's frame (none, square, ring). */ lamp?: LampKind }
 /**
  * The room types in use (for the palette's list) and what else the grid draws that no list covers (wall, door, beam, lamps).
  * Furniture codes are the palette's module list.
@@ -246,6 +264,7 @@ export function keyOf(d: Design): { rooms: KeyRoom[]; extras: KeyExtra[] } {
   const extras: KeyExtra[] = [{ name: 'wall / hull', color: css(WALL) }, { name: 'door', color: css(DOOR) }];
   if (d.layout.ground) extras.push({ name: 'asteroid ground', color: GROUND });
   if (d.rows.some((r) => r.includes('='))) extras.push({ name: 'beam', color: css(BEAM), hatch: true });
-  if (d.modules.some((m) => m.lamp)) extras.push({ name: 'lamp', color: css(DARK), dot: true });
+  const lamps = new Set(d.modules.map((m) => m.lamp));
+  for (const [kind, name] of [['floor', 'floor light'], ['cage', 'cage lamp'], ['mast', 'light mast']] as const) if (lamps.has(kind)) extras.push({ name, color: css(DARK), dot: true, lamp: kind });
   return { rooms, extras };
 }

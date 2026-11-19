@@ -1,13 +1,12 @@
 /** What the palette lists, in its order: the modules a design can place and the room types a room can be ([ and ] step through them). */
 import { content } from '../../src/content';
 import type { ModuleDef } from '../../src/sim';
-import { isLamp, moduleCode, NAMES, roleTint } from '../shipgen/labels';
+import { moduleCode, NAMES, roleTint } from '../shipgen/labels';
 
 const css = (c: readonly number[]): string => `rgb(${c[0]},${c[1]},${c[2]})`;
 
-/** Placeable modules by name (lamps are laid by the room, not placed). */
+/** Placeable modules by name, the three lights included. */
 export const paletteModules = Object.entries(content.modules as Record<string, ModuleDef>)
-  .filter(([, d]) => !isLamp(d))
   .map(([id, d]) => ({ id, name: d.name, code: moduleCode(d.name) }))
   .sort((a, b) => a.name.localeCompare(b.name));
 
