@@ -3,7 +3,7 @@ import { BAND } from './frame';
 import { closeFrame, frameGrid } from './frameGrid';
 import { cabinsFor } from './cabinBlock';
 import { crewRoom } from './roomSize';
-import type { RegionGrid } from './regions';
+import { SOLID, type RegionGrid } from './regions';
 import type { Part, Placed } from './placeLayout';
 
 /** PROTOTYPE (#581): paints a placed layout's room outlines (no fit-out): the frame's bridge, drive and corridors, then each part. */
@@ -59,18 +59,23 @@ export function paintPlaced(plan: ShipPlan, { fr, lay, battery }: Placed): Regio
     paint(g.room(h.role, { spec: h, access: [engines[side]] }), st.x0, st.x1, (y) => sign * y >= BAND + st.r0);
   }
   // PROTOTYPE: the battery: each gun room from its blister in, chained to the next and to the dock by the maintenance
-  // corridor along the hull between them (a door each side).
+  // corridor along the hull between them (a door each side). A gun room gives way to its neighbours, so its walls are
+  // its own and it stays a rectangle.
   const mt = fr.maint;
   if (mt) {
     const maint = g.hall('hall'), topAt = (x: number): number => { let y = 0; while (fr.inside(x, y + 1)) y++; return y; };
     const gun = (x: number): boolean => mt.guns.some(([s0, s1]) => x >= s0 && x < s1);
-    for (let x = mt.a; x < mt.b; x++) if (!gun(x) && !(x >= fr.dockAt && x < fr.dockAt + fr.CW)) paint(maint, x, x + 1, (y) => Math.abs(y) === mt.hallY(x));
+    // The corridor's row, plating outboard of it to the hull.
+    for (let x = mt.a; x < mt.b; x++) if (!gun(x) && !(x >= fr.dockAt && x < fr.dockAt + fr.CW)) {
+      paint(maint, x, x + 1, (y) => Math.abs(y) === mt.hallY(x));
+      paint(SOLID, x, x + 1, (y) => Math.abs(y) > mt.hallY(x));
+    }
     mt.guns.forEach(([s0, s1], i) => {
       const pair = battery[i];
       if (!pair) return;
       ([0, 1] as const).forEach((side) => {
         const h = pair[side], sign = side === 0 ? -1 : 1;
-        paint(g.room(h.role, { spec: h, access: [maint], doors: 2 }), s0, s1, (y) => sign * y >= mt.hallY(s0) && sign * y <= topAt(s0));
+        paint(g.room(h.role, { spec: h, access: [maint], doors: 2, rank: -1 }), s0, s1, (y) => sign * y >= mt.hallY(s0) && sign * y <= topAt(s0));
       });
     });
   }
