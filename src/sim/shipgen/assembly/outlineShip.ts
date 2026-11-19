@@ -110,7 +110,7 @@ export function assembleOutline(
   const vary = Array.from({ length: 24 }, () => rng.int(80, 135) / 100);
   let lay: { g: RegionGrid } | null = null;
   // The smallest beam the rooms fit, at a length from three quarters of it up: near the silhouette's proportions.
-  for (let sy = 1.2; sy <= 3.6 && !lay; sy += 0.1) for (let sx = Math.max(1, 0.75 * sy); sx <= 1.15 * sy && !lay; sx += 0.1) lay = layoutBlocks(plan, scaled(sil, sx, sy), type, vary, defs);
+  for (let sy = 1; sy <= 3.6 && !lay; sy += 0.1) for (let sx = Math.max(1, 0.75 * sy); sx <= 1.15 * sy && !lay; sx += 0.1) lay = layoutBlocks(plan, scaled(sil, sx, sy), type, vary, defs);
   if (!lay) throw new Error(`outline ${type}: rooms do not fit`);
   const { g } = lay;
   thinHull(g);
