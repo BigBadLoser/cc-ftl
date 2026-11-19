@@ -32,7 +32,7 @@ interface Shape {
 export const NAVY_TYPES: Record<NavyType, Shape> = {
   corvette: { centre: 'none', bow: 'bridge', guns: 'forward', family: 'corvette', bonus: { shields: 1 } },
   frigate: { centre: 'none', bow: 'bridge', guns: 'spread', family: 'frigate' },
-  destroyer: { centre: 'none', bow: 'battery', guns: 'forward', family: 'frigate', bonus: { weapons: 2, engines: 1, crew: -1, crates: -1 } },
+  destroyer: { centre: 'none', bow: 'battery', guns: 'forward', family: 'frigate', bonus: { weapons: 4, reactors: 1, engines: 1, crew: -1, crates: -1 } },
   cruiser: { centre: 'citadel', bow: 'bridge', guns: 'spread', family: 'cruiser' },
   carrier: { centre: 'deck', bow: 'bridge', guns: 'spread', family: 'carrier' },
 };

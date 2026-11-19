@@ -20,7 +20,8 @@ function scaled(sil: Silhouette, sx: number, sy: number): Mask {
   const W = Math.round(sil.length * sx), H = Math.round(sil.axis * sy);
   const inside = (x: number, y: number): boolean => {
     if (x < 0 || x >= W || Math.abs(y) > H) return false;
-    const row = sil.rows[sil.axis + Math.round(y / sy)];
+    // Rounded by distance from the axis, so the two sides mirror (Math.round takes -2.5 to -2 but 2.5 to 3).
+    const row = sil.rows[sil.axis + Math.sign(y) * Math.round(Math.abs(y) / sy)];
     return row?.[Math.floor(x / sx)] === '#';
   };
   return { W, H, inside };
@@ -52,6 +53,37 @@ function thinHull(g: RegionGrid): void {
   }
 }
 
+/**
+ * Floor a room cannot reach (a sliver of hull beyond a neck that compiles to wall: an embrasure's tooth) goes back to
+ * space, the outline shaved there. Whether any went.
+ */
+function dropIslands(g: RegionGrid): boolean {
+  const cell = g.compile(), half = g.half, size = 2 * half;
+  const floor = (x: number, y: number): boolean => x >= -half && y >= -half && x < half && y < half && cell[(y + half) * size + x + half] === '_';
+  const seen = new Set<number>(), parts = new Map<number, number[][]>();
+  for (let y = -half; y < half; y++) for (let x = -half; x < half; x++) {
+    const k = (y + half) * size + x + half, r = g.at(x, y);
+    if (seen.has(k) || r < 0 || !floor(x, y)) continue;
+    const part: number[] = [], stack = [[x, y] as const];
+    seen.add(k);
+    while (stack.length > 0) {
+      const [cx, cy] = stack.pop() as readonly [number, number];
+      part.push((cy + half) * size + cx + half);
+      for (const [nx, ny] of [[cx + 1, cy], [cx - 1, cy], [cx, cy + 1], [cx, cy - 1]] as const) {
+        const nk = (ny + half) * size + nx + half;
+        if (!seen.has(nk) && floor(nx, ny) && g.at(nx, ny) === r) { seen.add(nk); stack.push([nx, ny]); }
+      }
+    }
+    parts.set(r, [...(parts.get(r) ?? []), part]);
+  }
+  let dropped = false;
+  for (const ps of parts.values()) {
+    ps.sort((a, b) => b.length - a.length);
+    for (const p of ps.slice(1)) for (const k of p) { g.set((k % size) - half, Math.floor(k / size) - half, SPACE); dropped = true; }
+  }
+  return dropped;
+}
+
 export function assembleOutline(
   f: FactionDef, factionId: string, seed: number, depth: number, defs: Record<string, ModuleDef>, type: NavyType, n = 0, extra = 0,
 ): GenResult {
@@ -75,6 +107,7 @@ export function assembleOutline(
   if (!lay) throw new Error(`outline ${type}: rooms do not fit`);
   const { g } = lay;
   thinHull(g);
+  if (dropIslands(g)) thinHull(g);
   const cell = g.compile(), snap = g.snapshot(cell);
   const at = (cx: number, cy: number): string => snap.rows[cy]?.[cx] ?? '.';
   const rows = snap.rows.map((r, y) => [...r].map((c, cx) => (c === 'D' && [at(cx + 1, y), at(cx - 1, y), at(cx, y + 1), at(cx, y - 1)].includes('.') ? '#' : c)).join(''));

@@ -143,33 +143,14 @@ export function layoutBlocks(plan: ShipPlan, m: Mask, type: NavyType, vary: read
   const di = Math.min(low, MIN_DEPTH + 2);
   const tiered = (x: number): boolean => depth(x) >= di + 1 + MIN_DEPTH;
 
-  // Cross corridors: one at the deepest flat stretch of each run of two-tier columns, and one at the widest flat stretch
-  // for the airlocks where none is flat (an airlock needs a flat outer wall). Each leaves a room's length either side.
+  // The cross corridor: out to the airlocks at the hull's widest flat stretch (an airlock needs a flat outer wall), in the
+  // forward three quarters, leaving a room's length either side. Outer rooms elsewhere open into the room in front.
   const CW = dockSpec().w;
   const flat = (x0: number): boolean => { for (let k = -1; k <= CW; k++) if (top(x0 + k) !== top(x0)) return false; return true; };
-  const lo0 = xBand + MIN_DEPTH + 1, hi0 = xS - MIN_DEPTH - CW - 1;
-  const best = (a: number, b: number, needFlat: boolean): number => {
-    let c = -1;
-    for (let x = Math.max(a, lo0); x <= Math.min(b, hi0); x++) if ((!needFlat || flat(x)) && (c < 0 || depth(x) > depth(c))) c = x;
-    return c;
-  };
-  const cross: number[] = [];
-  for (let x = xBand; x < xS; x++) {
-    if (!tiered(x)) continue;
-    let e = x;
-    while (e < xS && tiered(e)) e++;
-    const c = best(x, e - CW, true) >= 0 ? best(x, e - CW, true) : best(x, e - CW, false);
-    if (c >= 0 && cross.every((o) => Math.abs(o - c) > CW + 2 * MIN_DEPTH)) cross.push(c);
-    x = e;
-  }
-  if (!cross.some(flat)) {
-    const c = best(lo0, Math.floor(xBand + 0.75 * (xS - xBand)), true);
-    if (c < 0) return null;
-    for (let k = cross.length - 1; k >= 0; k--) if (Math.abs((cross[k] as number) - c) <= CW + 2 * MIN_DEPTH) cross.splice(k, 1);
-    cross.push(c);
-  }
-  cross.sort((a, b) => a - b);
-  const dockAt = cross.find(flat) as number;
+  let dockAt = -1;
+  for (let x = xBand + MIN_DEPTH + 1; x <= Math.min(xS - MIN_DEPTH - CW - 1, xBand + 0.75 * (xS - xBand)); x++) if (flat(x) && (dockAt < 0 || depth(x) > depth(dockAt))) dockAt = x;
+  if (dockAt < 0) return null;
+  const cross = [dockAt];
 
   // Runs of band columns between the bridge, the cross corridors and the drive (a plating column each side of a corridor).
   const runs = (from: number, to: number): [number, number][] => {
@@ -228,7 +209,7 @@ export function layoutBlocks(plan: ShipPlan, m: Mask, type: NavyType, vary: read
     for (let tx = x0; tx < x1; tx++) for (let ty = -H; ty <= H; ty++) if (inside(tx, ty) && yIn(ty)) g.set(ox + tx, ty, id);
   };
   const hall = g.hall('hall');
-  // The airlock bays (halls with their fixture) at the first flat cross corridor; the other cross corridors are spine.
+  // The airlock bays: the cross corridor's halls, with their fixture.
   const docks: [number, number] = [g.hall('dock', undefined, dockSpec()), g.hall('dock', undefined, dockSpec())];
   paint(g.room(bridge.role, { spec: bridge }), 0, xBr, () => true);
   const innerIds = new Map<number, [number, number]>();
@@ -260,12 +241,8 @@ export function layoutBlocks(plan: ShipPlan, m: Mask, type: NavyType, vary: read
   }
   for (let tx = 0; tx < W; tx++) for (let ty = -H; ty <= H; ty++) if (inside(tx, ty) && g.at(ox + tx, ty) === SPACE) g.set(ox + tx, ty, SOLID);
   for (let tx = xBr; tx < W; tx++) for (let ty = -1; ty <= 1; ty++) if (inside(tx, ty)) g.set(ox + tx, ty, hall);
-  // Cross corridors out to the hull; the airlocks at the first flat one.
-  for (const c of cross) {
-    if (c === dockAt) {
-      paint(docks[0], c, c + CW, (y) => y <= -BAND);
-      paint(docks[1], c, c + CW, (y) => y >= BAND);
-    } else paint(hall, c, c + CW, () => true);
-  }
+  // The cross corridor out to the airlocks.
+  paint(docks[0], dockAt, dockAt + CW, (y) => y <= -BAND);
+  paint(docks[1], dockAt, dockAt + CW, (y) => y >= BAND);
   return { g };
 }
