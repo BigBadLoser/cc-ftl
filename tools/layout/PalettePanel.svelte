@@ -22,9 +22,8 @@
 	import { Separator } from '$lib/components/ui/separator/index.js';
 	import * as ToggleGroup from '$lib/components/ui/toggle-group/index.js';
 	import * as Tooltip from '$lib/components/ui/tooltip/index.js';
-	import { content } from '../../src/content';
-	import type { ModuleDef } from '../../src/sim';
-	import { isLamp, moduleCode, NAMES } from '../shipgen/labels';
+	import { NAMES } from '../shipgen/labels';
+	import { paletteModules, roomTypes } from './palette';
 	import { docks } from './dock.svelte';
 	import { roleTint } from '../shipgen/labels';
 	import { lab, type Tool } from './lab.svelte';
@@ -32,32 +31,25 @@
 
 	const tools: { id: string; name: string; tip: string; icon: Component }[] = [
 		{ id: 'select', name: 'Select', tip: 'Select and move (V)', icon: MousePointer2 },
-		{ id: 'move', name: 'Move', tip: 'Drag a box, then drag what is in it; arrows nudge, Delete clears, Ctrl+C / X / V copy, cut, paste (S)', icon: Move },
+		{ id: 'move', name: 'Move', tip: 'Drag a box, then drag what is in it (Alt: a duplicate); R turns, H mirrors, arrows nudge, Delete clears, Ctrl+C / X / V copy, cut, paste (S)', icon: Move },
 		{ id: 'floor', name: 'Floor', tip: 'Paint floor (F)', icon: Grid2x2 },
 		{ id: 'wall', name: 'Wall', tip: 'Paint an interior wall (W)', icon: BrickWall },
 		{ id: 'door', name: 'Door', tip: 'Place a door (D)', icon: DoorOpen },
-		{ id: 'window', name: 'Window', tip: 'Add a window to a wall; click one to remove it (X)', icon: PanelTop },
+		{ id: 'window', name: 'Window', tip: 'Add a window to a wall; click one to remove it; [ ] size (X)', icon: PanelTop },
 		{ id: 'beam', name: 'Beam', tip: 'Paint frame beams for containers (B)', icon: Equal },
 		{ id: 'space', name: 'Erase', tip: 'Erase to open space (E)', icon: Eraser },
-		{ id: 'room', name: 'Room', tip: 'Draw a room (G)', icon: SquareDashed },
-		{ id: 'module', name: 'Module', tip: 'Place a module (M)', icon: Box },
+		{ id: 'room', name: 'Room', tip: 'Draw a room; [ ] room type (G)', icon: SquareDashed },
+		{ id: 'module', name: 'Module', tip: 'Place a module; R turns, [ ] steps through the list (M)', icon: Box },
 		{ id: 'note', name: 'Pin', tip: 'Pin a note (N; Alt: free)', icon: StickyNote },
 	];
 	const css = (c: readonly number[]): string => `rgb(${c[0]},${c[1]},${c[2]})`;
-	const defs = Object.entries(content.modules as Record<string, ModuleDef>)
-		.filter(([, d]) => !isLamp(d))
-		.map(([id, d]) => ({ id, name: d.name, code: moduleCode(d.name) }))
-		.sort((a, b) => a.name.localeCompare(b.name));
+	const defs = paletteModules;
 		const rooms = $derived((lab.design?.rooms ?? []).filter((r) => r.tiles > 0).reduce((m, r) => m.set(r.role, (m.get(r.role) ?? 0) + 1), new Map<string, number>()));
 	const placed = $derived((lab.design?.modules ?? []).reduce((m, x) => m.set(x.def, (m.get(x.def) ?? 0) + 1), new Map<string, number>()));
-	const roleTypes = $derived(allRoles());
+	const roleTypes = roomTypes;
 	/** The design's rooms by what they are (a pantry, a brig: by role and contents), to find and select one. */
 	const here = $derived((lab.design?.rooms ?? []).filter((r) => r.tiles > 0 && r.role !== 'hall').map((r) => ({ id: r.id, name: r.name || r.role, tiles: r.tiles, color: css(roleTint(r.role)) })).sort((p, q) => p.name.localeCompare(q.name) || p.id - q.id));
 
-	/** Every room type the lab knows, with its colour: the new-room type, and what a selected room can become. */
-	function allRoles() {
-		return [...Object.keys(NAMES), 'hall'].filter((r, i, all) => all.indexOf(r) === i).map((r) => ({ role: r, name: r === 'hall' ? 'corridor' : NAMES[r] ?? r, color: css(roleTint(r)) }));
-	}
 	function pickRoom(role: string) {
 		lab.role = role;
 		const s = lab.selected;

@@ -87,3 +87,71 @@ describe('the Move tool', () => {
     expect(move.box).toBeNull();
   });
 });
+
+describe('Move tool turns, duplicates and keeps its clipboard', () => {
+  it('R turns the box contents in place as one undo step', () => {
+    start();
+    move.turn('cw');
+    expect(move.box).toEqual({ x: 5, y: 3, w: 6, h: 8 });
+    expect((lab.layout as Layout).modules[0]?.rot).toBe(1);
+    expect(lab.hist?.past.length).toBe(1);
+  });
+  it('Alt+drag leaves the original and places a duplicate with new ids', () => {
+    const l = start();
+    move.grab([5, 5], true);
+    move.drag([17, 5]);
+    move.drop();
+    const now = lab.layout as Layout;
+    expect(now.cells[4]?.slice(4, 12)).toBe(l.cells[4]?.slice(4, 12));
+    expect(now.cells[4]?.slice(16, 24)).toBe(l.cells[4]?.slice(4, 12));
+    expect(now.moduleIds).toEqual([0, 1]);
+  });
+  it('a copy is saved for the next session', () => {
+    const store = new Map<string, string>();
+    (globalThis as unknown as { localStorage: unknown }).localStorage = { getItem: (k: string) => store.get(k) ?? null, setItem: (k: string, v: string) => store.set(k, v) };
+    start();
+    move.copy();
+    expect(JSON.parse(store.get('cc-ftl.layout.clip') as string)).toEqual(move.clip);
+  });
+});
+
+describe('the keyboard', () => {
+  const key = async (k: string, mods: Partial<KeyboardEvent> = {}): Promise<void> => {
+    const { onKey } = await import('./keys');
+    onKey({ key: k, target: null, ctrlKey: false, metaKey: false, altKey: false, shiftKey: false, preventDefault: () => {}, ...mods } as unknown as KeyboardEvent);
+  };
+  it('[ and ] step the window size, the room type and the armed module', async () => {
+    start();
+    await key('x');
+    lab.windowSize = 3;
+    await key(']'); await key(']');
+    expect(lab.windowSize).toBe(4);
+    await key('[');
+    expect(lab.windowSize).toBe(3);
+    await key('g');
+    const role = lab.role;
+    await key(']');
+    expect(lab.role).not.toBe(role);
+    await key('m');
+    lab.armed = null;
+    await key(']');
+    expect(lab.armed).not.toBeNull();
+  });
+  it('S, R, Shift+R, arrows and Ctrl+C / Ctrl+V drive the Move tool', async () => {
+    start();
+    await key('s');
+    expect(lab.tool).toBe('move');
+    await key('R', { shiftKey: true });
+    expect((lab.layout as Layout).modules[0]?.rot).toBe(3);
+    await key('r');
+    expect((lab.layout as Layout).modules[0]?.rot).toBe(0);
+    const x = move.box?.x as number;
+    await key('ArrowRight', { shiftKey: true });
+    expect(move.box?.x).toBe(x + 5);
+    await key('c', { ctrlKey: true });
+    await key('v', { ctrlKey: true });
+    expect(move.float).not.toBeNull();
+    await key('Escape');
+    expect(move.float).toBeNull();
+  });
+});
