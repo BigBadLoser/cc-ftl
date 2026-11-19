@@ -18,8 +18,8 @@ const BAND = 2;
 const MIN_DEPTH = 3;
 /** Columns a cabin takes at least, its wall included; floor a cabin takes. */
 const CABIN = 4, CABIN_AREA = 14;
-/** A room at most this many times as deep as it is long. */
-const ASPECT = 3;
+/** A room at most this many times as long as it is deep, and at most `DEEP` times as deep as it is long (no thin strips). */
+const ASPECT = 3, DEEP = 2;
 /** Rooms bow to stern within a band: guns forward, then defences, works and stores, the crew aft. */
 const ZONE = ['weapons', 'bridge', 'shields', 'core', 'reactor', 'plant', 'farm', 'cargo', 'hangar', 'armoury', 'support', 'medbay', 'quarters'];
 /** How far past its planned floor a room of each kind grows to take up spare floor (stores take the rest). */
@@ -61,8 +61,11 @@ function mirrorPairs(specs: RoomSpec[]): Pair[] {
 
 /** A room's floor with its annex. */
 const full = (r: RoomSpec): number => r.w * r.h + (r.annex ? r.annex.w * r.annex.h : 0);
-/** A room's least length along the band: a reactor lies along a wall its full length, others at least their short side. */
-const minLen = (r: RoomSpec): number => (r.role === 'reactor' ? r.w : Math.min(r.w, r.h));
+/**
+ * A room's least length along the band: a reactor lies along a wall its full length, a room with an annex room for both
+ * side by side (where it is too shallow for the annex behind), others at least their short side.
+ */
+const minLen = (r: RoomSpec): number => (r.annex ? 2 * MIN_DEPTH + 1 : r.role === 'reactor' ? r.w : Math.min(r.w, r.h));
 const areaOf = ([r, s]: Pair): number => Math.max(full(r), full(s));
 /** A store pair for a stretch of band `len` long: floor no room was planned for. */
 const store = (len: number): Pair => [cargoSpec(Math.max(1, Math.floor(len / 2))), cargoSpec(Math.max(1, Math.floor(len / 2)))];
@@ -99,7 +102,7 @@ function split(band: Band, pairs: readonly Pair[], vary: readonly number[], spar
       s++; x = band.segs[s]?.[0] ?? 0; first = out.length;
     };
     for (const [i, pair] of pairs.entries()) {
-      const r = pair[0], len = minLen(r), goal = areaOf(pair) * share * (vary[i % vary.length] ?? 1);
+      const r = pair[0], len = Math.max(minLen(pair[0]), minLen(pair[1])), goal = areaOf(pair) * share * (vary[i % vary.length] ?? 1);
       // A room takes columns until its share is met, but no longer than three times its depth once it has its planned
       // floor; one that a run cannot hold moves on to the next run.
       for (;;) {
@@ -109,7 +112,7 @@ function split(band: Band, pairs: readonly Pair[], vary: readonly number[], spar
         // Past its planned floor, a room stops at three times its depth or as far as its kind grows.
         const plan = areaOf(pair), grow = Math.max(growOf(pair[0]), growOf(pair[1]));
         const long = (): boolean => a >= plan && ((x - x0) >= ASPECT * (a / Math.max(1, x - x0)) || a >= grow * plan);
-        for (; x < end && ((a < goal && !long()) || x - x0 < len || (x - x0) * ASPECT < deep); x++) { a += area(x); deep = Math.max(deep, area(x)); }
+        for (; x < end && ((a < goal && !long()) || x - x0 < len || (x - x0) * DEEP < deep); x++) { a += area(x); deep = Math.max(deep, area(x)); }
         if (a >= plan && x - x0 >= len) { out.push({ pair, x0, x1: x }); x++; break; }
         x = x0;
         next();
@@ -278,11 +281,13 @@ export function layoutBlocks(plan: ShipPlan, m: Mask, type: NavyType, vary: read
       for (let tx = c0; tx < c1; tx++) innerIds.set(tx, [n, s]);
       // An annex (a trauma room, a pantry) stands behind its host, the host keeping the corridor rows, a wall row
       // between and a door only into the host; where the piece is too shallow for two rooms, at its stern end instead.
-      let dMin = Infinity;
-      for (let tx = c0; tx < c1; tx++) dMin = Math.min(dMin, inner.hi(tx));
+      // (Columns under an outer room are the host's alone: the annex stands behind it on the rest.)
+      let dMin = Infinity, all = Infinity;
+      for (let tx = c0; tx < c1; tx++) { all = Math.min(all, inner.hi(tx)); if (!outerOf(tx)) dMin = Math.min(dMin, inner.hi(tx)); }
+      if (dMin === Infinity) dMin = all;
       const behind = dMin >= 2 * MIN_DEPTH + 1;
       const hostRows = (h: RoomSpec): number => (h.annex && k === 1 && behind ? dMin - 1 - Math.min(dMin - MIN_DEPTH - 1, Math.max(MIN_DEPTH, Math.round((dMin * h.annex.w * h.annex.h) / full(h)))) : Infinity);
-      const annexAt = (h: RoomSpec): number => (h.annex && k === 1 && !behind ? c1 - Math.max(MIN_DEPTH, Math.round(((c1 - c0) * h.annex.w * h.annex.h) / full(h))) : c1);
+      const annexAt = (h: RoomSpec): number => (h.annex && k === 1 && !behind ? c1 - Math.min(c1 - c0 - MIN_DEPTH - 1, Math.max(MIN_DEPTH, Math.round(((c1 - c0) * h.annex.w * h.annex.h) / full(h)))) : c1);
       const ids = [n, s].map((id, side) => { const h = side === 0 ? r : sr; return h.annex && k === 1 ? g.room(h.annex.role, { spec: h.annex, access: [id] }) : id; });
       for (let tx = c0; tx < c1; tx++) {
         const deep = outerOf(tx) ? BAND + inner.hi(tx) : Infinity;
