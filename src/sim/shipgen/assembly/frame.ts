@@ -36,12 +36,15 @@ export function outlineFrame(plan: ShipPlan, m: Mask): Frame | null {
   const { W, H, inside } = m;
   if (2 * H + 4 > 120 || W + 4 > 240) return null;
   const top = (x: number): number => { let y = 0; while (inside(x, y + 1)) y++; return inside(x, 0) ? y : -1; };
-  // A battery's maintenance corridor runs a row in from the hull, round each gun room (the gun on the hull, the
-  // corridor inboard of it): rooms on the spine stop a wall short of it.
+  // A battery chains along the hull: each gun room reaches in `rows` from its blister, a maintenance corridor a row in
+  // from the hull links each to the next and to the dock. `hallY` is the battery's innermost row per column (the
+  // gun room's inner row, else the corridor); rooms on the spine stop a wall short of it.
   const bt = m.battery, reg = bt ? top(bt.a) : 0;
-  const hallY = (x: number): number => (bt?.guns.some(([s0, s1]) => x >= s0 - 1 && x <= s1) ? reg - bt.rows - 1 : reg - 1);
-  const inBt = (x: number): boolean => !!bt && x >= bt.a && x < bt.b && !(x >= bt.air && x < bt.air + dockSpec().w);
-  const depth = (x: number): number => (inBt(x) ? hallY(x) - 2 - BAND : top(x) - BAND - 1);
+  const gun = (x: number): boolean => !!bt?.guns.some(([s0, s1]) => x >= s0 && x < s1);
+  const hallY = (x: number): number => (gun(x) ? reg - (bt?.rows ?? 0) : reg - 1);
+  const g0 = bt?.guns[0]?.[0] ?? 0, g1 = bt?.guns[bt.guns.length - 1]?.[1] ?? 0;
+  const inBt = (x: number): boolean => !!bt && x >= g0 && x < g1 && !(x >= bt.air && x < bt.air + dockSpec().w);
+  const depth = (x: number): number => (inBt(x) ? hallY(x) - (gun(x) ? 1 : 2) - BAND : top(x) - BAND - 1);
   const rowEnd = (y: number): number => { let x = W - 1; while (x > 0 && !inside(x, y)) x--; return x; };
   let xEnd = W - 1;
   while (xEnd > 0 && !inside(xEnd, 0)) xEnd--;
@@ -85,5 +88,5 @@ export function outlineFrame(plan: ShipPlan, m: Mask): Frame | null {
   let dockAt = bt ? bt.air : -1;
   if (!bt) for (let x = xBand + MIN_DEPTH + 1; x <= Math.min(xS - MIN_DEPTH - CW - 1, xBand + 0.75 * (xS - xBand)); x++) if (flat(x) && (dockAt < 0 || depth(x) > depth(dockAt))) dockAt = x;
   if (dockAt < 0) return null;
-  return { W, H, inside, top, depth, xS, xEnd, sternMax, perSide, used, engine, xBr, xBand, CW, dockAt, ...(bt ? { maint: { a: bt.a, b: bt.b, guns: bt.guns, rows: bt.rows, hallY } } : {}) };
+  return { W, H, inside, top, depth, xS, xEnd, sternMax, perSide, used, engine, xBr, xBand, CW, dockAt, ...(bt ? { maint: { a: g0, b: g1, guns: bt.guns, rows: bt.rows, hallY } } : {}) };
 }

@@ -58,23 +58,19 @@ export function paintPlaced(plan: ShipPlan, { fr, lay, battery }: Placed): Regio
     const h = st.spec[side] as RoomSpec, sign = side === 0 ? -1 : 1;
     paint(g.room(h.role, { spec: h, access: [engines[side]] }), st.x0, st.x1, (y) => sign * y >= BAND + st.r0);
   }
-  // PROTOTYPE: the battery: each gun on the hull in its blister, the maintenance corridor inboard of it and along the
-  // hull between, up to the dock's corridor.
+  // PROTOTYPE: the battery: each gun room from its blister in, chained to the next and to the dock by the maintenance
+  // corridor along the hull between them (a door each side).
   const mt = fr.maint;
   if (mt) {
     const maint = g.hall('hall'), topAt = (x: number): number => { let y = 0; while (fr.inside(x, y + 1)) y++; return y; };
-    const reg = mt.hallY(mt.a) + 1;
-    for (let x = mt.a; x < mt.b; x++) {
-      if (x >= fr.dockAt && x < fr.dockAt + fr.CW) continue;
-      const hy = mt.hallY(x), side = mt.guns.some(([s0, s1]) => x === s0 - 1 || x === s1);
-      paint(maint, x, x + 1, (y) => Math.abs(y) === hy || (side && Math.abs(y) >= hy && Math.abs(y) <= reg - 1));
-    }
+    const gun = (x: number): boolean => mt.guns.some(([s0, s1]) => x >= s0 && x < s1);
+    for (let x = mt.a; x < mt.b; x++) if (!gun(x) && !(x >= fr.dockAt && x < fr.dockAt + fr.CW)) paint(maint, x, x + 1, (y) => Math.abs(y) === mt.hallY(x));
     mt.guns.forEach(([s0, s1], i) => {
       const pair = battery[i];
       if (!pair) return;
       ([0, 1] as const).forEach((side) => {
         const h = pair[side], sign = side === 0 ? -1 : 1;
-        paint(g.room(h.role, { spec: h, access: [maint] }), s0, s1, (y) => sign * y > mt.hallY(s0) && sign * y <= topAt(s0));
+        paint(g.room(h.role, { spec: h, access: [maint], doors: 2 }), s0, s1, (y) => sign * y >= mt.hallY(s0) && sign * y <= topAt(s0));
       });
     });
   }
