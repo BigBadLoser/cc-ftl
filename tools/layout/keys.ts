@@ -19,6 +19,7 @@ export const SHORTCUTS: readonly [string, string][] = [
   ['[ / ]', 'previous / next: module (Module), room type (Room), window size (Window)'],
   ['Enter', 'place a pasted piece at the pointer'],
   ['Ctrl+C / X / V', 'copy, cut, paste the Move box'],
+  ['Ctrl+Shift+C', 'save the Move box as a shape (Shapes panel)'],
   ['Delete', 'clear the Move box, else delete the selection'],
   ['Esc', 'put back a piece in flight, drop the box, else back to Select'],
   ['+ / - / 0', 'zoom in, out, fit'],
@@ -42,6 +43,7 @@ export function onKey(e: KeyboardEvent): void {
   const done = (): void => e.preventDefault();
   if (mod && k === 'z') { done(); if (e.shiftKey) lab.redo(); else lab.undo(); return; }
   if (mod && k === 'y') { done(); lab.redo(); return; }
+  if (mod && e.shiftKey && k === 'c') { done(); move.saveShape(); return; }
   if (mod && !lab.compare && (k === 'c' || k === 'x' || k === 'v')) { done(); if (k === 'c') move.copy(); else if (k === 'x') move.cut(); else move.paste(); return; }
   if (mod || e.altKey) return;
   if (k === 'c') { lab.toggleCompare(); return; }
