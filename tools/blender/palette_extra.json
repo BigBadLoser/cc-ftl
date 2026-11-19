@@ -63,11 +63,11 @@
  },
  "wHW": {
   "hex": "#80bcae", "aa": "teal", "set": "window",
-  "aa_join": ["wH", "wL", "wS", "wM", "wD", "wXL", "wXS", "wXM", "wXD"]
+  "aa_join": ["wH", "wL", "wS", "wM", "wD", "wXL", "wXS", "wXM", "wXD", "wQH", "wQL", "wQS", "wQM", "wQD"]
  },
  "wallsTealAA": {
   "set": "walls_aa", "aa": "teal",
-  "aa_join": ["wH", "wL", "wS", "wM", "wD", "wXL", "wXS", "wXM", "wXD"]
+  "aa_join": ["wH", "wL", "wS", "wM", "wD", "wXL", "wXS", "wXM", "wXD", "wQH", "wQL", "wQS", "wQM", "wQD"]
  },
  "winBlue": {
   "hex": "#4994f8", "set": "window_src"

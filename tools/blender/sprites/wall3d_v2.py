@@ -48,9 +48,9 @@ YD = 64 / 4                  # screen px down per unit a part stands proud of a 
 def _row(z, d, half=0.0):
     """z on the screen's row grid for a part d proud of a straight face (NUDGE; SNAP's phase, moved half a row with
     half=0.5: the other way a 1 px line's two-px steps can pair up)."""
-    if not NUDGE or _AX[0] is None:
+    if _AX[0] is None:
         return z
-    ph = SNAP[_AX[0]] + YD * d + half
+    ph = (SNAP[_AX[0]] + YD * d if NUDGE else SNAPD + YD * d / SQ) + half
     return (round(z * W.ZART - ph) + ph) / W.ZART
 
 
@@ -66,7 +66,7 @@ def _paint(k, ax, plane, u0, u1, z0, z1, d, fam, tone, foot=0.0, top=None):
     z0 = _row(z0, dd, foot)                             #   snapping both ends alone could take or add a px)
     if top is not None:
         z1 = _row(z1, dd, top)
-    elif NUDGE and _AX[0] is not None:
+    elif _AX[0] is not None:
         z1 = z0 + max(1, round(h * W.ZART)) / W.ZART
     else:
         z1 = z0 + h
@@ -171,13 +171,23 @@ def _rail(k, ax, plane, a, b, ends, top, fam):
     return z0
 
 
+SNAPD = 0.375                     # the row phase on a face seen square on (_row)
+SQ = 2 ** -0.5                  # a screen px along a face seen square on (a diagonal wall), in LINEs
+PX0D = 0.0                      # where its px boundaries fall (in px, off u's grid) on a piece centred on its tile
+
+
 def _px(u, d):
-    """u on the default wall's front, d proud of it, in screen px (a depth shifts it a px left per LINE)."""
+    """u on the default wall's front, d proud of it, in screen px (a depth shifts it a px left per LINE; square on, a
+    px is SQ of a LINE and depth moves nothing)."""
+    if not NUDGE:
+        return u / (SQ * T.LINE) + PX0D
     return u / T.LINE + PX0 - d / T.LINE
 
 
 def _u(n, d):
     """The u that falls on px boundary n at depth d (_px's inverse)."""
+    if not NUDGE:
+        return (n - PX0D) * SQ * T.LINE
     return (n - PX0 + d / T.LINE) * T.LINE
 
 
@@ -207,18 +217,16 @@ def wall_face(k, ax, plane, a, b, ends, zs, top, full):
         if ax == "y" and NUDGE:                          # two on the lit faces: the same px between it and either post;
             p1 -= LINE                                   # none seen square on)
         elif not NUDGE:
-            p1 += LINE                                   # (square on: even, and off the px grid, which the screen's
-        snap = round if NUDGE else (lambda v: v)         #   isn't along it)
-        n0, n1 = snap(_px(p0, PAINT)), snap(_px(p1, PAINT))                     # (its parts on whole px, each
+            p1 += LINE                                   # (square on: even)
+        n0, n1 = round(_px(p0, PAINT)), round(_px(p1, PAINT))                   # (its parts on whole px, each
         p0, p1 = _u(n0, PAINT), _u(n1, PAINT)                                   # at its own depth)
         b0 = q0                                          # (the raised bar and fine lines placed as before ...)
         b1 = q1
         q0, q1 = q0 - 2 * PZ, q1 - 2 * PZ                # (... the panel's top and foot 2 px down, the slot with it)
         _AX[0] = ax                                      # (its foot's steps paired from its sides' feet, its top's
         o0, o1 = _row(q0, 2 * PAINT, 0.5), _row(q1, 2 * PAINT, 0.5)            # from their tops; a px wide all round)
-        if NUDGE:
-            q0, q1 = o0, o1
-        e = 1 / W.ZART if NUDGE else 0.026
+        q0, q1 = o0, o1
+        e = 1 / W.ZART
         T.paint(k, ax, plane, p0, p1, q0, q1, PAINT, F, 1)                                       # panel outline
         T.paint(k, ax, plane, _u(n0 + 1, 2 * PAINT), _u(n1 - 1, 2 * PAINT), q0 + e, q1 - e, 2 * PAINT, F, 2)
         if T.VARIANT[0]:                                 # (a straight run's top design in the panel)
@@ -226,8 +234,9 @@ def wall_face(k, ax, plane, a, b, ends, zs, top, full):
             V.wall_top(k, ax, plane, p0 + LINE, p1 - LINE, q0 + 0.026, q1 - 0.026, F, T.VARIANT[0])
             continue
         bw, nc = 0.42 * w, n0 + n1                       # (centred on the panel: twice its centre, in px)
-        ns = _odd(bw / LINE + 2, nc % 2)                 # the slot's width in px (a px round the bars)
-        nl = _odd(0.5 * w / LINE, nc % 2)                # the fine lines'
+        lw = LINE if NUDGE else SQ * LINE                # (a screen px along the face)
+        ns = _odd(bw / lw + 2, nc % 2)                   # the slot's width in px (a px round the bars)
+        nl = _odd(0.5 * w / lw, nc % 2)                  # the fine lines'
         _paint(k, ax, plane, _u((nc - ns) / 2, 3 * PAINT), _u((nc + ns) / 2, 3 * PAINT), q1 - 0.27 - PZ, q1 - 0.07,
                 3 * PAINT, F, 0)                         # (its foot a px further down)
         for j in range(2):                                                                       # ochre bars
