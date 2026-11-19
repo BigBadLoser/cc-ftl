@@ -21,41 +21,37 @@ import { SPACE, type RegionGrid } from './regions';
  * axis. Only the body scales across; what stands beyond it (a stern flare, wings, pods) keeps its size in tiles, out from
  * the scaled body's edge.
  */
-/** Notch columns either side of a gun site's blister. */
-const NOTCH = 2, BLISTER = 6;
+/** PROTOTYPE (#581): a gun blister's columns, and a gun site's step (its blister, then a room's width or the dock's). */
+const BLISTER = 6, STEP = 16;
 
 function scaled(sil: Silhouette, sx: number, sy: number): Mask {
-  const W = Math.round(sil.length * sx);
+  const W0 = Math.round(sil.length * sx);
   const bodyAt = (c: number): number => sil.body[Math.min(c, sil.body.length - 1)] as number;
-  const H = Math.max(...sil.body.map((b) => Math.round(b * sy) + sil.axis - b));
-  // PROTOTYPE (#581): the gun battery in tiles: blisters a room wide between notches, a gun on every other one (a
-  // plain room between), centred on the best straight stretch that holds it (the rest on the next stretches).
-  const sites: [number, number][] = [], low: [number, number][] = [], STEP = BLISTER + NOTCH;
-  let left = sil.battery?.guns ?? 0;
-  for (const [a, b] of sil.battery?.runs ?? []) {
-    if (left <= 0) break;
-    const A = Math.ceil(a * sx) + 1, B = Math.floor(b * sx) - 1, k = Math.min(left, Math.floor((B - A - NOTCH + STEP) / (2 * STEP)));
-    if (k <= 0) continue;
-    const x0 = A + Math.floor((B - A - ((2 * k - 1) * STEP + NOTCH)) / 2);
-    for (let i = 0; i < k; i++) sites.push([x0 + NOTCH + 2 * i * STEP, x0 + NOTCH + 2 * i * STEP + BLISTER]);
-    low.push([Math.floor(a * sx) - 2, Math.ceil(b * sx) + 2]);
-    left -= k;
-  }
-  sites.sort((p, q) => p[0] - q[0]);
-  // The stretch a battery stands on drops a tile; only the guns' blisters stand out of it.
-  // (Its top row only: the row the blisters stand on, so a taper beside the stretch keeps its shape.)
-  const notch = (x: number): boolean => low.some(([a, b]) => x >= a && x < b) && !sites.some(([s0, s1]) => x >= s0 && x < s1);
-  const hull = (x: number, y: number): boolean => {
-    if (x < 0 || x >= W || Math.abs(y) > H) return false;
+  const H0 = Math.max(...sil.body.map((b) => Math.round(b * sy) + sil.axis - b));
+  const base = (x: number, y: number): boolean => {
+    if (x < 0 || x >= W0 || Math.abs(y) > H0) return false;
     const c = Math.floor(x / sx), b = bodyAt(c), hb = Math.round(b * sy), d = Math.abs(y);
     // Rounded by distance from the axis, so the two sides mirror (Math.round takes -2.5 to -2 but 2.5 to 3).
     const raw = d <= hb ? Math.round(d / sy) : b + d - hb;
     return sil.rows[sil.axis + Math.sign(y) * raw]?.[c] === '#';
   };
+  // PROTOTYPE (#581): the gun battery on the widest straight stretch, lengthened (its middle column repeated) until it
+  // holds every gun: a blister a tile proud of the hull per gun, a room's width (or the dock) between them.
+  const k = sil.battery?.guns ?? 0, run = sil.battery?.runs[0];
+  let E = 0, mid = W0, sites: [number, number][] = [];
+  if (k > 0 && run) {
+    const A = Math.ceil(run[0] * sx) + 1, B = Math.floor(run[1] * sx) - 1, need = (k - 1) * STEP + BLISTER;
+    E = Math.max(0, need - (B - A));
+    mid = Math.floor((A + B) / 2);
+    const x0 = A + Math.floor((B + E - A - need) / 2);
+    sites = Array.from({ length: k }, (_, i): [number, number] => [x0 + i * STEP, x0 + i * STEP + BLISTER]);
+  }
+  const from = (x: number): number => (x < mid ? x : x < mid + E ? mid : x - E);
+  const hull = (x: number, y: number): boolean => base(from(x), y);
   const topOf = (x: number): number => { let y = 0; while (hull(x, y + 1)) y++; return y; };
-  const tops = sites.map(([s0]) => topOf(s0));
-  const inside = (x: number, y: number): boolean => hull(x, y) && !(notch(x) && tops.includes(Math.abs(y)) && !hull(x, Math.abs(y) + 1));
-  return { W, H, inside, ...(sites.length > 0 ? { sites } : {}) };
+  const proud = (x: number, y: number): boolean => sites.some(([s0, s1]) => x >= s0 && x < s1) && Math.abs(y) === topOf(x) + 1;
+  const inside = (x: number, y: number): boolean => hull(x, y) || proud(x, y);
+  return { W: W0 + E, H: H0 + (sites.length > 0 ? 1 : 0), inside, ...(sites.length > 0 ? { sites } : {}) };
 }
 
 /**

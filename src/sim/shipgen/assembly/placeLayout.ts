@@ -342,16 +342,15 @@ export function placeLayout(plan: ShipPlan, m: Mask, defs: Record<string, Module
   // take a tile, reaching the hull), while one is left; other rooms never stack a gun outside one.
   // Sites on the band only (none in the bridge or the drive).
   const sites = (m.sites ?? []).filter(([s0, s1]) => s0 > xBand + MIN_DEPTH && s1 < xS - 1);
-  // The blister exactly, the room in front of it small (at most six rows): the gun grows toward the spine instead.
-  const inSite = (q: Part, [s0, s1]: [number, number]): boolean => q.r1 === Infinity && q.x0 === s0 && q.x1 === s1 && q.r0 <= 8;
+  // The blister exactly, on the hull.
+  const inSite = (q: Part, [s0, s1]: [number, number]): boolean => q.r1 === Infinity && q.x0 === s0 && q.x1 === s1;
   const guns = (l: Layout): Part[] => l.blocks.flatMap((b) => b.pieces.flatMap((pc) => pc.parts)).filter((q) => q.spec.some((h) => h && roomKind(h) === 'guns'));
   function candsAt(lay: Layout, k: number): Cand[] {
     const p = order[k] as Pair, had = guns(lay);
     const free = sites.filter((st) => !had.some((q) => q.x0 < st[1] && st[0] < q.x1));
     const isGun = kinds(p).includes('guns');
     const spans = free.flatMap(([s0, s1]) => [[s0, 'L', s1 - s0] as [number, 'L', number]]);
-    // A gun on a site may grow past its cap (it fills the blister toward the spine).
-    const cs = cands(lay, p, k, isGun ? spans : [], isGun && free.length > 0 ? 60 : 0);
+    const cs = cands(lay, p, k, isGun ? spans : []);
     if (sites.length === 0) return cs;
     return cs.filter((c) => {
       const added = guns(c.lay).filter((q) => !had.some((h) => h.x0 === q.x0 && h.r0 === q.r0 && h.spec[0] === q.spec[0]));

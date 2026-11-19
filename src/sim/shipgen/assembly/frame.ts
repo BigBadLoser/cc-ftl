@@ -63,10 +63,10 @@ export function outlineFrame(plan: ShipPlan, m: Mask): Frame | null {
   // The cross corridor: out to the airlocks at the hull's widest flat stretch (an airlock needs a flat outer wall), in the
   // forward three quarters, leaving a room's length either side. Outer rooms elsewhere open into the room in front.
   const CW = dockSpec().w;
-  // (Not on the gun battery, notches and all: the guns have it.)
   const flat = (x0: number): boolean => {
-    // (A gun site's blister, its notches and the room either side of it in the battery: eight columns.)
-    if ((m.sites ?? []).some(([a, b]) => x0 + CW + 1 >= a - 8 && x0 - 1 < b + 8)) return false;
+    // (Beside a gun's blister, a plating column between, or clear of the battery: a room's width from every blister.)
+    const st = m.sites ?? [];
+    if (!st.some(([a, b]) => x0 === b + 1 || x0 + CW + 1 === a) && st.some(([a, b]) => x0 + CW + 1 >= a - 8 && x0 - 1 < b + 8)) return false;
     for (let k = -1; k <= CW; k++) if (top(x0 + k) !== top(x0)) return false;
     return true;
   };
