@@ -239,7 +239,13 @@ ask for, from a ranked list, each kind with its own size range and access rule (
 1. **Cargo hold**: crates, 9 to 30 tiles, opens off a workshop or a hold (cargo's access rule) or a corridor.
 2. **Small farm**: hydroponics, 12 to 24 tiles, on ships that carry a farm (cruisers and up).
 3. **Workshop**: a fabricator, 12 to 30 tiles, on a corridor.
-4. **Cabin**: while the ship's spare beds allow (below).
+4. **Crew lounge**: a game table, an arcade and benches, 12 to 30 tiles, on a corridor (barracks may open off it).
+5. **Gym**: 12 to 30 tiles, on a corridor; unfurnished until it has equipment.
+6. **Cabin**: while the ship's spare beds allow (below).
+
+Holds are the default; a ship takes at most one workshop, lounge and gym filler a side, and a farm filler only where
+it carries a farm, so a type's rooms vary without one kind filling the ship. Lounge and gym are `support` rooms marked
+by `use` on their spec (`roomKind` reads it).
 
 **Crew sleep in a barracks or cabins, with a few spare beds.** The plan gives every crew member a bed, plus two to four
 spare (seeded, more on bigger ships). The beds are laid out by the space they get: a slot the barracks fits as one room
