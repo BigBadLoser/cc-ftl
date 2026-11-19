@@ -19,6 +19,8 @@ END_W = 0.25                        # its end blocks along a tile (the middle bl
 LIP_D, LIP_H = PX, 3 * PZ           # the lip at the face's foot: its depth (2 px), its height
 MID_DROP = 3 * PZ                   # the middle block's top: its front edge this far under its back
 SHELF = 4 / 32                      # the ramp's top a flat step this deep against the wall (4 px)
+NUDGE = True    # the px nudges that centre a face's parts between its posts on screen (_nudge); off for a face seen
+#   square on (a diagonal wall), where depth moves nothing sideways
 PX0 = 0.875     # where the camera's px boundaries fall along the default wall's front (in px, off u's own grid)
 _STYLE = []
 
@@ -32,21 +34,30 @@ def plain_relief():
     return _STYLE[0]
 
 
-def _blocks(a, b):
-    """The rail's blocks over [a, b], on each tile's grid: (u0, u1, middle?)."""
+def _nudge(ax):
+    """The px a face's rail and lip seams move along u to sit centred between its posts on screen (a part's depth moves
+    it a px sideways per LINE, one way on each axis's faces): (rail, lip)."""
+    if not NUDGE:
+        return 0.0, 0.0
+    return (T.LINE, -T.LINE) if ax == "y" else (T.LINE, 0.0)
+
+
+def _blocks(a, b, sh=0.0):
+    """The rail's blocks over [a, b], on each tile's grid: (u0, u1, middle?); the middle block moved sh along u."""
     out = []
     for c in range(-1, 2):
-        for u0, u1, mid in ((c - 0.5, c - 0.5 + END_W, False), (c - 0.5 + END_W, c + 0.5 - END_W, True),
-                            (c + 0.5 - END_W, c + 0.5, False)):
+        for u0, u1, mid in ((c - 0.5, c - 0.5 + END_W + sh, False), (c - 0.5 + END_W + sh, c + 0.5 - END_W + sh, True),
+                            (c + 0.5 - END_W + sh, c + 0.5, False)):
             q0, q1 = max(a, u0), min(b, u1)
             if q1 - q0 > 1e-6:
                 out.append((q0, q1, mid))
     return out
 
 
-def _thirds(a, b):
-    """The lip's seams over [a, b] (each a px from u): a tile in three 10 px sections."""
-    return [u for c in range(-1, 2) for u in (c - 0.5 + 10.3 / 32, c - 0.5 + 21.3 / 32) if a + T.LINE < u < b - T.LINE]
+def _thirds(a, b, sh=0.0):
+    """The lip's seams over [a, b] (each a px from u): a tile in three 10 px sections, moved sh along u."""
+    return [u for c in range(-1, 2) for u in (c - 0.5 + 10.3 / 32 + sh, c - 0.5 + 21.3 / 32 + sh)
+            if a + T.LINE < u < b - T.LINE]
 
 
 def _mitres(ends):
@@ -75,7 +86,7 @@ def _lip(k, ax, plane, a, b, ends, zs, top, fam):
     T.paint(k, ax, plane, a, b, zl + LIP_H, zg + PZ if room else top, 0.0, fam, 2)             # (the face over it)
     if room:
         T.paint(k, ax, plane, a, b, zg, zg + PZ, T.PAINT, fam, 1)
-    for u in _thirds(a, b):
+    for u in _thirds(a, b, _nudge(ax)[1]):
         op, out = T.OPEN, T.LIP_OUT
         if op and out and (op[0] < u < op[0] + out * T.LINE or op[1] - out * T.LINE < u < op[1]):
             u += out * T.LINE * (-1 if u < (op[0] + op[1]) / 2 else 1)   # (a window's seam by its post, the opening
@@ -99,7 +110,7 @@ def _rail(k, ax, plane, a, b, ends, top, fam):
     mit = _mitres(ends)
     z0 = rail_foot(top)
     z1 = z0 + RAIL_H                                    # (under the cap's black)
-    bl = (T.RAIL_LAYOUT or _blocks)(a, b)
+    bl = T.RAIL_LAYOUT(a, b) if T.RAIL_LAYOUT else _blocks(a, b, _nudge(ax)[0])
     for i, (u0, u1, mid) in enumerate(bl):
         d = MID_D if mid else RAIL_D
         zb = z0 - PZ if mid else z0
@@ -112,7 +123,7 @@ def _rail(k, ax, plane, a, b, ends, top, fam):
         zt = z1 - MID_DROP if mid else z1
         T.paint(k, ax, plane, u0, u1, zt - PZ, zt, d, fam, 5)                                    # its top edge lit
         nxt = bl[i + 1][2] if i + 1 < len(bl) else False
-        if mid and u1 < b - 1e-6 and not nxt:           # (a seam where it meets the end block on its right, as the
+        if mid and u1 < b - 1e-6 and not nxt and NUDGE:  # (a seam where it meets the end block on its right, as the
             e = RAIL_D + 2 * T.PAINT                    # end block's side shows on its left: a sheet the px left of
             prism(k, ax, plane, u1 - 0.75 * T.LINE, u1 + 0.25 * T.LINE,   # the end block, up to its top; in front
                   [(e - T.PAINT, zb), (e, zb), (e, z1), (e - T.PAINT, z1)], fam, 2,   # of it, so the px is whole)
@@ -148,8 +159,13 @@ def wall_face(k, ax, plane, a, b, ends, zs, top, full):
         if f1 - f0 < 0.3 or (T.OPEN and ax == "y" and f0 < T.OPEN[1] and f1 > T.OPEN[0]):
             continue
         w = f1 - f0
-        p0, p1, q0, q1 = f0 + 0.04, f1 - 0.04 - LINE, zb + 0.1, zh - 0.06    # (its right side a px further in)
-        n0, n1 = round(_px(p0, PAINT)), round(_px(p1, PAINT))                   # (its parts on whole px, each
+        p0, p1, q0, q1 = f0 + 0.04, f1 - 0.04 - LINE, zb + 0.1, zh - 0.06    # (its right side a px further in,
+        if ax == "y" and NUDGE:                          # two on the lit faces: the same px between it and either post;
+            p1 -= LINE                                   # none seen square on)
+        elif not NUDGE:
+            p1 += LINE                                   # (square on: even, and off the px grid, which the screen's
+        snap = round if NUDGE else (lambda v: v)         #   isn't along it)
+        n0, n1 = snap(_px(p0, PAINT)), snap(_px(p1, PAINT))                     # (its parts on whole px, each
         p0, p1 = _u(n0, PAINT), _u(n1, PAINT)                                   # at its own depth)
         b0 = q0                                          # (the raised bar and fine lines placed as before ...)
         b1 = q1
