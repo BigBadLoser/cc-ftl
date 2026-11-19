@@ -10,7 +10,9 @@ import type { Part, Placed } from './placeLayout';
 export function paintPlaced(plan: ShipPlan, { fr, lay, battery }: Placed): RegionGrid {
   const { W, top, xS, dockAt, used, engine } = fr;
   const fg = frameGrid(fr, plan), { g, hall, docks, paint } = fg;
-  const stubs = lay.stubs.map((s) => ({ ...s, id: g.hall('hall') }));
+  const stubs = lay.stubs.map((s) => ({ ...s, id: g.hall('hall') })), maint = fr.maint ? g.hall('hall') : -1;
+  const allParts = lay.blocks.flatMap((b) => b.pieces.flatMap((pc) => pc.parts));
+  const frontOf = new Map<Part, [number, number]>();
   const rows = (q: Part, d: number): boolean => d >= (q.r0 === 1 ? BAND : BAND + q.r0) && d <= BAND + q.r1;
   for (const b of lay.blocks) for (const pc of b.pieces) {
     const front = new Map<Part, [number, number]>();
@@ -41,12 +43,14 @@ export function paintPlaced(plan: ShipPlan, { fr, lay, battery }: Placed): Regio
         const cross = (b.crossL && q.x0 === b.a) || (b.crossR && q.x1 === b.b) ? (dockAt < q.x0 ? docks[side] : docks[side]) : undefined;
         const host = parts.find((o) => o.spec[side]?.annex === h) ?? parts.find((o) => o.r0 < q.r0 && o.x0 <= q.x0 && q.x1 <= o.x1);
         const annexOf = parts.find((o) => o.spec[side]?.annex === h);
-        const access = annexOf ? [front.get(annexOf)?.[side] as number] : q.r0 === 1 ? undefined : stub !== undefined ? [stub] : cross !== undefined ? [cross] : host ? [front.get(host)?.[side] as number] : undefined;
+        const ahead = q.via === 'front' ? allParts.find((o) => o !== q && o.r0 < q.r0 && o.x0 <= q.x0 && q.x1 <= o.x1) : undefined;
+        const fixed = q.via === 'dock' ? [docks[side]] : q.via === 'maint' ? [maint] : ahead ? [frontOf.get(ahead)?.[side] as number] : undefined;
+        const access = fixed ?? (annexOf ? [front.get(annexOf)?.[side] as number] : q.r0 === 1 ? undefined : stub !== undefined ? [stub] : cross !== undefined ? [cross] : host ? [front.get(host)?.[side] as number] : undefined);
         const id = g.room(h.role, { spec: h, ...(access ? { access } : {}) });
         paint(id, q.x0, q.x1, (y) => rows(q, d(y)));
         return id;
       }) as [number, number];
-      front.set(q, ids);
+      front.set(q, ids); frontOf.set(q, ids);
     }
   }
   const sternGrown = !lay.stern || !!lay.stern.grown;
@@ -63,7 +67,7 @@ export function paintPlaced(plan: ShipPlan, { fr, lay, battery }: Placed): Regio
   // its own and it stays a rectangle.
   const mt = fr.maint;
   if (mt) {
-    const maint = g.hall('hall'), topAt = (x: number): number => { let y = 0; while (fr.inside(x, y + 1)) y++; return y; };
+    const topAt = (x: number): number => { let y = 0; while (fr.inside(x, y + 1)) y++; return y; };
     const gun = (x: number): boolean => mt.guns.some(([s0, s1]) => x >= s0 && x < s1);
     // The corridor's row, plating outboard of it to the hull.
     for (let x = mt.a; x < mt.b; x++) if (!gun(x) && !(x >= fr.dockAt && x < fr.dockAt + fr.CW)) {

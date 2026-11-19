@@ -61,3 +61,25 @@ export function gunsAndReactors(plan: ShipPlan, defs: Record<string, ModuleDef>)
   const [gn, gs] = pairUp(guns);
   return { gunPairs: gn.map((r, i) => [r, gs[i] as RoomSpec] as const), lone, reactors };
 }
+
+/**
+ * A plan's rooms as the layouts place them: the gun pairs, the cabin block's pair (its beds split across the axis), and
+ * the rest as mirror pairs, rooms with an annex paired together (both two tiers deep, or both with the annex beside).
+ */
+export function programPairs(plan: ShipPlan, defs: Record<string, ModuleDef>): { gunPairs: Pair[]; others: Pair[]; cabinPairs: Pair[] } {
+  const { gunPairs, lone, reactors } = gunsAndReactors(plan, defs);
+  const blockBeds = plan.quarters.filter((q) => q.block).reduce((n, q) => n + q.mods.length, 0);
+  const restRooms = [...lone, ...reactors, ...plan.shields, ...(plan.core ? [plan.core] : []), ...plan.quarters.filter((q) => !q.block), ...plan.support, ...plan.cargo, ...plan.hangars];
+  const hosts = restRooms.filter((r) => r.annex), even = hosts.slice(0, hosts.length - (hosts.length % 2));
+  const others = [...mirrorPairs(restRooms.filter((r) => !even.includes(r))), ...Array.from({ length: even.length / 2 }, (_, k): Pair => {
+    const a = even[2 * k] as RoomSpec, b = even[2 * k + 1] as RoomSpec, w = Math.max(a.w, b.w), h = Math.max(a.h, b.h);
+    return [{ ...a, w, h }, { ...b, w, h }];
+  })];
+  const cabinPairs: Pair[] = [];
+  if (blockBeds > 0) {
+    const north = 2 * Math.ceil(blockBeds / 4), south = blockBeds - north;
+    const spec = (n: number): RoomSpec => ({ role: 'quarters', mods: Array<string>(n).fill('module.bed'), w: 0, h: 0, block: true, cabins: false });
+    cabinPairs.push([spec(north), spec(south)]);
+  }
+  return { gunPairs, others, cabinPairs };
+}

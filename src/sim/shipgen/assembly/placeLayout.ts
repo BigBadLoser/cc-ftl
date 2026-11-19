@@ -1,7 +1,7 @@
 import type { ModuleDef } from '../../registry';
 import type { RoomSpec, ShipPlan } from '../plan';
 import { MIN_DEPTH, outlineFrame, type Frame, type Mask } from './frame';
-import { areaOf, capOf, gunsAndReactors, minLen, mirrorPairs, type Pair } from './pairs';
+import { areaOf, capOf, minLen, programPairs, type Pair } from './pairs';
 import { CABIN_TIER, cabinsFor } from './cabinBlock';
 import { SLEEPER } from './quarters';
 import { FILL_MAX, fillerSpec, maxArea, type Filler } from './roomSize';
@@ -16,7 +16,10 @@ import { opensThrough, roomKind, type RoomKind } from './roomAccess';
  */
 
 /** A rectangle of a piece: columns [x0, x1), floor rows r0..r1 (r1 Infinity: to the hull), a spec a side or open. */
-export interface Part { x0: number; x1: number; r0: number; r1: number; spec: [RoomSpec | null, RoomSpec | null]; fill?: boolean; grown?: boolean }
+export interface Part {
+  x0: number; x1: number; r0: number; r1: number; spec: [RoomSpec | null, RoomSpec | null]; fill?: boolean; grown?: boolean;
+  /** Its way in, where the layout fixed it: the dock's corridor, the battery's, or the room in front. */ via?: 'dock' | 'maint' | 'front';
+}
 export interface Piece { x0: number; x1: number; parts: Part[]; cabins?: boolean }
 /** A side's stretch between corridors and the drive: columns [a, b), its free runs (end exclusive) and its pieces. */
 export interface Block { a: number; b: number; crossL: boolean; crossR: boolean; free: [number, number][]; pieces: Piece[] }
@@ -51,22 +54,8 @@ export function placeLayout(plan: ShipPlan, m: Mask, defs: Record<string, Module
   const kinds = (p: Pair | Part['spec']): RoomKind[] => p.map((r) => (r ? roomKind(r) : 'other'));
 
   // The program: the cabin block, then guns and reactors (the hardest to place), then the rest largest first.
-  const { gunPairs, lone, reactors } = gunsAndReactors(plan, defs);
-  const blockBeds = plan.quarters.filter((q) => q.block).reduce((n, q) => n + q.mods.length, 0);
-  // Rooms with an annex pair together (both two tiers deep, or both with the annex beside), the rest as before.
-  const restRooms = [...lone, ...reactors, ...plan.shields, ...(plan.core ? [plan.core] : []), ...plan.quarters.filter((q) => !q.block), ...plan.support, ...plan.cargo, ...plan.hangars];
-  const hosts = restRooms.filter((r) => r.annex), even = hosts.slice(0, hosts.length - (hosts.length % 2));
-  const others = [...mirrorPairs(restRooms.filter((r) => !even.includes(r))), ...Array.from({ length: even.length / 2 }, (_, k): Pair => {
-    const a = even[2 * k] as RoomSpec, b = even[2 * k + 1] as RoomSpec, w = Math.max(a.w, b.w), h = Math.max(a.h, b.h);
-    return [{ ...a, w, h }, { ...b, w, h }];
-  })];
+  const { gunPairs, others, cabinPairs } = programPairs(plan, defs);
   const hard = (p: Pair): boolean => kinds(p).some((k) => k === 'reactor' || k === 'guns');
-  const cabinPairs: Pair[] = [];
-  if (blockBeds > 0) {
-    const north = 2 * Math.ceil(blockBeds / 4), south = blockBeds - north;
-    const spec = (n: number): RoomSpec => ({ role: 'quarters', mods: Array<string>(n).fill('module.bed'), w: 0, h: 0, block: true, cabins: false });
-    cabinPairs.push([spec(north), spec(south)]);
-  }
   // With a battery its gun pairs stand in its blisters, out of the search; any more are placed as usual.
   const searched = fr.maint ? gunPairs.slice(fr.maint.guns.length + fr.maint.inner.length) : gunPairs;
   const order = [...cabinPairs, ...[...others.filter(hard), ...searched].sort((a, b) => areaOf(b) - areaOf(a)), ...others.filter((p) => !hard(p)).sort((a, b) => areaOf(b) - areaOf(a))];
