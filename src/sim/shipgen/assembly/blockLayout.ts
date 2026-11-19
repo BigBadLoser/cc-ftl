@@ -265,7 +265,8 @@ export function layoutBlocks(plan: ShipPlan, m: Mask, type: NavyType, vary: read
     segs: [...runs(xBand, xS).flatMap(([a, b]) => { const out: [number, number][] = []; for (let x = a; x < b;) { if (!tiered(x)) { x++; continue; } let e = x; while (e < b && tiered(e)) e++; if (e - x >= MIN_DEPTH) out.push([x, e]); x = e; } return out; }), ...(sternOuter ? [[xS + 1, W] as [number, number]] : [])],
     lo: (x) => (x > xS ? used + 2 : di + 2), hi: (x) => depth(x),
   };
-  // Outer slots go to the guns where a type spreads them (the side hull, the wings first; a forward battery stays in the
+  // Outer slots go to the guns where a type spreads them (reactors stay on the spine: their row of reactors wants the
+  // corridor side's full length, guns and plant the hull) (the side hull, the wings first; a forward battery stays in the
   // bow's rooms, which reach the hull), then the smallest rooms, as far as the outer floor goes.
   const outerGuns = NAVY_TYPES[type].guns === 'spread' ? gunPairs : [];
   let outerArea = 0;
@@ -284,7 +285,7 @@ export function layoutBlocks(plan: ShipPlan, m: Mask, type: NavyType, vary: read
     return !!f && opensThrough(roomKind(p[0]), roomKind(f[0])) && opensThrough(roomKind(p[1]), roomKind(f[1]));
   };
   let outerPairs: Pair[] = [];
-  for (const p of [...outerGuns, ...byArea]) if (!byKind(p, (k) => !onHall(k) || !canBack(k)) && !p[0].block && !p[1].block && outerPairs.reduce((t, q) => t + areaOf(q), 0) + areaOf(p) <= outerArea * 0.9) outerPairs.push(p);
+  for (const p of [...outerGuns, ...byArea]) if (!byKind(p, (k) => !onHall(k) || !canBack(k) || k === 'reactor') && !p[0].block && !p[1].block && outerPairs.reduce((t, q) => t + areaOf(q), 0) + areaOf(p) <= outerArea * 0.9) outerPairs.push(p);
   let outerCut: Piece[] = [], innerCut: Piece[] | null = null, fillsLeft: Filler[] = [];
   const inner: Band = { segs: runs(xBand, xS), lo: () => 1, hi: (x) => (outerOf(x) ? di : depth(x)) };
   // Two-tier columns: under an outer room, and the plating column between two of them.
