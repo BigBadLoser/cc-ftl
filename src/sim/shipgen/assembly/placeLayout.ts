@@ -64,8 +64,8 @@ export function placeLayout(plan: ShipPlan, m: Mask, defs: Record<string, Module
     const spec = (n: number): RoomSpec => ({ role: 'quarters', mods: Array<string>(n).fill('module.bed'), w: 0, h: 0, block: true, cabins: false });
     cabinPairs.push([spec(north), spec(south)]);
   }
-  // With a battery the gun pairs stand in its blisters, out of the search.
-  const searched = fr.maint ? [] : gunPairs;
+  // With a battery its gun pairs stand in its blisters, out of the search; any more are placed as usual.
+  const searched = fr.maint ? gunPairs.slice(fr.maint.guns.length) : gunPairs;
   const order = [...cabinPairs, ...[...others.filter(hard), ...searched].sort((a, b) => areaOf(b) - areaOf(a)), ...others.filter((p) => !hard(p)).sort((a, b) => areaOf(b) - areaOf(a))];
 
   const blocks: Block[] = [
