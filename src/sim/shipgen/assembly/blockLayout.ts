@@ -226,6 +226,8 @@ export function layoutBlocks(plan: ShipPlan, m: Mask, type: NavyType, vary: read
     for (let tx = x0; tx < x1; tx++) for (let ty = -H; ty <= H; ty++) if (inside(tx, ty) && yIn(ty)) g.set(ox + tx, ty, id);
   };
   const hall = g.hall('hall');
+  // The airlock bays (halls with their fixture) at the first flat cross corridor; the other cross corridors are spine.
+  const docks: [number, number] = [g.hall('dock', undefined, dockSpec()), g.hall('dock', undefined, dockSpec())];
   paint(g.room(bridge.role, { spec: bridge }), 0, xBr, () => true);
   const innerIds = new Map<number, [number, number]>();
   for (const { pair: [r, sr], x0, x1 } of innerCut) {
@@ -251,16 +253,16 @@ export function layoutBlocks(plan: ShipPlan, m: Mask, type: NavyType, vary: read
   for (const { pair: [r, sr], x0, x1 } of outerCut ?? []) {
     const front = x0 > xS ? engines : (innerIds.get(Math.floor((x0 + x1) / 2)) ?? engines);
     const lo = (x: number): number => BAND + outer.lo(x);
-    paint(g.room(r.role, { spec: r, access: [hall, front[0]], doorFirst: x0 > xS }), x0, x1, (y) => y <= -lo(x0));
-    paint(g.room(sr.role, { spec: sr, access: [hall, front[1]], doorFirst: x0 > xS }), x0, x1, (y) => y >= lo(x0));
+    paint(g.room(r.role, { spec: r, access: [hall, docks[0], front[0]], doorFirst: x0 > xS }), x0, x1, (y) => y <= -lo(x0));
+    paint(g.room(sr.role, { spec: sr, access: [hall, docks[1], front[1]], doorFirst: x0 > xS }), x0, x1, (y) => y >= lo(x0));
   }
   for (let tx = 0; tx < W; tx++) for (let ty = -H; ty <= H; ty++) if (inside(tx, ty) && g.at(ox + tx, ty) === SPACE) g.set(ox + tx, ty, SOLID);
   for (let tx = xBr; tx < W; tx++) for (let ty = -1; ty <= 1; ty++) if (inside(tx, ty)) g.set(ox + tx, ty, hall);
   // Cross corridors out to the hull; the airlocks at the first flat one.
   for (const c of cross) {
     if (c === dockAt) {
-      paint(g.hall('dock', undefined, dockSpec()), c, c + CW, (y) => y <= -BAND);
-      paint(g.hall('dock', undefined, dockSpec()), c, c + CW, (y) => y >= BAND);
+      paint(docks[0], c, c + CW, (y) => y <= -BAND);
+      paint(docks[1], c, c + CW, (y) => y >= BAND);
     } else paint(hall, c, c + CW, () => true);
   }
   return { g };
