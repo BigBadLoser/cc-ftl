@@ -282,6 +282,10 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
         return T.P(ax, plane, u, zsurf(dd), dd) + nrm * rise
     g, rise, clip = T.LINE / 2, T.PAINT, lambda q: T._clip(T._clip(q, lo), hi)   # noqa: E731
     d0, d1 = max(0.02, T.style().shelf), run_ if ft else run_ - 0.045   # (from the shelf's edge to the toe's)
+    _SK[:] = _slope_grid(zsurf, zs, ft, run_)
+    sd, pdd, su, lw = _SK
+    if not NUDGE:                               # (square on: the slope's edges on whole screen px)
+        g, d0 = lw / 2, sd(d0)
     off = T.seam()
     segs = []
     for s0, s1 in T.spans(a, b):
@@ -300,7 +304,8 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
             poly = clip([(q[0], q[2]), (q[1], q[2]), (q[1], q[3]), (q[0], q[3])])
             if len(poly) >= 3:
                 T.plate(k, poly, pt, nrm, 0.0, rise, fam, 3)      # (the slope a shade lighter)
-        poly = clip([(e0 + g, d0), (e1 - g, d0), (e1 - g, d0 + 0.4 / 32), (e0 + g, d0 + 0.4 / 32)])
+        e0, e1 = (e0, e1) if NUDGE else (su(e0), su(e1))
+        poly = clip([(e0 + g, d0), (e1 - g, d0), (e1 - g, d0 + pdd), (e0 + g, d0 + pdd)])
         if len(poly) >= 3:                      # the step's edge lit (the slope's top px, at the shelf)
             T.plate(k, poly, pt, nrm, 0.0, rise + T.PAINT, fam, 5, base=rise)
     for u0, u1, field in segs:
@@ -309,25 +314,43 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
             panel(k, pt, nrm, clip, u0, u1, a, b, off, g, d0, run_, ft, fam, rise)
 
 
+_SK = [None, 0.4 / 32, None, T.LINE]              # the slope's grid, as skirt last set it (_slope_grid)
+
+
+def _slope_grid(zsurf, zs, ft, run_):
+    """For a square-on (diagonal) slope: a d onto whole screen rows (a z's row, as _row's, at its depth), a row's d,
+    a u onto whole screen px, and a px's u. A straight face keeps its art px (NUDGE)."""
+    if NUDGE:
+        return (lambda dd: dd), 0.4 / 32, (lambda u: u), T.LINE
+    f = lambda dd: zsurf(dd) * W.ZART - YD * dd / SQ                        # noqa: E731
+    kk = -(zs - ft) / run_ * W.ZART - YD / SQ
+    sd = lambda dd: dd + (round(f(dd) - SNAPD) + SNAPD - f(dd)) / kk         # noqa: E731
+    su = lambda u: _u(round(_px(u, 0.0)), 0.0)                               # noqa: E731
+    return sd, 1 / abs(kk), su, SQ * T.LINE / USCALE
+
+
 def panel(k, pt, nrm, clip, u0, u1, a, b, off, g, d0, run_, ft, fam, rise):
     """A field's panel on the slope (skirt): a seam line round its light plate and slot, its top 4 px down (under the
     step's lit edge), its bottom 2 px up; either side a seam across to the slope's edges, 3 px over the panel's bottom
     one (a window tile, T.BARE: only that seam, on across: wall3d_iwin_ramp's pockets cut it)."""
     PAINT, LINE = T.PAINT, T.LINE
+    sd, pd_, su, lw = _SK
+    if not NUDGE:
+        LINE = lw
 
     def rect(q):
         return [(q[0], q[2]), (q[1], q[2]), (q[1], q[3]), (q[0], q[3])]
     w = u1 - u0
     im = 0.2 * min(1.0, w / 0.76)
     dn = 0.12 * run_ if ft else 0.0                 # (the panel down to the toe's edge)
-    fu0, fu1, fd0, fd1 = u0 + 0.06, u1 - 0.06, 0.12 * run_ + dn, 0.88 * run_ + dn
-    pd = ed = 0.4 / 32                              # (about an art px down the slope)
-    fd0, fd1 = fd0 + 4 * pd, fd1 - 2 * pd
+    fu0, fu1, fd0, fd1 = su(u0 + 0.06), su(u1 - 0.06), 0.12 * run_ + dn, 0.88 * run_ + dn
+    pd = ed = pd_                                   # (about an art px down the slope; square on, a screen row)
+    fd0, fd1 = sd(fd0 + 4 * pd), sd(fd1 - 2 * pd)
     fd0 = max(fd0, d0 + pd) + pd
     sb = fd1 - ed                                   # (the bottom seam's top)
     hz = fd1 - 4 * pd
-    ea = u0 - off - (run_ if abs(u0 - off - a) < 1e-6 else 0.0) + g
-    eb = u1 + off + (run_ if abs(u1 + off - b) < 1e-6 else 0.0) - g
+    ea = su(u0 - off - (run_ if abs(u0 - off - a) < 1e-6 else 0.0)) + g
+    eb = su(u1 + off + (run_ if abs(u1 + off - b) < 1e-6 else 0.0)) - g
     for q in ((ea, eb, hz, hz + ed),) if T.BARE else ((ea, fu0, hz, hz + ed), (fu1, eb, hz, hz + ed)):
         poly = clip(rect(q))
         if len(poly) >= 3:
@@ -337,14 +360,14 @@ def panel(k, pt, nrm, clip, u0, u1, a, b, off, g, d0, run_, ft, fam, rise):
     for q in ((fu0, fu1, fd0, fd0 + ed), (fu0, fu1, fd1 - ed, fd1), (fu0, fu0 + LINE, fd0, fd1),
               (fu1 - LINE, fu1, fd0, fd1)):
         T.plate(k, rect(q), pt, nrm, 0.0, rise + PAINT, fam, 1, base=rise)
-    iu0, iu1 = u0 + im + LINE, u1 - im - LINE       # the light plate (a px in at its top and sides, a px down)
-    id0, id1 = 0.3 * run_ + dn + 2 * pd, 0.52 * run_ + dn + pd
+    iu0, iu1 = su(u0 + im) + LINE, su(u1 - im) - LINE   # the light plate (a px in at its top and sides, a px down)
+    id0, id1 = sd(0.3 * run_ + dn + 2 * pd), sd(0.52 * run_ + dn + pd)
     if T.VARIANT[1]:                                # (a straight run's ramp design: its own drawing in the frame)
         from . import wall3d_variants as V
         V.ramp_plain(lambda q, lvl, n: T.plate(k, q, pt, nrm, 0.0, rise + n * PAINT, fam, lvl, base=rise),
                      fu0 + LINE, fu1 - LINE, fd0 + 0.03, iu0, iu1, id1, sb, pd, T.VARIANT[1])
         return
     T.plate(k, rect((iu0, iu1, id0, id1)), pt, nrm, 0.0, rise + 2 * PAINT, fam, 4, base=rise)
-    su0, su1 = u0 + im + 0.02, u1 - im - 0.02      # the dark slot (a px down, clear of the bottom seam)
-    sd0, sd1 = 0.66 * run_ + dn + pd, min(0.74 * run_ + dn + pd, sb - 1e-3)
+    su0, su1 = su(u0 + im + 0.02), su(u1 - im - 0.02)   # the dark slot (a px down, clear of the bottom seam)
+    sd0, sd1 = sd(0.66 * run_ + dn + pd), min(sd(0.74 * run_ + dn + pd), sb - 1e-3)
     T.plate(k, rect((su0, su1, sd0, sd1)), pt, nrm, 0.0, rise + 2 * PAINT, fam, 0, base=rise)
