@@ -17,11 +17,14 @@ import { fillerSpec, type Filler } from './roomSize';
  */
 
 type Tier = 'full' | 'front' | 'back';
-interface Spot { i: number; j: number; tier: Tier; area: number; via?: Part['via'] }
+/** `split`: a host and its annex's front tier's last row, where they moved the wall between them off the bays' line. */
+interface Spot { i: number; j: number; tier: Tier; area: number; via?: Part['via']; split?: number }
 interface Put { pair: Pair; spot: Spot; annex?: Spot; fill?: boolean; cabins?: boolean }
 
 /** Floor a room may take past its plan before a leftover bay goes to a filler instead. */
-const GROW = 1.6;
+const GROW = 1.8;
+/** Floor a room aims for over its plan: room to move and fit out. */
+const TARGET = 1.35;
 
 export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleDef>, budget = 3000): Placed & { puts: number } {
   const bays = bayLayout(fr), n = bays.length;
@@ -29,14 +32,15 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
   const inBattery = fr.maint ? gunPairs.length : 0;
   const order = [...cabinPairs, ...gunPairs.slice(inBattery), ...others.sort((a, b) => areaOf(b) - areaOf(a))];
   const bay = (k: number): Bay => bays[k] as Bay;
-  const rowsAt = (b: Bay, x: number, tier: Tier): number => {
+  const rowsAt = (b: Bay, x: number, tier: Tier, split?: number): number => {
     const d = fr.depth(x), [f, k] = b.tiers;
     if (tier === 'full' || !k) return Math.max(0, d);
-    return tier === 'front' ? (f as [number, number])[1] : Math.max(0, d - k[0] + 1);
+    const r = split ?? (f as [number, number])[1];
+    return tier === 'front' ? Math.min(r, d) : Math.max(0, d - r - 1);
   };
-  const area = (i: number, j: number, tier: Tier): number => {
+  const area = (i: number, j: number, tier: Tier, split?: number): number => {
     let a = 0;
-    for (let k = i; k < j; k++) { const b = bay(k); for (let x = b.x0; x < b.x1; x++) a += rowsAt(b, x, tier); }
+    for (let k = i; k < j; k++) { const b = bay(k); for (let x = b.x0; x < b.x1; x++) a += rowsAt(b, x, tier, split); }
     return a;
   };
   // Neighbouring bays: no corridor between (the dock's, or a doubled gun's column).
@@ -93,19 +97,28 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
         }
         const a = area(i, j, tier), rw = rows(i, j, tier), ln = len(i, j);
         if (annex) {
-          // The host in front, its annex behind it over the same bays (both through the host).
+          // The host in front, its annex behind it over the same bays (through the host), the wall between them moved
+          // up to two rows off the bays' line: the annex as small as it may be, the host taking the rest.
           if (tier !== 'front' || !free(o, i, j, 'back')) continue;
-          const b = area(i, j, 'back');
-          if (a < 0.85 * (p[0].w * p[0].h) || b < 0.85 * annex.w * annex.h || a + b > 1.8 * want) continue;
-          out.push({ spot: { i, j, tier, area: a }, annex: { i, j, tier: 'back', area: b, via: 'front' }, cost: Math.abs((a + b) / want - 1) });
+          const line = (bay(i).tiers[0] as [number, number])[1], hostWant = p[0].w * p[0].h, annexWant = annex.w * annex.h;
+          let bestSplit: { split: number; a: number; b: number; cost: number } | null = null;
+          for (let split = line - 2; split <= line + 2; split++) {
+            const a2 = area(i, j, 'front', split), b2 = area(i, j, 'back', split), back = Math.min(...Array.from({ length: j - i }, (_, k) => minDepth(bay(i + k)))) - split - 1;
+            if (split < 3 || back < 3 || a2 < hostWant || b2 < 0.85 * annexWant || !p.every((h) => fits(h, len(i, j), split))) continue;
+            const cost = Math.abs(a2 / hostWant - TARGET) + 0.5 * Math.abs(b2 / annexWant - 1);
+            if (!bestSplit || cost < bestSplit.cost) bestSplit = { split, a: a2, b: b2, cost };
+          }
+          if (!bestSplit) continue;
+          const { split } = bestSplit;
+          out.push({ spot: { i, j, tier, area: bestSplit.a, split }, annex: { i, j, tier: 'back', area: bestSplit.b, via: 'front', split }, cost: bestSplit.cost });
           continue;
         }
         // (A bay tier is coarse: a small room may take up to about two and a half times its plan, at a cost.)
-        if (a < 0.85 * want || a > Math.max(cap * 1.3, want * 2.5) || !p.every((h) => fits(h, ln, rw))) continue;
+        if (a < want || a > Math.max(cap * 1.3, want * 2.5) || !p.every((h) => fits(h, ln, rw))) continue;
         let via: Part['via'] | undefined;
         if (tier === 'back') { const v = backVia(o, i, j, p); if (!v) continue; via = v; } else if (!hallOk) continue;
         // Small rooms prefer a tier; a room past its cap costs more.
-        out.push({ spot: { i, j, tier, area: a, ...(via ? { via } : {}) }, cost: Math.abs(a / want - 1) + (a > cap ? 1 : 0) + (tier === 'full' && want < 30 ? 0.3 : 0) });
+        out.push({ spot: { i, j, tier, area: a, ...(via ? { via } : {}) }, cost: Math.abs(a / want - TARGET) + (a > cap * 1.3 ? 1 : 0) + (tier === 'full' && want < 30 ? 0.3 : 0) });
       }
     }
     return out.sort((u, v) => u.cost - v.cost);
@@ -142,7 +155,7 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
   /** Bays left over: the room beside at that tier grows over them while near its size, else a filler. */
   function finish(o0: Occ, puts0: Put[]): { o: Occ; puts: Put[]; score: number } | null {
     let o = o0.map((s) => ({ ...s }));
-    const puts = puts0.map((p) => ({ ...p, spot: { ...p.spot } }));
+    const puts = [...puts0];
     const swap = (from: Put, to: Put): void => { o = o.map((s) => ({ front: s.front === from ? to : s.front, back: s.back === from ? to : s.back })); };
     let score = 0, nFill = 0;
     const left: Filler[] = ['workshop', 'lounge', 'gym', 'farm'];
@@ -160,15 +173,26 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
       }
       const a = area(k, k + 1, tier);
       if (a < 9) { score += 5; continue; }
-      const kind = left.length > 0 && a >= 12 ? (left.shift() as Filler) : 'hold';
-      const f = fillerSpec(kind, a);
-      fillers.add(f);
-      let via: Part['via'] | undefined;
-      if (tier === 'back') {
-        const v = backVia(o, k, k + 1, [f, f]);
-        if (!v) { note(`back pocket x${bay(k).x0}`); return null; }
-        via = v;
+      // The next filler kind left; behind a room, the first kind that may open through it.
+      const kinds: Filler[] = [...(a >= 12 ? left : []), 'hold'];
+      let f: RoomSpec | null = null, via: Part['via'] | undefined;
+      for (const kd of kinds) {
+        const c = fillerSpec(kd, a), v = tier === 'back' ? backVia(o, k, k + 1, [c, c]) : undefined;
+        if (tier === 'back' && !v) continue;
+        f = c; via = v ?? undefined;
+        if (left.includes(kd)) left.splice(left.indexOf(kd), 1);
+        break;
       }
+      if (!f) {
+        // No filler may open through the room in front: that room takes the bay's full depth, if it is that bay's alone.
+        const fr0 = o[k]?.front;
+        if (!fr0 || fr0.fill || fr0.cabins || fr0.annex || fr0.spot.i !== k || fr0.spot.j !== k + 1 || fr0.spot.tier !== 'front') { note(`back pocket x${bay(k).x0}`); return null; }
+        const nw: Put = { ...fr0, spot: { i: k, j: k + 1, tier: 'full', area: area(k, k + 1, 'full') } };
+        puts[puts.indexOf(fr0)] = nw; swap(fr0, nw); o = take(o, nw.spot, nw);
+        score += 2 * Math.max(0, nw.spot.area / areaOf(nw.pair) - 1);
+        continue;
+      }
+      fillers.add(f);
       const put: Put = { pair: [f, f], spot: { i: k, j: k + 1, tier, area: a, ...(via ? { via } : {}) }, fill: true };
       puts.push(put); o = take(o, put.spot, put);
       nFill++; score += 1 + (nFill > 2 ? 4 : 0);
@@ -185,7 +209,8 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
   function toPieces(puts: Put[]): Piece[] {
     const part = (sp: Spot, spec: Part['spec'], fill?: boolean): Part => {
       const [f, k] = bay(sp.i).tiers;
-      const [r0, r1] = sp.tier === 'full' || !k ? [1, Infinity] : sp.tier === 'front' ? (f as [number, number]) : k;
+      const line = sp.split ?? (f as [number, number])[1];
+      const [r0, r1] = sp.tier === 'full' || !k ? [1, Infinity] : sp.tier === 'front' ? [1, line] : [line + 2, Infinity];
       return { x0: bay(sp.i).x0, x1: bay(sp.j - 1).x1, r0, r1, spec, ...(fill ? { fill } : {}), ...(sp.via ? { via: sp.via } : {}) };
     };
     // Front and full-depth rooms first: a back room's way in may be the room in front.

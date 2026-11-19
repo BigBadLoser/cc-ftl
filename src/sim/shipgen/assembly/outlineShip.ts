@@ -40,13 +40,13 @@ function scaled(sil: Silhouette, sx: number, sy: number): Mask {
   const sites: [number, number][] = [];
   let E = 0, mid = W0, air = -1, a0 = 0, b0 = 0;
   if (k > 0 && run) {
-    const A = Math.ceil(run[0] * sx) + 1, B = Math.floor(run[1] * sx) - 1, need = k * GW + AIR + (k + 2) * GAP;
+    const A = Math.ceil(run[0] * sx) + 1, B = Math.floor(run[1] * sx) - 1, need = k * GW + AIR + 2 + (k + 2) * GAP;
     E = Math.max(0, need - (B - A));
     mid = Math.floor((A + B) / 2);
     a0 = A + Math.floor((B + E - A - need) / 2);
     let x = a0 + GAP;
     for (let i = 0; i <= k; i++) {
-      if (i === Math.ceil(k / 2)) { air = x; x += AIR + GAP; }
+      if (i === Math.ceil(k / 2)) { air = x + 1; x += AIR + 2 + GAP; }
       if (i < k) { sites.push([x, x + GW]); x += GW + GAP; }
     }
     b0 = x;
@@ -56,7 +56,7 @@ function scaled(sil: Silhouette, sx: number, sy: number): Mask {
   const topOf = (x: number): number => { let y = 0; while (hull(x, y + 1)) y++; return y; };
   // Proud enough that a gun room's floor rows end where the two-row corridor's do (its inner wall the corridor's).
   const P = Math.max(1, (bat?.h ?? 3) - 2);
-  const proud = (x: number, y: number): boolean => (sites.some(([s0, s1]) => x >= s0 && x < s1) || (air >= 0 && x >= air && x < air + AIR)) && Math.abs(y) > topOf(x) && Math.abs(y) <= topOf(x) + P;
+  const proud = (x: number, y: number): boolean => (sites.some(([s0, s1]) => x >= s0 && x < s1) || (air >= 0 && x >= air - 1 && x <= air + AIR)) && Math.abs(y) > topOf(x) && Math.abs(y) <= topOf(x) + P;
   const inside = (x: number, y: number): boolean => hull(x, y) || proud(x, y);
   const battery = sites.length > 0 ? { battery: { a: a0, b: b0, guns: sites, rows: bat?.h ?? 3, air, inner: guns > k ? [k - 1] : [] } } : {};
   return { W: W0 + E, H: H0 + (sites.length > 0 ? P : 0), inside, ...battery };
