@@ -25,6 +25,8 @@ const MIN_DEPTH = 3;
 const CABIN = 4;
 /** Floor a cabin takes: barracks with this much floor a bunk become cabins. */
 const CABIN_AREA = 14;
+/** A side room at most this many times as deep as it is long (a deep band widens its rooms rather than cut strips). */
+const ASPECT = 3;
 /** Side rooms bow to stern: guns forward, then defences, stores and works, the crew's rooms aft (where a flared stern is deepest). */
 const ZONE = ['weapons', 'bridge', 'shields', 'core', 'dock', 'reactor', 'plant', 'cargo', 'hangar', 'support', 'quarters'];
 
@@ -77,19 +79,37 @@ function layout(plan: ShipPlan, sil: Silhouette, sx: number, sy: number, type: N
   // stacked in one room off the corridor's end. Reactors stand in the side bands, last of their rooms.
   // A stern deep enough for more stacks them (a flared stern is full of engines rather than empty engine room).
   const one = engineSpec(1, 'w', plan.kit);
-  const xS = xEnd - one.w - 1; // the wall column ahead of the engine rooms
-  let sternDepth = Infinity;
-  for (let tx = xS + 1; tx <= xEnd; tx++) sternDepth = Math.min(sternDepth, depth(tx));
-  const perSide = Math.max(Math.ceil(plan.engines / 2), Math.min(3, Math.floor(sternDepth / one.h)));
+  // Each row's aft hull tile: the engine rows' own (the axis may run further aft, a tail).
+  const rowEnd = (y: number): number => { let x = W - 1; while (x > 0 && !inside(x, y)) x--; return x; };
+  // The wall column ahead of the engine rooms: an engine's length (its last row is the hull) and a walk column ahead.
+  const xS = Math.min(xEnd, rowEnd(-(BAND + 1))) - one.w - 1;
+  let sternDepth = Infinity, sternMax = 0;
+  for (let tx = xS + 1; tx <= xEnd; tx++) { sternDepth = Math.min(sternDepth, depth(tx)); sternMax = Math.max(sternMax, depth(tx)); }
+  // An engine stands with its exhaust on the hull: out from the corridor, each run of rows sharing an aft wall takes the
+  // engines it is wide enough for, against that wall (a quarters stern's outer rows reach further aft, a wall of their own).
+  const need = Math.ceil(plan.engines / 2);
+  let perSide = 0, used = 0;
+  for (let r = 0; r < sternMax && perSide < Math.max(need, 3);) {
+    let run = 1;
+    while (r + run < sternMax && rowEnd(-(BAND + 1 + r + run)) === rowEnd(-(BAND + 1 + r))) run++;
+    // A row beside one reaching further aft has wall, not space, behind its hull tile: no engine there.
+    const end = rowEnd(-(BAND + 1 + r)), longer = (y: number): number => (rowEnd(y) > end ? 1 : 0);
+    const k = Math.min(Math.floor((run - (r > 0 ? longer(-(BAND + r)) : 0) - longer(-(BAND + 1 + r + run))) / one.h), Math.max(need, 3) - perSide);
+    if (k > 0) { perSide += k; used = r + run; }
+    r += run;
+  }
+  if (perSide < need || perSide === 0) return null;
   const engine = engineSpec(perSide, 'w', plan.kit);
-  if (sternDepth < engine.h) return null;
+  // The engine room holds its engines' rows, its door at the bow end of the corridor wall onto the walk column ahead of
+  // them; the stern past them, deep enough for a room, is a store off it.
+  const store = sternMax - used - 1 >= MIN_DEPTH ? BAND + used + 1 : Infinity;
   const reactors: RoomSpec[] = Array.from({ length: plan.reactors }, () => reactorSpec(1, plan.kit));
 
   // The bow: the bridge at the nose tip, sized to its plan; the corridor and side rooms start behind it (where the hull
   // is still narrow, the corridor's wall is the hull: `thinHull` shaves a second layer).
   const bridge = plan.command;
   let xBr = 0, area = 0;
-  while (xBr < xS && (area < 1.3 * bridge.w * bridge.h || top(xBr) < 2)) { area += Math.max(0, 2 * top(xBr) - 1); xBr++; }
+  while (xBr < xS && (area < 1.3 * bridge.w * bridge.h || top(xBr) < 2 || xBr <= MIN_DEPTH + 1)) { area += Math.max(0, 2 * top(xBr) - 1); xBr++; }
   let xBand = xBr + 1;
   while (xBand < xS && depth(xBand) < 1) xBand++;
   if (xBand >= xS - 6) return null;
@@ -150,9 +170,11 @@ function layout(plan: ShipPlan, sil: Silhouette, sx: number, sy: number, type: N
       // A reactor lies along its back wall (the hull), so its room is at least its length long; others at least their short side.
       const len = dock ? r.w : r.role === 'reactor' ? r.w : Math.min(r.w, r.h);
       // Each room's share varies by seed (vary), so rooms of a kind are not all one size.
-      const want = r.w * r.h * share * (r.role === 'quarters' ? 2 : 1) * (vary[pairs.indexOf(pair) % vary.length] ?? 1);
+      // A plant room takes its planned size (the smallest allotment): its life support needs no more.
+      const plant = r.role === 'plant' || pair[1].role === 'plant';
+      const want = r.w * r.h * (plant ? 1 : share) * (r.role === 'quarters' ? 2 : 1) * (vary[pairs.indexOf(pair) % vary.length] ?? 1);
       if (dock) { if (!flat(x, r.w)) return null; x += r.w; a = r.w * r.h; }
-      else while (x < xS && (a < want || x - x0 < len)) { a += bandArea(x); x++; }
+      else for (let deep = 0; x < xS && (a < want || x - x0 < len || (x - x0) * ASPECT < deep); x++) { a += bandArea(x); deep = Math.max(deep, bandArea(x)); }
       if (a < r.w * r.h || x - x0 < len || x > xS) return null;
       order.push(pair);
       cuts.push([x0, x]);
@@ -196,8 +218,11 @@ function layout(plan: ShipPlan, sil: Silhouette, sx: number, sy: number, type: N
     }
   });
   for (let tx = 0; tx < W; tx++) for (let ty = -H; ty <= H; ty++) if (inside(tx, ty) && g.at(ox + tx, ty) === SPACE) g.set(ox + tx, ty, SOLID);
-  paint(g.room('engine', { spec: engine }), xS + 1, W, (y) => y <= -BAND);
-  paint(g.room('engine', { spec: engine }), xS + 1, W, (y) => y >= BAND);
+  for (const sg of [-1, 1]) {
+    const eng = g.room('engine', { spec: engine, doorFirst: true });
+    paint(eng, xS + 1, W, (y) => sg * y >= BAND && sg * y < store);
+    if (store < Infinity) paint(g.room('cargo', { spec: cargoSpec(2), access: [eng], doorFirst: true }), xS + 1, W, (y) => sg * y > store);
+  }
   const hall = g.hall('hall');
   for (let tx = xBr; tx < W; tx++) for (let ty = -1; ty <= 1; ty++) if (inside(tx, ty)) g.set(ox + tx, ty, hall);
   if (lastDock) { const x0 = (cuts[cuts.length - 1] as [number, number])[1]; paint(hall, x0, xS + 1, (y) => Math.abs(y) < top(0) + H); }
@@ -255,7 +280,7 @@ export function assembleOutline(
   return fitShell(
     rng, f, factionId, seed, role, 'sections', { crew: plan.crew } as Pick<ShipPlan, 'crew'>,
     { rows, roomOf: snap.roomOf, width: snap.width, height: snap.height, roles: g.regions.map((r) => r.role), specs: g.regions.map((r) => r.spec) },
-    `outline ${type}`, defs, n, { bareHalls: type === 'corvette' },
+    `outline ${type}`, defs, n, { bareHalls: type !== 'cruiser' && type !== 'carrier' },
   );
 }
 

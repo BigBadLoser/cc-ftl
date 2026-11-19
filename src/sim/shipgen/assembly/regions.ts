@@ -27,6 +27,8 @@ export interface Region {
   /** Regions this room may open a door onto (default: any hall). */
   access?: number[];
   doors: number;
+  /** One door at the first tile of its frontage (bow end, then top) rather than the middle: a room whose fixtures fill the rest. */
+  doorFirst?: boolean;
   /** Wall rank among rooms: the lower gives way. Defaults to creation order. */
   rank: number;
   /** The department this region belongs to (flow planner), for sheets and the plan class. */
@@ -125,9 +127,9 @@ export class RegionGrid {
     return false;
   }
 
-  room(role: RoomRole, o: { spec?: RoomSpec; access?: number[]; doors?: number; rank?: number; dept?: string } = {}): number {
+  room(role: RoomRole, o: { spec?: RoomSpec; access?: number[]; doors?: number; rank?: number; dept?: string; doorFirst?: boolean } = {}): number {
     const id = this.regions.length;
-    this.regions.push({ role, hall: false, doors: o.doors ?? 1, rank: o.rank ?? id, ...(o.spec ? { spec: o.spec } : {}), ...(o.access ? { access: o.access } : {}), ...(o.dept ?? o.spec?.dept ? { dept: o.dept ?? o.spec?.dept } : {}) });
+    this.regions.push({ role, hall: false, doors: o.doors ?? 1, rank: o.rank ?? id, ...(o.spec ? { spec: o.spec } : {}), ...(o.access ? { access: o.access } : {}), ...(o.doorFirst ? { doorFirst: true } : {}), ...(o.dept ?? o.spec?.dept ? { dept: o.dept ?? o.spec?.dept } : {}) });
     return id;
   }
 
@@ -433,7 +435,7 @@ export class RegionGrid {
     }
     for (let k = 0; k < Math.min(rg.doors, cands.length); k++) {
       // The middle of the frontage for one door; evenly spread for more.
-      const [x, y] = cands[Math.floor(((k + 0.5) * cands.length) / Math.min(rg.doors, cands.length))] as [number, number];
+      const [x, y] = (rg.doorFirst ? cands.reduce((a, b) => (b[0] < a[0] || (b[0] === a[0] && b[1] < a[1]) ? b : a)) : cands[Math.floor(((k + 0.5) * cands.length) / Math.min(rg.doors, cands.length))]) as [number, number];
       cell[(y + half) * size + x + half] = 'D';
     }
   }

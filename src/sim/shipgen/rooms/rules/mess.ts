@@ -72,6 +72,7 @@ function aside(c: Ctx, id: string, pieces: readonly Piece[], clear: ReadonlySet<
  * most clear, if that is `least` at least. Empty when none does.
  */
 export function tablesClear(c: Ctx, most: number, least: number, lay: (m: number) => Piece[]): Piece[] {
+  if (most < 1) return [];
   const clear = doorways(c);
   const free = (p: Piece): boolean => { const d = c.defs[p.def]; return (d ? footprintTiles(d, p.x, p.y, p.rot) : [p]).every((t) => !clear.has(key(t.x, t.y))); };
   const fp = (t: Piece): Set<string> => new Set((c.defs[T] ? footprintTiles(c.defs[T], t.x, t.y, t.rot) : [t]).map((q) => key(q.x, q.y)));
