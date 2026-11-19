@@ -102,7 +102,7 @@ function split(band: Band, pairs: readonly Pair[], vary: readonly number[], spar
       s++; x = band.segs[s]?.[0] ?? 0; first = out.length;
     };
     for (const [i, pair] of pairs.entries()) {
-      const r = pair[0], len = Math.max(minLen(pair[0]), minLen(pair[1])), goal = areaOf(pair) * share * (vary[i % vary.length] ?? 1);
+      const len = Math.max(minLen(pair[0]), minLen(pair[1])), goal = areaOf(pair) * share * (vary[i % vary.length] ?? 1);
       // A room takes columns until its share is met, but no longer than three times its depth once it has its planned
       // floor; one that a run cannot hold moves on to the next run.
       for (;;) {
