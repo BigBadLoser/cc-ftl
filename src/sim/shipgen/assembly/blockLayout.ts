@@ -35,7 +35,7 @@ export interface Mask { W: number; H: number; inside: (x: number, y: number) => 
 type Pair = readonly [RoomSpec, RoomSpec];
 /** A band: runs of columns (end exclusive) and each column's floor rows (room rows, from 1 at the spine's wall). */
 interface Band { segs: [number, number][]; lo: (x: number) => number; hi: (x: number) => number }
-interface Piece { pair: Pair; x0: number; x1: number }
+interface Piece { pair: Pair; x0: number; x1: number; /** An outer room's column in front of its own room (it keeps that door when it widens). */ at?: number }
 
 /**
  * Rooms paired across the axis: the same role where there are two, then unlike rooms of a size together (the shape
@@ -228,7 +228,10 @@ export function layoutBlocks(plan: ShipPlan, m: Mask, type: NavyType, vary: read
   // A room that may stand behind another at all (not a corridor-only one).
   const canBack = (k: RoomKind): boolean => (['guns', 'engine', 'reactor', 'shields', 'core', 'plant', 'cargo', 'barracks', 'pantry', 'trauma', 'hangar', 'farm', 'other'] as RoomKind[]).some((f) => opensThrough(k, f));
   const frontOf = (slot: Piece): Pair | null => (slot.x0 > xS ? [engine, engine] : innerCut?.find((q) => q.x0 <= (slot.x0 + slot.x1) >> 1 && (slot.x0 + slot.x1) >> 1 < q.x1)?.pair ?? null);
+  const annexBehind = (x0: number, x1: number): boolean => !!innerCut?.some((q) => q.x0 < x1 && x0 < q.x1 && (!!q.pair[0].annex || !!q.pair[1].annex));
   const entersFrom = (p: Pair, slot: Piece): boolean => {
+    // A room with an annex keeps the floor behind it for the annex.
+    if (annexBehind(slot.x0, slot.x1)) return false;
     if (crossAt(slot) >= 0) return onHall(roomKind(p[0])) && onHall(roomKind(p[1]));
     const f = frontOf(slot);
     return !!f && opensThrough(roomKind(p[0]), roomKind(f[0])) && opensThrough(roomKind(p[1]), roomKind(f[1]));
@@ -259,7 +262,33 @@ export function layoutBlocks(plan: ShipPlan, m: Mask, type: NavyType, vary: read
       const room = (slot.x1 - slot.x0) * Math.max(1, outer.hi(slot.x0) - outer.lo(slot.x0) + 1);
       const fits = left.filter((p) => entersFrom(p, slot)).sort((a, b) => Math.abs(areaOf(a) - room) - Math.abs(areaOf(b) - room));
       const p = fits[0];
-      if (p) { placed.push({ ...slot, pair: p }); left.splice(left.indexOf(p), 1); }
+      if (p) { placed.push({ ...slot, pair: p, at: (slot.x0 + slot.x1) >> 1 }); left.splice(left.indexOf(p), 1); }
+    }
+    // A slot no room may stand in goes to the outer room beside it (across the plating column), not the room in front.
+    for (let grew = true; grew;) {
+      grew = false;
+      for (const slot of slots) {
+        if (placed.some((q) => q.x0 <= slot.x0 && slot.x1 <= q.x1) || annexBehind(slot.x0, slot.x1)) continue;
+        const q = placed.find((o) => (o.x1 + 1 === slot.x0 || slot.x1 + 1 === o.x0) && (o.x0 > xS) === (slot.x0 > xS));
+        if (q) { q.x0 = Math.min(q.x0, slot.x0); q.x1 = Math.max(q.x1, slot.x1); grew = true; }
+      }
+    }
+    // A front room partly behind an outer room would wrap round it (an L): the outer room beside an uncovered two-tier
+    // stretch of it takes that stretch, so front and back rooms share their edges. A front room with nothing behind it
+    // keeps its full depth.
+    const before = placed.map((q) => [q.x0, q.x1] as const);
+    const covered = (c: number): boolean => before.some(([a0, a1]) => c >= a0 && c < a1);
+    for (const f of innerCut) {
+      let part = false;
+      for (let c = f.x0; c < f.x1 && !f.pair[0].annex && !f.pair[1].annex; c++) if (covered(c)) part = true;
+      for (let x = f.x0; part && x < f.x1;) {
+        if (covered(x) || !tiered(x)) { x++; continue; }
+        let e = x;
+        while (e < f.x1 && !covered(e) && tiered(e)) e++;
+        const q = placed.find((o) => (o.x0 > xS) === (x > xS) && (o.x1 === x || o.x1 + 1 === x || o.x0 === e || o.x0 - 1 === e));
+        if (q) { q.x0 = Math.min(q.x0, x); q.x1 = Math.max(q.x1, e); }
+        x = e;
+      }
     }
     outerCut = placed;
     if (left.length === 0) break;
@@ -322,7 +351,7 @@ export function layoutBlocks(plan: ShipPlan, m: Mask, type: NavyType, vary: read
   // An outer room opens onto a cross corridor it touches, else into the room in front of it (matched above).
   for (const slot of outerCut) {
     const { pair: [r, sr], x0, x1 } = slot;
-    const front = x0 > xS ? engines : (innerIds.get(Math.floor((x0 + x1) / 2)) ?? engines);
+    const front = x0 > xS ? engines : (innerIds.get(slot.at ?? Math.floor((x0 + x1) / 2)) ?? engines);
     const lo = (x: number): number => BAND + outer.lo(x);
     const access = (side: 0 | 1): number[] => (crossAt(slot) < 0 ? [front[side]] : crossAt(slot) === dockAt ? [docks[side]] : [hall]);
     paint(g.room(r.role, { spec: r, access: access(0), doorFirst: x0 > xS }), x0, x1, (y) => y <= -lo(x0));
