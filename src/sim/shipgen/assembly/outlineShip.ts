@@ -143,8 +143,6 @@ function layout(plan: ShipPlan, sil: Silhouette, sx: number, sy: number, type: N
   for (let bx = xBand; bx < xS; bx++) avail += bandArea(bx);
   const want = north.reduce((t, r) => t + r.w * r.h, 0);
   const full = Math.max(1, avail / Math.max(1, want) - 0.15);
-  // Docks wait for a straight stretch of hull (an airlock needs a flat outer wall): each is cut at the first straight
-  // run reached, the other rooms in their zone order round it.
   const pairs = north.map((r, i) => [r, south[i] as RoomSpec] as const);
   const flat = (x0: number, w: number): boolean => { for (let k = -1; k <= w; k++) if (top(x0 + k) !== top(x0) || depth(x0 + k) < MIN_DEPTH) return false; return true; };
   // Where the hull stands out ahead of amidships (a wing): the gun rooms wait for it, so the guns stand in the wing.
@@ -154,14 +152,28 @@ function layout(plan: ShipPlan, sil: Silhouette, sx: number, sy: number, type: N
   if ((sorted[Math.floor(sorted.length / 4)] ?? 0) < MIN_DEPTH) return null;
   let xWing = -1;
   for (let bx = xBand; bx < xBand + (xS - xBand) * 0.6 && xWing < 0; bx++) if (depth(bx) > bodyDepth + 1) xWing = bx;
-  const slice = (share: number): { order: (readonly [RoomSpec, RoomSpec])[]; cuts: [number, number][] } | null => {
-    const docks = pairs.filter(([r]) => r.role === 'dock');
-    const queue = pairs.filter(([r]) => r.role !== 'dock');
+  // The docks stand at the hull's widest flat stretch (an airlock needs a flat outer wall): a cross corridor out to them.
+  const dw = dockSpec().w;
+  let xDock = -1;
+  // Within the forward three quarters of the band: behind the docks stand rooms, not an empty bay to the drive.
+  for (let bx = xBand + MIN_DEPTH + 1; bx + dw < xS && bx < xBand + 0.75 * (xS - xBand); bx++) if (flat(bx, dw) && (xDock < 0 || depth(bx) > depth(xDock))) xDock = bx;
+  if (xDock < 0) return null;
+  // Rooms beside the cross corridor where the hull is deep enough for two: a small room (a plant, a store) tucked into
+  // the outer rows, off the cross corridor, out of the band.
+  const twoDeep = (d: number): boolean => d >= 2 * MIN_DEPTH + 1;
+  const tuckable = pairs.filter(([r, q]) => r.role === q.role && (r.role === 'plant' || r.role === 'cargo')).sort(([a], [b]) => (a.role === 'plant' ? 0 : 1) - (b.role === 'plant' ? 0 : 1));
+  const slice = (share: number, band: readonly (readonly [RoomSpec, RoomSpec])[]): { order: (readonly [RoomSpec, RoomSpec])[]; cuts: [number, number][] } | null => {
+    const docks = band.filter(([r]) => r.role === 'dock');
+    const queue = band.filter(([r]) => r.role !== 'dock');
     const order: (readonly [RoomSpec, RoomSpec])[] = [];
     const cuts: [number, number][] = [];
     let x = xBand;
     while (queue.length > 0 || docks.length > 0) {
-      const dock = docks.length > 0 && (flat(x, (docks[0] as readonly [RoomSpec, RoomSpec])[0].w) || queue.length === 0);
+      // The dock where it stands: the room ahead stretches to it when the next is too long to stand between.
+      const next = queue[0]?.[0], nextLen = next ? (next.role === 'reactor' ? next.w : Math.min(next.w, next.h)) : 0;
+      const dock = docks.length > 0 && (x + nextLen >= xDock - 1 || queue.length === 0);
+      const prev = cuts[cuts.length - 1];
+      if (dock && prev && x < xDock) { prev[1] = xDock - 1; x = xDock; }
       const wait = !dock && x < xWing - 2 && queue[0]?.[0].role === 'weapons' ? queue.findIndex(([q]) => q.role !== 'weapons') : -1;
       const pair = (dock ? docks.shift() : wait > 0 ? queue.splice(wait, 1)[0] : queue.shift()) as readonly [RoomSpec, RoomSpec];
       const r = pair[0];
@@ -173,8 +185,10 @@ function layout(plan: ShipPlan, sil: Silhouette, sx: number, sy: number, type: N
       // A plant room takes its planned size (the smallest allotment): its life support needs no more.
       const plant = r.role === 'plant' || pair[1].role === 'plant';
       const want = r.w * r.h * (plant ? 1 : share) * (r.role === 'quarters' ? 2 : 1) * (vary[pairs.indexOf(pair) % vary.length] ?? 1);
+      // A room ahead of the docks stops short of them (the plating column between).
+      const stop = docks.length > 0 ? xDock - 1 : xS;
       if (dock) { if (!flat(x, r.w)) return null; x += r.w; a = r.w * r.h; }
-      else for (let deep = 0; x < xS && (a < want || x - x0 < len || (x - x0) * ASPECT < deep); x++) { a += bandArea(x); deep = Math.max(deep, bandArea(x)); }
+      else for (let deep = 0; x < stop && (a < want || x - x0 < len || (x - x0) * ASPECT < deep); x++) { a += bandArea(x); deep = Math.max(deep, bandArea(x)); }
       if (a < r.w * r.h || x - x0 < len || x > xS) return null;
       order.push(pair);
       cuts.push([x0, x]);
@@ -182,16 +196,27 @@ function layout(plan: ShipPlan, sil: Silhouette, sx: number, sy: number, type: N
     }
     return { order, cuts };
   };
-  // The fullest share that fits, down to the plan's own sizes.
-  const cut = slice(full) ?? slice((1 + full) / 2) ?? slice(1);
+  // The fullest share that fits, down to the plan's own sizes; with rooms tucked beside the docks where they fit.
+  const sliced = (band: readonly (readonly [RoomSpec, RoomSpec])[]) => slice(full, band) ?? slice((1 + full) / 2, band) ?? slice(1, band);
+  let tucks = tuckable.slice(0, twoDeep(depth(xDock)) ? 2 : 0);
+  let cut = tucks.length > 0 ? sliced(pairs.filter((p) => !tucks.includes(p))) : null;
+  // Each tuck's host: the room ahead of the docks, then the one behind, where it is deep enough over its length.
+  const hosts: number[] = [];
+  if (cut) {
+    const di = cut.order.findIndex(([r]) => r.role === 'dock');
+    const minDepth = (i: number): number => { const c = cut?.cuts[i]; if (!c) return 0; let d = Infinity; for (let tx = c[0]; tx < c[1]; tx++) d = Math.min(d, depth(tx)); return d; };
+    for (const i of [di - 1, di + 1]) if (i >= 0 && i < cut.order.length && twoDeep(minDepth(i)) && hosts.length < tucks.length) hosts.push(i);
+    if (hosts.length < tucks.length) cut = null;
+  }
+  if (!cut) { tucks = []; hosts.length = 0; cut = sliced(pairs); }
   if (!cut) return null;
   const { order, cuts } = cut;
-  // What the band has left over goes to the crew's quarters (the rooms after them move aft), else to the last room;
+  // What the band has left over goes to the crew's quarters behind the docks (the rooms after them move aft), else to the last room;
   // a dock last leaves its bay as cut and the gap to the drive section is the corridor's (an open alcove).
   const lastDock = order[order.length - 1]?.[0].role === 'dock';
   const slack = xS - ((cuts[cuts.length - 1] as [number, number])[1]);
   const qi = order.findIndex(([r]) => r.role === 'quarters');
-  if (slack > 0 && qi >= 0) {
+  if (slack > 0 && qi > order.findIndex(([r]) => r.role === 'dock')) {
     (cuts[qi] as [number, number])[1] += slack;
     for (let k = qi + 1; k < cuts.length; k++) { (cuts[k] as [number, number])[0] += slack; (cuts[k] as [number, number])[1] += slack; }
   } else if (cuts.length > 0 && !lastDock) (cuts[cuts.length - 1] as [number, number])[1] = xS;
@@ -206,6 +231,17 @@ function layout(plan: ShipPlan, sil: Silhouette, sx: number, sy: number, type: N
     // An airlock bay is open to the corridor: a hall with its fixture, through the corridor's wall row.
     const make = (spec: RoomSpec): number => (spec.role === 'dock' ? g.hall('dock', undefined, spec) : g.room(spec.role, { spec }));
     const from = r.role === 'dock' ? BAND - 1 : 1;
+    // A host of a tucked room keeps the inner rows, a plating row, then the tucked room out to the hull.
+    const t = hosts.indexOf(i), tuck = tucks[t];
+    let inner = Infinity;
+    if (tuck) {
+      let d = Infinity;
+      for (let tx = x0; tx < x1; tx++) d = Math.min(d, depth(tx));
+      const o = Math.min(d - MIN_DEPTH - 1, Math.max(MIN_DEPTH, Math.ceil((tuck[0].w * tuck[0].h) / (x1 - x0))));
+      inner = BAND + d - o - 1;
+      paint(make(tuck[0]), x0, x1, (y) => y < -(inner + 1));
+      paint(make(tuck[1]), x0, x1, (y) => y > inner + 1);
+    }
     // Barracks long enough for it become cabins of a bunk or two, a plating column between, each off the corridor.
     let area = 0;
     for (let tx = x0; tx < x1; tx++) area += Math.max(0, depth(tx));
@@ -213,8 +249,8 @@ function layout(plan: ShipPlan, sil: Silhouette, sx: number, sy: number, type: N
     for (let c = 0; c < k; c++) {
       const c0 = x0 + Math.round(((x1 - x0 + 1) * c) / k), c1 = x0 + Math.round(((x1 - x0 + 1) * (c + 1)) / k) - 1;
       const part = (spec: RoomSpec): RoomSpec => (k === 1 ? spec : { ...spec, mods: spec.mods.filter((_, m) => m % k === c), w: c1 - c0 });
-      paint(make(part(r)), c0, c1, (y) => y < -from);
-      paint(make(part(sr)), c0, c1, (y) => y > from);
+      paint(make(part(r)), c0, c1, (y) => y < -from && y >= -inner);
+      paint(make(part(sr)), c0, c1, (y) => y > from && y <= inner);
     }
   });
   for (let tx = 0; tx < W; tx++) for (let ty = -H; ty <= H; ty++) if (inside(tx, ty) && g.at(ox + tx, ty) === SPACE) g.set(ox + tx, ty, SOLID);
