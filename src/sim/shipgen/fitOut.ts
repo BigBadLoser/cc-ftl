@@ -158,6 +158,8 @@ export function fitOut(
   const pd = (m: Record<string, number>): number => Object.entries(m).filter(([id]) => defs[id]?.pointDefense).reduce((t, [, n]) => t + n, 0);
   if (o.ground && pd(wanted) > 0 && pd(placed) < pd(wanted)) return { ...out, error: 'point defence does not fit' };
   if (reactorsIn(placed) < reactorsIn(wanted)) return { ...out, error: 'reactors do not fit' };
+  // Every planned airlock: a dock without one is a bay to nowhere.
+  if (count(placed, 'module.airlock') < count(wanted, 'module.airlock')) return { ...out, error: 'an airlock does not fit' };
   for (let room = 0; room < roles.length; room++) lightRoom(lay, rng, room);
   let supply = 0;
   let demand = 0;

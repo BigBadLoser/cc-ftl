@@ -27,6 +27,8 @@ const CABIN = 4;
 const CABIN_AREA = 14;
 /** A side room at most this many times as deep as it is long (a deep band widens its rooms rather than cut strips). */
 const ASPECT = 3;
+/** Spare floor rows an engine room may have beside its engines before the scale search looks a little larger. */
+const SNUG = 2;
 /** Side rooms bow to stern: guns forward, then defences, stores and works, the crew's rooms aft (where a flared stern is deepest). */
 const ZONE = ['weapons', 'bridge', 'shields', 'core', 'dock', 'reactor', 'plant', 'cargo', 'hangar', 'support', 'quarters'];
 
@@ -41,7 +43,8 @@ function scaled(sil: Silhouette, sx: number, sy: number): { W: number; H: number
   return { W, H, inside };
 }
 
-interface Layout { g: RegionGrid }
+/** The cut grid, and the floor rows each engine room has beyond its engines (no store took them). */
+interface Layout { g: RegionGrid; waste: number }
 
 /** A mess: a galley and tables down a long narrow room (rules.ts M4), the crew's commons. */
 const MESS: RoomSpec = { role: 'support', dept: 'commons', mods: ['module.galley', 'module.mess_table'], w: 6, h: 3 };
@@ -262,7 +265,7 @@ function layout(plan: ShipPlan, sil: Silhouette, sx: number, sy: number, type: N
   const hall = g.hall('hall');
   for (let tx = xBr; tx < W; tx++) for (let ty = -1; ty <= 1; ty++) if (inside(tx, ty)) g.set(ox + tx, ty, hall);
   if (lastDock) { const x0 = (cuts[cuts.length - 1] as [number, number])[1]; paint(hall, x0, xS + 1, (y) => Math.abs(y) < top(0) + H); }
-  return { g };
+  return { g, waste: (store < Infinity ? used : sternMax) - perSide * one.h };
 }
 
 /**
@@ -306,7 +309,15 @@ export function assembleOutline(
   const vary = Array.from({ length: 24 }, () => rng.int(80, 135) / 100);
   let lay: Layout | null = null;
   // The smallest beam the rooms fit, at a length from three quarters of it up: near the silhouette's proportions.
-  for (let sy = 1.2; sy <= 3.6 && !lay; sy += 0.1) for (let sx = Math.max(1, 0.75 * sy); sx <= 1.15 * sy && !lay; sx += 0.1) lay = layout(plan, sil, sx, sy, type, vary, defs);
+  let sy0 = 0;
+  for (let sy = 1.2; sy <= 3.6 && !lay; sy += 0.1) for (let sx = Math.max(1, 0.75 * sy); sx <= 1.15 * sy && !lay; sx += 0.1) { lay = layout(plan, sil, sx, sy, type, vary, defs); sy0 = sy; }
+  // A little larger where that gives engine rooms snug about their engines (the stern's rows fall to whole engines).
+  for (let sy = sy0; lay && lay.waste > SNUG && sy <= sy0 + 0.5; sy += 0.1) {
+    for (let sx = Math.max(1, 0.75 * sy); sx <= 1.15 * sy; sx += 0.1) {
+      const l = layout(plan, sil, sx, sy, type, vary, defs);
+      if (l && l.waste <= SNUG) { lay = l; break; }
+    }
+  }
   if (!lay) throw new Error(`outline ${type}: rooms do not fit`);
   const { g } = lay;
   thinHull(g);
