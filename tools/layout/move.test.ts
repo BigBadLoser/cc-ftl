@@ -174,3 +174,28 @@ describe('saved shapes', () => {
     expect(shapes.list).toEqual([]);
   });
 });
+
+describe('review fixes', () => {
+  it('a second paste while one is in flight starts from the design without the first preview; Esc restores it', () => {
+    const l = start();
+    move.copy();
+    move.pointer = [20, 12];
+    move.paste();
+    move.pointer = [22, 3];
+    move.paste();
+    move.drag([23, 3]);
+    expect((lab.layout as Layout).cells[9]?.slice(16, 24)).toBe(l.cells[9]?.slice(16, 24)); // the first preview is gone
+    move.cancelFloat();
+    expect(lab.layout).toBe(l);
+  });
+  it('a nudge that splits a room records the new room id, so a later room never reuses it', () => {
+    start();
+    move.box = { x: 4, y: 4, w: 4, h: 6 }; // the room's west half
+    const before = lab.marks.room;
+    move.nudge(0, 8);
+    expect(lab.marks.room).toBe(before + 1);
+    const split = (lab.layout as Layout).roomOf[13 * 30 + 5];
+    lab.undo();
+    expect(lab.drawRoom({ x: 20, y: 2, w: 3, h: 3 }, 'cabin')).not.toBe(split);
+  });
+});

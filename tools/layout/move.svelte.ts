@@ -97,6 +97,12 @@ class Move {
     lab.step(() => f.start);
     lab.end();
   }
+  /** One discrete stamp (a nudge, an in-place turn): one undo step, and the session marks take any room id it handed out. */
+  private commit(base: Layout, piece: Piece, at: Tile): void {
+    const s = stamp(base, piece, at[0], at[1], true, lab.marks);
+    lab.edit(() => s.layout);
+    lab.marks = s.marks;
+  }
   private atHome(f: Float): boolean { return !!f.home && !f.turned && f.at[0] === f.home.x && f.at[1] === f.home.y; }
   private stamped(f: Float) { return stamp(f.base, f.piece, f.at[0], f.at[1], f.keep, lab.marks); }
 
@@ -108,7 +114,7 @@ class Move {
     const piece = extract(l, b), base = lift(l, b);
     const at = fitPiece(base, piece, b.x + dx, b.y + dy);
     if (at[0] === b.x && at[1] === b.y) return;
-    lab.edit(() => stamp(base, piece, at[0], at[1], true, lab.marks).layout);
+    this.commit(base, piece, at);
     this.box = { ...b, x: at[0], y: at[1] };
   }
   /** R / Shift+R turn, H / Shift+H mirror: the piece in flight, else the box's contents in place (about its centre). */
@@ -125,7 +131,7 @@ class Move {
     if (!l || !b) return;
     const piece = turnPiece(extract(l, b), t), base = lift(l, b);
     const at = fitPiece(base, piece, b.x + ((b.w - piece.w) >> 1), b.y + ((b.h - piece.h) >> 1));
-    lab.edit(() => stamp(base, piece, at[0], at[1], true, lab.marks).layout);
+    this.commit(base, piece, at);
     this.box = { x: at[0], y: at[1], w: piece.w, h: piece.h };
   }
   /** Delete: clear the box. */
@@ -155,9 +161,10 @@ class Move {
   }
   /** Ctrl+V: the clipboard (or another piece, a saved shape) follows the pointer (centred on it) until a click places it. */
   paste(p: Piece | null = this.clip): void {
+    if (!p || lab.compare) return;
+    this.cancelFloat(); // a piece still in flight goes first: the new one starts from the design without its preview
     const l = lab.layout;
-    if (!l || !p || lab.compare) return;
-    this.cancelFloat();
+    if (!l) return;
     lab.setTool('move');
     const t = this.pointer ?? [Math.round(lab.view.cx), Math.round(lab.view.cy)];
     lab.begin();
