@@ -26,9 +26,7 @@ export interface Region {
   spec?: RoomSpec;
   /** Regions this room may open a door onto (default: any hall). */
   access?: number[];
-  doors: number;
-  /** One door at the first tile of its frontage (bow end, then top) rather than the middle: a room whose fixtures fill the rest. */
-  doorFirst?: boolean;
+  doors: number; /** One door at its frontage's bow end, not the middle (fixtures fill the rest). */ doorFirst?: boolean;
   /** Wall rank among rooms: the lower gives way. Defaults to creation order. */
   rank: number;
   /** The department this region belongs to (flow planner), for sheets and the plan class. */
