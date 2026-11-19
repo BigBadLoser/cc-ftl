@@ -155,3 +155,22 @@ describe('the keyboard', () => {
     expect(move.float).toBeNull();
   });
 });
+
+describe('saved shapes', () => {
+  it('Save box keeps the box as a shape; picking it up places a copy', async () => {
+    const { shapes } = await import('./shapes.svelte');
+    start();
+    move.saveShape();
+    const s = shapes.list[0];
+    expect(s?.piece.w).toBe(8);
+    move.pointer = [20, 12];
+    move.paste(s?.piece ?? null);
+    expect(move.float?.source).toBe(s?.piece);
+    move.drop();
+    expect((lab.layout as Layout).moduleIds).toEqual([0, 1]);
+    shapes.rename(s?.id as number, '  bay  ');
+    expect(shapes.list[0]?.name).toBe('bay');
+    shapes.remove(s?.id as number);
+    expect(shapes.list).toEqual([]);
+  });
+});

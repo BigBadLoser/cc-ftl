@@ -3,7 +3,8 @@ import { DEFAULT_DOCK, growOf, MIN_RECT, dockOpen, dockReducer, floating, panels
 
 describe('dock reducer', () => {
   it('a shrunk panel still fills its dock once alone, floating, or when the shared weights sum below 1', () => {
-    let s = dockReducer(DEFAULT_DOCK, { type: 'grow', weights: { inspector: 0.3, notes: 0.3 } });
+    const two = dockReducer(DEFAULT_DOCK, { type: 'collapse', id: 'shapes', collapsed: true }); // inspector and notes the only expanded pair
+    let s = dockReducer(two, { type: 'grow', weights: { inspector: 0.3, notes: 0.3 } });
     expect(growOf(s, 'inspector') + growOf(s, 'notes')).toBeCloseTo(2 * 0.5 + 0, 6); // normalised to sum 1
     expect(growOf(s, 'inspector')).toBeCloseTo(0.5, 6);
     s = dockReducer(s, { type: 'collapse', id: 'notes', collapsed: true });
@@ -27,7 +28,7 @@ describe('dock reducer', () => {
     const s = dockReducer(dockReducer(floated, { type: 'collapse', id: 'preview', collapsed: true }), { type: 'dock', id: 'preview', dock: 'right' });
     expect(s.panels.preview.place).toBe('right');
     expect(s.panels.preview.collapsed).toBe(false);
-    expect(panelsIn(s, 'right')).toEqual(['layers', 'inspector', 'notes', 'changes', 'preview']);
+    expect(panelsIn(s, 'right')).toEqual(['layers', 'inspector', 'notes', 'shapes', 'changes', 'preview']);
     expect(floating(s)).toEqual([]);
     expect(floating(floated)).toEqual(['preview']);
   });

@@ -7,12 +7,14 @@ import { lab } from './lab.svelte';
 import type { Layout, Rect, Tile } from './layout';
 import { clipRect, extract, fitPiece, isEmpty, lift, rectOf, stamp, wholeRect, type Piece } from './region';
 import { turnPiece, type Turn } from './pieceTurn';
+import { shapes } from './shapes.svelte';
+import { docks } from './dock.svelte';
 
 /**
  * A piece following the pointer, stamped over `base` (a move lifts it out first and keeps its ids; a duplicate or a paste takes new
  * ones), grabbed at `grab` within it. `home` is the box it was picked up from: dropped there unturned, nothing changed.
  */
-interface Float { piece: Piece; base: Layout; start: Layout; keep: boolean; grab: Tile; at: Tile; home: Rect | null; turned: boolean }
+interface Float { piece: Piece; base: Layout; start: Layout; keep: boolean; grab: Tile; at: Tile; home: Rect | null; turned: boolean; /** The piece as it was picked up (a clipboard or saved shape: the panel marks it). */ source: Piece }
 
 /** The clipboard outlives a reload (a copy from one design pastes into another). */
 const CLIP_KEY = 'cc-ftl.layout.clip';
@@ -59,7 +61,8 @@ class Move {
     const l = lab.layout, b = this.box;
     if (!l || !b || lab.compare) return;
     lab.begin();
-    this.float = { piece: extract(l, b), base: copy ? l : lift(l, b), start: l, keep: !copy, grab: [t[0] - b.x, t[1] - b.y], at: [b.x, b.y], home: b, turned: false };
+    const piece = extract(l, b);
+    this.float = { piece, base: copy ? l : lift(l, b), start: l, keep: !copy, grab: [t[0] - b.x, t[1] - b.y], at: [b.x, b.y], home: b, turned: false, source: piece };
   }
   /** The pointer moved with a piece in flight: show it at the pointer (kept on the grid). */
   drag(t: Tile): void {
@@ -141,6 +144,15 @@ class Move {
     return true;
   }
   cut(): void { if (this.copy()) this.clear(); }
+  /** Save the box as a named shape (the Shapes panel opens with its name ready to edit). */
+  saveShape(): void {
+    const l = lab.layout, b = this.box;
+    if (!l || !b || this.float) return;
+    const p = extract(l, b);
+    if (isEmpty(p)) return;
+    shapes.add(p);
+    if (docks.state.panels.shapes.collapsed) docks.dispatch({ type: 'collapse', id: 'shapes', collapsed: false });
+  }
   /** Ctrl+V: the clipboard (or another piece, a saved shape) follows the pointer (centred on it) until a click places it. */
   paste(p: Piece | null = this.clip): void {
     const l = lab.layout;
@@ -149,7 +161,7 @@ class Move {
     lab.setTool('move');
     const t = this.pointer ?? [Math.round(lab.view.cx), Math.round(lab.view.cy)];
     lab.begin();
-    this.float = { piece: p, base: l, start: l, keep: false, grab: [p.w >> 1, p.h >> 1], at: [-1, -1], home: null, turned: false };
+    this.float = { piece: p, base: l, start: l, keep: false, grab: [p.w >> 1, p.h >> 1], at: [-1, -1], home: null, turned: false, source: p };
     this.drag(t);
   }
   /** Drop the box and anything in flight. */
