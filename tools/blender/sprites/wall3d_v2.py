@@ -285,7 +285,7 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
     _SK[:] = _slope_grid(zsurf, zs, ft, run_)
     sd, pdd, su, lw = _SK
     if not NUDGE:                               # (square on: the slope's edges on whole screen px)
-        g, d0 = lw / 2, sd(d0)
+        g, d0 = 0.0, sd(d0)                     # (no tile seams: the pieces run on as one face)
     off = T.seam()
     segs = []
     for s0, s1 in T.spans(a, b):
@@ -304,14 +304,27 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
             poly = clip([(q[0], q[2]), (q[1], q[2]), (q[1], q[3]), (q[0], q[3])])
             if len(poly) >= 3:
                 T.plate(k, poly, pt, nrm, 0.0, rise, fam, 3)      # (the slope a shade lighter)
-        e0, e1 = (e0, e1) if NUDGE else (su(e0), su(e1))
+        e0, e1 = (e0, e1) if NUDGE else (su(e0) - lw / 2, su(e1) + lw / 2)   # (square on: over the joins)
         poly = clip([(e0 + g, d0), (e1 - g, d0), (e1 - g, d0 + pdd), (e0 + g, d0 + pdd)])
         if len(poly) >= 3:                      # the step's edge lit (the slope's top px, at the shelf)
             T.plate(k, poly, pt, nrm, 0.0, rise + T.PAINT, fam, 5, base=rise)
+    boxes = []
     for u0, u1, field in segs:
         poly = clip([(u0 + g, d0), (u1 - g, d0), (u1 - g, d1), (u0 + g, d1)])
         if len(poly) >= 3 and field and u1 - u0 >= 0.36 and T.style().skirt == "panel" and POSTS == "tile":
-            panel(k, pt, nrm, clip, u0, u1, a, b, off, g, d0, run_, ft, fam, rise)
+            boxes.append(panel(k, pt, nrm, clip, u0, u1, a, b, off, g, d0, run_, ft, fam, rise))
+    if NUDGE or T.style().skirt != "panel":
+        return
+    hz = _hz(run_, ft)                          # square on: the seam on across the whole face, box to box
+    for s0, s1 in T.spans(a, b):
+        e0, e1 = s0 - (run_ if abs(s0 - a) < 1e-6 else 0.0), s1 + (run_ if abs(s1 - b) < 1e-6 else 0.0)
+        cuts = sorted(q for q in boxes if q and e0 < q[0] < e1)
+        x = su(e0)
+        for f0, f1 in cuts + [(su(e1), None)]:
+            poly = clip([(x, hz), (f0, hz), (f0, hz + pdd), (x, hz + pdd)])
+            if f0 - x > 1e-6 and len(poly) >= 3:
+                T.plate(k, poly, pt, nrm, 0.0, rise + T.PAINT, fam, 1, base=rise)
+            x = f1
 
 
 _SK = [None, 0.4 / 32, None, T.LINE]              # the slope's grid, as skirt last set it (_slope_grid)
@@ -324,9 +337,17 @@ def _slope_grid(zsurf, zs, ft, run_):
         return (lambda dd: dd), 0.4 / 32, (lambda u: u), T.LINE
     f = lambda dd: zsurf(dd) * W.ZART - YD * dd / SQ                        # noqa: E731
     kk = -(zs - ft) / run_ * W.ZART - YD / SQ
-    sd = lambda dd: dd + (round(f(dd) - SNAPD) + SNAPD - f(dd)) / kk         # noqa: E731
+    ph = SNAPD + 0.25                            # (the slope's plates a quarter row off the face's: whole rows)
+    sd = lambda dd: dd + (round(f(dd) - ph) + ph - f(dd)) / kk               # noqa: E731
     su = lambda u: _u(round(_px(u, 0.0)), 0.0)                               # noqa: E731
     return sd, 1 / abs(kk), su, SQ * T.LINE / USCALE
+
+
+def _hz(run_, ft):
+    """The ramp's seam across, its top (the panel's bottom seam 4 rows up)."""
+    sd, pd = _SK[0], _SK[1]
+    dn = 0.12 * run_ if ft else 0.0
+    return sd(0.88 * run_ + dn - 2 * pd) - 4 * pd
 
 
 def panel(k, pt, nrm, clip, u0, u1, a, b, off, g, d0, run_, ft, fam, rise):
@@ -352,6 +373,8 @@ def panel(k, pt, nrm, clip, u0, u1, a, b, off, g, d0, run_, ft, fam, rise):
     ea = su(u0 - off - (run_ if abs(u0 - off - a) < 1e-6 else 0.0)) + g
     eb = su(u1 + off + (run_ if abs(u1 + off - b) < 1e-6 else 0.0)) - g
     for q in ((ea, eb, hz, hz + ed),) if T.BARE else ((ea, fu0, hz, hz + ed), (fu1, eb, hz, hz + ed)):
+        if not NUDGE:
+            break                                   # (square on, skirt draws it on across)
         poly = clip(rect(q))
         if len(poly) >= 3:
             T.plate(k, poly, pt, nrm, 0.0, rise + PAINT, fam, 1, base=rise)
@@ -366,8 +389,9 @@ def panel(k, pt, nrm, clip, u0, u1, a, b, off, g, d0, run_, ft, fam, rise):
         from . import wall3d_variants as V
         V.ramp_plain(lambda q, lvl, n: T.plate(k, q, pt, nrm, 0.0, rise + n * PAINT, fam, lvl, base=rise),
                      fu0 + LINE, fu1 - LINE, fd0 + 0.03, iu0, iu1, id1, sb, pd, T.VARIANT[1])
-        return
+        return fu0, fu1
     T.plate(k, rect((iu0, iu1, id0, id1)), pt, nrm, 0.0, rise + 2 * PAINT, fam, 4, base=rise)
     su0, su1 = su(u0 + im + 0.02), su(u1 - im - 0.02)   # the dark slot (a px down, clear of the bottom seam)
     sd0, sd1 = sd(0.66 * run_ + dn + pd), min(sd(0.74 * run_ + dn + pd), sb - 1e-3)
     T.plate(k, rect((su0, su1, sd0, sd1)), pt, nrm, 0.0, rise + 2 * PAINT, fam, 0, base=rise)
+    return fu0, fu1
