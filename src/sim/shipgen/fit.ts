@@ -67,7 +67,7 @@ export function placeOne(
     cands.sort((a, b) => b.score - a.score);
     for (const c of cands.slice(0, 40)) {
       lay.push(c.pm);
-      if (((!def.solid && !def.airlock) || opts.sealed || lay.connected()) && (!opts.ok || opts.ok())) return c.pm;
+      if (((!def.solid && !def.airlock) || opts.sealed || (lay.connected() && lay.allWorkable())) && (!opts.ok || opts.ok())) return c.pm;
       lay.pop();
     }
   }
