@@ -47,11 +47,9 @@ function program(plan: ShipPlan, defs: Record<string, ModuleDef>, inBattery: num
     ? [{ ...core, mods: core.mods.filter((m) => m !== 'module.droneBay'), w: 5, h: 4 }, { role: 'core', mods: ['module.droneBay'], w: 5, h: 4, ...(core.drones ? { drones: core.drones } : {}) }]
     : [{ ...core, w: 5, h: 4 }];
   if (core?.drones) delete (cores[0] as RoomSpec).drones;
-  // (One hangar with two shuttle bays side by side, an aisle beside each.)
-  const hangar = (r: RoomSpec): RoomSpec => (r.mods.filter((m) => m === 'module.vehicle_bay').length === 1 ? { ...r, mods: [...r.mods, 'module.vehicle_bay'], w: 10, h: 7 } : r);
   // (And a mess of 7x5 at least: the crew's commons.)
   const mess = (r: RoomSpec): RoomSpec => (r.mods.includes('module.galley') ? { ...r, w: Math.max(r.w, 7), h: Math.max(r.h, 5) } : r);
-  const singles = [...lone, ...cores, ...plan.quarters.filter((q) => !q.block), ...plan.support.map(brig).map(mess), ...plan.cargo.map(brig), ...plan.hangars.map(hangar)];
+  const singles = [...lone, ...cores, ...plan.quarters.filter((q) => !q.block), ...plan.support.map(brig).map(mess), ...plan.cargo.map(brig), ...plan.hangars];
   const items: Item[] = cabinPairs.map((p) => ({ specs: [p[0], p[1]], both: true, cabins: true }));
   const reactor = plan.reactors > 0 ? reactorSpec(plan.reactors, plan.kit) : null;
   const shields: RoomSpec | null = plan.shields.length > 0
@@ -136,7 +134,21 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
   };
 
   type Cand = { spot: Spot; specs: Specs; annex?: Spot; cost: number };
+  /** Every column of the bays at that tier the same depth: a rectangle. */
+  const square = (sp: Spot): boolean => {
+    let lo = Infinity, hi = -Infinity;
+    for (let k = sp.i; k < sp.j; k++) { const b = bay(k); for (let x = b.x0; x < b.x1; x++) { const r = rowsAt(b, x, sp.tier, sp.split); lo = Math.min(lo, r); hi = Math.max(hi, r); } }
+    return hi - lo <= 0;
+  };
+  /** A hangar takes a rectangle of bays; where one holds it, a second shuttle bay beside the first (an option, a little preferred). */
   function spots(o: Occ, it: Item): Cand[] {
+    const h = it.specs[0];
+    if (!h?.mods.includes('module.vehicle_bay')) return spotsOf(o, it);
+    const two: RoomSpec = { ...h, mods: [...h.mods, 'module.vehicle_bay'], w: 10, h: 7 };
+    return [...spotsOf(o, it), ...spotsOf(o, { ...it, specs: [two, null] }).map((c) => ({ ...c, cost: c.cost - 0.5 }))]
+      .filter((c) => square(c.spot)).sort((u, v) => u.cost - v.cost);
+  }
+  function spotsOf(o: Occ, it: Item): Cand[] {
     const out: Cand[] = [];
     const rs = real(it.specs), want = Math.max(...rs.map((r) => r.w * r.h + (r.annex ? r.annex.w * r.annex.h : 0)));
     const cap = Math.max(want * 1.25, Math.min(...rs.map(maxArea)));
@@ -230,7 +242,7 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
       const a = area(k, k + 1, tier), here: Spot = { side: s, i: k, j: k + 1, tier, area: a };
       // A single room beside it on this side at this tier grows over it, not past its size.
       const near = [k - 1, k + 1].filter((m) => m >= 0 && m < n && joined(Math.min(m, k))).map((m) => (tier === 'back' ? o[s][m]?.back : o[s][m]?.front))
-        .filter((p): p is Put => !!p && !p.fill && !p.item.cabins && !p.annex && !p.item.both && p.spot.tier === tier);
+        .filter((p): p is Put => !!p && !p.fill && !p.item.cabins && !p.annex && !p.item.both && p.spot.tier === tier && !real(p.specs).some((h) => h.mods.includes('module.vehicle_bay')));
       const grow = near.find((p) => p.spot.area + a <= GROW * planOf(p.specs) && (tier === 'full' || sameSplit(Math.min(p.spot.i, k), Math.max(p.spot.j, k + 1))));
       if (grow) {
         const nw: Put = { ...grow, spot: { ...grow.spot, i: Math.min(grow.spot.i, k), j: Math.max(grow.spot.j, k + 1), area: grow.spot.area + a } };
