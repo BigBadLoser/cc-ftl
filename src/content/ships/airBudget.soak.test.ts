@@ -7,14 +7,14 @@ import { ModuleC } from '../../sim/modules/components';
 import { newGame, startingRoles } from '../../sim/newGame';
 import { shipGrid } from '../../sim/regions';
 import { Struct } from '../../sim/structure';
-import { HOUR_TICKS } from '../../sim/clock';
+import { TICK_HZ } from '../../sim/time';
 import { O2_HARM_BELOW, O2_LOW_WORK_BELOW, CO2_HARM_ABOVE } from '../../sim/tuning';
 import { content } from '../index';
 import { run } from '../../../test/support/run';
 
 /**
  * Air budget (a tuning readout, not a claim yet): the starter ship full of air, five crew, life support switched off. How long until
- * the air turns bad? Prints a row per few game hours.
+ * the air turns bad? Times are real play time at 1x speed (a game hour is GAME_HOUR_SEC, 40 s). Prints a row every 10 minutes.
  */
 describe('air budget', () => {
   it('five crew, no life support: how long the air lasts', { timeout: 1_800_000 }, () => {
@@ -41,13 +41,14 @@ describe('air budget', () => {
       return { o2: o2 / tiles.length, min, co2: co2 / tiles.length };
     };
     const firsts = new Map<string, number>();
-    const mark = (k: string, h: number): void => { if (!firsts.has(k)) firsts.set(k, h); };
-    const lines = [`starter ship: ${tiles.length} tiles with air at the start, ${crew.length} crew, ${off} life support module(s) off`, 'hour   meanO2  minO2  meanCO2  hurt  down  suited  minHp  hunger'];
+    const mark = (k: string, min: number): void => { if (!firsts.has(k)) firsts.set(k, min); };
+    const clock = (min: number): string => `${Math.floor(min / 60)}h${String(min % 60).padStart(2, '0')}`;
+    const lines = [`starter ship: ${tiles.length} tiles with air at the start, ${crew.length} crew, ${off} life support module(s) off`, 'play   meanO2  minO2  meanCO2  hurt  down  suited  minHp'];
     const events: SimEvent[] = [];
-    for (let h = 1; h <= 420; h++) {
-      // Fed every hour: this measures air, not food (the starter ship's stores run out first).
+    for (let h = 1; h <= 280; h++) {
+      // Fed every minute: this measures air, not food (the starter ship's stores run out first).
       for (const c of crew) { const n = sim.world.get(c, NeedsC); if (n && n.hunger !== undefined) n.hunger = 100; }
-      events.push(...run(sim, HOUR_TICKS));
+      events.push(...run(sim, 60 * TICK_HZ)); // one real minute at 1x
       const a = air();
       const hurt = crew.filter((c) => (sim.world.get(c, HealthC)?.hp ?? 0) < (sim.world.get(c, HealthC)?.max ?? 0)).length;
       const down = crew.filter((c) => sim.world.has(c, DownedC) || !sim.world.has(c, CrewC)).length;
@@ -58,12 +59,11 @@ describe('air budget', () => {
       if (hurt) mark('first crew hurt', h);
       if (down) mark('first crew down', h);
       const minHp = Math.min(...crew.map((c) => sim.world.get(c, HealthC)?.hp ?? 0));
-      const hunger = crew.reduce((n, c) => n + (sim.world.get(c, NeedsC)?.hunger ?? 100), 0) / crew.length;
-      if (h % 24 === 0 || h === 1 || (hurt > 0 && h % 8 === 0)) lines.push(`${String(h).padStart(4)}  ${a.o2.toFixed(2).padStart(7)} ${a.min.toFixed(2).padStart(6)} ${a.co2.toFixed(2).padStart(8)} ${String(hurt).padStart(5)} ${String(down).padStart(5)} ${String(suited).padStart(7)} ${minHp.toFixed(0).padStart(6)} ${hunger.toFixed(0).padStart(7)}`);
+      if (h % 10 === 0 || (hurt > 0 && h % 2 === 0 && a.co2 > CO2_HARM_ABOVE)) lines.push(`${clock(h).padStart(5)}  ${a.o2.toFixed(2).padStart(7)} ${a.min.toFixed(2).padStart(6)} ${a.co2.toFixed(2).padStart(8)} ${String(hurt).padStart(5)} ${String(down).padStart(5)} ${String(suited).padStart(7)} ${minHp.toFixed(0).padStart(6)}`);
       if (down === crew.length) break;
     }
     const alerts = events.filter((e) => e.type === 'o2.low').length;
-    lines.push('', ...[...firsts].map(([k, h]) => `${k}: game hour ${h}`), `o2.low events: ${alerts}`);
+    lines.push('', ...[...firsts].map(([k, m]) => `${k}: ${clock(m)} of play`), `o2.low events: ${alerts}`);
     console.log(lines.join('\n'));
   });
 });
