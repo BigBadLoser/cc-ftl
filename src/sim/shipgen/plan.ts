@@ -54,6 +54,8 @@ export interface RoomSpec {
   drones?: { def: string; count: number };
   /** No door: equipment serviced from outside; its footprint fills the room (no connectivity check). */
   sealed?: boolean;
+  /** Tiles kept clear between the room's like modules (its engines a gap apart, not stacked wall to wall). */
+  gap?: number;
   /** Storage here starts with these instead of the faction's stock (a station armoury's weapons). */
   items?: readonly { item: string; min: number; max: number }[];
   /** Station assembly: the department the room belongs to, when not its role's own (`assembly/dept.ts`). */

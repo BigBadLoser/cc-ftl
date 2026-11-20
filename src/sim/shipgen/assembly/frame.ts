@@ -37,8 +37,11 @@ export interface Frame {
 /** A finished hull's area against its mask's, at most (`thinHull`, `dropIslands`). */
 const HULL_OF_MASK = 0.93;
 
-/** With `carry` (the hull tiles one engine carries), the drive holds the engines the hull's own size needs, not only the plan's. */
-export function outlineFrame(plan: ShipPlan, m: Mask, carry = 0): Frame | null {
+/**
+ * With `carry` (the hull tiles one engine carries), the drive holds the engines the hull's own size needs, not only the
+ * plan's. With `gap`, its engines stand that many rows apart.
+ */
+export function outlineFrame(plan: ShipPlan, m: Mask, carry = 0, gap = 0): Frame | null {
   const { W, H, inside } = m;
   if (2 * H + 4 > 120 || W + 4 > 240) return null;
   const top = (x: number): number => { let y = 0; while (inside(x, y + 1)) y++; return inside(x, 0) ? y : -1; };
@@ -75,12 +78,12 @@ export function outlineFrame(plan: ShipPlan, m: Mask, carry = 0): Frame | null {
     while (r + run < deep && rowEnd(-(BAND + 1 + r + run)) === rowEnd(-(BAND + 1 + r))) run++;
     const end = rowEnd(-(BAND + 1 + r)), longer = (y: number): number => (rowEnd(y) > end ? 1 : 0);
     // (A row spare: the engines stacked wall to wall would stand in front of the room's door.)
-    const k = Math.min(Math.floor((run - 1 - (r > 0 ? longer(-(BAND + r)) : 0) - longer(-(BAND + 1 + r + run))) / one.h), most - perSide);
+    const k = Math.min(Math.floor((run - 1 - (r > 0 ? longer(-(BAND + r)) : 0) - longer(-(BAND + 1 + r + run)) + gap) / (one.h + gap)), most - perSide);
     if (k > 0) { perSide += k; used = r + run; }
     r += run;
   }
   if (perSide < need || perSide === 0) return null;
-  const engine = engineSpec(perSide, 'w', plan.kit);
+  const engine: RoomSpec = { ...engineSpec(perSide, 'w', plan.kit), ...(gap > 0 ? { h: perSide * (one.h + gap) - gap, gap } : {}) };
 
   // The bridge takes the bow, about twice its plan and at least four columns.
   const bridge = plan.command;

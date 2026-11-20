@@ -137,6 +137,8 @@ export interface OutlineInputs {
 
 /** Drive sections a bay hull may draw in place of its own, each a tile wider, where its own holds too few engines. */
 const DRIVE_REDRAWS = 4;
+/** Rows between a bay hull's engines. */
+const ENGINE_GAP = 2;
 
 export function outlineInputs(
   f: FactionDef, seed: number, depth: number, defs: Record<string, ModuleDef>, type: NavyType, n = 0, extra = 0, sites = false,
@@ -221,7 +223,7 @@ function bayGrid(plans: ShipPlan[], sils: Silhouette[], maxBeam: number, defs: R
       const m = k === 0 ? m0 : scaled(sil, sx, sy);
       if (2 * m.H + 3 > maxBeam) continue;
       for (const plan of plans) {
-        const fr = outlineFrame(plan, m, defs[plan.kit.engine]?.engine?.hullCapacity ?? 0);
+        const fr = outlineFrame(plan, m, defs[plan.kit.engine]?.engine?.hullCapacity ?? 0, ENGINE_GAP);
         if (!fr) continue;
         const q = bayRooms(plan, fr, defs, 400);
         if (q.viable > 0) cands.push({ W: m.W, l: q, plan });

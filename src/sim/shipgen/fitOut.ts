@@ -3,7 +3,8 @@ import type { ModuleDef, ShipTemplate } from '../registry';
 import { lightRoom, placeOne, rotsOf } from './fit';
 import { furnishByRule, placeFeed } from './rooms/rules/place';
 import { RULES } from './rooms/rules/rules';
-import { Layout } from './layout';
+import { Layout, type PlacedModule } from './layout';
+import { rotatedSize } from '../modules/footprint';
 import type { Fitted } from './fitted';
 import { placeGroundTurrets, type GroundPlan } from './groundTurrets';
 import { accepts } from '../items/storage';
@@ -75,6 +76,15 @@ export function fitOut(
     return (k ? ELSEWHERE[k] : []).flatMap((r) => roles.flatMap((x, i) => (x === r && i !== room && !specs[i]?.sealed ? [i] : [])));
   };
   const rots = (id: string): number[] => rotsOf(id, defs[id] as ModuleDef);
+  // The module just placed stands `gap` tiles clear of every other of its kind (a room's `gap`).
+  const apart = (gap: number) => (): boolean => {
+    const m = lay.modules[lay.modules.length - 1] as PlacedModule, [w, h] = rotatedSize(defs[m.def] as ModuleDef, m.rot);
+    return lay.modules.every((o, i) => {
+      if (i === lay.modules.length - 1 || o.def !== m.def) return true;
+      const [ow, oh] = rotatedSize(defs[o.def] as ModuleDef, o.rot);
+      return Math.max(o.x - (m.x + w), m.x - (o.x + ow), o.y - (m.y + h), m.y - (o.y + oh)) >= gap;
+    });
+  };
   const stockUp = (idx: number, spec: RoomSpec | undefined): void => {
     const id = lay.modules[idx]?.def as string;
     if (spec?.stock && defs[id]?.storage) {
@@ -108,7 +118,7 @@ export function fitOut(
   for (const j of jobs) {
     wanted[j.def] = (wanted[j.def] ?? 0) + 1;
     if (furnished.has(j.room)) continue;
-    const pm = placeOne(lay, rng, j.def, [j.room], { rots: rots(j.def), spread: !!defs[j.def]?.weapon, ...(j.spec.sealed ? { sealed: true } : {}) })
+    const pm = placeOne(lay, rng, j.def, [j.room], { rots: rots(j.def), spread: !!defs[j.def]?.weapon, ...(j.spec.sealed ? { sealed: true } : {}), ...(j.spec.gap ? { ok: apart(j.spec.gap) } : {}) })
       ?? (j.spec.sealed ? null : placeOne(lay, rng, j.def, elsewhere(j.def, j.room), { rots: rots(j.def), spread: !!defs[j.def]?.weapon }));
     if (!pm) continue;
     placed[j.def] = (placed[j.def] ?? 0) + 1;
