@@ -178,10 +178,13 @@ function blockGrid(plan: ShipPlan, sil: Silhouette, maxBeam: number, defs: Recor
   return found.l.g;
 }
 
-/** Bay layouts: the first few hull sizes the rooms fit (a quick search each), the best of them by fit and length, searched again in full. */
+/** Bay layouts: the first few hull sizes the rooms fit (a quick search each, none past a quarter longer than the first), the best of them by fit and length, searched again in full. */
 function bayGrid(plan: ShipPlan, sil: Silhouette, maxBeam: number, defs: Record<string, ModuleDef>, type: NavyType): RegionGrid {
   const cands: { W: number; l: Placed }[] = [];
   scaleSearch(sil, maxBeam, (m) => {
+    // (Past a quarter longer than the first fit, a hull is never the best: stop there.)
+    const first = cands[0];
+    if (first && m.W > 1.25 * first.W) return first.l;
     const fr = outlineFrame(plan, m);
     if (!fr) return null;
     const q = bayRooms(plan, fr, defs, 400);
