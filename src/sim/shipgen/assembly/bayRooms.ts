@@ -243,9 +243,12 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
       // A single room beside it on this side at this tier grows over it, not past its size.
       const near = [k - 1, k + 1].filter((m) => m >= 0 && m < n && joined(Math.min(m, k))).map((m) => (tier === 'back' ? o[s][m]?.back : o[s][m]?.front))
         .filter((p): p is Put => !!p && !p.fill && !p.item.cabins && !p.annex && !p.item.both && p.spot.tier === tier && !real(p.specs).some((h) => h.mods.includes('module.vehicle_bay')));
-      const grow = near.find((p) => p.spot.area + a <= GROW * planOf(p.specs) && (tier === 'full' || sameSplit(Math.min(p.spot.i, k), Math.max(p.spot.j, k + 1))));
+      // (A back room grows only where it still has a way in over the wider span: one room in front it opens through, or its corridor.)
+      const wayIn = (p: Put): Part['via'] | null => backVia(o, s, Math.min(p.spot.i, k), Math.max(p.spot.j, k + 1), p.specs);
+      const grow = near.find((p) => p.spot.area + a <= GROW * planOf(p.specs) && (tier === 'full' || sameSplit(Math.min(p.spot.i, k), Math.max(p.spot.j, k + 1))) && (tier !== 'back' || !!wayIn(p)));
       if (grow) {
-        const nw: Put = { ...grow, spot: { ...grow.spot, i: Math.min(grow.spot.i, k), j: Math.max(grow.spot.j, k + 1), area: grow.spot.area + a } };
+        const via = tier === 'back' ? wayIn(grow) : undefined;
+        const nw: Put = { ...grow, spot: { ...grow.spot, i: Math.min(grow.spot.i, k), j: Math.max(grow.spot.j, k + 1), area: grow.spot.area + a, ...(via ? { via } : {}) } };
         replace(grow, nw, here);
         score += 2 * Math.max(0, nw.spot.area / planOf(nw.specs) - 1);
         continue;
