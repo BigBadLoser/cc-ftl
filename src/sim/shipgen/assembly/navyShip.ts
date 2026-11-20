@@ -37,7 +37,15 @@ interface Shape {
   sleep: 'bunks' | 'beds' | 'cabins';
   /** Engines every ship of the type plans (more where an attempt adds them), in place of its budget's. */
   engines?: number;
+  /** Its rooms laid on bays (bayRooms.ts), and the parts it takes there: a gun battery along a maintenance corridor. */
+  layout?: BayLayout;
   bonus?: Partial<Record<'weapons' | 'engines' | 'crew' | 'crates' | 'shields' | 'pointDefense' | 'reactors', number>>;
+}
+
+/** How a type lays its rooms on bays (PROTOTYPE, #581): which of the bay system's optional parts it has. */
+export interface BayLayout {
+  /** Gun rooms in blisters along a maintenance corridor, the airlock between them; else the airlocks at the cross corridor. */
+  battery: boolean;
 }
 
 export type ShipRoom = 'medbay' | 'brig' | 'farm' | 'pantry';
@@ -62,8 +70,8 @@ export const NAVY_TYPES: Record<NavyType, Shape> = {
   corvette: { maxBeam: 27, centre: 'none', bow: 'bridge', guns: 'forward', family: 'corvette', sleep: 'bunks', bonus: { shields: 1 } },
   frigate: { maxBeam: 31, centre: 'none', bow: 'bridge', guns: 'spread', family: 'frigate', sleep: 'bunks' },
   destroyer: { maxBeam: 33, centre: 'none', bow: 'battery', guns: 'forward', family: 'frigate', sleep: 'beds', bonus: { weapons: 4, reactors: 1, engines: 1, crew: -1, crates: -1 } },
-  cruiser: { maxBeam: 41, engines: 4, centre: 'citadel', bow: 'bridge', guns: 'spread', family: 'cruiser', sleep: 'cabins', bays: 1, rooms: ['medbay', 'brig', 'farm', 'pantry'], bonus: { weapons: 3, reactors: 2 } },
-  carrier: { maxBeam: 51, centre: 'deck', bow: 'bridge', guns: 'spread', family: 'carrier', sleep: 'cabins', rooms: ['medbay', 'brig', 'farm', 'pantry'] },
+  cruiser: { maxBeam: 41, engines: 4, layout: { battery: true }, centre: 'citadel', bow: 'bridge', guns: 'spread', family: 'cruiser', sleep: 'cabins', bays: 1, rooms: ['medbay', 'brig', 'farm', 'pantry'], bonus: { weapons: 3, reactors: 2 } },
+  carrier: { maxBeam: 51, layout: { battery: false }, centre: 'deck', bow: 'bridge', guns: 'spread', family: 'carrier', sleep: 'cabins', rooms: ['medbay', 'brig', 'farm', 'pantry'] },
 };
 
 /** Floor depth of an ordinary strip room. */
