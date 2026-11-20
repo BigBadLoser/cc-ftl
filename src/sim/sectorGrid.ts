@@ -9,7 +9,7 @@ import {
   type GridLike,
   type Rect,
 } from './grid';
-import { writeDelta } from './sectorGridBulk';
+import { type ChunkTiles, writeDelta } from './sectorGridBulk';
 
 /** Field name -> value a tile has when no chunk holds it (vacuum). */
 export type EmptySpec = Record<string, number>;
@@ -260,8 +260,8 @@ export class SectorGrid implements GridLike {
   }
 
   /** `writeDelta` in sectorGridBulk.ts: the writes of a `set` per tile of `rect` that changed by more than `eps`. */
-  writeDelta(field: string, rect: Rect, vals: Float64Array, before: Float64Array, eps: number, round = false, sync = false): number {
-    return writeDelta(this, field, rect, vals, before, eps, round, sync);
+  writeDelta(field: string, rect: Rect, vals: Float64Array, before: Float64Array, eps: number, round = false, sync = false, only?: ChunkTiles): number {
+    return writeDelta(this, field, rect, vals, before, eps, round, sync, only);
   }
 
   /** The watched field and threshold, or null. */

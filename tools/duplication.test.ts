@@ -11,7 +11,7 @@ import { describe, expect, it } from 'vitest';
  * the baseline comes down with it. `npx jscpd` prints the clones (console reporter: `npx jscpd --reporters console`).
  * jscpd 5 (the Rust engine) takes well under a second, so this runs with the other rule checks (`npm run test:rules`).
  */
-const BASELINE = { clones: 71, duplicatedLines: 650 };
+const BASELINE = { clones: 70, duplicatedLines: 643 };
 
 const out = mkdtempSync(join(tmpdir(), 'jscpd-'));
 let now = { clones: 0, duplicatedLines: 0 };
