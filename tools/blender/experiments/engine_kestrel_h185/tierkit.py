@@ -1,27 +1,31 @@
-"""Kestrel Mk II / Mk III: the inboard fit-out of the deeper engine tiers (4x6, 4x7). Study stage.
+"""Kestrel Mk II / Mk III: the inboard fit-out of the deeper engine tiers (4x6, 4x7). Study stage (round 2).
 
-The Mk I assembly (hull row, bulkhead, cassette, bell) is unchanged; a tier adds DEPTH - 5 tiles inboard of the
-cassette's injector plate (u = -2.28), down to the footprint's inboard edge at u = 2.5 - DEPTH. Built in final
-coordinates: the thrust axis at model.THRUST_Z (read while the model is lowered for stage 8), the ship deck at z = 0,
-nothing above the 2.05 roof. Same family as Mk I: navy and blue-grey castings, steel trim, brass gaskets, the same
-fasteners; each tier carries one accent band colour (ACCENT).
+The hull row, bulkhead and bell are the Mk I's. A tier cuts the cassette's inboard end off (`cut`: the Mk I faces
+inboard of a u are dropped, the injector plate and pump crown armour with them) and grows its own machinery out of the
+casing, down to the footprint's inboard edge at u = 2.5 - DEPTH. Built in final coordinates: the thrust axis at
+model.THRUST_Z (read while the model is lowered for stage 8), the deck at z = 0, nothing above the 2.05 roof. Round
+castings that continue the cassette go on `fs`, squashed about the axis like the cassette. Same family as Mk I: navy
+and blue-grey castings, steel trim, brass gaskets and unions, the same fasteners. Tiers read by shape and equipment.
 
-Variants (the study's three fit-out concepts):
-  A  turbopump: a pre-burner drum on the axis fed by two flanking turbopumps; Mk III adds a pair of spherical
-     propellant tanks on cradles behind them
-  B  long casting: the cassette's armoured body continues inboard, a radiator crown along its top; Mk III longer
-     still, with a second clamp ring and side radiator banks
-  C  coil drive: a stack of field coils around a central core in a tie-rod frame; Mk III a longer stack plus two
-     upright capacitor canisters and cable trays
+Concepts:
+  D  side pumps: the casing necks into a pre-burner drum; two turbopumps on cradles either side discharge into it.
+     Mk III: a longer two-stage drum, bigger pumps, and two spherical propellant tanks feeding the pumps.
+  E  inline pump: a coaxial turbopump continues the axis (inducer, volute, turbine), its turbine exhaust ducted
+     along the deck to a dump beside the bulkhead. Mk III: a booster stage, and a saddle tank across the back.
+  F  twin pre-burners: the casing ends in a Y; two angled pre-burners, a turbopump between them, low on the axis.
+     Mk III: a pump per pre-burner, longer pre-burners, and a large spherical tank on the axis behind.
 """
 import math
 import sys
 
 from sprites import detail as D, greeble as G
-from geometry import annulus, curved_pipe, torus
+from geometry import annulus, curved_pipe, sleeve, torus
 
-ACCENT = {2: "polyB", 3: "hazY"}
-FACE = -2.28            # the cassette's injector plate (the Mk I machine's inboard face)
+CUT = -1.5              # the Mk I powerhead's faces inboard of this go (the injector plate, rear armour and clamps)
+
+
+def cut(variant, name):
+    return CUT if name == "powerhead" else -99
 
 
 def _m():
@@ -36,159 +40,193 @@ def sphere(f, u, v, z, r, mat, n=8, sides=16):
                r1=max(r * math.sin(b), 0.01), sides=sides)
 
 
-def coupling(f, a, tier):
-    """The family joint onto the injector plate: a clamp ring, a brass gasket and the tier's accent band."""
-    annulus(f, FACE - 0.14, FACE - 0.02, 0.3, 0.6, a, "steelD", "steelL", sides=16)
-    annulus(f, FACE - 0.2, FACE - 0.14, 0.32, 0.56, a, "brass", "gm", sides=16)
-    annulus(f, FACE - 0.3, FACE - 0.2, 0.32, 0.6, a, ACCENT[tier], "steel", sides=16)
-    for k in range(6):
-        t = k * math.tau / 6 + math.pi / 6
-        G.disc(f, "-u", 0.5 * math.cos(t), a + 0.5 * math.sin(t), FACE - 0.14, 0.045, 0, 0.04, "plate", sides=6)
-
-
 def lug(f, u, v):
     """A mounting lug bolted to the deck, as on the Mk I's cast supports."""
     f.box(u, v, 0, 0.34, 0.34, 0.16, "steel", top="plate")
     G.disc(f, "z", u, v, 0.16, 0.07, 0, 0.05, "steelD", sides=6)
 
 
-# ---- A: turbopump --------------------------------------------------------------------------------------------------
-
-def _pump(f, u0, u1, v, tier):
-    z = 0.62
-    f.hcyl(u0, u1, v, z, 0.34, "steelD", sides=16, cap="steelL", capstart="steel")
-    torus(f, u1 - 0.22, v, z, 0.36, 0.11, "navy", n=20, sides=8)          # the volute
-    annulus(f, u0 + 0.12, u0 + 0.2, 0.3, 0.42, z, ACCENT[tier], "steel", v=v, sides=16)
-    D.ribs(f, u0 + 0.28, u1 - 0.4, v, z, 0.34, 0.34, 3, thick=0.05, grow=0.03, mat="gm", sides=16)
-    f.box((u0 + u1) / 2, v, 0, u1 - u0 - 0.1, 0.5, 0.3, "navy", top="blueGrey")   # its cradle
-    for u in (u0 + 0.12, u1 - 0.12):
-        lug(f, u, v + math.copysign(0.32, v))
-
-
-def turbopump(f, fs, tier, a, u_in):
-    m = _m()
-    # Pre-burner drum on the axis, its dome to the inboard side.
-    d0 = -3.15 if tier == 2 else -3.25
-    f.hcyl(d0, FACE - 0.3, 0, a, 0.52, "navy", sides=24)
-    m.sleeve(f, [(d0 - 0.24, 0.18, a), (d0 - 0.16, 0.38, a), (d0 - 0.05, 0.5, a), (d0, 0.52, a)], "steel", sides=24)
-    for u in (d0 + 0.18, FACE - 0.45):
-        annulus(f, u - 0.05, u + 0.05, 0.5, 0.58, a, "blueGrey", "steelL", sides=24)
-    f.hcyl(d0 - 0.3, d0 - 0.24, 0, a, 0.12, "steelD", sides=8, capstart="brass")
-    m.prism(f, [(d0 + 0.05, 0), (d0 + 0.05, a - 0.35), (FACE - 0.3, a - 0.35), (FACE - 0.3, 0)], -0.42, 0.42, "steelD", "steel")
-    pu0 = (-3.3 if tier == 2 else -3.42)
-    for side in (-1, 1):
-        v = side * 1.25
-        _pump(f, pu0, FACE - 0.1, v, tier)
-        # Discharge: up off the volute and into the drum's shoulder.
-        curved_pipe(f, [(FACE - 0.32, v, 0.98), (FACE - 0.36, v, 1.35), (FACE - 0.55, side * 0.95, 1.62),
-                        (FACE - 0.62, side * 0.45, a + 0.32)], 0.1, "steelL", steps=5, sides=10)
-        D.flange(f, (FACE - 0.6, side * 0.5, a + 0.3), "v", 0.15, "brass", t=0.08)
-        G.valve_wheel(f, "+v" if side > 0 else "-v", pu0 + 0.45, 0.62, v + side * 0.36, r=0.11)
-    if tier == 3:
-        # Two spherical propellant tanks on ring cradles, feeding the pumps' suction ends.
-        for side in (-1, 1):
-            v = side * 0.95
-            u, z, r = -4.0, 0.92, 0.6
-            f.vcyl(u, v, 0, 0.42, 0.42, "navy", top="blueGrey", sides=16)
-            sphere(f, u, v, z, r, "steel", n=10, sides=20)
-            f.vcyl(u, v, z - 0.04, r + 0.02, 0.08, ACCENT[tier], top=ACCENT[tier], sides=20)
-            f.vcyl(u, v, z + r - 0.04, 0.16, 0.1, "steelD", top="plate", sides=10)
-            for k in (-1, 1):
-                lug(f, u + k * 0.36, v)
-            curved_pipe(f, [(u + 0.45, v, 0.7), (u + 0.62, side * 1.15, 0.62), (pu0 - 0.02, side * 1.25, 0.62)],
-                        0.09, "gm", steps=4, sides=10)
-        f.box(-4.0, 0, 0, 0.6, 0.5, 0.95, "navy", top="blueGrey")             # the bus box between the tanks
-        D.panel(f, -4.0, 0, 0.95, 0.46, 0.36, "blueGrey", t=0.02, ring=0.04, bolts=True)
-
-
-# ---- B: long casting -----------------------------------------------------------------------------------------------
-
-def _body(f, fs, u0, u1, a, tier):
-    """The round body on fs (squashed under the roof like the cassette), its side castings on f."""
-    m = _m()
-    r = 0.86
-    # Armoured body, continuing the cassette's section, with the cassette's sculpted staves.
-    f.hcyl(u0, u1, 0, a, r, "steelD", sides=32)
-    for t0, t1, mat in ((0.16, 1.1, "steel"), (1.1, 2.04, "blueGrey"), (2.04, 2.98, "steel"), (3.42, 6.0, "navy")):
-        m.sculpted_stave(fs, [(u0 + 0.12, r + 0.06, a), (u1 - 0.12, r + 0.06, a)], t0, t1, mat)
-    # Squashed under the roof like the cassette: clip with a crown plate rather than rising above 2.05.
-    m.sleeve(fs, [(u0 - 0.3, 0.3, a), (u0 - 0.2, 0.62, a), (u0 - 0.06, 0.82, a), (u0, 0.86, a)], "steel", sides=32)
-    f.hcyl(u0 - 0.36, u0 - 0.3, 0, a, 0.28, "navy", sides=12, capstart="navy")
-    for k in range(6):
-        t = k * math.tau / 6
-        G.disc(fs, "-u", 0.2 * math.cos(t), a + 0.2 * math.sin(t), u0 - 0.36, 0.04, 0, 0.035, "plate", sides=6)
-    annulus(fs, u1 - 0.12, u1, 0.7, 0.95, a, "steelD", "steelL", sides=16)
-    annulus(fs, u1 - 0.18, u1 - 0.12, 0.74, 0.92, a, ACCENT[tier], "gm", sides=24)
-    # Side castings down to the deck, as heavy_bed's.
-    for side in (-1, 1):
-        v = side * 1.13
-        m.prism(f, [(u0, 0), (u0, 0.8), (u1, 0.8), (u1, 0)], v - 0.26, v + 0.26, "navy", "blueGrey")
-        lug(f, u0 + 0.2, side * 1.5)
-
-
-def casting(f, fs, tier, a, u_in):
-    if tier == 2:
-        _body(f, fs, -3.1, FACE - 0.3, a, tier)
-        D.fins(f, -3.0, FACE - 0.4, 0, 2.0 - 0.05, 0.9, 0.05, 6, thick=0.05, mat="steelL", top="plate", base=False)
-        f.box((-3.0 + FACE - 0.4) / 2, 0, a + 0.62, 0.9, 1.0, 0.08, "steelD", top="steel")
-        for side in (-1, 1):
-            G.hatch(f, "+v" if side > 0 else "-v", -2.85, 0.5, side * 1.4, w=0.4, h=0.26)
-        return
-    _body(f, fs, -4.1, FACE - 0.3, a, tier)
-    annulus(fs, -3.35, -3.2, 0.82, 1.0, a, "steelD", "steelL", sides=16)     # the second clamp ring
-    annulus(fs, -3.2, -3.15, 0.86, 0.96, a, "brass", "gm", sides=24)
-    f.box(-3.2, 0, a + 0.62, 1.8, 1.0, 0.08, "steelD", top="steel")
-    D.fins(f, -4.0, FACE - 0.4, 0, a + 0.7, 0.9, 0.05, 12, thick=0.05, mat="steelL", top="plate")
-    for side in (-1, 1):
-        v = side * 1.62
-        # Side radiator banks on standoffs.
-        f.box(-3.5, v, 0, 1.3, 0.12, 0.2, "steelD", top="steel")
-        D.fins(f, -4.1, -2.9, v, 0.2, 0.22, 0.95, 9, thick=0.05, mat="steelL", top="plate")
-        f.box(-3.5, v, 1.15, 1.3, 0.26, 0.06, ACCENT[tier], top=ACCENT[tier])
-        curved_pipe(f, [(-2.95, v, 1.0), (-2.8, side * 1.35, 1.1), (-2.7, side * 1.0, 1.25)], 0.08, "gm", steps=4)
-
-
-# ---- C: coil drive -------------------------------------------------------------------------------------------------
-
-def coils(f, fs, tier, a, u_in):
-    n = 3 if tier == 2 else 6
-    u0 = -3.2 if tier == 2 else -4.15
-    u1 = FACE - 0.3
-    f.hcyl(u0 - 0.1, u1, 0, a, 0.3, "gm", sides=16, capstart="steelL")             # the core
-    step = (u1 - u0) / n
+def bolts(f, u, a, r, n=6, face="-u"):
     for k in range(n):
-        c = u0 + step * (k + 0.5)
-        annulus(f, c - step * 0.32, c + step * 0.32, 0.3, 0.62, a, "brass", "steelD", sides=24)   # a field coil
-        annulus(f, c - 0.03, c + 0.03, 0.62, 0.66, a, "steelD", "steelD", sides=24)
-    for c in [u0 + step * k for k in range(n + 1)]:
-        annulus(f, c - 0.04, c + 0.04, 0.3, 0.7, a, "steel", "steelL", sides=16)   # spacer plates
-    # Tie-rod frame: four rods at the corners, end plates down to the deck.
-    for vv, zz in ((-0.62, a - 0.52), (0.62, a - 0.52), (-0.62, a + 0.52), (0.62, a + 0.52)):
-        D.seg(f, (u0 - 0.15, vv, zz), (u1, vv, zz), 0.05, "steelL", 8, cap="plate", capstart="plate")
-    for u in (u0 - 0.15, u1 - 0.05):
-        f.box(u, 0, 0, 0.1, 1.6, a - 0.5, "navy", top="blueGrey")
-        f.box(u, 0, a + 0.3, 0.1, 1.6, 0.4, "navy", top="blueGrey")
-        for side in (-1, 1):
-            lug(f, u, side * 1.1)
-    f.box((u0 + u1) / 2, 0, a + 0.7, u1 - u0 + 0.2, 0.3, 0.06, ACCENT[tier], top=ACCENT[tier])
-    for side in (-1, 1):
-        D.conduit_bundle(f, (u0, side * 1.3, 0.3), (u1, side * 1.3, 0.3), n=3, pitch=0.12, r=0.045, across="z", clamps=3)
+        t = k * math.tau / n + math.pi / n
+        G.disc(f, face, r * math.cos(t), a + r * math.sin(t), u, 0.045, 0, 0.04, "plate", sides=6)
+
+
+def neck(fs, a, u1, r1):
+    """The casing, cut at CUT, closes down to radius r1 at u1, with a clamp ring and gasket over the joint."""
+    sleeve(fs, [(CUT + 0.02, 0.93, a), (CUT - 0.2, 0.9, a), (CUT - 0.42, 0.8, a), (u1, r1, a)], "steelD", sides=32)
+    annulus(fs, CUT - 0.1, CUT + 0.04, 0.8, 1.0, a, "steelD", "steelL", sides=16)
+    annulus(fs, CUT - 0.14, CUT - 0.1, 0.82, 0.95, a, "brass", "gm", sides=24)
+    for k in range(4):
+        t = k * math.pi / 2 + math.pi / 4
+        _m().petal(fs, [(CUT - 0.1, 0.99, a), (CUT + 0.2, 1.02, a)], t - 0.09, t + 0.09, "steelL", thick=0.13)
+
+
+def drum(fs, a, u0, u1, r, rings=2):
+    """A pre-burner drum on the axis (u0 its inboard end), domed, banded, its igniter boss on the dome."""
+    fs.hcyl(u0, u1, 0, a, r, "navy", sides=32)
+    sleeve(fs, [(u0 - 0.26, 0.2, a), (u0 - 0.18, r * 0.72, a), (u0 - 0.06, r * 0.96, a), (u0, r, a)], "steel", sides=32)
+    for k in range(rings):
+        u = u0 + (u1 - u0) * (k + 0.5) / rings
+        annulus(fs, u - 0.06, u + 0.06, r - 0.02, r + 0.07, a, "blueGrey", "steelL", sides=32)
+    fs.hcyl(u0 - 0.34, u0 - 0.26, 0, a, 0.13, "steelD", sides=10, capstart="brass")
+    bolts(fs, u0 - 0.26, a, 0.17)
+
+
+def pump(f, u0, u1, v, z, r, face):
+    """A turbopump along u: suction bell at u0, barrel, volute at u1 (its discharge rising from the top)."""
+    f.hcyl(u0 - 0.14, u0, v, z, r * 0.62, "steel", r1=r * 0.9, sides=16, capstart="dark")
+    f.hcyl(u0, u1, v, z, r, "steelD", sides=16, cap="steelL")
+    D.ribs(f, u0 + 0.12, u1 - 0.3, v, z, r, r, 3, thick=0.05, grow=0.03, mat="gm", sides=16)
+    torus(f, u1 - 0.16, v, z, r * 1.02, r * 0.32, "navy", n=20, sides=8)
+    f.hcyl(u1, u1 + 0.1, v, z, r * 0.7, "steel", sides=16, cap="blueGrey")           # turbine end cover
+    G.hatch(f, face, (u0 + u1) / 2, z, v + math.copysign(r + 0.01, v), w=min(0.42, u1 - u0 - 0.3), h=r * 0.8)
+
+
+def cradle(f, u0, u1, v, top, w=0.5):
+    _m().prism(f, [(u0, 0), (u0, top - 0.1), (u0 + 0.12, top), (u1 - 0.12, top), (u1, top - 0.1), (u1, 0)],
+               v - w / 2, v + w / 2, "navy", "blueGrey")
+    for u in (u0 + 0.14, u1 - 0.14):
+        lug(f, u, v + math.copysign(w / 2 + 0.12, v) if v else v)
+
+
+def tank(f, u, v, z, r):
+    """A spherical propellant tank on a ring cradle, a girth flange and a top fill boss."""
+    f.vcyl(u, v, 0, r * 0.7, z - r * 0.7, "navy", top="blueGrey", sides=16)
+    sphere(f, u, v, z, r, "steel", n=10, sides=20)
+    f.vcyl(u, v, z - 0.03, r + 0.025, 0.06, "steelL", top="steelL", sides=20)
+    f.vcyl(u, v, z + r - 0.05, 0.15, 0.1, "steelD", top="plate", sides=10)
+    for k in (-1, 1):
+        lug(f, u + k * (r * 0.7 + 0.1), v)
+
+
+# ---- D: side pumps ---------------------------------------------------------------------------------------------------
+
+def side_pumps(f, fs, tier, a):
+    neck(fs, a, -1.98, 0.66 if tier == 2 else 0.7)
+    d0 = -3.0 if tier == 2 else -3.35
+    r = 0.66 if tier == 2 else 0.7
+    drum(fs, a, d0, -1.98, r, rings=2 if tier == 2 else 3)
     if tier == 3:
+        annulus(fs, -2.68, -2.6, r - 0.05, r + 0.12, a, "steelD", "steel", sides=32)      # the stage joint
+        annulus(fs, -2.6, -2.56, r - 0.02, r + 0.06, a, "brass", "gm", sides=32)
+    pr = 0.34 if tier == 2 else 0.42
+    pu0, pu1 = (-3.2, -2.05) if tier == 2 else (-3.55, -2.05)
+    pz = 0.2 + pr + 0.06
+    for side in (-1, 1):
+        v = side * (1.25 if tier == 2 else 1.3)
+        face = "+v" if side > 0 else "-v"
+        cradle(f, pu0 + 0.05, pu1 - 0.1, v, pz - pr + 0.04)
+        pump(f, pu0, pu1, v, pz, pr, face)
+        # Discharge: up off the volute and into the drum's flank.
+        curved_pipe(f, [(pu1 - 0.16, v, pz + pr + 0.1), (pu1 - 0.22, v, pz + pr + 0.42),
+                        (pu1 - 0.45, side * (r + 0.42), a + 0.18), (pu1 - 0.55, side * (r - 0.05), a + 0.08)],
+                    0.11, "steelL", steps=5, sides=12)
+        D.flange(f, (pu1 - 0.53, side * (r + 0.08), a + 0.09), "v", 0.17, "brass", t=0.09)
+        G.valve_wheel(f, face, pu0 + 0.25, pz + pr + 0.05, v, r=0.1)
+        if tier == 3:
+            tank(f, -4.05, side * 0.98, 0.95, 0.55)
+            curved_pipe(f, [(-3.6, side * 1.15, 0.62), (-3.68, v, pz), (pu0 - 0.13, v, pz)], 0.1, "gm", steps=4, sides=10)
+            D.flange(f, (pu0 - 0.2, v, pz), "u", 0.15, "brass", t=0.08)
+
+
+# ---- E: inline pump --------------------------------------------------------------------------------------------------
+
+def inline_pump(f, fs, tier, a):
+    neck(fs, a, -1.95, 0.5)
+    fs.hcyl(-2.25, -1.95, 0, a, 0.45, "steel", r1=0.5, sides=32)                          # inducer housing
+    torus(fs, -2.45, 0, a, 0.56, 0.26, "navy", n=28, sides=10)                             # main volute
+    fs.hcyl(-2.7, -2.25, 0, a, 0.5, "steelD", sides=32)
+    stages = [(-2.45, 0.56)]
+    t0 = -2.7
+    if tier == 3:
+        fs.hcyl(-3.2, -2.7, 0, a, 0.46, "steelD", sides=32)
+        torus(fs, -3.0, 0, a, 0.5, 0.22, "navy", n=28, sides=10)                           # booster volute
+        annulus(fs, -2.76, -2.66, 0.44, 0.62, a, "steelD", "steelL", sides=16)
+        stages.append((-3.0, 0.5))
+        t0 = -3.2
+    # Turbine housing: ribbed, then the suction bellmouth on the axis.
+    tu = t0 - 0.55
+    fs.hcyl(tu, t0, 0, a, 0.6, "steelD", sides=32, capstart="steel")
+    D.ribs(fs, tu + 0.08, t0 - 0.08, 0, a, 0.6, 0.6, 4, thick=0.05, grow=0.04, mat="gm", sides=32)
+    annulus(fs, t0 - 0.06, t0 + 0.04, 0.42, 0.68, a, "brass", "gm", sides=24)
+    bolts(fs, tu, a, 0.42, n=8)
+    # Volute discharges: short elbows from each volute back into the casing.
+    for u, rr in stages:
         for side in (-1, 1):
-            v = side * 1.45
-            D.tank(f, -4.1, v, 0, 0.32, 1.25, mat="navy", cap="blueGrey", bands=2, sides=14)
-            f.vcyl(-4.1, v, 0.7, 0.35, 0.08, ACCENT[tier], top=ACCENT[tier], sides=14)
-            curved_pipe(f, [(-4.1, v, 1.4), (-3.85, side * 1.1, 1.55), (-3.7, side * 0.85, a + 0.5)], 0.06, "brass", steps=4)
-        f.box(-3.6, 0, a + 0.8, 1.0, 0.5, 0.06, "steelD", top="steel")             # cable tray over the stack
+            curved_pipe(f, [(u, side * (rr + 0.22), a + 0.05), (u + 0.25, side * (rr + 0.32), a + 0.25),
+                            (CUT - 0.05, side * 0.8, a + 0.3)], 0.09, "steelL", steps=4, sides=10)
+    # Turbine exhaust: off the housing's +v side, down to a deck duct running out to a dump beside the bulkhead.
+    ex = 1.62
+    curved_pipe(f, [(tu + 0.28, 0.5, a - 0.1), (tu + 0.32, 1.15, a - 0.2), (tu + 0.5, ex, 0.7), (tu + 0.8, ex, 0.4)],
+                0.17, "steel", steps=5, sides=12)
+    f.hcyl(tu + 0.8, 0.85, ex, 0.4, 0.18, "steel", sides=12)
+    for u in (tu + 1.0, -1.0, 0.2):
+        D.flange(f, (u, ex, 0.4), "u", 0.24, "steelD", t=0.08)
+        f.box(u, ex, 0, 0.14, 0.32, 0.22, "navy", top="blueGrey")
+    f.box(1.05, ex, 0, 0.4, 0.5, 0.75, "navy", top="blueGrey")                             # the dump valve box
+    G.valve_wheel(f, "+v", 1.05, 0.5, ex + 0.25, r=0.11)
+    # Suction: the feed lines come up through the deck to the bellmouth.
+    for side in (-1, 1):
+        curved_pipe(f, [(tu - 0.35, side * 0.55, 0.0), (tu - 0.35, side * 0.55, 0.5), (tu - 0.25, side * 0.3, a - 0.2),
+                        (tu - 0.02, side * 0.2, a - 0.1)], 0.1, "gm", steps=4, sides=10)
+        f.box(tu - 0.35, side * 0.55, 0, 0.36, 0.36, 0.08, "steel", top="plate")
+    cradle(f, tu + 0.05, -1.75, 0, a - 0.48, w=0.9)
+    if tier == 3:
+        # A saddle tank across the back of the footprint, on two cradles.
+        u, z, r = -4.05, 0.82, 0.48
+        D.seg(f, (u, -1.25, z), (u, 1.25, z), r, "steel", 20)
+        for side in (-1, 1):
+            sphere(f, u, side * 1.25, z, r, "steel", n=8, sides=16)    # (domed ends, as spheres)
+            f.box(u, side * 0.8, 0, 0.62, 0.22, z - 0.2, "navy", top="blueGrey")
+            lug(f, u + 0.42, side * 0.8)
+        for vv in (-0.45, 0.45):
+            D.flange(f, (u, vv, z), "v", r + 0.04, "steelL", t=0.06)
+        curved_pipe(f, [(u + 0.4, 0, z), (u + 0.55, 0, 0.5), (tu - 0.35, 0, 0.3)], 0.1, "gm", steps=4)
 
 
-VARIANTS = {"A": turbopump, "B": casting, "C": coils}
+# ---- F: twin pre-burners ---------------------------------------------------------------------------------------------
+
+def twin_preburners(f, fs, tier, a):
+    neck(fs, a, -1.95, 0.7)
+    fs.hcyl(-2.15, -1.95, 0, a, 0.72, "steel", sides=32, capstart="steelD")                # the Y manifold's back plate
+    bolts(fs, -2.15, a, 0.55, n=8)
+    length = 1.05 if tier == 2 else 1.5
+    spread = 0.62 if tier == 2 else 0.78
+    r = 0.34
+    for side in (-1, 1):
+        p0 = (-2.1, side * 0.32, a)
+        p1 = (-2.1 - length, side * (0.32 + spread), a - 0.08)
+        D.seg(f, p0, p1, r, "navy", 20)
+        sphere(f, p1[0], p1[1], p1[2], r, "steel", n=8, sides=20)
+        for t in (0.3, 0.75):
+            q = tuple(x + (y - x) * t for x, y in zip(p0, p1))
+            D.seg(f, (q[0] + 0.05, q[1] + side * 0.03 * spread, q[2]), (q[0] - 0.05, q[1] - side * 0.0, q[2]), r + 0.05,
+                  "blueGrey", 20)
+        f.box(p1[0] + 0.2, p1[1], 0, 0.4, 0.4, p1[2] - r + 0.05, "navy", top="blueGrey")
+        lug(f, p1[0] + 0.2, p1[1] + side * 0.32)
+        f.hcyl(p1[0] - r - 0.1, p1[0] - r + 0.02, p1[1], p1[2], 0.11, "steelD", sides=10, capstart="brass")
+        if tier == 3:
+            v = side * 1.55
+            pump(f, -3.5, -2.35, v, 0.52, 0.32, "+v" if side > 0 else "-v")
+            cradle(f, -3.45, -2.45, v, 0.24, w=0.42)
+            curved_pipe(f, [(-2.51, v, 0.88), (-2.6, v, 1.15), (-2.85, side * 1.22, a + 0.05),
+                            (-2.95, side * 1.0, a)], 0.09, "steelL", steps=4, sides=10)
+    pu0 = -3.3 if tier == 2 else -3.6
+    pump(f, pu0, -2.3, 0, 0.5, 0.3, "+v")
+    cradle(f, pu0 + 0.05, -2.4, 0, 0.24, w=0.42)
+    for side in (-1, 1):
+        curved_pipe(f, [(-2.45, 0, 0.82), (-2.5, side * 0.2, 1.0), (-2.6, side * 0.48, a - 0.2),
+                        (-2.6, side * 0.65, a - 0.25)], 0.08, "steelL", steps=4, sides=10)
+    if tier == 3:
+        tank(f, -4.05, 0, 0.82, 0.62)
+        curved_pipe(f, [(-3.5, 0, 0.62), (pu0 - 0.13, 0, 0.5)], 0.1, "gm", steps=3)
+
+
+VARIANTS = {"D": side_pumps, "E": inline_pump, "F": twin_preburners}
 
 
 def build(f, fs, tier, variant):
     """The tier's inboard fit-out on frame f (final coordinates); fs is a frame whose mesh the caller squashes about
-    the thrust axis by model.CASSETTE_Z_FIT, as the cassette is, for round castings too big for the roof."""
-    a = _m().THRUST_Z
-    u_in = 2.5 - _m().DEPTH
-    coupling(f, a, tier)
-    VARIANTS[variant](f, fs, tier, a, u_in)
+    the thrust axis by model.CASSETTE_Z_FIT, as the cassette is, for castings that continue its round section."""
+    VARIANTS[variant](f, fs, tier, _m().THRUST_Z)

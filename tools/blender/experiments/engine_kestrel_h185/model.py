@@ -439,6 +439,11 @@ def _machine(rot,hot,stage,holdout,part):
             squash.f=[face for face in squash.f if (u_of_(squash,face,cx,cy,rot)>outer)==(part=="bell")]
             if squash.f:
                 objects.append(squash.build())
+        if TIER>1 and name in ("bed","powerhead","services"):
+            # A tier's fit-out replaces the Mk I's inboard end: drop the faces inboard of its cut.
+            import tierkit
+            lo=tierkit.cut(VARIANT,name)
+            m.f=[face for face in m.f if u_of_(m,face,cx,cy,rot)>=lo]
         # Keep the faces on this part's side of the hull's outer face.
         def u_of(face):
             pts=[m.v[i] for i in face[0]]
