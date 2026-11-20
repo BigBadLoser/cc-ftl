@@ -23,10 +23,10 @@ export function diagRole(h: HullKeys, x: number, y: number): DiagRole | null {
   return "m";
 }
 
-/** The tile's diagonal wall and cap (the station's cap first for a ground base, the ship's after it), or null. */
+/** The tile's diagonal wall and cap (the station's, falling back to the ship's), or null. A ground base's only for now:
+ * a ship keeps its cut hull pieces there. */
 export function diagWallPieces(h: HullKeys, x: number, y: number, look: HullLook): Piece[] | null {
-  const r = diagRole(h, x, y);
+  const r = look === "station" ? diagRole(h, x, y) : null;
   if (!r) return null;
-  const cap = [...(look === "station" ? [`tile.hull.station.cap.diag.${r}`] : []), `tile.hull.cap.diag.${r}`];
-  return [{ chain: [`tile.wall.diag.${r}`], order: 0 }, { chain: cap, order: 1 }];
+  return [{ chain: [`tile.wall.diag.${r}`], order: 0 }, { chain: [`tile.hull.station.cap.diag.${r}`, `tile.hull.cap.diag.${r}`], order: 1 }];
 }

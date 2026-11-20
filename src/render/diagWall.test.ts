@@ -25,12 +25,12 @@ describe("diagRole", () => {
     expect(diagRole(h, 4, 0)).toBeNull(); // (the straight run)
   });
 
-  it("puts the station's cap ahead of the ship's", () => {
+  it("draws on a ground base only, the station's cap ahead of the ship's", () => {
     const h = cutCorner(2);
     expect(diagWallPieces(h, 1, 1, "station")).toEqual([
       { chain: ["tile.wall.diag.m"], order: 0 },
       { chain: ["tile.hull.station.cap.diag.m", "tile.hull.cap.diag.m"], order: 1 },
     ]);
-    expect(diagWallPieces(h, 1, 1, "ship")?.[1]?.chain).toEqual(["tile.hull.cap.diag.m"]);
+    expect(diagWallPieces(h, 1, 1, "ship")).toBeNull();
   });
 });
