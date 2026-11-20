@@ -26,6 +26,9 @@ interface Spot { side: Side; i: number; j: number; tier: Tier; area: number; via
 interface Item { specs: Specs; both: boolean; cabins?: boolean }
 interface Put { item: Item; specs: Specs; spot: Spot; annex?: Spot; fill?: boolean }
 
+/** The kinds a leftover back tier may be filled with. */
+const FILL_KINDS = (['hold', 'workshop', 'lounge', 'gym', 'farm', 'armoury', 'battery', 'shop', 'lab', 'provisions'] as Filler[]).map((k) => roomKind(fillerSpec(k, 20)));
+
 /** Floor a room may take past its plan before a leftover bay goes to a filler instead. */
 const GROW = 2.5;
 /** Floor a room aims for over its plan: room to move and fit out. */
@@ -170,6 +173,13 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
         if (a < want || a > Math.max(cap * 1.3, want * 2.5) || !rs.every((h) => fits(h, ln, rw))) continue;
         let via: Part['via'] | undefined;
         if (tier === 'back') { const v = backVia(o, side, i, j, specs); if (!v) continue; via = v; } else if (!hallOk) continue;
+        // A front room nothing may open through, over back tiers still free with no corridor beside them, leaves a
+        // pocket behind it no room can reach.
+        if (tier === 'front' && !byDock(i, j) && !byMaint(i, j) && !rs.every((h) => FILL_KINDS.some((f) => opensThrough(f, roomKind(h))))) {
+          let open = false;
+          for (let k = i; k < j; k++) for (const s0 of sidesOf(side)) if (!(o[s0][k] as Slot).back) open = true;
+          if (open) continue;
+        }
         out.push({ spot: { side, i, j, tier, area: a, ...(via ? { via } : {}) }, specs, cost: sizeCost(a / want) + (a > cap * 1.3 ? 1 : 0) + (tier === 'full' && want < 30 ? 0.3 : 0) });
       }
     }
