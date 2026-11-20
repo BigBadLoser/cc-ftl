@@ -1,4 +1,4 @@
-import { SteadyState, conductanceMap, diffuseStep, fieldFrame, inputKey, fieldMirror, scratchOf, tilesOf, writeBackMirror } from '../diffusion';
+import { SteadyState, conductanceMap, mixPairs, fieldFrame, inputKey, fieldMirror, scratchOf, tilesOf, writeBackMirror } from '../diffusion';
 import { lifeSupportActs, lifeSupportTick } from '../modules/lifeSupport';
 import { regions } from '../regions';
 import type { Sim } from '../sim';
@@ -11,13 +11,15 @@ const INPUTS_VENT = [...INPUTS, 'vent'] as const;
 const steady = new SteadyState();
 /** Tiles that hold no gas: airless (Space, rock ground), walls and solid rock. */
 const holdsNoGas = (kind: number): boolean => isAirless(kind) || kind === Struct.Wall || isSolidRock(kind);
+/** Every other kind: what the solve can change (after a write-back, no-gas tiles hold 0 until something else writes them). */
+const holdsGas = (kind: number): boolean => !holdsNoGas(kind);
 
 /**
  * Per-tile gas diffusion of O2 and CO2. Floors, open doors (scaled by openness) and Space are
  * gas-passable; walls and closed doors block. Space and rock ground are fixed vacuum sinks, so a floor tile next
  * to Space (a breach) vents fast and the whole connected volume bleeds out through it.
  * Mass is conserved between ordinary tiles. Walls hold no gas (anything left in a freshly built
- * wall is dropped). Runs per region; diffusion visits only the region's active tiles (see diffusion.ts). A region whose
+ * wall is dropped). Runs per region; mixing visits only the region's gas links, pair by pair in place (`mixPairs`, diffusion.ts). A region whose
  * last solve wrote nothing and whose inputs are unwritten since is at a fixed point and is skipped (SteadyState). Each ship solves every
  * GAS_EVERY ticks, on its own phase, running those ticks in turn: each tick's life support (modules/lifeSupport.ts), then its substeps (#65).
  */
@@ -44,9 +46,9 @@ export function atmosphereSystem(sim: Sim): void {
         o2[i] = 0;
         co2[i] = 0;
       }
-      for (let s = 0; s < GAS_SUBSTEPS; s++) diffuseStep(frame, cond, [o2, co2], GAS_DIFFUSION, GAS_VENT, true);
+      for (let s = 0; s < GAS_SUBSTEPS; s++) mixPairs(frame, cond, o2, co2, GAS_DIFFUSION, GAS_VENT, (sim.tick + t) * GAS_SUBSTEPS + s);
     }
-    const wrote = writeBackMirror(grid, 'o2', o2, o2Before, GAS_EPSILON) + writeBackMirror(grid, 'co2', co2, co2Before, GAS_EPSILON);
+    const wrote = writeBackMirror(grid, 'o2', o2, o2Before, GAS_EPSILON, holdsGas) + writeBackMirror(grid, 'co2', co2, co2Before, GAS_EPSILON, holdsGas);
     steady.done(grid, key, wrote);
   }
 }
