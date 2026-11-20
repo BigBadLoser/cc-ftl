@@ -138,7 +138,9 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
       for (let i = 0; i < n; i++) for (let j = i + 1; j <= n && j - i <= 4; j++) for (const tier of ['full', 'front', 'back'] as Tier[]) {
         if (!free(o, side, i, j, tier)) continue;
         if (it.cabins) {
-          if (tier !== 'full' || !rs.every((h) => cabinsFor(h, len(i, j), minDepth(i, j))?.stubs.length === 1)) continue;
+          // (Never under the battery: its corridor runs out to the hull and would meet the battery's.)
+          const m = fr.maint, under = !!m && bay(i).x0 < m.b && bay(j - 1).x1 > m.a;
+          if (tier !== 'full' || under || !rs.every((h) => cabinsFor(h, len(i, j), minDepth(i, j))?.stubs.length === 1)) continue;
           out.push({ spot: { side, i, j, tier, area: area(i, j, tier) }, specs, cost: Math.abs(len(i, j) - 11) / 4 });
           continue;
         }
