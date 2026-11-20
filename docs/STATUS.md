@@ -80,7 +80,7 @@ in #392. Next is more to find per node (#171; danger bands #382 folded in: no vi
 #383 story arcs and #172/#52 goals queue behind them. The test overhaul (#371) landed in #555 (harness, scenario builder, near-test
 `check:fast`, import-cycle ratchet). Follow-ups: #553 done (no import cycles in `src`, #560); cheaper ticks (#65) partly done: temperature and
 gas solve every 4 ticks per ship with life support inside the gas solve, mood by ship, grid read cache (#565, #570), shared station/outpost test builds
-(#574); next idea if air gets costly again is pairwise in-place mixing (the #65 thread). Test-worker heap growth (#556) fixed in #581: the galaxy generator cache keeps two seeds, so a shared worker levels off near 300 MB.
+(#574), and pairwise in-place gas mixing with a sparse write-back (#589: air system time −24% to −48%; breathing retuned to 0.1 O₂ in / 0.03 CO₂ out). Test-worker heap growth (#556) fixed in #581: the galaxy generator cache keeps two seeds, so a shared worker levels off near 300 MB.
 
 - **Station generation: reviewed 2026-11-17** (stack #501, #527, #528, #529; design and file map in
   [STATION_ASSEMBLY.md](STATION_ASSEMBLY.md)).
