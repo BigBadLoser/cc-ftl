@@ -35,6 +35,8 @@ interface Shape {
   rooms?: readonly ShipRoom[];
   /** How the crew sleeps: barracks of bunks, barracks of single beds, or every bed a cabin in cabin blocks. */
   sleep: 'bunks' | 'beds' | 'cabins';
+  /** Engines every ship of the type plans (more where an attempt adds them), in place of its budget's. */
+  engines?: number;
   bonus?: Partial<Record<'weapons' | 'engines' | 'crew' | 'crates' | 'shields' | 'pointDefense' | 'reactors', number>>;
 }
 
@@ -60,7 +62,7 @@ export const NAVY_TYPES: Record<NavyType, Shape> = {
   corvette: { maxBeam: 27, centre: 'none', bow: 'bridge', guns: 'forward', family: 'corvette', sleep: 'bunks', bonus: { shields: 1 } },
   frigate: { maxBeam: 31, centre: 'none', bow: 'bridge', guns: 'spread', family: 'frigate', sleep: 'bunks' },
   destroyer: { maxBeam: 33, centre: 'none', bow: 'battery', guns: 'forward', family: 'frigate', sleep: 'beds', bonus: { weapons: 4, reactors: 1, engines: 1, crew: -1, crates: -1 } },
-  cruiser: { maxBeam: 41, centre: 'citadel', bow: 'bridge', guns: 'spread', family: 'cruiser', sleep: 'cabins', bays: 1, rooms: ['medbay', 'brig', 'farm', 'pantry'], bonus: { weapons: 3, reactors: 2 } },
+  cruiser: { maxBeam: 41, engines: 4, centre: 'citadel', bow: 'bridge', guns: 'spread', family: 'cruiser', sleep: 'cabins', bays: 1, rooms: ['medbay', 'brig', 'farm', 'pantry'], bonus: { weapons: 3, reactors: 2 } },
   carrier: { maxBeam: 51, centre: 'deck', bow: 'bridge', guns: 'spread', family: 'carrier', sleep: 'cabins', rooms: ['medbay', 'brig', 'farm', 'pantry'] },
 };
 
