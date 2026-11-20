@@ -19,7 +19,7 @@ import { addStatic } from "./sprites";
 import { haloTex } from "./haloTex";
 import { beamIds, DEFAULT_BEAM_LOOK, type BeamLook } from "./beamArt";
 import { createChunkViews, regionTiles, type ChunkRef } from "./regionTiles";
-import { artKind, doorShownOpen, floorChain, ghostVertsIn, HULL_REACH, HullSide, hullSide, replacesFloor, wallLevel, wallPieces, type CutawayMode } from "./tiles";
+import { artKind, doorShownOpen, floorChain, ghostVertsIn, hideReach, HULL_REACH, HullSide, hullSide, replacesFloor, wallLevel, wallPieces, type CutawayMode } from "./tiles";
 import { CarpetSprite } from "./carpetPaint";
 import { DRAWN_MARKINGS, markPieces, WALKWAY_PAINT } from "./deckMarks";
 import { HullSprite } from "./hullPaint";
@@ -306,7 +306,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
           if (hull && gapAt(x, y) && !drew) drawHull(hull, x, y, k, ci, v, true);
           // Roofed, a tile with the hull from outside has no floor plate (its edge showed below the hull's foot).
           const fin = finish?.[ci] ?? 0;
-          const f = (ghosts && !engineUp && replacesFloor(pieceAt, x, y, mode)) || (drew && !ghosts) ? undefined : atlas.firstOf(floorChain(x, y, fin));
+          const f = (ghosts && !engineUp && replacesFloor(pieceAt, x, y, mode, hideReach(host.hullLook?.() ?? "ship"))) || (drew && !ghosts) ? undefined : atlas.firstOf(floorChain(x, y, fin));
           if (f && fin === Finish.Carpet && f === atlas.stat("tile.floor.carpet")) {
             // The carpet is grey art the hull-paint step recolours: the ship's carpet paint times the light.
             const spr = addPaintSprite(f, x, y, 0, v.floor, CarpetSprite);
@@ -322,7 +322,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
           // The engine's hull row (walls up or roofed) is the engine's own bulkhead sprite: no hull wall on it.
           if (special) continue;
           // With the walls down the far hull's ghost (its outline) stays, over its cut hull.
-          const outline = drew && ghosts && hullSide(wallAt, x, y) === HullSide.Far;
+          const outline = drew && ghosts && hullSide(wallAt, x, y, hideReach(host.hullLook?.() ?? "ship")) === HullSide.Far;
           for (const piece of diag ?? wallPieces(pieceAt, x, y, stone ? Struct.RockWall : k, mode, ghosts, gapAt, decodeWindow(windows?.[ci] ?? 0), host.hullLook?.() ?? "ship")) {
             if (drew && !keepsOldPiece(k, ghosts, piece.under) && !(outline && !piece.under)) continue; // (a door stays, without its old belly)
             const s = atlas.firstOf(piece.chain);
@@ -452,7 +452,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
       return true;
     }
     // A wall tile shows its cut hull where its ghost replaces the floor: the near hull, and the far hull with the walls down.
-    if (k !== Struct.Floor && !replacesFloor(wallAt, x, y, mode)) return false;
+    if (k !== Struct.Floor && !replacesFloor(wallAt, x, y, mode, hideReach(look))) return false;
     // With the walls down a ground base's hull is cut as a ship's is (the same cut top, seam and ghosts), only no belly
     // under the deck: it stands on the ground.
     const station = look === "station";
