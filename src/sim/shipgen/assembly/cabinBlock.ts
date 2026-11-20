@@ -60,12 +60,12 @@ export function cabinBlock(len: number, rows: number, want = Infinity): CabinBlo
 }
 
 /**
- * PROTOTYPE (#581): a cabin run, its corridor lengthwise: a stub out from the spine at the piece's first columns, then
- * along the piece, a row of cabins each side of it (the front row on the spine, the back row out to the hull or the
- * battery). For floor too shallow-ended for a corridor run out to the hull, as under the battery. Null when `rows` is
- * under two rows of cabins and the corridor, or a row has no cabin.
+ * PROTOTYPE (#581): a cabin run beside the dock: the dock's corridor turns along the piece (through the plating column
+ * between, at the `dock` end), a row of cabins each side of it (the front row on the spine, the back row out to the hull
+ * or the battery). Null when `rows` is under two rows of cabins and the corridor, or a row has no cabin.
  */
-export function cabinRun(len: number, rows: number): CabinBlock | null {
+export type DockEnd = 'start' | 'end';
+export function cabinRun(len: number, rows: number, dock: DockEnd): CabinBlock | null {
   if (rows < 2 * CABIN_ROWS + 3) return null;
   // The corridor two wide where the floor allows it and the back row keeps its three rows.
   const sw = rows >= 2 * CABIN_ROWS + 4 ? 2 : 1, h0 = CABIN_ROWS + 2, h1 = h0 + sw - 1;
@@ -80,18 +80,18 @@ export function cabinRun(len: number, rows: number): CabinBlock | null {
     }
     return out;
   };
-  const front = row(sw, len, 0, h0 - 1), back = row(0, len, h1 + 1, Infinity);
+  const front = row(0, len, 0, h0 - 1), back = row(0, len, h1 + 1, Infinity);
   if (!front || !back) return null;
-  return { stubs: [{ c0: 0, c1: sw, r0: 0, r1: h0 - 1 }, { c0: 0, c1: len, r0: h0, r1: h1 }], cabins: [...front, ...back], rest: [] };
+  return { stubs: [{ c0: dock === 'start' ? -1 : 0, c1: dock === 'end' ? len + 1 : len, r0: h0, r1: h1 }], cabins: [...front, ...back], rest: [] };
 }
 
 /**
- * A barracks' cabin block (`run`: a cabin run instead), each cabin its spec: a bed and a locker, or a bunk where there are fewer cabins than sleepers.
+ * A barracks' cabin block (`run`: a cabin run instead, the dock at that end), each cabin its spec: a bed and a locker, or a bunk where there are fewer cabins than sleepers.
  * Null when the floor is too small, or the cabins would not sleep the barracks' crew.
  */
-export function cabinsFor(barracks: RoomSpec, len: number, rows: number, run = false): { stubs: Rect[]; cabins: { rect: Rect; spec: RoomSpec }[]; rest: Rect[] } | null {
+export function cabinsFor(barracks: RoomSpec, len: number, rows: number, run: DockEnd | false = false): { stubs: Rect[]; cabins: { rect: Rect; spec: RoomSpec }[]; rest: Rect[] } | null {
   const sleepers = barracks.mods.reduce((n, m) => n + (m === SLEEPER.def ? SLEEPER.sleepers : m === 'module.bed' ? 1 : 0), 0);
-  const b = run ? cabinRun(len, rows) : cabinBlock(len, rows, sleepers);
+  const b = run ? cabinRun(len, rows, run) : cabinBlock(len, rows, sleepers);
   if (!b || b.cabins.length * SLEEPER.sleepers < sleepers) return null;
   const bed = b.cabins.length >= sleepers ? 'module.bed' : SLEEPER.def;
   return { stubs: b.stubs, rest: b.rest, cabins: b.cabins.map((rect) => ({ rect, spec: { role: 'quarters', mods: [bed, 'module.storage_locker'], w: rect.c1 - rect.c0, h: CABIN_ROWS, cabin: true, cabins: false } })) };
