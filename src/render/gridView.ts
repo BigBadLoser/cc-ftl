@@ -19,7 +19,7 @@ import { addStatic } from "./sprites";
 import { haloTex } from "./haloTex";
 import { beamIds, DEFAULT_BEAM_LOOK, type BeamLook } from "./beamArt";
 import { createChunkViews, regionTiles, type ChunkRef } from "./regionTiles";
-import { artKind, doorShownOpen, floorChain, ghostVertsIn, hideReach, HULL_REACH, HullSide, hullSide, replacesFloor, wallLevel, wallPieces, type CutawayMode } from "./tiles";
+import { artKind, doorShownOpen, floorChain, ghostVertsIn, hideReach, HULL_REACH, HullSide, hullSide, outward, replacesFloor, wallLevel, wallPieces, type CutawayMode } from "./tiles";
 import { CarpetSprite } from "./carpetPaint";
 import { DRAWN_MARKINGS, markPieces, WALKWAY_PAINT } from "./deckMarks";
 import { HullSprite } from "./hullPaint";
@@ -160,6 +160,9 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
   const wallAt = tiles.wallAt; // rock walls stay RockWall: never hull
   // The wall pieces' neighbours: unroofed, a tube's near junction stands in for its wall tiles (no wall there, its ends face it).
   const pieceAt = (x: number, y: number): number => (ghosts && tiles.inside(x, y) && tube.junction.has(y * width + x) ? Struct.Space : wallAt(x, y));
+  /** A ground base's cut hull that faces away from the camera (cut because the base lies behind it on screen). */
+  const rearCut = (x: number, y: number): boolean =>
+    host.hullLook?.() === "station" && hullSide(pieceAt, x, y, hideReach("station")) === HullSide.Near && !outward(pieceAt, x, y);
   const lockDoor = (i: number): boolean => airlocks.has(i) || tube.port.has(i);
   // Beam tiles under a cargo container are its seat, not frame: no beam sprite there, and the frame's beams end at it.
   const boxAt = (x: number, y: number): boolean => {
@@ -331,8 +334,9 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
           if (k === Struct.Floor) continue;
           // The engine's hull row (walls up or roofed) is the engine's own bulkhead sprite: no hull wall on it.
           if (special) continue;
-          // With the walls down the far hull's ghost (its outline) stays, over its cut hull.
-          const outline = drew && ghosts && hullSide(wallAt, x, y, hideReach(host.hullLook?.() ?? "ship")) === HullSide.Far;
+          // With the walls down the far hull's ghost (its outline) stays, over its cut hull; so does a ground base's back-facing
+          // cut hull's (its rear ramp ghost, at every level).
+          const outline = drew && ghosts && (hullSide(wallAt, x, y, hideReach(host.hullLook?.() ?? "ship")) === HullSide.Far || rearCut(x, y));
           for (const piece of diag ?? wallPieces(pieceAt, x, y, stone ? Struct.RockWall : k, mode, ghosts, gapAt, decodeWindow(windows?.[ci] ?? 0), host.hullLook?.() ?? "ship")) {
             if (drew && !keepsOldPiece(k, ghosts, piece.under) && !(outline && !piece.under)) continue; // (a door stays, without its old belly)
             const s = atlas.firstOf(piece.chain);
@@ -462,7 +466,8 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
       return true;
     }
     // A wall tile shows its cut hull where its ghost replaces the floor: the near hull, and the far hull with the walls down.
-    if (k !== Struct.Floor && !replacesFloor(wallAt, x, y, mode, hideReach(look))) return false;
+    // (A base asks as its wall pieces do, a tube junction standing in for space; a ship as on main.)
+    if (k !== Struct.Floor && !replacesFloor(look === "station" ? pieceAt : wallAt, x, y, mode, hideReach(look))) return false;
     // With the walls down a ground base's hull is cut as a ship's is (the same cut top, seam and ghosts), only no belly
     // under the deck: it stands on the ground.
     const station = look === "station";
@@ -471,8 +476,9 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
       // A ground base's near hull: the station's foot (no belly), the berm against it.
       const foot = lowId(h, x, y, has);
       if (foot) put(foot, z + 0.001, L.sorted, solid);
-      // Its ghost over the cut, as a ship's near hull's (the station's: on its cut).
-      const g = foot ? nearGhostId(h, x, y, has, solid, "station") : undefined;
+      // Its ghost over the cut, as a ship's near hull's (the station's: on its cut). A back-facing cut keeps its rear ramp ghost
+      // (wallPieces) instead.
+      const g = foot && !rearCut(x, y) ? nearGhostId(h, x, y, has, solid, "station") : undefined;
       const gs = g ? atlas.stat(g) : undefined;
       if (gs) v.owned.push(...addStatic(L, gs, x, y, z + 0.0025, L.sorted));
       return berm() || !!foot;
@@ -611,3 +617,4 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
     },
   };
 }
+
