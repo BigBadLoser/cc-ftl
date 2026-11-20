@@ -2,6 +2,7 @@ import { dockSpec, engineSpec, type RoomSpec, type ShipPlan } from '../plan';
 /** A scaled silhouette about its axis: `inside(x, y)` with y = 0 the axis. */
 export interface Mask {
   W: number; H: number; inside: (x: number, y: number) => boolean;
+  /** The silhouette's scale along and across, where it was scaled from one. */ scale?: [number, number];
   /** Gun sites' blister columns [x0, x1), scaled (prototype). */ sites?: [number, number][];
   /** PROTOTYPE (#581): a gun battery on a maintenance corridor along the hull: its columns [a, b), its guns' blisters, its gun rooms' floor rows, and the airlock's first column (the dock). */
   battery?: { a: number; b: number; guns: [number, number][]; rows: number; air: number; /** Sites whose column holds a second gun inboard. */ inner: number[] };
@@ -20,6 +21,7 @@ export const MIN_DEPTH = 3;
 
 export interface Frame {
   W: number; H: number; inside: (x: number, y: number) => boolean;
+  /** The silhouette's scale along and across, where it was scaled from one. */ scale?: [number, number];
   /** The hull's last inside row above the axis at a column; floor rows out from the spine there. */
   top: (x: number) => number; depth: (x: number) => number;
   /** The stern's first column past the band; the deepest stern column; engine rows a side and the rows they take. */
@@ -32,7 +34,11 @@ export interface Frame {
   maint?: { a: number; b: number; guns: [number, number][]; rows: number; inner: number[]; hallY: (x: number) => number };
 }
 
-export function outlineFrame(plan: ShipPlan, m: Mask): Frame | null {
+/** A finished hull's area against its mask's, at most (`thinHull`, `dropIslands`). */
+const HULL_OF_MASK = 0.93;
+
+/** With `carry` (the hull tiles one engine carries), the drive holds the engines the hull's own size needs, not only the plan's. */
+export function outlineFrame(plan: ShipPlan, m: Mask, carry = 0): Frame | null {
   const { W, H, inside } = m;
   if (2 * H + 4 > 120 || W + 4 > 240) return null;
   const top = (x: number): number => { let y = 0; while (inside(x, y + 1)) y++; return inside(x, 0) ? y : -1; };
@@ -59,7 +65,10 @@ export function outlineFrame(plan: ShipPlan, m: Mask): Frame | null {
   let deep = 0;
   // (A floor row has hull past it too, the hull's wall, as long: a diagonal's wall runs a tile further in.)
   while (deep < sternMax && long(-(BAND + 1 + deep)) && long(-(BAND + 2 + deep))) deep++;
-  const need = Math.ceil(plan.engines / 2), most = Math.max(need, 3);
+  let tiles = 0;
+  if (carry > 0) for (let y = -H; y <= H; y++) for (let x = 0; x < W; x++) if (inside(x, y)) tiles++;
+  // (The finished hull comes out 7-9% under its mask: its walls thinned and slivers dropped. Counted at the near end.)
+  const need = Math.max(Math.ceil(plan.engines / 2), carry > 0 ? Math.ceil((HULL_OF_MASK * tiles) / carry / 2) : 0), most = Math.max(need, 3);
   let perSide = 0, used = 0;
   for (let r = 0; r < deep && perSide < most;) {
     let run = 1;

@@ -91,11 +91,16 @@ function noseHalf(style: NoseStyle, i: number, n: number, front: number, h: numb
 }
 
 /** The body's half-widths bow to stern: nose or pod, then the sections joined by their tapers. */
-function body(rng: Rng, p: Profile): { outer: number[]; bodyStart: number } {
+function body(rng: Rng, p: Profile, drive?: Drive): { outer: number[]; bodyStart: number } {
   const secs = p.sections
     .map((part) => one(rng, part))
     .filter((s) => s.chance === undefined || rng.chance(s.chance))
     .map((s) => ({ len: pick(rng, s.len), half: pick(rng, s.half), taper: s.taper ?? 2 }));
+  if (drive && secs.length > 1) {
+    // The drive section drawn again from its own options, `grow` tiles wider (never past the section ahead of it).
+    const s = one(drive.rng, p.sections[p.sections.length - 1] as Part), ahead = (secs[secs.length - 2] as { half: number }).half;
+    secs[secs.length - 1] = { len: pick(drive.rng, s.len), half: Math.min(ahead, pick(drive.rng, s.half) + drive.grow), taper: s.taper ?? 2 };
+  }
   const H0 = (secs[0] as { half: number }).half;
   const outer: number[] = [];
   if (p.pod) {
@@ -207,10 +212,18 @@ function addMounts(rng: Rng, p: Profile, outer: number[], top: number[], bodySta
   }
 }
 
-/** With `guns`, that many gun sites stand in place of the profile's embrasures (PROTOTYPE, #581). */
-export function drawSilhouette(rng: Rng, p: Profile, guns?: number): Silhouette {
-  const { outer, bodyStart } = body(rng, p);
-  const st = one(rng, p.stern), sLen = pick(rng, st.len), sOut = pick(rng, st.out), rate = st.rate ?? 2;
+/**
+ * A drive section drawn again: the hull's last section and its stern from `rng`, not the hull's own draws, its half-width
+ * `grow` tiles more. The rest of the hull is drawn as it was (the hull's own draws are all still made).
+ */
+export interface Drive { rng: Rng; grow: number }
+
+/** With `guns`, that many gun sites stand in place of the profile's embrasures (PROTOTYPE, #581); with `drive`, the drive section redrawn. */
+export function drawSilhouette(rng: Rng, p: Profile, guns?: number, drive?: Drive): Silhouette {
+  const { outer, bodyStart } = body(rng, p, drive);
+  let st = one(rng, p.stern), sLen = pick(rng, st.len), sOut = pick(rng, st.out);
+  if (drive) { st = one(drive.rng, p.stern); sLen = pick(drive.rng, st.len); sOut = pick(drive.rng, st.out); }
+  const rate = st.rate ?? 2;
   const L = outer.length;
   // Flare and tail reshape the last stretch of the body itself; mounts stay clear of it.
   const shaped = st.kind === 'flare' || st.kind === 'tail';
