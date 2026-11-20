@@ -1,4 +1,4 @@
-import { SteadyState, conductanceMap, diffuseStep, fieldFrame, inputKey, fieldMirror, scratchOf, tilesOf, writeBackMirror } from '../diffusion';
+import { SteadyState, conductanceMap, diffuseStep, mixPairs, fieldFrame, inputKey, fieldMirror, scratchOf, tilesOf, writeBackMirror } from '../diffusion';
 import { lifeSupportActs, lifeSupportTick } from '../modules/lifeSupport';
 import { regions } from '../regions';
 import type { Sim } from '../sim';
@@ -9,6 +9,11 @@ import { GAS_DIFFUSION, GAS_EPSILON, GAS_EVERY, GAS_SUBSTEPS, GAS_VENT } from '.
 const INPUTS = ['o2', 'co2', 'struct', 'door'] as const
 const INPUTS_VENT = [...INPUTS, 'vent'] as const;
 const steady = new SteadyState();
+// PROTOTYPE A/B switch (#65): AIR_PAIRS=1 uses phased pairwise mixing; AIR_PAIR_STEPS / AIR_PAIR_K tune it.
+const penv = (globalThis as unknown as { process?: { env: Record<string, string | undefined> } }).process?.env ?? {};
+const PAIRS = penv.AIR_PAIRS === '1';
+const PAIR_STEPS = Number(penv.AIR_PAIR_STEPS ?? 2);
+const PAIR_K = Number(penv.AIR_PAIR_K ?? 0.88);
 /** Tiles that hold no gas: airless (Space, rock ground), walls and solid rock. */
 const holdsNoGas = (kind: number): boolean => isAirless(kind) || kind === Struct.Wall || isSolidRock(kind);
 
@@ -44,7 +49,8 @@ export function atmosphereSystem(sim: Sim): void {
         o2[i] = 0;
         co2[i] = 0;
       }
-      for (let s = 0; s < GAS_SUBSTEPS; s++) diffuseStep(frame, cond, [o2, co2], GAS_DIFFUSION, GAS_VENT, true);
+      if (PAIRS) for (let s = 0; s < PAIR_STEPS; s++) mixPairs(frame, cond, o2, co2, GAS_DIFFUSION * PAIR_K, GAS_VENT * PAIR_K, (sim.tick + t) * PAIR_STEPS + s);
+      else for (let s = 0; s < GAS_SUBSTEPS; s++) diffuseStep(frame, cond, [o2, co2], GAS_DIFFUSION, GAS_VENT, true);
     }
     const wrote = writeBackMirror(grid, 'o2', o2, o2Before, GAS_EPSILON) + writeBackMirror(grid, 'co2', co2, co2Before, GAS_EPSILON);
     steady.done(grid, key, wrote);

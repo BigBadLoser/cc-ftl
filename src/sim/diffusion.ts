@@ -329,3 +329,56 @@ export class SteadyState {
     else this.at.delete(grid);
   }
 }
+
+/** Links split into four phases (horizontal pairs at even x, at odd x, vertical at even y, at odd y): no tile appears twice in a phase. */
+interface PhasedLinks extends Links {
+  /** Start offsets of each phase in i/j/air, plus the end. */
+  readonly at: Int32Array;
+}
+const phaseCache = new WeakMap<FieldFrame, PhasedLinks>();
+
+function phasesOf(frame: FieldFrame): PhasedLinks {
+  const hit = phaseCache.get(frame);
+  if (hit) return hit;
+  const L = linksOf(frame);
+  const { width } = frame;
+  const phase = (l: number): number => {
+    const i = L.i[l] as number, j = L.j[l] as number;
+    const x = i % width;
+    return j === i + 1 ? x & 1 : 2 + (((i - x) / width) & 1);
+  };
+  const order = Array.from({ length: L.n }, (_, l) => l).sort((p, q) => phase(p) - phase(q) || p - q);
+  const at = new Int32Array(5);
+  for (const l of order) at[phase(l) + 1] = (at[phase(l) + 1] as number) + 1;
+  for (let p = 0; p < 4; p++) at[p + 1] = (at[p + 1] as number) + (at[p] as number);
+  const out: PhasedLinks = {
+    n: L.n, at,
+    i: Int32Array.from(order, (l) => L.i[l] as number), j: Int32Array.from(order, (l) => L.j[l] as number), air: Uint8Array.from(order, (l) => L.air[l] as number),
+  };
+  phaseCache.set(frame, out);
+  return out;
+}
+
+/** Phase orders, one per substep in turn: each phase leads and trails equally often, so no direction leads overall. */
+const ORDERS = [[0, 1, 2, 3], [1, 0, 3, 2], [2, 3, 0, 1], [3, 2, 1, 0], [3, 2, 1, 0], [2, 3, 0, 1], [1, 0, 3, 2], [0, 1, 2, 3]] as const;
+
+/**
+ * Pairwise in-place mixing of two fields: each phase's pairs are disjoint, so a phase updates in place with no delta buffer and no
+ * second pass. `step` picks the phase order (ORDERS, in turn). With k * conductance <= 0.5 an exchange never overshoots, so values stay
+ * non-negative. Mass moves only between the two ends of a pair, so it is conserved exactly apart from airless sinks.
+ */
+export function mixPairs(frame: FieldFrame, cond: Float64Array, a: Float64Array, b: Float64Array, kNormal: number, kVent: number, step: number): void {
+  const P = phasesOf(frame);
+  for (const p of ORDERS[step % ORDERS.length] as readonly number[]) {
+    for (let l = P.at[p] as number, end = P.at[p + 1] as number; l < end; l++) {
+      const i = P.i[l] as number, j = P.j[l] as number, air = P.air[l] as number;
+      const c = Math.min(cond[i] as number, cond[j] as number);
+      if (c <= 0) continue;
+      const k = (air !== 0 ? kVent : kNormal) * c;
+      const d1 = k * ((a[i] as number) - (a[j] as number));
+      const d2 = k * ((b[i] as number) - (b[j] as number));
+      if ((air & 1) === 0) { a[i] = (a[i] as number) - d1; b[i] = (b[i] as number) - d2; }
+      if ((air & 2) === 0) { a[j] = (a[j] as number) + d1; b[j] = (b[j] as number) + d2; }
+    }
+  }
+}
