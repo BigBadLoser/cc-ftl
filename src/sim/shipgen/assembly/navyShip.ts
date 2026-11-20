@@ -276,17 +276,27 @@ export function assembleNavy(
 export function navyAttempts(defs: Record<string, ModuleDef>, assemble: (n: number, extra: number) => GenResult): GenResult {
   const failures: string[] = [];
   let last: GenResult | null = null;
+  let error: unknown = null;
+  // An attempt that throws (its rooms fit no hull) is a failure like any other; more engines that no hull holds keep
+  // the attempt before them.
+  const tryAssemble = (n: number, extra: number): GenResult | null => {
+    try { return assemble(n, extra); } catch (e) { error = e; failures.push(e instanceof Error ? e.message : String(e)); return null; }
+  };
   for (let n = 0; n < 24; n++) {
-    let r = assemble(n, 0);
+    let r = tryAssemble(n, 0);
+    if (!r) continue;
     for (let k = 0, extra = 0; k < 3 && r.problems[0]?.startsWith('engines carry'); k++) {
       extra += Math.max(1, enginesShort(defs, r.template));
-      r = assemble(n, extra);
+      const more = tryAssemble(n, extra);
+      if (!more) break;
+      r = more;
     }
     last = { ...r, failures: [...failures] };
     if (r.problems.length === 0) return last;
     failures.push(r.problems[0] as string);
   }
-  return last as GenResult;
+  if (!last) throw error;
+  return last;
 }
 
 /** A navy ship by attempts. `type` defaults to the seed's (`navyTypeOf`). */

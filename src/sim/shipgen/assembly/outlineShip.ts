@@ -6,6 +6,10 @@ import { fitShell, seedOf } from '../generate';
 import { ENGINE_TIERS, REACTOR_TIERS, planShip, reactorsFor, type ShipPlan } from '../plan';
 import type { FactionDef, GenResult } from '../types';
 import { layoutBlocks, type Mask } from './blockLayout';
+import { bayRooms } from './bayRooms';
+import { outlineFrame } from './frame';
+import { paintPlaced } from './placePaint';
+import type { Placed } from './placeLayout';
 import { gunsAndReactors } from './pairs';
 import { NAVY_TYPES, navyAttempts, navyRole, shipCommons, shipQuarters, type NavyType } from './navyShip';
 import { SPACE, type RegionGrid } from './regions';
@@ -98,7 +102,8 @@ function dropIslands(g: RegionGrid): boolean {
   const seen = new Set<number>(), parts = new Map<number, number[][]>();
   for (let y = -half; y < half; y++) for (let x = -half; x < half; x++) {
     const k = (y + half) * size + x + half, r = g.at(x, y);
-    if (seen.has(k) || r < 0 || !floor(x, y)) continue;
+    // (A hall may run in pieces: the battery's corridor, between its gun rooms.)
+    if (seen.has(k) || r < 0 || !floor(x, y) || g.regions[r]?.hall) continue;
     const part: number[] = [], stack = [[x, y] as const];
     seen.add(k);
     while (stack.length > 0) {
@@ -167,14 +172,34 @@ export function scaleSearch<T>(sil: Silhouette, maxBeam: number, fit: (m: Mask) 
   return null;
 }
 
+function blockGrid(plan: ShipPlan, sil: Silhouette, maxBeam: number, defs: Record<string, ModuleDef>, type: NavyType, vary: number[]): RegionGrid {
+  const found = scaleSearch(sil, maxBeam, (m) => layoutBlocks(plan, m, type, vary, defs));
+  if (!found) throw new Error(`outline ${type}: rooms do not fit`);
+  return found.l.g;
+}
+
+/** Bay layouts: the first few hull sizes the rooms fit (a quick search each), the best of them by fit and length, searched again in full. */
+function bayGrid(plan: ShipPlan, sil: Silhouette, maxBeam: number, defs: Record<string, ModuleDef>, type: NavyType): RegionGrid {
+  const cands: { W: number; l: Placed }[] = [];
+  scaleSearch(sil, maxBeam, (m) => {
+    const fr = outlineFrame(plan, m);
+    if (!fr) return null;
+    const q = bayRooms(plan, fr, defs, 400);
+    if (q.viable > 0) cands.push({ W: m.W, l: q });
+    return cands.length >= 4 ? q : null;
+  }, 1, 0.45, 0.45);
+  const best = cands.sort((a, b) => a.l.score + a.W / 20 - (b.l.score + b.W / 20))[0];
+  if (!best) throw new Error(`outline ${type}: rooms do not fit`);
+  return paintPlaced(plan, bayRooms(plan, best.l.fr, defs, 3000));
+}
+
 export function assembleOutline(
   f: FactionDef, factionId: string, seed: number, depth: number, defs: Record<string, ModuleDef>, type: NavyType, n = 0, extra = 0,
 ): GenResult {
-  const { rng, role, plan, sil, vary, maxBeam } = outlineInputs(f, seed, depth, defs, type, n, extra);
-  const found = scaleSearch(sil, maxBeam, (m) => layoutBlocks(plan, m, type, vary, defs));
-  if (!found) throw new Error(`outline ${type}: rooms do not fit`);
-  const lay = found.l;
-  const { g } = lay;
+  // PROTOTYPE (#581): a cruiser's rooms on bays, along a gun battery.
+  const bays = type === 'cruiser';
+  const { rng, role, plan, sil, vary, maxBeam } = outlineInputs(f, seed, depth, defs, type, n, extra, bays);
+  const g = bays ? bayGrid(plan, sil, maxBeam, defs, type) : blockGrid(plan, sil, maxBeam, defs, type, vary);
   thinHull(g);
   if (dropIslands(g)) thinHull(g);
   const cell = g.compile(), snap = g.snapshot(cell);
