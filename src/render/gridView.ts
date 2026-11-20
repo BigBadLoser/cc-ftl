@@ -28,7 +28,7 @@ import type { BuildGate } from "./buildBudget";
 import { iso } from "./iso";
 import { bellyIds, engineHullTiles, nearGhostId, exteriorIds, gridHullKeys, isStationPiece, PLAIN_PAINT, type HullKeys, type HullLook, type HullPaint } from "./hullArt";
 import { bermId, lowId } from "./stationHull";
-import { diagWallPieces } from "./diagWall";
+import { deckHalf, diagWallPieces, halfSprite } from "./diagWall";
 
 export type { CutawayMode };
 
@@ -319,6 +319,14 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
             // (A far diagonal's deck lies under a wall tile, whose own cell has no room light: lit as its wall is.)
             tinted.push({ spr: made[0] as Sprite, x, y, ci, wall: !!diag, solid: false });
           }
+          // A diagonal's inner tile whose cut hull dropped the plate: the cut covers half of it, the other half is deck.
+          const half = !f && ghosts && hull && k !== Struct.Floor ? deckHalf(hull, x, y) : null;
+          const deck = half ? atlas.firstOf(floorChain(x, y, fin)) : undefined;
+          if (half && deck) {
+            const made = addStatic(L, halfSprite(deck, half), x, y, 0, v.floor);
+            owned.push(...made);
+            tinted.push({ spr: made[0] as Sprite, x, y, ci, wall: true, solid: false });
+          }
           if (f && k === Struct.Floor && anyMarks) drawMarks(x, y, ci, v);
           if (k === Struct.Floor) continue;
           // The engine's hull row (walls up or roofed) is the engine's own bulkhead sprite: no hull wall on it.
@@ -463,6 +471,10 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
       // A ground base's near hull: the station's foot (no belly), the berm against it.
       const foot = lowId(h, x, y, has);
       if (foot) put(foot, z + 0.001, L.sorted, solid);
+      // Its ghost over the cut, as a ship's near hull's (the station's: on its cut).
+      const g = foot ? nearGhostId(h, x, y, has, solid, "station") : undefined;
+      const gs = g ? atlas.stat(g) : undefined;
+      if (gs) v.owned.push(...addStatic(L, gs, x, y, z + 0.0025, L.sorted));
       return berm() || !!foot;
     }
     const cutLook: HullLook = station ? "ship" : look;

@@ -3,7 +3,8 @@ where its armour face rises from the deck-level cut (wall3d_belly, `top` FAR_LOW
 line along the cut's outer edge, faint lines rising at the tile seams and where the outline turns (its chamfers), fading as
 they go, and the same fading fill between them. One per hull key (hull_catalog), as the belly's pieces, on every front:
 the near hull's, and a side diagonal's or a far run's where it is cut too (a step in a side, the back wall across a notch;
-render/tiles.ts hidesShip): tile.hull.ghost.n.<key name>."""
+render/tiles.ts hidesShip): tile.hull.ghost.n.<key name>. A ground base's (tile.hull.station.ghost.n.<key name>) stands on
+its cut, higher than the ship's (station_hull_walls.FOOT_Z), as tall over it."""
 from . import core
 from . import hull_outline as HO
 from . import wall3d_belly as B
@@ -16,9 +17,9 @@ BACK = tuple(f"gFillN{i}" for i in range(11))   # the fill, bottom up: as the re
 Z0 = B.FAR_LOW                             # (from the cut's top, flush with the deck)
 
 
-def _top():
+def _top(z0=Z0):
     from .walls import hull_top
-    return Z0 + hull_top() / 6 - 0.02      # (as tall as the rear's)
+    return z0 + hull_top() / 6 - 0.02      # (as tall as the rear's)
 
 
 def _faces(key, za, zb):
@@ -33,15 +34,16 @@ def _faces(key, za, zb):
     return out
 
 
-def _cuts():
-    z1 = _top()
-    lo = Z0 + (z1 - Z0) / 3                # (the bottom band a third of the height, the fade in ten bands above)
-    return [Z0] + [lo + (z1 - lo) * k / (len(BACK) - 1) for k in range(len(BACK))]
+def _cuts(z0=Z0):
+    z1 = _top(z0)
+    lo = z0 + (z1 - z0) / 3                # (the bottom band a third of the height, the fade in ten bands above)
+    return [z0] + [lo + (z1 - lo) * k / (len(BACK) - 1) for k in range(len(BACK))]
 
 
-def upright(key):
-    """The ghost of a hull key: [plate, lines, fill]; [] if the key has no front."""
-    z1 = _top()
+def upright(key, z0=Z0):
+    """The ghost of a hull key, standing on a cut at z0: [plate, lines, fill]; [] if the key has no front."""
+    Z0 = z0
+    z1 = _top(z0)
     faces = _faces(key, Z0, z1)
     if not faces:
         return []
@@ -61,7 +63,7 @@ def upright(key):
                     za, zb = Z0 + (z1 - Z0) * k / len(FADE), Z0 + (z1 - Z0) * (k + 1) / len(FADE)
                     strip(m, (*xy, za), (*xy, zb), tone)
     f = _Fill(f"hull_near_fill_{name}", flat=True)
-    cuts = _cuts()
+    cuts = _cuts(z0)
     for k, tone in enumerate(BACK):
         for pts in _faces(key, cuts[k], cuts[k + 1]):
             f.poly([core.G(*p) for p in pts], tone)
@@ -84,4 +86,10 @@ def sprites():
     for k in HC.keys():
         if k and _some(k):
             out.append((f"tile.hull.ghost.n.{HO.name(k)}", (1, 1), "wire", lambda k=k: upright(k)))
+            out.append((f"tile.hull.station.ghost.n.{HO.name(k)}", (1, 1), "wire", lambda k=k: upright(k, _station_z())))
     return out
+
+
+def _station_z():
+    from .station_hull_walls import FOOT_Z
+    return FOOT_Z

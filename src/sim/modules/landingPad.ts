@@ -21,8 +21,8 @@ export function isLandingPad(def: Pick<ModuleDef, 'vehicleBay'> | undefined): bo
   return !!def?.vehicleBay?.pad;
 }
 
-/** How far (tiles) an airlock's outer door may be from a pad's footprint for the pad to be that airlock's (the apron the generator keeps: collar and one more). */
-const NEAR = 4;
+/** How far (tiles) an airlock's outer door may be from a pad's footprint for the pad to be that airlock's (the generator's 5-tile apron, collar and one more). */
+const NEAR = 7;
 
 /**
  * The pad an airlock opens onto (the nearest pad of its ship within NEAR tiles of its outer door), or 0 when it has none: a base of

@@ -177,7 +177,7 @@ export function placeGroundTurrets(lay: Layout, plan: GroundPlan): GroundFit {
   return out;
 
   /**
-   * The landing pads (#509): each stands on its box, turned so its port side faces the shortest cable to a hull wall (the same cable rules
+   * The landing pads (#509): each stands on its box, turned so its port side (a camera-facing side) faces the shortest cable to a hull wall (the same cable rules
    * as a turret's, from the port tile `groundPort` gives), clear of the airlock approaches. A pad no cable reaches is counted in `unwired`.
    */
   function wirePads(): void {
@@ -187,6 +187,8 @@ export function placeGroundTurrets(lay: Layout, plan: GroundPlan): GroundFit {
       let best: { rot: number; run: number[] } | null = null;
       for (let rot = 0; rot < 4; rot++) {
         const port = groundPort(def, { x, y, rot });
+        // Its cable comes out of a side facing the camera (+x or +y, the bottom of it on screen), never from behind it.
+        if (port.dir.x + port.dir.y <= 0) continue;
         const reach = hullReach();
         const first = port.cable.y * w + port.cable.x;
         if (!lay.inBounds(port.cable.x, port.cable.y) || !runs(first) || approach[first]) continue;

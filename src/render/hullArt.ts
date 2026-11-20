@@ -163,13 +163,14 @@ export function bellyIds(h: HullKeys, x: number, y: number, has: (id: string) =>
 /**
  * The cut hull's ghost on a tile (`tile.hull.ghost.n.<key>`: a faint upright on its outer edge, over its cut top; the near
  * hull's, and a side diagonal's or far run's where it is cut too), for the same key as its belly (`bellyIds`), or
- * undefined if the art has none.
+ * undefined if the art has none. `look` "station": a ground base's, standing on its cut (higher than the ship's).
  */
 export function nearGhostId(h: HullKeys, x: number, y: number, has: (id: string) => boolean, hull = false, look: HullLook = "ship"): string | undefined {
-  if (look === "station" || !h.ship(x, y)) return undefined;
+  if (!h.ship(x, y)) return undefined;
   const k = h.at(x, y);
+  const pre = look === "station" ? "tile.hull.station.ghost.n." : "tile.hull.ghost.n.";
   for (const n of [k ? hullKeyName(k) : undefined, hull ? fallbackBelly(h, x, y) : undefined]) {
-    if (n && has(`tile.hull.ghost.n.${n}`)) return `tile.hull.ghost.n.${n}`;
+    if (n && has(pre + n)) return pre + n;
   }
   return undefined;
 }
