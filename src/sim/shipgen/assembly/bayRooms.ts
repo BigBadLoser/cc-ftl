@@ -24,7 +24,8 @@ type Specs = [RoomSpec | null, RoomSpec | null];
 /** `split`: a host and its annex's front tier's last row, where they moved the wall between them off the bays' line. */
 interface Spot { side: Side; i: number; j: number; tier: Tier; area: number; via?: Part['via']; split?: number }
 interface Item { specs: Specs; both: boolean; cabins?: boolean }
-interface Put { item: Item; specs: Specs; spot: Spot; annex?: Spot; fill?: boolean }
+/** `strip`: a row of that many single cabins along a lane, off the side corridor. */
+interface Put { item: Item; specs: Specs; spot: Spot; annex?: Spot; fill?: boolean; strip?: number }
 
 /** The kinds a leftover back tier may be filled with. */
 const FILL_KINDS = (['hold', 'workshop', 'lounge', 'gym', 'farm', 'armoury', 'battery', 'shop', 'lab', 'provisions'] as Filler[]).map((k) => roomKind(fillerSpec(k, 20)));
@@ -37,7 +38,7 @@ const TARGET = 1.35;
 const sizeCost = (r: number): number => (r < TARGET ? 2 * (TARGET - r) : 0.4 * (r - TARGET));
 
 /** All the plan's reactors in one room and all its shield generators in another, a mirrored pair; the rest single. */
-function program(plan: ShipPlan, defs: Record<string, ModuleDef>, inBattery: number, hangars = true): Item[] {
+function program(plan: ShipPlan, defs: Record<string, ModuleDef>, inBattery: number, hangars = true, blocks = true): Item[] {
   const { gunPairs, cabinPairs } = programPairs(plan, defs);
   const { lone } = gunsAndReactors(plan, defs);
   // (Prototype sizes, here until the plan takes them: a 5x4 brig; the core split into an AI core room and a drone room, 5x4 each.)
@@ -50,7 +51,7 @@ function program(plan: ShipPlan, defs: Record<string, ModuleDef>, inBattery: num
   // (And a mess of 7x5 at least: the crew's commons.)
   const mess = (r: RoomSpec): RoomSpec => (r.mods.includes('module.galley') ? { ...r, w: Math.max(r.w, 7), h: Math.max(r.h, 5) } : r);
   const singles = [...lone, ...cores, ...plan.quarters.filter((q) => !q.block), ...plan.support.map(brig).map(mess), ...plan.cargo.map(brig), ...(hangars ? plan.hangars : [])];
-  const items: Item[] = cabinPairs.map((p) => ({ specs: [p[0], p[1]], both: true, cabins: true }));
+  const items: Item[] = blocks ? cabinPairs.map((p) => ({ specs: [p[0], p[1]], both: true, cabins: true })) : [];
   const reactor = plan.reactors > 0 ? reactorSpec(plan.reactors, plan.kit) : null;
   const shields: RoomSpec | null = plan.shields.length > 0
     ? { role: 'shields', mods: plan.shields.flatMap((s) => s.mods), w: plan.shields.reduce((t, s) => t + s.w, 0), h: Math.max(...plan.shields.map((s) => s.h)) } : null;
@@ -294,7 +295,25 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
     return { puts, score };
   }
 
-  dfs([emptySide(), emptySide()], [], order, 0);
+  // A lane hull's cabins: single cabins along the lane, inboard of the side corridors from the hangar aft, the beds
+  // shared between the sides; where the strip is too short for them, cabin blocks as anywhere.
+  const strip: Put[] = [];
+  if (fr.lane) {
+    const beds = plan.quarters.filter((q) => q.block).reduce((t, q) => t + q.mods.length, 0);
+    for (const s of [0, 1] as const) {
+      let need = s === 0 ? Math.ceil(beds / 2) : Math.floor(beds / 2);
+      for (let k = 0; k < n && need > 0; k++) {
+        if ((bay(k).row?.dir ?? 1) > 0) continue;
+        const c = Math.min(need, Math.max(1, Math.floor((bay(k).x1 - bay(k).x0 + 1) / 4))), cab: RoomSpec = { role: 'quarters', mods: Array<string>(c).fill('module.bed'), w: 3 * c, h: 3 };
+        strip.push({ item: { specs: on(cab, s), both: false, cabins: true }, specs: on(cab, s), spot: { side: s, i: k, j: k + 1, tier: 'full', area: area(k, k + 1, 'full') }, strip: c });
+        need -= c;
+      }
+      if (need > 0) strip.length = 0;
+      if (need > 0) break;
+    }
+  }
+  const occ0 = strip.reduce<Occ>((o, p) => take(o, p.spot, p), [emptySide(), emptySide()]);
+  dfs(occ0, strip, strip.length > 0 ? program(plan, defs, fr.maint ? gunPairs.length : 0, !fr.lane, false) : order, 0);
   const got = best as { puts: Put[]; score: number } | null;
   const lay: Layout = { blocks: [{ a: fr.xBand, b: fr.xS, crossL: false, crossR: false, free: [], pieces: toPieces(got?.puts ?? []) }], stern: null, stubs: [], done: [] };
   const battery = fr.maint ? gunPairs.slice(0, fr.maint.guns.length + fr.maint.inner.length) : [];
@@ -318,7 +337,7 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
     return sorted.map((p) => {
       const parts = [part(p.spot, p.specs, p.fill)];
       if (p.annex) parts.push(part(p.annex, [p.specs[0]?.annex ?? null, p.specs[1]?.annex ?? null]));
-      return { x0: parts[0]?.x0 ?? 0, x1: parts[0]?.x1 ?? 0, parts, ...(p.item.cabins ? { cabins: true } : {}) };
+      return { x0: parts[0]?.x0 ?? 0, x1: parts[0]?.x1 ?? 0, parts, ...(p.item.cabins ? { cabins: true } : {}), ...(p.strip ? { strip: p.strip } : {}) };
     });
   }
 }

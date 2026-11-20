@@ -146,6 +146,8 @@ const DRIVE_REDRAWS = 4;
 const ENGINE_GAP = 2;
 /** A lane hull's lane half-widths, widest first: narrower where its side hulls are too shallow for their rooms. */
 const LANES = [8, 7, 6, 5, 4, 3];
+/** A hull's floor against its mask's tiles, about (walls and corridors out). */
+const LIT = 0.7;
 
 export function outlineInputs(
   f: FactionDef, seed: number, depth: number, defs: Record<string, ModuleDef>, type: NavyType, n = 0, extra = 0, bay?: BayLayout,
@@ -244,8 +246,10 @@ function bayGrid(plans: ShipPlan[], lanes: Silhouette[][], maxBeam: number, defs
         for (const plan of plans) {
           const fr = outlineFrame(plan, m, defs[plan.kit.engine]?.engine?.hullCapacity ?? 0, ENGINE_GAP, lane);
           if (!fr) continue;
-          const q = bayRooms(plan, fr, defs, 400);
-          if (q.viable > 0) { cands.push({ W: m.W, l: q, plan }); break lanes; }
+          // (A lane hull's floor is far past its rooms' plan: its reactors light the hull's.)
+          const lit = fr.lane ? { ...plan, reactors: reactorsFor(plan, defs, Math.round(LIT * fr.area)) } : plan;
+          const q = bayRooms(lit, fr, defs, 400);
+          if (q.viable > 0) { cands.push({ W: m.W, l: q, plan: lit }); break lanes; }
           continue lanes;
         }
       }

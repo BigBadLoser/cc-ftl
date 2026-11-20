@@ -56,6 +56,8 @@ export interface Frame {
   /** PROTOTYPE (#581): the battery's maintenance corridor, its row out from the axis per column (rooms stop short of it). */
   maint?: { a: number; b: number; guns: [number, number][]; rows: number; inner: number[]; hallY: (x: number) => number };
   lane?: Lane;
+  /** The mask's tiles (counted where the drive is sized by the hull). */
+  area: number;
 }
 
 /** A finished hull's area against its mask's, at most (`thinHull`, `dropIslands`). */
@@ -144,7 +146,7 @@ export function outlineFrame(plan: ShipPlan, m: Mask, carry = 0, gap = 0, lane?:
   if (ln) for (const h of HANGAR) { const x = ln.head - h - CW; if (x > xBand + MIN_DEPTH && flat(x)) { dockAt = x; break; } }
   else if (!bt) for (let x = xBand + MIN_DEPTH + 1; x <= Math.min(xS - MIN_DEPTH - CW - 1, xBand + 0.75 * (xS - xBand)); x++) if (flat(x) && (dockAt < 0 || depth(x) > depth(dockAt))) dockAt = x;
   if (dockAt < 0) return null;
-  return { W, H, inside, top, outer, depth, xS, xEnd, sternMax, perSide, used, engine, xBr, xBand, CW, dockAt, ...(bt ? { maint: { a: g0, b: g1, guns: bt.guns, rows: bt.rows, inner: bt.inner, hallY } } : {}), ...(ln ? { lane: ln } : {}) };
+  return { W, H, inside, top, outer, depth, area: tiles, xS, xEnd, sternMax, perSide, used, engine, xBr, xBand, CW, dockAt, ...(bt ? { maint: { a: g0, b: g1, guns: bt.guns, rows: bt.rows, inner: bt.inner, hallY } } : {}), ...(ln ? { lane: ln } : {}) };
 }
 
 /**

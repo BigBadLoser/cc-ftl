@@ -21,7 +21,7 @@ export interface Part {
   /** Its way in, where the layout fixed it: the dock's corridor, the battery's, or the room in front. */ via?: 'dock' | 'maint' | 'front';
   /** Its rows, where not out from the spine (a lane hull's side corridor). */ row?: Row;
 }
-export interface Piece { x0: number; x1: number; parts: Part[]; cabins?: boolean }
+export interface Piece { x0: number; x1: number; parts: Part[]; cabins?: boolean; /** Single cabins in a row, that many (a lane's strip). */ strip?: number }
 /** A side's stretch between corridors and the drive: columns [a, b), its free runs (end exclusive) and its pieces. */
 export interface Block { a: number; b: number; crossL: boolean; crossR: boolean; free: [number, number][]; pieces: Piece[] }
 /** A corridor stub: a hall column from the spine to the hull. */

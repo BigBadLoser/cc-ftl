@@ -296,8 +296,9 @@ export function planDemand(plan: ShipPlan, defs: Record<string, ModuleDef>): num
 }
 
 /** Reactors of the plan's tier that power it, its planned rooms' lamps included (`LAMP_AREA`). */
-export function reactorsFor(plan: ShipPlan, defs: Record<string, ModuleDef>): number {
-  const floor = allRooms(plan).reduce((n, r) => n + r.w * r.h, 0);
+export function reactorsFor(plan: ShipPlan, defs: Record<string, ModuleDef>, hullFloor = 0): number {
+  // (Lit floor: the rooms' plan, or the hull's own where it is known and bigger.)
+  const floor = Math.max(hullFloor, allRooms(plan).reduce((n, r) => n + r.w * r.h, 0));
   return Math.max(1, Math.ceil((planDemand(plan, defs) + Math.ceil(floor / LAMP_AREA)) / (defs[plan.kit.reactor]?.power ?? 50)));
 }
 

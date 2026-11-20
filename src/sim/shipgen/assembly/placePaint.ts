@@ -25,6 +25,17 @@ export function paintPlaced(plan: ShipPlan, { fr, lay, battery }: Placed): Regio
       const ids = ([0, 1] as const).map((side) => {
         const h = q.spec[side], sign = side === 0 ? -1 : 1, d = (y: number): number => sign * y;
         if (!h) return -1;
+        // A lane's strip: its bay cut into single cabins side by side, each on the side corridor (the wall between
+        // two is the one a cabin gives way).
+        if (pc.strip) {
+          const n = pc.strip;
+          for (let c = 0; c < n; c++) {
+            const a = q.x0 + Math.round(((q.x1 - q.x0) * c) / n), b = q.x0 + Math.round(((q.x1 - q.x0) * (c + 1)) / n);
+            const spec: RoomSpec = { role: 'quarters', mods: ['module.bed'], w: b - a, h: 3 };
+            paint(g.room('quarters', { spec }), a, b, (y) => rows(q, d(y)));
+          }
+          return hall;
+        }
         if (pc.cabins) {
           let rowsMin = Infinity;
           for (let tx = q.x0; tx < q.x1; tx++) rowsMin = Math.min(rowsMin, (q.row?.depth ?? fr.depth)(tx));
