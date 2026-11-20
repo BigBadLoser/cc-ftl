@@ -6,6 +6,10 @@ order: 2
 Every room holds its own air, and air moves through open doors until the rooms match. A shut door stops it, which is what
 you want when one side is on fire or open to space, and a nuisance when you only want two rooms to share air.
 
+Crew use up oxygen as they breathe, faster than they add CO₂, so on a ship whose life support stops it is oxygen that runs out.
+Five crew on the starter ship with life support off get the low-oxygen alert after about an hour of play, and start to be hurt
+about an hour after that.
+
 ## Door vents
 
 Every door has a **vent**, and it starts **open**, so the air in a ship evens out between its rooms. Select a door to open its inspector, which names the two sides it joins, shows its state (open, shut, jammed) and whether the air on each side is breathable, and offers **Close vent** to seal it (press **Open vent** to open it again).
