@@ -9,6 +9,7 @@ import type { Sprite } from 'pixi.js';
 import type { Atlas } from './assets/loader';
 import { cableTileId, type CableSide } from './groundCable';
 import { depthKey } from './iso';
+import { isLandingPad } from '../sim/modules/landingPad';
 import type { Layers } from './layers';
 import { moduleKey, type ModuleDefs } from './moduleView';
 import type { ModuleDef } from '../sim/registry';
@@ -28,11 +29,13 @@ export interface CableView {
 /**
  * The depth key of a cabled tile (x, y), in grid-local tiles: `depthKey`, except beside a ground piece's +x or +y face, where the tile is in
  * front of the piece (its sprite stands up over the face) and so draws after it, just over the piece's own key. Tiles beside its -x or -y face
- * sort before it already. `pieces` are the ground mounts and pads, in the same tile frame.
+ * sort before it already. `pieces` are the ground mounts and pads, in the same tile frame. A landing pad lies flat and sorts at its back
+ * tile (moduleView), so a cable beside it keeps its own tile's depth (and draws under the walls in front of it).
  */
 export function cableDepth(x: number, y: number, pieces: readonly { def: ModuleDef; x: number; y: number; rot: number }[]): number {
   let d = depthKey(x, y);
   for (const p of pieces) {
+    if (isLandingPad(p.def)) continue;
     const [w, h] = rotatedSize(p.def, p.rot);
     const x1 = p.x + w, y1 = p.y + h;
     if ((x === x1 && y >= p.y && y < y1) || (y === y1 && x >= p.x && x < x1)) d = Math.max(d, moduleKey(p.def, x1 - 1, y1 - 1) + 0.01);

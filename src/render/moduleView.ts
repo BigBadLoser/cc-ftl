@@ -263,7 +263,8 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
         }
         return;
       }
-      const k = key(m.x + w - 1, m.y + h - 1);
+      // A landing pad lies flat on the ground: sorted at its back tile, so the walls beside it and what stands on it draw over it.
+      const k = isLandingPad(def) ? key(m.x, m.y) : key(m.x + w - 1, m.y + h - 1);
       out.push(makePart(s, m.x + w - 1, m.y + h - 1, flip, k, art.tint, glowKey(layer, k), layer.overlay));
       for (let j = from; j < out.length; j++) out[j]!.li = i;
     });
