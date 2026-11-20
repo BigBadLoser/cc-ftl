@@ -147,7 +147,7 @@ const ENGINE_GAP = 2;
 /** A lane hull's lane half-widths, widest first: narrower where its side hulls are too shallow for their rooms. */
 const LANES = [8, 7, 6, 5, 4, 3];
 /** A hull's floor against its mask's tiles, about (walls and corridors out). */
-const LIT = 0.7;
+const LIT = 0.3;
 
 export function outlineInputs(
   f: FactionDef, seed: number, depth: number, defs: Record<string, ModuleDef>, type: NavyType, n = 0, extra = 0, bay?: BayLayout,

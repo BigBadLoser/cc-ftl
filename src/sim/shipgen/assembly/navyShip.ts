@@ -80,7 +80,7 @@ export const NAVY_TYPES: Record<NavyType, Shape> = {
   frigate: { maxBeam: 31, centre: 'none', bow: 'bridge', guns: 'spread', family: 'frigate', sleep: 'bunks' },
   destroyer: { maxBeam: 33, centre: 'none', bow: 'battery', guns: 'forward', family: 'frigate', sleep: 'beds', bonus: { weapons: 4, reactors: 1, engines: 1, crew: -1, crates: -1 } },
   cruiser: { maxBeam: 41, engines: 4, layout: { battery: true }, centre: 'citadel', bow: 'bridge', guns: 'spread', family: 'cruiser', sleep: 'cabins', bays: 1, rooms: ['medbay', 'brig', 'farm', 'pantry'], bonus: { weapons: 3, reactors: 2 } },
-  carrier: { maxBeam: 51, minLength: 115, gunRooms: 6, layout: { battery: false, lane: true }, centre: 'deck', bow: 'bridge', guns: 'spread', family: 'carrier', sleep: 'cabins', rooms: ['medbay', 'brig', 'farm', 'pantry'] },
+  carrier: { maxBeam: 51, minLength: 115, gunRooms: 4, layout: { battery: false, lane: true }, centre: 'deck', bow: 'bridge', guns: 'spread', family: 'carrier', sleep: 'cabins', rooms: ['medbay', 'brig', 'farm', 'pantry'] },
 };
 
 /** Floor depth of an ordinary strip room. */
