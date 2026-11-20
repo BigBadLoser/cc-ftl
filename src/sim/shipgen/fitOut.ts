@@ -110,7 +110,7 @@ export function fitOut(
         const id = lay.modules[idx]?.def as string;
         placed[id] = (placed[id] ?? 0) + 1;
         stockUp(idx, spec);
-        if (spec?.vehicle && defs[id]?.vehicleBay) out.vehicles.set(idx, defs[id]?.vehicleBay?.builtWith ?? 'vehicle.shuttle');
+        if (spec?.vehicle && defs[id]?.vehicleBay) out.vehicles.set(idx, typeof spec.vehicle === 'string' ? spec.vehicle : defs[id]?.vehicleBay?.builtWith ?? 'vehicle.shuttle');
         if (spec?.drones && defs[id]?.droneBay) out.drones.set(idx, Array<string>(Math.min(spec.drones.count, defs[id]?.droneBay?.slots ?? 0)).fill(spec.drones.def));
       }
     });
@@ -146,7 +146,7 @@ export function fitOut(
       }
       if (fi !== null) stockUp(fi, j.spec);
     }
-    if (j.spec.vehicle && defs[j.def]?.vehicleBay) out.vehicles.set(idx, defs[j.def]?.vehicleBay?.builtWith ?? 'vehicle.shuttle');
+    if (j.spec.vehicle && defs[j.def]?.vehicleBay) out.vehicles.set(idx, typeof j.spec.vehicle === 'string' ? j.spec.vehicle : defs[j.def]?.vehicleBay?.builtWith ?? 'vehicle.shuttle');
     if (j.spec.drones && defs[j.def]?.droneBay) out.drones.set(idx, Array<string>(Math.min(j.spec.drones.count, defs[j.def]?.droneBay?.slots ?? 0)).fill(j.spec.drones.def));
   }
   if (o.ground) {

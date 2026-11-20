@@ -49,7 +49,8 @@ export interface RoomSpec {
   stock?: boolean;
   /** A star fort's corner battery (assembly/fort.ts): a pointed room furnished along its diagonal (rooms/rules/bastion.ts). */
   bastion?: true;
-  vehicle?: boolean;
+  /** Its vehicle bays hold vehicles (`true`: the bay's own; an id: that vehicle). */
+  vehicle?: boolean | string;
   /** A drone bay here is filled with this many drones of this DroneDef id. */
   drones?: { def: string; count: number };
   /** No door: equipment serviced from outside; its footprint fills the room (no connectivity check). */

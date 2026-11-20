@@ -271,7 +271,10 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
       if (a < 9) { score += 5; continue; }
       // The next filler kind left; behind a room, the first kind that may open through it.
       let f: RoomSpec | null = null, via: Part['via'] | undefined;
-      for (const kd of [...(a >= 12 ? left : []), 'hold'] as Filler[]) {
+      // (A carrier's spare floor past those, where no room stands behind it (none may open through them): escape pods
+      // where the bay reaches the hull, else drones.)
+      const out = (bay(k).row?.dir ?? 1) > 0, extra: Filler[] = fr.lane && a >= 16 && tier !== 'front' ? [out ? 'pods' : 'drones'] : [];
+      for (const kd of [...(a >= 12 ? left : []), ...extra, 'hold'] as Filler[]) {
         const c = fillerSpec(kd, a), v = tier === 'back' ? backVia(o, s, k, k + 1, on(c, s)) : undefined;
         if (tier === 'back' && !v) continue;
         f = c; via = v ?? undefined;
