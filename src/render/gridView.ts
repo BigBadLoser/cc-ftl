@@ -160,9 +160,13 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
   const wallAt = tiles.wallAt; // rock walls stay RockWall: never hull
   // The wall pieces' neighbours: unroofed, a tube's near junction stands in for its wall tiles (no wall there, its ends face it).
   const pieceAt = (x: number, y: number): number => (ghosts && tiles.inside(x, y) && tube.junction.has(y * width + x) ? Struct.Space : wallAt(x, y));
-  /** A ground base's cut hull that faces away from the camera (cut because the base lies behind it on screen). */
+  /**
+   * A ground base's cut hull that faces away from the camera (cut because the base lies behind it on screen): space behind it
+   * at -x, -y or their diagonal. A side diagonal's step (space only at +x -y or -x +y) keeps its own cut ghost.
+   */
   const rearCut = (x: number, y: number): boolean =>
-    host.hullLook?.() === "station" && hullSide(pieceAt, x, y, hideReach("station")) === HullSide.Near && !outward(pieceAt, x, y);
+    host.hullLook?.() === "station" && hullSide(pieceAt, x, y, hideReach("station")) === HullSide.Near && !outward(pieceAt, x, y) &&
+    [[0, -1], [-1, 0], [-1, -1]].some(([dx, dy]) => pieceAt(x + dx!, y + dy!) === Struct.Space);
   const lockDoor = (i: number): boolean => airlocks.has(i) || tube.port.has(i);
   // Beam tiles under a cargo container are its seat, not frame: no beam sprite there, and the frame's beams end at it.
   const boxAt = (x: number, y: number): boolean => {
