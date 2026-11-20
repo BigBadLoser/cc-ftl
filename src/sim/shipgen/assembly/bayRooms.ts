@@ -3,7 +3,7 @@ import { reactorSpec, type RoomSpec, type ShipPlan } from '../plan';
 import { bayLayout, type Bay } from './bays';
 import { cabinsFor } from './cabinBlock';
 import type { Frame } from './frame';
-import { gunsAndReactors, programPairs } from './pairs';
+import { gunsAndReactors, programPairs, type Pair } from './pairs';
 import { fillers, type Layout, type Part, type Piece, type Placed } from './placeLayout';
 import { onHall, opensThrough, roomKind } from './roomAccess';
 import { fillerSpec, maxArea, type Filler } from './roomSize';
@@ -284,6 +284,12 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
   const got = best as { puts: Put[]; score: number } | null;
   const lay: Layout = { blocks: [{ a: fr.xBand, b: fr.xS, crossL: false, crossR: false, free: [], pieces: toPieces(got?.puts ?? []) }], stern: null, stubs: [], done: [] };
   const battery = fr.maint ? gunPairs.slice(0, fr.maint.guns.length + fr.maint.inner.length) : [];
+  // A doubled column's inner room (the bigger: the column's depth under the blister) takes the pair with more guns.
+  const guns = (p: Pair | undefined): number => p?.[0].mods.filter((m) => defs[m]?.weapon).length ?? 0;
+  for (const [j, site] of (fr.maint?.inner ?? []).entries()) {
+    const k = (fr.maint?.guns.length ?? 0) + j, out = battery[site], inn = battery[k];
+    if (out && inn && guns(out) > guns(inn)) { battery[site] = inn; battery[k] = out; }
+  }
   return { fr, lay, score: got?.score ?? Infinity, viable, nodes, why, pins: battery.length, sites: fr.maint?.guns.length ?? 0, battery, puts: got?.puts.length ?? 0 };
 
   function toPieces(puts: Put[]): Piece[] {
