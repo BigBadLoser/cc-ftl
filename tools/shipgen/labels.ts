@@ -146,7 +146,14 @@ function drawCable(r: Raster, g: GenResult, t: number, top: number): boolean {
 }
 
 /** Any layout as a labelled image (a generated one, or a hand-made mock), with captions at tiles when given. */
-export function labelOf(g: GenResult, title: string, t = 16, captions: readonly { x: number; y: number; text: string }[] = [], names = true, marks?: EdgeMarkings): Raster {
+/**
+ * `rooms`: what each room holds where the layout has no furniture placed yet (an outline), to name it by; a filler room
+ * is hatched.
+ */
+export function labelOf(
+  g: GenResult, title: string, t = 16, captions: readonly { x: number; y: number; text: string }[] = [], names = true, marks?: EdgeMarkings,
+  rooms?: readonly { mods: readonly string[]; filler?: boolean }[],
+): Raster {
   const rows = g.template.rows;
   const H = rows.length, W = Math.max(...rows.map((row) => row.length));
   const roles = g.rooms.map((rm) => rm.role as RoomRole);
@@ -157,6 +164,7 @@ export function labelOf(g: GenResult, title: string, t = 16, captions: readonly 
   // What each room holds, by the tile a module stands on (for its name: roomKind).
   const mods: string[][] = roles.map(() => []);
   for (const m of g.template.modules ?? []) mods[g.roomOf[m.y * g.width + m.x] ?? -1]?.push(m.def);
+  rooms?.forEach((rm, i) => mods[i]?.push(...rm.mods));
   const kinds = new Map<string, RoomRole>(roles.map((role, i) => [roomKind(role, mods[i] ?? []), role]));
   // A base on open ground (a prefab asteroid base): its levelled site as rock ground, its landing pads framed.
   const site = (g as { site?: { pads: { x: number; y: number; w: number; h: number }[] } }).site;
@@ -172,7 +180,7 @@ export function labelOf(g: GenResult, title: string, t = 16, captions: readonly 
     if (c === 'D') { r.rect(px, py, t, t, DOOR); continue; }
     const room = g.roomOf[y * W + x] ?? -1;
     const role = roles[room] ?? 'hall';
-    r.rect(px, py, t, t, roleTint(role));
+    r.rect(px, py, t, t, rooms?.[room]?.filler && (x + y) % 3 === 0 ? (roleTint(role).map((v) => v * 0.6) as RGB) : roleTint(role));
     if (room >= 0) { const m = mid.get(room) ?? [0, 0, 0]; m[0] += x; m[1] += y; m[2]++; mid.set(room, m); }
   }
   if (marks) drawMarks(r, marks, g.width, t, TOP);
