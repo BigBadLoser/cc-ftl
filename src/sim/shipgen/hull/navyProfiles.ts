@@ -1,4 +1,4 @@
-import type { Profile } from './silhouette';
+import type { Part, Profile } from './silhouette';
 
 /**
  * Navy silhouettes, two or three per type, from the parts settled on the option sheets and the type identities (docs/SHIPGEN_V4.md,
@@ -6,6 +6,17 @@ import type { Profile } from './silhouette';
  * row, so a hull is 2 * half + 1 wide. Gun mounts are sized for a gun bay (light guns 2x2, heavy 3x3, plus walls).
  * A part given as a list is a choice per seed: that is how a recipe moves its masses between seeds and keeps its identity.
  */
+/**
+ * A carrier's body behind its bow: long and broad, met at a hard shoulder, then (half the time) the hulls either side of
+ * the lane stepped in. The lane opens about half way along, after a stretch at full width (two bays); squared at its head.
+ */
+const CARRIER_BODY: readonly Part[] = [
+  [{ len: [76, 82], half: [15, 16], taper: 1 }, { len: [72, 78], half: [16, 17], taper: 1 }],
+  { len: [22, 28], half: [13, 14], chance: 0.5 },
+];
+const CARRIER_LANE: Profile['split'] = { at: [0.46, 0.5], lane: [4, 8], end: ['square'] };
+const CARRIER_STERN: Profile['stern'] = [{ kind: 'flare', len: [8, 10], out: [3, 4] }, { kind: 'bank', len: [0, 0], out: [0, 0] }];
+
 export const NAVY_PROFILES: Record<string, readonly Profile[]> = {
   // Skirmisher: small and slim, drives large for its size.
   corvette: [
@@ -49,15 +60,13 @@ export const NAVY_PROFILES: Record<string, readonly Profile[]> = {
       sections: [{ len: [6, 10], half: [8, 9] }, { len: [26, 34], half: [14, 16], taper: 1 }, [{ len: [16, 20], half: [6, 7], taper: 1 }, { len: [20, 24], half: [6, 7], taper: 1 }]],
       mounts: [{ kind: 'embrasure', count: [3, 4], len: [4, 5], depth: [1, 2], tooth: 6, span: [0.1, 0.75] }], stern: { kind: 'flare', len: [8, 12], out: [4, 6] } },
   ],
-  // Launcher: broad, built around its hangar.
+  // Launcher: longer than a cruiser, built round a launch lane open out of the stern (its floor about a cruiser's, the lane
+  // taking the rest). The bow picked per seed: a neck with hard shoulders, two steps, or a bulb on a neck.
   carrier: [
-    // A launch lane open out of the stern between two decks.
-    { id: 'carrier.split', nose: { style: ['round', 'cheek'], len: [13, 17], front: [3, 5] }, sections: [{ len: [56, 70], half: [13, 15] }],
-      split: { at: [0.25, 0.5], lane: [3, 6], end: ['square', 'round'] }, stern: [{ kind: 'bank', len: [0, 0], out: [0, 0] }, { kind: 'flare', len: [10, 13], out: [3, 4], rate: 3 }] },
-    // A broad hangar block behind a narrow bow, launching from bays open in its flanks.
-    { id: 'carrier.deck', nose: { style: ['cheek', 'stepped'], len: [12, 16], front: [3, 4] },
-      sections: [[{ len: [10, 14], half: [8, 9] }, { len: [16, 20], half: [7, 8] }], { len: [48, 58], half: [14, 16], taper: 1 }, { len: [8, 12], half: [11, 12], taper: 1 }],
-      mounts: [{ kind: 'embrasure', count: [2, 3], len: [7, 9], depth: [4, 5], tooth: 6, span: [0.2, 0.9] }],
-      stern: [{ kind: 'bank', len: [0, 0], out: [0, 0] }, { kind: 'flare', len: [8, 10], out: [3, 4], rate: 3 }] },
+    { id: 'carrier.neck', nose: { style: 'steep', len: [10, 13], front: [2, 3] }, sections: [{ len: [18, 24], half: [8, 9] }, ...CARRIER_BODY], split: CARRIER_LANE, stern: CARRIER_STERN },
+    { id: 'carrier.steps', nose: { style: 'steep', len: [10, 13], front: [2, 3] },
+      sections: [{ len: [10, 14], half: [8, 9] }, { len: [10, 14], half: [12, 13], taper: 1 }, ...CARRIER_BODY], split: CARRIER_LANE, stern: CARRIER_STERN },
+    { id: 'carrier.bulb', nose: { style: 'round', len: [7, 9], front: [3, 4] },
+      sections: [{ len: [8, 10], half: [9, 10] }, { len: [8, 12], half: [6, 7], taper: 1 }, ...CARRIER_BODY], split: CARRIER_LANE, stern: CARRIER_STERN },
   ],
 };
