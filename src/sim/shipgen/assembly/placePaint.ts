@@ -54,9 +54,14 @@ export function paintPlaced(plan: ShipPlan, { fr, lay, battery }: Placed): Regio
     }
   }
   const sternGrown = !lay.stern || !!lay.stern.grown;
-  const engines: [number, number] = [g.room('engine', { spec: engine, doorFirst: true }), g.room('engine', { spec: engine, doorFirst: true })];
-  paint(engines[0], xS + 1, W, (y) => y <= -BAND && (sternGrown || -y <= BAND + used));
-  paint(engines[1], xS + 1, W, (y) => y >= BAND && (sternGrown || y <= BAND + used));
+  // Two engine rooms either side of the spine, or one across the beam where the spine ends at it.
+  const one = fr.across ? g.room('engine', { spec: engine, doorFirst: true }) : -1;
+  const engines: [number, number] = fr.across ? [one, one] : [g.room('engine', { spec: engine, doorFirst: true }), g.room('engine', { spec: engine, doorFirst: true })];
+  if (fr.across) paint(one, xS + 1, W, (y) => sternGrown || Math.abs(y) <= BAND + used);
+  else {
+    paint(engines[0], xS + 1, W, (y) => y <= -BAND && (sternGrown || -y <= BAND + used));
+    paint(engines[1], xS + 1, W, (y) => y >= BAND && (sternGrown || y <= BAND + used));
+  }
   const st = lay.stern;
   if (st?.spec[0]) for (const side of [0, 1] as const) {
     const h = st.spec[side] as RoomSpec, sign = side === 0 ? -1 : 1;

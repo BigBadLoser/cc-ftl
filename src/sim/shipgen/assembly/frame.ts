@@ -26,6 +26,8 @@ export interface Frame {
   top: (x: number) => number; depth: (x: number) => number;
   /** The stern's first column past the band; the deepest stern column; engine rows a side and the rows they take. */
   xS: number; xEnd: number; sternMax: number; perSide: number; used: number; engine: RoomSpec;
+  /** One engine room across the beam (the spine ends at it): `perSide` is then all the engines, in one room. */
+  across?: boolean;
   /** The bridge's end column; the band's first column. */
   xBr: number; xBand: number;
   /** The cross corridor's width and its first column (the dock). */
@@ -34,11 +36,17 @@ export interface Frame {
   maint?: { a: number; b: number; guns: [number, number][]; rows: number; inner: number[]; hallY: (x: number) => number };
 }
 
+/** Rows an engine takes in a room across the beam: its four, and a row between it and the next (or spare at the end). */
+const ROWS_PER_ENGINE = 5;
+
 /** A finished hull's area against its mask's, at most (`thinHull`, `dropIslands`). */
 const HULL_OF_MASK = 0.93;
 
-/** With `carry` (the hull tiles one engine carries), the drive holds the engines the hull's own size needs, not only the plan's. */
-export function outlineFrame(plan: ShipPlan, m: Mask, carry = 0): Frame | null {
+/**
+ * With `carry` (the hull tiles one engine carries), the drive holds the engines the hull's own size needs, not only the
+ * plan's. With `across`, the engines stand in one room across the beam, the spine's rows theirs too.
+ */
+export function outlineFrame(plan: ShipPlan, m: Mask, carry = 0, across = false): Frame | null {
   const { W, H, inside } = m;
   if (2 * H + 4 > 120 || W + 4 > 240) return null;
   const top = (x: number): number => { let y = 0; while (inside(x, y + 1)) y++; return inside(x, 0) ? y : -1; };
@@ -68,9 +76,20 @@ export function outlineFrame(plan: ShipPlan, m: Mask, carry = 0): Frame | null {
   let tiles = 0;
   if (carry > 0) for (let y = -H; y <= H; y++) for (let x = 0; x < W; x++) if (inside(x, y)) tiles++;
   // (The finished hull comes out 7-9% under its mask: its walls thinned and slivers dropped. Counted at the near end.)
-  const need = Math.max(Math.ceil(plan.engines / 2), carry > 0 ? Math.ceil((HULL_OF_MASK * tiles) / carry / 2) : 0), most = Math.max(need, 3);
+  const all = Math.max(plan.engines, carry > 0 ? Math.ceil((HULL_OF_MASK * tiles) / carry) : 0);
+  const need = Math.ceil(all / 2), most = Math.max(need, 3);
   let perSide = 0, used = 0;
-  for (let r = 0; r < deep && perSide < most;) {
+  if (across) {
+    // Every row from the axis out that ends at the axis's aft wall, the room as many rows as its engines need.
+    const end = rowEnd(0);
+    for (let y = 0; y <= BAND; y++) if (rowEnd(-y) !== end || !long(-y)) return null;
+    let rows = 0;
+    while (rows < deep && rowEnd(-(BAND + 1 + rows)) === end) rows++;
+    used = Math.max(0, Math.ceil((ROWS_PER_ENGINE * all - (2 * BAND + 1)) / 2));
+    if (used > rows) return null;
+    perSide = all;
+  }
+  for (let r = 0; !across && r < deep && perSide < most;) {
     let run = 1;
     while (r + run < deep && rowEnd(-(BAND + 1 + r + run)) === rowEnd(-(BAND + 1 + r))) run++;
     const end = rowEnd(-(BAND + 1 + r)), longer = (y: number): number => (rowEnd(y) > end ? 1 : 0);
@@ -79,7 +98,7 @@ export function outlineFrame(plan: ShipPlan, m: Mask, carry = 0): Frame | null {
     if (k > 0) { perSide += k; used = r + run; }
     r += run;
   }
-  if (perSide < need || perSide === 0) return null;
+  if ((!across && perSide < need) || perSide === 0) return null;
   const engine = engineSpec(perSide, 'w', plan.kit);
 
   // The bridge takes the bow, about twice its plan and at least four columns.
@@ -102,5 +121,5 @@ export function outlineFrame(plan: ShipPlan, m: Mask, carry = 0): Frame | null {
   let dockAt = bt ? bt.air : -1;
   if (!bt) for (let x = xBand + MIN_DEPTH + 1; x <= Math.min(xS - MIN_DEPTH - CW - 1, xBand + 0.75 * (xS - xBand)); x++) if (flat(x) && (dockAt < 0 || depth(x) > depth(dockAt))) dockAt = x;
   if (dockAt < 0) return null;
-  return { W, H, inside, top, depth, xS, xEnd, sternMax, perSide, used, engine, xBr, xBand, CW, dockAt, ...(bt ? { maint: { a: g0, b: g1, guns: bt.guns, rows: bt.rows, inner: bt.inner, hallY } } : {}) };
+  return { W, H, inside, top, depth, xS, xEnd, sternMax, perSide, used, engine, ...(across ? { across } : {}), xBr, xBand, CW, dockAt, ...(bt ? { maint: { a: g0, b: g1, guns: bt.guns, rows: bt.rows, inner: bt.inner, hallY } } : {}) };
 }

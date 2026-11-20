@@ -33,7 +33,8 @@ export function frameGrid(fr: Frame, plan: ShipPlan): FrameGrid {
 export function closeFrame(fr: Frame, { g, hall, docks, paint }: FrameGrid): void {
   const { W, H, inside, xBr, dockAt, CW } = fr, ox = -Math.floor(W / 2);
   for (let tx = 0; tx < W; tx++) for (let ty = -H; ty <= H; ty++) if (inside(tx, ty) && g.at(ox + tx, ty) === SPACE) g.set(ox + tx, ty, SOLID);
-  for (let tx = xBr + 1; tx < W; tx++) for (let ty = -1; ty <= 1; ty++) if (inside(tx, ty)) g.set(ox + tx, ty, hall);
+  // (To the stern, or to the engine room's wall where one room spans the beam.)
+  for (let tx = xBr + 1; tx < (fr.across ? fr.xS : W); tx++) for (let ty = -1; ty <= 1; ty++) if (inside(tx, ty)) g.set(ox + tx, ty, hall);
   paint(docks[0], dockAt, dockAt + CW, (y) => y <= -BAND);
   paint(docks[1], dockAt, dockAt + CW, (y) => y >= BAND);
 }

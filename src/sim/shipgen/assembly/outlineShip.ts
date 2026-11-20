@@ -219,7 +219,7 @@ function bayGrid(plans: ShipPlan[], sils: Silhouette[], maxBeam: number, defs: R
       const m = k === 0 ? m0 : scaled(sil, sx, sy);
       if (2 * m.H + 3 > maxBeam) continue;
       for (const plan of plans) {
-        const fr = outlineFrame(plan, m, defs[plan.kit.engine]?.engine?.hullCapacity ?? 0);
+        const fr = outlineFrame(plan, m, defs[plan.kit.engine]?.engine?.hullCapacity ?? 0, true);
         if (!fr) continue;
         const q = bayRooms(plan, fr, defs, 400);
         if (q.viable > 0) cands.push({ W: m.W, l: q, plan });
