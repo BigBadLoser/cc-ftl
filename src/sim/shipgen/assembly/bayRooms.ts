@@ -143,7 +143,7 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
           // runs along the bays.
           const m = fr.maint, under = !!m && bay(i).x0 < m.b && bay(j - 1).x1 > m.a, ln = len(i, j), dp = minDepth(i, j);
           if (!under && rs.every((h) => cabinsFor(h, ln, dp)?.stubs.length === 1)) out.push({ spot: { side, i, j, tier, area: area(i, j, tier) }, specs, cost: Math.abs(ln - 11) / 4 });
-          if (rs.every((h) => cabinsFor(h, ln, dp, true))) out.push({ spot: { side, i, j, tier, area: area(i, j, tier), run: true }, specs, cost: sizeCost(area(i, j, tier) / want) + 0.5 });
+          if (rs.every((h) => cabinsFor(h, ln, dp, true))) out.push({ spot: { side, i, j, tier, area: area(i, j, tier), run: true }, specs, cost: sizeCost(area(i, j, tier) / want) + (under ? 0 : 0.5) });
           continue;
         }
         const a = area(i, j, tier), rw = rows(i, j, tier), ln = len(i, j);
