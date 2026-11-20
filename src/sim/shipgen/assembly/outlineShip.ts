@@ -133,12 +133,19 @@ export interface OutlineInputs {
   drives: Silhouette[];
   /** On bays, the plan with its engines a tier up, where there is a tier up: a drive's other choice. */
   planUp?: ShipPlan;
+  /**
+   * On a lane hull, the hull drawn with its lane each half-width from the widest down (`LANES`), the rest the same: its
+   * own drive section then the redraws, each; and whether its side corridors have rooms both sides (else outboard only).
+   */
+  lanes?: Silhouette[][]; both?: boolean;
 }
 
 /** Drive sections a bay hull may draw in place of its own, each a tile wider, where its own holds too few engines. */
 const DRIVE_REDRAWS = 4;
 /** Rows between a bay hull's engines. */
 const ENGINE_GAP = 2;
+/** A lane hull's lane half-widths, widest first: narrower where its side hulls are too shallow for their rooms. */
+const LANES = [8, 7, 6, 5, 4, 3];
 
 export function outlineInputs(
   f: FactionDef, seed: number, depth: number, defs: Record<string, ModuleDef>, type: NavyType, n = 0, extra = 0, bay?: BayLayout,
@@ -168,17 +175,22 @@ export function outlineInputs(
   const profile = rng.pick(NAVY_PROFILES[type] ?? []), from = rng.getState();
   // A bay hull's flare holds its full width an engine room deep (the deepest engine it may take, a walk column and wall).
   const hold = bay ? engineSpec(1, 'w', planUp?.kit ?? kit).w + 2 : 0;
-  const draw = (drive?: Drive): Silhouette => {
+  const draw = (drive?: Drive, lane?: number): Silhouette => {
     rng.setState(from);
-    const s = drawSilhouette(rng, profile, sites ? gp.length : undefined, { ...drive, hold });
+    const p = lane && profile.split ? { ...profile, split: { ...profile.split, lane: [lane, lane] as const } } : profile;
+    const s = drawSilhouette(rng, p, sites ? gp.length : undefined, { ...drive, hold });
     if (s.battery) Object.assign(s.battery, { w: Math.max(...gp.flat().map((r) => r.w)), h: Math.max(3, ...gp.flat().map((r) => r.h)) });
     return s;
   };
   // (The redraws first, from the hull's own draws: the rng runs on from the hull's own as though there were none.)
-  const drives = bay ? Array.from({ length: DRIVE_REDRAWS }, (_, k) => draw({ rng: new Rng(seedOf(seed, 1000 + 16 * n + k)), grow: k + 1 })) : [];
+  const redraws = (lane?: number): Silhouette[] => (bay ? Array.from({ length: DRIVE_REDRAWS }, (_, k) => draw({ rng: new Rng(seedOf(seed, 1000 + 16 * n + k)), grow: k + 1 }, lane)) : []);
+  const drives = redraws();
+  const lanes = bay?.lane && profile.split ? LANES.map((l) => [draw(undefined, l), ...redraws(l)]) : undefined;
+  // (Its own draw, so the corridor style leaves the hull's draws as they were.)
+  const both = lanes ? new Rng(seedOf(seed, 2000 + n)).chance(0.5) : undefined;
   const sil = draw();
   const vary = Array.from({ length: 24 }, () => rng.int(80, 135) / 100);
-  return { rng, role, plan, sil, drives, vary, maxBeam: NAVY_TYPES[type].maxBeam, profile: profile.id, ...(planUp ? { planUp } : {}) };
+  return { rng, role, plan, sil, drives, vary, maxBeam: NAVY_TYPES[type].maxBeam, profile: profile.id, ...(planUp ? { planUp } : {}), ...(lanes ? { lanes, both } : {}) };
 }
 
 /**
@@ -214,26 +226,33 @@ function blockGrid(plan: ShipPlan, sil: Silhouette, maxBeam: number, defs: Recor
  * engines its size needs: its own drive section (`sils[0]`) with the plan's engines, then with engines a tier up (`plans`),
  * then each wider drive section the same way. The rest of the hull is the same in each.
  */
-function bayGrid(plans: ShipPlan[], sils: Silhouette[], maxBeam: number, defs: Record<string, ModuleDef>, type: NavyType): RegionGrid {
+function bayGrid(plans: ShipPlan[], lanes: Silhouette[][], maxBeam: number, defs: Record<string, ModuleDef>, type: NavyType, both?: boolean): RegionGrid {
   const cands: { W: number; l: Placed; plan: ShipPlan }[] = [];
-  scaleSearch(sils[0] as Silhouette, maxBeam, (m0) => {
-    // (Past a quarter longer than the first fit, a hull is never the best: stop there.)
-    const first = cands[0];
-    if (first && m0.W > 1.25 * first.W) return first.l;
-    const [sx, sy] = m0.scale ?? [1, 1];
-    drive: for (const [k, sil] of sils.entries()) {
-      const m = k === 0 ? m0 : scaled(sil, sx, sy);
-      if (2 * m.H + 3 > maxBeam) continue;
-      for (const plan of plans) {
-        const fr = outlineFrame(plan, m, defs[plan.kit.engine]?.engine?.hullCapacity ?? 0, ENGINE_GAP);
-        if (!fr) continue;
-        const q = bayRooms(plan, fr, defs, 400);
-        if (q.viable > 0) cands.push({ W: m.W, l: q, plan });
-        break drive;
+  // A lane hull's corridor style: rooms both sides of its side corridors where any size holds them, else outboard only.
+  for (const style of both === undefined ? [undefined] : both ? [true, false] : [false]) {
+    const lane = style === undefined ? undefined : { both: style };
+    scaleSearch((lanes[0] as Silhouette[])[0] as Silhouette, maxBeam, (m0) => {
+      // (Past a quarter longer than the first fit, a hull is never the best: stop there.)
+      const first = cands[0];
+      if (first && m0.W > 1.25 * first.W) return first.l;
+      if (m0.W < (NAVY_TYPES[type].minLength ?? 0)) return null;
+      const [sx, sy] = m0.scale ?? [1, 1];
+      // The widest lane the rooms fit (its side hulls deep enough), at its first drive that holds the engines.
+      lanes: for (const [j, sils] of lanes.entries()) for (const [k, sil] of sils.entries()) {
+        const m = j === 0 && k === 0 ? m0 : scaled(sil, sx, sy);
+        if (2 * m.H + 3 > maxBeam) continue;
+        for (const plan of plans) {
+          const fr = outlineFrame(plan, m, defs[plan.kit.engine]?.engine?.hullCapacity ?? 0, ENGINE_GAP, lane);
+          if (!fr) continue;
+          const q = bayRooms(plan, fr, defs, 400);
+          if (q.viable > 0) { cands.push({ W: m.W, l: q, plan }); break lanes; }
+          continue lanes;
+        }
       }
-    }
-    return cands.length >= 4 ? (cands[cands.length - 1] as { l: Placed }).l : null;
-  }, 1, 0.45, 0.45);
+      return cands.length >= 4 ? (cands[cands.length - 1] as { l: Placed }).l : null;
+    }, 1, 0.45, 0.45);
+    if (cands.length > 0) break;
+  }
   const best = cands.sort((a, b) => a.l.score + a.W / 20 - (b.l.score + b.W / 20))[0];
   if (!best) throw new Error(`outline ${type}: rooms do not fit`);
   return paintPlaced(best.plan, bayRooms(best.plan, best.l.fr, defs, 3000));
@@ -244,8 +263,8 @@ export function assembleOutline(
 ): GenResult {
   // PROTOTYPE (#581): a type with a bay layout has its rooms on bays (a cruiser along a gun battery).
   const bay = NAVY_TYPES[type].layout;
-  const { rng, role, plan, sil, drives, planUp, vary, maxBeam, profile } = outlineInputs(f, seed, depth, defs, type, n, extra, bay);
-  const g = bay ? bayGrid([plan, ...(planUp ? [planUp] : [])], [sil, ...drives], maxBeam, defs, type) : blockGrid(plan, sil, maxBeam, defs, type, vary);
+  const { rng, role, plan, sil, drives, planUp, vary, maxBeam, profile, lanes, both } = outlineInputs(f, seed, depth, defs, type, n, extra, bay);
+  const g = bay ? bayGrid([plan, ...(planUp ? [planUp] : [])], lanes ?? [[sil, ...drives]], maxBeam, defs, type, both) : blockGrid(plan, sil, maxBeam, defs, type, vary);
   thinHull(g);
   if (dropIslands(g)) thinHull(g);
   const cell = g.compile(), snap = g.snapshot(cell);

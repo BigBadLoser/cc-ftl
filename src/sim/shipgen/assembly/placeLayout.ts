@@ -1,6 +1,6 @@
 import type { ModuleDef } from '../../registry';
 import type { RoomSpec, ShipPlan } from '../plan';
-import { MIN_DEPTH, outlineFrame, type Frame, type Mask } from './frame';
+import { MIN_DEPTH, outlineFrame, type Frame, type Mask, type Row } from './frame';
 import { areaOf, capOf, minLen, programPairs, type Pair } from './pairs';
 import { CABIN_TIER, cabinsFor } from './cabinBlock';
 import { SLEEPER } from './quarters';
@@ -19,6 +19,7 @@ import { opensThrough, roomKind, type RoomKind } from './roomAccess';
 export interface Part {
   x0: number; x1: number; r0: number; r1: number; spec: [RoomSpec | null, RoomSpec | null]; fill?: boolean; grown?: boolean;
   /** Its way in, where the layout fixed it: the dock's corridor, the battery's, or the room in front. */ via?: 'dock' | 'maint' | 'front';
+  /** Its rows, where not out from the spine (a lane hull's side corridor). */ row?: Row;
 }
 export interface Piece { x0: number; x1: number; parts: Part[]; cabins?: boolean }
 /** A side's stretch between corridors and the drive: columns [a, b), its free runs (end exclusive) and its pieces. */

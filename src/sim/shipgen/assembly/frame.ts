@@ -19,11 +19,30 @@ export const BAND = 2;
 /** Floor rows a room has at least, and so a tier. */
 export const MIN_DEPTH = 3;
 
+/**
+ * A run of bays' rows: out from a hall whose middle row is `c` (the spine's 0, a side corridor's), towards the hull
+ * (`dir` 1) or the axis (-1, a carrier's lane side), and the floor rows a room has there per column.
+ */
+export interface Row { c: number; dir: 1 | -1; depth: (x: number) => number }
+
+/**
+ * PROTOTYPE (#581): a carrier's launch lane, open out of the stern from its head: the hangar between the cross corridor
+ * and the lane's head, a corridor down each side hull (its middle row `yc`) to its engine room, rooms outboard of it and,
+ * with `both`, inboard too (between it and the lane). `edge(x)` is the side hull's first row beside the lane.
+ */
+export interface Lane { head: number; yc: number; both: boolean; edge: (x: number) => number }
+
+/** Side-hull rows a lane hull needs, its edge to its top (most of its length): rooms both sides of the corridor, or outboard only. */
+const LANE_BOTH = 16, LANE_ONE = 10;
+/** The hangar's columns, as near this as the cross corridor finds a flat stretch for its airlocks. */
+const HANGAR = [12, 11, 13, 10, 14, 9, 15];
+
 export interface Frame {
   W: number; H: number; inside: (x: number, y: number) => boolean;
   /** The silhouette's scale along and across, where it was scaled from one. */ scale?: [number, number];
   /** The hull's last inside row above the axis at a column; floor rows out from the spine there. */
   top: (x: number) => number; depth: (x: number) => number;
+  /** The hull's last inside row above the axis at a column, the axis open or not (a lane). */ outer: (x: number) => number;
   /** The stern's first column past the band; the deepest stern column; engine rows a side and the rows they take. */
   xS: number; xEnd: number; sternMax: number; perSide: number; used: number; engine: RoomSpec;
   /** The bridge's end column; the band's first column. */
@@ -32,6 +51,7 @@ export interface Frame {
   CW: number; dockAt: number;
   /** PROTOTYPE (#581): the battery's maintenance corridor, its row out from the axis per column (rooms stop short of it). */
   maint?: { a: number; b: number; guns: [number, number][]; rows: number; inner: number[]; hallY: (x: number) => number };
+  lane?: Lane;
 }
 
 /** A finished hull's area against its mask's, at most (`thinHull`, `dropIslands`). */
@@ -41,7 +61,7 @@ const HULL_OF_MASK = 0.93;
  * With `carry` (the hull tiles one engine carries), the drive holds the engines the hull's own size needs, not only the
  * plan's. With `gap`, its engines stand that many rows apart.
  */
-export function outlineFrame(plan: ShipPlan, m: Mask, carry = 0, gap = 0): Frame | null {
+export function outlineFrame(plan: ShipPlan, m: Mask, carry = 0, gap = 0, lane?: { both: boolean }): Frame | null {
   const { W, H, inside } = m;
   if (2 * H + 4 > 120 || W + 4 > 240) return null;
   const top = (x: number): number => { let y = 0; while (inside(x, y + 1)) y++; return inside(x, 0) ? y : -1; };
@@ -54,20 +74,27 @@ export function outlineFrame(plan: ShipPlan, m: Mask, carry = 0, gap = 0): Frame
   const inBt = (x: number): boolean => !!bt && x >= g0 && x < g1 && !(x >= bt.air && x < bt.air + dockSpec().w);
   const depth = (x: number): number => (inBt(x) ? hallY() - 1 - BAND : top(x) - BAND - 1);
   const rowEnd = (y: number): number => { let x = W - 1; while (x > 0 && !inside(x, y)) x--; return x; };
+  // (The hull's last row out at a column, where the axis is open: a lane.)
+  const outer = (x: number): number => { let y = H; while (y > 0 && !inside(x, y)) y--; return y; };
+  const ln = lane ? laneOf(m, outer, lane.both) : null;
+  if (lane && !ln) return null;
+  // Engines' first floor row: beside the spine, or beside a lane.
+  const e0 = ln ? ln.edge(ln.head + 2) + 1 : BAND + 1;
   let xEnd = W - 1;
-  while (xEnd > 0 && !inside(xEnd, 0)) xEnd--;
+  while (xEnd > 0 && !inside(xEnd, ln ? e0 : 0)) xEnd--;
 
   // Engines claim the aft hull: out from the spine, each run of rows sharing an aft wall (a row beside one reaching
   // further aft has wall, not space, behind its hull tile) takes the engines it is deep enough for, a walk column ahead.
   const one = engineSpec(1, 'w', plan.kit);
-  const xS = Math.min(xEnd, rowEnd(-(BAND + 1))) - one.w - 1;
+  // (A lane hull's side corridor ends at its engine room, so the room keeps its own walk column ahead of the engines.)
+  const xS = Math.min(xEnd, rowEnd(-e0)) - one.w - (ln ? 2 : 1);
   let sternMax = 0;
-  for (let tx = xS + 1; tx <= xEnd; tx++) sternMax = Math.max(sternMax, depth(tx));
+  for (let tx = xS + 1; tx <= xEnd; tx++) sternMax = Math.max(sternMax, ln ? outer(tx) - e0 : depth(tx));
   // Engines only in rows long enough for one, out to the first that is not (a flared stern's rows start partway along it).
   const long = (y: number): boolean => { const e = rowEnd(y); for (let x = e - one.w - 1; x <= e; x++) if (!inside(x, y)) return false; return true; };
   let deep = 0;
   // (A floor row has hull past it too, the hull's wall, as long: a diagonal's wall runs a tile further in.)
-  while (deep < sternMax && long(-(BAND + 1 + deep)) && long(-(BAND + 2 + deep))) deep++;
+  while (deep < sternMax && long(-(e0 + deep)) && long(-(e0 + 1 + deep))) deep++;
   let tiles = 0;
   if (carry > 0) for (let y = -H; y <= H; y++) for (let x = 0; x < W; x++) if (inside(x, y)) tiles++;
   // (The finished hull comes out 7-9% under its mask: its walls thinned and slivers dropped. Counted at the near end.)
@@ -75,10 +102,10 @@ export function outlineFrame(plan: ShipPlan, m: Mask, carry = 0, gap = 0): Frame
   let perSide = 0, used = 0;
   for (let r = 0; r < deep && perSide < most;) {
     let run = 1;
-    while (r + run < deep && rowEnd(-(BAND + 1 + r + run)) === rowEnd(-(BAND + 1 + r))) run++;
-    const end = rowEnd(-(BAND + 1 + r)), longer = (y: number): number => (rowEnd(y) > end ? 1 : 0);
+    while (r + run < deep && rowEnd(-(e0 + r + run)) === rowEnd(-(e0 + r))) run++;
+    const end = rowEnd(-(e0 + r)), longer = (y: number): number => (rowEnd(y) > end ? 1 : 0);
     // (A row spare: the engines stacked wall to wall would stand in front of the room's door.)
-    const k = Math.min(Math.floor((run - 1 - (r > 0 ? longer(-(BAND + r)) : 0) - longer(-(BAND + 1 + r + run)) + gap) / (one.h + gap)), most - perSide);
+    const k = Math.min(Math.floor((run - 1 - (r > 0 ? longer(-(e0 - 1 + r)) : 0) - longer(-(e0 + r + run)) + gap) / (one.h + gap)), most - perSide);
     if (k > 0) { perSide += k; used = r + run; }
     r += run;
   }
@@ -103,7 +130,31 @@ export function outlineFrame(plan: ShipPlan, m: Mask, carry = 0, gap = 0): Frame
     return true;
   };
   let dockAt = bt ? bt.air : -1;
-  if (!bt) for (let x = xBand + MIN_DEPTH + 1; x <= Math.min(xS - MIN_DEPTH - CW - 1, xBand + 0.75 * (xS - xBand)); x++) if (flat(x) && (dockAt < 0 || depth(x) > depth(dockAt))) dockAt = x;
+  // A lane hull's cross corridor stands a hangar's length ahead of the lane's head.
+  if (ln) for (const h of HANGAR) { const x = ln.head - h - CW; if (x > xBand + MIN_DEPTH && flat(x)) { dockAt = x; break; } }
+  else if (!bt) for (let x = xBand + MIN_DEPTH + 1; x <= Math.min(xS - MIN_DEPTH - CW - 1, xBand + 0.75 * (xS - xBand)); x++) if (flat(x) && (dockAt < 0 || depth(x) > depth(dockAt))) dockAt = x;
   if (dockAt < 0) return null;
-  return { W, H, inside, top, depth, xS, xEnd, sternMax, perSide, used, engine, xBr, xBand, CW, dockAt, ...(bt ? { maint: { a: g0, b: g1, guns: bt.guns, rows: bt.rows, inner: bt.inner, hallY } } : {}) };
+  return { W, H, inside, top, outer, depth, xS, xEnd, sternMax, perSide, used, engine, xBr, xBand, CW, dockAt, ...(bt ? { maint: { a: g0, b: g1, guns: bt.guns, rows: bt.rows, inner: bt.inner, hallY } } : {}), ...(ln ? { lane: ln } : {}) };
+}
+
+/**
+ * The lane's head (its first column, past the hull's first third), its edge, and the side corridor's middle row: against
+ * the lane, or with `both` a room's depth out from it (five floor rows inboard, at least), halfway to the hull where
+ * deeper. Null where the side hull is too shallow for it over most of its length.
+ */
+function laneOf(m: Mask, outer: (x: number) => number, both: boolean): Lane | null {
+  const { W, H, inside } = m;
+  let head = Math.floor(W / 3);
+  while (head < W && inside(head, 0)) head++;
+  if (head >= W) return null;
+  const edge = (x: number): number => { let y = 1; while (y <= H && !inside(x, y)) y++; return y; };
+  let end = W - 1;
+  while (end > head && outer(end) === 0) end--;
+  // (Most of its length: an aft step may take the outboard rooms shallower.)
+  const tops: number[] = [];
+  for (let x = head; x < end - 12; x++) tops.push(outer(x));
+  tops.sort((a, b) => a - b);
+  const lh = edge(head + 2), t = tops[Math.floor(tops.length * 0.4)] ?? 0;
+  if (t - lh < (both ? LANE_BOTH : LANE_ONE)) return null;
+  return { head, edge, both, yc: both ? Math.max(lh + 8, Math.round((lh + t) / 2)) : lh + 2 };
 }

@@ -8,12 +8,15 @@ import type { Part, Placed } from './placeLayout';
 
 /** PROTOTYPE (#581): paints a placed layout's room outlines (no fit-out): the frame's bridge, drive and corridors, then each part. */
 export function paintPlaced(plan: ShipPlan, { fr, lay, battery }: Placed): RegionGrid {
-  const { W, top, xS, dockAt, used, engine } = fr;
+  const { W, xS, dockAt, used, engine, lane } = fr;
   const fg = frameGrid(fr, plan), { g, hall, docks, paint } = fg;
   const stubs = lay.stubs.map((s) => ({ ...s, id: g.hall('hall') })), maint = fr.maint ? g.hall('hall') : -1;
   const allParts = lay.blocks.flatMap((b) => b.pieces.flatMap((pc) => pc.parts));
   const frontOf = new Map<Part, [number, number]>();
-  const rows = (q: Part, d: number): boolean => d >= (q.r0 === 1 ? BAND : BAND + q.r0) && d <= BAND + q.r1;
+  // (Rows out from the part's hall: the spine, or a lane hull's side corridor, outboard or in towards the lane.)
+  // (Its own side only: rows in towards a lane would run on across it.)
+  const from = (q: Part, d: number): number => (d <= 0 ? -Infinity : q.row ? q.row.dir * (d - q.row.c) : d);
+  const rows = (q: Part, d: number): boolean => from(q, d) >= (q.r0 === 1 ? BAND : BAND + q.r0) && from(q, d) <= BAND + q.r1;
   for (const b of lay.blocks) for (const pc of b.pieces) {
     const front = new Map<Part, [number, number]>();
     const parts = [...pc.parts].filter((q) => q.x1 > q.x0 && q.spec.some((v) => v)).sort((p, q) => p.r0 - q.r0 || Number(isAnnex(p)) - Number(isAnnex(q)));
@@ -24,17 +27,17 @@ export function paintPlaced(plan: ShipPlan, { fr, lay, battery }: Placed): Regio
         if (!h) return -1;
         if (pc.cabins) {
           let rowsMin = Infinity;
-          for (let tx = q.x0; tx < q.x1; tx++) rowsMin = Math.min(rowsMin, top(tx) - BAND - 1);
+          for (let tx = q.x0; tx < q.x1; tx++) rowsMin = Math.min(rowsMin, (q.row?.depth ?? fr.depth)(tx));
           const bl = cabinsFor(h, q.x1 - q.x0, rowsMin);
-          if (!bl) { const id = g.room(h.role, { spec: h }); paint(id, q.x0, q.x1, (y) => d(y) >= BAND); return id; }
-          const st = bl.stubs.map((s) => { const id = g.hall('hall'); paint(id, q.x0 + s.c0, q.x0 + s.c1, (y) => d(y) >= BAND + s.r0 && d(y) <= BAND + s.r1); return { id, s }; });
+          if (!bl) { const id = g.room(h.role, { spec: h }); paint(id, q.x0, q.x1, (y) => from(q, d(y)) >= BAND); return id; }
+          const st = bl.stubs.map((s) => { const id = g.hall('hall'); paint(id, q.x0 + s.c0, q.x0 + s.c1, (y) => from(q, d(y)) >= BAND + s.r0 && from(q, d(y)) <= BAND + s.r1); return { id, s }; });
           for (const { rect: c, spec } of bl.cabins) {
             const own = st.find(({ s }) => s.c0 === c.c1 || s.c1 === c.c0)?.id ?? hall;
-            paint(g.room('quarters', { spec, access: [own] }), q.x0 + c.c0, q.x0 + c.c1, (y) => d(y) >= BAND + c.r0 && d(y) <= BAND + c.r1);
+            paint(g.room('quarters', { spec, access: [own] }), q.x0 + c.c0, q.x0 + c.c1, (y) => from(q, d(y)) >= BAND + c.r0 && from(q, d(y)) <= BAND + c.r1);
           }
           for (const c of bl.rest) {
             const own = st.find(({ s }) => s.c0 >= c.c0 && s.c1 <= c.c1)?.id ?? hall, spec = crewRoom(['lounge', 'gym'], 30);
-            paint(g.room(spec.role, { spec, access: [own] }), q.x0 + c.c0, q.x0 + c.c1, (y) => d(y) >= BAND + c.r0 && d(y) <= BAND + c.r1);
+            paint(g.room(spec.role, { spec, access: [own] }), q.x0 + c.c0, q.x0 + c.c1, (y) => from(q, d(y)) >= BAND + c.r0 && from(q, d(y)) <= BAND + c.r1);
           }
           return hall;
         }
@@ -55,8 +58,16 @@ export function paintPlaced(plan: ShipPlan, { fr, lay, battery }: Placed): Regio
   }
   const sternGrown = !lay.stern || !!lay.stern.grown;
   const engines: [number, number] = [g.room('engine', { spec: engine, doorFirst: true }), g.room('engine', { spec: engine, doorFirst: true })];
-  paint(engines[0], xS + 1, W, (y) => y <= -BAND && (sternGrown || -y <= BAND + used));
-  paint(engines[1], xS + 1, W, (y) => y >= BAND && (sternGrown || y <= BAND + used));
+  // (On a lane hull, a side hull's: from the lane's edge out.)
+  const e = lane ? lane.edge(xS + 1) : BAND;
+  paint(engines[0], xS + 1, W, (y) => y <= -e && (sternGrown || -y <= BAND + used));
+  paint(engines[1], xS + 1, W, (y) => y >= e && (sternGrown || y <= BAND + used));
+  // A lane hull's hangar: from the cross corridor to the lane's head, its rows the lane's and the side corridors' walls.
+  if (lane) {
+    const bays = Math.max(1, plan.hangars.length), wide = 2 * lane.yc - 3, long = lane.head - dockAt - fr.CW;
+    const spec: RoomSpec = { role: 'hangar', mods: Array.from({ length: bays }, () => 'module.vehicle_bay'), w: long, h: wide, vehicle: true };
+    paint(g.room('hangar', { spec }), dockAt + fr.CW, lane.head, (y) => Math.abs(y) <= lane.yc - 2);
+  }
   const st = lay.stern;
   if (st?.spec[0]) for (const side of [0, 1] as const) {
     const h = st.spec[side] as RoomSpec, sign = side === 0 ? -1 : 1;

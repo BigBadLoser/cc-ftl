@@ -37,7 +37,7 @@ const TARGET = 1.35;
 const sizeCost = (r: number): number => (r < TARGET ? 2 * (TARGET - r) : 0.4 * (r - TARGET));
 
 /** All the plan's reactors in one room and all its shield generators in another, a mirrored pair; the rest single. */
-function program(plan: ShipPlan, defs: Record<string, ModuleDef>, inBattery: number): Item[] {
+function program(plan: ShipPlan, defs: Record<string, ModuleDef>, inBattery: number, hangars = true): Item[] {
   const { gunPairs, cabinPairs } = programPairs(plan, defs);
   const { lone } = gunsAndReactors(plan, defs);
   // (Prototype sizes, here until the plan takes them: a 5x4 brig; the core split into an AI core room and a drone room, 5x4 each.)
@@ -49,7 +49,7 @@ function program(plan: ShipPlan, defs: Record<string, ModuleDef>, inBattery: num
   if (core?.drones) delete (cores[0] as RoomSpec).drones;
   // (And a mess of 7x5 at least: the crew's commons.)
   const mess = (r: RoomSpec): RoomSpec => (r.mods.includes('module.galley') ? { ...r, w: Math.max(r.w, 7), h: Math.max(r.h, 5) } : r);
-  const singles = [...lone, ...cores, ...plan.quarters.filter((q) => !q.block), ...plan.support.map(brig).map(mess), ...plan.cargo.map(brig), ...plan.hangars];
+  const singles = [...lone, ...cores, ...plan.quarters.filter((q) => !q.block), ...plan.support.map(brig).map(mess), ...plan.cargo.map(brig), ...(hangars ? plan.hangars : [])];
   const items: Item[] = cabinPairs.map((p) => ({ specs: [p[0], p[1]], both: true, cabins: true }));
   const reactor = plan.reactors > 0 ? reactorSpec(plan.reactors, plan.kit) : null;
   const shields: RoomSpec | null = plan.shields.length > 0
@@ -69,22 +69,35 @@ function program(plan: ShipPlan, defs: Record<string, ModuleDef>, inBattery: num
 export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleDef>, budget = 3000): Placed & { puts: number } {
   const bays = bayLayout(fr), n = bays.length;
   const { gunPairs } = gunsAndReactors(plan, defs);
-  const order = program(plan, defs, fr.maint ? gunPairs.length : 0);
+  // (A lane hull's hangar is its frame's, at the lane's head.)
+  const order = program(plan, defs, fr.maint ? gunPairs.length : 0, !fr.lane);
   const bay = (k: number): Bay => bays[k] as Bay;
   const rowsAt = (b: Bay, x: number, tier: Tier, split?: number): number => {
-    const d = fr.depth(x), [f, k] = b.tiers;
+    const d = (b.row?.depth ?? fr.depth)(x), [f, k] = b.tiers;
     if (tier === 'full' || !k) return Math.max(0, d);
     const r = split ?? (f as [number, number])[1];
     return tier === 'front' ? Math.min(r, d) : Math.max(0, d - r - 1);
   };
+  // (Asked again and again in the search: kept.)
+  const areas = new Map<string, number>(), depths = new Map<number, number>();
   const area = (i: number, j: number, tier: Tier, split?: number): number => {
+    const key = `${i},${j},${tier},${split ?? ''}`, got = areas.get(key);
+    if (got !== undefined) return got;
     let a = 0;
     for (let k = i; k < j; k++) { const b = bay(k); for (let x = b.x0; x < b.x1; x++) a += rowsAt(b, x, tier, split); }
+    areas.set(key, a);
     return a;
   };
-  const minDepth = (i: number, j: number): number => { let d = Infinity; for (let k = i; k < j; k++) for (let x = bay(k).x0; x < bay(k).x1; x++) d = Math.min(d, fr.depth(x)); return d; };
-  // Neighbouring bays: no corridor between (the dock's, or a doubled gun's column).
-  const joined = (k: number): boolean => bay(k + 1).x0 === bay(k).x1 + 1;
+  const minDepth = (i: number, j: number): number => {
+    const got = depths.get(i * 1024 + j);
+    if (got !== undefined) return got;
+    let d = Infinity;
+    for (let k = i; k < j; k++) for (let x = bay(k).x0; x < bay(k).x1; x++) d = Math.min(d, (bay(k).row?.depth ?? fr.depth)(x));
+    depths.set(i * 1024 + j, d);
+    return d;
+  };
+  // Neighbouring bays: no corridor between (the dock's, or a doubled gun's column), on the same rows.
+  const joined = (k: number): boolean => bay(k + 1).x0 === bay(k).x1 + 1 && bay(k + 1).row === bay(k).row;
   const twoTier = (k: number): boolean => bay(k).tiers.length > 1;
   const sameSplit = (i: number, j: number): boolean => { for (let k = i + 1; k < j; k++) if (bay(k).tiers[0]?.[1] !== bay(i).tiers[0]?.[1]) return false; return true; };
   const byDock = (i: number, j: number): boolean => bay(j - 1).x1 === fr.dockAt - 1 || bay(i).x0 === fr.dockAt + fr.CW + 1;
@@ -182,7 +195,8 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
           continue;
         }
         // (A bay tier is coarse: a small room may take up to about two and a half times its plan, at a cost.)
-        if (a < want || a > Math.max(cap * 1.3, want * 2.5) || !rs.every((h) => fits(h, ln, rw))) continue;
+        // (A lane hull's bays run bigger: a small room there may take up to three times its plan.)
+        if (a < want || a > Math.max(cap * 1.3, want * (fr.lane ? 3 : 2.5)) || !rs.every((h) => fits(h, ln, rw))) continue;
         let via: Part['via'] | undefined;
         if (tier === 'back') { const v = backVia(o, side, i, j, specs); if (!v) continue; via = v; } else if (!hallOk) continue;
         // A front room nothing may open through, over back tiers still free with no corridor beside them, leaves a
@@ -296,7 +310,8 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
     const part = (sp: Spot, spec: Specs, fill?: boolean): Part => {
       const [f, k] = bay(sp.i).tiers, line = sp.split ?? (f as [number, number])[1];
       const [r0, r1] = sp.tier === 'full' || !k ? [1, Infinity] : sp.tier === 'front' ? [1, line] : [line + 2, Infinity];
-      return { x0: bay(sp.i).x0, x1: bay(sp.j - 1).x1, r0, r1, spec, ...(fill ? { fill } : {}), ...(sp.via ? { via: sp.via } : {}) };
+      const row = bay(sp.i).row;
+      return { x0: bay(sp.i).x0, x1: bay(sp.j - 1).x1, r0, r1, spec, ...(fill ? { fill } : {}), ...(sp.via ? { via: sp.via } : {}), ...(row ? { row } : {}) };
     };
     // Front and full-depth rooms first: a back room's way in may be the room in front.
     const sorted = [...puts].sort((u, v) => Number(u.spot.tier === 'back') - Number(v.spot.tier === 'back'));

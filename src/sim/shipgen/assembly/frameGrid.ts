@@ -31,9 +31,11 @@ export function frameGrid(fr: Frame, plan: ShipPlan): FrameGrid {
 
 /** Unpainted floor to plating, then the spine and the cross corridor out to the airlocks over everything. */
 export function closeFrame(fr: Frame, { g, hall, docks, paint }: FrameGrid): void {
-  const { W, H, inside, xBr, dockAt, CW } = fr, ox = -Math.floor(W / 2);
+  const { W, H, inside, xBr, dockAt, CW, xS, lane } = fr, ox = -Math.floor(W / 2);
   for (let tx = 0; tx < W; tx++) for (let ty = -H; ty <= H; ty++) if (inside(tx, ty) && g.at(ox + tx, ty) === SPACE) g.set(ox + tx, ty, SOLID);
-  for (let tx = xBr + 1; tx < W; tx++) for (let ty = -1; ty <= 1; ty++) if (inside(tx, ty)) g.set(ox + tx, ty, hall);
+  // The spine to the stern, or on a lane hull to the cross corridor, a corridor down each side hull from there to its engine room.
+  for (let tx = xBr + 1; tx < (lane ? dockAt + CW : W); tx++) for (let ty = -1; ty <= 1; ty++) if (inside(tx, ty)) g.set(ox + tx, ty, hall);
+  if (lane) paint(hall, dockAt + CW, xS + 1, (y) => Math.abs(Math.abs(y) - lane.yc) <= 1);
   paint(docks[0], dockAt, dockAt + CW, (y) => y <= -BAND);
   paint(docks[1], dockAt, dockAt + CW, (y) => y >= BAND);
 }
