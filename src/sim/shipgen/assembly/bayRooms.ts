@@ -89,6 +89,7 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
     for (let k = i; k < j; k++) for (let x = bay(k).x0; x < bay(k).x1; x++) if (x >= m.a && x < m.b && !gunCol(x)) return true;
     return false;
   };
+  const underBattery = (i: number, j: number): boolean => !!fr.maint && bay(i).x0 < fr.maint.b && bay(j - 1).x1 > fr.maint.a;
   const fits = (r: RoomSpec, ln: number, rw: number): boolean => (ln >= r.w && rw >= r.h) || (ln >= r.h && rw >= r.w);
   const len = (i: number, j: number): number => bay(j - 1).x1 - bay(i).x0;
   const rows = (i: number, j: number, tier: Tier): number => Math.round(area(i, j, tier) / Math.max(1, len(i, j)));
@@ -141,7 +142,7 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
           if (tier !== 'full') continue;
           // A block's corridor runs out to the hull, so never under the battery (it would meet the battery's); a run's
           // runs along the bays.
-          const m = fr.maint, under = !!m && bay(i).x0 < m.b && bay(j - 1).x1 > m.a, ln = len(i, j), dp = minDepth(i, j);
+          const under = underBattery(i, j), ln = len(i, j), dp = minDepth(i, j);
           if (!under && rs.every((h) => cabinsFor(h, ln, dp)?.stubs.length === 1)) out.push({ spot: { side, i, j, tier, area: area(i, j, tier) }, specs, cost: Math.abs(ln - 11) / 4 });
           if (rs.every((h) => cabinsFor(h, ln, dp, true))) out.push({ spot: { side, i, j, tier, area: area(i, j, tier), run: true }, specs, cost: sizeCost(area(i, j, tier) / want) + (under ? 0 : 0.5) });
           continue;
@@ -190,6 +191,12 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
     // nothing else has one.)
     let pi = -1, cs: Cand[] = [];
     for (const [k, it] of left.entries()) { const c = spots(o, it); if (c.length > 0 && (pi < 0 || c.length < cs.length)) { pi = k; cs = c; } }
+    // (Prototype: a cabin run under the battery first, where one fits.)
+    for (const [k, it] of left.entries()) {
+      if (!it.cabins) continue;
+      const c = spots(o, it).filter((x) => x.spot.run && underBattery(x.spot.i, x.spot.j));
+      if (c.length > 0) { pi = k; cs = c; break; }
+    }
     if (pi < 0) { note(`no spot ${left.map((it) => real(it.specs)[0]?.role).join(',')}`); return; }
     const it = left[pi] as Item;
     for (const c of cs.slice(0, 3)) {
