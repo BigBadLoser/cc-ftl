@@ -127,6 +127,8 @@ function dropIslands(g: RegionGrid): boolean {
 /** What an outline is built from: the plan with the type's commons and quarters, the drawn silhouette, the rooms' size draws. */
 export interface OutlineInputs {
   rng: Rng; role: ReturnType<typeof navyRole>; plan: ShipPlan; sil: Silhouette; vary: number[]; maxBeam: number;
+  /** The silhouette's profile (`NAVY_PROFILES`). */
+  profile: string;
   /** With `sites`, the same silhouette with its drive section drawn again, a tile wider each (`DRIVE_REDRAWS` of them). */
   drives: Silhouette[];
   /** With `sites`, the plan with its engines a tier up, where there is a tier up: a drive's other choice. */
@@ -170,7 +172,7 @@ export function outlineInputs(
   const drives = sites ? Array.from({ length: DRIVE_REDRAWS }, (_, k) => draw({ rng: new Rng(seedOf(seed, 1000 + 16 * n + k)), grow: k + 1 })) : [];
   const sil = draw();
   const vary = Array.from({ length: 24 }, () => rng.int(80, 135) / 100);
-  return { rng, role, plan, sil, drives, vary, maxBeam: NAVY_TYPES[type].maxBeam, ...(planUp ? { planUp } : {}) };
+  return { rng, role, plan, sil, drives, vary, maxBeam: NAVY_TYPES[type].maxBeam, profile: profile.id, ...(planUp ? { planUp } : {}) };
 }
 
 /**
@@ -236,7 +238,7 @@ export function assembleOutline(
 ): GenResult {
   // PROTOTYPE (#581): a cruiser's rooms on bays, along a gun battery.
   const bays = type === 'cruiser';
-  const { rng, role, plan, sil, drives, planUp, vary, maxBeam } = outlineInputs(f, seed, depth, defs, type, n, extra, bays);
+  const { rng, role, plan, sil, drives, planUp, vary, maxBeam, profile } = outlineInputs(f, seed, depth, defs, type, n, extra, bays);
   const g = bays ? bayGrid([plan, ...(planUp ? [planUp] : [])], [sil, ...drives], maxBeam, defs, type) : blockGrid(plan, sil, maxBeam, defs, type, vary);
   thinHull(g);
   if (dropIslands(g)) thinHull(g);
@@ -246,7 +248,7 @@ export function assembleOutline(
   return fitShell(
     rng, f, factionId, seed, role, 'sections', { crew: plan.crew } as Pick<ShipPlan, 'crew'>,
     { rows, roomOf: snap.roomOf, width: snap.width, height: snap.height, roles: g.regions.map((r) => r.role), specs: g.regions.map((r) => r.spec) },
-    `outline ${type}`, defs, n, { bareHalls: true },
+    `outline ${profile}`, defs, n, { bareHalls: true },
   );
 }
 
