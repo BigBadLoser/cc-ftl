@@ -251,7 +251,7 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
       o = o.map((sd) => sd.map((t) => ({ front: t.front === old ? nw : t.front, back: t.back === old ? nw : t.back }))) as Occ;
       o = take(o, grown, nw);
     };
-    let score = 0, nFill = 0, nDrones = 0;
+    let score = 0, nFill = 0;
     // (Prototype: a big ship's spare-floor rooms first, then the fillers.)
     const left: Filler[] = ['armoury', 'battery', 'shop', 'lab', 'provisions', 'workshop', 'lounge', 'gym', 'farm'];
     for (const s of [0, 1] as const) for (let k = 0; k < n; k++) for (const tier of (twoTier(k) ? ['front', 'back'] : ['full']) as Tier[]) {
@@ -273,13 +273,10 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
       if (a < 9) { score += 5; continue; }
       // The next filler kind left; behind a room, the first kind that may open through it.
       let f: RoomSpec | null = null, via: Part['via'] | undefined;
-      // (A carrier's spare floor past those: two drone bays at most, where no room stands behind (none may open through them).)
-      const extra: Filler[] = fr.lane && a >= 16 && tier !== 'front' && nDrones < 2 ? ['drones'] : [];
-      for (const kd of [...(a >= 12 ? left : []), ...extra, 'hold'] as Filler[]) {
+      for (const kd of [...(a >= 12 ? left : []), 'hold'] as Filler[]) {
         const c = fillerSpec(kd, a), v = tier === 'back' ? backVia(o, s, k, k + 1, on(c, s)) : undefined;
         if (tier === 'back' && !v) continue;
         f = c; via = v ?? undefined;
-        if (kd === 'drones') nDrones++;
         if (left.includes(kd)) left.splice(left.indexOf(kd), 1);
         break;
       }

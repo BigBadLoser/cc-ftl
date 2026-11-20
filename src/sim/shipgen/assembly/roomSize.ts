@@ -25,8 +25,8 @@ export function maxArea(r: RoomSpec): number {
 export type Filler = 'hold' | 'workshop' | 'lounge' | 'gym' | 'farm' | 'armoury'
   /** PROTOTYPE (#581): a big ship's spare-floor rooms, before the fillers. */
   | 'pd' | 'battery' | 'shop' | 'lab' | 'provisions'
-  /** PROTOTYPE (#581): a carrier's, repeating where the others are used up: defence drones, escape pods. */
-  | 'drones' | 'pods';
+  /** PROTOTYPE (#581): a carrier's escape pods. */
+  | 'pods';
 /** Floor a filler room takes, at least and at most. */
 export const FILL_MIN = 9, FILL_MAX = 45;
 
@@ -44,7 +44,6 @@ export function fillerSpec(kind: Filler, area: number): RoomSpec {
     case 'battery': return { role: 'plant', mods: [...Array<string>(area >= 40 ? 8 : 4).fill('module.battery'), 'module.console'], w: 5, h: 4 };
     case 'shop': return { role: 'industry', mods: ['module.scrapper', 'module.storage_scrap', 'module.storage_scrap', 'module.storage_pallet'], w: 8, h: 5 };
     case 'lab': return { role: 'industry', mods: [...Array<string>(n(20, 2)).fill('module.research'), 'module.console', 'module.storage_locker'], w: 7, h: 4 };
-    case 'drones': return { role: 'core', mods: Array<string>(n(10, 3)).fill('module.droneBay'), w: 4, h: 4, drones: { def: 'drone.defence', count: 2 * n(10, 3) } };
     case 'pods': return { role: 'hangar', mods: Array<string>(n(16, 3)).fill('module.pod_bay'), w: 4, h: 4, vehicle: 'vehicle.escape_pod' };
     case 'provisions': return { role: 'cargo', mods: Array<string>(n(8, 4)).fill('module.storage_cold'), w: 7, h: 3 };
   }
