@@ -95,12 +95,21 @@ export function placeGroundTurrets(lay: Layout, plan: GroundPlan): GroundFit {
     for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const r = lay.inBounds(x + dx, y + dy) ? (lay.roomOf[(y + dy) * w + x + dx] ?? -1) : -1; if (r >= 0 && arrivals.has(r)) return true; }
     return false;
   };
-  // A hull wall a cable may plug into (not an airlock, not beside an arrivals room). Turrets and cables only take ground, so it is
-  // worked out once (the turret search asks it many times over).
+  // A hull wall a cable may plug into (not an airlock, not beside an arrivals room, not a corner: the middle of a straight run, hull
+  // on both sides of it along the run and not across, so never a bend, a diagonal's step or a T). Turrets and cables only take
+  // ground, so it is worked out once (the turret search asks it many times over).
+  const hullAt = (x: number, y: number): boolean => lay.inBounds(x, y) && (lay.at(x, y) === '#' || lay.at(x, y) === 'D');
+  const straight = (x: number, y: number): boolean => (hullAt(x - 1, y) && hullAt(x + 1, y)) !== (hullAt(x, y - 1) && hullAt(x, y + 1));
   const plugs = new Uint8Array(w * h);
+  // Ground beside a corner of the hull: no cable runs there (it would run into the corner, or along it).
+  const byCorner = new Uint8Array(w * h);
   for (let i = 0; i < w * h; i++) {
     const x = i % w, y = Math.floor(i / w);
-    if (lay.at(x, y) === '#' && (lay.occ[i] === -1 || !lay.defs[lay.modules[lay.occ[i] as number]!.def]?.airlock) && !besideArrivals(x, y)) plugs[i] = 1;
+    if (lay.at(x, y) === '#' && !straight(x, y)) for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) if (lay.inBounds(x + dx, y + dy)) byCorner[(y + dy) * w + x + dx] = 1;
+  }
+  for (let i = 0; i < w * h; i++) {
+    const x = i % w, y = Math.floor(i / w);
+    if (lay.at(x, y) === '#' && straight(x, y) && (lay.occ[i] === -1 || !lay.defs[lay.modules[lay.occ[i] as number]!.def]?.airlock) && !besideArrivals(x, y)) plugs[i] = 1;
   }
   const wallAt = (x: number, y: number): boolean => x >= 0 && y >= 0 && x < w && y < h && plugs[y * w + x] === 1;
   // Where the turrets gather: the command room's middle (else the middle of the floor).
@@ -311,7 +320,7 @@ export function placeGroundTurrets(lay: Layout, plan: GroundPlan): GroundFit {
 
   /** Whether a cable may run over a tile: open ground, nothing on it, not already cabled, not on a pad. */
   function runs(i: number): boolean {
-    return free(i % w, Math.floor(i / w)) && !onPad[i];
+    return free(i % w, Math.floor(i / w)) && !onPad[i] && !byCorner[i];
   }
 
   /** Each tile's open ground to the nearest hull tile, eight ways (1 beside the hull). */
