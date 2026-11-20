@@ -37,7 +37,14 @@ const sizeCost = (r: number): number => (r < TARGET ? 2 * (TARGET - r) : 0.4 * (
 function program(plan: ShipPlan, defs: Record<string, ModuleDef>, inBattery: number): Item[] {
   const { gunPairs, cabinPairs } = programPairs(plan, defs);
   const { lone } = gunsAndReactors(plan, defs);
-  const singles = [...lone, ...(plan.core ? [plan.core] : []), ...plan.quarters.filter((q) => !q.block), ...plan.support, ...plan.cargo, ...plan.hangars];
+  // (Prototype sizes, here until the plan takes them: a 5x5 brig; the core split into an AI core room and a drone room, 5x5 each.)
+  const brig = (r: RoomSpec): RoomSpec => (r.mods.includes('module.stasis_wheel') ? { ...r, w: 5, h: 5 } : r);
+  const core = plan.core;
+  const cores: RoomSpec[] = !core ? [] : core.mods.includes('module.droneBay')
+    ? [{ ...core, mods: core.mods.filter((m) => m !== 'module.droneBay'), w: 5, h: 5 }, { role: 'core', mods: ['module.droneBay'], w: 5, h: 5, ...(core.drones ? { drones: core.drones } : {}) }]
+    : [{ ...core, w: 5, h: 5 }];
+  if (core?.drones) delete (cores[0] as RoomSpec).drones;
+  const singles = [...lone, ...cores, ...plan.quarters.filter((q) => !q.block), ...plan.support.map(brig), ...plan.cargo.map(brig), ...plan.hangars];
   const items: Item[] = cabinPairs.map((p) => ({ specs: [p[0], p[1]], both: true, cabins: true }));
   const reactor = plan.reactors > 0 ? reactorSpec(plan.reactors, plan.kit) : null;
   const shields: RoomSpec | null = plan.shields.length > 0
