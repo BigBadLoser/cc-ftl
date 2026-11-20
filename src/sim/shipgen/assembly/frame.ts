@@ -65,7 +65,8 @@ export function outlineFrame(plan: ShipPlan, m: Mask): Frame | null {
     let run = 1;
     while (r + run < deep && rowEnd(-(BAND + 1 + r + run)) === rowEnd(-(BAND + 1 + r))) run++;
     const end = rowEnd(-(BAND + 1 + r)), longer = (y: number): number => (rowEnd(y) > end ? 1 : 0);
-    const k = Math.min(Math.floor((run - (r > 0 ? longer(-(BAND + r)) : 0) - longer(-(BAND + 1 + r + run))) / one.h), most - perSide);
+    // (A row spare: the engines stacked wall to wall would stand in front of the room's door.)
+    const k = Math.min(Math.floor((run - 1 - (r > 0 ? longer(-(BAND + r)) : 0) - longer(-(BAND + 1 + r + run))) / one.h), most - perSide);
     if (k > 0) { perSide += k; used = r + run; }
     r += run;
   }
