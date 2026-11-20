@@ -24,9 +24,12 @@ export function diagRole(h: HullKeys, x: number, y: number): DiagRole | null {
 }
 
 /** The tile's diagonal wall and cap (the station's, falling back to the ship's), or null. A ground base's only for now:
- * a ship keeps its cut hull pieces there. */
+ * a ship keeps its cut hull pieces there. An inner tile of the staircase (its front through the tile's corner, a step at
+ * -x) draws nothing: its step draws the panel on it. */
 export function diagWallPieces(h: HullKeys, x: number, y: number, look: HullLook): Piece[] | null {
-  const r = look === "station" ? diagRole(h, x, y) : null;
+  if (look !== "station") return null;
+  if (names(h, x, y).includes("m1_m1_31") && diagRole(h, x - 1, y)) return [];
+  const r = diagRole(h, x, y);
   if (!r) return null;
   return [{ chain: [`tile.wall.diag.${r}`], order: 0 }, { chain: [`tile.hull.station.cap.diag.${r}`, `tile.hull.cap.diag.${r}`], order: 1 }];
 }

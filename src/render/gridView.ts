@@ -306,16 +306,18 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
           if (hull && gapAt(x, y) && !drew) drawHull(hull, x, y, k, ci, v, true);
           // Roofed, a tile with the hull from outside has no floor plate (its edge showed below the hull's foot).
           const fin = finish?.[ci] ?? 0;
-          const f = (ghosts && !engineUp && replacesFloor(pieceAt, x, y, mode, hideReach(host.hullLook?.() ?? "ship"))) || (drew && !ghosts) ? undefined : atlas.firstOf(floorChain(x, y, fin));
+          // (A far diagonal's tiles keep their deck: the diagonal wall stands on it.)
+          const f = (ghosts && !engineUp && !diag && replacesFloor(pieceAt, x, y, mode, hideReach(host.hullLook?.() ?? "ship"))) || (drew && !ghosts) ? undefined : atlas.firstOf(floorChain(x, y, fin));
           if (f && fin === Finish.Carpet && f === atlas.stat("tile.floor.carpet")) {
             // The carpet is grey art the hull-paint step recolours: the ship's carpet paint times the light.
             const spr = addPaintSprite(f, x, y, 0, v.floor, CarpetSprite);
             owned.push(spr);
-            tinted.push({ spr, x, y, ci, wall: false, solid: false, paint: host.hullPaint?.().carpet ?? PLAIN_PAINT.carpet });
+            tinted.push({ spr, x, y, ci, wall: !!diag, solid: false, paint: host.hullPaint?.().carpet ?? PLAIN_PAINT.carpet });
           } else if (f) {
             const made = addStatic(L, f, x, y, 0, v.floor);
             owned.push(...made);
-            tinted.push({ spr: made[0] as Sprite, x, y, ci, wall: false, solid: false });
+            // (A far diagonal's deck lies under a wall tile, whose own cell has no room light: lit as its wall is.)
+            tinted.push({ spr: made[0] as Sprite, x, y, ci, wall: !!diag, solid: false });
           }
           if (f && k === Struct.Floor && anyMarks) drawMarks(x, y, ci, v);
           if (k === Struct.Floor) continue;

@@ -32,5 +32,7 @@ describe("diagRole", () => {
       { chain: ["tile.hull.station.cap.diag.m", "tile.hull.cap.diag.m"], order: 1 },
     ]);
     expect(diagWallPieces(h, 1, 1, "ship")).toBeNull();
+    expect(diagWallPieces(h, 1, 2, "station")).toEqual([]); // (an inner tile: its panel is its step's)
+    expect(diagWallPieces(h, 1, 2, "ship")).toBeNull();
   });
 });
