@@ -54,11 +54,16 @@ export function outlineFrame(plan: ShipPlan, m: Mask): Frame | null {
   const xS = Math.min(xEnd, rowEnd(-(BAND + 1))) - one.w - 1;
   let sternMax = 0;
   for (let tx = xS + 1; tx <= xEnd; tx++) sternMax = Math.max(sternMax, depth(tx));
+  // Engines only in rows long enough for one, out to the first that is not (a flared stern's rows start partway along it).
+  const long = (y: number): boolean => { const e = rowEnd(y); for (let x = e - one.w - 1; x <= e; x++) if (!inside(x, y)) return false; return true; };
+  let deep = 0;
+  // (A floor row has hull past it too, the hull's wall, as long: a diagonal's wall runs a tile further in.)
+  while (deep < sternMax && long(-(BAND + 1 + deep)) && long(-(BAND + 2 + deep))) deep++;
   const need = Math.ceil(plan.engines / 2), most = Math.max(need, 3);
   let perSide = 0, used = 0;
-  for (let r = 0; r < sternMax && perSide < most;) {
+  for (let r = 0; r < deep && perSide < most;) {
     let run = 1;
-    while (r + run < sternMax && rowEnd(-(BAND + 1 + r + run)) === rowEnd(-(BAND + 1 + r))) run++;
+    while (r + run < deep && rowEnd(-(BAND + 1 + r + run)) === rowEnd(-(BAND + 1 + r))) run++;
     const end = rowEnd(-(BAND + 1 + r)), longer = (y: number): number => (rowEnd(y) > end ? 1 : 0);
     const k = Math.min(Math.floor((run - (r > 0 ? longer(-(BAND + r)) : 0) - longer(-(BAND + 1 + r + run))) / one.h), most - perSide);
     if (k > 0) { perSide += k; used = r + run; }
