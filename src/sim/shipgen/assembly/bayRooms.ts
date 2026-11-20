@@ -22,7 +22,7 @@ type Tier = 'full' | 'front' | 'back';
 type Side = 0 | 1 | 2;
 type Specs = [RoomSpec | null, RoomSpec | null];
 /** `split`: a host and its annex's front tier's last row, where they moved the wall between them off the bays' line. */
-interface Spot { side: Side; i: number; j: number; tier: Tier; area: number; via?: Part['via']; split?: number }
+interface Spot { side: Side; i: number; j: number; tier: Tier; area: number; via?: Part['via']; split?: number; /** A cabin run. */ run?: boolean }
 interface Item { specs: Specs; both: boolean; cabins?: boolean }
 interface Put { item: Item; specs: Specs; spot: Spot; annex?: Spot; fill?: boolean }
 
@@ -138,10 +138,12 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
       for (let i = 0; i < n; i++) for (let j = i + 1; j <= n && j - i <= 4; j++) for (const tier of ['full', 'front', 'back'] as Tier[]) {
         if (!free(o, side, i, j, tier)) continue;
         if (it.cabins) {
-          // (Never under the battery: its corridor runs out to the hull and would meet the battery's.)
-          const m = fr.maint, under = !!m && bay(i).x0 < m.b && bay(j - 1).x1 > m.a;
-          if (tier !== 'full' || under || !rs.every((h) => cabinsFor(h, len(i, j), minDepth(i, j))?.stubs.length === 1)) continue;
-          out.push({ spot: { side, i, j, tier, area: area(i, j, tier) }, specs, cost: Math.abs(len(i, j) - 11) / 4 });
+          if (tier !== 'full') continue;
+          // A block's corridor runs out to the hull, so never under the battery (it would meet the battery's); a run's
+          // runs along the bays.
+          const m = fr.maint, under = !!m && bay(i).x0 < m.b && bay(j - 1).x1 > m.a, ln = len(i, j), dp = minDepth(i, j);
+          if (!under && rs.every((h) => cabinsFor(h, ln, dp)?.stubs.length === 1)) out.push({ spot: { side, i, j, tier, area: area(i, j, tier) }, specs, cost: Math.abs(ln - 11) / 4 });
+          if (rs.every((h) => cabinsFor(h, ln, dp, true))) out.push({ spot: { side, i, j, tier, area: area(i, j, tier), run: true }, specs, cost: sizeCost(area(i, j, tier) / want) + 0.5 });
           continue;
         }
         const a = area(i, j, tier), rw = rows(i, j, tier), ln = len(i, j);
@@ -266,7 +268,7 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
     return sorted.map((p) => {
       const parts = [part(p.spot, p.specs, p.fill)];
       if (p.annex) parts.push(part(p.annex, [p.specs[0]?.annex ?? null, p.specs[1]?.annex ?? null]));
-      return { x0: parts[0]?.x0 ?? 0, x1: parts[0]?.x1 ?? 0, parts, ...(p.item.cabins ? { cabins: true } : {}) };
+      return { x0: parts[0]?.x0 ?? 0, x1: parts[0]?.x1 ?? 0, parts, ...(p.item.cabins ? { cabins: p.spot.run ? 'run' as const : true } : {}) };
     });
   }
 }
