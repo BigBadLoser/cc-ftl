@@ -208,7 +208,8 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
       o = take(o, grown, nw);
     };
     let score = 0, nFill = 0;
-    const left: Filler[] = ['workshop', 'lounge', 'gym', 'farm'];
+    // (Prototype: a big ship's spare-floor rooms first, then the fillers.)
+    const left: Filler[] = ['pd', 'armoury', 'battery', 'shop', 'lab', 'provisions', 'workshop', 'lounge', 'gym', 'farm'];
     for (const s of [0, 1] as const) for (let k = 0; k < n; k++) for (const tier of (twoTier(k) ? ['front', 'back'] : ['full']) as Tier[]) {
       if (taken(o[s][k] as Slot, tier)) continue;
       const a = area(k, k + 1, tier), here: Spot = { side: s, i: k, j: k + 1, tier, area: a };

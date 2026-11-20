@@ -22,7 +22,9 @@ export function maxArea(r: RoomSpec): number {
 }
 
 /** Filler kinds, the default first; the rest one a side each at most (a farm only on a ship that carries one). */
-export type Filler = 'hold' | 'workshop' | 'lounge' | 'gym' | 'farm' | 'armoury';
+export type Filler = 'hold' | 'workshop' | 'lounge' | 'gym' | 'farm' | 'armoury'
+  /** PROTOTYPE (#581): a big ship's spare-floor rooms, before the fillers. */
+  | 'pd' | 'battery' | 'shop' | 'lab' | 'provisions';
 /** Floor a filler room takes, at least and at most. */
 export const FILL_MIN = 9, FILL_MAX = 45;
 
@@ -36,6 +38,11 @@ export function fillerSpec(kind: Filler, area: number): RoomSpec {
     case 'gym': return { role: 'support', use: 'gym', mods: Array<string>(n(6, 4)).fill('module.exercise'), w: 4, h: 3 };
     case 'armoury': return { role: 'armoury', mods: [], w: 9, h: 5 };
     case 'farm': return { role: 'farm', mods: Array<string>(n(6, 4)).fill('module.hydroponics'), w: 4, h: 3 };
+    case 'pd': return { role: 'weapons', mods: Array<string>(n(15, 2)).fill('module.pointDefense'), w: 3, h: 3 };
+    case 'battery': return { role: 'plant', mods: [...Array<string>(area >= 40 ? 8 : 4).fill('module.battery'), 'module.console'], w: 5, h: 4 };
+    case 'shop': return { role: 'industry', mods: ['module.scrapper', 'module.storage_scrap', 'module.storage_scrap', 'module.storage_pallet'], w: 8, h: 5 };
+    case 'lab': return { role: 'industry', mods: [...Array<string>(n(20, 2)).fill('module.research'), 'module.console', 'module.storage_locker'], w: 7, h: 4 };
+    case 'provisions': return { role: 'cargo', mods: Array<string>(n(8, 4)).fill('module.storage_cold'), w: 7, h: 3 };
   }
 }
 
