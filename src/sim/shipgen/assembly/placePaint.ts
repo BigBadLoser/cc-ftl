@@ -90,7 +90,9 @@ export function paintPlaced(plan: ShipPlan, { fr, lay, battery }: Placed): Regio
       if (!pair || !st || !out) return;
       ([0, 1] as const).forEach((side) => {
         const h = pair[side], sign = side === 0 ? -1 : 1;
-        paint(g.room(h.role, { spec: h, rank: -2, access: [out[side]] }), st[0], st[1], (y) => sign * y >= BAND && sign * y < mt.hallY(st[0]));
+        // Between the bays' plating columns under the blister; it outranks the outer gun, so the wall between is the
+        // outer's and both have the same floor as a lone gun.
+        paint(g.room(h.role, { spec: h, rank: -0.5, access: [out[side]] }), st[0] + 1, st[1] - 1, (y) => sign * y >= BAND && sign * y < mt.hallY(st[0]));
       });
     });
   }

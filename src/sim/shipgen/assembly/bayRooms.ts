@@ -44,7 +44,9 @@ function program(plan: ShipPlan, defs: Record<string, ModuleDef>, inBattery: num
     ? [{ ...core, mods: core.mods.filter((m) => m !== 'module.droneBay'), w: 5, h: 4 }, { role: 'core', mods: ['module.droneBay'], w: 5, h: 4, ...(core.drones ? { drones: core.drones } : {}) }]
     : [{ ...core, w: 5, h: 4 }];
   if (core?.drones) delete (cores[0] as RoomSpec).drones;
-  const singles = [...lone, ...cores, ...plan.quarters.filter((q) => !q.block), ...plan.support.map(brig), ...plan.cargo.map(brig), ...plan.hangars];
+  // (And a mess of 7x5 at least: the crew's commons.)
+  const mess = (r: RoomSpec): RoomSpec => (r.mods.includes('module.galley') ? { ...r, w: Math.max(r.w, 7), h: Math.max(r.h, 5) } : r);
+  const singles = [...lone, ...cores, ...plan.quarters.filter((q) => !q.block), ...plan.support.map(brig).map(mess), ...plan.cargo.map(brig), ...plan.hangars];
   const items: Item[] = cabinPairs.map((p) => ({ specs: [p[0], p[1]], both: true, cabins: true }));
   const reactor = plan.reactors > 0 ? reactorSpec(plan.reactors, plan.kit) : null;
   const shields: RoomSpec | null = plan.shields.length > 0
@@ -143,13 +145,13 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
         const a = area(i, j, tier), rw = rows(i, j, tier), ln = len(i, j);
         if (annex) {
           // The host in front, its annex behind it over the same bays (through the host), the wall between them moved
-          // up to two rows off the bays' line: the annex as small as it may be, the host taking the rest.
+          // up to two rows off the bays' line: the annex as small as it may be (never past three quarters of the host), the host taking the rest.
           if (tier !== 'front' || !free(o, side, i, j, 'back')) continue;
           const line = (bay(i).tiers[0] as [number, number])[1], hostWant = host.w * host.h, annexWant = annex.w * annex.h, deep = minDepth(i, j);
           let best: { split: number; a: number; b: number; cost: number } | null = null;
           for (let split = line - 2; split <= line + 2; split++) {
             const a2 = area(i, j, 'front', split), b2 = area(i, j, 'back', split);
-            if (split < 3 || deep - split - 1 < 3 || a2 < hostWant || b2 < 0.85 * annexWant || !fits(host, ln, split)) continue;
+            if (split < 3 || deep - split - 1 < 3 || a2 < hostWant || b2 < 0.85 * annexWant || b2 > 0.75 * a2 || !fits(host, ln, split)) continue;
             const cost = Math.abs(a2 / hostWant - TARGET) + 0.5 * Math.abs(b2 / annexWant - 1);
             if (!best || cost < best.cost) best = { split, a: a2, b: b2, cost };
           }
@@ -233,6 +235,7 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
         const f0 = o[s][k]?.front;
         if (!f0 || f0.fill || f0.item.cabins || f0.annex || f0.item.both || f0.spot.i !== k || f0.spot.j !== k + 1 || f0.spot.tier !== 'front') { note(`back pocket x${bay(k).x0}`); return null; }
         const full: Spot = { side: s, i: k, j: k + 1, tier: 'full', area: area(k, k + 1, 'full') };
+        if (full.area > 2.5 * planOf(f0.specs)) { note(`back pocket x${bay(k).x0} (front too small to take it)`); return null; }
         replace(f0, { ...f0, spot: full }, full);
         continue;
       }
