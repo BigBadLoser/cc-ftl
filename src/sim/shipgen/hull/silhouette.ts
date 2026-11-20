@@ -96,10 +96,10 @@ function body(rng: Rng, p: Profile, drive?: Drive): { outer: number[]; bodyStart
     .map((part) => one(rng, part))
     .filter((s) => s.chance === undefined || rng.chance(s.chance))
     .map((s) => ({ len: pick(rng, s.len), half: pick(rng, s.half), taper: s.taper ?? 2 }));
-  if (drive && secs.length > 1) {
+  if (drive?.rng && secs.length > 1) {
     // The drive section drawn again from its own options, `grow` tiles wider (never past the section ahead of it).
     const s = one(drive.rng, p.sections[p.sections.length - 1] as Part), ahead = (secs[secs.length - 2] as { half: number }).half;
-    secs[secs.length - 1] = { len: pick(drive.rng, s.len), half: Math.min(ahead, pick(drive.rng, s.half) + drive.grow), taper: s.taper ?? 2 };
+    secs[secs.length - 1] = { len: pick(drive.rng, s.len), half: Math.min(ahead, pick(drive.rng, s.half) + (drive.grow ?? 0)), taper: s.taper ?? 2 };
   }
   const H0 = (secs[0] as { half: number }).half;
   const outer: number[] = [];
@@ -217,30 +217,35 @@ function addMounts(rng: Rng, p: Profile, outer: number[], top: number[], bodySta
 }
 
 /**
- * A drive section drawn again: the hull's last section and its stern from `rng`, not the hull's own draws, its half-width
- * `grow` tiles more. The rest of the hull is drawn as it was (the hull's own draws are all still made).
+ * How a drive section is drawn. With `rng`, drawn again: the hull's last section and its stern from it, not the hull's
+ * own draws, its half-width `grow` tiles more (the rest of the hull is drawn as it was: its own draws are all still made).
+ * With `hold`, a flare's full width runs at least that many columns (lengthened past the flare where it is shorter),
+ * so its outer rows are long enough for engines.
  */
-export interface Drive { rng: Rng; grow: number }
+export interface Drive { rng?: Rng; grow?: number; hold?: number }
 
 /** With `guns`, that many gun sites stand in place of the profile's embrasures (PROTOTYPE, #581); with `drive`, the drive section redrawn. */
 export function drawSilhouette(rng: Rng, p: Profile, guns?: number, drive?: Drive): Silhouette {
   const { outer, bodyStart } = body(rng, p, drive);
   let st = one(rng, p.stern), sLen = pick(rng, st.len), sOut = pick(rng, st.out);
-  if (drive) { st = one(drive.rng, p.stern); sLen = pick(drive.rng, st.len); sOut = pick(drive.rng, st.out); }
+  if (drive?.rng) { st = one(drive.rng, p.stern); sLen = pick(drive.rng, st.len); sOut = pick(drive.rng, st.out); }
   const rate = st.rate ?? 2;
-  const L = outer.length;
   // Flare and tail reshape the last stretch of the body itself; mounts stay clear of it.
   const shaped = st.kind === 'flare' || st.kind === 'tail';
   const pre = outer.slice();
   if (shaped) {
-    for (let i = 0; i < sLen; i++) {
-      const x = L - sLen + i, d = Math.min(sOut, Math.floor(i / rate) + 1);
+    for (let i = 0, L0 = outer.length; i < sLen; i++) {
+      const x = L0 - sLen + i, d = Math.min(sOut, Math.floor(i / rate) + 1);
       outer[x] = (outer[x] as number) + (st.kind === 'flare' ? d : -d);
     }
   }
+  // (A flare is at full width from its column rate * (out - 1) on.)
+  const hold = st.kind === 'flare' ? Math.max(0, (drive?.hold ?? 0) - Math.max(0, sLen - rate * (sOut - 1))) : 0;
+  for (let i = 0; i < hold; i++) { outer.push(outer[outer.length - 1] as number); pre.push(pre[pre.length - 1] as number); }
+  const L = outer.length;
   const rw = has(rng, p.rearWings) ? p.rearWings : undefined;
   const rwLen = rw ? pick(rng, rw.len) : 0;
-  const sternFrom = L - Math.max(shaped || st.kind !== 'bank' ? sLen : 0, rwLen) - 2;
+  const sternFrom = L - Math.max(shaped || st.kind !== 'bank' ? sLen + hold : 0, rwLen) - 2;
   const top = outer.slice();
   addMounts(rng, p, outer, top, bodyStart, sternFrom, guns !== undefined);
   if (rw) {

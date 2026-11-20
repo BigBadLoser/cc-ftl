@@ -3,7 +3,7 @@ import { Rng } from '../../rng';
 import { drawSilhouette, type Drive, type Silhouette } from '../hull/silhouette';
 import { NAVY_PROFILES } from '../hull/navyProfiles';
 import { fitShell, seedOf } from '../generate';
-import { ENGINE_TIERS, REACTOR_TIERS, planShip, reactorsFor, type ShipPlan } from '../plan';
+import { ENGINE_TIERS, REACTOR_TIERS, engineSpec, planShip, reactorsFor, type ShipPlan } from '../plan';
 import type { FactionDef, GenResult } from '../types';
 import { layoutBlocks, type Mask } from './blockLayout';
 import { bayRooms } from './bayRooms';
@@ -162,9 +162,11 @@ export function outlineInputs(
   // PROTOTYPE (#581): with `sites`, a notched gun site per gun pair in place of the profile's embrasures.
   const gp = gunsAndReactors(plan, defs).gunPairs;
   const profile = rng.pick(NAVY_PROFILES[type] ?? []), from = rng.getState();
+  // A bay hull's flare holds its full width an engine room deep (the deepest engine it may take, a walk column and wall).
+  const hold = sites ? engineSpec(1, 'w', planUp?.kit ?? kit).w + 2 : 0;
   const draw = (drive?: Drive): Silhouette => {
     rng.setState(from);
-    const s = drawSilhouette(rng, profile, sites ? gp.length : undefined, drive);
+    const s = drawSilhouette(rng, profile, sites ? gp.length : undefined, { ...drive, hold });
     if (s.battery) Object.assign(s.battery, { w: Math.max(...gp.flat().map((r) => r.w)), h: Math.max(3, ...gp.flat().map((r) => r.h)) });
     return s;
   };
