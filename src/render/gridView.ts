@@ -476,8 +476,10 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
       // Its unpainted layer (`.own`, hulltiles._items): the blue seam keeps its blue under the armour paint.
       const own = atlas.stat(`${b.low}.own`);
       if (own) v.owned.push(...addStatic(L, own, x, y, z + 0.0015, L.sorted));
-      // The near hull's ghost over its cut top: an upright on its outer edge (unpainted, unlit).
-      const g = nearGhostId(h, x, y, has, k !== Struct.Floor, cutLook);
+      // The cut hull's ghost over its cut top: an upright on its outer edge (unpainted, unlit). Not the far hull's with the
+      // walls down: its old ghost (the outline) stays over it.
+      const far = k !== Struct.Floor && hullSide(wallAt, x, y, hideReach(look)) === HullSide.Far;
+      const g = far ? undefined : nearGhostId(h, x, y, has, k !== Struct.Floor, cutLook);
       const gs = g ? atlas.stat(g) : undefined;
       if (gs) v.owned.push(...addStatic(L, gs, x, y, z + 0.002, L.sorted));
     }

@@ -1,8 +1,9 @@
-"""The near hull's ghost (walls fully down): the rear ghost's back upright (hull._rise, hull._back_fill) stood on the
-near hull's outer edge, where its armour face rises from the deck-level cut (wall3d_belly, `top` FAR_LOW). A 'wire'
-sprite (hull_wire.render): a line along the cut's outer edge, faint lines rising at the tile seams and where the outline
-turns (its chamfers), fading as they go, and the same fading fill between them. One per hull key with a near front
-(hull_catalog), as the belly's pieces: tile.hull.ghost.n.<key name>."""
+"""The cut hull's ghost: the rear ghost's back upright (hull._rise, hull._back_fill) stood on the cut hull's outer edge,
+where its armour face rises from the deck-level cut (wall3d_belly, `top` FAR_LOW). A 'wire' sprite (hull_wire.render): a
+line along the cut's outer edge, faint lines rising at the tile seams and where the outline turns (its chamfers), fading as
+they go, and the same fading fill between them. One per hull key (hull_catalog), as the belly's pieces, on every front:
+the near hull's, and a side diagonal's or a far run's where it is cut too (a step in a side, the back wall across a notch;
+render/tiles.ts hidesShip): tile.hull.ghost.n.<key name>."""
 from . import core
 from . import hull_outline as HO
 from . import wall3d_belly as B
@@ -21,11 +22,9 @@ def _top():
 
 
 def _faces(key, za, zb):
-    """The near parts' outer faces between za and zb: [points in order]."""
+    """The parts' outer faces between za and zb: [points in order]."""
     out = []
     for f, planes, n, _, _ in B._parts(key, B.ZG):
-        if not B.near(f[0]):
-            continue
         own = next(i for i in range(7, 7 + n) if planes[i][1] == f[1] / 32
                    and (planes[i][0].x, planes[i][0].y) == tuple(f[0]))
         planes = list(planes)
@@ -41,7 +40,7 @@ def _cuts():
 
 
 def upright(key):
-    """The near ghost of a hull key: [plate, lines, fill]; [] if the key has no near front."""
+    """The ghost of a hull key: [plate, lines, fill]; [] if the key has no front."""
     z1 = _top()
     faces = _faces(key, Z0, z1)
     if not faces:
@@ -79,10 +78,10 @@ def _some(k):
 
 
 def sprites():
-    """The walls family's jobs: (id, footprint, kind, builder) for every catalogued key with a near front."""
+    """The walls family's jobs: (id, footprint, kind, builder) for every catalogued key."""
     from . import hull_catalog as HC
     out = []
     for k in HC.keys():
-        if k and any(B.near(h[0]) for st in HO.parse(k) for h in st) and _some(k):
+        if k and _some(k):
             out.append((f"tile.hull.ghost.n.{HO.name(k)}", (1, 1), "wire", lambda k=k: upright(k)))
     return out
