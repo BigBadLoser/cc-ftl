@@ -112,7 +112,11 @@ function body(rng: Rng, p: Profile, drive?: Drive): { outer: number[]; bodyStart
     const len = pick(rng, p.nose.len), front = pick(rng, p.nose.front), style = one(rng, p.nose.style);
     // At most two tiles out per column, so no nose has a square shoulder; a nose that falls short runs on 2:1.
     let h = front - 2;
-    for (let i = 0; i < len; i++) { h = Math.min(H0, noseHalf(style, i, len, front, H0), h + 2); outer.push(h); }
+    // A stepped nose's front corners chamfered, as a pod's: its flat front never meets the dark at a right angle.
+    for (let i = 0; i < len; i++) {
+      h = Math.min(H0, noseHalf(style, i, len, front, H0), h + 2);
+      outer.push(style === 'stepped' ? Math.max(1, h - Math.max(0, 2 - i)) : h);
+    }
     while (h < H0) { h = Math.min(H0, h + 2); outer.push(h); }
   }
   const bodyStart = outer.length;
