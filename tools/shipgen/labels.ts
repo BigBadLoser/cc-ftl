@@ -202,7 +202,7 @@ export function labelOf(
   // Room names at the middle of every room big enough to carry one.
   for (const [room, [sx, sy, n]] of names ? mid : []) {
     const name = roomKind(roles[room] as string, mods[room] ?? []);
-    if (!name || n < 10) continue;
+    if (!name || n < 10 || roles[room] === 'hall') continue;
     const cx = (sx / n) * t + (t >> 1), cy = TOP + (sy / n) * t + (t >> 1);
     outlined(r, name, Math.round(cx - name.length * 4), Math.round(cy - 5), [255, 255, 255], 2);
   }
