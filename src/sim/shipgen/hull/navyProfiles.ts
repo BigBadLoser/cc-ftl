@@ -41,13 +41,13 @@ export const NAVY_PROFILES: Record<string, readonly Profile[]> = {
   // Ship of the line: big and heavy, embrasures down the side and a raked wing, a square drive bank.
   cruiser: [
     { id: 'cruiser.line', nose: { style: ['stepped', 'steep'], len: [16, 22], front: [2, 4] },
-      sections: [[{ len: [10, 14], half: [8, 10] }, { len: [20, 26], half: [8, 9] }], { len: [34, 44], half: [11, 13] }],
+      sections: [[{ len: [10, 14], half: [8, 10] }, { len: [20, 26], half: [8, 9] }], { len: [34, 44], half: [11, 13] }, { len: [14, 18], half: [6, 7], taper: 1 }],
       mounts: [{ kind: 'embrasure', count: [3, 4], len: [4, 5], depth: [1, 2], tooth: 6, span: [0.25, 0.8] }, { kind: 'wing', count: [1, 1], len: [16, 20], reach: [5, 6], rake: 3, span: [0.7, 1], chance: 0.6 }],
-      stern: [{ kind: 'bank', len: [0, 0], out: [0, 0] }, { kind: 'quarters', len: [10, 13], out: [3, 4], aft: [3, 5] }] },
+      stern: [{ kind: 'quarters', len: [10, 13], out: [2, 3], aft: [3, 5] }, { kind: 'flare', len: [8, 10], out: [3, 4] }] },
     // A broad armoured citadel amidships, hard shoulders fore and aft, a command pod ahead and a narrower drive block behind.
     { id: 'cruiser.citadel', pod: { len: [6, 9], half: [5, 6] },
-      sections: [{ len: [6, 10], half: [8, 9] }, { len: [26, 34], half: [14, 16], taper: 1 }, [{ len: [8, 10], half: [9, 10], taper: 1 }, { len: [14, 18], half: [9, 10], taper: 1 }]],
-      mounts: [{ kind: 'embrasure', count: [3, 4], len: [4, 5], depth: [1, 2], tooth: 6, span: [0.1, 0.75] }], stern: [{ kind: 'bank', len: [0, 0], out: [0, 0] }, { kind: 'flare', len: [8, 10], out: [3, 4] }] },
+      sections: [{ len: [6, 10], half: [8, 9] }, { len: [26, 34], half: [14, 16], taper: 1 }, [{ len: [8, 10], half: [9, 10], taper: 1 }, { len: [14, 18], half: [7, 8], taper: 1 }]],
+      mounts: [{ kind: 'embrasure', count: [3, 4], len: [4, 5], depth: [1, 2], tooth: 6, span: [0.1, 0.75] }], stern: [{ kind: 'flare', len: [8, 10], out: [3, 4] }, { kind: 'quarters', len: [10, 13], out: [3, 4], aft: [3, 5] }] },
   ],
   // Launcher: broad, built around its hangar.
   carrier: [

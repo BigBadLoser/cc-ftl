@@ -20,7 +20,7 @@ export interface Part {
   x0: number; x1: number; r0: number; r1: number; spec: [RoomSpec | null, RoomSpec | null]; fill?: boolean; grown?: boolean;
   /** Its way in, where the layout fixed it: the dock's corridor, the battery's, or the room in front. */ via?: 'dock' | 'maint' | 'front';
 }
-export interface Piece { x0: number; x1: number; parts: Part[]; /** A cabin block; 'run': its corridor lengthwise. */ cabins?: boolean | 'run' }
+export interface Piece { x0: number; x1: number; parts: Part[]; cabins?: boolean }
 /** A side's stretch between corridors and the drive: columns [a, b), its free runs (end exclusive) and its pieces. */
 export interface Block { a: number; b: number; crossL: boolean; crossR: boolean; free: [number, number][]; pieces: Piece[] }
 /** A corridor stub: a hall column from the spine to the hull. */

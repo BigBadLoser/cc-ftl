@@ -25,13 +25,11 @@ export function paintPlaced(plan: ShipPlan, { fr, lay, battery }: Placed): Regio
         if (pc.cabins) {
           let rowsMin = Infinity;
           for (let tx = q.x0; tx < q.x1; tx++) rowsMin = Math.min(rowsMin, top(tx) - BAND - 1);
-          const bl = cabinsFor(h, q.x1 - q.x0, rowsMin, pc.cabins === 'run' ? (q.x0 === dockAt + fr.CW + 1 ? 'start' : 'end') : false);
+          const bl = cabinsFor(h, q.x1 - q.x0, rowsMin);
           if (!bl) { const id = g.room(h.role, { spec: h }); paint(id, q.x0, q.x1, (y) => d(y) >= BAND); return id; }
-          // (A run's corridor is the dock's, turned along it.)
-          const run = pc.cabins === 'run' ? docks[side] : -1;
-          const st = bl.stubs.map((s) => { const id = run >= 0 ? run : g.hall('hall'); paint(id, q.x0 + s.c0, q.x0 + s.c1, (y) => d(y) >= BAND + s.r0 && d(y) <= BAND + s.r1); return { id, s }; });
+          const st = bl.stubs.map((s) => { const id = g.hall('hall'); paint(id, q.x0 + s.c0, q.x0 + s.c1, (y) => d(y) >= BAND + s.r0 && d(y) <= BAND + s.r1); return { id, s }; });
           for (const { rect: c, spec } of bl.cabins) {
-            const own = run >= 0 ? run : st.find(({ s }) => s.c0 === c.c1 || s.c1 === c.c0)?.id ?? hall;
+            const own = st.find(({ s }) => s.c0 === c.c1 || s.c1 === c.c0)?.id ?? hall;
             paint(g.room('quarters', { spec, access: [own] }), q.x0 + c.c0, q.x0 + c.c1, (y) => d(y) >= BAND + c.r0 && d(y) <= BAND + c.r1);
           }
           for (const c of bl.rest) {

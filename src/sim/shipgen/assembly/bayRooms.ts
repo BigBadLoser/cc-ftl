@@ -22,7 +22,7 @@ type Tier = 'full' | 'front' | 'back';
 type Side = 0 | 1 | 2;
 type Specs = [RoomSpec | null, RoomSpec | null];
 /** `split`: a host and its annex's front tier's last row, where they moved the wall between them off the bays' line. */
-interface Spot { side: Side; i: number; j: number; tier: Tier; area: number; via?: Part['via']; split?: number; /** A cabin run. */ run?: boolean }
+interface Spot { side: Side; i: number; j: number; tier: Tier; area: number; via?: Part['via']; split?: number }
 interface Item { specs: Specs; both: boolean; cabins?: boolean }
 interface Put { item: Item; specs: Specs; spot: Spot; annex?: Spot; fill?: boolean }
 
@@ -89,8 +89,6 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
     for (let k = i; k < j; k++) for (let x = bay(k).x0; x < bay(k).x1; x++) if (x >= m.a && x < m.b && !gunCol(x)) return true;
     return false;
   };
-  const underBattery = (i: number, j: number): boolean => !!fr.maint && bay(i).x0 < fr.maint.b && bay(j - 1).x1 > fr.maint.a;
-  const withinBattery = (i: number, j: number): boolean => !!fr.maint && bay(i).x0 >= fr.maint.a && bay(j - 1).x1 <= fr.maint.b;
   const fits = (r: RoomSpec, ln: number, rw: number): boolean => (ln >= r.w && rw >= r.h) || (ln >= r.h && rw >= r.w);
   const len = (i: number, j: number): number => bay(j - 1).x1 - bay(i).x0;
   const rows = (i: number, j: number, tier: Tier): number => Math.round(area(i, j, tier) / Math.max(1, len(i, j)));
@@ -140,12 +138,10 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
       for (let i = 0; i < n; i++) for (let j = i + 1; j <= n && j - i <= 4; j++) for (const tier of ['full', 'front', 'back'] as Tier[]) {
         if (!free(o, side, i, j, tier)) continue;
         if (it.cabins) {
-          if (tier !== 'full') continue;
-          // A block's corridor runs out to the hull, so never under the battery (it would meet the battery's); a run's
-          // runs along the bays.
-          const under = underBattery(i, j), ln = len(i, j), dp = minDepth(i, j);
-          if (!under && rs.every((h) => cabinsFor(h, ln, dp)?.stubs.length === 1)) out.push({ spot: { side, i, j, tier, area: area(i, j, tier) }, specs, cost: Math.abs(ln - 11) / 4 });
-          if (byDock(i, j) && rs.every((h) => cabinsFor(h, ln, dp, bay(i).x0 === fr.dockAt + fr.CW + 1 ? 'start' : 'end'))) out.push({ spot: { side, i, j, tier, area: area(i, j, tier), run: true }, specs, cost: sizeCost(area(i, j, tier) / want) + (under ? 0 : 0.5) });
+          // (Never under the battery: its corridor runs out to the hull and would meet the battery's.)
+          const m = fr.maint, under = !!m && bay(i).x0 < m.b && bay(j - 1).x1 > m.a;
+          if (tier !== 'full' || under || !rs.every((h) => cabinsFor(h, len(i, j), minDepth(i, j))?.stubs.length === 1)) continue;
+          out.push({ spot: { side, i, j, tier, area: area(i, j, tier) }, specs, cost: Math.abs(len(i, j) - 11) / 4 });
           continue;
         }
         const a = area(i, j, tier), rw = rows(i, j, tier), ln = len(i, j);
@@ -192,12 +188,6 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
     // nothing else has one.)
     let pi = -1, cs: Cand[] = [];
     for (const [k, it] of left.entries()) { const c = spots(o, it); if (c.length > 0 && (pi < 0 || c.length < cs.length)) { pi = k; cs = c; } }
-    // (Prototype: a cabin run under the battery first, where one fits.)
-    for (const [k, it] of left.entries()) {
-      if (!it.cabins) continue;
-      const c = spots(o, it).filter((x) => x.spot.run && withinBattery(x.spot.i, x.spot.j));
-      if (c.length > 0) { pi = k; cs = c; break; }
-    }
     if (pi < 0) { note(`no spot ${left.map((it) => real(it.specs)[0]?.role).join(',')}`); return; }
     const it = left[pi] as Item;
     for (const c of cs.slice(0, 3)) {
@@ -276,7 +266,7 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
     return sorted.map((p) => {
       const parts = [part(p.spot, p.specs, p.fill)];
       if (p.annex) parts.push(part(p.annex, [p.specs[0]?.annex ?? null, p.specs[1]?.annex ?? null]));
-      return { x0: parts[0]?.x0 ?? 0, x1: parts[0]?.x1 ?? 0, parts, ...(p.item.cabins ? { cabins: p.spot.run ? 'run' as const : true } : {}) };
+      return { x0: parts[0]?.x0 ?? 0, x1: parts[0]?.x1 ?? 0, parts, ...(p.item.cabins ? { cabins: true } : {}) };
     });
   }
 }
