@@ -204,15 +204,20 @@ export function planShip(rng: Rng, f: FactionDef, role: ShipRoleDef, depth: numb
   const b = budgetOf(f, role, depth);
   const arch = f.architecture;
   const guns: string[] = [];
-  for (let i = 0; i < Math.max(1, b.weapons); i++) {
+  const fixed = role.guns ?? 0;
+  for (let i = 0; i < (fixed > 0 ? Math.ceil(fixed / 2) : Math.max(1, b.weapons)); i++) {
     const heavy = f.weapons.heavy.length > 0 && rng.int(0, 99) < b.heavyPct;
     guns.push(pickWeighted(rng, heavy ? f.weapons.heavy : f.weapons.light));
   }
   guns.sort((a, c) => sizeOf(defs, c) - sizeOf(defs, a));
   const weapons: RoomSpec[] = [];
+  // (A fixed count: each gun its own room, in pairs.)
+  if (fixed > 0) for (let i = 0; i < fixed; i++) weapons.push(weaponSpec(defs, [guns[Math.floor(i / 2)] as string]));
   const light = guns.filter((g) => sizeOf(defs, g) <= 2);
-  for (const g of guns.filter((x) => sizeOf(defs, x) > 2)) weapons.push(weaponSpec(defs, [g]));
-  for (let i = 0; i < light.length; i += arch.battery) weapons.push(weaponSpec(defs, light.slice(i, i + arch.battery)));
+  if (fixed === 0) {
+    for (const g of guns.filter((x) => sizeOf(defs, x) > 2)) weapons.push(weaponSpec(defs, [g]));
+    for (let i = 0; i < light.length; i += arch.battery) weapons.push(weaponSpec(defs, light.slice(i, i + arch.battery)));
+  }
   const shields: RoomSpec[] = [];
   for (let i = 0; i < b.shields; i++) {
     const g = pickWeighted(rng, f.shields);
@@ -276,7 +281,7 @@ export function planShip(rng: Rng, f: FactionDef, role: ShipRoleDef, depth: numb
   const cap = Math.max(1, b.reactors) + Math.ceil(((booked + extraEngines) * -(defs[engine]?.power ?? -6)) / mk1);
   // Guns go before point defence when power is short (the last gun first).
   const isPd = (r: RoomSpec): boolean => r.mods.every((m) => !!defs[m]?.pointDefense);
-  while (plan.weapons.length > 1 && Math.ceil(demandOf() / mk1) > cap) {
+  while (fixed === 0 && plan.weapons.length > 1 && Math.ceil(demandOf() / mk1) > cap) {
     const gun = plan.weapons.map(isPd).lastIndexOf(false);
     plan.weapons.splice(gun >= 0 ? gun : plan.weapons.length - 1, 1);
   }

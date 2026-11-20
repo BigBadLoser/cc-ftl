@@ -38,7 +38,7 @@ const TARGET = 1.35;
 const sizeCost = (r: number): number => (r < TARGET ? 2 * (TARGET - r) : 0.4 * (r - TARGET));
 
 /** All the plan's reactors in one room and all its shield generators in another, a mirrored pair; the rest single. */
-function program(plan: ShipPlan, defs: Record<string, ModuleDef>, inBattery: number, hangars = true, blocks = true): Item[] {
+function program(plan: ShipPlan, defs: Record<string, ModuleDef>, inBattery: number, hangars = true, blocks = true, mirror = false): Item[] {
   const { gunPairs, cabinPairs } = programPairs(plan, defs);
   const { lone } = gunsAndReactors(plan, defs);
   // (Prototype sizes, here until the plan takes them: a 5x4 brig; the core split into an AI core room and a drone room, 5x4 each.)
@@ -64,7 +64,8 @@ function program(plan: ShipPlan, defs: Record<string, ModuleDef>, inBattery: num
     const w = Math.max(reactor.w, shields.w), h = Math.max(reactor.h, shields.h);
     items.push({ specs: [{ ...reactor, w, h }, { ...shields, w, h }], both: true });
   } else for (const r of [reactor, shields]) if (r) items.push({ specs: [r, null], both: false });
-  for (const p of gunPairs.slice(inBattery)) items.push({ specs: [p[0], null], both: false }, { specs: [p[1], null], both: false });
+  // (Each side on its own, or mirrored: the same gun opposite.)
+  for (const p of gunPairs.slice(inBattery)) items.push(...(mirror ? [{ specs: [p[0], p[1]] as Specs, both: true }] : [{ specs: [p[0], null] as Specs, both: false }, { specs: [p[1], null] as Specs, both: false }]));
   const size = (r: RoomSpec): number => r.w * r.h + (r.annex ? r.annex.w * r.annex.h : 0);
   return [...items, ...singles.sort((a, b) => size(b) - size(a)).map((r): Item => ({ specs: [r, null], both: false }))];
 }
@@ -73,7 +74,7 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
   const bays = bayLayout(fr), n = bays.length;
   const { gunPairs } = gunsAndReactors(plan, defs);
   // (A lane hull's hangar is its frame's, at the lane's head.)
-  const order = program(plan, defs, fr.maint ? gunPairs.length : 0, !fr.lane);
+  const order = program(plan, defs, fr.maint ? gunPairs.length : 0, !fr.lane, true, !!fr.lane);
   const bay = (k: number): Bay => bays[k] as Bay;
   const rowsAt = (b: Bay, x: number, tier: Tier, split?: number): number => {
     const d = (b.row?.depth ?? fr.depth)(x), [f, k] = b.tiers;
@@ -314,8 +315,17 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
       if (need > 0) break;
     }
   }
-  const occ0 = strip.reduce<Occ>((o, p) => take(o, p.spot, p), [emptySide(), emptySide()]);
-  dfs(occ0, strip, strip.length > 0 ? program(plan, defs, fr.maint ? gunPairs.length : 0, !fr.lane, false) : order, 0);
+  // A lane hull's guns, fixed before the rest: a mirrored pair a bay, the bays evenly spaced down the side hulls outboard
+  // (out to the hull, on the side corridor).
+  const ob = fr.lane ? bays.map((b, k) => ((b.row?.dir ?? 1) > 0 && b.row ? k : -1)).filter((k) => k >= 0) : [];
+  const at = new Set(gunPairs.map((_, i) => ob[Math.round(((ob.length - 1) * (i + 0.5)) / gunPairs.length)]));
+  const guns0: Put[] = ob.length >= gunPairs.length && at.size === gunPairs.length && !fr.maint ? gunPairs.map((p, i) => {
+    const k = [...at][i] as number, specs: Specs = [p[0], p[1]];
+    return { item: { specs, both: true }, specs, spot: { side: 2, i: k, j: k + 1, tier: 'full', area: area(k, k + 1, 'full') } };
+  }) : [];
+  const pre = [...strip, ...guns0], occ0 = pre.reduce<Occ>((o, p) => take(o, p.spot, p), [emptySide(), emptySide()]);
+  const inBattery = fr.maint || guns0.length > 0 ? gunPairs.length : 0;
+  dfs(occ0, pre, pre.length > 0 ? program(plan, defs, inBattery, !fr.lane, strip.length === 0, !!fr.lane) : order, 0);
   const got = best as { puts: Put[]; score: number } | null;
   const lay: Layout = { blocks: [{ a: fr.xBand, b: fr.xS, crossL: false, crossR: false, free: [], pieces: toPieces(got?.puts ?? []) }], stern: null, stubs: [], done: [] };
   const battery = fr.maint ? gunPairs.slice(0, fr.maint.guns.length + fr.maint.inner.length) : [];

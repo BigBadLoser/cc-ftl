@@ -39,6 +39,8 @@ interface Shape {
   engines?: number;
   /** The hull's least length in tiles (a carrier: longer than a cruiser, its lane taking floor). */
   minLength?: number;
+  /** Guns every ship of the type carries, one to a room, in pairs (`ShipRoleDef.guns`; mirrored on a lane hull). */
+  gunRooms?: number;
   /** Its rooms laid on bays (bayRooms.ts), and the parts it takes there: a gun battery along a maintenance corridor. */
   layout?: BayLayout;
   bonus?: Partial<Record<'weapons' | 'engines' | 'crew' | 'crates' | 'shields' | 'pointDefense' | 'reactors', number>>;
@@ -78,7 +80,7 @@ export const NAVY_TYPES: Record<NavyType, Shape> = {
   frigate: { maxBeam: 31, centre: 'none', bow: 'bridge', guns: 'spread', family: 'frigate', sleep: 'bunks' },
   destroyer: { maxBeam: 33, centre: 'none', bow: 'battery', guns: 'forward', family: 'frigate', sleep: 'beds', bonus: { weapons: 4, reactors: 1, engines: 1, crew: -1, crates: -1 } },
   cruiser: { maxBeam: 41, engines: 4, layout: { battery: true }, centre: 'citadel', bow: 'bridge', guns: 'spread', family: 'cruiser', sleep: 'cabins', bays: 1, rooms: ['medbay', 'brig', 'farm', 'pantry'], bonus: { weapons: 3, reactors: 2 } },
-  carrier: { maxBeam: 51, minLength: 115, layout: { battery: false, lane: true }, centre: 'deck', bow: 'bridge', guns: 'spread', family: 'carrier', sleep: 'cabins', rooms: ['medbay', 'brig', 'farm', 'pantry'] },
+  carrier: { maxBeam: 51, minLength: 115, gunRooms: 6, layout: { battery: false, lane: true }, centre: 'deck', bow: 'bridge', guns: 'spread', family: 'carrier', sleep: 'cabins', rooms: ['medbay', 'brig', 'farm', 'pantry'] },
 };
 
 /** Floor depth of an ordinary strip room. */
@@ -112,7 +114,7 @@ function roleOf(f: FactionDef, type: NavyType, shape: Shape): ShipRoleDef {
   const fam = (f.hullFamilies ?? []).find((h) => h.id === shape.family) as HullFamilyDef;
   const bonus = { ...(fam.bonus ?? {}) } as Record<string, number>;
   for (const [k, v] of Object.entries(shape.bonus ?? {})) bonus[k] = (bonus[k] ?? 0) + v;
-  return { id: type, weight: fam.weight, archetypes: [], bonus, ...((shape.bays ?? fam.bays) ? { bays: shape.bays ?? fam.bays } : {}) };
+  return { id: type, weight: fam.weight, archetypes: [], bonus, ...((shape.bays ?? fam.bays) ? { bays: shape.bays ?? fam.bays } : {}), ...(shape.gunRooms ? { guns: shape.gunRooms } : {}) };
 }
 
 /** The role a navy type plans with: its family's budget and the type's slant. */

@@ -89,6 +89,8 @@ export interface ShipRoleDef {
   bonus?: Partial<Record<keyof ShipBudget, number>>;
   /** Shuttle bays (with shuttles). */
   bays?: number;
+  /** Guns it always carries, one to a room, drawn a pair at a time (each pair the same gun) and never dropped for power. */
+  guns?: number;
 }
 
 /** The architectural policy of a faction: how the builder shapes its ships. */
