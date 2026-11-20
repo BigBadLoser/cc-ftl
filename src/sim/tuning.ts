@@ -76,8 +76,8 @@ export const EXTINGUISH_PER_SEC = 90;
 
 // --- Crew vitals ---
 export const CREW_MAX_HP = 100;
-export const BREATH_O2_PER_SEC = 0.05;
-export const BREATH_CO2_PER_SEC = 0.05;
+export const BREATH_O2_PER_SEC = 0.1;
+export const BREATH_CO2_PER_SEC = 0.03;
 export const O2_HARM_BELOW = 10;
 export const O2_HARM_PER_SEC = 0.4;
 export const CO2_HARM_ABOVE = 5;
