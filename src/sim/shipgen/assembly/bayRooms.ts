@@ -90,6 +90,7 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
     return false;
   };
   const underBattery = (i: number, j: number): boolean => !!fr.maint && bay(i).x0 < fr.maint.b && bay(j - 1).x1 > fr.maint.a;
+  const withinBattery = (i: number, j: number): boolean => !!fr.maint && bay(i).x0 >= fr.maint.a && bay(j - 1).x1 <= fr.maint.b;
   const fits = (r: RoomSpec, ln: number, rw: number): boolean => (ln >= r.w && rw >= r.h) || (ln >= r.h && rw >= r.w);
   const len = (i: number, j: number): number => bay(j - 1).x1 - bay(i).x0;
   const rows = (i: number, j: number, tier: Tier): number => Math.round(area(i, j, tier) / Math.max(1, len(i, j)));
@@ -194,7 +195,7 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
     // (Prototype: a cabin run under the battery first, where one fits.)
     for (const [k, it] of left.entries()) {
       if (!it.cabins) continue;
-      const c = spots(o, it).filter((x) => x.spot.run && underBattery(x.spot.i, x.spot.j));
+      const c = spots(o, it).filter((x) => x.spot.run && withinBattery(x.spot.i, x.spot.j));
       if (c.length > 0) { pi = k; cs = c; break; }
     }
     if (pi < 0) { note(`no spot ${left.map((it) => real(it.specs)[0]?.role).join(',')}`); return; }

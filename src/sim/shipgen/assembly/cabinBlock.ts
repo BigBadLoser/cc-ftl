@@ -66,12 +66,9 @@ export function cabinBlock(len: number, rows: number, want = Infinity): CabinBlo
  * under two rows of cabins and the corridor, or a row has no cabin.
  */
 export function cabinRun(len: number, rows: number): CabinBlock | null {
-  if (rows < CABIN_ROWS + 3) return null;
-  // Too shallow for two rows: one-sided, the cabins on the spine, the corridor two wide behind them (out to the hull or
-  // along the battery's wall).
-  const one = rows < 2 * CABIN_ROWS + 3;
+  if (rows < 2 * CABIN_ROWS + 3) return null;
   // The corridor two wide where the floor allows it and the back row keeps its three rows.
-  const sw = one ? 2 : rows >= 2 * CABIN_ROWS + 4 ? 2 : 1, h0 = one ? rows - 1 : CABIN_ROWS + 2, h1 = one ? Infinity : h0 + sw - 1;
+  const sw = rows >= 2 * CABIN_ROWS + 4 ? 2 : 1, h0 = CABIN_ROWS + 2, h1 = h0 + sw - 1;
   const row = (c0: number, c1: number, r0: number, r1: number): Rect[] | null => {
     // Cabins near `ROOMY` wide a plating column apart; the first and last column of each may be wall.
     const L = c1 - c0, n = Math.max(1, Math.round((L + 1) / (ROOMY + 2)));
@@ -83,7 +80,7 @@ export function cabinRun(len: number, rows: number): CabinBlock | null {
     }
     return out;
   };
-  const front = row(sw, len, 0, h0 - 1), back = one ? [] : row(0, len, h1 + 1, Infinity);
+  const front = row(sw, len, 0, h0 - 1), back = row(0, len, h1 + 1, Infinity);
   if (!front || !back) return null;
   return { stubs: [{ c0: 0, c1: sw, r0: 0, r1: h0 - 1 }, { c0: 0, c1: len, r0: h0, r1: h1 }], cabins: [...front, ...back], rest: [] };
 }
