@@ -20,7 +20,8 @@ export function frameGrid(fr: Frame, plan: ShipPlan): FrameGrid {
   };
   const hall = g.hall('hall');
   // The airlock bays: the cross corridor's halls, with their fixture.
-  const docks: [number, number] = [g.hall('dock', undefined, dockSpec()), g.hall('dock', undefined, dockSpec())];
+  // (A lane hull's are in the lane's walls, `closeFrame`: its cross corridor is a corridor.)
+  const docks: [number, number] = fr.lane ? [hall, hall] : [g.hall('dock', undefined, dockSpec()), g.hall('dock', undefined, dockSpec())];
   // From the first column three floor rows deep: a nose spike or tip narrower than the helm is plating.
   let xNose = 0;
   while (xNose < xBr - MIN_DEPTH && top(xNose) < 2) xNose++;
@@ -38,4 +39,8 @@ export function closeFrame(fr: Frame, { g, hall, docks, paint }: FrameGrid): voi
   if (lane) paint(hall, dockAt + CW, xS + 1, (y) => Math.abs(Math.abs(y) - lane.yc) <= 1);
   paint(docks[0], dockAt, dockAt + CW, (y) => y <= -BAND);
   paint(docks[1], dockAt, dockAt + CW, (y) => y >= BAND);
+  // A lane hull's airlocks: from each side corridor in to the lane's wall.
+  if (lane) for (const d of lane.docks) for (const sign of [-1, 1]) {
+    paint(g.hall('dock', undefined, dockSpec()), d, d + CW, (y) => sign * y >= lane.edge(d) && sign * y <= lane.yc - 2);
+  }
 }

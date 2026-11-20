@@ -28,12 +28,16 @@ export interface Row { c: number; dir: 1 | -1; depth: (x: number) => number }
 /**
  * PROTOTYPE (#581): a carrier's launch lane, open out of the stern from its head: the hangar between the cross corridor
  * and the lane's head, a corridor down each side hull (its middle row `yc`) to its engine room, rooms outboard of it and,
- * with `both`, inboard too (between it and the lane). `edge(x)` is the side hull's first row beside the lane.
+ * inboard (between it and the lane): a room's depth with `both`, else a strip of small rooms. `edge(x)` is the side
+ * hull's first row beside the lane. The airlocks are in the lane's walls, evenly spaced along the side hulls (`docks`,
+ * their first columns), opening onto the side corridors: two a side, one where the hull steps in aft (`taper`).
  */
-export interface Lane { head: number; yc: number; both: boolean; edge: (x: number) => number }
+export interface Lane { head: number; yc: number; both: boolean; edge: (x: number) => number; taper: boolean; docks: number[] }
 
-/** Side-hull rows a lane hull needs, its edge to its top (most of its length): rooms both sides of the corridor, or outboard only. */
-const LANE_BOTH = 16, LANE_ONE = 10;
+/** Side-hull rows a lane hull needs, its edge to its top (most of its length): deep rooms inboard of the corridor, or a strip. */
+const LANE_BOTH = 16, LANE_ONE = 13;
+/** Floor rows of the strip of rooms between a side corridor and the lane, where it has no deeper rooms there. */
+const STRIP = 3;
 /** The hangar's columns, as near this as the cross corridor finds a flat stretch for its airlocks. */
 const HANGAR = [12, 11, 13, 10, 14, 9, 15];
 
@@ -88,6 +92,12 @@ export function outlineFrame(plan: ShipPlan, m: Mask, carry = 0, gap = 0, lane?:
   const one = engineSpec(1, 'w', plan.kit);
   // (A lane hull's side corridor ends at its engine room, so the room keeps its own walk column ahead of the engines.)
   const xS = Math.min(xEnd, rowEnd(-e0)) - one.w - (ln ? 2 : 1);
+  if (ln) {
+    const k = ln.taper ? 1 : 2, span = xS - ln.head - 1, CWd = dockSpec().w;
+    ln.docks = Array.from({ length: k }, (_, i) => ln.head + 1 + Math.round((span * (i + 1)) / (k + 1)) - Math.floor(CWd / 2));
+    // (An airlock needs a flat wall: the lane's edge the same across it and a column either side.)
+    for (const d of ln.docks) for (let x = d - 1; x <= d + CWd; x++) if (ln.edge(x) !== ln.edge(d)) return null;
+  }
   let sternMax = 0;
   for (let tx = xS + 1; tx <= xEnd; tx++) sternMax = Math.max(sternMax, ln ? outer(tx) - e0 : depth(tx));
   // Engines only in rows long enough for one, out to the first that is not (a flared stern's rows start partway along it).
@@ -156,5 +166,7 @@ function laneOf(m: Mask, outer: (x: number) => number, both: boolean): Lane | nu
   tops.sort((a, b) => a - b);
   const lh = edge(head + 2), t = tops[Math.floor(tops.length * 0.4)] ?? 0;
   if (t - lh < (both ? LANE_BOTH : LANE_ONE)) return null;
-  return { head, edge, both, yc: both ? Math.max(lh + 8, Math.round((lh + t) / 2)) : lh + 2 };
+  // (Stepped in aft: the side hull ahead of the stern's last stretch shallower than most of it.)
+  const taper = outer(end - 14) < t - 1;
+  return { head, edge, both, taper, docks: [], yc: both ? Math.max(lh + 8, Math.round((lh + t) / 2)) : lh + STRIP + 3 };
 }

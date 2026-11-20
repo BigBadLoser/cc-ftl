@@ -17,7 +17,12 @@ export function bayLayout(fr: Frame): Bay[] {
   // On a lane hull, aft of the cross corridor: out from each side corridor, and in from it to the lane where it has both.
   const out: Row | undefined = lane && { c: lane.yc, dir: 1, depth: (x) => outer(x) - lane.yc - BAND - 1 };
   const blocks: [number, number, Row?][] = [[xBand, dockAt - 1], [dockAt + CW + 1, xS, out]];
-  if (lane?.both) blocks.push([lane.head + 1, xS, { c: lane.yc, dir: -1, depth: (x) => lane.yc - BAND - 1 - lane.edge(x) }]);
+  // (Inboard, between the lane's airlocks.)
+  if (lane) {
+    const inb: Row = { c: lane.yc, dir: -1, depth: (x) => lane.yc - BAND - 1 - lane.edge(x) };
+    const cuts = [lane.head + 1, ...lane.docks.flatMap((d) => [d - 1, d + CW + 1]), xS];
+    for (let i = 0; i + 1 < cuts.length; i += 2) blocks.push([cuts[i] as number, cuts[i + 1] as number, inb]);
+  }
   // Plating columns the battery fixes: each gun room's side walls, run in to the spine.
   const fixed = (maint?.guns ?? []).flatMap(([s0, s1]) => [s0, s1 - 1]);
   const bays: Bay[] = [];
