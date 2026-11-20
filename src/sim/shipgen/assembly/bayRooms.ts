@@ -44,13 +44,18 @@ function program(plan: ShipPlan, defs: Record<string, ModuleDef>, inBattery: num
     ? [{ ...core, mods: core.mods.filter((m) => m !== 'module.droneBay'), w: 5, h: 4 }, { role: 'core', mods: ['module.droneBay'], w: 5, h: 4, ...(core.drones ? { drones: core.drones } : {}) }]
     : [{ ...core, w: 5, h: 4 }];
   if (core?.drones) delete (cores[0] as RoomSpec).drones;
+  // (One hangar with two shuttle bays side by side, an aisle beside each.)
+  const hangar = (r: RoomSpec): RoomSpec => (r.mods.filter((m) => m === 'module.vehicle_bay').length === 1 ? { ...r, mods: [...r.mods, 'module.vehicle_bay'], w: 10, h: 7 } : r);
   // (And a mess of 7x5 at least: the crew's commons.)
   const mess = (r: RoomSpec): RoomSpec => (r.mods.includes('module.galley') ? { ...r, w: Math.max(r.w, 7), h: Math.max(r.h, 5) } : r);
-  const singles = [...lone, ...cores, ...plan.quarters.filter((q) => !q.block), ...plan.support.map(brig).map(mess), ...plan.cargo.map(brig), ...plan.hangars];
+  const singles = [...lone, ...cores, ...plan.quarters.filter((q) => !q.block), ...plan.support.map(brig).map(mess), ...plan.cargo.map(brig), ...plan.hangars.map(hangar)];
   const items: Item[] = cabinPairs.map((p) => ({ specs: [p[0], p[1]], both: true, cabins: true }));
   const reactor = plan.reactors > 0 ? reactorSpec(plan.reactors, plan.kit) : null;
   const shields: RoomSpec | null = plan.shields.length > 0
     ? { role: 'shields', mods: plan.shields.flatMap((s) => s.mods), w: plan.shields.reduce((t, s) => t + s.w, 0), h: Math.max(...plan.shields.map((s) => s.h)) } : null;
+  // (A point-defence turret a side, a mirrored pair of 4x4 rooms.)
+  const pd: RoomSpec = { role: 'weapons', mods: ['module.pointDefense'], w: 4, h: 4 };
+  items.push({ specs: [pd, { ...pd }], both: true });
   if (reactor && shields) {
     const w = Math.max(reactor.w, shields.w), h = Math.max(reactor.h, shields.h);
     items.push({ specs: [{ ...reactor, w, h }, { ...shields, w, h }], both: true });
@@ -209,7 +214,7 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
     };
     let score = 0, nFill = 0;
     // (Prototype: a big ship's spare-floor rooms first, then the fillers.)
-    const left: Filler[] = ['pd', 'armoury', 'battery', 'shop', 'lab', 'provisions', 'workshop', 'lounge', 'gym', 'farm'];
+    const left: Filler[] = ['armoury', 'battery', 'shop', 'lab', 'provisions', 'workshop', 'lounge', 'gym', 'farm'];
     for (const s of [0, 1] as const) for (let k = 0; k < n; k++) for (const tier of (twoTier(k) ? ['front', 'back'] : ['full']) as Tier[]) {
       if (taken(o[s][k] as Slot, tier)) continue;
       const a = area(k, k + 1, tier), here: Spot = { side: s, i: k, j: k + 1, tier, area: a };
