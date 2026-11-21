@@ -78,7 +78,7 @@ function program(plan: ShipPlan, defs: Record<string, ModuleDef>, inBattery: num
   return [...items, ...singles.sort((a, b) => size(b) - size(a)).map((r): Item => ({ specs: [r, null], both: false }))];
 }
 
-export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleDef>, budget = 3000): Placed & { puts: number } {
+export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleDef>, budget = 3000): Placed & { puts: number; zone: (Dept | undefined)[] } {
   const bays = bayLayout(fr), n = bays.length;
   const { gunPairs } = gunsAndReactors(plan, defs);
   // (A lane hull's hangar is its frame's, at the lane's head.)
