@@ -36,3 +36,23 @@ describe('manifest parts', () => {
     expect(Object.keys(m.sheets).length).toBeGreaterThan(1000);
   });
 });
+
+describe('readManifestOnce', () => {
+  it('reads once per index URL and forgets a failed read', async () => {
+    resetManifestCache();
+    let calls = 0;
+    let fail = true;
+    const get = async (url: string): Promise<unknown> => {
+      calls++;
+      if (fail) throw new Error('offline');
+      return url.endsWith('manifest.json') ? index : parts[url.slice('/y/manifest/'.length, -'.json'.length)];
+    };
+    await expect(readManifestOnce('/y/manifest.json', get)).rejects.toThrow('offline');
+    fail = false;
+    const a = await readManifestOnce('/y/manifest.json', get);
+    const n = calls;
+    expect(await readManifestOnce('/y/manifest.json', get)).toBe(a);
+    expect(calls).toBe(n);
+    resetManifestCache();
+  });
+});
