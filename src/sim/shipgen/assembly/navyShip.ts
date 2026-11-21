@@ -60,12 +60,12 @@ export interface BayLayout {
 export type ShipRoom = 'medbay' | 'brig' | 'farm' | 'pantry';
 /** A mess: a galley and tables down a long narrow room, the crew's commons. */
 export const MESS: RoomSpec = { role: 'support', dept: 'commons', mods: ['module.galley', 'module.mess_table'], w: 6, h: 3 };
-/** The bigger ships' extra rooms: a med bay with its trauma room behind, a brig round a stasis wheel, a small farm, the mess's pantry. */
+/** The bigger ships' extra rooms: a med bay with its trauma room behind, a brig round a stasis wheel, a small farm, the mess's pantry (cold stores always). */
 export const SHIP_ROOMS: Record<ShipRoom, RoomSpec> = {
   medbay: { role: 'medbay', mods: ['module.med_bed', 'module.med_bed'], w: 5, h: 4, annex: { role: 'medbay', mods: ['module.recovery', 'module.recovery'], w: 5, h: 4 } },
   brig: { role: 'armoury', mods: ['module.stasis_wheel'], w: 7, h: 6 },
   farm: { role: 'farm', mods: Array<string>(4).fill('module.hydroponics'), w: 4, h: 5 },
-  pantry: { role: 'cargo', dept: 'commons', mods: ['module.storage_rack', 'module.storage_rack'], w: 4, h: 3 },
+  pantry: { role: 'cargo', dept: 'commons', mods: ['module.storage_cold', 'module.storage_cold', 'module.storage_rack'], w: 4, h: 3 },
 };
 
 /** The commons a navy ship of `type` adds to its plan: a mess for three crew or more (its pantry off it where the type has one), the type's extra rooms. */
