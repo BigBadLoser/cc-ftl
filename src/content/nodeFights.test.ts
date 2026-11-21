@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { CombatC, ShipC } from '../sim/combat/components';
+import { CombatC, ShipC, WeaponC, type Weapon } from '../sim/combat/components';
+import { setTruce } from '../sim/blackmarket/truce';
+import { ModuleC } from '../sim/modules/components';
+import { shipIdOf } from '../sim/regions';
 import { atBattle, shipsHostile } from '../sim/combat/engage';
 import { hostileAct } from '../sim/combat/provoke';
 import { wreckShip } from '../sim/combat/wreck';
@@ -48,6 +51,8 @@ function fight(a: [string, Fleet['role']] = ['meridian', 'patrol'], b: [string, 
 }
 
 const shipOf = (f: Fleet): number => f.ships[0]?.ship as number;
+const weaponsOf = (sim: Sim, ship: number): Weapon[] =>
+  sim.world.query(WeaponC, ModuleC).filter((id) => shipIdOf(sim, sim.world.get(id, ModuleC) as { x: number; y: number }) === ship).map((id) => sim.world.get(id, WeaponC) as Weapon);
 
 describe('fleets at war that meet in the player\'s node', () => {
   it('fight as real ships: the meeting is recorded, each aims at the other, both are at battle and foes; the player is not in combat', () => {
@@ -82,6 +87,27 @@ describe('fleets at war that meet in the player\'s node', () => {
     run(sim, TICK_HZ);
     expect(sim.galaxy.fleets.map((f) => f.id)).toEqual([fa.id]);
     expect(sim.galaxy.ports[fb.home]?.queue).toEqual([{ faction: 'helix', role: 'patrol', size: 'small' }]);
+  });
+
+  it('do not start where a black market truce holds (#609 review)', () => {
+    const { sim } = fight();
+    setTruce(sim, sim.galaxy.current);
+    run(sim, 2 * TICK_HZ);
+    expect(engagements(sim)).toHaveLength(0);
+  });
+
+  it('a draw drops the aims the fight set, though the node stays in combat (#609 review)', () => {
+    const { sim, fa, fb } = fight();
+    run(sim, 10 * TICK_HZ);
+    const [a, b] = [shipOf(fa), shipOf(fb)];
+    expect(sim.world.get(a, CombatC)?.target?.ship).toBe(b);
+    sim.sector.inCombat = true;
+    (sim.sector.engagements?.[0] as { since: number }).since -= ENGAGE_MAX_SEC * TICK_HZ;
+    run(sim, 1);
+    expect(engagements(sim)).toHaveLength(0);
+    const aims = (ship: number) => [sim.world.get(ship, CombatC)?.target?.ship, ...weaponsOf(sim, ship).flatMap((w) => [w.target?.ship, w.commit?.target.ship])];
+    expect(aims(a)).not.toContain(b);
+    expect(aims(b)).not.toContain(a);
   });
 
   it('a fight that runs out of time is a draw; a side that never turns up, or a fight the player leaves, is settled by the stats fight', () => {

@@ -23,6 +23,7 @@ import type { UiAlert, UiAlertKind } from '../ui/api';
 import { createAlerts } from './alerts';
 import { ALERT_PRIORITY, EVENT_ROUTE } from './eventRoute';
 import { createEventLog } from './eventLog';
+import { createDescriber } from './logText';
 
 function current(a: ReturnType<typeof createAlerts>): UiAlert[] {
   let out: UiAlert[] = [];
@@ -64,6 +65,16 @@ describe('event routing table', () => {
     log.list.subscribe((l) => (texts = l.map((e) => e.text)))();
     expect(texts).toHaveLength(8);
     expect(texts.join('|')).toContain('Overcharged jump: 1 damaged, 2 fires');
+  });
+
+  it('says why standing came in when a joined fight ends: the side helped saw the player fight the other (#603)', () => {
+    const say = createDescriber(newGame(1, content));
+    const end = { type: 'engagement.ended', engagement: 1, kind: 'meeting', node: 'n', who: 'Gull', foe: 'Mule', stats: false } as const;
+    expect(say({ ...end, winner: 1, joined: 1, standing: 5, faction: 'traders' })?.text).toBe(
+      "Mule won the fight against Gull. Mule's crew saw you drive off Gull: +5 standing with Free Traders",
+    );
+    expect(say({ ...end, winner: 1, joined: 0, standing: 2, faction: 'pirates' })).toMatchObject({ tone: 'good', text: "Mule won the fight against Gull. Gull's crew saw you stand against Mule: +2 standing with Scrapper Clans" });
+    expect(say({ ...end, winner: null })).toMatchObject({ tone: 'info', text: 'Gull and Mule broke off' });
   });
 });
 

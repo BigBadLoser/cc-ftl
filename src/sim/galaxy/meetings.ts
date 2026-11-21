@@ -1,3 +1,4 @@
+import { truceHolds } from '../blackmarket/truce';
 import type { Sim } from '../sim';
 import { chase, headHome, retreat, strand } from './agenda';
 import { clash, wouldFight, type Clash, type SideResult } from './clash';
@@ -39,11 +40,11 @@ export interface Meeting {
 
 /**
  * The meetings in the player's node (#603): fleets there of factions that fight on sight, not already in a fight nor among `done` (those that fought
- * this turn), in id order, each in one at most. Only while the node is live (the ship deployed, no event grid); they are played out ship by ship (engagementFlow.ts `startMeeting`).
+ * this turn), in id order, each in one at most. Never where a black market's truce holds. Only while the node is live (the ship deployed, no event grid); they are played out ship by ship (engagementFlow.ts `startMeeting`).
  */
 export function liveMeetings(sim: Sim, done: ReadonlySet<number> = new Set()): Meeting[] {
   const g = sim.galaxy;
-  if (sim.sector.state !== 'active' || g.event || sim.sector.node !== g.current) return [];
+  if (sim.sector.state !== 'active' || g.event || sim.sector.node !== g.current || truceHolds(sim)) return [];
   const busy = new Set([...engagedFleets(sim), ...done]);
   const here = g.fleets.filter((f) => f.node === g.current && f.ships.length > 0 && !busy.has(f.id)).sort((p, q) => p.id - q.id);
   const out: Meeting[] = [];

@@ -1,6 +1,8 @@
 import { CombatC, ShipC } from '../combat/components';
 import type { Engagement } from '../combat/engagementTypes';
+import { shipsHostile } from '../combat/engage';
 import { shipCentre } from '../combat/intercept';
+import { dropAims } from '../combat/stations';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { strand } from './agenda';
@@ -128,7 +130,10 @@ function credit(sim: Sim, e: Engagement, winner: 0 | 1 | null): number {
   return n;
 }
 
-/** Take the fight off the record, drop the aims it set, credit the player and report it. */
+/**
+ * Take the fight off the record, drop the aims it set, credit the player and report it. Once it is gone, a member's aims (ship-wide, weapon and
+ * committed) at the other side are dropped where the two are no longer foes, so a draw breaks off even while the node is otherwise in combat.
+ */
 function close(sim: Sim, e: Engagement, winner: 0 | 1 | null, stats: boolean): void {
   for (const side of e.members) {
     for (const m of side) {
@@ -137,6 +142,10 @@ function close(sim: Sim, e: Engagement, winner: 0 | 1 | null, stats: boolean): v
     }
   }
   sim.sector.engagements = engagements(sim).filter((x) => x !== e);
+  e.members.forEach((side, i) => {
+    const other = new Set(e.members[i === 0 ? 1 : 0].map((o) => o.ship));
+    for (const m of side) dropAims(sim, m.ship, (t) => other.has(t) && !shipsHostile(sim, m.ship, t));
+  });
   const standing = credit(sim, e, winner);
   sim.galaxy.rev++;
   sim.events.emit({

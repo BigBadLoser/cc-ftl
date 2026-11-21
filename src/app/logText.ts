@@ -108,7 +108,10 @@ export function createDescriber(sim: Sim) {
         : { kind: 'combat', tone: 'warn', text: `Fight: ${e.who} (${factionName(e.faction)}) attacks ${e.foe} (${factionName(e.foeFaction)})`, ...(e.ship ? onShip(e.ship) : here()) };
       case 'engagement.ended': {
         const end = e.winner === null ? `${e.who} and ${e.foe} broke off` : `${e.winner === 0 ? e.who : e.foe} won the fight against ${e.winner === 0 ? e.foe : e.who}`;
-        return { kind: 'combat', tone: e.standing ? 'good' : 'info', text: `${end}${e.standing && e.faction ? `: +${e.standing} standing with ${factionName(e.faction)}` : ''}`, ...here() };
+        if (!e.standing || !e.faction || e.joined === undefined) return { kind: 'combat', tone: 'info', text: end, ...here() };
+        const [helped, fought] = e.joined === 0 ? [e.who, e.foe] : [e.foe, e.who];
+        const deed = e.winner === e.joined ? 'drive off' : 'stand against';
+        return { kind: 'combat', tone: 'good', text: `${end}. ${helped}'s crew saw you ${deed} ${fought}: +${e.standing} standing with ${factionName(e.faction)}`, ...here() };
       }
       case 'galaxy.hunt': return { kind: 'galaxy', tone: 'bad', text: `${factionName(e.faction)} hunters are on your trail (${e.ships} ship${e.ships === 1 ? '' : 's'})`, ...node(e.node) };
       case 'galaxy.distressSent': return { kind: 'galaxy', tone: 'info', text: 'Distress call sent: help is on its way', ...node(e.node) };
