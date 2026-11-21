@@ -93,7 +93,7 @@ issue.
   `enemyAiSystem`) re-aims prey when the target is gone. It is the only writer of `prey` for engagements.
 - **Room.** If a side has no ship in play within `ENGAGE_WAIT_SEC` (the node cap or grace kept it a descriptor), the engagement falls back
   to `clash()` plus `apply` at that moment, so the fight always happens one way or the other.
-- **End.** An engagement ends when a side has no ship in play (wrecked, fled, taken), when it times out (`ENGAGE_MAX_SEC`, a draw), or when
+- **End.** An engagement ends when a side has no ship in play (wrecked, taken, jumped away; no time limit, decision 9), or when
   the player leaves the node. On leaving, `liftFleetsAt` runs first in the jump. The engagement settles the rest with `clash()` on the
   survivors, so a fight the player walks away from still has a result. That hook is `endEngagementsAt(sim, node)`, called from the same
   place as `unbindMarkets`, before `liftFleetsAt`.
@@ -190,3 +190,8 @@ updates `wiki/` and `docs/CATALOG.md` in its PR.
 5. Aid: NPC ships at standing 3+ help when the player is attacked in their node; friendly armed stations fire on the attacker too (PR 1).
 6. Watching a trader die costs nothing for now.
 7. A fight starting in the node raises an urgent alert with a "Join" hint (PR 1).
+8. Auto-join stays: the player's auto-aimed guns hitting a side that is also hostile to the player joins the other side, and the ship's log
+   says why the standing came in (review of #609).
+9. No time limit and no draws by time (review of #609): fleets at war in one node fight until a side is out (wrecked, taken) or jumps away. A
+   badly hurt ship flees by the enemy AI's rule and its fleet goes with it; after `ENGAGE_STALE_SEC` (60 s) with no damage, the weaker side
+   (lower integrity share; on a tie the side that did not start it) jumps away.

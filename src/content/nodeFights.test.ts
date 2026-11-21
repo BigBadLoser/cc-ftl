@@ -13,11 +13,12 @@ import { engagedFleets, engagements } from '../sim/galaxy/engagements';
 import { materialiseFleet } from '../sim/galaxy/fleetShips';
 import { standing } from '../sim/galaxy/standing';
 import { onTurn } from '../sim/galaxy/turn';
-import { AID_STANDING, ENGAGE_MAX_SEC, ENGAGE_WAIT_SEC, JOIN_STANDING, JOIN_WIN_STANDING } from '../sim/galaxy/tuningWar';
+import { AID_STANDING, ENGAGE_STALE_SEC, ENGAGE_WAIT_SEC, JOIN_STANDING, JOIN_WIN_STANDING } from '../sim/galaxy/tuningWar';
 import type { Fleet } from '../sim/galaxy/types';
 import { newGame } from '../sim/newGame';
 import type { Sim } from '../sim/sim';
 import { TICK_HZ } from '../sim/time';
+import { FLEE_BELOW, FTL_CHARGE_SEC } from '../sim/tuning';
 import { eventsOf } from '../../test/support/sim';
 import { run } from '../../test/support/run';
 import { expectReplayable } from '../../test/support/world';
@@ -96,26 +97,52 @@ describe('fleets at war that meet in the player\'s node', () => {
     expect(engagements(sim)).toHaveLength(0);
   });
 
-  it('a draw drops the aims the fight set, though the node stays in combat (#609 review)', () => {
+  it('end when a badly hurt ship jumps away: its fleet goes with it, the other side wins, the aims are dropped, and they do not meet again', () => {
     const { sim, fa, fb } = fight();
     run(sim, 10 * TICK_HZ);
     const [a, b] = [shipOf(fa), shipOf(fb)];
     expect(sim.world.get(a, CombatC)?.target?.ship).toBe(b);
-    sim.sector.inCombat = true;
-    (sim.sector.engagements?.[0] as { since: number }).since -= ENGAGE_MAX_SEC * TICK_HZ;
-    run(sim, 1);
-    expect(engagements(sim)).toHaveLength(0);
-    const aims = (ship: number) => [sim.world.get(ship, CombatC)?.target?.ship, ...weaponsOf(sim, ship).flatMap((w) => [w.target?.ship, w.commit?.target.ship])];
-    expect(aims(a)).not.toContain(b);
-    expect(aims(b)).not.toContain(a);
+    sim.sector.inCombat = true; // the node stays in combat: the aims still go (#609 review)
+    Object.assign(sim.world.get(b, ShipC) as object, { integrity: FLEE_BELOW / 2 });
+    (sim.world.get(b, CombatC) as { ftl: number }).ftl = FTL_CHARGE_SEC;
+    const ended = eventsOf(run(sim, 2 * TICK_HZ), 'engagement.ended');
+    expect(ended).toMatchObject([{ winner: 0, stats: false }]);
+    expect(fb.node).not.toBe(sim.galaxy.current);
+    expect(sim.galaxy.news.some((n) => n.kind === 'driven' && n.who === fa.ships[0]?.name)).toBe(true);
+    expect(sim.galaxy.news.some((n) => n.kind === 'clash')).toBe(false);
+    const aims = [sim.world.get(a, CombatC)?.target?.ship, ...weaponsOf(sim, a).flatMap((w) => [w.target?.ship, w.commit?.target.ship])];
+    expect(aims).not.toContain(b);
+    sim.sector.inCombat = false;
+    expect(eventsOf(run(sim, 5 * TICK_HZ), 'engagement.started')).toEqual([]);
   });
 
-  it('a fight that runs out of time is a draw; a side that never turns up, or a fight the player leaves, is settled by the stats fight', () => {
-    const timed = fight();
-    run(timed.sim, 1);
-    (timed.sim.sector.engagements?.[0] as { since: number }).since -= ENGAGE_MAX_SEC * TICK_HZ;
-    expect(eventsOf(run(timed.sim, 1), 'engagement.ended')).toMatchObject([{ winner: null, stats: false }]);
-    expect(timed.sim.galaxy.news.some((n) => n.kind === 'clash')).toBe(true);
+  it('have no time limit: a stalemate (no damage for ENGAGE_STALE_SEC) sends the weaker side away; on a tie the side that did not start it', () => {
+    const tie = fight();
+    run(tie.sim, 1);
+    const e = engagements(tie.sim)[0] as { calm?: number };
+    run(tie.sim, 5 * TICK_HZ);
+    e.calm = tie.sim.tick - ENGAGE_STALE_SEC * TICK_HZ;
+    for (const f of [tie.fa, tie.fb]) (tie.sim.world.get(shipOf(f), CombatC) as { ftl: number }).ftl = FTL_CHARGE_SEC;
+    expect(eventsOf(run(tie.sim, 2 * TICK_HZ), 'engagement.ended')).toMatchObject([{ winner: 0, stats: false }]);
+    expect(tie.fb.node).not.toBe(tie.sim.galaxy.current);
+    expect(tie.fa.node).toBe(tie.sim.galaxy.current);
+
+    // Side 0 worse off: it is the one that goes, though it started the fight.
+    const weak = fight();
+    run(weak.sim, 1);
+    const a = shipOf(weak.fa);
+    const hit = weak.sim.world.query(ModuleC).find((id) => shipIdOf(weak.sim, weak.sim.world.get(id, ModuleC) as { x: number; y: number }) === a) as number;
+    (weak.sim.world.get(hit, ModuleC) as { hp: number }).hp = 1;
+    const w = engagements(weak.sim)[0] as { calm?: number; hull?: number };
+    run(weak.sim, TICK_HZ - 1);
+    expect(weak.sim.world.get(a, ShipC)?.integrity).toBeLessThan(weak.sim.world.get(shipOf(weak.fb), ShipC)?.integrity as number);
+    w.calm = weak.sim.tick - ENGAGE_STALE_SEC * TICK_HZ;
+    w.hull = 0; // no damage taken since
+    run(weak.sim, 1);
+    expect(engagements(weak.sim)[0]?.leaving?.side).toBe(0);
+  });
+
+  it('a side that never turns up, or a fight the player leaves, is settled by the stats fight', () => {
 
     // The other side's hull cannot be made: it never turns up, so the stats fight settles it once the wait is over.
     const sim = newGame(21, content);

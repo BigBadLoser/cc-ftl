@@ -13,10 +13,11 @@ A fight starts in your node only when two fleets whose factions are at war end a
 In a war zone or pirate country, where many hostile fleets pass through, you will see more fights.
 
 - An urgent alert names the attacker and its target: **Join the fight? … attacks …**. Click it to jump to the ships.
-- The two sides fight with their real weapons, shields and crews, just as you do. A ship that is losing badly charges its
-  drive and jumps away.
-- The fight ends when one side is destroyed, captured or gone. If neither side can finish the other after a few minutes,
-  they break off. The ship's log and the news say how it ended.
+- The two sides fight with their real weapons, shields and crews, just as you do. A ship that is losing badly jumps away,
+  and the rest of its fleet goes with it.
+- There is no time limit. The fight ends only when one side is destroyed, captured or has jumped away. If neither side
+  can hurt the other for about a minute, the weaker side gives up and jumps away. The ship's log and the news say how it
+  ended.
 - If you leave the node before the fight ends, it is settled without you.
 
 You don't have to do anything. Staying out of it costs nothing.
@@ -25,7 +26,9 @@ You don't have to do anything. Staying out of it costs nothing.
 
 You join a fight by attacking one side. The first side you fire on (or board) makes you an ally of the other.
 
-- **+2 standing** with the side you joined, and **+3 more** if your side wins. You get this once per fight, when it ends.
+- **+2 standing** with the side you joined, and **+3 more** if your side wins. You get this once per fight, when it ends,
+  and the ship's log says which crew saw you help.
+- Your guns on auto count too: if they hit a side that is also hostile to you, you have joined the other side.
 - Attacking a ship that wasn't hostile to you turns it and its fleet hostile, as it always does (see
   [Ship combat](../combat/)). Joining the pirates against a trader makes the trader's faction your enemy.
 - If you fire on both sides, you get nothing.

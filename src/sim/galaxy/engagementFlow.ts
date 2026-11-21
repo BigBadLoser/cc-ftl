@@ -2,10 +2,11 @@ import { CombatC, ShipC } from '../combat/components';
 import type { Engagement } from '../combat/engagementTypes';
 import { shipsHostile } from '../combat/engage';
 import { shipCentre } from '../combat/intercept';
+import { shipCanAct } from '../combat/shipQuery';
 import { dropAims } from '../combat/stations';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
-import { strand } from './agenda';
+import { retreat, strand } from './agenda';
 import { clash, type Clash, type SideResult } from './clash';
 import { engagements, sideShips } from './engagements';
 import { liftFleet } from './fleetShips';
@@ -13,15 +14,18 @@ import { aftermath, apply, liveMeetings, type Meeting } from './meetings';
 import { fleetName } from './names';
 import { report } from './news';
 import { standingShift } from './standing';
-import { ENGAGE_HURT_INTEGRITY, ENGAGE_MAX_SEC, ENGAGE_WAIT_SEC, JOIN_STANDING, JOIN_WIN_STANDING } from './tuningWar';
+import { FTL_CHARGE_SEC } from '../tuning';
+import { ENGAGE_HURT_INTEGRITY, ENGAGE_STALE_SEC, ENGAGE_WAIT_SEC, JOIN_STANDING, JOIN_WIN_STANDING } from './tuningWar';
 import type { Contact, Fleet } from './types';
 
 /**
  * Fights between NPC ships played out in the player's node (#603; user decisions 2026-11-21). Fleets that would fight on the map and meet here
  * (meetings.ts `liveMeetings`, at most once a turn per fleet) fight as real ships instead of the stats mini-sim: each ship is pointed at the nearest foe (`Combat.prey`,
- * which the combat AI ranks above the player), the combat rules treat the two sides as foes (combat/engage.ts), and the fight ends when a side has
- * no ship left in play (wrecked, fled, taken) or after ENGAGE_MAX_SEC (a draw). `reap` (fleetShips.ts) still forgets the ships lost and sends the fled
- * home; the end adds what the stats fight would have (meetings.ts `aftermath`: news, loot, chase) and strands a side left hurt. A side with no ship
+ * which the combat AI ranks above the player), the combat rules treat the two sides as foes (combat/engage.ts), and the fight ends only when a side has
+ * no ship left in play: wrecked, taken, or jumped away. There is no time limit and no breaking off in place (user, 2026-11-21). A badly hurt ship
+ * flees by the enemy AI's own rule (FLEE_BELOW, `combat.flee`), and its fleet goes with it (fleetShips.ts `tendFleet`: lift and `retreat`), so a
+ * routed side leaves the node and the other wins. A stalemate (no damage for ENGAGE_STALE_SEC) sends the weaker side away the same way (`stalemate`,
+ * `leave`). `reap` (fleetShips.ts) still forgets the ships lost and sends the fled home; the end adds what the stats fight would have (meetings.ts `aftermath`: news, loot, chase) and strands a side left hurt. A side with no ship
  * real after ENGAGE_WAIT_SEC, or a fight the player leaves (`settleEngagements`), is settled by the stats fight on what is left. Joining a side
  * earns standing with its faction at the end (`credit`). Aid fights (engagementAid.ts) run through the same loop.
  */
@@ -132,7 +136,7 @@ function credit(sim: Sim, e: Engagement, winner: 0 | 1 | null): number {
 
 /**
  * Take the fight off the record, drop the aims it set, credit the player and report it. Once it is gone, a member's aims (ship-wide, weapon and
- * committed) at the other side are dropped where the two are no longer foes, so a draw breaks off even while the node is otherwise in combat.
+ * committed) at the other side are dropped where the two are no longer foes, so a side that left is no longer shot at even while the node is otherwise in combat.
  */
 function close(sim: Sim, e: Engagement, winner: 0 | 1 | null, stats: boolean): void {
   for (const side of e.members) {
@@ -154,15 +158,15 @@ function close(sim: Sim, e: Engagement, winner: 0 | 1 | null, stats: boolean): v
   });
 }
 
-/** The fight played out: strand a side left hurt, then the news, loot and chase of the stats fight's aftermath. */
-function finish(sim: Sim, e: Engagement, timedOut: boolean): void {
+/** The fight played out: strand a side left hurt, then the news, loot and chase of the stats fight's aftermath. No winner (both sides gone at once) is no news. */
+function finish(sim: Sim, e: Engagement): void {
   const r = [sideResult(sim, e, 0), sideResult(sim, e, 1)] as const;
-  const winner = timedOut || r[0].held === r[1].held ? null : r[0].held ? 0 : 1;
+  const winner = r[0].held === r[1].held ? null : r[0].held ? 0 : 1;
   const a = fleetById(sim, e.fleets[0][0]);
   const b = fleetById(sim, e.fleets[1][0]);
   if (e.kind === 'meeting' && a && b) {
     const loser = winner === null ? null : r[winner === 0 ? 1 : 0];
-    const kind: Clash['kind'] = !loser ? 'draw' : loser.fate === 'destroyed' ? 'decisive' : 'driven';
+    const kind: Clash['kind'] = !loser ? 'avoided' : loser.fate === 'destroyed' ? 'decisive' : 'driven';
     r.forEach((x, i) => {
       const f = i === 0 ? a : b;
       if (x.fate === 'hurt' && f.node === e.node && f.ships.length) strand(sim, f, sim.galaxy.turn);
@@ -170,6 +174,45 @@ function finish(sim: Sim, e: Engagement, timedOut: boolean): void {
     aftermath(sim, { a, b, node: e.node }, { kind, winner: winner === null ? null : winner === 0 ? 'a' : 'b', share: 0.5, a: r[0], b: r[1] }, sim.galaxy.turn, e.names);
   }
   close(sim, e, winner, false);
+}
+
+/** A side's summed integrity over its ships in play, and that per ship it has had in the fight (lost ones count 0). */
+function hullOf(sim: Sim, e: Engagement, side: 0 | 1): number {
+  return sideShips(sim, e, side).reduce((n, id) => n + (sim.world.get(id, ShipC)?.integrity ?? 0), 0);
+}
+const shareOf = (sim: Sim, e: Engagement, side: 0 | 1): number => hullOf(sim, e, side) / Math.max(1, e.members[side].length);
+
+/**
+ * Once a second: note whether the fight did damage. After ENGAGE_STALE_SEC without, the weaker side (the lower integrity share; on a tie side 1,
+ * the one that did not start it) gives up and jumps away (`leave`).
+ */
+function stalemate(sim: Sim, e: Engagement): void {
+  const now = hullOf(sim, e, 0) + hullOf(sim, e, 1);
+  if (e.calm === undefined || e.hull === undefined || now < e.hull - 1e-6) e.calm = sim.tick;
+  e.hull = now;
+  if (e.leaving || sim.tick - e.calm < ENGAGE_STALE_SEC * TICK_HZ) return;
+  e.leaving = { side: shareOf(sim, e, 0) < shareOf(sim, e, 1) ? 0 : 1, since: sim.tick };
+}
+
+/**
+ * The side giving up jumps away: each of its ships with a charged drive flees (`combat.flee`, as the enemy AI does), and its fleet follows the first
+ * (`tendFleet`). A fleet none of whose ships can jump within FTL_CHARGE_SEC + ENGAGE_WAIT_SEC (no pilot, no engines) is moved off the same way.
+ */
+function leave(sim: Sim, e: Engagement): void {
+  const l = e.leaving;
+  if (!l) return;
+  for (const id of sideShips(sim, e, l.side)) {
+    const s = sim.world.get(id, ShipC);
+    const c = sim.world.get(id, CombatC);
+    if (s && c && s.state === 'active' && !s.immobile && shipCanAct(s) && c.ftl >= FTL_CHARGE_SEC) sim.enqueue({ type: 'combat.flee', ship: id });
+  }
+  if (sim.tick - l.since < (FTL_CHARGE_SEC + ENGAGE_WAIT_SEC) * TICK_HZ) return;
+  for (const id of e.fleets[l.side]) {
+    const f = fleetById(sim, id);
+    if (!f || f.node !== e.node) continue;
+    liftFleet(sim, f);
+    retreat(sim, f, sim.galaxy.turn);
+  }
 }
 
 /** Settle what is left of a meeting by the stats fight: both fleets' ships are lifted out (damage is not carried, as on any lift) and `clash` decides. */
@@ -193,7 +236,8 @@ function byStats(sim: Sim, e: Engagement): void {
 /**
  * Each tick in the live node: once a second, fleets here that would fight and have not fought this turn start a fight (as they arrive, or once
  * their ships turn up); then every fight takes in its ships that turned up, re-aims, and
- * ends when a side is out (or falls back to the stats fight while a side has not turned up, or runs out of time).
+ * ends when a side is out (or falls back to the stats fight while a side has not turned up). Once a second a stalemate is checked and a side
+ * giving up is sent on its way.
  */
 export function tendEngagements(sim: Sim): void {
   const g = sim.galaxy;
@@ -214,9 +258,14 @@ export function tendEngagements(sim: Sim): void {
       if (age >= ENGAGE_WAIT_SEC * TICK_HZ || !alive(sim, e, 0) || !alive(sim, e, 1)) byStats(sim, e);
       continue;
     }
-    if (!alive(sim, e, 0) || !alive(sim, e, 1)) finish(sim, e, false);
-    else if (age >= ENGAGE_MAX_SEC * TICK_HZ) finish(sim, e, true);
-    else aim(sim, e);
+    if (!alive(sim, e, 0) || !alive(sim, e, 1)) {
+      finish(sim, e);
+      continue;
+    }
+    aim(sim, e);
+    if (sim.tick % TICK_HZ !== 0) continue;
+    stalemate(sim, e);
+    leave(sim, e);
   }
 }
 

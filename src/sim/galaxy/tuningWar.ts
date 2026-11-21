@@ -40,11 +40,12 @@ export const HUNT_EDGE = 0.6;
 
 /**
  * Fights between NPC ships in the player's node (#603, galaxy/engagementFlow.ts). A side with no ship real after ENGAGE_WAIT_SEC (no room in the
- * sector, or the opening grace) is settled by the stats fight instead; a fight that has not ended after ENGAGE_MAX_SEC is a draw. A ship holding
- * the field under ENGAGE_HURT_INTEGRITY counts its side as hurt (stranded).
+ * sector, or the opening grace) is settled by the stats fight instead. There is no time limit (user, 2026-11-21): a fight in which no ship has
+ * taken damage for ENGAGE_STALE_SEC is a stalemate, and the weaker side jumps away. A ship holding the field under ENGAGE_HURT_INTEGRITY counts
+ * its side as hurt (stranded).
  */
 export const ENGAGE_WAIT_SEC = 20;
-export const ENGAGE_MAX_SEC = 240;
+export const ENGAGE_STALE_SEC = 60;
 export const ENGAGE_HURT_INTEGRITY = 0.6;
 /** Joining a side (firing on or boarding only its foes) earns JOIN_STANDING with its faction, and JOIN_WIN_STANDING more if that side wins; once per fight. */
 export const JOIN_STANDING = 2;

@@ -107,7 +107,7 @@ export function createDescriber(sim: Sim) {
         ? { kind: 'combat', tone: 'good', text: `${e.who} comes to your aid against ${e.foe}`, ...(e.ship ? onShip(e.ship) : here()) }
         : { kind: 'combat', tone: 'warn', text: `Fight: ${e.who} (${factionName(e.faction)}) attacks ${e.foe} (${factionName(e.foeFaction)})`, ...(e.ship ? onShip(e.ship) : here()) };
       case 'engagement.ended': {
-        const end = e.winner === null ? `${e.who} and ${e.foe} broke off` : `${e.winner === 0 ? e.who : e.foe} won the fight against ${e.winner === 0 ? e.foe : e.who}`;
+        const end = e.winner === null ? `${e.who} and ${e.foe} ${e.stats ? 'broke off' : 'both left the fight'}` : `${e.winner === 0 ? e.who : e.foe} won the fight against ${e.winner === 0 ? e.foe : e.who}`;
         if (!e.standing || !e.faction || e.joined === undefined) return { kind: 'combat', tone: 'info', text: end, ...here() };
         const [helped, fought] = e.joined === 0 ? [e.who, e.foe] : [e.foe, e.who];
         const deed = e.winner === e.joined ? 'drive off' : 'stand against';
