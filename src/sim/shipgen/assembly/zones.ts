@@ -11,6 +11,11 @@ import type { Filler } from './roomSize';
  */
 export type Dept = 'command' | 'systems' | 'hab' | 'stores' | 'flight' | 'weapons';
 
+/** A department's rooms a side: floor, slots, and whether one has an annex (a bay of two tiers). */
+export type Need = { area: number; rooms: number; deep?: boolean };
+
+const FWD: readonly Dept[] = ['command', 'stores', 'systems'];
+
 /** A room's department. */
 export function deptOf(r: RoomSpec): Dept {
   if (r.role === 'weapons') return 'weapons';
@@ -28,25 +33,29 @@ export function deptOf(r: RoomSpec): Dept {
  * forward department's rooms' floor and count a side, `area` a bay's floor (a side).
  */
 export function zonesOf(
-  fr: Frame, bays: readonly Bay[], weapons: ReadonlySet<number>, flight: number, need: Partial<Record<Dept, { area: number; rooms: number }>>, area: (k: number) => number,
+  fr: Frame, bays: readonly Bay[], weapons: ReadonlySet<number>, flight: number, need: Partial<Record<Dept, Need>>, area: (k: number) => number,
 ): Dept[] {
   if (!fr.lane) return [];
-  // The forward section from the bow: command, stores, systems, each a share of its bays' floor as its rooms' (at least a bay).
-  const fwd = (['command', 'stores', 'systems'] as const).filter((d) => need[d]);
-  const ks = bays.flatMap((b, k) => (b.row ? [] : [k]));
-  const total = fwd.reduce((t, d) => t + (need[d]?.area ?? 0), 0), floor = ks.reduce((t, k) => t + area(k), 0);
-  const of = new Map<number, Dept>();
-  let d = 0, upTo = 0, got = 0, slots = 0, out = 0;
-  for (const [n, k] of ks.entries()) {
-    // (The next department once this one has its share (nearest) and a slot a room, while enough bays are left for
-    // those after it.)
-    const enough = (): boolean => got + area(k) / 2 >= upTo && slots >= Math.ceil(need[fwd[d] as Dept]?.rooms ?? 0);
-    while (d < fwd.length - 1 && got > 0 && (enough() || ks.length - n <= fwd.length - 1 - d)) { d++; got = 0; slots = 0; }
-    if (got === 0) upTo = (floor * (need[fwd[d] as Dept]?.area ?? 0)) / total;
-    of.set(k, (fwd[d] ?? 'systems') as Dept);
-    got += area(k);
-    slots += (bays[k] as Bay).tiers.length;
+  // The forward section: command at the bow, then stores and systems (either way round), each a run of bays. Of every
+  // cut, one where each has a slot a room (a department with an annex a two-tier bay), the floor nearest its share.
+  const ks = bays.flatMap((b, k) => (b.row ? [] : [k])), tiers = (k: number): number => (bays[k] as Bay).tiers.length;
+  const total = FWD.reduce((t, d) => t + (need[d]?.area ?? 0), 0), floor = ks.reduce((t, k) => t + area(k), 0);
+  let best: { cost: number; of: Dept[] } | null = null;
+  for (const order of [['command', 'stores', 'systems'], ['command', 'systems', 'stores']] as const) {
+    for (let c1 = 1; c1 < ks.length - 1; c1++) for (let c2 = c1 + 1; c2 < ks.length; c2++) {
+      const runs = [ks.slice(0, c1), ks.slice(c1, c2), ks.slice(c2)];
+      let cost = 0;
+      for (const [n, d] of order.entries()) {
+        const run = runs[n] as number[], nd = need[d];
+        const slots = run.reduce((t, k) => t + tiers(k), 0), got = run.reduce((t, k) => t + area(k), 0);
+        if (nd && (slots < Math.ceil(nd.rooms) || (nd.deep && !run.some((k) => tiers(k) > 1)))) cost += 1000;
+        cost += Math.abs(got / floor - (nd?.area ?? 0) / total);
+      }
+      if (!best || cost < best.cost) best = { cost, of: runs.flatMap((r, n) => r.map(() => order[n] as Dept)) };
+    }
   }
+  const of = new Map<number, Dept>(ks.map((k, n) => [k, best?.of[n] ?? 'systems']));
+  let out = 0;
   return bays.map((b, k) => {
     if (!b.row) return of.get(k) ?? 'systems';
     if (b.row.dir < 0) return 'hab';

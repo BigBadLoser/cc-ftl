@@ -7,7 +7,7 @@ import { gunsAndReactors, programPairs, type Pair } from './pairs';
 import { fillers, type Layout, type Part, type Piece, type Placed } from './placeLayout';
 import { onHall, opensThrough, roomKind } from './roomAccess';
 import { fillerSpec, maxArea, type Filler } from './roomSize';
-import { DEPT_FILL, deptOf, zonesOf, type Dept } from './zones';
+import { DEPT_FILL, deptOf, zonesOf, type Dept, type Need } from './zones';
 
 /**
  * PROTOTYPE (#581): the plan's rooms on the bays (`bayLayout`). A room takes a run of neighbouring bays at one tier on
@@ -57,9 +57,14 @@ function program(plan: ShipPlan, defs: Record<string, ModuleDef>, inBattery: num
   // (A lane hull's escape pods: one room of four, two bays long.)
   const pods: RoomSpec[] = hangars ? [] : [{ ...fillerSpec('pods', 64), mods: Array<string>(4).fill('module.pod_bay'), w: 14, h: 4 }];
   // (Mirrored, the point defence is its pair of turrets only: the plan's own room goes.)
-  // (Mirrored, on a lane hull's single-tier side hulls: an annex is a room of its own beside its host.)
-  const own = (r: RoomSpec): RoomSpec[] => (mirror && r.annex ? [{ ...r, annex: undefined } as RoomSpec, { ...r.annex, ...(r.dept ? { dept: r.dept } : {}) }] : [r]);
-  const singles = [...lone.filter((r) => !(mirror && r.mods.every((m) => m === 'module.pointDefense'))), ...cores, ...plan.quarters.filter((q) => !q.block), ...plan.support.map(brig).map(mess).flatMap(own), ...plan.cargo.map(brig), ...(hangars ? plan.hangars : pods)];
+  // (Mirrored, on a lane hull's single-tier side hulls: an annex (the pantry) is part of its host; the med bay keeps its
+  // trauma room behind it, in stores' forward bays.)
+  const own = (r: RoomSpec): RoomSpec => {
+    if (!mirror || !r.annex || r.role === 'medbay') return r;
+    const { annex, ...host } = r;
+    return { ...host, mods: [...r.mods, ...annex.mods], w: r.w + Math.ceil((annex.w * annex.h) / r.h) };
+  };
+  const singles = [...lone.filter((r) => !(mirror && r.mods.every((m) => m === 'module.pointDefense'))), ...cores, ...plan.quarters.filter((q) => !q.block), ...plan.support.filter((r) => !(mirror && r.role === 'plant')).map(brig).map(mess).map(own), ...plan.cargo.map(brig), ...(hangars ? plan.hangars : pods)];
   const items: Item[] = blocks ? cabinPairs.map((p) => ({ specs: [p[0], p[1]], both: true, cabins: true })) : [];
   const reactor = plan.reactors > 0 ? reactorSpec(plan.reactors, plan.kit) : null;
   const shields: RoomSpec | null = plan.shields.length > 0
@@ -68,6 +73,13 @@ function program(plan: ShipPlan, defs: Record<string, ModuleDef>, inBattery: num
   const pd: RoomSpec = { role: 'weapons', mods: ['module.pointDefense'], w: 4, h: 4 };
   // (Mirrored, the pair is fixed beside the guns.)
   if (!mirror) items.push({ specs: [pd, { ...pd }], both: true });
+  // (Mirrored, life support is a room a side: the plan's units shared out, rounded up to a pair, the fabricator to one.)
+  const plants = mirror ? plan.support.filter((r) => r.role === 'plant') : [];
+  if (plants.length > 0) {
+    const units = Math.ceil(plants.length / 2), fab = plants.some((r) => r.mods.includes('module.fabricator'));
+    const side = (f: boolean): RoomSpec => ({ role: 'plant', mods: [...Array<string>(units).fill('module.lifeSupport'), ...(f ? ['module.fabricator'] : [])], w: 3 * units + (fab ? 1 : 0), h: 3 });
+    items.push({ specs: [side(fab), side(false)], both: true });
+  }
   if (reactor && shields) {
     const w = Math.max(reactor.w, shields.w), h = Math.max(reactor.h, shields.h);
     items.push({ specs: [{ ...reactor, w, h }, { ...shields, w, h }], both: true });
@@ -161,6 +173,7 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
   type Cand = { spot: Spot; specs: Specs; annex?: Spot; cost: number };
   /** A lane hull's bays' departments (`zones.ts`), set before the search; a room only in its own. */
   let zone: (Dept | undefined)[] = [];
+  let alone = new Set<Dept>();
   const inZone = (i: number, j: number, rs: RoomSpec[]): boolean => {
     if (zone.length === 0) return true;
     for (let k = i; k < j; k++) if (!rs.every((h) => deptOf(h) === zone[k])) return false;
@@ -215,7 +228,9 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
         }
         // (A bay tier is coarse: a small room may take up to about two and a half times its plan, at a cost.)
         // (A lane hull's bays run bigger: a small room there may take up to four times its plan.)
-        if (a < want || a > Math.max(cap * 1.3, want * (fr.lane ? 4 : 2.5)) || !rs.every((h) => fits(h, ln, rw))) continue;
+        // (A department's one room a side may take all its bays; on a lane hull, so may a hold: spare floor is storage.)
+        const sole = rs.every((h) => alone.has(deptOf(h)) || (fr.lane && roomKind(h) === 'cargo'));
+        if (a < want || (a > Math.max(cap * 1.3, want * (fr.lane ? 4 : 2.5)) && !sole) || !rs.every((h) => fits(h, ln, rw))) continue;
         let via: Part['via'] | undefined;
         if (tier === 'back') { const v = backVia(o, side, i, j, specs); if (!v) continue; via = v; } else if (!hallOk) continue;
         // A front room nothing may open through, over back tiers still free with no corridor beside them, leaves a
@@ -350,12 +365,13 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
   const pre = [...strip, ...guns0], occ0 = pre.reduce<Occ>((o, p) => take(o, p.spot, p), [emptySide(), emptySide()]);
   const inBattery = fr.maint || guns0.length > 0 ? gunPairs.length : 0;
   const rest = pre.length > 0 ? program(plan, defs, inBattery, !fr.lane, strip.length === 0, !!fr.lane) : order;
-  // (Each department's rooms' floor a side: half each room's, a mirrored pair's both.)
-  const need: Partial<Record<Dept, { area: number; rooms: number }>> = {};
+  // (Each department's rooms' floor and slots a side: half each room's, a mirrored pair's both; an annex its own slot.)
+  const need: Partial<Record<Dept, Need>> = {};
   for (const r of rest.flatMap((it) => real(it.specs))) {
     const n = need[deptOf(r)] ?? { area: 0, rooms: 0 };
-    need[deptOf(r)] = { area: n.area + 0.5 * (r.w * r.h + (r.annex ? r.annex.w * r.annex.h : 0)), rooms: n.rooms + 0.5 };
+    need[deptOf(r)] = { area: n.area + 0.5 * (r.w * r.h + (r.annex ? r.annex.w * r.annex.h : 0)), rooms: n.rooms + (r.annex ? 1 : 0.5), ...(n.deep || r.annex ? { deep: true } : {}) };
   }
+  alone = new Set((Object.keys(need) as Dept[]).filter((d) => (need[d]?.rooms ?? 0) <= 1));
   zone = zonesOf(fr, bays, new Set(guns0.map((p) => p.spot.i)), FLIGHT, need, (k) => area(k, k + 1, 'full'));
   dfs(occ0, pre, rest, 0);
   const got = best as { puts: Put[]; score: number } | null;
