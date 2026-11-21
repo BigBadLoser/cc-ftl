@@ -339,15 +339,18 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
   const strip: Put[] = [];
   if (fr.lane) {
     const beds = plan.quarters.filter((q) => q.block).reduce((t, q) => t + q.mods.length, 0);
-    // (Inboard only: where it holds too few cabins, two beds to a cabin.)
-    const ks = bays.flatMap((b, k) => (b.row && b.row.dir < 0 ? [k] : []));
-    const room = ks.reduce((t, k) => t + Math.max(1, Math.floor((bay(k).x1 - bay(k).x0) / 4)), 0);
+    // (Inboard only: where it holds too few cabins, two beds to a cabin; the two aftmost bays left to hab's rooms (the
+    // mess beside the cabins) where the rest hold the beds that way.)
+    const cabins = (k: number): number => Math.max(1, Math.floor((bay(k).x1 - bay(k).x0) / 4));
+    const all = bays.flatMap((b, k) => (b.row && b.row.dir < 0 ? [k] : [])), most = Math.ceil(beds / 2);
+    const held = all.slice(0, -2), ks = all.length > 2 && 2 * held.reduce((t, k) => t + cabins(k), 0) >= most ? held : all;
+    const room = ks.reduce((t, k) => t + cabins(k), 0);
     for (const s of [0, 1] as const) {
       let need = s === 0 ? Math.ceil(beds / 2) : Math.floor(beds / 2);
       const per = need > room ? 2 : 1;
       for (const k of ks) {
         if (need <= 0) break;
-        const c = Math.min(Math.ceil(need / per), Math.max(1, Math.floor((bay(k).x1 - bay(k).x0) / 4))), b = Math.min(need, c * per);
+        const c = Math.min(Math.ceil(need / per), cabins(k)), b = Math.min(need, c * per);
         const cab: RoomSpec = { role: 'quarters', mods: Array<string>(b).fill('module.bed'), w: 3 * c, h: 3 };
         strip.push({ item: { specs: on(cab, s), both: false, cabins: true }, specs: on(cab, s), spot: { side: s, i: k, j: k + 1, tier: 'full', area: area(k, k + 1, 'full') }, strip: c });
         need -= b;
@@ -369,23 +372,30 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
     for (let m = deep.length - 1; m >= 0 && got.length < mounts.length; m--) if (got.every((k) => Math.abs(ob.indexOf(k) - ob.indexOf(deep[m] as number)) > gap)) got.push(deep[m] as number);
     return got;
   };
-  const spaced = pick(1), at = new Set((spaced.length === mounts.length ? spaced : pick(0)).sort((u, v) => u - v));
-  const guns0: Put[] = fr.lane && ob.length >= mounts.length && at.size === mounts.length ? mounts.map((p, i) => {
-    const k = [...at][i] as number, specs: Specs = [p[0], p[1]];
-    return { item: { specs, both: true }, specs, spot: { side: 2, i: k, j: k + 1, tier: 'full', area: area(k, k + 1, 'full') } };
-  }) : [];
-  const pre = [...strip, ...guns0], occ0 = pre.reduce<Occ>((o, p) => take(o, p.spot, p), [emptySide(), emptySide()]);
-  const inBattery = fr.maint || guns0.length > 0 ? gunPairs.length : 0;
-  const rest = pre.length > 0 ? program(plan, defs, inBattery, !fr.lane, strip.length === 0, !!fr.lane) : order;
-  // (Each department's rooms' floor and slots a side: half each room's, a mirrored pair's both; an annex its own slot.)
-  const need: Partial<Record<Dept, Need>> = {};
-  for (const r of rest.flatMap((it) => real(it.specs))) {
-    const n = need[deptOf(r)] ?? { area: 0, rooms: 0 };
-    need[deptOf(r)] = { area: n.area + 0.5 * (r.w * r.h + (r.annex ? r.annex.w * r.annex.h : 0)), rooms: n.rooms + (r.annex ? 1 : 0.5), ...(n.deep || r.annex ? { deep: true } : {}) };
+  // (Spaced first; side by side where nothing else fits that way, before a longer hull.)
+  let guns0: Put[] = [];
+  for (const gap of [1, 0]) {
+    const at = pick(gap).sort((u, v) => u - v);
+    if (gap > 0 && at.length < mounts.length) continue;
+    guns0 = fr.lane && ob.length >= mounts.length && at.length === mounts.length ? mounts.map((p, i) => {
+      const k = at[i] as number, specs: Specs = [p[0], p[1]];
+      return { item: { specs, both: true }, specs, spot: { side: 2, i: k, j: k + 1, tier: 'full', area: area(k, k + 1, 'full') } };
+    }) : [];
+    const pre = [...strip, ...guns0], occ0 = pre.reduce<Occ>((o, p) => take(o, p.spot, p), [emptySide(), emptySide()]);
+    const inBattery = fr.maint || guns0.length > 0 ? gunPairs.length : 0;
+    const rest = pre.length > 0 ? program(plan, defs, inBattery, !fr.lane, strip.length === 0, !!fr.lane) : order;
+    // (Each department's rooms' floor and slots a side: half each room's, a mirrored pair's both; an annex its own slot.)
+    const need: Partial<Record<Dept, Need>> = {};
+    for (const r of rest.flatMap((it) => real(it.specs))) {
+      const n = need[deptOf(r)] ?? { area: 0, rooms: 0 };
+      need[deptOf(r)] = { area: n.area + 0.5 * (r.w * r.h + (r.annex ? r.annex.w * r.annex.h : 0)), rooms: n.rooms + (r.annex ? 1 : 0.5), ...(n.deep || r.annex ? { deep: true } : {}) };
+    }
+    alone = new Set((Object.keys(need) as Dept[]).filter((d) => (need[d]?.rooms ?? 0) <= 1));
+    zone = zonesOf(fr, bays, new Set(guns0.map((p) => p.spot.i)), FLIGHT, need, (k) => area(k, k + 1, 'full'));
+    nodes = 0;
+    dfs(occ0, pre, rest, 0);
+    if (best || !fr.lane) break;
   }
-  alone = new Set((Object.keys(need) as Dept[]).filter((d) => (need[d]?.rooms ?? 0) <= 1));
-  zone = zonesOf(fr, bays, new Set(guns0.map((p) => p.spot.i)), FLIGHT, need, (k) => area(k, k + 1, 'full'));
-  dfs(occ0, pre, rest, 0);
   const got = best as { puts: Put[]; score: number } | null;
   const lay: Layout = { blocks: [{ a: fr.xBand, b: fr.xS, crossL: false, crossR: false, free: [], pieces: toPieces(got?.puts ?? []) }], stern: null, stubs: [], done: [] };
   const battery = fr.maint ? gunPairs.slice(0, fr.maint.guns.length + fr.maint.inner.length) : [];
