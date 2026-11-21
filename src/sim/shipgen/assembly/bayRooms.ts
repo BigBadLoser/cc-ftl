@@ -363,20 +363,33 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
   // (out to the hull, on the side corridor).
   // (And the point-defence pair after them, its own bay.)
   const pdSpec: RoomSpec = { role: 'weapons', mods: ['module.pointDefense'], w: 4, h: 4 }, mounts: Pair[] = [...gunPairs, [pdSpec, { ...pdSpec }]];
-  // (Aft of flight ops' two bays by the hangar.)
-  const ob = fr.lane ? bays.map((b, k) => ((b.row?.dir ?? 1) > 0 && b.row ? k : -1)).filter((k) => k >= 0).slice(FLIGHT) : [];
-  // (The outboard bays by the engines four rows deep at least, a bay between each: from the stern, spaced where there
-  // are bays enough.)
-  const deep = ob.filter((k) => minDepth(k, k + 1) >= 4), pick = (gap: number): number[] => {
-    const got: number[] = [];
+  // (Outboard bays four rows deep at least. First the mounts spread the side hull's length, front to stern, flight ops'
+  // bays (the pods) in the first gap and hab's (the mess) in the next; else from the stern aft of flight ops' two bays
+  // by the hangar, a bay between each, else side by side.)
+  const all = fr.lane ? bays.flatMap((b, k) => (b.row && b.row.dir > 0 ? [k] : [])) : [];
+  const ob = all.slice(FLIGHT), deepOf = (ks: number[]): number[] => ks.filter((k) => minDepth(k, k + 1) >= 4);
+  const pick = (gap: number): number[] => {
+    const deep = deepOf(ob), got: number[] = [];
     for (let m = deep.length - 1; m >= 0 && got.length < mounts.length; m--) if (got.every((k) => Math.abs(ob.indexOf(k) - ob.indexOf(deep[m] as number)) > gap)) got.push(deep[m] as number);
     return got;
   };
-  // (Spaced first; side by side where nothing else fits that way, before a longer hull.)
+  const spread = (): number[] => {
+    const deep = deepOf(all), got: number[] = [], n = all.length, m = mounts.length;
+    for (let i = 0; i < m && n > 1; i++) {
+      const want = Math.round((i * (n - 1)) / (m - 1));
+      const k = deep.filter((d) => !got.includes(d)).sort((u, v) => Math.abs(all.indexOf(u) - want) - Math.abs(all.indexOf(v) - want))[0];
+      if (k !== undefined) got.push(k);
+    }
+    // (Each gap two bays at least: a pods room or the mess.)
+    const s2 = [...got].sort((u, v) => u - v);
+    return s2.every((k, i) => i === 0 || all.indexOf(k) - all.indexOf(s2[i - 1] as number) >= 3) ? s2 : [];
+  };
   let guns0: Put[] = [];
-  for (const gap of [1, 0]) {
-    const at = pick(gap).sort((u, v) => u - v);
-    if (gap > 0 && at.length < mounts.length) continue;
+  for (const how of ['spread', 1, 0] as const) {
+    const at = (how === 'spread' ? spread() : pick(how)).sort((u, v) => u - v);
+    if (how !== 0 && at.length < mounts.length) continue;
+    // (Flight ops' bays: the first gap, spread; else the two by the hangar.)
+    const flight = how === 'spread' ? all.indexOf(at[1] as number) - all.indexOf(at[0] as number) - 1 : FLIGHT;
     guns0 = fr.lane && ob.length >= mounts.length && at.length === mounts.length ? mounts.map((p, i) => {
       const k = at[i] as number, specs: Specs = [p[0], p[1]];
       return { item: { specs, both: true }, specs, spot: { side: 2, i: k, j: k + 1, tier: 'full', area: area(k, k + 1, 'full') } };
@@ -391,7 +404,7 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
       need[deptOf(r)] = { area: n.area + 0.5 * (r.w * r.h + (r.annex ? r.annex.w * r.annex.h : 0)), rooms: n.rooms + (r.annex ? 1 : 0.5), ...(n.deep || r.annex ? { deep: true } : {}) };
     }
     alone = new Set((Object.keys(need) as Dept[]).filter((d) => (need[d]?.rooms ?? 0) <= 1));
-    zone = zonesOf(fr, bays, new Set(guns0.map((p) => p.spot.i)), FLIGHT, need, (k) => area(k, k + 1, 'full'));
+    zone = zonesOf(fr, bays, new Set(guns0.map((p) => p.spot.i)), flight, need, (k) => area(k, k + 1, 'full'));
     nodes = 0;
     dfs(occ0, pre, rest, 0);
     if (best || !fr.lane) break;
