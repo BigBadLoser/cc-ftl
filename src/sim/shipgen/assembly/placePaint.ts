@@ -34,7 +34,7 @@ export function paintPlaced(plan: ShipPlan, { fr, lay, battery }: Placed): Regio
             // (The beds shared out: two to a cabin where the strip is short of cabins.)
             const beds = Math.round((h.mods.length * (c + 1)) / n) - Math.round((h.mods.length * c) / n);
             const spec: RoomSpec = { role: 'quarters', mods: Array<string>(beds).fill('module.bed'), w: b - a, h: 3 };
-            paint(g.room('quarters', { spec }), a, b, (y) => rows(q, d(y)));
+            paint(g.room('quarters', { spec, ...(fr.lane ? { doorAlong: 'x' as const } : {}) }), a, b, (y) => rows(q, d(y)));
           }
           return hall;
         }
@@ -42,7 +42,7 @@ export function paintPlaced(plan: ShipPlan, { fr, lay, battery }: Placed): Regio
           let rowsMin = Infinity;
           for (let tx = q.x0; tx < q.x1; tx++) rowsMin = Math.min(rowsMin, (q.row?.depth ?? fr.depth)(tx));
           const bl = cabinsFor(h, q.x1 - q.x0, rowsMin);
-          if (!bl) { const id = g.room(h.role, { spec: h }); paint(id, q.x0, q.x1, (y) => from(q, d(y)) >= BAND); return id; }
+          if (!bl) { const id = g.room(h.role, { spec: h, ...(fr.lane ? { doorAlong: 'x' as const } : {}) }); paint(id, q.x0, q.x1, (y) => from(q, d(y)) >= BAND); return id; }
           const st = bl.stubs.map((s) => { const id = g.hall('hall'); paint(id, q.x0 + s.c0, q.x0 + s.c1, (y) => from(q, d(y)) >= BAND + s.r0 && from(q, d(y)) <= BAND + s.r1); return { id, s }; });
           for (const { rect: c, spec } of bl.cabins) {
             const own = st.find(({ s }) => s.c0 === c.c1 || s.c1 === c.c0)?.id ?? hall;
@@ -62,9 +62,9 @@ export function paintPlaced(plan: ShipPlan, { fr, lay, battery }: Placed): Regio
         const ahead = q.via === 'front' ? allParts.find((o) => o !== q && !!o.spec[side] && o.r0 < q.r0 && o.x0 <= q.x0 && q.x1 <= o.x1) : undefined;
         const fixed = q.via === 'dock' ? [docks[side]] : q.via === 'maint' ? [maint] : ahead ? [frontOf.get(ahead)?.[side] as number] : undefined;
         const access = fixed ?? (annexOf ? [front.get(annexOf)?.[side] as number] : q.r0 === 1 ? undefined : stub !== undefined ? [stub] : cross !== undefined ? [cross] : host ? [front.get(host)?.[side] as number] : undefined);
-        // (A lane hull's forward rooms open onto the spine where they touch it, not the cross corridor; a hold on a side
-        // hull at a short end where a corridor is.)
-        const id = g.room(h.role, { spec: h, ...(access ? { access } : {}), ...(fr.lane ? (!q.row ? { doorAlong: 'x' as const } : h.role === 'cargo' ? { doorAlong: 'y' as const } : {}) : {}) });
+        // (A lane hull's rooms open onto the corridors along the hull (the spine, the side corridors) where they touch
+        // one, not the cross corridor or an airlock's hall.)
+        const id = g.room(h.role, { spec: h, ...(access ? { access } : {}), ...(fr.lane ? { doorAlong: 'x' as const } : {}) });
         paint(id, q.x0, q.x1, (y) => rows(q, d(y)));
         // (A room cut from its stern end, entered only through it: the mess's pantry.)
         const cut = h.beside;

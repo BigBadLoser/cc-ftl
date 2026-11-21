@@ -33,6 +33,8 @@ const FILL_KINDS = (['hold', 'workshop', 'lounge', 'gym', 'farm', 'armoury', 'ba
 
 /** A lane hull's outboard bays by the hangar that are flight ops (`zones.ts`). */
 const FLIGHT = 2;
+/** Spare-floor rooms a ship has one of at most (#581). */
+const ONCE: readonly Filler[] = ['lounge', 'gym', 'workshop'];
 
 /** Floor a room may take past its plan before a leftover bay goes to a filler instead. */
 const GROW = 2.5;
@@ -294,6 +296,7 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
     const left: Filler[] = ['armoury', 'battery', 'shop', 'lab', 'provisions', 'workshop', 'lounge', 'gym', 'farm'];
     // (By department: its own kinds in turn, the same turn on both sides.)
     const turn = new Map<string, number>();
+    const once = new Set<Filler>();
     for (const s of [0, 1] as const) for (let k = 0; k < n; k++) for (const tier of (twoTier(k) ? ['front', 'back'] : ['full']) as Tier[]) {
       if (taken(o[s][k] as Slot, tier)) continue;
       const a = area(k, k + 1, tier), here: Spot = { side: s, i: k, j: k + 1, tier, area: a };
@@ -315,12 +318,22 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
       let f: RoomSpec | null = null, via: Part['via'] | undefined;
       const z = zone[k], own = z ? DEPT_FILL[z] : [], t = turn.get(`${z}${s}`) ?? 0;
       if (z) turn.set(`${z}${s}`, t + 1);
-      const kinds: Filler[] = z ? [...own.slice(t % own.length), ...own.slice(0, t % own.length)] : a >= 12 ? left : [];
+      const all: Filler[] = z ? [...own.slice(t % own.length), ...own.slice(0, t % own.length)] : a >= 12 ? left : [];
+      // (A rec room, gym or workshop once a ship: where the next would be another, the spare room beside grows over the
+      // bay instead, two bays long.)
+      const kinds = all.filter((kd) => !(ONCE.includes(kd) && once.has(kd)));
+      const spare = [k - 1, k + 1].filter((m) => m >= 0 && m < n && joined(Math.min(m, k))).map((m) => (tier === 'back' ? o[s][m]?.back : o[s][m]?.front))
+        .find((p): p is Put => !!p && !!p.fill && p.spot.tier === tier && p.spot.j - p.spot.i < 2 && zone[p.spot.i] === zone[k]);
+      if (kinds.length < all.length && kinds[0] !== all[0] && spare && tier !== 'back' && (tier === 'full' || sameSplit(Math.min(spare.spot.i, k), Math.max(spare.spot.j, k + 1)))) {
+        replace(spare, { ...spare, spot: { ...spare.spot, i: Math.min(spare.spot.i, k), j: Math.max(spare.spot.j, k + 1), area: spare.spot.area + a } }, here);
+        continue;
+      }
       for (const kd of [...kinds, 'hold'] as Filler[]) {
         const c = racked(fillerSpec(kd, a)), v = tier === 'back' ? backVia(o, s, k, k + 1, on(c, s)) : undefined;
         if (tier === 'back' && !v) continue;
         f = c; via = v ?? undefined;
         if (left.includes(kd)) left.splice(left.indexOf(kd), 1);
+        if (ONCE.includes(kd)) once.add(kd);
         break;
       }
       if (!f) {
@@ -341,25 +354,34 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
   }
 
   // A lane hull's cabins: single cabins along the lane, inboard of the side corridors from the hangar aft, the beds
-  // shared between the sides; where the strip is too short for them even two to a cabin, cabin blocks as anywhere.
+  // shared between the sides, one bed to a cabin; where the strip is too short for them, cabin blocks as anywhere.
   const strip: Put[] = [];
   if (fr.lane) {
     const beds = plan.quarters.filter((q) => q.block).reduce((t, q) => t + q.mods.length, 0);
-    // (Inboard only: where it holds too few cabins, two beds to a cabin; the two aftmost bays left to hab's rooms (the
-    // mess beside the cabins) where the rest hold the beds that way.)
-    const cabins = (k: number): number => Math.max(1, Math.floor((bay(k).x1 - bay(k).x0) / 4));
+    // (Inboard only, a cabin to four columns, the cabins run on across joined bays; the two aftmost bays left to hab's
+    // rooms (the mess beside the cabins) where the rest hold the beds.)
+    const cap = (i: number, j: number): number => Math.max(1, Math.floor((bay(j - 1).x1 - bay(i).x0) / 4));
+    const cut = (ks: number[], need: number): { i: number; j: number; c: number }[] => {
+      const got: { i: number; j: number; c: number }[] = [];
+      for (let m = 0; m < ks.length && need > 0; ) {
+        const i = ks[m] as number;
+        let j = i + 1;
+        while (cap(i, j) < need && ks[m + 1] === j && joined(j - 1)) { j++; m++; }
+        m++;
+        const c = Math.min(need, cap(i, j));
+        got.push({ i, j, c }); need -= c;
+      }
+      return got;
+    };
+    const fits = (ks: number[], need: number): boolean => cut(ks, need).reduce((t, g) => t + g.c, 0) >= need;
     const all = bays.flatMap((b, k) => (b.row && b.row.dir < 0 ? [k] : [])), most = Math.ceil(beds / 2);
-    const held = all.slice(0, -2), ks = all.length > 2 && 2 * held.reduce((t, k) => t + cabins(k), 0) >= most ? held : all;
-    const room = ks.reduce((t, k) => t + cabins(k), 0);
+    const held = all.slice(0, -2), ks = all.length > 2 && fits(held, most) ? held : all;
     for (const s of [0, 1] as const) {
       let need = s === 0 ? Math.ceil(beds / 2) : Math.floor(beds / 2);
-      const per = need > room ? 2 : 1;
-      for (const k of ks) {
-        if (need <= 0) break;
-        const c = Math.min(Math.ceil(need / per), cabins(k)), b = Math.min(need, c * per);
-        const cab: RoomSpec = { role: 'quarters', mods: Array<string>(b).fill('module.bed'), w: 3 * c, h: 3 };
-        strip.push({ item: { specs: on(cab, s), both: false, cabins: true }, specs: on(cab, s), spot: { side: s, i: k, j: k + 1, tier: 'full', area: area(k, k + 1, 'full') }, strip: c });
-        need -= b;
+      for (const { i, j, c } of cut(ks, need)) {
+        const cab: RoomSpec = { role: 'quarters', mods: Array<string>(c).fill('module.bed'), w: 3 * c, h: 3 };
+        strip.push({ item: { specs: on(cab, s), both: false, cabins: true }, specs: on(cab, s), spot: { side: s, i, j, tier: 'full', area: area(i, j, 'full') }, strip: c });
+        need -= c;
       }
       if (need > 0) strip.length = 0;
       if (need > 0) break;
