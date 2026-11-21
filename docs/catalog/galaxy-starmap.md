@@ -26,7 +26,7 @@ Fleets of every faction persist, follow agendas, fight each other off-screen and
 | Encounters and interdiction | `-` | Crossings, ambush odds, evade, bribe, fight | In game | sim/galaxy/encounters.ts, encounterOdds.ts, respond.ts; ui/StarmapEncounter.svelte |
 | Fleets and NPC traffic | `-` | Persistent fleets with home ports, agendas, rebuilds | In game | sim/galaxy/fleets.ts, agenda.ts, roster.ts, rebuild.ts; content/galaxyFleets.ts |
 | Off-screen wars | `-` | Hostile fleets that meet fight in a stats mini-sim; wrecks and news | In game | sim/galaxy/meetings.ts, clash.ts, wrecks.ts, news.ts |
-| Heat (notoriety) and hunters | `-` | Kills and captures raise heat; factions send hunters | In game | sim/galaxy/heat.ts, hunters.ts, tuningHeat.ts |
+| Heat (notoriety) and hunters | `-` | Kills and captures raise heat; factions send hunters; an urgent alert fires when hunters reach the player's node | In game | sim/galaxy/heat.ts, hunters.ts, tuningHeat.ts |
 | Stranding and distress tug | `-` | Broken fleets and the player can be towed | In game | sim/galaxy/stranded.ts; ui/StrandedBanner.svelte |
 | Opening grace period | `-` | No fights until act one is done or a timer passes | In game | sim/galaxy/grace.ts |
 | Event grids | `event:<id>` | Temporary deep-space pocket nodes | In game | sim/galaxy/eventGrid.ts |

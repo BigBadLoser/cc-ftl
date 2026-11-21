@@ -1,6 +1,6 @@
 # Catalog: UI windows and panels
 
-The Svelte UI (`src/ui`, 91 top-level components plus `combat`, `comms`, `crew`, `inspector`, `kit`, `lessons`, `menu`, `module`, `title`) mounted by `src/ui/App.svelte`
+The Svelte UI (`src/ui`, 98 top-level components plus `combat`, `comms`, `crew`, `inspector`, `kit`, `lessons`, `menu`, `module`, `title`) mounted by `src/ui/App.svelte`
 and `GameSession.svelte`. The UI reads snapshots built in `src/app/*Snapshot.ts` and sends commands through `src/app/bridge.ts`; it never mutates the sim.
 All top-level components are imported by something except `EnemyCharges.svelte`. The game is desktop only. UI soft rules are in `docs/DESIGN.md` ("UI").
 
@@ -29,6 +29,9 @@ All top-level components are imported by something except `EnemyCharges.svelte`.
 | Enemy weapon charge bars | `EnemyCharges` | Per-weapon charge with aim commit notch | Defined, unused | src/ui/EnemyCharges.svelte: no component imports it (combat HUD shows charge elsewhere) |
 | Drone bay, robot bay, shuttle, salvage, prize, asteroid panels | `DroneBayPanel, RobotBayPanel, ShuttlePanel, SalvagePanel, PrizePanel, AsteroidPanel` | Module and craft control panels | In game | src/ui/*Panel.svelte |
 | Ship overview and meters | `ShipOverview, ShipMeters, FtlCharge` | Resources by the numbers, FTL charge | Partial: improvement planned | issue #164 |
+| Lost cargo panel | `ContainerPanel` | A lost container's inspector: unknown contents and an Open order (crew cut it open in suits) (#503) | In game | src/ui/ContainerPanel.svelte |
+| Door inspector | `DoorInspector` | A door's state, the air on both sides, its vent toggle (vents start open) and the jam action (#591) | In game | src/ui/DoorInspector.svelte |
+| Prisoner deals | `PrisonerDeals` | A station's Prisoners service: ransom, bounty or black-market offers for sealed prisoners (#116) | In game | src/ui/PrisonerDeals.svelte |
 | Alerts and event log | `AlertList, EventLog, StrandedBanner` | Urgent clickable alerts vs the ship log | In game | src/ui/AlertList.svelte, EventLog.svelte |
 | Goals card and story modal | `GoalsCard, StoryModal, EventPanel` | Tutorial goals, event decisions | In game | src/ui/GoalsCard.svelte |
 | Lessons | `lessons/*` | Coach mark engine with two lessons | Partial: two lessons | see events-story.md |

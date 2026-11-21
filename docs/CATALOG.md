@@ -3,7 +3,7 @@
 This catalog lists everything in the game and says, for each thing, how far it actually goes: a content def, the system that uses it, whether it can appear or be built in play,
 and whether it has art or UI. It exists because people and agents kept mistaking a sprite or a design note for a feature (cryo pods are the standing example: the sprite exists,
 `DESIGN.md` says "already in the game", and there is no module def or system). When in doubt, trust this catalog over `DESIGN.md`, and trust the code over both.
-It was built on 2026-11-11 from the code at `main` (a read-only survey with ripgrep and a registry dump), not from the docs; statuses were spot-checked against the code.
+It was built on 2026-11-11 from the code at `main` (a read-only survey with ripgrep and a registry dump), not from the docs; statuses were spot-checked against the code, and audited again on 2026-11-21.
 Entries cite `file:line` of the def plus the system or render file that uses it; line numbers drift, ids do not.
 
 ## Status legend
@@ -23,22 +23,22 @@ Counts are table rows per status (each row is one entry, so a row that groups se
 
 | Area | Covers | In game | Partial | Art only | Defined, unused | Debug only | Planned |
 |---|---|---|---|---|---|---|---|
-| [modules](catalog/modules.md) | Modules, furniture, containers, tiers; module art with no def | 44 | 16 | 5 | 0 | 0 | 0 |
+| [modules](catalog/modules.md) | Modules, furniture, containers, tiers; module art with no def | 46 | 23 | 5 | 2 | 0 | 0 |
 | [items](catalog/items.md) | Items, recipes, ship weapons, hand weapons, crops, ores; item sprites with no def | 69 | 8 | 32 | 0 | 0 | 0 |
-| [crew](catalog/crew.md) | Species, roles, skills, backgrounds, traits, needs, mood, breaks, bonds, schedules | 95 | 8 | 0 | 0 | 0 | 4 |
+| [crew](catalog/crew.md) | Species, roles, skills, backgrounds, traits, needs, mood, breaks, bonds, schedules | 98 | 7 | 0 | 0 | 0 | 4 |
 | [ships-factions](catalog/ships-factions.md) | Ship templates, generator styles, galaxy factions, hull families, derelicts | 36 | 5 | 0 | 0 | 5 | 2 |
-| [stations](catalog/stations.md) | Station kinds, services, shipyard, black markets | 15 | 6 | 0 | 0 | 0 | 1 |
-| [combat](catalog/combat.md) | Ship combat, boarding, capture, hand weapons, cover | 29 | 3 | 11 | 0 | 0 | 0 |
-| [drones-vehicles-robots](catalog/drones-vehicles-robots.md) | Drones, shuttles, pods, robots | 13 | 1 | 0 | 0 | 0 | 4 |
+| [stations](catalog/stations.md) | Station kinds, services, shipyard, black markets | 17 | 5 | 0 | 0 | 0 | 1 |
+| [combat](catalog/combat.md) | Ship combat, boarding, capture, hand weapons, cover | 30 | 2 | 11 | 0 | 0 | 0 |
+| [drones-vehicles-robots](catalog/drones-vehicles-robots.md) | Drones, shuttles, pods, robots | 14 | 1 | 0 | 0 | 0 | 4 |
 | [research-upgrades](catalog/research-upgrades.md) | Research, blueprints, weapon upgrades | 28 | 5 | 0 | 0 | 0 | 1 |
-| [economy](catalog/economy.md) | Trade, traders, jobs, contraband, hauling, production | 37 | 0 | 0 | 1 | 0 | 3 |
+| [economy](catalog/economy.md) | Trade, traders, jobs, contraband, hauling, production | 38 | 0 | 0 | 1 | 0 | 2 |
 | [events-story](catalog/events-story.md) | Events, scenes, goals, lessons, story engine | 27 | 0 | 0 | 0 | 0 | 5 |
-| [galaxy-starmap](catalog/galaxy-starmap.md) | Map generator, structures, jumps, fleets, wars, heat, starmap UI | 21 | 2 | 0 | 0 | 0 | 2 |
-| [environment](catalog/environment.md) | Air, power, fire, heat, light, rooms, hull, roof | 20 | 1 | 0 | 0 | 0 | 4 |
-| [ui](catalog/ui.md) | Windows, panels, menus, kit | 26 | 4 | 0 | 1 | 1 | 1 |
-| [dev-tools](catalog/dev-tools.md) | Scenarios, debug commands, labs, profilers, test tools | 0 | 0 | 0 | 0 | 37 | 0 |
-| [art](catalog/art.md) | Manifest families, art-only sprites, render systems | 9 | 2 | 10 | 0 | 0 | 3 |
-| **Total** | | 465 | 59 | 59 | 2 | 42 | 30 |
+| [galaxy-starmap](catalog/galaxy-starmap.md) | Map generator, structures, jumps, fleets, wars, heat, starmap UI | 22 | 2 | 0 | 0 | 0 | 2 |
+| [environment](catalog/environment.md) | Air, power, fire, heat, light, rooms, hull, roof | 26 | 4 | 0 | 0 | 0 | 1 |
+| [ui](catalog/ui.md) | Windows, panels, menus, kit | 29 | 4 | 0 | 1 | 1 | 1 |
+| [dev-tools](catalog/dev-tools.md) | Scenarios, debug commands, labs, profilers, test tools | 0 | 0 | 0 | 0 | 42 | 0 |
+| [art](catalog/art.md) | Manifest families, art-only sprites, render systems | 16 | 2 | 11 | 0 | 0 | 3 |
+| **Total** | | 496 | 68 | 59 | 4 | 48 | 26 |
 
 ## Commonly confused
 
@@ -48,7 +48,7 @@ Things people believe exist and do not (or only partly), and the reverse.
 - **Cryo pods** (`module.cryo_pod`): sprite only. No def, no system, and not the prisoner holding: prisoners go in stasis slabs and the stasis wheel (#116).
 - **Stasis loading animation** (`stasisload` sprite family, `render/stasisLoad.ts`, lab panel `stasisload`): a stow into slot 0 plays 63 patch frames over the wheel (cradle, cart, slab run-in, star step); the slab in the patches carries the prisoner being stowed (pressed through the UV pass, like the slot layers).
 - **Prisoners:** captured crew get a `PrisonerC` (`sim/capture/prize.ts`); downed ones are rescued after our own crew (`sim/crew/care.ts`). A fully subdued ship waits for "take prisoners / let them go" (`ship.settle`, `sim/capture/settle.ts`); a prisoner can be released for a little standing (`prisoner.release`). The player marks a prisoner for sealing (`prisoner.seal`, `sim/stasis/order.ts`; "Seal in stasis" on the crew inspector, "Seal" and "Seal all" on the prize panel); crew seal only marked prisoners into stasis slabs and hold them in a stasis wheel (`sim/stasis/`, #116). On a prize with no wheel a shuttle run fetches them (`sim/stasis/shuttle.ts`, away site owner 'stasis'): empty slabs out in its rack, sealed on the prize, full slabs home to the wheel (`?scenario=prisoners&taken&seal`). A frozen prisoner can be released too (the slab is opened). Stations buy sealed prisoners (ransom, bounty, black market: `sim/capture/offers.ts`, the station's Prisoners service, `ui/PrisonerDeals.svelte`, `?scenario=stasis&deals`); the slab goes by shuttle and is paid on arrival (`sim/capture/delivery.ts`). There is no recruiting.
-- **Workbench, comms console, medical console, sensor console, armory/cold storage, storage tank:** sprites only (workbench is issue #320; `workbench` in code is a work-priority label).
+- **Workbench, comms console, medical console, sensor console:** sprites only (workbench is issue #320; `workbench` in code is a work-priority label). The armory locker, cold store and storage tank have defs (buildable; cold stores are also placed on stations).
 - **Rogue AI faction:** the faction, its ship generator (`faction.drones`), a shipyard template and a terminal event exist, but the galaxy fields no rogue ships (`ships: []`, issue #427). You do not meet machine fleets in a normal game.
 - **Black markets:** only `bm.lesser` is ever attached to a station. The cartel market, machine bazaar and hiring hall are defined and tested but never spawned. `item.ai_core`, `item.robot_parts`, `item.drone_tech` are sold there and consumed by nothing.
 - **Station fuel and repair services:** listed as tags on trade and military stations; no code implements a repair service, and fuel is simply bought as an item.
@@ -56,11 +56,11 @@ Things people believe exist and do not (or only partly), and the reverse.
 - **Ten hand weapons with art** (laser pistol, shotgun, SMG, plasma cutter...): no item defs (issue #49). Likewise about 32 goods with item sprites (copper, nanites, stim, torpedo, artifact...). Research costs use `item.parts` and `item.rare_ore` as stand-ins for data cores and artifacts.
 - **Cover in combat:** targets do get cover from solid modules, but crew never seek it (issue #50).
 - **Lessons:** the engine is general, but only two lessons exist (combat, hail).
-- **Research module:** buildable but placed on no ship, so research needs the player to build one first. Same for the scrapper, radiator and large hydroponics bed ("buildable only").
+- **Research module:** no ship template or ship generator places one, so research on a ship needs the player to build one first (research stations and breaker shops on stations do carry the research module and scrapper). Same for the radiator, large hydroponics bed, bunk, scrap bin and armory/tank storage ("buildable only").
 - **Zealot "augmented" crews:** a stand-in body; real implants are phase 7 (issue #311).
 - **Recovery pod:** built as a first pass (#319): buildable, heals HP to full; no ship starts with one, no injuries or surgery yet.
 - **Water purifier:** in game (`module.waterPurifier`, #321): buildable, `recipe.purify_ice` turns ice into water; art from `purifier_g1` (family `purifier_module`, four rotations).
-- **Construction pods and drones, logistics robot, arcade:** planned only, even though `module.pod_bay` text mentions construction pods.
+- **Construction pods and drones, logistics robot:** planned only, even though `module.pod_bay` text mentions construction pods.
 - **Leisure furniture** (art in `tools/blender/sprites/leisure.py`, four rotations each; #441). Buildable from the Life tab, in game:
   `module.bench` 2x1 (three seat positions in its def, `sim/modules/seats.ts`, and the `sit_bench` crew clip
   and front overlays are ready; nothing sends crew to sit yet; front tiles kept clear), `module.bunk` 1x2 (a bed like `module.bed` with `berths: 2`: two crew sleep in it, lower deck and upper deck; `crew/berths.ts` owns who holds which berth,
