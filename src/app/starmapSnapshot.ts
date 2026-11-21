@@ -32,6 +32,12 @@ function headingOf(f: Fleet, nodeName: (id: string) => string): string {
 /** The turn's progress is published in this many steps (the map redraws a fleet on each). */
 const TURN_STEPS = 90;
 
+/** The node a fleet jumped from this turn (its slide's start), or nulls. */
+function fromOf(f: Fleet, turn: number, index: ReturnType<typeof galaxyIndex>): { fx: number | null; fy: number | null } {
+  const was = f.moved === turn && f.from !== f.node ? index.nodes.get(f.from) : undefined;
+  return { fx: was ? Math.round(was.x) : null, fy: was ? Math.round(was.y) : null };
+}
+
 /** The NPC fleets the sensors see, with where each is heading. */
 function fleetsOf(sim: Sim, nodeName: (id: string) => string): UiStarFleet[] {
   const index = galaxyIndex(sim.galaxy);
@@ -41,7 +47,7 @@ function fleetsOf(sim: Sim, nodeName: (id: string) => string): UiStarFleet[] {
     const next = f.route.length ? index.nodes.get(f.route[0] as string) : undefined;
     if (!at) return [];
     return [{
-      id: f.id, node: f.node, x: Math.round(at.x), y: Math.round(at.y), tx: next ? Math.round(next.x) : null, ty: next ? Math.round(next.y) : null, hops: f.damaged ? 0 : f.route.length,
+      id: f.id, node: f.node, x: Math.round(at.x), y: Math.round(at.y), tx: next ? Math.round(next.x) : null, ty: next ? Math.round(next.y) : null, hops: f.damaged ? 0 : f.route.length, ...fromOf(f, sim.galaxy.turn, index),
       name: fleetName(f), faction: content?.factions[f.faction]?.name ?? f.faction, role: ROLE_LABEL[f.role] ?? f.role, kind: f.role, ships: f.ships.length,
       tone: toneOf(content?.factions[f.faction]?.kind), hostile: isHostileFaction(sim, f.faction), damaged: !!f.damaged,
       heading: headingOf(f, nodeName), home: nodeName(portNode(f.home)), cargo: cargoOf(sim, f),

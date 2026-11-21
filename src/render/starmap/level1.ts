@@ -24,6 +24,8 @@ export function createLevel1(ctx: Ctx, sc0: Scene, cam0: Cam): Level {
   let sc = sc0;
   let cam = cam0;
   let ship: Glide | null = null;
+  /** How far the fleets that jumped this turn have slid in from where they were (0..1). */
+  let slide = 1;
   let hasShip = false;
   let g = 2 / cam.s;
   let zoomKey = '';
@@ -108,12 +110,12 @@ export function createLevel1(ctx: Ctx, sc0: Scene, cam0: Cam): Level {
   const fleetFrame = art?.art.frames['starmap.fleet.patrol.d0']?.w ?? 48;
   const structFrame = art?.art.frames['starmap.struct.den']?.w ?? 48;
 
-  /** Where a fleet's chevron sits now: the way along its next lane by the share of the turn gone (it takes the jump when the turn ends), fanned off the lane. */
+  /** Where a fleet's chevron sits: at its node (sliding in from where it was while the turn's slide runs), fanned off the lane. */
   const lane = (m: (typeof marks)[number]): { x: number; y: number; px: number; py: number } => {
     const k = 1 / cam.s;
-    const t = m.f.tx === null || m.f.ty === null ? 0 : Math.min(1, Math.max(0, sc.map.turnFrac ?? 0));
-    const px = m.f.x + (m.f.tx === null ? 0 : (m.f.tx - m.f.x) * t);
-    const py = m.f.y + (m.f.ty === null ? 0 : (m.f.ty - m.f.y) * t);
+    const back = m.f.fx === null || m.f.fy === null ? 0 : 1 - slide;
+    const px = m.f.x + (m.f.fx === null ? 0 : (m.f.fx - m.f.x) * back);
+    const py = m.f.y + (m.f.fy === null ? 0 : (m.f.fy - m.f.y) * back);
     return { x: px + m.ox * 54 * k, y: py + m.oy * 54 * k, px, py };
   };
   /** "Next node in 1:23" for a fleet on the move. */
@@ -254,6 +256,11 @@ export function createLevel1(ctx: Ctx, sc0: Scene, cam0: Cam): Level {
     root,
     scene,
     camera,
+    slide(t) {
+      if (t === slide) return;
+      slide = t;
+      if (marks.some((m) => m.f.fx !== null)) redraw();
+    },
     glide(next) {
       const flipped = !!next !== hasShip;
       ship = next;

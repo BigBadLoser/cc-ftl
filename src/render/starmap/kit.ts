@@ -54,6 +54,8 @@ export interface Level {
   scene(sc: Scene): void;
   camera(cam: Cam): void;
   glide(g: Glide | null): void;
+  /** The fleets' slide from where they were to where they are (0..1, eased). */
+  slide?(t: number): void;
   /** Advance animations to `now` (ms); true while the level still needs frames ('fast': at the display rate, else 30 fps). */
   tick(now: number): boolean | 'fast';
   /** The tooltip of what is at a screen point of the view, if any. */

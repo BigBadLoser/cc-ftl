@@ -33,7 +33,7 @@ const BASELINE: Record<string, number> = {
   'src/sim/shipgen/rooms/furnish.ts': 405,
   'src/sim/tuning.ts': 634,
   'src/ui/App.svelte': 434,
-  'src/ui/StarmapView.svelte': 544,
+  'src/ui/StarmapView.svelte': 542,
   'src/ui/api.ts': 1719,
   'src/ui/starmapApi.ts': 416,
 };

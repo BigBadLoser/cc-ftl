@@ -33,12 +33,34 @@ export interface StarmapGlide {
   ty: number;
 }
 
+/** One hop's slide takes this long, whatever the sim's pace (the ship's and the fleets'). */
+export const GLIDE_MS = 700;
+/** The slide's easing (in-out quad): `t` 0..1 along a lane to the share of the lane covered. */
+export const easeGlide = (t: number): number => (t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2);
+
+/** The fleets' slide (see `fleetSlide`): restarts when the turn changes (not on the first turn seen), runs one GLIDE_MS tween. Returns the eased share to draw, or null when idle. */
+export function createFleetSlide(): (dt: number, turn: number | undefined) => number | null {
+  let t = 1;
+  let seen = -1;
+  return (dt, turn) => {
+    if (turn !== undefined && turn !== seen) {
+      if (seen >= 0) t = 0;
+      seen = turn;
+    }
+    if (t >= 1) return null;
+    t = Math.min(1, t + dt / GLIDE_MS);
+    return easeGlide(t);
+  };
+}
+
 export interface StarmapGpu {
   /** New data or screen state. */
   scene(s: StarmapGpuScene): void;
   /** The view centre (map units), scale (screen px per map unit) and the view's size in CSS px. */
   camera(cx: number, cy: number, s: number, w: number, h: number): void;
   glide(g: StarmapGlide | null): void;
+  /** How far the fleets that jumped this turn have slid from where they were to where they are (0..1, eased; 1 = arrived). */
+  fleetSlide(t: number): void;
   /** The tooltip of what is under a point of the view (a fleet, a job mark), if any. */
   tip(x: number, y: number): string | null;
   destroy(): void;

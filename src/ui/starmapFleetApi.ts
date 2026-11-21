@@ -24,6 +24,9 @@ export interface UiStarFleet {
   damaged: boolean;
   /** What it is doing: "Resting at X", "Trading run to X", "Returning home to X", "Adrift"... */
   heading: string;
+  /** Where it was before this turn's jump (position), or null when it did not move this turn: the slide that lands it on `node`. */
+  fx: number | null;
+  fy: number | null;
   /** Jumps left on its route (0 while it rests or is stranded). It takes the next one when the turn ends. */
   hops: number;
   /** Its home port's node. */
