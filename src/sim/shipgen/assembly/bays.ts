@@ -46,7 +46,7 @@ export function bayLayout(fr: Frame): Bay[] {
 }
 
 /** A lane hull's front tier's rows at most: its wide body's small rooms in front, the big behind. */
-const FRONT = 3;
+const FRONT = 4;
 
 /**
  * One tier to the hull, or a front and a back where the bay is deep enough for two rooms of at least `MIN_DEPTH` rows:
