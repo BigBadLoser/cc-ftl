@@ -21,7 +21,6 @@
     "test:weights": "vitest run --reporter=json --outputFile=.vitest-report.json && node tools/testWeights.mjs .vitest-report.json",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit -p . & p=$!; svelte-check --tsconfig ./tsconfig.json; r=$?; svelte-check --tsconfig ./tools/layout/tsconfig.json; l=$?; wait $p; w=$?; [ $r = 0 ] && [ $l = 0 ] && [ $w = 0 ]",
-    "lab:build": "vite build -c spikes/crew-lab/vite.config.ts && node spikes/crew-lab/post.mjs",
     "check": "npm run lint && npm run typecheck && npm run test",
     "check:fast": "npm run lint && npm run typecheck && npm run test:rules && npm run test:fast",
     "check:push": "npm run lint && npm run typecheck && npm run test:rules && npm run test:branch",
@@ -29,7 +28,6 @@
     "assets": "tools/blender/setup.sh && \"$(tools/blender/setup.sh)\" -b --factory-startup --python tools/blender/build.py",
     "assets:preview": "\"$(tools/blender/setup.sh)\" -b --factory-startup --python tools/blender/preview.py -- shots/assets-preview",
     "sprites": "\"$(tools/blender/setup.sh)\" -b --factory-startup --python tools/blender/sprites/build_sprites.py",
-    "pixel-lab:build": "vite build -c spikes/pixel-lab/vite.config.ts && node spikes/pixel-lab/post.mjs",
     "lab": "node tools/lab/shoot.js",
     "profile": "node tools/profile/cli.js",
     "profile:sim": "node tools/profile/sim.js",
@@ -67,7 +65,6 @@
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.71.2",
     "vite": "^8.3.4",
-    "vite-plugin-singlefile": "^2.3.3",
     "vitest": "^5.0.5"
   }
 }

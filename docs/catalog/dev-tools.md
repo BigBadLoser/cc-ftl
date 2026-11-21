@@ -58,8 +58,6 @@ Presets are files in `presets/`; `?scenario=<name>` takes the preset's own flags
 | Asteroid sheets | ``tools/asteroids/`` | Asteroid generation CLI and sheet drawing | Debug only | tools/asteroids/* |
 | Profiler | ``npm run profile, profile:sim, profile:baseline, ai:diff`` | Per-system sim cost, headless-game profile, crew decision diffs | Debug only | tools/profile/*; docs/PROFILING.md; in-game ?perf |
 | Sprite pipeline | ``npm run sprites, assets`` | Headless Blender renders sprite sheets into public/assets/1x | Debug only | tools/blender/* (about 400 sprite scripts) |
-| Damage mock | ``tools/damage_mock`` | Python mocks for breach and roof damage art | Debug only | tools/damage_mock/* |
-| Spikes | ``spikes/crew-lab, spikes/pixel-lab`` | Old art experiments with their own vite config (`lab:build`, `pixel-lab:build`) | Debug only | spikes/* |
 | Test harness and checks | `npm run check:fast`, `npm run check:push`, `npm run test:soak`, `npm run test:weights:ci` | Shared fixtures, near and branch checks, soak tests, and shard weights | Debug only | `test/support/` and [Test tiers](../ARCHITECTURE.md#test-tiers) |
 
 Planned tooling: end-to-end browser regression tests (#157), Vite dependency scan limit (#53), room-layout solver (#193).

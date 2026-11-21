@@ -1,4 +1,4 @@
-"""Sol's approved module packs (tools/blender/experiments, see height_185/HANDOFF.md), rendered at final quality by
+"""Sol's approved module packs (tools/blender/experiments), rendered at final quality by
 their own scripts and packed into game sheets. Runs inside Blender (build_sprites.py `sol`); each pack is rendered by a
 separate Blender job, one at a time.
 

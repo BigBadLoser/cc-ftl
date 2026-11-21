@@ -1130,7 +1130,7 @@ so does shrinking without lowering the baseline in the same change.
 - Sim systems get unit tests, plus **scenario tests**, for example "a 1-tile breach vents a 4×4 room
   below 5% O2 within N ticks".
 - Soft limit of about 400 lines per file. Splitting is preferred to growing.
-- No test or demo code in `src/`. Spikes live in `spikes/` and never get imported.
+- No test or demo code in `src/`.
 - **Polish follows gameplay:** no VFX or juice work on a system until its loop is playable.
 - One way to do each thing: one pathfinder, one event channel, one ECS.
 
