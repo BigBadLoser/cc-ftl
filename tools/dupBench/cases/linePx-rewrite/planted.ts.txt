@@ -1,0 +1,14 @@
+type Px = { x: number; y: number };
+
+// Step along the major axis and round the other coordinate (DDA) instead of tracking an error term.
+export function ddaLine(ax: number, ay: number, bx: number, by: number): Px[] {
+  const x0 = Math.round(ax), y0 = Math.round(ay);
+  const x1 = Math.round(bx), y1 = Math.round(by);
+  const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0));
+  const pts: Px[] = [];
+  for (let i = 0; i <= n; i++) {
+    const t = n === 0 ? 0 : i / n;
+    pts.push({ x: Math.round(x0 + (x1 - x0) * t), y: Math.round(y0 + (y1 - y0) * t) });
+  }
+  return pts;
+}

@@ -1,0 +1,6 @@
+{
+  "label": "dup",
+  "level": "restructure",
+  "original": { "file": "src/render/pixelShapes.ts", "fn": "linePx" },
+  "planted": { "target": "src/render/segmentPixels.ts", "fn": "segmentPixels" }
+}

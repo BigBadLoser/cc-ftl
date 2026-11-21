@@ -1,0 +1,6 @@
+{
+  "label": "dup",
+  "level": "rewrite",
+  "original": { "file": "src/sim/crew/bonds.ts", "fn": "fadeBonds" },
+  "planted": { "target": "src/sim/crew/forgetFeelings.ts", "fn": "forgetFeelings" }
+}

@@ -1,0 +1,33 @@
+import { isEmergency } from '../ai/emergency';
+import { shipIdOf } from '../regions';
+import type { Sim } from '../sim';
+import { JobC, type Job, type WorkCategory } from './components';
+
+interface Calls {
+  emergencies: Set<WorkCategory>;
+  consoles: Job[];
+}
+
+// A single sorted pass over the jobs, grouped by ship, instead of lazily filling per-ship buckets.
+let lastTick = -1;
+let lastSim: Sim | null = null;
+let table = new Map<number, Calls>();
+
+function callsFor(sim: Sim, ship: number): Calls | undefined {
+  if (lastSim !== sim || lastTick !== sim.tick) {
+    const jobs = [...sim.world.query(JobC)].map((id) => sim.world.get(id, JobC) as Job);
+    const relevant = jobs.filter((j) => isEmergency(j) || (j.kind === 'operate' && j.reservedBy === 0));
+    const ships = new Set(relevant.map((j) => shipIdOf(sim, j)));
+    table = new Map(
+      [...ships].map((s) => {
+        const mine = relevant.filter((j) => shipIdOf(sim, j) === s);
+        const emergencies = new Set(mine.filter(isEmergency).map((j) => j.category));
+        const consoles = mine.filter((j) => !isEmergency(j));
+        return [s, { emergencies, consoles }] as const;
+      }),
+    );
+    lastSim = sim;
+    lastTick = sim.tick;
+  }
+  return table.get(ship);
+}

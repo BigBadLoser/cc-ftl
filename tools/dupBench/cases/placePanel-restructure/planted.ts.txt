@@ -1,0 +1,25 @@
+type Rect = { x0: number; y0: number; x1: number; y1: number };
+type Size = { w: number; h: number };
+type Pt = { x: number; y: number };
+const overlap = (a: Rect, b: Rect): boolean => !(a.x1 <= b.x0 || b.x1 <= a.x0 || a.y1 <= b.y0 || b.y1 <= a.y0);
+
+export function placePopup(anchor: Rect, size: Size, view: Size, obstacles: Rect[], gap = 12, margin = 8): Pt | null {
+  const offscreen = anchor.x1 <= 0 || anchor.y1 <= 0 || anchor.x0 >= view.w || anchor.y0 >= view.h;
+  if (offscreen) return null;
+  const clamp = (v: number, extent: number, max: number) => Math.min(Math.max(v, margin), max - extent - margin);
+  const centreX = (anchor.x0 + anchor.x1 - size.w) / 2;
+  const centreY = (anchor.y0 + anchor.y1 - size.h) / 2;
+  const costOf = (want: Pt): { at: Pt; cost: number } => {
+    const at = { x: clamp(want.x, size.w, view.w), y: clamp(want.y, size.h, view.h) };
+    const box = { x0: at.x, y0: at.y, x1: at.x + size.w, y1: at.y + size.h };
+    const blocked = obstacles.reduce((n, o) => n + (overlap(box, o) ? 1 : 0), 0);
+    return { at, cost: (overlap(box, anchor) ? 1e6 : 0) + 1000 * blocked + Math.abs(at.x - want.x) + Math.abs(at.y - want.y) };
+  };
+  const scored = [
+    { x: anchor.x1 + gap, y: centreY },
+    { x: anchor.x0 - gap - size.w, y: centreY },
+    { x: centreX, y: anchor.y0 - gap - size.h },
+    { x: centreX, y: anchor.y1 + gap },
+  ].map(costOf);
+  return scored.reduce((best, c) => (c.cost < best.cost ? c : best)).at;
+}

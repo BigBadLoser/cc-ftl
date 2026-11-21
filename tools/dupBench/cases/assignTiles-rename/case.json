@@ -1,0 +1,6 @@
+{
+  "label": "dup",
+  "level": "rename",
+  "original": { "file": "src/sim/crew/spread.ts", "fn": "assignTiles" },
+  "planted": { "target": "src/sim/crew/allocSpots.ts", "fn": "allocateSpots" }
+}

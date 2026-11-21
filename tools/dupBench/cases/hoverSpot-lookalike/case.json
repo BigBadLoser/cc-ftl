@@ -1,0 +1,6 @@
+{
+  "label": "distinct",
+  "level": "lookalike",
+  "original": { "file": "src/sim/mining/pick.ts", "fn": "hoverSpot" },
+  "planted": { "target": "src/sim/mining/dockSpot.ts", "fn": "dockSpot" }
+}

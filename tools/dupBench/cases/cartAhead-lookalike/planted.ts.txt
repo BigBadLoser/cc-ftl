@@ -1,0 +1,24 @@
+import type { Pt } from './cartPose';
+
+export type SagPoint = { x: number; y: number; slope: number } | null;
+
+// Where a hanging cable sits at a fraction of its run: the straight stretches carry it, each bend lifts it a little.
+export function cableSagAt(tiles: readonly Pt[], fraction: number): SagPoint {
+  if (tiles.length < 2) return null;
+  const step = (i: number): [number, number] => [tiles[i + 1]!.x - tiles[i]!.x, tiles[i + 1]!.y - tiles[i]!.y];
+  const bends: number[] = [0];
+  for (let i = 1; i < tiles.length - 1; i++) {
+    const [ax, ay] = step(i - 1), [bx, by] = step(i);
+    if (ax * by - ay * bx !== 0) bends.push(i);
+  }
+  bends.push(tiles.length - 1);
+  const m = Math.max(0, Math.min(1, fraction)) * (tiles.length - 1);
+  let r = 0;
+  while (r < bends.length - 2 && m > bends[r + 1]!) r++;
+  const a = bends[r]!, b = bends[r + 1]!;
+  const span = Math.max(1, b - a);
+  const t = (m - a) / span;
+  const [dx, dy] = step(a);
+  const sag = 4 * t * (1 - t) * 0.25 * span;
+  return { x: tiles[a]!.x + dx * (m - a), y: tiles[a]!.y + dy * (m - a) + sag, slope: 4 * (1 - 2 * t) * 0.25 };
+}

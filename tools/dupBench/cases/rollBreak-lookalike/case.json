@@ -1,0 +1,6 @@
+{
+  "label": "distinct",
+  "level": "lookalike",
+  "original": { "file": "src/sim/crew/breakdown.ts", "fn": "rollBreak" },
+  "planted": { "target": "src/sim/crew/rollLoot.ts", "fn": "rollLoot" }
+}

@@ -1,0 +1,44 @@
+import { BodyC } from '../body';
+import type { Sim } from '../sim';
+import { Struct } from '../structure';
+import { DIRS, STANDOFF } from './geometry';
+import { MiningPodC } from './components';
+
+const HEADINGS: readonly (readonly number[])[] = [[0, 2], [4, 6], [1, 3, 5, 7]];
+
+type P = { x: number; y: number };
+const dist2 = (a: P, b: P): number => (a.x - b.x) ** 2 + (a.y - b.y) ** 2;
+
+function otherPods(sim: Sim, pod: number): P[] {
+  return [...sim.world.query(MiningPodC)]
+    .filter((id) => id !== pod)
+    .map((id) => sim.world.get(id, MiningPodC)?.spot)
+    .filter((s): s is P => !!s);
+}
+
+function isOpen(sim: Sim, p: P): boolean {
+  const tx = Math.floor(p.x), ty = Math.floor(p.y);
+  const inside = tx >= 0 && ty >= 0 && tx < sim.sector.width && ty < sim.sector.height;
+  if (!inside) return false;
+  const k = sim.sector.grid.get('struct', tx, ty);
+  return [Struct.Space, Struct.Ground].includes(k);
+}
+
+export function standoffSpot(sim: Sim, pod: number, target: P, size: number): P {
+  const centre = { x: target.x + 0.5, y: target.y + 0.5 };
+  const others = otherPods(sim, pod);
+  const free = (p: P) => !others.some((o) => dist2(o, p) < size * size - 1e-9);
+  const from = sim.world.get(pod, BodyC) ?? centre;
+  const candidates: (P & { i: number })[] = [];
+  for (const group of HEADINGS) {
+    const row = group.map((k, i) => {
+      const d = DIRS[k] as readonly [number, number];
+      return { x: centre.x - d[0] * STANDOFF, y: centre.y - d[1] * STANDOFF, i };
+    });
+    row.sort((a, b) => dist2(a, from) - dist2(b, from) || a.i - b.i);
+    candidates.push(...row);
+  }
+  for (const c of candidates) if (isOpen(sim, c) && free(c)) return { x: c.x, y: c.y };
+  for (const c of candidates) if (free(c)) return { x: c.x, y: c.y };
+  return candidates.length ? { x: candidates[0]!.x, y: candidates[0]!.y } : centre;
+}

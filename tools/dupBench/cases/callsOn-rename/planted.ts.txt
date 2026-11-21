@@ -1,0 +1,30 @@
+import { isEmergency } from '../ai/emergency';
+import { shipIdOf } from '../regions';
+import type { Sim } from '../sim';
+import { JobC, type Job, type WorkCategory } from './components';
+
+interface Calls {
+  emergencies: Set<WorkCategory>;
+  consoles: Job[];
+}
+
+const cache = new WeakMap<Sim, { tick: number; byShip: Map<number, Calls> }>();
+
+function alertsOn(world: Sim, vessel: number): Calls | undefined {
+  let entry = cache.get(world);
+  if (!entry || entry.tick !== world.tick) {
+    entry = { tick: world.tick, byShip: new Map() };
+    for (const id of world.world.query(JobC)) {
+      const job = world.world.get(id, JobC) as Job;
+      const urgent = isEmergency(job);
+      if (!urgent && !(job.kind === 'operate' && job.reservedBy === 0)) continue;
+      const hull = shipIdOf(world, job);
+      let bucket = entry.byShip.get(hull);
+      if (!bucket) entry.byShip.set(hull, (bucket = { emergencies: new Set(), consoles: [] }));
+      if (urgent) bucket.emergencies.add(job.category);
+      else bucket.consoles.push(job);
+    }
+    cache.set(world, entry);
+  }
+  return entry.byShip.get(vessel);
+}

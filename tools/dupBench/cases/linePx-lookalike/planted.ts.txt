@@ -1,0 +1,21 @@
+type Px = { x: number; y: number };
+
+// Midpoint circle: the pixels of a one-pixel-wide ring, in drawing order.
+export function ringPx(cx: number, cy: number, radius: number): Px[] {
+  let [x, y] = [Math.round(radius), 0];
+  const [ox, oy] = [Math.round(cx), Math.round(cy)];
+  let err = 1 - x;
+  const out: Px[] = [];
+  while (x >= y) {
+    out.push({ x: ox + x, y: oy + y }, { x: ox + y, y: oy + x }, { x: ox - y, y: oy + x }, { x: ox - x, y: oy + y });
+    out.push({ x: ox - x, y: oy - y }, { x: ox - y, y: oy - x }, { x: ox + y, y: oy - x }, { x: ox + x, y: oy - y });
+    y++;
+    if (err < 0) {
+      err += 2 * y + 1;
+    } else {
+      x--;
+      err += 2 * (y - x) + 1;
+    }
+  }
+  return out;
+}

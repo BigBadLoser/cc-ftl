@@ -1,0 +1,34 @@
+import { AllegianceC } from '../fight/components';
+import { AboardC, EmbarkOrderC, type Vehicle } from '../vehicles/components';
+import { AssignmentC, CrewC, DeadC, DraftedC, JobC, PositionC } from '../crew/components';
+import { isIncapacitated } from '../crew/helpers';
+import { shipById } from '../combat/shipQuery';
+import { shipIdOf } from '../regions';
+import type { Sim } from '../sim';
+import { stat } from '../stats';
+
+// Rank every eligible crew member by piloting skill (stable on id) and take the first.
+export function topPilot(sim: Sim, v: Vehicle, exclude?: ReadonlySet<number>): number {
+  const home = shipById(sim, v.homeShip);
+  const blocked = new Set<number>([...reserved(sim), ...(exclude ?? [])]);
+  const eligible = (id: number): boolean => {
+    const w = sim.world;
+    const pos = w.get(id, PositionC);
+    return (
+      !blocked.has(id) &&
+      !w.has(id, DeadC) &&
+      !w.has(id, DraftedC) &&
+      !w.has(id, EmbarkOrderC) &&
+      !w.has(id, AboardC) &&
+      w.get(w.get(id, AssignmentC)?.jobId ?? 0, JobC)?.kind !== 'passage' &&
+      !isIncapacitated(sim, id) &&
+      w.get(id, AllegianceC)?.faction === home?.faction &&
+      shipIdOf(sim, pos) === v.homeShip
+    );
+  };
+  const ranked = [...sim.world.query(CrewC, PositionC)]
+    .filter(eligible)
+    .map((id) => ({ id, skill: stat(sim, id, 'piloting') }))
+    .sort((a, b) => b.skill - a.skill || a.id - b.id);
+  return ranked[0]?.id ?? 0;
+}

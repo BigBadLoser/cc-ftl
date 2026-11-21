@@ -1,0 +1,6 @@
+{
+  "label": "dup",
+  "level": "rewrite",
+  "original": { "file": "src/sim/mining/pilot.ts", "fn": "pickPilot" },
+  "planted": { "target": "src/sim/mining/topPilot.ts", "fn": "topPilot" }
+}

@@ -1,0 +1,6 @@
+{
+  "label": "dup",
+  "level": "restructure",
+  "original": { "file": "src/sim/crew/eating.ts", "fn": "foodOn" },
+  "planted": { "target": "src/sim/crew/pickFood.ts", "fn": "pickFood" }
+}

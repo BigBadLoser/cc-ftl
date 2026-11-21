@@ -1,0 +1,6 @@
+{
+  "label": "dup",
+  "level": "rename",
+  "original": { "file": "src/ui/combat/panelPlace.ts", "fn": "placePanel" },
+  "planted": { "target": "src/ui/combat/tooltipPlace.ts", "fn": "placeTooltip" }
+}

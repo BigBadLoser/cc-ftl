@@ -1,0 +1,26 @@
+type Rect = { x0: number; y0: number; x1: number; y1: number };
+type Size = { w: number; h: number };
+
+// Slide the box around the anchor in small steps, keeping the first position that touches nothing; fall back to the least bad.
+export function floatBeside(anchor: Rect, size: Size, view: Size, obstacles: Rect[], gap = 12, margin = 8): { x: number; y: number } | null {
+  if (Math.max(anchor.x0, 0) >= Math.min(anchor.x1, view.w) || Math.max(anchor.y0, 0) >= Math.min(anchor.y1, view.h)) return null;
+  const touches = (x: number, y: number, r: Rect) => x < r.x1 && x + size.w > r.x0 && y < r.y1 && y + size.h > r.y0;
+  const inView = (x: number, y: number) => x >= margin && y >= margin && x + size.w <= view.w - margin && y + size.h <= view.h - margin;
+  const cx = Math.round((anchor.x0 + anchor.x1 - size.w) / 2), cy = Math.round((anchor.y0 + anchor.y1 - size.h) / 2);
+  let fallback: { x: number; y: number; n: number } | null = null;
+  for (let off = 0; off <= Math.max(view.w, view.h); off += 8) {
+    const probes = [
+      [anchor.x1 + gap, cy + off], [anchor.x1 + gap, cy - off],
+      [anchor.x0 - gap - size.w, cy + off], [anchor.x0 - gap - size.w, cy - off],
+      [cx + off, anchor.y0 - gap - size.h], [cx - off, anchor.y0 - gap - size.h],
+      [cx + off, anchor.y1 + gap], [cx - off, anchor.y1 + gap],
+    ] as const;
+    for (const [x, y] of probes) {
+      if (!inView(x, y) || touches(x, y, anchor)) continue;
+      const n = obstacles.filter((o) => touches(x, y, o)).length;
+      if (n === 0) return { x, y };
+      if (!fallback || n < fallback.n) fallback = { x, y, n };
+    }
+  }
+  return fallback ? { x: fallback.x, y: fallback.y } : { x: margin, y: margin };
+}

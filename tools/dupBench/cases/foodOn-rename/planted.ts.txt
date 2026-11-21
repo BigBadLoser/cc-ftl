@@ -1,0 +1,23 @@
+import { storagesOn } from '../combat/ammo';
+import { StorageC } from '../items/components';
+import type { Sim } from '../sim';
+import { foodsOf } from './eating';
+
+export function bestMealIn(world: Sim, vessel: number): string | null {
+  // Single sweep over every stack, remembering the best-ranked meal found.
+  const menu = foodsOf(world);
+  let top = menu.ranks.size;
+  for (const crate of storagesOn(world, vessel)) {
+    const contents = world.world.get(crate, StorageC)?.stacks;
+    if (!contents) continue;
+    for (const entry of contents) {
+      if (entry.count <= 0) continue;
+      const rank = menu.ranks.get(entry.item);
+      if (rank !== undefined && rank < top) {
+        if (rank === 0) return menu.ids[0] ?? null;
+        top = rank;
+      }
+    }
+  }
+  return menu.ids[top] ?? null;
+}

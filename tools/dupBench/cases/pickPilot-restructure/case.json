@@ -1,0 +1,6 @@
+{
+  "label": "dup",
+  "level": "restructure",
+  "original": { "file": "src/sim/mining/pilot.ts", "fn": "pickPilot" },
+  "planted": { "target": "src/sim/mining/bestPilot.ts", "fn": "bestAvailablePilot" }
+}

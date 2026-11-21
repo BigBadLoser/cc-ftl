@@ -1,0 +1,6 @@
+{
+  "label": "distinct",
+  "level": "lookalike",
+  "original": { "file": "src/sim/crew/spread.ts", "fn": "assignTiles" },
+  "planted": { "target": "src/sim/crew/pairBuddies.ts", "fn": "pairBuddies" }
+}

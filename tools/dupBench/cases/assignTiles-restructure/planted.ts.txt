@@ -1,0 +1,29 @@
+type Spot = { x: number; y: number };
+type Person = { id: number; x: number; y: number };
+
+const manhattan = (p: Person, s: Spot): number => Math.abs(p.x - s.x) + Math.abs(p.y - s.y);
+
+export function matchWalkersToSpots(crew: readonly Person[], spots: readonly Spot[]): Map<number, Spot> {
+  const result = new Map<number, Spot>();
+  if (!spots.length) return result;
+  const queue = [...crew].sort((p, q) => p.id - q.id);
+  let pass = 0;
+  while (queue.length) {
+    if (pass++ > 51) break;
+    const group = queue.splice(0, spots.length);
+    const scored = group.flatMap((person) => spots.map((s, n) => ({ dist: manhattan(person, s), person, n })));
+    scored.sort((p, q) => {
+      if (p.dist !== q.dist) return p.dist - q.dist;
+      if (p.person.id !== q.person.id) return p.person.id - q.person.id;
+      return p.n - q.n;
+    });
+    const taken = new Set<number>();
+    scored.forEach((c) => {
+      if (!result.has(c.person.id) && !taken.has(c.n)) {
+        result.set(c.person.id, spots[c.n] as Spot);
+        taken.add(c.n);
+      }
+    });
+  }
+  return result;
+}

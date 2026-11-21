@@ -1,0 +1,24 @@
+import type { Sim } from '../sim';
+import { TICK_HZ } from '../time';
+
+const GRUDGE_SEC = 600;
+
+// Grudges are timed records: when one has run out, it is removed and the pair's lock is released.
+export function expireGrudges(sim: Sim): void {
+  const span = GRUDGE_SEC * TICK_HZ;
+  for (const fk of Object.keys(sim.grudges.byCrew)) {
+    const row = sim.grudges.byCrew[+fk]!;
+    for (const tk of Object.keys(row)) {
+      const g = row[+tk]!;
+      let lapsed = false;
+      while (sim.tick - g.since >= span && g.stacks > 0) {
+        g.since += span;
+        lapsed = true;
+        g.stacks -= 1;
+        sim.grudges.locked.delete(`${fk}:${tk}`);
+      }
+      if (lapsed && g.stacks === 0 && !g.pinned) delete row[+tk];
+    }
+    if (Object.keys(row).length === 0) delete sim.grudges.byCrew[+fk];
+  }
+}

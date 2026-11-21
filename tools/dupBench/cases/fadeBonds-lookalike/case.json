@@ -1,0 +1,6 @@
+{
+  "label": "distinct",
+  "level": "lookalike",
+  "original": { "file": "src/sim/crew/bonds.ts", "fn": "fadeBonds" },
+  "planted": { "target": "src/sim/crew/expireGrudges.ts", "fn": "expireGrudges" }
+}

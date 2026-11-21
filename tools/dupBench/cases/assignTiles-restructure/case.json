@@ -1,0 +1,6 @@
+{
+  "label": "dup",
+  "level": "restructure",
+  "original": { "file": "src/sim/crew/spread.ts", "fn": "assignTiles" },
+  "planted": { "target": "src/sim/crew/matchSpots.ts", "fn": "matchWalkersToSpots" }
+}

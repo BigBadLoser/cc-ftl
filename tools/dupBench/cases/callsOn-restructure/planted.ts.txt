@@ -1,0 +1,37 @@
+import { isEmergency } from '../ai/emergency';
+import { shipIdOf } from '../regions';
+import type { Sim } from '../sim';
+import { JobC, type Job, type WorkCategory } from './components';
+
+interface Calls {
+  emergencies: Set<WorkCategory>;
+  consoles: Job[];
+}
+
+const memo = new WeakMap<Sim, { tick: number; byShip: Map<number, Calls> }>();
+
+function fresh(sim: Sim): Map<number, Calls> {
+  const byShip = new Map<number, Calls>();
+  const bucketFor = (ship: number): Calls => {
+    const found = byShip.get(ship);
+    if (found) return found;
+    const made: Calls = { emergencies: new Set(), consoles: [] };
+    byShip.set(ship, made);
+    return made;
+  };
+  [...sim.world.query(JobC)]
+    .map((id) => sim.world.get(id, JobC) as Job)
+    .forEach((j) => {
+      if (isEmergency(j)) bucketFor(shipIdOf(sim, j)).emergencies.add(j.category);
+      else if (j.kind === 'operate' && j.reservedBy === 0) bucketFor(shipIdOf(sim, j)).consoles.push(j);
+    });
+  return byShip;
+}
+
+function pendingCalls(sim: Sim, ship: number): Calls | undefined {
+  const hit = memo.get(sim);
+  if (hit && hit.tick === sim.tick) return hit.byShip.get(ship);
+  const next = { tick: sim.tick, byShip: fresh(sim) };
+  memo.set(sim, next);
+  return next.byShip.get(ship);
+}

@@ -1,0 +1,6 @@
+{
+  "label": "dup",
+  "level": "restructure",
+  "original": { "file": "src/ui/combat/panelPlace.ts", "fn": "placePanel" },
+  "planted": { "target": "src/ui/combat/popupPlace.ts", "fn": "placePopup" }
+}

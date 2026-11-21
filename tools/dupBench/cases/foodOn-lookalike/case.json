@@ -1,0 +1,6 @@
+{
+  "label": "distinct",
+  "level": "lookalike",
+  "original": { "file": "src/sim/crew/eating.ts", "fn": "foodOn" },
+  "planted": { "target": "src/sim/crew/ammoOn.ts", "fn": "bestAmmoOn" }
+}

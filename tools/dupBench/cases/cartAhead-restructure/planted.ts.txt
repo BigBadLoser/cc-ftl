@@ -1,0 +1,25 @@
+import { CART_GAP, angleOf, orthoSteps, type CartPose, type Pt } from './cartPose';
+
+function bendIndexes(t: readonly Pt[]): number[] {
+  const turns = t.slice(1, -1).map((_, k) => k + 1).filter((i) => {
+    const a = { x: t[i]!.x - t[i - 1]!.x, y: t[i]!.y - t[i - 1]!.y };
+    const b = { x: t[i + 1]!.x - t[i]!.x, y: t[i + 1]!.y - t[i]!.y };
+    return a.x !== b.x || a.y !== b.y;
+  });
+  return [0, ...turns, t.length - 1];
+}
+
+export function railPose(tiles: readonly Pt[], progress: number): CartPose | null {
+  const { tiles: t, first } = orthoSteps(tiles);
+  if (t.length >= 2) {
+    const ends = bendIndexes(t);
+    const m = first * Math.min(1, Math.max(0, progress)) + CART_GAP;
+    const r = Math.min(ends.findIndex((e, i) => i > 0 && m < e) - 1, ends.length - 2);
+    const run = r < 0 ? ends.length - 2 : r;
+    const a = ends[run]!, b = ends[run + 1]!;
+    const c = Math.min(b - 0.5, Math.max(a + 0.5, m));
+    const dx = t[a + 1]!.x - t[a]!.x, dy = t[a + 1]!.y - t[a]!.y;
+    return { x: t[a]!.x + dx * (c - a), y: t[a]!.y + dy * (c - a), angle: angleOf(dx, dy) };
+  }
+  return null;
+}

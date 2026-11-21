@@ -1,0 +1,6 @@
+{
+  "label": "dup",
+  "level": "rewrite",
+  "original": { "file": "src/render/cartPose.ts", "fn": "cartAhead" },
+  "planted": { "target": "src/render/segmentCart.ts", "fn": "segmentCart" }
+}

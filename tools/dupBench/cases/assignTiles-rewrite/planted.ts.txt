@@ -1,0 +1,31 @@
+type Spot = { x: number; y: number };
+type Person = { id: number; x: number; y: number };
+
+// Repeatedly take the globally closest remaining (person, spot) pair, so nobody sorts the whole pair list.
+export function closestFirstSpots(crew: readonly Person[], spots: readonly Spot[]): Map<number, Spot> {
+  const result = new Map<number, Spot>();
+  if (spots.length === 0) return result;
+  const ids = crew.map((c) => c.id).sort((a, b) => a - b);
+  const byId = new Map(crew.map((c) => [c.id, c] as const));
+  for (let from = 0; from < ids.length; from += spots.length) {
+    const group = ids.slice(from, from + spots.length);
+    const freeSpots = new Set(spots.keys());
+    const waiting = new Set(group);
+    while (waiting.size > 0) {
+      let best: { d: number; id: number; n: number } | null = null;
+      for (const id of waiting) {
+        const p = byId.get(id) as Person;
+        for (const n of freeSpots) {
+          const s = spots[n] as Spot;
+          const d = Math.abs(p.x - s.x) + Math.abs(p.y - s.y);
+          if (!best || d < best.d || (d === best.d && (id < best.id || (id === best.id && n < best.n)))) best = { d, id, n };
+        }
+      }
+      if (!best) break;
+      result.set(best.id, spots[best.n] as Spot);
+      waiting.delete(best.id);
+      freeSpots.delete(best.n);
+    }
+  }
+  return result;
+}

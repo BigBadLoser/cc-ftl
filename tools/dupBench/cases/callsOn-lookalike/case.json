@@ -1,0 +1,6 @@
+{
+  "label": "distinct",
+  "level": "lookalike",
+  "original": { "file": "src/sim/crew/onCall.ts", "fn": "callsOn" },
+  "planted": { "target": "src/sim/crew/tallyOn.ts", "fn": "tallyOn" }
+}

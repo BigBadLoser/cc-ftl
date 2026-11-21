@@ -1,0 +1,6 @@
+{
+  "label": "distinct",
+  "level": "lookalike",
+  "original": { "file": "src/ui/combat/panelPlace.ts", "fn": "placePanel" },
+  "planted": { "target": "src/ui/combat/arrowPlace.ts", "fn": "placeArrow" }
+}

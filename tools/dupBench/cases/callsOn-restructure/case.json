@@ -1,0 +1,6 @@
+{
+  "label": "dup",
+  "level": "restructure",
+  "original": { "file": "src/sim/crew/onCall.ts", "fn": "callsOn" },
+  "planted": { "target": "src/sim/crew/pendingCalls.ts", "fn": "pendingCalls" }
+}

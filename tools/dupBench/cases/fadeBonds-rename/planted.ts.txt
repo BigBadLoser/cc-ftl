@@ -1,0 +1,23 @@
+import type { Sim } from '../sim';
+import { TICK_HZ } from '../time';
+import { BOND_FADE_SEC, setScore } from './bonds';
+
+// Opinions drift back toward neutral, one point per fade period.
+export function decayRapport(world: Sim): void {
+  const period = BOND_FADE_SEC * TICK_HZ;
+  for (const from of Object.keys(world.bonds.opinions)) {
+    const table = world.bonds.opinions[+from]!;
+    for (const to of Object.keys(table)) {
+      const entry = table[+to]!;
+      let changed = false;
+      while (world.tick - entry.touched >= period) {
+        entry.touched += period;
+        changed = true;
+        const next = entry.score > 0 ? Math.max(0, entry.score - 1) : Math.min(0, entry.score + 1);
+        setScore(world, +from, +to, entry, next);
+      }
+      if (changed && entry.score === 0 && !entry.kind) delete table[+to]; // nothing left to remember
+    }
+    if (Object.keys(table).length === 0) delete world.bonds.opinions[+from];
+  }
+}
