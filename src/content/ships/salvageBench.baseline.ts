@@ -1,7 +1,7 @@
 import type { BenchOpts } from './salvageBench';
 
 /**
- * The throughput baseline of the salvage bench (docs/ARCHITECTURE.md "Throughput check", #286): scrap units brought home in 2 game hours, per variant
+ * The throughput baseline of the salvage bench (docs/ARCHITECTURE.md "Throughput bench", #286): scrap units brought home in 2 game hours, per variant
  * and seed (1, 2, 3), and stripping jobs done. Re-based on slice 3's staging (an away site's staging zone, gathered hauls, crate loading) with the
  * bench's own ration locker (`stockRations`): the old salvage-team numbers (main 6108953: 6 crew 720/702/805, 4 crew 841/926/766, airlock 0) no longer
  * apply. Re-based again for the rest retune (#278): crew stay awake about 10 times longer, so fewer sleep trips and more throughput (the slice 3

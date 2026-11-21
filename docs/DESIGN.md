@@ -771,7 +771,7 @@ Built in slices 2a and 2b (#295); ARCHITECTURE.md "Away sites and the air drive"
   drop), so the first trip already has a hauling seat.
 - The panel's "no shuttle" and "no crew" come from the site (no free shuttle with suits; passages open but untaken for a while).
 - The wreck stays until the party has left its side, then goes as today.
-- **Throughput.** Scrap brought home per game hour is held to the bench's baseline (ARCHITECTURE.md "Away sites and the air drive", "Throughput check"). With staging (slice 3) it was re-based: 6 crew bring home about 380 units a game hour (the salvage teams: about 370), and more crew is never slower.
+- **Throughput.** Scrap brought home per game hour is held to the bench's baseline (ARCHITECTURE.md "Away sites and the air drive", "Throughput bench"). With staging (slice 3) it was re-based: 6 crew bring home about 380 units a game hour (the salvage teams: about 370), and more crew is never slower.
 
 #### How the general design covers each salvage special case
 

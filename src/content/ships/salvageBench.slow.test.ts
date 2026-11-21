@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { runBench, setupBench } from './salvageBench';
 
 /**
- * Guard for `salvageBench.soak.test.ts` (the salvage throughput bench, docs/ARCHITECTURE.md "Throughput check", #286): the same short smoke
+ * Guard for `salvageBench.soak.test.ts` (the salvage throughput bench, docs/ARCHITECTURE.md "Throughput bench", #286): the same short smoke
  * on the bench wreck, 3 game minutes instead of 5. The soak file keeps the 5-minute smoke and the 2-game-hour runs (`SALVAGE_BENCH=1`).
  */
 describe('salvage throughput bench (guard)', () => {

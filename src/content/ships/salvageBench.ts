@@ -1,5 +1,5 @@
 /**
- * The salvage throughput bench (docs/ARCHITECTURE.md "Throughput check", #286): the starter ship with 6 (or 4) crew, one shuttle (3 suits),
+ * The salvage throughput bench (docs/ARCHITECTURE.md "Throughput bench", #286): the starter ship with 6 (or 4) crew, one shuttle (3 suits),
  * a sealed wreck with or without an airlock, and nothing else to do at home. `play` runs it; `scrapHome` is what is measured. Tooling and
  * the slow test read it; salvage's own code is not touched.
  */
