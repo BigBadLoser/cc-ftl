@@ -41,3 +41,28 @@ export function f2(c: Ctx): Piece[] {
   }
   return out;
 }
+
+/**
+ * F3, a farm floor deep enough for two rows (a room wider than deep, its door on a long wall): the large beds half on the
+ * back wall and half on the front, lying along them, each pair facing the other over the aisle between; spread evenly,
+ * the front ones clear of the door (#581).
+ */
+export function f3(c: Ctx): Piece[] {
+  const { w, h, d } = c, n = c.need.filter((m) => m === HYL).length, back = Math.ceil(n / 2), front = n - back;
+  const at = (m: number, i: number): number => Math.round(((i + 0.5) * w) / m - 1.5);
+  const out: Piece[] = [];
+  for (let i = 0; i < back; i++) out.push(P(HYL, at(back, i), 0, 0));
+  for (let i = 0; i < front; i++) {
+    let x = at(front, i);
+    // (Slide off the door's column, toward the room's middle side of it where that keeps inside the walls.)
+    if (d >= x && d <= x + 2) x = d - x <= 1 && d + 1 + 3 <= w ? d + 1 : d - 3 >= 0 ? d - 3 : d + 1;
+    out.push(P(HYL, x, h - 2, 2));
+  }
+  return out;
+}
+
+/** Whether F3 suits a room: its large beds two to a wall with two tiles between, a row to each long wall and an aisle. */
+export const f3Fits = (need: readonly string[], r: { w: number; h: number }): boolean => {
+  const n = need.filter((m) => m === HYL).length;
+  return n > 0 && n === need.length && r.h >= 5 && Math.ceil(n / 2) * 5 - 2 + 2 <= r.w;
+};
