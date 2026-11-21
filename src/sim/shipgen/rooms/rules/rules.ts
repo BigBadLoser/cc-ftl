@@ -16,6 +16,7 @@ import { laid, messTables, tablesClear } from './mess';
 import { co, cu, gy, hl, mk, pz } from './social';
 import { bg, ore, pa, qm, shelfSlots } from './stores';
 import { bk, lb, rf, rf2, rf2Fits, su, ws } from './works';
+import { life, lifeFits, shieldRoom, shieldsFit, vault, vaultFits, ward, wardFits } from './toSize';
 
 /** What a rule is given: the room (frame), the planned modules, and the module defs. */
 /**
@@ -312,6 +313,7 @@ export const RULES: Partial<Record<RoomRole, readonly RuleArrangement[]>> = {
     { name: 'GY gym, sparring droids in a row', weight: 1, when: (n, r) => n.includes(EX) && r.h >= 4 && r.w >= 3 * count(n, EX), rule: gy },
   ],
   medbay: [
+    { name: 'D4 ward to size, beds along the back wall, lockers down the sides', weight: 50, when: wardFits, rule: ward },
     { name: 'D1 beds along a wall', weight: 1, rule: d1 },
     { name: 'D2 bays, pod in the middle', weight: 1, when: (_, r) => r.w >= 9, rule: d2 },
     { name: 'D3 beds down the long wall', weight: 1, when: (_, r) => r.h > r.w, rule: d3 },
@@ -322,7 +324,7 @@ export const RULES: Partial<Record<RoomRole, readonly RuleArrangement[]>> = {
     { name: 'G2 two rows of columns', weight: 1, rule: g2 },
     { name: 'G3 guns in the corners', weight: 1, when: (n, r) => n.filter((m) => r.defs[m]?.weapon || r.defs[m]?.pointDefense).length <= 4, rule: g3 },
   ],
-  shields: [{ name: 'S1 gens, batteries between', weight: 1, rule: (c) => spread(c, c.need.filter((m) => c.defs[m]?.shieldGen), false) }],
+  shields: [{ name: 'S2 shield room to size, battery banks down the sides', weight: 50, when: shieldsFit, rule: shieldRoom }, { name: 'S1 gens, batteries between', weight: 1, rule: (c) => spread(c, c.need.filter((m) => c.defs[m]?.shieldGen), false) }],
   farm: [{ name: 'F1 greenhouse: beds on end down both long walls', weight: 1, when: (_, r) => r.h > r.w && r.w >= 4, rule: f1 }],
   bridge: [
     { name: "CO chief's office, desk and planters", weight: 1, when: (n, r) => !n.includes('module.helm') && !n.some((m) => OPS.includes(m)) && r.w >= 5 && r.w <= 10 && r.h >= 4 && r.h <= 6, rule: co },
@@ -339,8 +341,9 @@ export const RULES: Partial<Record<RoomRole, readonly RuleArrangement[]>> = {
     when: (n, r) => n.length > 0 && (n.every((m) => m === OB) || n.every((m) => m === OBL)) && Math.min(r.w, r.h) >= 5 && Math.max(r.w, r.h) >= n.length + 1,
     rule: ore,
   }],
-  core: [{ name: 'CR core vault, the AI core between its point defence', weight: 1, when: (n, r) => count(n, AI) === 1 && r.w >= 3 * n.length - 1, rule: core }],
+  core: [{ name: 'C2 core vault to size, consoles either side, racks down the sides', weight: 50, when: vaultFits, rule: vault }, { name: 'CR core vault, the AI core between its point defence', weight: 1, when: (n, r) => count(n, AI) === 1 && r.w >= 3 * n.length - 1, rule: core }],
   plant: [
+    { name: 'L2 life support to size, tanks down the sides', weight: 50, when: lifeFits, rule: life },
     { name: 'BA battery room, the cells in a bank round the console', weight: 1, when: (n, r) => n.includes(BT) && r.w >= 3 && r.h >= 3, rule: bank },
     { name: 'MR machine room, the machines on the back wall', weight: 1, when: machinesFit, rule: machines },
   ],
