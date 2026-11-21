@@ -14,6 +14,8 @@ Install Chromium using the [browser tools setup](../README.md#browser-tools) bef
 | Same on a built scenario (crew AI) | `npm run profile:sim -- --scenario storm --seed 1` (`--scenario list` shows them) |
 | Use the shared browser preset in the headless sim | `npm run profile:sim -- --scenario preset:log --seed 1` |
 | Baseline table for every scenario and seed | `npm run profile:baseline -- --seeds 1,2,3` |
+| Cost per window of ticks over a long run (one label) | `npm run profile:windows -- --scenario colony --ticks 30000 --window 2500 --label sim/schedule` |
+| Profile a save | `npm run profile:dump -- --save save.json` |
 | Record or compare crew decisions | `npm run ai:diff -- --record ...`, `npm run ai:diff -- --a x.jsonl --b y.jsonl` |
 | Whole game in headless Chromium | `npm run profile -- --scenario log --seconds 20 --speed 3 --seed 1` |
 | Colony baseline (no scenario) | `npm run profile -- --seconds 20` |

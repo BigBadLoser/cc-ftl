@@ -83,6 +83,7 @@ costs an unneeded engine.
 | `scrapGrammars.ts` | salvage composition (heap, raft, chain), welding, improvised extras |
 | `salvage.ts` | cuts at seams, corner damage, outline ports, `freeze` |
 | `fit.ts`, `layout.ts`, `validate.ts`, `metrics.ts` | module placement, the layout model, validation, metrics |
+| `ruin*.ts`, `fitted.ts`, `openDocks.ts`, `thinWalls.ts`, `markings.ts`, `rooms/` | derelict ruins, the fitted layout and its template, dock openings, thin-wall rules, hull markings, and the room builders the fit-out and stations share |
 | `topoNavy.ts`, `topoDrone.ts`, `topoParts.ts`, `topoSalvage.ts` | the older v2 topologies. Only factions without hull families use them; `topoNavy` still supplies `pickNose`, `pairUp` and `nose` |
 
 `tools/shipgen/`:
@@ -90,6 +91,7 @@ costs an unneeded engine.
 - `draw.ts`: sheet layout, the detail view, diversity metrics, and the `faction:family` filter.
 - `views.ts`: the silhouette, assembly and structure views.
 - `live.ts`, `index.html`: the browser viewer.
+- `labels.ts` (the `labels` view), `ruinView.ts` (derelict ruins), `assemblyViews.ts`, `assemblySheets.js` (station assembly sheets), `bench.js` and `sizing.js` (station timing and room-sizing reports); see `docs/STATION_ASSEMBLY.md`.
 - `templates.ts`: sheets of hand-drawn templates (starter ships and their variants), the iso view and the board.
 - `templateDraw.py`: a drawing aid for hand-drawn templates (rooms, outlines, doors, beams, containers, modules).
 - `starters/`: the starter ship variants (#241): `<ship>.py` draws the current round, `<ship>.ts` is the generated variant
@@ -249,6 +251,5 @@ Still open, renumbered:
 - **Shared files that need small, additive, merge-friendly edits:**
   - `arranger.ts`, `blocks.ts`, `hullFill.ts`, `profile.ts`, `navyLayouts.ts` (the GRAMMARS table);
   - `types.ts` (union additions, such as a civil grammar id);
-  - `scrapBlocks.ts` (the civil donor builders: the civilian work may move them into shared civil block files
-    and re-export them, so scrapper donors keep working).
+  - the civil donor builders (once `scrapBlocks.ts`; they now live in `civilBlocks.ts`, which scrapper donors use).
 - In shared files, add rather than rewrite, and keep exports stable.
