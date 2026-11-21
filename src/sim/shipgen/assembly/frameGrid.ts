@@ -38,11 +38,11 @@ export function closeFrame(fr: Frame, { g, hall, docks, paint }: FrameGrid): voi
   // The spine to the stern, or on a lane hull to the cross corridor, a corridor down each side hull from there to its engine room.
   for (let tx = xBr + 1; tx < (lane ? dockAt + CW : W); tx++) for (let ty = -1; ty <= 1; ty++) if (inside(tx, ty)) g.set(ox + tx, ty, hall);
   if (lane) paint(hall, dockAt + CW, xS + 1, (y) => Math.abs(Math.abs(y) - lane.yc) <= 1);
-  // (Its alcoves: side hull too shallow or short for a room, open to the corridor out to the hull, a wall column kept
-  // beside each room; each a hall of its own, a vending machine in it and, with the floor, a bench.)
+  // (Its alcoves: side hull too shallow or short for a room, open to the corridor out to the hull, up to the
+  // rooms beside (their one wall between); each a hall of its own, a vending machine in it and, with the floor, a bench.)
   if (lane) {
     const runs = outboardRuns(fr), cols: number[] = [];
-    for (let tx = dockAt + CW + 1; tx <= xS; tx++) if (!runs.some(([a, b]) => tx >= a - 1 && tx <= b + 1)) cols.push(tx);
+    for (let tx = dockAt + CW + 1; tx <= xS; tx++) if (!runs.some(([a, b]) => tx >= a && tx <= b)) cols.push(tx);
     const rowsAt = (tx: number): number => Math.max(0, fr.outer(tx) - 1 - (lane.yc + 2) + 1);
     for (let i = 0; i < cols.length; ) {
       let j = i + 1;
