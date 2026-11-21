@@ -302,11 +302,42 @@ eyes and the main organs are parts, fingers are not.
   the part; a bad failure destroys it. Surgery never kills outright, but bleeding afterwards can.
 - **Implants are items** (`ItemDef.implant`: slot, tier, modifiers; the weapon-upgrade pattern), one per part.
   Replacements: cyber arms, legs, eyes, lungs, heart. Augments that keep the flesh part: neural chip (brain), spine
-  reinforcement, dermal armour (torso).
+  reinforcement, dermal armour (the dermal slot, see the table).
   - **Tiers:** Mk I a crude prosthetic (about 80% of flesh), Mk II flesh plus a little, Mk III clearly better; unique
     implants are found only, with special effects. Basic ones are researched (#380), higher tiers bought or found.
   - **Implant load** (summed cyber points) measures "heavily augmented" for the zealot rule (`augmentedCrew()`).
     Zealot crews spawn as humans with implants and `species.augmented` is retired.
+- **Implant table (first pass, draft for the user to edit, 2026-11-21).** Numbers are starting points for tuning.
+  Capacity values are the part's contribution against flesh = 1.0. Load is the implant's cyber points.
+  Slots are the ten parts plus one **dermal** slot (skin, body-wide, no flesh part).
+
+  | Implant | Slot | Mk I | Mk II | Mk III | Load I/II/III |
+  |---|---|---|---|---|---|
+  | Cyber arm | arm (L or R) | manipulation 0.8 | 1.0, melee +1 | 1.2, melee +2, carry +2 | 1 / 2 / 3 |
+  | Cyber leg | leg (L or R) | moving 0.8 | 1.0 | 1.15 | 1 / 2 / 3 |
+  | Cyber eye | eye (L or R) | sight 0.8 | 1.0, gunnery +1 (a pair: +2) | 1.1, no darkness penalty | 1 / 2 / 3 |
+  | Cyber lungs | lungs | breathing 0.8 | 1.0, suit air x1.25 | 1.0, suit air x1.6, no thin-air work penalty | 1 / 2 / 3 |
+  | Cyber heart | heart | blood pumping 0.8 | 1.0, bleed-out x1.5 | 1.0, bleed-out x2, healing x1.5 | 1 / 2 / 3 |
+  | Spinal frame | spine | moving 0.8 (restores a destroyed spine) | 1.0, carry +2 | - | 2 / 3 |
+  | Neural chip | brain (augment) | +1 to one skill (one item per skill) | +2 to one skill | co-processor: +1 every skill, work x1.05 | 1 / 2 / 3 |
+  | Reflex booster | spine (augment) | - | move x1.1, melee +1 | move x1.15, melee +2 | - / 2 / 3 |
+  | Dermal armour | dermal | armor 0.05 | armor 0.1 | armor 0.15 | 1 / 2 / 3 |
+
+  - **No cyber brain.** A destroyed brain is death. Augments sit beside the flesh part; a replacement takes its place
+    (fitting one onto a healthy part removes the flesh, so it is a choice).
+  - **Where they come from.** Mk I of the arm, leg, eye, lungs, heart and neural chip: researched, then made at the
+    fabricator from parts and components. Mk II: bought at research stations and corporation stations (Helix
+    Biosystems' speciality), and researched later. Mk III: black market and found. Reflex booster and dermal armour
+    Mk II-III are military: contraband, and carried by navy and mercenary crews.
+  - **Unique implants (found only, examples):** *Halcyon Heart* (bleed-out x4, healing x2), *Ghost Eye* (sees enemy
+    crew through roofs within a few tiles), *Grip Hands* (a cyber arm, work x1.3 on EVA). Zealot relics drop from
+    zealot crews.
+  - **Heavily augmented** = load 6 or more. Zealots trade on standing or on enough heavily augmented crew. Zealot crews
+    spawn with a random load of 4-9.
+  - **Ion:** an ion hit on a crew member shuts every implant down for about 2 s per load point, capped (a shut-down
+    replacement counts as a destroyed part meanwhile; augments just stop).
+  - **Moods:** Purist -4 per implant on themselves, -2 near crew at load 6+; Chrome +2 per load point up to +8,
+    and -3 while at load 0. Anyone: "lost a limb" -10 fading over two days.
 - **Trade-offs.**
   - **Trait moods:** a *Purist* trait hates implants on themselves and dislikes crew with many; a *Chrome* trait is
     proud of theirs and wants more. Losing a part is a mood hit for a while for anyone.
