@@ -13,7 +13,7 @@ import { ruin } from '../../sim/shipgen/ruin';
 import type { RuinCause, RuinResult } from '../../sim/shipgen/ruinTypes';
 import { content } from '../index';
 import { factions } from './index';
-import manifest from '../../../public/assets/1x/manifest.json';
+import { shippedManifest } from '../../../test/support/manifest';
 
 const defs = content.modules as Record<string, ModuleDef>;
 const FACTIONS = ['faction.navy', 'faction.civilian', 'faction.scrapper'] as const;
@@ -175,7 +175,7 @@ describe('derelict ruin pass', () => {
   });
 
   it('gives a ruined floor light its grate art, which the sprite manifest has (its art id is not its def id)', () => {
-    const assets = manifest.assets as Record<string, unknown>;
+    const assets = shippedManifest().assets as Record<string, unknown>;
     let lights = 0;
     for (const f of FACTIONS) for (const cause of CAUSES) for (const seed of [1, 2, 3, 4]) for (const m of ruined(f, seed, 0.9, cause).meta.modules) {
       if (m.def !== 'module.light' || !m.art) continue;

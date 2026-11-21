@@ -12,12 +12,15 @@ import json
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from sprites import manifest_io  # noqa: E402
+
 from PIL import Image, ImageDraw, ImageFont
 
 src, out, spec = Path(sys.argv[1]), sys.argv[2], sys.argv[3]
 G = int(sys.argv[4]) if len(sys.argv) > 4 else 4
 SC = int(sys.argv[5]) if len(sys.argv) > 5 else 3
-man = json.loads((src / "manifest.json").read_text())
+man = manifest_io.read_manifest(src)
 A, SH = man["assets"], man["sheets"]
 TW, TH = man["tile"]["w"], man["tile"]["h"]
 # src/render/roofArt.ts SCHEMES (P, S)

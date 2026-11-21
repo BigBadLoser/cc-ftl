@@ -14,6 +14,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from sprites import roof_layout as rl  # noqa: E402
+from sprites import manifest_io  # noqa: E402
 from sprites import roof_livery as lv  # noqa: E402
 
 PATCH, INSET = (2, 1, 0, 1), (1, 2, 2, 0)                     # roof_variants / roofArt.ts
@@ -68,7 +69,7 @@ def rgb(h):
 
 class Atlas:
     def __init__(self, root):
-        self.root, self.m, self.img = Path(root), json.loads((Path(root) / "manifest.json").read_text()), {}
+        self.root, self.m, self.img = Path(root), manifest_io.read_manifest(Path(root)), {}
 
     def get(self, aid):
         a = self.m["assets"].get(aid)

@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { newGame } from '../sim/newGame';
 import { content } from '../content';
 import { iconOf } from './starmapSnapshot';
-import manifest from '../../public/assets/1x/manifest.json';
+import { shippedManifest } from '../../test/support/manifest';
 
-const frames: Record<string, unknown> = manifest.assets;
+const frames: Record<string, unknown> = shippedManifest().assets;
 
 describe('starmap structure icons', () => {
   const sim = newGame(1, content);

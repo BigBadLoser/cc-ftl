@@ -14,6 +14,7 @@ from PIL import Image, ImageDraw
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT / "tools/blender"))
 from sprites import compose  # noqa: E402
+from sprites import manifest_io  # noqa: E402
 
 BG = (14, 17, 22)
 HUMAN = {"team.skin": (232, 190, 150), "team.hair": (70, 48, 34), "team.cloth": (60, 96, 150), "team.accent": (200, 150, 40)}
@@ -30,7 +31,7 @@ ALONG = {0: (1, 0), 1: (0, 1), 2: (-1, 0), 3: (0, -1)}
 class Assets:
     def __init__(self, d):
         self.d = Path(d)
-        self.m = json.loads((self.d / "manifest.json").read_text())
+        self.m = manifest_io.read_manifest(self.d)
         self._img = {}
 
     def img(self, rel):

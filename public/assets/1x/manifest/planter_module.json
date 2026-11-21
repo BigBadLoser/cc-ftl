@@ -1,0 +1,12 @@
+{
+"sheets":{
+"planter_module":{"image":"sprites/planter_module.png"}
+},
+"assets":{
+"module.planter":{"kind":"static","sheet":"planter_module","frame":{"x":1,"y":1,"w":44,"h":45},"anchor":{"x":22,"y":39},"footprint":[1,1]},
+"module.planter.r0":{"kind":"static","sheet":"planter_module","frame":{"x":46,"y":1,"w":44,"h":45},"anchor":{"x":22,"y":39},"footprint":[1,1]},
+"module.planter.r1":{"kind":"static","sheet":"planter_module","frame":{"x":183,"y":1,"w":46,"h":39},"anchor":{"x":22,"y":33},"footprint":[1,1]},
+"module.planter.r2":{"kind":"static","sheet":"planter_module","frame":{"x":138,"y":1,"w":44,"h":43},"anchor":{"x":22,"y":37},"footprint":[1,1]},
+"module.planter.r3":{"kind":"static","sheet":"planter_module","frame":{"x":91,"y":1,"w":46,"h":44},"anchor":{"x":24,"y":38},"footprint":[1,1]}
+}
+}

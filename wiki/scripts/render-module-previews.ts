@@ -20,10 +20,11 @@ import { layerKey } from '../../src/render/moduleArt.ts';
 import { steady } from '../../src/render/vehicleBayArt.ts';
 import { previewGeometry } from '../../src/ui/buildCatalog.ts';
 import type { Manifest, StaticAsset } from '../../src/render/assets/manifest.ts';
+import { readManifest } from '../../src/render/assets/manifestParts.ts';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const assetRoot = resolve(root, '../public/assets/1x');
-const manifest = JSON.parse(await readFile(join(assetRoot, 'manifest.json'), 'utf8')) as Manifest;
+const manifest: Manifest = await readManifest(`${assetRoot}/manifest.json`, async (file) => JSON.parse(await readFile(file, 'utf8')) as unknown);
 const mods: Record<string, ModuleDef> = { ...baseModules, ...tierModules };
 const dest = join(root, 'static/generated/previews');
 const urlPrefix = '/cc-ftl/wiki/generated/previews/';

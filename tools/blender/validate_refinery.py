@@ -1,8 +1,12 @@
 """Audit the exported refinery's actual atlas pixels, dimensions and handoff data."""
 import argparse,hashlib,json,math
+import sys
 from pathlib import Path
 import numpy as np
 from PIL import Image
+
+sys.path.insert(0,str(Path(__file__).resolve().parent))
+from sprites import manifest_io
 
 
 def load(path): return json.loads(path.read_text())
@@ -12,7 +16,7 @@ def validate(package,pipeline):
     m=load(package/'manifest.fragment.json');settings=load(package/'settings.json')
     integration=load(package/'integration.json');build=load(package/'build.json')
     assert build['complete'] and build['uniqueFrames']==24 and build['manifestEntries']==31
-    game=load(pipeline/'public/assets/1x/manifest.json')
+    game=manifest_io.read_manifest(pipeline/'public/assets/1x')
     assert m['tile']==game['tile']=={'w':64,'h':32}
     assert all(m[key]==game[key] for key in ('version','heights','keyColors'))
     assert settings['blenderVersion'].startswith(settings['pinnedBlender']) and settings['pinnedBlender']=='4.2.9'

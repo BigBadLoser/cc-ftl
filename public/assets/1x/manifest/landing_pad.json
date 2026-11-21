@@ -1,0 +1,11 @@
+{
+"sheets":{
+"landing_pad":{"image":"sprites/landing_pad.png","glow":"sprites/landing_pad.glow.png"}
+},
+"assets":{
+"module.landing_pad.r0":{"kind":"static","sheet":"landing_pad","frame":{"x":1,"y":1,"w":542,"h":280},"anchor":{"x":271,"y":272},"footprint":[9,9],"glow":true},
+"module.landing_pad.r1":{"kind":"static","sheet":"landing_pad","frame":{"x":544,"y":1,"w":542,"h":280},"anchor":{"x":271,"y":272},"footprint":[9,9],"glow":true},
+"module.landing_pad.r2":{"kind":"static","sheet":"landing_pad","frame":{"x":1087,"y":1,"w":542,"h":280},"anchor":{"x":271,"y":272},"footprint":[9,9],"glow":true},
+"module.landing_pad.r3":{"kind":"static","sheet":"landing_pad","frame":{"x":1630,"y":1,"w":542,"h":280},"anchor":{"x":271,"y":272},"footprint":[9,9],"glow":true}
+}
+}

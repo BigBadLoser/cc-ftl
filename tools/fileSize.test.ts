@@ -13,7 +13,7 @@ const BASELINE: Record<string, number> = {
   'src/app/controller.ts': 492,
   'src/content/modules.ts': 635,
   'src/main.ts': 527,
-  'src/render/assets/loader.ts': 515,
+  'src/render/assets/loader.ts': 510,
   'src/render/crewView.ts': 526,
   'src/render/gridView.ts': 577,
   'src/render/moduleArt.ts': 421,

@@ -12,11 +12,12 @@ from PIL import Image, ImageDraw
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from sprites import compose  # noqa: E402
+from sprites import manifest_io  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[3]
 W, C, OUT = Path(sys.argv[1]), Path(sys.argv[2]), Path(sys.argv[3])
 A = Path(sys.argv[4]) if len(sys.argv) > 4 else ROOT / "public/assets/1x"      # asset dir with the airlock sheet (a scratch build)
-MAN = json.loads((A / "manifest.json").read_text())
+MAN = manifest_io.read_manifest(A)
 SHEET = np.array(Image.open(A / "sprites/airlock.png").convert("RGBA"))
 GLOW = np.array(Image.open(A / "sprites/airlock.glow.png").convert("RGBA"))
 Z_PX = 16 * math.sqrt(6)

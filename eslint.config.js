@@ -132,9 +132,9 @@ export default tseslint.config(
   },
   {
     // The sim-only test helpers serve src/sim tests, so they follow the sim's import boundary; only content.ts and the scenario fixtures in
-    // test/support/fixtures (used by content tests) may reach content.
+    // test/support/fixtures (used by content tests) may reach content; manifest.ts reads the shipped art manifest for render, content and wiki tests.
     files: ['test/support/**/*.ts'],
-    ignores: ['test/support/content.ts', 'test/support/scenario.ts', 'test/support/content.test.ts', 'test/support/fixtures/**'],
+    ignores: ['test/support/content.ts', 'test/support/manifest.ts', 'test/support/scenario.ts', 'test/support/content.test.ts', 'test/support/fixtures/**'],
     rules: noImports(pixiNames, [...pixiPat, ...sveltePat, ...pat(['content', 'render', 'ui', 'app'])]),
   },
   {
