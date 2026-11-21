@@ -11,7 +11,7 @@ import { db, pods2, pods2Fit, tr, traumaFits, ward, wardBeds } from './bays';
 import { f1 } from './farm';
 import { rw } from './refinery';
 import { AC, B, seats, BT, OB, OBL, CD, DR, EX, FB, RF, G, GT, L, LS, MB, P, RK, RP, RS, SB, SP, SW, T, bunks, messSize, count, leftover, middle, range, rowsOf, sidePairs, tables, type Beds, type Run } from './parts';
-import { PB, VB, AI, CR, bank, core, crates, lifeWalls, lifeWallsFit, machines, machinesFit, podsFit, pods, shuttle } from './plant';
+import { PB, VB, AI, CR, bank, core, crates, lifeWalls, lifeWallsFit, machines, machinesFit, podsFit, pods, shuttle, walkwayFits, walkwayHold } from './plant';
 import { laid, messTables, tablesClear } from './mess';
 import { co, cu, gy, hl, mk, pz } from './social';
 import { bg, ore, pa, qm, shelfSlots } from './stores';
@@ -333,7 +333,7 @@ export const RULES: Partial<Record<RoomRole, readonly RuleArrangement[]>> = {
     // The helm amid the consoles, all facing the back wall: a ship's bridge has its door aft, so they face the bow.
     { name: 'HF helm bridge, the helm forward on the door\'s line, the consoles on the side walls behind it', weight: 1, when: helmFits, rule: helmFront, deep: 3 },
   ],
-  cargo: [{
+  cargo: [{ name: 'CW walkway hold, crate rows along a walkway down the middle', weight: 50, when: walkwayFits, rule: walkwayHold }, {
     name: 'PA pantry, cold stores along the back wall', weight: 1,
     when: (n, r) => n.length > 0 && n.every((m) => m === RK || m === CD) && r.h >= 3 && r.h <= 4 && count(n, RK) + count(n, CD) <= shelfSlots(r.w).length,
     rule: pa,

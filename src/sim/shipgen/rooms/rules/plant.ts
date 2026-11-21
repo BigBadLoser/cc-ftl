@@ -148,3 +148,29 @@ export function lifeWalls(c: Ctx): Piece[] {
 /** Whether `lifeWalls` suits a room: life support (and a fabricator) only, a unit a side's row each, the aisle between. */
 export const lifeWallsFit = (need: readonly string[], r: { w: number; h: number }): boolean =>
   need.includes(LS) && need.every((m) => m === LS || m === FB) && r.w >= 6 && Math.ceil(count(need, LS) / 2) <= r.h - 1;
+
+/**
+ * CW walkway hold (#581): entered at a short end, a walkway straight down the middle from the door to the far wall, the
+ * crates in rows along it: the rows either side facing it, a row back to back behind each facing a side aisle, and so on
+ * out to the walls (a row against a wall faces in). The door's row is a lane across. Every place takes a crate.
+ */
+export function walkwayHold(c: Ctx): Piece[] {
+  const { w, h, d } = c, out: Piece[] = [];
+  const skip = new Set([...(c.cut ?? []), ...(c.doors ?? [])].map((e) => `${e.x},${e.y}`));
+  for (const side of [-1, 1] as const) {
+    for (let x = d + side; x >= 0 && x < w; x += side) {
+      const k = (Math.abs(x - d) - 1) % 3;
+      if (k === 2) continue;
+      // (Facing the walkway side (k 0) or away to the aisle beyond (k 1), where that aisle is floor.)
+      const away = k === 1, toward = away ? side : -side;
+      if (away && (x + side < 0 || x + side >= w)) continue;
+      const rot = toward > 0 ? 3 : 1;
+      for (let y = 0; y <= h - 2; y++) if (!skip.has(`${x},${y}`) && !skip.has(`${x + toward},${y}`)) out.push(P(CR, x, y, rot));
+    }
+  }
+  return out;
+}
+
+/** Whether `walkwayHold` suits a room: crates only, entered at a short end, deep enough for a row past the lane. */
+export const walkwayFits = (need: readonly string[], r: { w: number; h: number }): boolean =>
+  need.length > 0 && need.every((m) => m === CR) && r.h > r.w && r.h >= 4 && r.w >= 3;
