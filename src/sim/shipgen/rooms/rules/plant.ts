@@ -152,11 +152,12 @@ export const lifeWallsFit = (need: readonly string[], r: { w: number; h: number 
 /**
  * CW walkway hold (#581): entered at a short end, a walkway straight down the middle from the door to the far wall, the
  * crates in rows along it: the rows either side facing it, a row back to back behind each facing a side aisle, and so on
- * out to the walls (a row against a wall faces in). The door's row is a lane across. Every place takes a crate (or a
- * rack, lying along its row).
+ * out to the walls (a row against a wall faces in). The door's row is a lane across. Every place takes a crate. A rack
+ * hold has rows across instead (`rackRows`).
  */
 export function walkwayHold(c: Ctx): Piece[] {
   const { w, h, d } = c, id = c.need[0] as string, out: Piece[] = [];
+  if (id === RACK) return rackRows(c);
   // (A piece turned a quarter to lie along its row: as wide as it is deep, as long as it is wide.)
   const [len, wide] = c.defs[id]?.footprint ?? [1, 1];
   const skip = new Set([...(c.cut ?? []), ...(c.doors ?? [])].map((e) => `${e.x},${e.y}`));
@@ -183,3 +184,18 @@ export const walkwayFits = (need: readonly string[], r: { w: number; h: number }
   need.length > 0 && (need.every((m) => m === CR) || need.every((m) => m === RACK)) && r.h > r.w && r.h >= 4 && r.w >= 3;
 
 const RACK = 'module.storage_rack';
+
+/**
+ * A rack hold off its walkway: rows of racks across the room from the walkway out to each wall, the back wall's first,
+ * two tiles of aisle between rows (each rack facing the aisle on the door's side).
+ */
+function rackRows(c: Ctx): Piece[] {
+  const { w, h, d } = c, out: Piece[] = [], [rw] = c.defs[RACK]?.footprint ?? [2, 1];
+  const skip = new Set([...(c.cut ?? []), ...(c.doors ?? [])].map((e) => `${e.x},${e.y}`));
+  const free = (x: number, y: number): boolean => ![0, 1].some((i) => skip.has(`${x + i},${y}`) || skip.has(`${x + i},${y + 1}`));
+  for (let y = 0; y + 1 <= h - 2; y += 3) {
+    for (let x = d - rw; x >= 0; x -= rw) if (free(x, y)) out.push(P(RACK, x, y, 0));
+    for (let x = d + 1; x + rw <= w; x += rw) if (free(x, y)) out.push(P(RACK, x, y, 0));
+  }
+  return out;
+}
