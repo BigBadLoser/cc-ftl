@@ -17,16 +17,9 @@ export function bayLayout(fr: Frame): Bay[] {
   // On a lane hull, aft of the cross corridor: out from each side corridor, and in from it to the lane where it has both.
   const out: Row | undefined = lane && { c: lane.yc, dir: 1, depth: (x) => outer(x) - lane.yc - BAND - 1 };
   const blocks: [number, number, Row?][] = [[xBand, dockAt - 1]];
-  // (Outboard, round where the side hull is under four rows deep (a notch, its taper by the engines), and
-  // a stretch under four columns: that much is hull.)
+  // (Outboard, round its alcoves.)
   if (!out) blocks.push([dockAt + CW + 1, xS]);
-  else for (let x = dockAt + CW + 1; x <= xS; x++) {
-    if (out.depth(x) < 4) continue;
-    let e = x;
-    while (e + 1 <= xS && out.depth(e + 1) >= 4) e++;
-    if (e - x + 1 >= 4) blocks.push([x, e, out]);
-    x = e;
-  }
+  else for (const [a, b] of outboardRuns(fr)) blocks.push([a, b, out]);
   // (Inboard, between the lane's airlocks.)
   if (lane) {
     const inb: Row = { c: lane.yc, dir: -1, depth: (x) => lane.yc - BAND - 1 - lane.edge(x) };
@@ -67,3 +60,21 @@ function tiersOf(x0: number, x1: number, depth: (x: number) => number): [number,
   return [[1, r], [r + 2, Infinity]];
 }
 
+
+/**
+ * A lane hull's outboard runs of bays, [x0, x1]: round where the side hull is under four rows deep (a notch, its taper by
+ * the engines) and a stretch between under four columns. What they leave is the side corridor's alcoves.
+ */
+export function outboardRuns(fr: Frame): [number, number][] {
+  const { lane, outer, dockAt, CW, xS } = fr, runs: [number, number][] = [];
+  if (!lane) return runs;
+  const deep = (x: number): boolean => outer(x) - lane.yc - BAND - 1 >= 4;
+  for (let x = dockAt + CW + 1; x <= xS; x++) {
+    if (!deep(x)) continue;
+    let e = x;
+    while (e + 1 <= xS && deep(e + 1)) e++;
+    if (e - x + 1 >= 4) runs.push([x, e]);
+    x = e;
+  }
+  return runs;
+}

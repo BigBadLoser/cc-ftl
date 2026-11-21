@@ -1,4 +1,5 @@
 import { dockSpec, type ShipPlan } from '../plan';
+import { outboardRuns } from './bays';
 import { BAND, MIN_DEPTH, type Frame } from './frame';
 import { RegionGrid, SOLID, SPACE } from './regions';
 
@@ -37,6 +38,15 @@ export function closeFrame(fr: Frame, { g, hall, docks, paint }: FrameGrid): voi
   // The spine to the stern, or on a lane hull to the cross corridor, a corridor down each side hull from there to its engine room.
   for (let tx = xBr + 1; tx < (lane ? dockAt + CW : W); tx++) for (let ty = -1; ty <= 1; ty++) if (inside(tx, ty)) g.set(ox + tx, ty, hall);
   if (lane) paint(hall, dockAt + CW, xS + 1, (y) => Math.abs(Math.abs(y) - lane.yc) <= 1);
+  // (Its alcoves: side hull too shallow or short for a room, open to the corridor out to the hull, a wall column kept
+  // beside each room.)
+  if (lane) {
+    const runs = outboardRuns(fr);
+    for (let tx = dockAt + CW + 1; tx <= xS; tx++) {
+      if (runs.some(([a, b]) => tx >= a - 1 && tx <= b + 1)) continue;
+      paint(hall, tx, tx + 1, (y) => Math.abs(y) >= lane.yc + 2 && Math.abs(y) <= fr.outer(tx) - 1);
+    }
+  }
   paint(docks[0], dockAt, dockAt + CW, (y) => y <= -BAND);
   paint(docks[1], dockAt, dockAt + CW, (y) => y >= BAND);
   // A lane hull's airlocks: from each side corridor in to the lane's wall.
