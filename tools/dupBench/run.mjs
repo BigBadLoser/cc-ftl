@@ -22,8 +22,8 @@ const only = value('only')?.split(',');
 const out = value('out');
 
 const cases = loadCases();
-// A fixed path, so jscpd's per-path embedding cache survives from one run to the next (a cold semantic run takes minutes).
-const base = join(tmpdir(), 'dupbench');
+// A fixed path by default, so jscpd's per-path embedding cache survives between runs; DUPBENCH_DIR runs two benches at once.
+const base = process.env.DUPBENCH_DIR ?? join(tmpdir(), 'dupbench');
 rmSync(base, { recursive: true, force: true });
 mkdirSync(base);
 const dirs = { planted: join(base, 'planted'), clean: join(base, 'clean'), combined: join(base, 'combined') };

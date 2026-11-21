@@ -2,12 +2,14 @@
 // Score a local LLM as the judge of duplicate pairs: for each bench case it reads the original function and the planted
 // code and answers whether they answer the same question. Dups should get YES, lookalikes NO.
 //   JUDGE_URL=http://127.0.0.1:11434 JUDGE_MODELS=qwen2.5-coder:1.5b,qwen2.5-coder:3b node tools/dupBench/judge.mjs [--out f.json]
-// The server is Ollama's native API (/api/chat). Nothing here is part of the game or CI.
+// The server is Ollama's native API (/api/chat), or with JUDGE_API=openai any OpenAI-compatible /v1/chat/completions (the
+// RKLLM NPU server on the agent-harness host). Nothing here is part of the game or CI.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { functionRange, loadCases, REPO } from './tree.mjs';
 
 const URL = process.env.JUDGE_URL ?? 'http://127.0.0.1:11434';
+const OPENAI = process.env.JUDGE_API === 'openai';
 const MODELS = (process.env.JUDGE_MODELS ?? 'qwen2.5-coder:1.5b').split(',').filter(Boolean);
 const args = process.argv.slice(2);
 const out = args.includes('--out') ? args[args.indexOf('--out') + 1] : null;
@@ -35,19 +37,22 @@ export function pairText(c) {
 
 async function ask(model, a, b) {
   const t0 = Date.now();
-  const res = await fetch(`${URL}/api/chat`, {
+  const sampling = OPENAI ? { temperature: 0, max_tokens: 3 } : { options: { temperature: 0, num_predict: 3 } };
+  const res = await fetch(OPENAI ? `${URL}/v1/chat/completions` : `${URL}/api/chat`, {
     method: 'POST',
+    headers: { 'content-type': 'application/json' },
     body: JSON.stringify({
       model,
       stream: false,
-      options: { temperature: 0, num_predict: 3 },
+      ...sampling,
       messages: [
         { role: 'system', content: PROMPT },
         { role: 'user', content: `First:\n\`\`\`ts\n${a}\n\`\`\`\n\nSecond:\n\`\`\`ts\n${b}\n\`\`\`\n\nSame question? YES or NO.` },
       ],
     }),
   });
-  const text = (await res.json()).message?.content ?? '';
+  const body = await res.json();
+  const text = (OPENAI ? body.choices?.[0]?.message?.content : body.message?.content) ?? '';
   return { yes: /^\W*yes/i.test(text), raw: text.trim(), seconds: (Date.now() - t0) / 1000 };
 }
 
