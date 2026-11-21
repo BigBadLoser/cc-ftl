@@ -37,7 +37,7 @@
 - Pieces may carry a plain painted patch (a scrap of livery, hazard stripe or hull number) from the existing palette names (`hivis`, `c4T3`, `navy`, `medWhite`), at fixed colour. No faction key colours and no runtime tint, so the sprites need no `.tint` layer.
 - If you need new colours, put them in their own palette set (`"set": "debris"` in `palette_extra.json`) and select it for this family only.
 
-**Ids and manifest:** family and sheet `debris`. All pieces listed in `public/assets/manifest.json`:
+**Ids and manifest:** family and sheet `debris`. All pieces listed in `public/assets/1x/manifest.json`:
 - `debris.plate.s.v<n>.r<k>`, `debris.plate.l.v<n>.r<k>`, `debris.plate.long.v<n>.r<k>`
 - `debris.truss.v<n>.r<k>`, `debris.truss.long.v<n>.r<k>`
 - `debris.chunk.v<n>.r<k>`

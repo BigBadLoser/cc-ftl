@@ -8,7 +8,7 @@
 - `tools/blender/sprites/human_render.py`: the layer slots, stack ORDER and the holdout rules;
 - `tools/blender/sprites/human_gear.py` and `human_base.py`;
 - `src/render/loadout.ts`: how layers are picked at runtime;
-- the crew entries in `public/assets/manifest.json`: `crew.human.<slot>.<item>`, with the 8 directions and every existing clip (idle, walk, work, the combat clips, sit, downed and so on).
+- the crew entries in `public/assets/1x/manifest.json`: `crew.human.<slot>.<item>`, with the 8 directions and every existing clip (idle, walk, work, the combat clips, sit, downed and so on).
 
 **The suit:**
 - **Layers:** a full-coverage suit as items in the existing slots, so it works with every clip and all 8 directions:
