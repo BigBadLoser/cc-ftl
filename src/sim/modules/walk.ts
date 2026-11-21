@@ -38,7 +38,7 @@ export function walkInfo(sim: Sim, id: number): WalkInfo {
 }
 
 /**
- * The one walk rule (docs/ARCHITECTURE.md "Away sites", #292): a walker may step on (x, y) if its struct is walkable (or, `suited`, the
+ * The one walk rule (docs/ARCHITECTURE.md "Away sites and the air drive", #292): a walker may step on (x, y) if its struct is walkable (or, `suited`, the
  * grid's exterior surface: suited and airless crew), it is not a door that cannot open now (jammed shut, or the shut door of an airlock that
  * does not work), and no solid module stands there. `findPath`, the scheduler's navigation views and movement all ask this, so pathing,
  * reach, job feasibility and the step itself agree. `infos` caches module walk info for the length of one search.

@@ -204,7 +204,7 @@ const SCENARIOS: Scenario[] = [
     const benches = new WeakMap<Sim, Bench>();
     return {
       name: `salvageBench${crew === 4 ? '4' : ''}${airlock ? 'Lock' : ''}`,
-      description: `The salvage throughput bench (docs/ARCHITECTURE.md "Throughput check"): ${crew} crew, a wreck ${airlock ? 'with' : 'without'} an airlock, every scrap type ordered. The report ends with scrap brought home per game hour; run 144000 ticks for the 2 game hours of the baseline.`,
+      description: `The salvage throughput bench (docs/ARCHITECTURE.md "Throughput bench"): ${crew} crew, a wreck ${airlock ? 'with' : 'without'} an airlock, every scrap type ordered. The report ends with scrap brought home per game hour; run 144000 ticks for the 2 game hours of the baseline.`,
       ticks: 144000,
       populate: false,
       setup(sim) {
