@@ -666,10 +666,15 @@ palette.json    the single palette, read by Blender scripts and the game
     `tile.hull.station.ext.g.<key>` and `tile.roof.station.g.<key>`, and no belly; against the foot a rock berm
     `tile.hull.station.berm.<key>.v<n>[.e<a><b>]` (`stationHull.ts` `bermId`, `sprites/station_berm.py`, set `berm`).
     The pieces stay unpainted grey, lit only; just each `.tint` livery mask takes the deco paint. Where the station has
-    no art for a tile (diagonal far walls, #561; six eight-front keys) the ship's piece is drawn. Walls up: the far hull's
+    no art for a tile (six eight-front keys) the ship's piece is drawn. Walls up: the far hull's
     cap `tile.hull.station.cap.m<mask>[c<c>]` goes over the partition piece (`tiles.ts` `wallPieces` `look`), and the near
     hull draws `tile.hull.station.low.<key>` (`lowId`), cut at the ship's rim height with the ship's cut black, a seam and
-    a lit lip. Cache: `station_hull_walls.py` is its own module with its own palette set (`station_cut`), so changing it
+    a lit lip. Over the cut, the near hull's ghost `tile.hull.station.ghost.n.<key>` (`hullArt.ts` `nearGhostId`,
+    `sprites/hull_near.py`); a cut that faces away from the camera keeps the rear ramp ghost instead, squashed between the
+    lip and the ship's ramp top (`tile.hull.station.ghost.m*[c2][.r*]`, `hull.station_rear`). A far wall is cut only within
+    `hideReach("station")` of the base behind it. Diagonal far walls (#561, ground bases only; a ship keeps its stepped
+    hull): `diagWall.ts` picks `tile.wall.diag.<a|m|b>` and their caps (`sprites/wall_diag.py`) for a staircase's step
+    tiles, whose deck stays under them; its inner tiles draw nothing of their own but half a deck plate (`deckHalf`). Cache: `station_hull_walls.py` is its own module with its own palette set (`station_cut`), so changing it
     does not invalidate the family's cache. Render lab panel `station-hull`.
 - **Beams (`struct`, `sprites/struct.py`, wired in `src/render/beamArt.ts` and `gridView.ts`):**
   - `struct.beam.<look>.m<mask>` is chosen by a 4-neighbour mask over beam tiles (N1 E2 S4 W8), anchored
