@@ -2,7 +2,7 @@
 
 The Svelte UI (`src/ui`, 98 top-level components plus `combat`, `comms`, `crew`, `inspector`, `kit`, `lessons`, `menu`, `module`, `title`) mounted by `src/ui/App.svelte`
 and `GameSession.svelte`. The UI reads snapshots built in `src/app/*Snapshot.ts` and sends commands through `src/app/bridge.ts`; it never mutates the sim.
-All top-level components are imported by something except `EnemyCharges.svelte`. The game is desktop only. UI soft rules are in `docs/DESIGN.md` ("UI").
+All top-level components are imported by something. The game is desktop only. UI soft rules are in `docs/DESIGN.md` ("UI").
 
 | Name | id | What it does | Status | Where |
 |---|---|---|---|---|
@@ -26,7 +26,6 @@ All top-level components are imported by something except `EnemyCharges.svelte`.
 | Recruit, blueprint and pod lists | `RecruitList, BlueprintList, PodList` | Hire crew, buy blueprints, pods | In game | src/ui/RecruitList.svelte |
 | Yard pane | `YardPane` | Shipyard hull orders | In game | src/ui/YardPane.svelte |
 | Combat HUD | `combat/*` | Weapon bay, shields, heat, enemy card, board picker, fight report, flee | In game | src/ui/combat/* |
-| Enemy weapon charge bars | `EnemyCharges` | Per-weapon charge with aim commit notch | Defined, unused | src/ui/EnemyCharges.svelte: no component imports it (combat HUD shows charge elsewhere) |
 | Drone bay, robot bay, shuttle, salvage, prize, asteroid panels | `DroneBayPanel, RobotBayPanel, ShuttlePanel, SalvagePanel, PrizePanel, AsteroidPanel` | Module and craft control panels | In game | src/ui/*Panel.svelte |
 | Ship overview and meters | `ShipOverview, ShipMeters, FtlCharge` | Resources by the numbers, FTL charge | Partial: improvement planned | issue #164 |
 | Lost cargo panel | `ContainerPanel` | A lost container's inspector: unknown contents and an Open order (crew cut it open in suits) (#503) | In game | src/ui/ContainerPanel.svelte |
