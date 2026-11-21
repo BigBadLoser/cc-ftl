@@ -5,7 +5,7 @@
  * two screen px, icons are a whole number of device px per art px.
  */
 import { Container, Graphics } from 'pixi.js';
-import type { UiStarNode } from '../../ui/starmapApi';
+import type { UiStarFleet, UiStarNode } from '../../ui/starmapApi';
 import { fillArea } from './area';
 import { bodyVariant } from './artIds';
 import { createLaneMask } from './laneMask';
@@ -108,6 +108,21 @@ export function createLevel1(ctx: Ctx, sc0: Scene, cam0: Cam): Level {
   const fleetFrame = art?.art.frames['starmap.fleet.patrol.d0']?.w ?? 48;
   const structFrame = art?.art.frames['starmap.struct.den']?.w ?? 48;
 
+  /** Where a fleet's chevron sits now: the way along its next lane by the share of the turn gone (it takes the jump when the turn ends), fanned off the lane. */
+  const lane = (m: (typeof marks)[number]): { x: number; y: number; px: number; py: number } => {
+    const k = 1 / cam.s;
+    const t = m.f.tx === null || m.f.ty === null ? 0 : Math.min(1, Math.max(0, sc.map.turnFrac ?? 0));
+    const px = m.f.x + (m.f.tx === null ? 0 : (m.f.tx - m.f.x) * t);
+    const py = m.f.y + (m.f.ty === null ? 0 : (m.f.ty - m.f.y) * t);
+    return { x: px + m.ox * 54 * k, y: py + m.oy * 54 * k, px, py };
+  };
+  /** "Next node in 1:23" for a fleet on the move. */
+  const etaOf = (f: UiStarFleet): string => {
+    if (!f.hops) return '';
+    const s = Math.ceil((1 - (sc.map.turnFrac ?? 0)) * (sc.map.turnSec ?? 0));
+    return ` Next node in ${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}${f.hops > 1 ? `, ${f.hops} jumps to go` : ''}.`;
+  };
+
   /** Everything drawn at the current grid that is not a piece: reach lines, route, fleets, exit icons, rings, the ship, labels. */
   function redraw(): void {
     const k = 1 / cam.s;
@@ -128,7 +143,8 @@ export function createLevel1(ctx: Ctx, sc0: Scene, cam0: Cam): Level {
     for (const m of marks) {
       if (m.f.tx === null || m.f.ty === null) continue;
       const o = newOps();
-      pixelLine(o, m.f.x, m.f.y, m.f.tx, m.f.ty, g, { dash: [2, 2] });
+      const at = lane(m);
+      pixelLine(o, at.px, at.py, m.f.tx, m.f.ty, g, { dash: [2, 2] });
       fillOps(dyn, o, pal.tone(m.f.tone), 0.55);
     }
     exitIcons.removeChildren().forEach((c) => c.destroy({ children: true }));
@@ -144,8 +160,7 @@ export function createLevel1(ctx: Ctx, sc0: Scene, cam0: Cam): Level {
     const fx = new Graphics({ roundPixels: true });
     fleetBox.addChild(fx);
     for (const m of marks) {
-      const x = m.f.x + m.ox * 54 * k;
-      const y = m.f.y + m.oy * 54 * k;
+      const { x, y } = lane(m);
       const id = `starmap.fleet.${m.f.kind}.d${dirOf(m.heading)}`;
       const spr = art?.has(`starmap.fleet.${m.f.kind}.d0`) ? spriteAt(ctx, id, x, y, fleetPx, m.f.tone, half) : null;
       if (spr) fleetBox.addChild(spr);
@@ -258,9 +273,8 @@ export function createLevel1(ctx: Ctx, sc0: Scene, cam0: Cam): Level {
       const my = cam.cy + (y - cam.h / 2) * k;
       const half = (iconSize(fleetFrame, cam.s, dpr) / 2) * k;
       for (const m of marks) {
-        const fx = m.f.x + m.ox * 54 * k;
-        const fy = m.f.y + m.oy * 54 * k;
-        if (Math.abs(mx - fx) <= half && Math.abs(my - fy) <= half) return `${m.f.faction} ${m.f.role.toLowerCase()}, ${m.f.ships} ship${m.f.ships > 1 ? 's' : ''}. ${m.f.heading}.`;
+        const { x: fx, y: fy } = lane(m);
+        if (Math.abs(mx - fx) <= half && Math.abs(my - fy) <= half) return `${m.f.faction} ${m.f.role.toLowerCase()}, ${m.f.ships} ship${m.f.ships > 1 ? 's' : ''}. ${m.f.heading}.${etaOf(m.f)}`;
       }
       for (const n of map.nodes) {
         if (!n.known || !n.jobs?.length) continue;

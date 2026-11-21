@@ -35,7 +35,7 @@ const BASELINE: Record<string, number> = {
   'src/ui/App.svelte': 434,
   'src/ui/StarmapView.svelte': 544,
   'src/ui/api.ts': 1719,
-  'src/ui/starmapApi.ts': 439,
+  'src/ui/starmapApi.ts': 416,
 };
 
 /** Lines the way `wc -l` counts them: newline characters. */

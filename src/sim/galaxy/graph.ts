@@ -50,9 +50,25 @@ export function reachFrom(sim: Sim, from: string): Reach {
   return r;
 }
 
+const wide = new WeakMap<GalaxyIndex, Map<string, Reach>>();
+
+/** Wider than REACH_HOPS: cached by (node, hops) so a repeated query (the fleet area, twice a turn) is one search. */
+function wideReach(sim: Sim, from: string, hops: number): Reach {
+  const index = galaxyIndex(sim.galaxy);
+  let cache = wide.get(index);
+  if (!cache) wide.set(index, (cache = new Map()));
+  const key = `${from}:${hops}`;
+  let r = cache.get(key);
+  if (!r) {
+    if (cache.size >= 16) cache.clear();
+    cache.set(key, (r = explore(index, from, hops)));
+  }
+  return r;
+}
+
 /** Node ids within `hops` jumps of `from` over generated edges, with their distance. */
 export function nodesWithin(sim: Sim, from: string, hops: number): Map<string, number> {
-  const r = hops <= REACH_HOPS ? reachFrom(sim, from) : explore(galaxyIndex(sim.galaxy), from, hops);
+  const r = hops <= REACH_HOPS ? reachFrom(sim, from) : wideReach(sim, from, hops);
   const out = new Map<string, number>();
   for (const id of r.order) {
     const d = r.dist.get(id) as number;

@@ -33,6 +33,7 @@
     return n?.known ? n.name : 'Uncharted';
   };
   const legs = $derived(travel ? travel.route.slice(1).map((id, i) => ({ id, done: i < travel.at, now: i === travel.at && travel.phase === 'hop' })) : []);
+  const fmtEta = (s: number): string => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
   const traffic = $derived(node ? map.fleets.filter((f) => f.node === node.id) : []);
   const blocked = $derived(travel?.phase === 'interdicted' || travel?.phase === 'event' || travel?.phase === 'story');
   const recent = $derived(map.result && map.encounters.length === 0 && map.turn - map.result.turn <= 3 ? map.result : null);
@@ -109,6 +110,7 @@
                 <i style={`background: ${toneColor(f.tone)}`}></i>
                 <span><b>{f.name}</b> <small>{f.faction} {f.role.toLowerCase()}</small></span>
                 <small class="sub">{f.heading.endsWith(f.home) ? f.heading : `${f.heading} · home ${f.home}`}</small>
+                {#if f.hops}<small class="sub eta" data-testid="starmap-eta">Next node in {fmtEta(Math.ceil((1 - map.turnFrac) * map.turnSec))}{f.hops > 1 ? ` · ${f.hops} jumps to go` : ''}</small>{/if}
                 {#if f.cargo}<small class="sub cargo" data-testid="starmap-cargo">Carrying {f.cargo}</small>{/if}
               </li>
             {/each}
