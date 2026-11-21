@@ -19,7 +19,7 @@ import { TICK_HZ } from '../time';
 import {
   BED_HEAL_PER_SEC, BREATH_CO2_PER_SEC, BREATH_O2_PER_SEC, GET_UP_HP, REGEN_PER_SEC, STARVE_HARM_PER_SEC, XP_PER_HP_HEALED,
 } from '../tuning';
-import { careHealStep, podModule, restInCare, startRecovery } from '../crew/recovery';
+import { careHealStep, leaveCare, podModule, restInCare, startRecovery } from '../crew/recovery';
 import { tendingOf, treatmentMult } from '../crew/treatment';
 import { grantXp } from '../crew/xp';
 
@@ -53,7 +53,11 @@ export function vitalsSystem(sim: Sim): void {
     const parts = tileHarmParts(grid, pos.x, pos.y, suited, airless);
     const starve = (sim.world.get(id, NeedsC)?.hunger ?? 1) <= 0 ? STARVE_HARM_PER_SEC : 0;
     const harm = parts.air + parts.temp + parts.fire + starve;
-    const resting = sim.world.get(id, RecoveringC);
+    let resting = sim.world.get(id, RecoveringC);
+    if (resting && (health.hp <= 0 || mustBeDown(sim, id))) {
+      leaveCare(sim, id, resting); // a wound in bed that downs them (a lost vital organ): out of the bed, and down below
+      resting = undefined;
+    }
     if (resting) {
       restInCare(sim, id, resting, health, harm); // a recovery pod: heals to full, out of action meanwhile
     } else if (!downed) {

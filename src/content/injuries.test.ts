@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { CrewC, DownedC, HealthC, JobC, PrioritiesC } from '../sim/crew/components';
+import { CrewC, DownedC, HealthC, JobC, PositionC, PrioritiesC } from '../sim/crew/components';
+import { StasisC } from '../sim/stasis/components';
 import { InjuriesC } from '../sim/crew/injuryTypes';
 import { capacitiesOf, canBeInjured, injuriesOf, isBleeding, partCondition } from '../sim/crew/body';
 import { addInjury, damageCrew, injureOnDown } from '../sim/crew/injure';
@@ -170,6 +171,32 @@ describe('crew injuries (#601)', () => {
     const bleed = downed!.bleed;
     run(sim, TICK_HZ);
     expect(sim.world.get(id, DownedC)!.bleed).toBeLessThan(bleed);
+  });
+
+  it('a patient in a medical bed who loses a vital organ leaves the bed and goes down', () => {
+    const built = cachedScenario('injuries');
+    const sim = built.sim;
+    for (const c of playerCrew(sim)) sim.world.get(c, PrioritiesC)!.medical = 0; // nobody tends the bed
+    const gunner = playerCrew(sim).find((id) => injuriesOf(sim, id).some((i) => i.kind === 'injury.fracture'))!;
+    play(built, 120 * TICK_HZ, { until: (s) => s.world.has(gunner, RecoveringC) });
+    expect(sim.world.has(gunner, RecoveringC)).toBe(true);
+    addInjury(sim, gunner, 'part.heart', 'injury.organ_damage', 'destroyed');
+    play(built, 2);
+    expect(sim.world.has(gunner, RecoveringC)).toBe(false);
+    expect(sim.world.has(gunner, DownedC)).toBe(true);
+  });
+
+  it('a prisoner frozen in stasis neither bleeds nor heals', () => {
+    const sim = cachedNewGame(3);
+    const id = human(sim);
+    addInjury(sim, id, 'part.arm_left', 'injury.cut');
+    sim.world.get(id, HealthC)!.hp = 80;
+    sim.world.remove(id, PositionC); // sealed: off the grid, in a slab
+    sim.world.add(id, StasisC, { reserve: 1e6, at: 'wheel', carrier: 0, x: 0, y: 0, rot: 0 });
+    run(sim, 10 * TICK_HZ);
+    expect(sim.world.get(id, HealthC)!.hp).toBe(80);
+    expect(injuriesOf(sim, id)[0]!.age).toBe(0);
+    expect(isBleeding(sim, id)).toBe(true);
   });
 
   it('the tables are whole: every part a source can hit has a kind of each severity that fits it, and each capacity\'s shares sum to 1', () => {
