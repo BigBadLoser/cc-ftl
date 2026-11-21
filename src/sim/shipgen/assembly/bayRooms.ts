@@ -41,6 +41,12 @@ const TARGET = 1.35;
 /** A room's size cost: short of the target dear, past it cheap (spare floor is better in a room than in a filler). */
 const sizeCost = (r: number): number => (r < TARGET ? 2 * (TARGET - r) : 0.4 * (r - TARGET));
 
+/** A bay hull's hold: racks, not crates (a rack two crates' worth, so half as many). */
+const racked = (r: RoomSpec): RoomSpec => {
+  const n = r.mods.filter((m) => m === 'module.storage').length;
+  return r.role !== 'cargo' || n === 0 ? r : { ...r, mods: [...r.mods.filter((m) => m !== 'module.storage'), ...Array<string>(Math.ceil(n / 2)).fill('module.storage_rack')] };
+};
+
 /** All the plan's reactors in one room and all its shield generators in another, a mirrored pair; the rest single. */
 function program(plan: ShipPlan, defs: Record<string, ModuleDef>, inBattery: number, hangars = true, blocks = true, mirror = false): Item[] {
   const { gunPairs, cabinPairs } = programPairs(plan, defs);
@@ -65,7 +71,7 @@ function program(plan: ShipPlan, defs: Record<string, ModuleDef>, inBattery: num
     const { annex, ...host } = r;
     return { ...host, mods: [...r.mods, ...annex.mods], w: r.w + Math.ceil((annex.w * annex.h) / r.h) };
   };
-  const singles = [...lone.filter((r) => !(mirror && r.mods.every((m) => m === 'module.pointDefense'))), ...cores, ...plan.quarters.filter((q) => !q.block), ...plan.support.filter((r) => !(mirror && r.role === 'plant')).map(brig).map(mess).map(own), ...plan.cargo.map(brig), ...(hangars ? plan.hangars : pods)];
+  const singles = [...lone.filter((r) => !(mirror && r.mods.every((m) => m === 'module.pointDefense'))), ...cores, ...plan.quarters.filter((q) => !q.block), ...plan.support.filter((r) => !(mirror && r.role === 'plant')).map(brig).map(mess).map(own), ...plan.cargo.map(brig).map(racked), ...(hangars ? plan.hangars : pods)];
   const items: Item[] = blocks ? cabinPairs.map((p) => ({ specs: [p[0], p[1]], both: true, cabins: true })) : [];
   const reactor = plan.reactors > 0 ? reactorSpec(plan.reactors, plan.kit) : null;
   const shields: RoomSpec | null = plan.shields.length > 0
@@ -311,7 +317,7 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
       if (z) turn.set(`${z}${s}`, t + 1);
       const kinds: Filler[] = z ? [...own.slice(t % own.length), ...own.slice(0, t % own.length)] : a >= 12 ? left : [];
       for (const kd of [...kinds, 'hold'] as Filler[]) {
-        const c = fillerSpec(kd, a), v = tier === 'back' ? backVia(o, s, k, k + 1, on(c, s)) : undefined;
+        const c = racked(fillerSpec(kd, a)), v = tier === 'back' ? backVia(o, s, k, k + 1, on(c, s)) : undefined;
         if (tier === 'back' && !v) continue;
         f = c; via = v ?? undefined;
         if (left.includes(kd)) left.splice(left.indexOf(kd), 1);

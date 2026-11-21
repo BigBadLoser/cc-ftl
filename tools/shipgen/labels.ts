@@ -45,7 +45,8 @@ export function roomKind(role: string, mods: readonly string[]): string {
   if (has('storage_tank')) return 'tanks';
   // A market stall: racks and a counter (console), not cold stores.
   if (role === 'cargo' && has('storage_rack') && has('console') && !has('storage_cold')) return 'stall';
-  if (has('storage_cold') || (role === 'cargo' && has('storage_rack'))) return 'pantry';
+  // (A pantry: cold stores, or a few racks; a rack hold (a bay hull's) is cargo.)
+  if (has('storage_cold') || (role === 'cargo' && has('storage_rack') && mods.filter((m) => m === 'module.storage_rack').length < 6)) return 'pantry';
   // Gun bays and engine rooms carry a battery bank too: they keep their role's name.
   if (role !== 'weapons' && role !== 'engine' && has('battery') && !has('reactor') && !has('reactor.mk2') && !has('reactor.mk3') && !has('shieldGen')) return 'batteries';
   if (has('recovery') && mods.filter((m) => m === 'module.med_bed').length <= 1) return 'trauma';
