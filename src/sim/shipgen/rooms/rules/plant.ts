@@ -6,7 +6,7 @@
  */
 import type { ModuleDef } from '../../../registry';
 import type { Piece } from './check';
-import { BT, CN, P, count, range } from './parts';
+import { BT, CN, FB, LS, P, count, range } from './parts';
 import type { Ctx } from './rules';
 
 export const AI = 'module.aiCore', PDF = 'module.pointDefense', CR = 'module.storage', VB = 'module.vehicle_bay', PB = 'module.pod_bay';
@@ -130,3 +130,21 @@ export function pods(c: Ctx): Piece[] {
   const xs = per === 1 ? [Math.floor((c.w - 4) / 2)] : range(0, per - 1, 1).map((i) => Math.round((i * (c.w - 4)) / (per - 1)));
   return range(0, n - 1, 1).map((i) => P(PB, xs[i % per] as number, 4 * Math.floor(i / per), 0));
 }
+
+/**
+ * L1 life support on the walls (#581): the units against the side walls, facing in, taken in turn left and right and
+ * spread down each; a fabricator in the middle of the back wall.
+ */
+export function lifeWalls(c: Ctx): Piece[] {
+  const units = c.need.filter((m) => m === LS), fab = c.need.filter((m) => m !== LS);
+  const side = (s: 0 | 1): Piece[] => {
+    // (Spread over the rows short of the door's, a unit a row.)
+    const mine = units.filter((_, i) => i % 2 === s), k = mine.length, last = c.h - 2;
+    return mine.map((m, i) => P(m, s === 0 ? 0 : c.w - 2, k === 1 ? Math.floor(last / 2) : Math.round((i * last) / (k - 1)), s === 0 ? 3 : 1));
+  };
+  return [...side(0), ...side(1), ...fab.map((m) => P(m, Math.floor((c.w - (c.defs[m]?.footprint[0] ?? 2)) / 2), 0, 0))];
+}
+
+/** Whether `lifeWalls` suits a room: life support (and a fabricator) only, a unit a side's row each, the aisle between. */
+export const lifeWallsFit = (need: readonly string[], r: { w: number; h: number }): boolean =>
+  need.includes(LS) && need.every((m) => m === LS || m === FB) && r.w >= 6 && Math.ceil(count(need, LS) / 2) <= r.h - 1;

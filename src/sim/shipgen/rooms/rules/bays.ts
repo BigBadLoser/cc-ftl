@@ -36,3 +36,12 @@ const WARD = 3;
 
 /** The beds `ward` stands in a w x h room. */
 export const wardBeds = (w: number, h: number): number => (h >= w ? 2 * (Math.floor((h - 2) / WARD) + 1) : Math.floor((w - 1) / WARD) + 1);
+
+/** T2: a trauma room of recovery pods only: in the back corners (more along the back wall between, a tile apart). */
+export function pods2(c: Ctx): Piece[] {
+  const n = count(c.need, RP), xs = n <= 1 ? [0] : range(0, n - 1, 1).map((i) => Math.round((i * (c.w - 2)) / (n - 1)));
+  return xs.map((x) => P(RP, x, 0, 0));
+}
+
+/** Whether `pods2` stands its pods across a w-wide back wall, a tile between. */
+export const pods2Fit = (need: readonly string[], w: number): boolean => need.length > 0 && need.every((m) => m === RP) && 3 * count(need, RP) - 1 <= w;
