@@ -110,6 +110,7 @@ export const FILES = {
   'part-eye': 'eye',
   'part-heart': 'heart',
   'part-lungs': 'lungs',
+  'part-skin': 'shield', // the dermal implant slot
   'sparkles': 'sparkles',
   'diamond': 'diamond',
   'bomb': 'bomb',

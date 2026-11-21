@@ -72,6 +72,7 @@ export default {
  "src/content/ships/shuttleDefence.test.ts": 15,
  "src/content/blueprints.test.ts": 14.8,
  "src/content/medpod.test.ts": 14.7,
+ "src/content/surgery.test.ts": 14,
  "src/content/factions/shipgen.test.ts": 14.6,
  "src/content/ships/shuttleDefence.slow.test.ts": 14.6,
  "src/content/upgrades.test.ts": 14.6,

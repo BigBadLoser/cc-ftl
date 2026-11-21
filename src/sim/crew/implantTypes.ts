@@ -73,6 +73,16 @@ export interface Operations {
 }
 export const OperationsC = defineComponent<Operations>('operations');
 
+/** The surgery queue commands (crew/surgeryHandlers.ts), part of `Command`. */
+export type SurgeryCommand =
+  /**
+   * Queue an operation on crew member `id` (crew/surgery.ts): fit the implant `item` to `part`, remove the fitted `item`, repair an organ, amputate a lost limb.
+   * A surgeon does it at a surgery table or a medical bed (systems/surgery.ts). Rejected with `crew/surgery.ts operationError`'s reason, or `queued`.
+   */
+  | { type: 'crew.queueOperation'; id: number; kind: OperationKind; part: string; item?: string }
+  /** Take operation `op` off crew member `id`'s queue (a surgeon at work on it stops). */
+  | { type: 'crew.cancelOperation'; id: number; op: number };
+
 /** How an operation went: done; failed (the part is injured); botched (the part is destroyed, or a brain badly hurt). */
 export type SurgeryOutcome = 'success' | 'failure' | 'botched';
 

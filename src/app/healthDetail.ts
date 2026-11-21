@@ -3,6 +3,8 @@ import { bleedRate, canBeInjured, capacitiesOf, injuriesOf } from '../sim/crew/b
 import { BLEED_FAST_AT } from '../sim/crew/tuningInjury';
 import type { BodyPartDef, Capacity } from '../sim/crew/injuryTypes';
 import { clockAt } from '../sim/clock';
+import { implantsOf } from '../sim/crew/implants';
+import { DERMAL_PART } from '../sim/crew/implantTypes';
 import type { UiBodyPart, UiHealth, UiInjuryCard, UiOperations, UiPartIcon, UiTone } from '../ui/crewDetailApi';
 
 /** The glyph of a part, from what it feeds (a gate on moving is the spine). */
@@ -17,15 +19,17 @@ export function partIcon(def: BodyPartDef): UiPartIcon {
 const rank = (i: Injury): number => (i.sev === 'destroyed' ? 5 : i.sev === 'serious' && !i.treated ? 4 : i.bleeding ? 3 : i.sev === 'serious' ? 2 : i.sev === 'scar' ? 1 : 0);
 const needsCare = (i: Injury): boolean => !!i.bleeding || (i.sev === 'serious' && !i.treated);
 
+const AMPUTATED = 'injury.amputated';
+
 function stateOf(sim: Sim, i: Injury): string {
-  if (i.sev === 'destroyed') return 'Destroyed';
+  if (i.sev === 'destroyed') return i.kind === AMPUTATED ? 'Amputated' : 'Destroyed';
   const name = sim.content.injuries?.kinds[i.kind]?.name ?? i.kind;
   const how = i.bleeding ? 'bleeding' : i.sev === 'serious' ? (i.treated ? 'treated' : 'untreated') : i.sev === 'scar' ? 'scar' : 'healing';
   return `${name}, ${how}`;
 }
 
 function careOf(sim: Sim, i: Injury): string {
-  if (i.sev === 'destroyed') return 'Lost for good.';
+  if (i.sev === 'destroyed') return i.kind === AMPUTATED ? 'Taken off: ready for a cyber limb.' : 'Lost: only an implant can replace it.';
   if (i.sev === 'scar') return 'Healed badly: a small loss for good.';
   const bleed = i.bleeding ? 'Bleeding: needs first aid where they stand. ' : '';
   if (i.sev === 'serious' && !i.treated) return `${bleed}Untreated. A medic must treat it at a medical bed, or it may scar.`;
@@ -39,7 +43,13 @@ function gotOf(sim: Sim, i: Injury): string {
   return `Got it: ${sim.content.injuries?.sources[i.src]?.name ?? i.src}, day ${clockAt(i.at).day}.`;
 }
 
-/** The Health tab of one crew member (null for a body that takes no injuries). `operations`: the surgery queue, null until surgery exists. */
+/** The fitted implants' names on a part, or null. */
+function implantNames(sim: Sim, id: number, part: string): string | null {
+  const names = implantsOf(sim, id).filter((f) => f.part === part).map((f) => sim.content.items[f.item]?.name ?? f.item);
+  return names.length ? names.join(', ') : null;
+}
+
+/** The Health tab of one crew member (null for a body that takes no injuries). `operations`: the surgery section (app/surgeryDetail.ts). */
 export function buildHealth(sim: Sim, id: number, operations: UiOperations | null = null): UiHealth | null {
   const c = sim.content.injuries;
   if (!c || !sim.world.has(id, CrewC) || !canBeInjured(sim, id)) return null;
@@ -57,12 +67,15 @@ export function buildHealth(sim: Sim, id: number, operations: UiOperations | nul
     const tone: UiTone = mine.some(needsCare) ? 'alert' : worst ? 'plain' : 'fine';
     const capDef = c.capacities[def.capacity];
     const card: UiInjuryCard | null = worst ? {
-      title: `${def.name}: ${worst.sev === 'destroyed' ? 'destroyed' : (c.kinds[worst.kind]?.name ?? worst.kind).toLowerCase()}`, tone,
+      title: `${def.name}: ${worst.sev === 'destroyed' ? stateOf(sim, worst).toLowerCase() : (c.kinds[worst.kind]?.name ?? worst.kind).toLowerCase()}`, tone,
       injuries: mine.map((i) => ({ what: mine.length > 1 ? stateOf(sim, i) : '', care: careOf(sim, i), got: gotOf(sim, i) })),
       effect: `${capDef?.name ?? def.capacity} ${Math.round(caps[def.capacity] * 100)}%: ${capDef?.effect ?? ''}.`,
     } : null;
-    return { id: pid, name: def.name, icon: partIcon(def), mirror: def.side === 'left', gap, state: worst ? stateOf(sim, worst) : 'Fine', more: Math.max(0, mine.length - 1), tone, card };
+    const implant = implantNames(sim, id, pid);
+    return { id: pid, name: def.name, icon: partIcon(def), mirror: def.side === 'left', gap, state: worst ? stateOf(sim, worst) : implant ? '' : 'Fine', more: Math.max(0, mine.length - 1), tone: implant && tone === 'fine' ? 'plain' : tone, implant, card };
   });
+  const skin = implantNames(sim, id, DERMAL_PART); // the skin has a row only while an implant is in it
+  if (skin) parts.push({ id: DERMAL_PART, name: 'Skin', icon: 'part-skin', mirror: false, gap: true, state: '', more: 0, tone: 'plain', implant: skin, card: null });
   const rate = bleedRate(sim, id);
   return {
     hpPct: hp && hp.max > 0 ? Math.round((hp.hp / hp.max) * 100) : 100,

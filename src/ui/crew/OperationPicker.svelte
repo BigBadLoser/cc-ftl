@@ -5,14 +5,17 @@
   /**
    * The Queue operation picker (the Health tab, slice 2 of #311): beside the inspector, a part list on the left and the part's operations on the right
    * (one that does not apply is greyed with the reason; fitting an implant lists the implants that fit, with stock), where it happens, the best free
-   * surgeon's odds, and Queue. With `ops.live` false (the debug preview) the buttons do nothing.
+   * surgeon's odds, and Queue (`onQueue`: the Health tab sends `crew.queueOperation`).
    */
-  let { ops, part = $bindable(), anchor, onClose }: { ops: UiOperations; part: string; anchor: HTMLElement; onClose: () => void } = $props();
+  let { ops, part = $bindable(), anchor, onClose, onQueue }: {
+    ops: UiOperations; part: string; anchor: HTMLElement; onClose: () => void; onQueue: (kind: UiOperationOption['kind'], part: string, item?: string) => void;
+  } = $props();
   const options = $derived(ops.picker.ops[part] ?? []);
   let pick = $state<UiOperationOption['kind'] | null>(null);
   let implant = $state<string | null>(null);
   const chosen = $derived(options.find((o) => o.kind === pick && !o.disabled) ?? options.find((o) => !o.disabled) ?? null);
   const fitted = $derived(chosen?.implants?.find((i) => i.id === implant && i.stock > 0) ?? chosen?.implants?.find((i) => i.stock > 0) ?? null);
+  const cap = (s: string): string => s.charAt(0).toUpperCase() + s.slice(1);
   const pos = $derived.by(() => {
     const r = anchor.closest('[data-testid="crew-inspector"]')?.getBoundingClientRect() ?? anchor.getBoundingClientRect();
     return { left: r.right + 8, bottom: Math.max(8, window.innerHeight - r.bottom) }; // bottom-aligned with the inspector, so it stays on screen
@@ -39,7 +42,7 @@
         {#if chosen === o && o.implants}
           {#each o.implants as i (i.id)}
             <button class="implant" class:on={fitted === i} disabled={i.stock <= 0} onclick={() => (implant = i.id)}>
-              <span>{i.name}</span><small>{i.stock > 0 ? `${i.stock} in stock` : 'not in stock'}</small>
+              <span>{i.name}</span><small>{i.note ?? (i.stock > 0 ? `${i.stock} in stock` : 'not in stock')}</small>
             </button>
           {/each}
         {/if}
@@ -48,7 +51,9 @@
       {#each ops.picker.where as w (w)}<p>{w}</p>{/each}
       <h4 class="gapped">Surgeon</h4>
       <p>{ops.picker.surgeon}</p>
-      <button class="queue" disabled={!ops.live || !chosen || (!!chosen.implants && !fitted)} data-testid="op-queue">Queue</button>
+      {#if fitted?.odds ?? chosen?.odds}<p data-testid="op-odds">{cap(fitted?.odds ?? chosen?.odds ?? '')}</p>{/if}
+      <button class="queue" disabled={!ops.live || !chosen || (!!chosen.implants && !fitted)} data-testid="op-queue"
+        onclick={() => chosen && onQueue(chosen.kind, part, fitted?.id)}>Queue</button>
     </div>
   </div>
 </div>

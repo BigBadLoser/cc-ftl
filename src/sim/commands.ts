@@ -1,7 +1,7 @@
 import type { Faction } from './combat/components';
 import type { BreakContext, BreakKind } from './crew/breakTypes';
 import type { WorkCategory } from './crew/components';
-import type { OperationKind } from './crew/implantTypes';
+import type { SurgeryCommand } from './crew/implantTypes';
 import type { ScheduleBlock } from './ai/types';
 import type { ItemQty, ScrapType, SkillName } from './registry';
 
@@ -69,13 +69,7 @@ export type Command =
   | { type: 'crew.equip'; id: number; item: string }
   /** Drop the wielded weapon at the crew member's feet. */
   | { type: 'crew.unequip'; id: number }
-  /**
-   * Queue an operation on crew member `id` (crew/surgery.ts): fit the implant `item` to `part`, remove the fitted `item`, repair an organ, amputate a lost limb.
-   * A surgeon does it at a surgery table or a medical bed (systems/surgery.ts). Rejected with `crew/surgery.ts operationError`'s reason, or `queued`.
-   */
-  | { type: 'crew.queueOperation'; id: number; kind: OperationKind; part: string; item?: string }
-  /** Take operation `op` off crew member `id`'s queue (a surgeon at work on it stops). */
-  | { type: 'crew.cancelOperation'; id: number; op: number }
+  | SurgeryCommand
   /** Walk a drafted crew member to a tile (on `ship` if given, which must be the ship it stands on). */
   | { type: 'crew.moveTo'; id: number; x: number; y: number; ship?: number }
   /** Walk a group of drafted crew to the free tiles nearest (x, y) of `ship` (default: the first one's ship): each takes its own tile. Members on another ship are left out. */
@@ -147,10 +141,7 @@ export type Command =
    * instant cargo swap). Then it flies home. Replaces nothing: a shuttle on a trade run, a ferry or a mining order is busy.
    */
   | { type: 'ferry.order'; vehicle?: number; from: number; to: number; items?: { item: string; count: number }[]; crew?: number[] }
-  /**
-   * Queue a logistics transfer: move `items` (clipped to what `from` holds) from player region `from` (or a salvage site) to player
-   * region `to`. A free shuttle and pilot take it in as many trips as it needs; nothing else to micro-manage.
-   */
+  /** Queue a logistics transfer: move `items` (clipped to what `from` holds) from player region `from` (or a salvage site) to player region `to`. A free shuttle and pilot take it in as many trips as it needs. */
   | { type: 'transfer.order'; from: number; to: number; items: { item: string; count: number }[] }
   /** Cancel a transfer: pending trips stop, goods stay where they are (a trip already on its way to the drop-off finishes). */
   | { type: 'transfer.cancel'; order: number }

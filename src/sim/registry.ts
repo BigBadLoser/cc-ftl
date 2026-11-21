@@ -6,8 +6,7 @@ import type { FactionDef } from './shipgen/types';
 import type { StationDef } from './shipgen/stationTypes';
 import type { WorkCategory } from './crew/components';
 import type { CareerDef, UpbringingDef } from './crew/background';
-import type { InjuryContent } from './crew/injuryTypes';
-import type { ImplantDef } from './crew/implantTypes';
+import type { InjuryContent, ImplantDef } from './crew/injuryTypes';
 
 /** Crew skills the stat resolver knows (0 = untrained; roles add levels). */
 export type SkillName = 'gunnery' | 'piloting' | 'shielding' | 'melee' | 'construction' | 'hacking' | 'medicine' | 'science' | 'cooking' | 'botany' | 'industry';
@@ -264,10 +263,7 @@ export interface WeaponDef {
   interceptable?: boolean;
   /** Can be aimed at (and hurts) shuttles. Weapons without it never fire at a shuttle. */
   antiVehicle?: boolean;
-  /**
-   * Shield rule: a shot is blocked when layers > pierce (and `bypass` is off), removing `damage` layers.
-   * `bypass` skips shields entirely.
-   */
+  /** Shield rule: a shot is blocked when layers > pierce (and `bypass` is off), removing `damage` layers. `bypass` skips shields entirely. */
   shield: { damage: number; pierce: number; bypass?: boolean };
   /** Heat the firing ship gains per volley (combat/heat.ts). */
   heat: number;
@@ -294,8 +290,7 @@ export interface ItemDef {
   vehicle?: string;
   /** Present = an upgrade a module's slot takes (sim/upgrades). */
   upgrade?: UpgradeDef;
-  /** Present = an implant a surgeon fits to a crew member's body part (crew/implants.ts, crew/surgery.ts). */
-  implant?: ImplantDef;
+  /** Present = an implant a surgeon fits to a crew member's body part (crew/implants.ts, crew/surgery.ts). */ implant?: ImplantDef;
   /** DroneDef id: a drone bay with a free slot turns one of these from the ship's storage into a drone. */
   drone?: string;
   /** Present = crew can equip it and fight with it. */
@@ -562,11 +557,7 @@ export interface ModuleDef {
    * full with no medic, out of action meanwhile; a downed patient carried there is stabilised and heals too. The critical (downed) take it before a medical bed, walking patients only when no medical bed is free (crew/beds.ts `BedUse`).
    */
   recovery?: true;
-  /**
-   * A surgery table (crew/surgery.ts; also `bed` and `medical`): patients lie on it only for an operation, which it makes safer than a medical bed, and brain
-   * and spine work needs one. Powered: without power it cannot be used. Never a bed for the other uses (crew/beds.ts `BedUse`).
-   */
-  surgery?: true;
+  /** A surgery table (crew/surgery.ts; also `bed` and `medical`, powered): patients lie on it only for an operation, safer than a medical bed; brain and spine work needs one. */ surgery?: true;
   /** A hydroponics bed: carries a crop (farm/). `scale`: how many times a small bed's yield and planting water it takes (the large bed's 3). */
   plot?: { scale: number; waterScale?: number };
   /**

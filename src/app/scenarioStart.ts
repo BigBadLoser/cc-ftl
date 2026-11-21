@@ -1,6 +1,5 @@
 import { buildScenario, parseScenarioUrl, type Built, type ScenarioUrl, type UiRequest } from '../content/scenario';
 import { ShipC, homeShip, type Sim } from '../sim';
-import { enableOpsPreview } from './opsPreview';
 
 /** The `?scenario=` start named in the URL, if any (the starter hull it wants is read before the game is made). */
 export const scenarioUrl = (search: string): ScenarioUrl | null => parseScenarioUrl(search);
@@ -36,7 +35,6 @@ export function applyScenarioUi(sim: Sim, built: Built, t: ScenarioUiTargets): v
     if (req.kind === 'speed') t.setSpeed(req.speed);
     else if (req.kind === 'select') t.selectCrew(req.crew, req.focus);
     else if (req.kind === 'tool') t.setTool(req.tool);
-    else if (req.kind === 'preview') enableOpsPreview();
     else if (req.kind === 'frame') {
       const home = homeShip(sim);
       const station = sim.world.query(ShipC).find((i) => i !== home && sim.world.get(i, ShipC)?.immobile);
