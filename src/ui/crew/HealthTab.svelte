@@ -6,7 +6,7 @@
   import OperationPicker from './OperationPicker.svelte';
 
   /**
-   * The crew Health tab (#601; the approved round-6 mock). A summary sentence, then OVERALL and CAPACITIES on the left and the whole BODY on the right
+   * The crew Health tab (#601; the approved round-6 mock). OVERALL and CAPACITIES on the left and the whole BODY on the right
    * (ten parts in a fixed order, each with its state; a hover card per injured part). One alert colour: red is "needs care now"; plain text is white and
    * anything fine is grey. Under the body, the surgery queue and its picker, drawn only when the crew detail API has operations (slice 2, #311).
    */
@@ -23,7 +23,6 @@
 
 {#if h}
   <div class="health" bind:this={root} data-testid="crew-health">
-    <p class="sum" class:fine={h.summary.fine} data-testid="health-summary">{#if h.summary.alert}<span class="alert">{h.summary.alert}</span>{/if}{h.summary.alert && h.summary.text ? ' ' : ''}{h.summary.text}</p>
     <div class="cols">
       <div class="left">
         <h4>Overall</h4>
@@ -62,9 +61,6 @@
 
 <style>
   .health { font-size: var(--fs-body); color: var(--text); }
-  .sum { margin: -2px -10px 10px; padding: 0 10px 10px; border-bottom: 1px solid var(--line); font-size: 14px; }
-  .sum.fine { color: var(--dim); }
-  .sum .alert { color: var(--red); }
   .cols { display: grid; grid-template-columns: 170px 1fr; }
   .left { padding-right: 12px; border-right: 1px solid var(--line); }
   .right { padding-left: 12px; min-width: 0; }

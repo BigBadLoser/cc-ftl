@@ -1,5 +1,5 @@
-import { CrewC, DownedC, HealthC, type Injury, type Sim } from '../sim';
-import { bleedRate, canBeInjured, capacitiesOf, injuriesOf, isBleeding, needsTreatment } from '../sim/crew/body';
+import { CrewC, HealthC, type Injury, type Sim } from '../sim';
+import { bleedRate, canBeInjured, capacitiesOf, injuriesOf } from '../sim/crew/body';
 import { BLEED_FAST_AT } from '../sim/crew/tuningInjury';
 import type { BodyPartDef, Capacity } from '../sim/crew/injuryTypes';
 import { clockAt } from '../sim/clock';
@@ -39,15 +39,6 @@ function gotOf(sim: Sim, i: Injury): string {
   return `Got it: ${sim.content.injuries?.sources[i.src]?.name ?? i.src}, day ${clockAt(i.at).day}.`;
 }
 
-/** The summary sentence from the sim's answers: down, bleeding, waiting for a medic, healing, healthy. */
-function summaryOf(sim: Sim, id: number, list: readonly Injury[]): UiHealth['summary'] {
-  if (sim.world.has(id, DownedC)) return { alert: 'Down.', text: needsTreatment(sim, id) ? 'Needs a rescue and a medic.' : 'Needs a rescue.', fine: false };
-  if (isBleeding(sim, id)) return { alert: 'Bleeding.', text: needsTreatment(sim, id) ? 'Needs first aid and a medic.' : 'Needs first aid.', fine: false };
-  if (needsTreatment(sim, id)) return { alert: 'Needs a medic.', text: '', fine: false };
-  if (list.some((i) => i.sev === 'minor' || i.sev === 'serious')) return { alert: '', text: 'Healing.', fine: false };
-  return { alert: '', text: list.length ? 'Stable.' : 'Healthy.', fine: true };
-}
-
 /** The Health tab of one crew member (null for a body that takes no injuries). `operations`: the surgery queue, null until surgery exists. */
 export function buildHealth(sim: Sim, id: number, operations: UiOperations | null = null): UiHealth | null {
   const c = sim.content.injuries;
@@ -74,7 +65,6 @@ export function buildHealth(sim: Sim, id: number, operations: UiOperations | nul
   });
   const rate = bleedRate(sim, id);
   return {
-    summary: summaryOf(sim, id, list),
     hpPct: hp && hp.max > 0 ? Math.round((hp.hp / hp.max) * 100) : 100,
     bleeding: rate > 0 ? (rate >= BLEED_FAST_AT ? 'fast' : 'slow') : null,
     capacities: (Object.keys(c.capacities) as Capacity[]).map((k) => ({ key: k, name: c.capacities[k].name, pct: Math.round(caps[k] * 100), tone: capTone(caps[k]) })),

@@ -38,8 +38,6 @@ and the capacities change the crew member's stats:
 
 The crew inspector's **Health** tab shows it all at a glance:
 
-- A line across the top says what is wrong in a few words: "Bleeding. Needs first aid and a medic.", "Needs a medic.",
-  "Down." or "Healthy.". Red means it needs care now.
 - On the left, their health, how fast they bleed (while they do), and every capacity; one under 100% shows white,
   a full one grey.
 - On the right, all ten body parts with their state: "Fine", or the worst injury, such as "Fracture, treated" or

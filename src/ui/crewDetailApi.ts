@@ -162,8 +162,6 @@ export type UiTone = 'alert' | 'plain' | 'fine';
 export type UiPartIcon = 'part-brain' | 'part-eye' | 'part-heart' | 'part-lungs' | 'part-spine' | 'part-arm' | 'part-leg';
 
 export interface UiHealth {
-  /** One plain sentence: `alert` (red, may be empty), then `text`. Grey when nothing is wrong. */
-  summary: { alert: string; text: string; fine: boolean };
   hpPct: number;
   /** The bleeding rate in a word, only while bleeding. */
   bleeding: 'slow' | 'fast' | null;
