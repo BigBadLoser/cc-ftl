@@ -1,7 +1,7 @@
 import { CrewC, HealthC, MoodC, NeedsC, PositionC } from '../crew/components';
 import { refusesWork } from '../crew/helpers';
 import { careAvailable } from '../crew/recovery';
-import { needsTreatment } from '../crew/body';
+import { seeksTreatment } from '../crew/body';
 import { TREATMENT_HEALTH_INPUT } from '../crew/tuningInjury';
 import { foodOn, hungerDrainPerSec } from '../crew/eating';
 import { airLeft } from '../eva/airLedger';
@@ -50,12 +50,12 @@ const INPUTS: Record<DriveInput, (sim: Sim, id: number) => number | undefined> =
   },
   /** A battery robot's upkeep: 0 when it wants its bay (battery low, or damaged with a repair item aboard), else 1000. */
   robotUpkeep: (sim, id) => (speciesOf(sim, id)?.charge ? (wantsBay(sim, id) ? 0 : 1000) : undefined),
-  /** Hp per mille, held under `TREATMENT_HEALTH_INPUT` while a serious injury waits for a medic's treatment (crew/body.ts `needsTreatment`): the recover drive takes them to a medical bed. */
+  /** Hp per mille, held under `TREATMENT_HEALTH_INPUT` while a serious injury waits for a medic's treatment (crew/body.ts `seeksTreatment`): the recover drive takes them to a medical bed. */
   health: (sim, id) => {
     const h = sim.world.get(id, HealthC);
     if (!h || h.max <= 0) return undefined;
     const hp = Math.floor((h.hp * 1000) / h.max);
-    return needsTreatment(sim, id) ? Math.min(hp, TREATMENT_HEALTH_INPUT) : hp;
+    return seeksTreatment(sim, id) ? Math.min(hp, TREATMENT_HEALTH_INPUT) : hp;
   },
   /** A worn suit's tank, per mille. */
   air: (sim, id) => {

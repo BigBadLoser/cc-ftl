@@ -2,7 +2,7 @@ import {
   BreakdownC, CrewC, DownedC, HealthC, ImplantsC, MoodC, FOOD_MOOD_KEYS, MOOD_BASE, MOOD_LABELS, MOOD_LOW, MOOD_LOW_WORK_MULT, MOOD_VERY_LOW, MOOD_VERY_LOW_WORK_MULT,
   BackgroundC, InterestsC, SKILL_NAMES, WONT_DO_NAMES, WONT_DO_SKILLS, WontDoC, interestIn,
   NeedsC, RolledSkillsC, SKILLS, SkillXpC, SuitC, SurrenderedC, PrisonerC,
-  statBreakdown, suitAir, capacitiesOf, injuriesOf, TraitsC, suitDef, traitDefs, wielded, xpProgress, type Sim, type StatBreakdown, type StatName,
+  statBreakdown, suitAir, TraitsC, suitDef, traitDefs, wielded, xpProgress, type Sim, type StatBreakdown, type StatName,
 } from '../sim';
 import { CarryingC } from '../sim/items/components';
 import { slabDraining, slabInfo } from '../sim/stasis/query';
@@ -12,6 +12,8 @@ import { buildBonds } from './bondSnapshot';
 import { buildSocial } from './socialSnapshot';
 import { xpGainMult } from '../sim/crew/traits';
 import { carriedCard, suitCard, weaponCard } from './crewItemCards';
+import { buildHealth } from './healthDetail';
+import { previewOperations } from './opsPreview';
 import type { UiCondition, UiCrewDetail, UiGearSlot, UiItemCard, UiSkillDetail, UiStatDetail, UiStatPart } from '../ui/crewDetailApi';
 
 const cap = (s: string): string => s[0]!.toUpperCase() + s.slice(1);
@@ -111,29 +113,6 @@ function conditionsOf(sim: Sim, id: number): UiCondition[] {
   return out;
 }
 
-/** The injury list: part, kind and where it is on the ladder; then the capacities under 100%. */
-function injuryLines(sim: Sim, id: number): UiCondition[] {
-  const c = sim.content.injuries;
-  const list = injuriesOf(sim, id);
-  if (!c || !list.length) return [];
-  const state = (i: (typeof list)[number]): { text: string; tone: UiCondition['tone'] } => {
-    if (i.sev === 'destroyed') return { text: 'lost', tone: 'bad' };
-    if (i.sev === 'scar') return { text: 'scar', tone: 'warn' };
-    if (i.bleeding) return { text: 'bleeding', tone: 'bad' };
-    if (i.sev === 'serious') return i.treated ? { text: 'treated, healing', tone: 'warn' } : { text: 'needs treatment', tone: 'bad' };
-    return { text: 'healing', tone: 'ok' };
-  };
-  const lines: UiCondition[] = list.map((i, n) => {
-    const s = state(i);
-    const kind = i.sev === 'destroyed' ? '' : `${c.kinds[i.kind]?.name ?? i.kind}, `;
-    return { key: `injury${n}`, label: c.parts[i.part]?.name ?? i.part, text: `${kind}${s.text}`, pct: null, tone: s.tone };
-  });
-  const caps = capacitiesOf(sim, id);
-  const low = (Object.keys(caps) as (keyof typeof caps)[]).filter((k) => caps[k] < 0.995).map((k) => `${c.capacities[k]?.name ?? k} ${Math.round(caps[k] * 100)}%`);
-  if (low.length) lines.push({ key: 'capacities', label: 'Body', text: low.join(', '), pct: null, tone: 'warn' });
-  return lines;
-}
-
 function moodOf(sim: Sim, id: number): UiCrewDetail['mood'] {
   const m = sim.world.get(id, MoodC);
   if (!m) return null;
@@ -191,7 +170,8 @@ export function buildCrewDetail(sim: Sim, id: number | null): UiCrewDetail | nul
   const hp = sim.world.get(id, HealthC);
   return {
     id,
-    health: { hp: Math.round(hp?.hp ?? 100), maxHp: hp?.max ?? 100, conditions: conditionsOf(sim, id), injuries: injuryLines(sim, id) },
+    health: { hp: Math.round(hp?.hp ?? 100), maxHp: hp?.max ?? 100, conditions: conditionsOf(sim, id) },
+    body: buildHealth(sim, id, previewOperations(sim, id)),
     mood: moodOf(sim, id),
     skills: skillsOf(sim, id),
     ...backgroundOf(sim, id),

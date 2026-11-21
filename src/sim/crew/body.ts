@@ -2,7 +2,8 @@ import type { Modifier, ModifierSource } from '../stats';
 import type { Sim } from '../sim';
 import { CrewC } from './components';
 import { InjuriesC, type Capacity, type Injury, type InjuryContent } from './injuryTypes';
-import { BLEED_OUT_MIN_MULT, HEAL_MIN_MULT, KNOCKOUT_BELOW, SUIT_AIR_MIN_MULT } from './tuningInjury';
+import { BLEED_OUT_MIN_MULT, HEAL_MIN_MULT, KNOCKOUT_BELOW, STRANDED_RETRY_SEC, SUIT_AIR_MIN_MULT } from './tuningInjury';
+import { TICK_HZ } from '../time';
 
 /**
  * The body map (DESIGN.md "Injuries and cyberware"): the one answer to "how well does this part work" (`partCondition`), "how well does this
@@ -96,8 +97,30 @@ export function mustBeDown(sim: Sim, id: number): boolean {
 /** Is any injury bleeding? The first-aid job and the medic drone ask it. */
 export const isBleeding = (sim: Sim, id: number): boolean => injuriesOf(sim, id).some((i) => i.bleeding);
 
-/** Does a serious injury wait for a medic's treatment? The recover drive and the medical bed stay ask it. */
+/** Does a serious injury wait for a medic's treatment? */
 export const needsTreatment = (sim: Sim, id: number): boolean => injuriesOf(sim, id).some((i) => i.sev === 'serious' && !i.treated);
+
+/** Has a medic started (or finished) treating any of their serious injuries? */
+export const treatmentStarted = (sim: Sim, id: number): boolean => injuriesOf(sim, id).some((i) => i.sev === 'serious' && (!!i.treated || (i.treat ?? 0) > 0));
+
+/**
+ * Do they go and get treated: a serious injury waits for a medic and they have not given up on it lately (`untended`, a stay in a medical bed that timed out,
+ * crew/recovery.ts). The recover drive's health input, the bed choice and the medical bed stay ask it.
+ */
+export const seeksTreatment = (sim: Sim, id: number): boolean =>
+  injuriesOf(sim, id).some((i) => i.sev === 'serious' && !i.treated && (i.untended === undefined || sim.tick - i.untended >= STRANDED_RETRY_SEC * TICK_HZ));
+
+/** Give up waiting for treatment: their untreated serious injuries are marked `untended` now. */
+export function giveUpTreatment(sim: Sim, id: number): void {
+  for (const i of sim.world.get(id, InjuriesC)?.list ?? []) if (i.sev === 'serious' && !i.treated) i.untended = sim.tick;
+}
+
+/** Hp a second their bleeding wounds take while they stand (0 when none bleeds). */
+export function bleedRate(sim: Sim, id: number): number {
+  let r = 0;
+  for (const i of injuriesOf(sim, id)) if (i.bleeding) r += sim.content.injuries?.kinds[i.kind]?.bleed ?? 0;
+  return r;
+}
 
 const lerp = (min: number, v: number): number => min + (1 - min) * v;
 

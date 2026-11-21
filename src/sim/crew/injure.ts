@@ -86,7 +86,7 @@ function injure(sim: Sim, id: number, source: InjurySource, serious: boolean): v
     const fits = (list: readonly string[]) => list.filter((k) => { const parts = c.kinds[k]?.parts; return !!c.kinds[k] && (!parts || parts.includes(part)); });
     const first = fits(serious ? def.serious : def.minor);
     const kinds = first.length ? first : fits(serious ? def.minor : def.serious);
-    if (kinds.length) addInjury(sim, id, part, sim.rng.pick(kinds));
+    if (kinds.length) addInjury(sim, id, part, sim.rng.pick(kinds), undefined, source);
   }
 }
 
@@ -94,18 +94,19 @@ function injure(sim: Sim, id: number, source: InjurySource, serious: boolean): v
  * Put one injury of `kind` on `part` (the sources, and `debug.setCrew`, which may set it `as` a scar or a lost part at once). A part already lost takes
  * none. A serious injury that leaves the part with no condition destroys it: its injuries go, and one `destroyed` entry stays for good.
  */
-export function addInjury(sim: Sim, id: number, part: string, kind: string, as?: 'scar' | 'destroyed'): void {
+export function addInjury(sim: Sim, id: number, part: string, kind: string, as?: 'scar' | 'destroyed', src?: InjurySource): void {
   const k = sim.content.injuries?.kinds[kind];
   if (!k || !sim.content.injuries?.parts[part] || partDestroyed(sim, id, part)) return;
   const inj = injuriesComp(sim, id);
+  const from = src ? { src, at: sim.tick } : {};
   if (as === 'scar') {
-    inj.list.push({ part, kind, sev: 'scar', age: 0, heal: 0 });
+    inj.list.push({ part, kind, sev: 'scar', age: 0, heal: 0, ...from });
     return;
   }
-  inj.list.push({ part, kind, sev: k.severity, age: 0, heal: 0, ...(k.bleed ? { bleeding: true as const } : {}) });
+  inj.list.push({ part, kind, sev: k.severity, age: 0, heal: 0, ...(k.bleed ? { bleeding: true as const } : {}), ...from });
   if (as === 'destroyed' || (k.severity === 'serious' && partCondition(sim, id, part, inj.list) <= 0)) {
     inj.list = inj.list.filter((i) => i.part !== part);
-    inj.list.push({ part, kind, sev: 'destroyed', age: 0, heal: 0 });
+    inj.list.push({ part, kind, sev: 'destroyed', age: 0, heal: 0, ...from });
     sim.events.emit({ type: 'crew.injured', crew: id, part, kind, severity: 'destroyed' });
     return;
   }

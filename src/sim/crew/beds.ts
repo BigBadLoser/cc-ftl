@@ -7,7 +7,7 @@ import { walkOpts } from '../eva/route';
 import { findPath, type PathOpts, type Tile } from './pathfind';
 import { shipIdOf } from '../regions';
 import { berthHolder, freeBerth, releaseBerth } from './berths';
-import { needsTreatment } from './body';
+import { seeksTreatment } from './body';
 
 /** A bed tile a planner must not use (a hazard there for this sleeper). */
 export type BedSkip = (x: number, y: number) => boolean;
@@ -35,11 +35,11 @@ const BED_ORDER: Record<BedUse, readonly BedKind[]> = {
 
 /**
  * The use a hurt crew member's bed search is for: critical when downed or carried (the game's incapacitated-by-injury test), treatment when a serious
- * injury waits for a medic (crew/body.ts `needsTreatment`), else walking. The one place that decides.
+ * injury waits for a medic (crew/body.ts `seeksTreatment`), else walking. The one place that decides.
  */
 export function bedUseOf(sim: Sim, crew: number): BedUse {
   if (sim.world.has(crew, DownedC) || sim.world.has(crew, CarriedC)) return 'critical';
-  return needsTreatment(sim, crew) ? 'treatment' : 'walking';
+  return seeksTreatment(sim, crew) ? 'treatment' : 'walking';
 }
 
 /** Which kind of bed a module is: a recovery pod, a medical bed (patients only) or an ordinary bed. */

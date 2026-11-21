@@ -4,7 +4,9 @@ import { InjuriesC } from '../sim/crew/injuryTypes';
 import { capacitiesOf, canBeInjured, injuriesOf, isBleeding, partCondition } from '../sim/crew/body';
 import { addInjury, damageCrew, injureOnDown } from '../sim/crew/injure';
 import { injuryStep } from '../sim/crew/injuryCare';
-import { SCAR_AFTER_SEC } from '../sim/crew/tuningInjury';
+import { SCAR_AFTER_SEC, STRANDED_SEC } from '../sim/crew/tuningInjury';
+import { RecoveringC } from '../sim/crew/components';
+import { seeksTreatment } from '../sim/crew/body';
 import { stat, statBreakdown } from '../sim/stats';
 import { playerCrew } from '../sim/story/world';
 import type { Sim } from '../sim/sim';
@@ -108,6 +110,23 @@ describe('crew injuries (#601)', () => {
     expect(inj.sev).toBe('scar');
     expect(inj.heal).toBe(0); // no healing ever ran untreated
     expect(partCondition(other, id, 'part.arm_right')).toBeCloseTo(1 - injuries.kinds['injury.fracture'].scarLoss, 6);
+  });
+
+  it('a patient no medic comes to gets up after STRANDED_SEC, and does not walk straight back', () => {
+    const built = cachedScenario('injuries');
+    const sim = built.sim;
+    for (const c of playerCrew(sim)) sim.world.get(c, PrioritiesC)!.medical = 0; // nobody tends the bed
+    const gunner = playerCrew(sim).find((id) => injuriesOf(sim, id).some((i) => i.kind === 'injury.fracture'))!;
+    play(built, 120 * TICK_HZ, { until: (s) => s.world.has(gunner, RecoveringC) });
+    expect(sim.world.has(gunner, RecoveringC)).toBe(true); // walked to the medical bed for treatment
+    const lay = sim.tick;
+    play(built, (STRANDED_SEC + 120) * TICK_HZ, { until: (s) => !s.world.has(gunner, RecoveringC) });
+    expect(sim.world.has(gunner, RecoveringC)).toBe(false);
+    expect((sim.tick - lay) / TICK_HZ).toBeGreaterThanOrEqual(STRANDED_SEC);
+    expect(injuriesOf(sim, gunner).some((i) => i.sev === 'serious' && !i.treated)).toBe(true); // still untreated
+    expect(seeksTreatment(sim, gunner)).toBe(false);
+    play(built, 30 * TICK_HZ);
+    expect(sim.world.has(gunner, RecoveringC)).toBe(false);
   });
 
   it('a destroyed eye stays lost, and takes no further injury', () => {

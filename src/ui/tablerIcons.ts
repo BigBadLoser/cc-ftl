@@ -55,6 +55,8 @@ import t_gas_station from '@tabler/icons/outline/gas-station.svg?raw';
 import t_ghost from '@tabler/icons/outline/ghost.svg?raw';
 import t_hand_stop from '@tabler/icons/outline/hand-stop.svg?raw';
 import t_heart from '@tabler/icons/outline/heart.svg?raw';
+import t_brain from '@tabler/icons/outline/brain.svg?raw';
+import t_lungs from '@tabler/icons/outline/lungs.svg?raw';
 import t_heart_broken from '@tabler/icons/outline/heart-broken.svg?raw';
 import t_polygon from '@tabler/icons/outline/polygon.svg?raw';
 import t_hexagon from '@tabler/icons/outline/hexagon.svg?raw';
@@ -103,6 +105,11 @@ const inner = (raw: string): string => raw.replace(/^[\s\S]*?<svg[^>]*>/, '').re
 
 /** Icon.svelte name -> Tabler outline file. */
 export const FILES = {
+  // Body parts (the crew Health tab); the spine, arm and leg are drawn in ui/bodyGlyphs.ts.
+  'part-brain': 'brain',
+  'part-eye': 'eye',
+  'part-heart': 'heart',
+  'part-lungs': 'lungs',
   'sparkles': 'sparkles',
   'diamond': 'diamond',
   'bomb': 'bomb',
@@ -204,6 +211,8 @@ export const FILES = {
 } as const;
 
 const RAW: Record<string, string> = {
+  'brain': t_brain,
+  'lungs': t_lungs,
   'sparkles': t_sparkles,
   'diamond': t_diamond,
   'bomb': t_bomb,

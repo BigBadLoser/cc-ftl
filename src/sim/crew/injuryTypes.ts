@@ -24,11 +24,15 @@ export interface BodyPartDef {
   gate?: true;
   /** Brain, heart, lungs: destroyed, it downs the crew member, who dies without surgery. */
   vital?: true;
+  /** A paired part's side (the Health tab mirrors its icon). Content order is the order the Health tab lists the parts in. */
+  side?: 'left' | 'right';
 }
 
 /** A capacity: its floor (what is left with every part of it gone) and the stats it scales (`weight`: the share of the stat it takes away at 0). */
 export interface CapacityDef {
   name: string;
+  /** What a low value does, in plain words (the Health tab's hover card). */
+  effect: string;
   floor?: number;
   stats: Partial<Record<StatName, number>>;
 }
@@ -53,6 +57,8 @@ export interface InjuryKindDef {
 
 /** How a source injures: which parts it hits (weights) and with which kinds. */
 export interface InjurySourceDef {
+  /** How it is named in "Got it: <name>, day 3". */
+  name: string;
   /** A hit of at least this many hp may injure; a dose source injures each time its harm adds up to it. */
   threshold: number;
   /** Chance a hit over the threshold injures (dose sources: every dose does). */
@@ -91,6 +97,11 @@ export interface Injury {
   treated?: number;
   /** Seconds of a medic's treatment so far. */
   treat?: number;
+  /** What caused it, and the tick it happened (the Health tab's "Got it" line). Absent for one set by a debug command. */
+  src?: InjurySource;
+  at?: number;
+  /** The tick its patient gave up waiting in a medical bed for a medic (`STRANDED_SEC`): they do not seek treatment for it again for `STRANDED_RETRY_SEC`. */
+  untended?: number;
 }
 
 /** A crew member's injuries, and the harm a dose source (fire, vacuum) has dealt since its last injury. */

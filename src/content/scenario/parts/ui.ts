@@ -7,6 +7,8 @@ export interface UiSpec {
   /** Select this player crew member (by order, or the one a function picks) with the camera on them. */
   select?: number | ((sim: Sim) => number | null | undefined);
   tool?: Extract<UiRequest, { kind: 'tool' }>['tool'];
+  /** Turn on a debug preview (the Health tab's surgery section). */
+  preview?: Extract<UiRequest, { kind: 'preview' }>['what'];
 }
 declare module '../types' { interface ScenarioSpec { ui?: UiSpec } }
 
@@ -17,6 +19,7 @@ export default definePart<'ui'>({
   apply(ctx, u) {
     if (u.speed !== undefined) ctx.ui({ kind: 'speed', speed: u.speed });
     if (u.tool) ctx.ui({ kind: 'tool', tool: u.tool });
+    if (u.preview) ctx.ui({ kind: 'preview', what: u.preview });
     const crew = u.select === undefined ? undefined : typeof u.select === 'function' ? u.select(ctx.sim) ?? undefined : playerCrewPackedOk(ctx.sim)[u.select];
     if (crew !== undefined) ctx.ui({ kind: 'select', crew, focus: true });
   },

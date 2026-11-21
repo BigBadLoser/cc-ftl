@@ -10,7 +10,8 @@ import { CrewC, DownedC, PathC, PositionC, RecoveringC, type Crew, type Downed, 
 import { clearPath } from './helpers';
 import { tendingOf, treatmentMult } from './treatment';
 import { grantXp } from './xp';
-import { healMult, needsTreatment } from './body';
+import { giveUpTreatment, healMult, seeksTreatment, treatmentStarted } from './body';
+import { STRANDED_SEC } from './tuningInjury';
 import { damageCrew } from './injure';
 
 /**
@@ -59,7 +60,7 @@ export function enterCare(sim: Sim, crew: number, bed: number, treated?: number)
   pos.progress = 0;
   holdBerth(sim.content.modules[m.def], m, crew);
   clearPath(sim, crew);
-  const rec: Recovering = treated ? { bed, treated } : { bed };
+  const rec: Recovering = treated ? { bed, treated, since: sim.tick } : { bed, since: sim.tick };
   sim.world.add(crew, RecoveringC, rec);
   (sim.world.get(crew, CrewC) as Crew).activity = 'recovering';
   sim.events.emit({ type: 'crew.enteredCare', crew, bed });
@@ -114,8 +115,12 @@ export function restInCare(sim: Sim, crew: number, rec: Recovering, health: Heal
     leaveCare(sim, crew, rec);
     return;
   }
-  // In a medical bed they stay on, healed, until a medic has treated their serious injuries (crew/injuryCare.ts); a pod does not treat.
-  if (health.hp >= health.max && (podModule(sim, rec.bed) || !needsTreatment(sim, crew))) leaveCare(sim, crew, rec);
+  if (health.hp < health.max) return;
+  const pod = !!podModule(sim, rec.bed);
+  // In a medical bed they stay on, healed, until a medic has treated their serious injuries (crew/injuryCare.ts); a pod does not treat. With no medic
+  // started on them within STRANDED_SEC of lying down, they give up and get up (and do not come back for it for a while).
+  if (!pod && seeksTreatment(sim, crew) && !treatmentStarted(sim, crew) && sim.tick - (rec.since ?? sim.tick) >= STRANDED_SEC * TICK_HZ) giveUpTreatment(sim, crew);
+  if (pod || !seeksTreatment(sim, crew)) leaveCare(sim, crew, rec);
 }
 
 /** A stabilised downed patient in a pod has reached `GET_UP_HP`: they are no longer downed, and stay to full. */

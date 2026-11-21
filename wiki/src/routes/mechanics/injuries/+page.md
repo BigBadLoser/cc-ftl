@@ -34,8 +34,20 @@ and the capacities change the crew member's stats:
 | Breathing | Lungs | Suit air runs out sooner; a little slower at work and on foot |
 | Blood pumping | Heart | Bleeding out comes sooner; every kind of healing is slower |
 
-The crew inspector's **Status** tab lists every injury and the capacities they lower. The Skills tab shows the stat
-changes as "Injuries" in each breakdown.
+### The Health tab
+
+The crew inspector's **Health** tab shows it all at a glance:
+
+- A line across the top says what is wrong in a few words: "Bleeding. Needs first aid and a medic.", "Needs a medic.",
+  "Down." or "Healthy.". Red means it needs care now.
+- On the left, their health, how fast they bleed (while they do), and every capacity. A capacity under
+  <Stat kind="tuning" id="CAPACITY_LOW_BELOW" percent /> shows red.
+- On the right, all ten body parts with their state: "Fine", or the worst injury, such as "Fracture, treated" or
+  "Destroyed" (with "+1" when the part has more). Red only when it needs care now: bleeding, or serious and untreated.
+- Point at an injured part for its card: what is wrong, what care it needs, what it does to the crew member, and how
+  and when it happened.
+
+The Skills tab shows the stat changes as "Injuries" in each breakdown.
 
 ## Where injuries come from
 
@@ -72,7 +84,9 @@ Any crew member with the **Medical** priority gives first aid where the patient 
 A serious injury needs a **medical bed**. Crew with one walk to a free medical bed on their own. Downed crew are
 carried to a recovery pod first when there is one, so their serious injury waits until they can walk to a medical bed. While a medic tends the bed, they treat the patient's serious injuries one at a time, about
 <Stat kind="tuning" id="TREAT_SEC" unit="s" /> each. The medic's Medicine skill and any medicinal herbs in stock set how
-well it is done: a better treatment heals faster. A patient stays in the bed until everything is treated.
+well it is done: a better treatment heals faster. A patient stays in the bed until everything is treated. If no medic has started on them
+<Stat kind="tuning" id="STRANDED_SEC" unit="s" /> after they lie down, they give up and get up, and do not come back for it for
+<Stat kind="tuning" id="STRANDED_RETRY_SEC" unit="s" />.
 
 A **recovery pod** does not treat injuries, but treated ones heal
 <Stat kind="tuning" id="POD_INJURY_HEAL_MULT" />× as fast while the patient lies in a powered pod.

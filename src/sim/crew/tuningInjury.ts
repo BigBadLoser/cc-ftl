@@ -21,5 +21,12 @@ export const POD_INJURY_HEAL_MULT = 2;
 export const FIRST_AID_SEC = 4;
 /** How often (ticks) injuries are aged and healed, and bleeding is dealt. */
 export const INJURY_STEP_TICKS = 10;
+/** Seconds a walking patient waits in a medical bed for a medic to start treating them before they get up (they do not seek treatment again for `STRANDED_RETRY_SEC`). */
+export const STRANDED_SEC = 180;
+export const STRANDED_RETRY_SEC = 600;
+/** Bleeding at this many hp a second or more is "fast" (the Health tab). */
+export const BLEED_FAST_AT = 0.3;
+/** A capacity under this is low enough to matter: the Health tab shows it red. */
+export const CAPACITY_LOW_BELOW = 0.75;
 /** The `health` drive input (per mille) while a serious injury waits for treatment: under the recover drive's enter (700, content/policies.ts). */
 export const TREATMENT_HEALTH_INPUT = 690;
