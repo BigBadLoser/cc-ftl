@@ -28,6 +28,8 @@ export interface Region {
   /** Regions this room may open a door onto (default: any hall). */
   access?: number[];
   doors: number; /** One door at its frontage's bow end, not the middle (fixtures fill the rest). */ doorFirst?: boolean;
+  /** Doors in a wall running along this axis where it has any (a lane hull's forward rooms: onto the spine). */
+  doorAlong?: 'x' | 'y';
   /** Wall rank among rooms: the lower gives way. Defaults to creation order. */
   rank: number;
   /** The department this region belongs to (flow planner), for sheets and the plan class. */
@@ -126,9 +128,9 @@ export class RegionGrid {
     return false;
   }
 
-  room(role: RoomRole, o: { spec?: RoomSpec; access?: number[]; doors?: number; rank?: number; dept?: string; doorFirst?: boolean } = {}): number {
+  room(role: RoomRole, o: { spec?: RoomSpec; access?: number[]; doors?: number; rank?: number; dept?: string; doorFirst?: boolean; doorAlong?: 'x' | 'y' } = {}): number {
     const id = this.regions.length;
-    this.regions.push({ role, hall: false, doors: o.doors ?? 1, rank: o.rank ?? id, ...(o.spec ? { spec: o.spec } : {}), ...(o.access ? { access: o.access } : {}), ...(o.doorFirst ? { doorFirst: true } : {}), ...(o.dept ?? o.spec?.dept ? { dept: o.dept ?? o.spec?.dept } : {}) });
+    this.regions.push({ role, hall: false, doors: o.doors ?? 1, rank: o.rank ?? id, ...(o.spec ? { spec: o.spec } : {}), ...(o.access ? { access: o.access } : {}), ...(o.doorFirst ? { doorFirst: true } : {}), ...(o.doorAlong ? { doorAlong: o.doorAlong } : {}), ...(o.dept ?? o.spec?.dept ? { dept: o.dept ?? o.spec?.dept } : {}) });
     return id;
   }
 

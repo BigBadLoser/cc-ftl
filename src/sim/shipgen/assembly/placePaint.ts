@@ -62,7 +62,8 @@ export function paintPlaced(plan: ShipPlan, { fr, lay, battery }: Placed): Regio
         const ahead = q.via === 'front' ? allParts.find((o) => o !== q && !!o.spec[side] && o.r0 < q.r0 && o.x0 <= q.x0 && q.x1 <= o.x1) : undefined;
         const fixed = q.via === 'dock' ? [docks[side]] : q.via === 'maint' ? [maint] : ahead ? [frontOf.get(ahead)?.[side] as number] : undefined;
         const access = fixed ?? (annexOf ? [front.get(annexOf)?.[side] as number] : q.r0 === 1 ? undefined : stub !== undefined ? [stub] : cross !== undefined ? [cross] : host ? [front.get(host)?.[side] as number] : undefined);
-        const id = g.room(h.role, { spec: h, ...(access ? { access } : {}) });
+        // (A lane hull's forward rooms open onto the spine where they touch it, not the cross corridor.)
+        const id = g.room(h.role, { spec: h, ...(access ? { access } : {}), ...(fr.lane && !q.row ? { doorAlong: 'x' as const } : {}) });
         paint(id, q.x0, q.x1, (y) => rows(q, d(y)));
         return id;
       }) as [number, number];
