@@ -24,7 +24,7 @@ Fleets of every faction persist, follow agendas, fight each other off-screen and
 | Hyperspace jump and FTL | `galaxy.jump` | Route, fuel, FTL charge; the ship drops into the target node | In game | sim/galaxy/hyperspace.ts, travel.ts, route.ts; sim/ftl/*; ui/JumpConfirm.svelte |
 | Fuel | `-` | Jump fuel, station fuel stock | In game | sim/galaxy/fuel.ts, costs.ts |
 | Encounters and interdiction | `-` | Crossings, ambush odds, evade, bribe, fight | In game | sim/galaxy/encounters.ts, encounterOdds.ts, respond.ts; ui/StarmapEncounter.svelte |
-| Fleets and NPC traffic | `-` | Persistent fleets with home ports, agendas, rebuilds | In game | sim/galaxy/fleets.ts, agenda.ts, roster.ts, rebuild.ts; content/galaxyFleets.ts |
+| Fleets and NPC traffic | `-` | Persistent fleets with home ports, agendas, rebuilds; drawn gliding along their lane with a next-node ETA | In game | sim/galaxy/fleets.ts, agenda.ts, roster.ts, rebuild.ts; content/galaxyFleets.ts |
 | Off-screen wars | `-` | Hostile fleets that meet fight in a stats mini-sim; wrecks and news | In game | sim/galaxy/meetings.ts, clash.ts, wrecks.ts, news.ts |
 | Heat (notoriety) and hunters | `-` | Kills and captures raise heat; factions send hunters; an urgent alert fires when hunters reach the player's node | In game | sim/galaxy/heat.ts, hunters.ts, tuningHeat.ts |
 | Stranding and distress tug | `-` | Broken fleets and the player can be towed | In game | sim/galaxy/stranded.ts; ui/StrandedBanner.svelte |
