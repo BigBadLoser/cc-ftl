@@ -35,12 +35,12 @@ export function zonesOf(
 ): Dept[] {
   if (!fr.lane) return [];
   // The forward section from the bow: command, then stores, each as many bays as hold its rooms; systems the rest.
-  const fwd: Dept[] = ['command', 'stores', 'systems'];
+  const fwd: Dept[] = ['command', 'systems'];
   let out = 0, got = 0, slots = 0, d = 0;
   const done = (): boolean => { const n = need[fwd[d] as Dept]; return !n || (got >= ROOM * n.area && slots >= n.rooms); };
   return bays.map((b, k) => {
     if (!b.row) {
-      while (d < 2 && done()) { d++; got = 0; slots = 0; }
+      while (d < fwd.length - 1 && done()) { d++; got = 0; slots = 0; }
       got += area(k); slots += b.tiers.length;
       return fwd[d] as Dept;
     }
@@ -48,6 +48,11 @@ export function zonesOf(
     if (weapons.has(k)) return 'weapons';
     return out++ < flight ? 'flight' : 'hab';
   });
+}
+
+/** Whether a bay of department `z` takes a room of `d`: stores share hab's side-hull bays (by the hangar's airlocks). */
+export function admits(z: Dept | undefined, d: Dept): boolean {
+  return z === d || (z === 'hab' && d === 'stores');
 }
 
 /** A department's own rooms for floor left over, taken in turn (again and again), the plainest last. */

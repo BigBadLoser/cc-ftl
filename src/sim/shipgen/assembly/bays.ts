@@ -38,25 +38,22 @@ export function bayLayout(fr: Frame): Bay[] {
         const x0 = s0 + Math.round(((s1 - s0 + 1) * j) / n), x1 = s0 + Math.round(((s1 - s0 + 1) * (j + 1)) / n) - 1;
         // (Under a doubled gun the column is the inboard gun's.)
         if (maint?.inner.some((i) => { const g = maint.guns[i]; return !!g && x0 >= g[0] && x1 <= g[1]; })) continue;
-        bays.push({ x0, x1, tiers: tiersOf(x0, x1, row?.depth ?? depth, lane ? FRONT : undefined), ...(row ? { row } : {}) });
+        bays.push({ x0, x1, tiers: tiersOf(x0, x1, row?.depth ?? depth), ...(row ? { row } : {}) });
       }
     }
   }
   return bays;
 }
 
-/** A lane hull's front tier's rows at most: its wide body's small rooms in front, the big behind. */
-const FRONT = 4;
-
 /**
- * One tier to the hull, or a front and a back where the bay is deep enough for two rooms of at least `MIN_DEPTH` rows:
- * halved, or with `front` the front tier no deeper than that.
+ * One tier to the hull, or a front and a back (halved) where the bay is deep enough for two rooms of at least `MIN_DEPTH`
+ * rows.
  */
-function tiersOf(x0: number, x1: number, depth: (x: number) => number, front?: number): [number, number][] {
+function tiersOf(x0: number, x1: number, depth: (x: number) => number): [number, number][] {
   let d = Infinity;
   for (let x = x0; x < x1; x++) d = Math.min(d, depth(x));
   if (d < 2 * MIN_DEPTH + 1) return [[1, Infinity]];
-  const r = Math.min(front ?? Infinity, Math.max(MIN_DEPTH, Math.round((d - 1) / 2)));
+  const r = Math.max(MIN_DEPTH, Math.round((d - 1) / 2));
   return [[1, r], [r + 2, Infinity]];
 }
 

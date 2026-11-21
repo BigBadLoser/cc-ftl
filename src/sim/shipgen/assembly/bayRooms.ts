@@ -7,7 +7,7 @@ import { gunsAndReactors, programPairs, type Pair } from './pairs';
 import { fillers, type Layout, type Part, type Piece, type Placed } from './placeLayout';
 import { onHall, opensThrough, roomKind } from './roomAccess';
 import { fillerSpec, maxArea, type Filler } from './roomSize';
-import { DEPT_FILL, deptOf, zonesOf, type Dept } from './zones';
+import { admits, DEPT_FILL, deptOf, zonesOf, type Dept } from './zones';
 
 /**
  * PROTOTYPE (#581): the plan's rooms on the bays (`bayLayout`). A room takes a run of neighbouring bays at one tier on
@@ -163,7 +163,7 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
   let zone: (Dept | undefined)[] = [];
   const inZone = (i: number, j: number, rs: RoomSpec[]): boolean => {
     if (zone.length === 0) return true;
-    for (let k = i; k < j; k++) if (!rs.every((h) => deptOf(h) === zone[k])) return false;
+    for (let k = i; k < j; k++) if (!rs.every((h) => admits(zone[k], deptOf(h)))) return false;
     return true;
   };
   /** Every column of the bays at that tier the same depth: a rectangle. */
