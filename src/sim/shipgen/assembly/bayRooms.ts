@@ -341,13 +341,13 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
     const beds = plan.quarters.filter((q) => q.block).reduce((t, q) => t + q.mods.length, 0);
     // (Inboard only: where it holds too few cabins, two beds to a cabin.)
     const ks = bays.flatMap((b, k) => (b.row && b.row.dir < 0 ? [k] : []));
-    const room = ks.reduce((t, k) => t + Math.max(1, Math.floor((bay(k).x1 - bay(k).x0 + 1) / 4)), 0);
+    const room = ks.reduce((t, k) => t + Math.max(1, Math.floor((bay(k).x1 - bay(k).x0) / 4)), 0);
     for (const s of [0, 1] as const) {
       let need = s === 0 ? Math.ceil(beds / 2) : Math.floor(beds / 2);
       const per = need > room ? 2 : 1;
       for (const k of ks) {
         if (need <= 0) break;
-        const c = Math.min(Math.ceil(need / per), Math.max(1, Math.floor((bay(k).x1 - bay(k).x0 + 1) / 4))), b = Math.min(need, c * per);
+        const c = Math.min(Math.ceil(need / per), Math.max(1, Math.floor((bay(k).x1 - bay(k).x0) / 4))), b = Math.min(need, c * per);
         const cab: RoomSpec = { role: 'quarters', mods: Array<string>(b).fill('module.bed'), w: 3 * c, h: 3 };
         strip.push({ item: { specs: on(cab, s), both: false, cabins: true }, specs: on(cab, s), spot: { side: s, i: k, j: k + 1, tier: 'full', area: area(k, k + 1, 'full') }, strip: c });
         need -= b;
@@ -362,8 +362,14 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
   const pdSpec: RoomSpec = { role: 'weapons', mods: ['module.pointDefense'], w: 4, h: 4 }, mounts: Pair[] = [...gunPairs, [pdSpec, { ...pdSpec }]];
   // (Aft of flight ops' two bays by the hangar.)
   const ob = fr.lane ? bays.map((b, k) => ((b.row?.dir ?? 1) > 0 && b.row ? k : -1)).filter((k) => k >= 0).slice(FLIGHT) : [];
-  // (The outboard bays by the engines.)
-  const at = new Set(ob.slice(-mounts.length));
+  // (The outboard bays by the engines four rows deep at least, a bay between each: from the stern, spaced where there
+  // are bays enough.)
+  const deep = ob.filter((k) => minDepth(k, k + 1) >= 4), pick = (gap: number): number[] => {
+    const got: number[] = [];
+    for (let m = deep.length - 1; m >= 0 && got.length < mounts.length; m--) if (got.every((k) => Math.abs(ob.indexOf(k) - ob.indexOf(deep[m] as number)) > gap)) got.push(deep[m] as number);
+    return got;
+  };
+  const spaced = pick(1), at = new Set((spaced.length === mounts.length ? spaced : pick(0)).sort((u, v) => u - v));
   const guns0: Put[] = fr.lane && ob.length >= mounts.length && at.size === mounts.length ? mounts.map((p, i) => {
     const k = [...at][i] as number, specs: Specs = [p[0], p[1]];
     return { item: { specs, both: true }, specs, spot: { side: 2, i: k, j: k + 1, tier: 'full', area: area(k, k + 1, 'full') } };

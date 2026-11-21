@@ -16,7 +16,17 @@ export function bayLayout(fr: Frame): Bay[] {
   const { xBand, dockAt, CW, xS, depth, maint, lane, outer } = fr;
   // On a lane hull, aft of the cross corridor: out from each side corridor, and in from it to the lane where it has both.
   const out: Row | undefined = lane && { c: lane.yc, dir: 1, depth: (x) => outer(x) - lane.yc - BAND - 1 };
-  const blocks: [number, number, Row?][] = [[xBand, dockAt - 1], [dockAt + CW + 1, xS, out]];
+  const blocks: [number, number, Row?][] = [[xBand, dockAt - 1]];
+  // (Outboard, round where the side hull is under four rows deep (a notch, its taper by the engines), and
+  // a stretch under four columns: that much is hull.)
+  if (!out) blocks.push([dockAt + CW + 1, xS]);
+  else for (let x = dockAt + CW + 1; x <= xS; x++) {
+    if (out.depth(x) < 4) continue;
+    let e = x;
+    while (e + 1 <= xS && out.depth(e + 1) >= 4) e++;
+    if (e - x + 1 >= 4) blocks.push([x, e, out]);
+    x = e;
+  }
   // (Inboard, between the lane's airlocks.)
   if (lane) {
     const inb: Row = { c: lane.yc, dir: -1, depth: (x) => lane.yc - BAND - 1 - lane.edge(x) };
