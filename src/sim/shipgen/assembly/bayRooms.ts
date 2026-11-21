@@ -1,5 +1,5 @@
 import type { ModuleDef } from '../../registry';
-import { reactorSpec, type RoomSpec, type ShipPlan } from '../plan';
+import { reactorSpec, unflat, type RoomSpec, type ShipPlan } from '../plan';
 import { bayLayout, type Bay } from './bays';
 import { cabinsFor } from './cabinBlock';
 import type { Frame } from './frame';
@@ -52,8 +52,9 @@ function program(plan: ShipPlan, defs: Record<string, ModuleDef>, inBattery: num
     ? [{ ...core, mods: core.mods.filter((m) => m !== 'module.droneBay'), w: 5, h: 4 }, { role: 'core', mods: ['module.droneBay'], w: 5, h: 4, ...(core.drones ? { drones: core.drones } : {}) }]
     : [{ ...core, w: 5, h: 4 }];
   if (core?.drones) delete (cores[0] as RoomSpec).drones;
-  // (And a mess of 7x5 at least: the crew's commons.)
-  const mess = (r: RoomSpec): RoomSpec => (r.mods.includes('module.galley') ? { ...r, w: Math.max(r.w, 7), h: Math.max(r.h, 5) } : r);
+  // (And a mess of 7x5 at least: the crew's commons. Mirrored, on a lane hull's side hulls four rows deep, 9x4.)
+  const [mw, mh] = mirror ? [9, 4] : [7, 5];
+  const mess = (r: RoomSpec): RoomSpec => (r.mods.includes('module.galley') ? { ...r, w: Math.max(r.w, mw), h: mirror ? mh : Math.max(r.h, mh) } : r);
   // (A lane hull's escape pods: one room of four, two bays long.)
   const pods: RoomSpec[] = hangars ? [] : [{ ...fillerSpec('pods', 64), mods: Array<string>(4).fill('module.pod_bay'), w: 14, h: 4 }];
   // (Mirrored, the point defence is its pair of turrets only: the plan's own room goes.)
@@ -68,7 +69,7 @@ function program(plan: ShipPlan, defs: Record<string, ModuleDef>, inBattery: num
   const items: Item[] = blocks ? cabinPairs.map((p) => ({ specs: [p[0], p[1]], both: true, cabins: true })) : [];
   const reactor = plan.reactors > 0 ? reactorSpec(plan.reactors, plan.kit) : null;
   const shields: RoomSpec | null = plan.shields.length > 0
-    ? { role: 'shields', mods: plan.shields.flatMap((s) => s.mods), w: plan.shields.reduce((t, s) => t + s.w, 0), h: Math.max(...plan.shields.map((s) => s.h)) } : null;
+    ? unflat({ role: 'shields', mods: plan.shields.flatMap((s) => s.mods), w: plan.shields.reduce((t, s) => t + s.w, 0), h: Math.max(...plan.shields.map((s) => s.h)) }) : null;
   // (A point-defence turret a side, a mirrored pair of 4x4 rooms.)
   const pd: RoomSpec = { role: 'weapons', mods: ['module.pointDefense'], w: 4, h: 4 };
   // (Mirrored, the pair is fixed beside the guns.)
@@ -334,17 +335,22 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
   }
 
   // A lane hull's cabins: single cabins along the lane, inboard of the side corridors from the hangar aft, the beds
-  // shared between the sides; where the strip is too short for them, cabin blocks as anywhere.
+  // shared between the sides; where the strip is too short for them even two to a cabin, cabin blocks as anywhere.
   const strip: Put[] = [];
   if (fr.lane) {
     const beds = plan.quarters.filter((q) => q.block).reduce((t, q) => t + q.mods.length, 0);
+    // (Inboard only: where it holds too few cabins, two beds to a cabin.)
+    const ks = bays.flatMap((b, k) => (b.row && b.row.dir < 0 ? [k] : []));
+    const room = ks.reduce((t, k) => t + Math.max(1, Math.floor((bay(k).x1 - bay(k).x0 + 1) / 4)), 0);
     for (const s of [0, 1] as const) {
       let need = s === 0 ? Math.ceil(beds / 2) : Math.floor(beds / 2);
-      for (let k = 0; k < n && need > 0; k++) {
-        if ((bay(k).row?.dir ?? 1) > 0) continue;
-        const c = Math.min(need, Math.max(1, Math.floor((bay(k).x1 - bay(k).x0 + 1) / 4))), cab: RoomSpec = { role: 'quarters', mods: Array<string>(c).fill('module.bed'), w: 3 * c, h: 3 };
+      const per = need > room ? 2 : 1;
+      for (const k of ks) {
+        if (need <= 0) break;
+        const c = Math.min(Math.ceil(need / per), Math.max(1, Math.floor((bay(k).x1 - bay(k).x0 + 1) / 4))), b = Math.min(need, c * per);
+        const cab: RoomSpec = { role: 'quarters', mods: Array<string>(b).fill('module.bed'), w: 3 * c, h: 3 };
         strip.push({ item: { specs: on(cab, s), both: false, cabins: true }, specs: on(cab, s), spot: { side: s, i: k, j: k + 1, tier: 'full', area: area(k, k + 1, 'full') }, strip: c });
-        need -= c;
+        need -= b;
       }
       if (need > 0) strip.length = 0;
       if (need > 0) break;

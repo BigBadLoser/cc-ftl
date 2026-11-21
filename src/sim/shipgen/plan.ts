@@ -129,8 +129,21 @@ export interface CoreKit { engine: string; reactor: string }
  */
 export const reactorSpec = (k: number, kit: CoreKit): RoomSpec => {
   const len = k * reactorDepth(kit.reactor) + 1;
-  return { role: 'reactor', mods: Array<string>(k).fill(kit.reactor), w: len % 2 === 0 ? len + 1 : len, h: 3 };
+  return unflat({ role: 'reactor', mods: Array<string>(k).fill(kit.reactor), w: len % 2 === 0 ? len + 1 : len, h: 3 });
 };
+
+/** The flattest a room may be, long side to short. */
+export const MAX_ASPECT = 3;
+
+/**
+ * A row of machines (a walk row along it) too flat for a room, folded in two: two rows facing one walk row between them.
+ */
+export function unflat(r: RoomSpec): RoomSpec {
+  const long = Math.max(r.w, r.h), short = Math.min(r.w, r.h);
+  if (long <= MAX_ASPECT * short) return r;
+  const l = Math.ceil((long - 1) / 2) + 1, s2 = 2 * short - 1;
+  return r.w >= r.h ? { ...r, w: l, h: s2 } : { ...r, w: s2, h: l };
+}
 
 /** Engine room for k engines stacked along the east hull. `door` is the wall crew enter by. */
 export const engineSpec = (k: number, door: 'w' | 'ns', kit: CoreKit): RoomSpec => ({
