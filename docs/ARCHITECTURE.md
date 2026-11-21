@@ -35,7 +35,7 @@ One line per section; read the index, then only the sections your task touches.
 - [Events (story), `src/sim/story/`](#events-story-srcsimstory): Events are data (EventDef, src/sim/story/defs.ts; content in src/content/events.ts, satisfies EventDef,...
 - [Food and farming, `src/sim/farm/`](#food-and-farming-srcsimfarm): `PlotC` on hydroponics beds, `farmSystem`, plant and harvest jobs, meal quality from the cook's skill, herbs in medical beds.
 - [Trade, `src/sim/trade/`](#trade-srcsimtrade): Terminology (user decision, 2026-10-19): a node is one playable grid or location (what older text and code...
-- [Asteroids (slices 1-3 on branch `asteroids`), `src/sim/asteroids/`, `mining/`, `rock/`, `outposts/`](#asteroids-slices-1-3-on-branch-asteroids-srcsimasteroids-mining-rock-outposts): Region model: its own AsteroidC entity plus the owner layer (not a ShipC kind). An asteroid (one big body,...
+- [Asteroids, `src/sim/asteroids/`, `mining/`, `rock/`, `outposts/`](#asteroids-srcsimasteroids-mining-rock-outposts): Region model: its own AsteroidC entity plus the owner layer (not a ShipC kind). An asteroid (one big body,...
 - [Starmap (galaxy), `src/sim/galaxy/`](#starmap-galaxy-srcsimgalaxy): Galaxy state, the app snapshot, and the Svelte and Pixi starmap.
 - [Sector grid](#sector-grid): Sparse tiles, ship views, and placement in the current node.
 - [Historical sector-grid migration](#historical-sector-grid-migration): The October refactor plan and implementation notes.
@@ -218,7 +218,7 @@ they are stamped into the [sector grid](#sector-grid).
 - Each art pixel maps to a whole number of device pixels.
 
 **Assets come from the pipeline (see Asset pipeline).** By default the renderer draws game content from
-sprite sheets listed in `public/assets/manifest.json`. Shaders and effects may work on that art (tints,
+sprite sheets listed in `public/assets/1x/manifest.json`. Shaders and effects may work on that art (tints,
 masks, blends, lighting, such as damage revealing a tile's stripped sprite). Content may be drawn in code
 where that is clearly the better tool, but sprites come first. Debug and overlay visuals (selection
 frames, overlays, blueprints) and temporary placeholders while art is pending are drawn in code freely.
@@ -285,7 +285,7 @@ Pixi `RenderLayer` and render group. Keep sprites in each band batchable:
   screen). A roof that is not shown is plated in the background (`budget.idle()`, idle frames only). A whole-node rebuild
   (`?scenario=busy`, `__cc.liveryAtlas(true)`): one 210-270 ms frame became 9-13 frames of at most ~40 ms (headless).
   `__cc.buildBudget(false)` switches the budget, the throttle and the crew skip off for A/B runs.
-- Measure with the draw counter (`render/drawCalls`) at `?scenario=busy` zoomed out, and see which instruction broke each batch
+- Measure with the draw counter (the `render/drawCalls` counter of the profiler, `app/profiler/install.ts`) at `?scenario=busy` zoomed out, and see which instruction broke each batch
   with the scratch tracer approach in #389 (walk `renderGroup.instructionSet`). `__cc.additiveMerge(false)` and
   `__cc.crewAtlas(false)`, `__cc.renderGroups(false)`, `__cc.depthBands(false)` and `__cc.liveryAtlas(false)` (rebuilds the scenes) (with `?hook`) switch back to the old paths
   for same-frame render diffs (`depthBands(n)` tries a band width).
@@ -469,7 +469,7 @@ The rules the #371 migration followed; new tests follow them too.
   `contentEdited` / `contentAtDanger`. A new module-level cache in a test or fixture is a `fileCache()`.
 - **Shared setup** goes in `test/support/fixtures/<name>.ts`, a run loop is the shared `run` (a local copy only when it returns or stops
   differently, and then as a thin wrapper), a scene a preset is likely to want is a scenario preset.
-- **Isolation:** a test that mocks or spies, or changes shared or cached data, goes on `ISOLATED` in `vite.config.ts`. So does one that
+- **Isolation:** a test that mocks or spies, or changes shared or cached data, goes on `ISOLATED` in `tools/isolatedTests.ts`. So does one that
   needs a lot of heap by itself (`researchReach`, about 1.4 GB).
 - **New or reshaped heavy files** get an estimate in `tools/testWeights.ts` (about 2.5 × the local time) until the next
   `npm run test:weights:ci`.
@@ -487,7 +487,7 @@ file (Vite resolves it in the browser build, Vitest and the profiler, which all 
   plots, production orders), `ships` (enemy, generated, derelict, raider), `hooks`, `ui` (speed, selection, tool, camera: data the app applies; tests ignore it).
   A part changes the sim through commands (the `debug.*` ones, or a new one where none exists); a direct write is allowed only for pre-start setup tests already did
   (skip goals, a story flag, the queued event) and only inside the owning part.
-- A preset is `presets/<name>.ts` (`presets/inspect/station.ts` is `inspect.station`), default export `definePreset({ doc, params?, starter?, spec(params) })`. `params`
+- A preset is `presets/<name>.ts` (a nested `presets/<dir>/<name>.ts` is `<dir>.<name>`), default export `definePreset({ doc, params?, starter?, spec(params) })`. `params`
   are its URL knobs by kind (`flag`, `num`, `str`, `oneOf`). `buildScenario(name | spec, { seed, params, overrides, sim?, extraHooks? })` returns `Built`:
   the finished scene (the build steps the sim itself), `requests` (UI), `rejected` (command rejections by `command:reason`) and the hooks. `overrides` is a partial spec
   merged over the preset's (objects merge, arrays replace, `null` deletes); a key no part owns is an error.
@@ -610,7 +610,7 @@ palette.json    the single palette, read by Blender scripts and the game
 - **Module state art (`moduleArt.ts` `stateArt`, `moduleView.ts`):** any module whose art has `<asset>.rN.unpowered` shows it while
   unpowered or disabled, and one with `<asset>.rN.active.f1` and up cycles `.active`, `.f1`... while it shows its active state
   (a crafting refinery), at `ANIM_FPS` = 4 from the render clock. The manifest carries no animation data, so the rate is a
-  render-side constant (the pack's `animations.json` also says 4 fps). A frame change swaps the sprite's texture
+  render-side constant. A frame change swaps the sprite's texture
   (`swapFrame`); the part is not rebuilt. Damage extends it: at 0 hp `<asset>.rN.destroyed`; under half hp (`DAMAGED_BELOW`) `.damaged`, which while powered alternates with the dark `.damaged.flicker` (`FLICKER_LIT_MS` 340 / `FLICKER_DARK_MS` 170, render clock, by texture swap; a frame without glow hides the glow part) and while unpowered stays on `.damaged.flicker`. Precedence: destroyed, damaged, unpowered, `.active` animation. Each applies only if the art has the id.
 - **Core systems (reactor 2x2, life support 1x2; sheets `reactor`, `life_support`, not `families.py` families):** 4 rotations x healthy,
   `.unpowered`, `.damaged`, `.damaged.flicker` (dark, no glow) and `.destroyed`; ids `module.reactor.rN[.state]`,
@@ -815,7 +815,7 @@ palette.json    the single palette, read by Blender scripts and the game
     (split at the waist).
   - `team.cloth` is the faction shell and `team.accent` the seam; the eye and charge cells glow.
   - Look previews: `ROBOT_QUICK`, `ROBOT_REST` and `ROBOT_ANIM` builds, composited by `review/robots_preview.py`.
-- **Aliens** (`sprites/alien.py`, `alien_render.py`, family `aliens`; wired on branch `aliens`): the derelict infestation, built
+- **Aliens** (`sprites/alien.py`, `alien_render.py`, family `aliens`; wired): the derelict infestation, built
   on the robot rig kit. There is one sheet per creature in the crew layer format, with species `alien` and no gear:
   - `crew.alien.body.hunter`: the swarm melee unit, about 1 tile.
   - `crew.alien.body.brute`: the tank, about 1.5 tiles.
@@ -1097,14 +1097,15 @@ renderer draws from the look alone (`api.lookPortrait`); no speaker keeps the pl
   Lessons keep their own prefs.
 - **Esc menu** (`src/ui/menu/`): Esc closes the top panel, else `api.cancel()` (order menu, tool or aim, selection), else opens the
   menu (Esc is the only way in). Settings and Controls are kit `SideTabs`, one group at a time. While it is open it holds the one modal gate (`holdModal` / `modalOpen` in `ui/keys.ts`, also held by the jump confirmation), and every game key handler stands aside; the App pauses the game and restores the speed.
-- **Saves** (`app/saveStore.ts`): a `SaveStore` interface (list, read, write, remove, with name, date, turn and node) over localStorage,
-  ready for IndexedDB (#204). The autosave keeps the `cc.save` key; three named slots. Loading a slot reloads the page into it.
+- **Saves** (`app/saveStore.ts`): a `SaveStore` interface (list, read, write, remove, with name, date, turn and node) over IndexedDB (a save is over a megabyte;
+  localStorage's quota held about four), with labels kept in memory after `ready()`; saves an older build left in localStorage are moved in on first run. The autosaves (a chain, newest first),
+  a pre-combat snapshot and three named slots (`SLOT_IDS`). Loading a slot reloads the page into it.
 
 ## Saves
 
 - A save is the serialized sim: ECS component stores, grid arrays (base64 typed arrays), RNG state,
   galaxy seed, explored chunks, flags and a **format version**.
-- Migrations are written per version bump.
+- No migrations (prototype, decision 2026-10-19): `SAVE_VERSION` (`sim/save.ts`) is bumped whenever the shape changes, and a save of another version is refused (the game starts fresh).
 - Content stays out of saves except as IDs.
 
 ## Enforced rules
@@ -1146,7 +1147,7 @@ Each milestone ends with something playable or watchable in the browser.
 | A1 | **Readability session** (timeboxed art) | The pipeline renders a variant sheet (proportions, silhouette, outline, shading bands, rim light, colour contrast, face simplification, crew height) at real game zoom. The user picks the winners, which become pipeline defaults, and crew sprites are regenerated. |
 | M3 | **Ship systems** | Power network, atmosphere, breaches, fire, smoke and lighting fields with overlays. Modules come from content, there is build mode with construction jobs, and the light economy works (items, storage, hauling). |
 | M4 | **Combat** | An enemy ship grid, weapons (charge and volley), shields, evasion, module targeting, tile effects, enemy AI doctrine, readability feedback, and destroy, flee and wreck endings. |
-| M5 | **Boarding & derelicts** | Portal graph across grids, airlocks and teleporters, EVA, crew-vs-crew combat, capture, and exploring wrecks. |
+| M5 | **Boarding & derelicts** | Airlocks and teleporters across grids (the portal graph is since replaced by the one sector grid), EVA, crew-vs-crew combat, capture, and exploring wrecks. |
 | M6 | **Galaxy & events** | Chunked endless starmap, danger tiers, jumps, the event system (requirements, effects, flags, odds), stores and trade, and basic factions. |
 | M7 | **Depth pass** | Species, implants, more weapons and modules, recipes, and hardened saves. |
 | M8 | **Character art** | More species (rock, robot, slime), more slot items, and portraits. |
@@ -1206,7 +1207,7 @@ Slices 2 and 4 of #268 (the order and the stripping; the salvage teams). Slice 3
 Slices 0 to 3 are built (below). Gameplay side: DESIGN.md "Air, away sites and salvage (#286; built)".
 
 **Slice 0 is built** (branch `feat/air-sources-286`): `ai/travel.ts` (`travelTicks`, `flightTicks`; `floatTicks` re-exported), `eva/sources.ts`
-(`airSources`, `sourceCandidates`), `eva/air.ts` (stores, `refillFromAirlock` / `refillFromVehicle`), `systems/airStores.ts` (once a second),
+(`airSources`, `sourceCandidates`), `eva/air.ts` (stores; `eva/refillOrder.ts`, `eva/refillFloat.ts` for the refill walk), `systems/airStores.ts` (once a second),
 `ai/machines/refill.ts` (the `refill` errand job: `ToAirlock`, then `Fill`, a `finish` state), `eva/refillOrder.ts` (`eva.refill`), `ai/admitAir.ts`
 (`AirAdmission`, asked from the scheduler's `accept`), and the bench (`content/ships/salvageBench.ts`, scenarios `salvageBench*`, baseline in
 `salvageBench.baseline.ts`). Where the code differed from the plan: a plain door costs `DOOR_PASS_SEC` = 0 (doors open as the walker steps in, so
@@ -1277,7 +1278,7 @@ admission until slice 3, which dropped the exemption (salvage moved onto sites; 
   The table in `owned.ts` lists each: `AwayC` (the run, else the site's claim), `Drafted.away` (the float), `Suit.vehicle` and
   `Away.landing` (the drift out), `Away.lastCall` and a member out's `ride` (the 'depart' phase), `Away.pickup`, `downAt`, `home` of a
   member out, `SiteRun.returnBy` and `AirHoldsC` (the trip away from the site), `boardedAt`/`held` (the stop at home), `passage` jobs
-  (the run serving the site), `StagingC` (the site). `awayLeaks` is the same rules as a pure audit; the away tests' `play` (`awayFixture.ts`) throws when a
+  (the run serving the site), `StagingC` (the site). `awayLeaks` is the same rules as a pure audit; the away tests' `play` (`test/support/fixtures/away.ts`) throws when a
   leak survives a tick. New away state goes in that table.
 **Slice 3 is built** (branch `away/salvage-sites-286`): salvage on sites (see "Derelict salvage", "On an away site").
 - **Deleted:** `salvage/trip.ts`, `team.ts`, `teamCrew.ts`, `cargoRun.ts`, `SalvageTripC`, `SalvageCrewC`, `CargoRun`, `SalvageOrder.teamAt`,
@@ -1327,7 +1328,7 @@ The air and return drives are Phase 3 drives (`content/policies.ts`, `satisfies 
 
 1. **Drive inputs.** `air` (tank per mille; absent while unsuited, airless or in breathable air), `airMargin` (air left minus
    the travel time to the nearest source, tenths of a second), `away` (has `AwayC`), `health`. `airMargin` needs a search:
-   it is read only for suited crew in thin air, once per `EVAL_TICKS` window. The source found stays on the refill task's
+   it is read only for suited crew in thin air, once per `AIR_EVAL_TICKS` window. The source found stays on the refill task's
    blackboard.
 2. **Urgent override in data.** A drive may declare `urgent: {below}`: under it, reconcile treats every class as `any`,
    **`finish` included**, using that machine's `onAbort` (rescue `ToBed`/`Lay`: set the patient down on the nearest safe tile
@@ -1365,7 +1366,7 @@ The air and return drives are Phase 3 drives (`content/policies.ts`, `satisfies 
   over the suited view. A reverse per-pass map `toSource[jobTile]` (one search out of all source tiles) serves admission.
   (Since #295 part of the air module with `eva/airLedger.ts`; see "The air module" above.)
 - **Air stores.**
-  - `AirlockC.air` (seconds; default `AirlockDef.airStore`, 1800). It refills at `AIRLOCK_AIR_REFILL` on a ship with working
+  - `AirlockC.air` (seconds; default `AirlockDef.airStore`, 1800). It refills at `AIRLOCK_AIR_REFILL_SEC` (one tank) on a ship with working
     life support.
   - `Vehicle.air` (default `VehicleDef.eva.airStore`, 3600). It is refilled to full while stowed in its bay or docked at a
     player airlock, drawn from that airlock's store.
@@ -1375,7 +1376,7 @@ The air and return drives are Phase 3 drives (`content/policies.ts`, `satisfies 
   `any`, `Fill`/`Float` are `finish` (only hard reasons end them).
 - **Admission** (`jobRank`, thin or suited pairs):
   `travel(walk) + min(STINT_SEC, remaining / workSpeed) + toSource[job] + AIR_RESERVE_SEC <= airLeft`. A full tank counts
-  for a suit-up walk. `explainJob` gets the rejection `noAir`.
+  for a suit-up walk. the job explain (`ai/explain.ts`) gets the rejection `noAir` (`AirRejection`, `ai/admitAir.ts`).
 - **Pickup request.** `AwayC.pickup` or, on the home ship, `PickupC {since}` on the crew member: set by the utility reader
   when `Intent.blocked === 'air'`, cleared when a source is reachable again.
   - The site's run (or a free EVA shuttle, by the pickup run) re-aims its hover box at the requester (`VehicleDest.hover.box`
@@ -1410,7 +1411,7 @@ The air and return drives are Phase 3 drives (`content/policies.ts`, `satisfies 
     decides between a home job and a site.
   - Passages rank below home needs. Per pass, `homeNeedFor(crew)` is true if some home need is open, unheld and admissible
     for them (`admitLevel` at any level, reachable by the component labelling, no search). For such crew a passage is
-    refused (`explainJob` rejection `homeNeed`), whatever its level. Pairs matched to a home need earlier in the pass are
+    refused (rejection `homeNeed`, in `ai/scheduler.ts`), whatever its level. Pairs matched to a home need earlier in the pass are
     taken off, so the check is redone per level as needs fill.
   - With no home need open there is no reserve.
   - Passengers aboard a shuttle still in its bay (`board` or `turnaround`) are unboarded when a home need opens that they
@@ -1431,9 +1432,9 @@ The air and return drives are Phase 3 drives (`content/policies.ts`, `satisfies 
   - Downed or carried members are never safe; they are rescued aboard first.
   - In `depart`:
     1. Members not safe under (a)–(c) and able get a last-call refill (their air drive is set urgent).
-    2. If still not safe after `LAST_CALL_SEC` (60 s), they get `AwayC.ride` (return drive full) and board.
+    2. If still not safe after `AWAY_LAST_CALL_SEC` (60 s), they get `AwayC.ride` (return drive full) and board.
     3. Launch when every member out is safe.
-    4. Never launch otherwise; after `DEPART_GIVEUP_SEC` the trip is called off and the run goes back to `stay`.
+    4. Never launch otherwise; after `AWAY_DEPART_GIVEUP_SEC` the trip is called off and the run goes back to `stay`.
   - On launch, `returnBy` is the earliest tick any (b)- or (c)-safe member would run short, minus `flightTicks(home→site)`. The home
     stop ends at `returnBy` whatever is left (unload, passages).
   - Watch: if `now + remaining > returnBy`, or a member left out turns unsafe (downed, pickup request), the run skips to
@@ -1443,7 +1444,7 @@ The air and return drives are Phase 3 drives (`content/policies.ts`, `satisfies 
     `regionAirlock` on the home ship, else a hover there.
   - Departure triggers are those of DESIGN.md "Air, away sites and salvage": urgent (`AwayC` passenger with an urgent return reason, a downed patient aboard,
     or a pickup that needs a trip) at once; otherwise hold full with loot waiting, rotation due (non-urgent passengers
-    `>= ceil(seats / 2)`, or free seats and a passage-eligible crew member free at home), `TRIP_WAIT_SEC` (300) since the
+    `>= ceil(seats / 2)`, or free seats and a passage-eligible crew member free at home), `AWAY_TRIP_WAIT_SEC` (300) since the
     last trip with anyone aboard, or `Vehicle.air` under one tank. A waiting passenger turns urgent below rest 20 / hunger
     10 (needs keep running aboard). Every trigger goes through the departure check.
   - `turnaround`: unboard the non-riders (they leave `AwayC`), cargo hauls unload, refill `Vehicle.air`,
@@ -1857,8 +1858,8 @@ returns to its bay. Failures (`trade.failed {reason}`: `cancelled`, `lost` shutt
 refund the escrow and put unsent goods back in the trader's stock; goods already flown on a destroyed shuttle are lost.
 
 **UI.** `app/tradeSnapshot.ts` builds `UiTrade` (credits, hailable ships/stations with their lines, prices and delivery probe, deals);
-`TradeList.svelte` (ships in range, Hail) and `TradeWindow.svelte` (two columns, quantities, totals, barter box, offer/accept; a bottom
-sheet with You/Them tabs on phones), a Hail button in `CombatPanel`, a credits chip in `StatsChips`, trade status in `ShuttlePanel`, trade
+`TradeWindow.svelte` (two columns, quantities, totals, barter box, offer/accept; a bottom
+sheet with You/Them tabs on phones), a Hail window (`HailWindow.svelte`), the combat HUD (`ui/combat/`), trade status in `ShuttlePanel`, trade
 alerts in `alerts.ts`.
 
 **Adding a trader:** add a `TraderDef` to `trade.traders` in `src/content/trade.ts` with a `match` (a `faction` and `role` to catch a
@@ -1867,7 +1868,7 @@ the `ItemDef` (the content test fails for an unpriced item); tilt it per trader 
 **A new faction:** add a `TradeFactionDef` keyed by its faction id. When the real faction system arrives, replace `tradeFactionOf`,
 `profileFor` and the `relation + reputation` rule in `trade/traders.ts`; everything else reads those.
 
-## Asteroids (slices 1-3 on branch `asteroids`), `src/sim/asteroids/`, `mining/`, `rock/`, `outposts/`
+## Asteroids, `src/sim/asteroids/`, `mining/`, `rock/`, `outposts/`
 
 **Region model: its own `AsteroidC` entity plus the owner layer (not a `ShipC` kind).** An asteroid (one big body, or a whole
 field of small rocks) is an entity with `AsteroidC { kind, seed, coverage, x, y, width, height, parts }` (sector tiles).
@@ -2189,8 +2190,8 @@ picks the level by zoom (sector below 2200 units across the short side, cluster 
 nodes one jump away. While the map is open the world is not rendered.
 
 **Fuel economy and stranding** (user decisions 2026-10-26; `galaxy/stranded.ts`, `content/galaxyMarket.ts`, `content/trade.ts`). `item.fuel` is a market good: trade stations make 1/turn x size, mining outposts 0.6, farms 0.3, and every
-civilian station, outpost, farm and depot profile stocks it at a price near 8 credits. A purchase through the normal deal flow bumps `fuelBought` (goal `goal.buy_fuel`). The station panel's Trade tab has a **Refuel** button
-(`TradePane`: fill up to 24 units, one `trade.offer` then an automatic `trade.accept`) when the structure lists the `fuel` service. **Distress tug:** `isStranded` (active at a node, fuel below the cheapest adjacent jump) and no
+civilian station, outpost, farm and depot profile stocks it at a price near 8 credits. A purchase through the normal deal flow bumps `fuelBought` (goal `goal.buy_fuel`). The trade window has a **Refuel** button
+(`TradeSlip.svelte`: fill up to 24 units, one `trade.offer` then an automatic `trade.accept`) when the structure lists the `fuel` service. **Distress tug:** `isStranded` (active at a node, fuel below the cheapest adjacent jump) and no
 affordable fuel on sale in the node (`fuelOnSale`) allow `galaxy.distress`; it saves `GalaxyState.distress { node, sent, due }` and the tug arrives `DISTRESS_TURNS` (2) turns later (`stepDistress`, from `onTurn`): fuel for two
 of the cheapest jumps (at least 6) at 3x the item price. It always delivers: the player pays what they can, the unpaid part costs `DISTRESS_UNPAID_REP` reputation with the traders (no debt to track, never a dead end). UI: `StrandedBanner`
 (`api.stranded`, `app/strandedSnapshot.ts`). Save v52.
@@ -2706,7 +2707,7 @@ Leftovers that 7a deliberately keeps: every `gridId` parameter of the helpers (`
 
 NPCs use almost exactly the same crew AI as the player's crew. There is no parallel "NPC behaviour" stack:
 - Station, enemy and player crew all run through the same needs (`systems/needs.ts`), job generation (the `*Jobs` systems),
-  reservation, decide (`pickJob` by role priorities and `WORK_CATEGORIES`), work (`performJob`) and fight (`fight/`) code. Jobs are
+  reservation, the scheduler (`assignJobs` in `ai/scheduler.ts`, by role priorities and `WORK_CATEGORIES`), work (`performJob`) and fight (`fight/`) code. Jobs are
   per ship and picked by crew aboard that ship, for every faction.
 - The only differences are the **command source** and a **policy layer**. The player issues commands (priorities, drafts, orders);
   an NPC ship has a small per-ship **director**, data and config that sets the same things: it posts jobs and later drafts and
@@ -2739,8 +2740,8 @@ see docs/STATION_ASSEMBLY.md), and stamped by
   plazas, gardens and rest rooms; patrol stops at the armoury, docks, plazas, gardens, drill hall and bridge), `StationAlarmC` and
   `StationCrewC {station}` on its crew. Crew with a role loadout start carrying its first item the station's storage holds
   (taken out of the armoury lockers): a station has been running long before anyone arrives. Station crew live on the shared crew AI: they eat (hunger floors at 25, as the station is
-  resupplied off-screen), sleep, work their station's jobs, and idle crew sometimes stroll to a court (`stations/life.ts`, a
-  fallback inside decide before `wander`).
+  resupplied off-screen), sleep, work their station's jobs, and idle crew sometimes stroll to a court (`ai/machines/idle.ts`, a
+  fallback before `wander`).
 - **Director** (`systems/stationDirector.ts`, every 10 ticks): while calm it keeps one `patrol` job (category `patrol`, kind
   `patrol`, an on-tile job worked for 3 s) per able guard at rotating walkable posts. Roles opt in with `priorities.patrol`
   (security and security bots at 2; the player's grid hides the column, as no player director posts patrols yet). On alarm it
@@ -2765,7 +2766,7 @@ and `StationCrewC`, so they live the station's life) and removes unhired ones wh
 shuttle docks at a station airlock (no hover fallback: `noDock`), the recruit walks aboard (`trade/recruitLand.ts`), the shuttle flies home,
 and on docking the recruit steps out as player crew (allegiance switch, `crew.hired`, key into `recruitLog`) and the escrow is paid. Any failure
 (no shuttle, no dock, recruit dead, board timeout, cancel) refunds and puts the recruit back to station life. One live deal per station.
-UI: selecting a station opens `StationPanel` (tabs Trade, Jobs, Crew; `TradePane`, `JobCards`, `RecruitList`); recruits ride in `UiTradePartner`.
+UI: selecting a station opens `ChannelPanel` (`ui/ChannelPanel.svelte`, the comms channel: `JobCards`, `RecruitList`, `PrisonerDeals`; its Trade button opens `TradeWindow`); recruits ride in `UiTradePartner`.
 
 
 ## Engine capacity and the shipyard (progression phase 5)
