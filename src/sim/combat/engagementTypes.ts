@@ -28,6 +28,8 @@ export interface Engagement {
   /** The summed integrity of the ships in play at the last check, and the tick the fight last did damage (a stalemate is ENGAGE_STALE_SEC without). */
   hull?: number;
   calm?: number;
+  /** Sides that lost a ship to the other side's boarders (galaxy/engagementPrize.ts): the fight's end reads as a capture. */
+  taken?: (0 | 1)[];
   /** The side that gave up a stalemate and is jumping away, and since when. */
   leaving?: { side: 0 | 1; since: number };
 }
@@ -44,5 +46,5 @@ export type EngagementEvent =
   /** It is over: `winner` the side that held the field (null: a stats draw, or both sides gone at once), `stats` when the stats fight settled it, `standing` what joining it earned (with `faction`). */
   | {
     type: 'engagement.ended'; engagement: number; kind: Engagement['kind']; node: string; who: string; foe: string; winner: 0 | 1 | null; stats: boolean;
-    joined?: 0 | 1; standing?: number; faction?: string;
+    joined?: 0 | 1; standing?: number; faction?: string; taken?: true;
   };

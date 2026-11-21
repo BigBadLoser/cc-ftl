@@ -15,7 +15,10 @@ In a war zone or pirate country, where many hostile fleets pass through, you wil
 - An urgent alert names the attacker and its target: **Join the fight? … attacks …**. Click it to jump to the ships.
 - The two sides fight with their real weapons, shields and crews, just as you do. A ship that is losing badly jumps away,
   and the rest of its fleet goes with it.
-- There is no time limit. The fight ends only when one side is destroyed, captured or has jumped away. If neither side
+- Boarding crews board each other too. A raider's shuttle docks at the ship it is fighting and its crew fight the
+  defenders. If they hold the bridge of a ship whose crew are all down or have given up, they take the ship, and it
+  leaves with their fleet.
+- There is no time limit. The fight ends only when one side is destroyed, taken or has jumped away. If neither side
   can hurt the other for about a minute, the weaker side gives up and jumps away. The ship's log and the news say how it
   ended.
 - If you leave the node before the fight ends, it is settled without you.

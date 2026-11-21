@@ -159,7 +159,7 @@ export interface WreckSeed {
  * `raid`: `who` raided a den and destroyed `foe`; `cut`: a trade route is cut, `foe` (a trader) was lost near here; `loot`: `who` took `count` of `item`
  * from `foe`; `shortage`: the port here is short of `item`; `rebuilt`: `who` was launched from the port here; `hunt`: `who` set out from here after the player.
  */
-export type NewsKind = 'destroyed' | 'driven' | 'clash' | 'raid' | 'cut' | 'loot' | 'shortage' | 'rebuilt' | 'hunt' | 'joined';
+export type NewsKind = 'destroyed' | 'driven' | 'clash' | 'raid' | 'cut' | 'loot' | 'shortage' | 'rebuilt' | 'hunt' | 'joined' | 'taken';
 
 export interface NewsItem {
   id: number;

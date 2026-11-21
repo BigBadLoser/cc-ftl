@@ -1,4 +1,8 @@
 import { CombatC, ShipC } from '../combat/components';
+import { CrewC, PositionC } from '../crew/components';
+import { AllegianceC } from '../fight/components';
+import { isCombatReady } from '../fight/relations';
+import { shipIdOf } from '../regions';
 import type { Engagement } from '../combat/engagementTypes';
 import { shipsHostile } from '../combat/engage';
 import { shipCentre } from '../combat/intercept';
@@ -155,10 +159,14 @@ function close(sim: Sim, e: Engagement, winner: 0 | 1 | null, stats: boolean): v
   sim.events.emit({
     type: 'engagement.ended', engagement: e.id, kind: e.kind, node: e.node, who: e.names[0], foe: e.names[1], winner, stats,
     ...(e.joined !== undefined ? { joined: e.joined } : {}), ...(standing ? { standing, faction: e.factions[e.joined as 0 | 1] } : {}),
+    ...(winner !== null && e.taken?.includes(winner === 0 ? 1 : 0) ? { taken: true as const } : {}),
   });
 }
 
-/** The fight played out: strand a side left hurt, then the news, loot and chase of the stats fight's aftermath. No winner (both sides gone at once) is no news. */
+/**
+ * The fight played out: strand a side left hurt, then the news, loot and chase of the stats fight's aftermath. No winner (both sides gone at once)
+ * is no news, nor is a loser whose ship was taken (engagementPrize.ts said so as it happened).
+ */
 function finish(sim: Sim, e: Engagement): void {
   const r = [sideResult(sim, e, 0), sideResult(sim, e, 1)] as const;
   const winner = r[0].held === r[1].held ? null : r[0].held ? 0 : 1;
@@ -166,7 +174,8 @@ function finish(sim: Sim, e: Engagement): void {
   const b = fleetById(sim, e.fleets[1][0]);
   if (e.kind === 'meeting' && a && b) {
     const loser = winner === null ? null : r[winner === 0 ? 1 : 0];
-    const kind: Clash['kind'] = !loser ? 'avoided' : loser.fate === 'destroyed' ? 'decisive' : 'driven';
+    const taken = winner !== null && !!e.taken?.includes(winner === 0 ? 1 : 0);
+    const kind: Clash['kind'] = !loser || taken ? 'avoided' : loser.fate === 'destroyed' ? 'decisive' : 'driven';
     r.forEach((x, i) => {
       const f = i === 0 ? a : b;
       if (x.fate === 'hurt' && f.node === e.node && f.ships.length) strand(sim, f, sim.galaxy.turn);
@@ -182,13 +191,24 @@ function hullOf(sim: Sim, e: Engagement, side: 0 | 1): number {
 }
 const shareOf = (sim: Sim, e: Engagement, side: 0 | 1): number => hullOf(sim, e, side) / Math.max(1, e.members[side].length);
 
+/** Is a boarding on: a crew member serving a ship of one side, able to fight, aboard a ship of the other (fight/relations.ts `crewShipOf`)? */
+function boarding(sim: Sim, e: Engagement): boolean {
+  const ships = [new Set(sideShips(sim, e, 0)), new Set(sideShips(sim, e, 1))] as const;
+  return sim.world.query(CrewC, PositionC).some((c) => {
+    const own = sim.world.get(c, AllegianceC)?.ship;
+    if (own === undefined || !isCombatReady(sim, c)) return false;
+    const at = shipIdOf(sim, sim.world.get(c, PositionC));
+    return (ships[0].has(own) && ships[1].has(at)) || (ships[1].has(own) && ships[0].has(at));
+  });
+}
+
 /**
- * Once a second: note whether the fight did damage. After ENGAGE_STALE_SEC without, the weaker side (the lower integrity share; on a tie side 1,
+ * Once a second: note whether the fight did damage (or a boarding party is still at it). After ENGAGE_STALE_SEC without, the weaker side (the lower integrity share; on a tie side 1,
  * the one that did not start it) gives up and jumps away (`leave`).
  */
 function stalemate(sim: Sim, e: Engagement): void {
   const now = hullOf(sim, e, 0) + hullOf(sim, e, 1);
-  if (e.calm === undefined || e.hull === undefined || now < e.hull - 1e-6) e.calm = sim.tick;
+  if (e.calm === undefined || e.hull === undefined || now < e.hull - 1e-6 || boarding(sim, e)) e.calm = sim.tick;
   e.hull = now;
   if (e.leaving || sim.tick - e.calm < ENGAGE_STALE_SEC * TICK_HZ) return;
   e.leaving = { side: shareOf(sim, e, 0) < shareOf(sim, e, 1) ? 0 : 1, since: sim.tick };
@@ -254,7 +274,7 @@ export function tendEngagements(sim: Sim): void {
   for (const e of [...engagements(sim)]) {
     refresh(sim, e);
     const age = sim.tick - e.since;
-    if (e.kind === 'meeting' && e.members.some((side) => side.length === 0)) {
+    if (e.kind === 'meeting' && e.members.some((side, i) => side.length === 0 && !e.taken?.includes(i as 0 | 1))) {
       if (age >= ENGAGE_WAIT_SEC * TICK_HZ || !alive(sim, e, 0) || !alive(sim, e, 1)) byStats(sim, e);
       continue;
     }

@@ -14,13 +14,13 @@ import { materialiseFleet } from '../sim/galaxy/fleetShips';
 import { standing } from '../sim/galaxy/standing';
 import { onTurn } from '../sim/galaxy/turn';
 import { AID_STANDING, ENGAGE_STALE_SEC, ENGAGE_WAIT_SEC, JOIN_STANDING, JOIN_WIN_STANDING } from '../sim/galaxy/tuningWar';
-import type { Fleet } from '../sim/galaxy/types';
 import { newGame } from '../sim/newGame';
 import type { Sim } from '../sim/sim';
 import { TICK_HZ } from '../sim/time';
 import { FLEE_BELOW, FTL_CHARGE_SEC } from '../sim/tuning';
 import { eventsOf } from '../../test/support/sim';
 import { run } from '../../test/support/run';
+import { fight, fleetHere, shipOf } from '../../test/support/content';
 import { expectReplayable } from '../../test/support/world';
 import { content } from '.';
 
@@ -29,29 +29,6 @@ import { content } from '.';
  * to the player's aid. Meridian and Helix are at war and both neutral to a new player, so their fight is one the player only watches.
  */
 
-/** A one-ship fleet of `faction` parked in the player's node (it goes nowhere), cloned from the start's first patrol. */
-function fleetHere(sim: Sim, faction: string, role: Fleet['role'], id: number): Fleet {
-  const proto = sim.galaxy.fleets.find((f) => f.role === 'patrol') as Fleet;
-  const shipgen = (content.galaxy as { factions: Record<string, { ships: { value: string }[] }> }).factions[faction]?.ships[0]?.value as string;
-  const node = sim.galaxy.current;
-  const ship = { ...(proto.ships[0] as Fleet['ships'][number]), id: sim.galaxy.nextFleet++, faction, shipgen, seed: 1000 + id, size: 'small' as const, name: `${faction} ${role}` };
-  delete ship.ship;
-  return { ...proto, id, faction, role, ships: [ship], node, from: node, dest: node, route: [], dwell: 99999, legs: 0, moved: -1, synced: sim.galaxy.turn, cargo: [] };
-}
-
-/** A new game with two fleets in the player's node, made real. */
-function fight(a: [string, Fleet['role']] = ['meridian', 'patrol'], b: [string, Fleet['role']] = ['helix', 'patrol']): { sim: Sim; fa: Fleet; fb: Fleet } {
-  const sim = newGame(21, content);
-  sim.story.goals.skipped = true; // no opening grace
-  const fa = fleetHere(sim, a[0], a[1], 9001);
-  const fb = fleetHere(sim, b[0], b[1], 9002);
-  sim.galaxy.fleets = [fa, fb];
-  materialiseFleet(sim, fa);
-  materialiseFleet(sim, fb);
-  return { sim, fa, fb };
-}
-
-const shipOf = (f: Fleet): number => f.ships[0]?.ship as number;
 const weaponsOf = (sim: Sim, ship: number): Weapon[] =>
   sim.world.query(WeaponC, ModuleC).filter((id) => shipIdOf(sim, sim.world.get(id, ModuleC) as { x: number; y: number }) === ship).map((id) => sim.world.get(id, WeaponC) as Weapon);
 

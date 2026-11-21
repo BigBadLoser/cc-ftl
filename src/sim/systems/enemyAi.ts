@@ -1,6 +1,6 @@
 
 import { truceHolds } from '../blackmarket/truce';
-import { CombatC, ShipC, type Combat, type Ship } from '../combat/components';
+import { CombatC, ShipC, type Combat } from '../combat/components';
 import { isDormant } from '../combat/dormant';
 import { aiRuns, atBattle, shipsHostile } from '../combat/engage';
 import { shipCanAct } from '../combat/shipQuery';
@@ -39,7 +39,7 @@ export function enemyAiSystem(sim: Sim): void {
       combat.aiTimer--;
       continue;
     }
-    const fv = flyingFoeVehicle(sim, ship.faction);
+    const fv = flyingFoeVehicle(sim, id);
     // A foe shuttle in flight is hunted by the anti-vehicle weapons only; the rest keep shooting the ship below.
     if (fv && combat.vehicleTarget !== fv) {
       sim.enqueue({ type: 'combat.setTarget', ship: id, weaponId: null, targetShip: 0, targetModuleId: 0, targetVehicle: fv });
@@ -54,10 +54,10 @@ export function enemyAiSystem(sim: Sim): void {
   }
 }
 
-/** The first shuttle in flight that is hostile to `faction` (the same test targeting keeps it by), or 0. */
-function flyingFoeVehicle(sim: Sim, faction: Ship['faction']): number {
+/** The first shuttle in flight that is hostile to the ship (the same test targeting keeps it by), or 0. */
+function flyingFoeVehicle(sim: Sim, ship: number): number {
   for (const id of sim.world.query(VehicleC)) {
-    if (sim.world.get(id, VehicleC)?.state === 'flying' && hostileVehicle(sim, id, faction)) return id;
+    if (sim.world.get(id, VehicleC)?.state === 'flying' && hostileVehicle(sim, id, ship)) return id;
   }
   return 0;
 }

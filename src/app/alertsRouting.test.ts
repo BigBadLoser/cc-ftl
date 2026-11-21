@@ -76,6 +76,7 @@ describe('event routing table', () => {
     expect(say({ ...end, winner: 1, joined: 0, standing: 2, faction: 'pirates' })).toMatchObject({ tone: 'good', text: "Mule won the fight against Gull. Gull's crew saw you stand against Mule: +2 standing with Scrapper Clans" });
     expect(say({ ...end, winner: null })).toMatchObject({ tone: 'info', text: 'Gull and Mule both left the fight' });
     expect(say({ ...end, winner: null, stats: true })?.text).toBe('Gull and Mule broke off');
+    expect(say({ ...end, winner: 0, taken: true })?.text).toBe('Gull took Mule');
   });
 });
 

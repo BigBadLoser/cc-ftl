@@ -845,6 +845,9 @@ Built in slices 2a and 2b (#295); ARCHITECTURE.md "Away sites and the air drive"
 
 ## Starmap and factions
 
+- **NPCs treat each other as they treat the player** (user, 2026-11-21): they fight, board, take ships and defend against each other through the
+  same systems as the player. See "One answer per question" in `ARCHITECTURE.md`.
+
 - **Galaxy:** endless, generated in chunks as you push outward, shaped by a terrain of dense filaments, nebula clouds and **rifts** (voids).
   Space is grouped three ways: nodes make a **sector** (6 to 12 nodes around a **central body**: a star, red dwarf, blue giant, gas giant,
   nebula or black hole; the nodes take a layout such as a cloud, streak, ring, fork or corridor), sectors make a **cluster**, clusters
