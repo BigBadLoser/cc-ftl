@@ -2031,7 +2031,7 @@ through the [main and inset cameras](#camera-passes-and-layer-ownership).
 ## Historical sector-grid migration
 
 The October 2026 refactor notes (inventory, data model, migration steps, split plan, risks) moved to the
-[status archive](STATUS_ARCHIVE.md#historical-sector-grid-migration-moved-from-architecturemd-2026-11-21). The live model is [Sector grid](#sector-grid).
+[status archive](STATUS_ARCHIVE.md#historical-sector-grid-migration). The live model is [Sector grid](#sector-grid).
 
 ## Crew AI: one system for every ship (user principle, 2026-10-21)
 
