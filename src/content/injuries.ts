@@ -12,16 +12,16 @@ const ALL_SKILLS = { gunnery: 0.6, piloting: 0.6, shielding: 0.6, melee: 0.6, co
 
 export const injuries = {
   parts: {
-    'part.brain': { name: 'Brain', group: 'head', capacity: 'consciousness', share: 1, vital: true },
-    'part.eye_right': { name: 'Right eye', group: 'head', capacity: 'sight', share: 0.5, side: 'right' },
-    'part.eye_left': { name: 'Left eye', group: 'head', capacity: 'sight', share: 0.5, side: 'left' },
-    'part.heart': { name: 'Heart', group: 'torso', capacity: 'bloodPumping', share: 1, vital: true },
-    'part.lungs': { name: 'Lungs', group: 'torso', capacity: 'breathing', share: 1, vital: true },
-    'part.spine': { name: 'Spine', group: 'torso', capacity: 'moving', gate: true },
-    'part.arm_right': { name: 'Right arm', group: 'limb', capacity: 'manipulation', share: 0.5, side: 'right' },
-    'part.arm_left': { name: 'Left arm', group: 'limb', capacity: 'manipulation', share: 0.5, side: 'left' },
-    'part.leg_right': { name: 'Right leg', group: 'limb', capacity: 'moving', share: 0.5, side: 'right' },
-    'part.leg_left': { name: 'Left leg', group: 'limb', capacity: 'moving', share: 0.5, side: 'left' },
+    'part.brain': { name: 'Brain', group: 'head', capacity: 'consciousness', share: 1, vital: true, slot: 'brain' },
+    'part.eye_right': { name: 'Right eye', group: 'head', capacity: 'sight', share: 0.5, side: 'right', slot: 'eye' },
+    'part.eye_left': { name: 'Left eye', group: 'head', capacity: 'sight', share: 0.5, side: 'left', slot: 'eye' },
+    'part.heart': { name: 'Heart', group: 'torso', capacity: 'bloodPumping', share: 1, vital: true, slot: 'heart' },
+    'part.lungs': { name: 'Lungs', group: 'torso', capacity: 'breathing', share: 1, vital: true, slot: 'lungs' },
+    'part.spine': { name: 'Spine', group: 'torso', capacity: 'moving', gate: true, slot: 'spine' },
+    'part.arm_right': { name: 'Right arm', group: 'limb', capacity: 'manipulation', share: 0.5, side: 'right', slot: 'arm' },
+    'part.arm_left': { name: 'Left arm', group: 'limb', capacity: 'manipulation', share: 0.5, side: 'left', slot: 'arm' },
+    'part.leg_right': { name: 'Right leg', group: 'limb', capacity: 'moving', share: 0.5, side: 'right', slot: 'leg' },
+    'part.leg_left': { name: 'Left leg', group: 'limb', capacity: 'moving', share: 0.5, side: 'left', slot: 'leg' },
   },
   capacities: {
     manipulation: { name: 'Manipulation', effect: 'slower at work, weaker in a fight', stats: { workSpeed: 0.4, melee: 0.6, construction: 0.6, industry: 0.6, cooking: 0.5 } },
@@ -44,6 +44,9 @@ export const injuries = {
     'injury.deep_burn': { name: 'Deep burn', severity: 'serious', damage: 0.45, healSec: 1500, scarLoss: 0.15, parts: [...ARMS, ...LEGS, ...EYES, 'part.lungs'] },
     'injury.concussion': { name: 'Concussion', severity: 'serious', damage: 0.4, healSec: 900, scarLoss: 0.1, parts: ['part.brain'] },
     'injury.organ_damage': { name: 'Organ damage', severity: 'serious', damage: 0.4, healSec: 1500, scarLoss: 0.15, parts: ['part.heart', 'part.lungs', ...EYES] },
+    // Surgery (#311): a failed operation's wound, and a lost limb taken off (a destroyed entry: the slot is ready for a cyber limb).
+    'injury.surgical': { name: 'Surgical wound', severity: 'serious', damage: 0.4, healSec: 1200, scarLoss: 0.1, bleed: 0.2, bleedSec: 60 },
+    'injury.amputated': { name: 'Amputated', severity: 'serious', damage: 1, healSec: 1, parts: [...ARMS, ...LEGS] },
   },
   sources: {
     // Bullets mostly hit the torso.

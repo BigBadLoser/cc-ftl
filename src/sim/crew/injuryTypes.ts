@@ -1,5 +1,6 @@
 import { defineComponent } from '../ecs';
 import type { StatName } from '../stats';
+import type { ImplantSlot } from './implantTypes';
 
 /**
  * Crew injuries (DESIGN.md "Injuries and cyberware", slice 1, #601): the content shapes, the component and the events. Content is data
@@ -26,6 +27,8 @@ export interface BodyPartDef {
   vital?: true;
   /** A paired part's side (the Health tab mirrors its icon). Content order is the order the Health tab lists the parts in. */
   side?: 'left' | 'right';
+  /** The implant slot kind it takes (`ImplantDef.slot`: a cyber arm fits either arm). */
+  slot: ImplantSlot;
 }
 
 /** A capacity: its floor (what is left with every part of it gone) and the stats it scales (`weight`: the share of the stat it takes away at 0). */
