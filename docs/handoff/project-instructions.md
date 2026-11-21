@@ -34,14 +34,9 @@ holds the hard rules. This file covers how the user likes to work, which isn't i
 
 ## Process
 - **Every piece of work gets a GitHub issue.** PRs say `Closes #N` or `Part of #N`, and commits say `Refs #N`.
-- **Testing round before every PR:**
-  1. Merge `main` in.
-  2. Run the full `npm run check` on the final head, writing output to a file ending in `echo EXIT $?`. Don't pipe it
-     through `tail`, which hides the exit code.
-  3. Paste the result into the PR body.
-
-  A fix pushed after the check needs the check rerun. There is no `full-ci` label any more.
-- **Batch pushes to open PRs,** because CI minutes cost money.
+- **Testing round before every PR:** merge `main` in, run `npm run check:push` before pushing, and open the PR as a draft while
+  it still expects fixes. Marking it ready runs the full suite in CI, which is the record (`npm run check` is optional, to chase
+  a failure). A fix pushed after a run is checked by the next run. See "Workflow" in `CLAUDE.md`.
 - **Review bots:**
   - Codex reviews every PR. Treat each finding as a claim: verify it, fix real ones with a test, then reply on the
     thread naming the commit and resolve it.

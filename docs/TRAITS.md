@@ -1,9 +1,9 @@
 # Crew traits and per-crew skills
 
 Design for #239 (parent #238: the new-game crew screen rolls a crew, so the roll needs something to roll). Section 10 (#415,
-design) replaces the role-based skill roll with backgrounds, interests and a 0–10 scale, and removes roles for player crew; where it
-changes sections 1 to 4 they say so. Steps 1 to 4 (section 9) are built: rolls and traits core (#243), the crew card (#246), the crew screen (#249), work XP (#251).
-Sections 5 to 7 are design only. Numbers are starting values for tuning, not promises.
+built) replaces the role-based skill roll with backgrounds, interests and a 0–10 scale, and removes roles for player crew; where it
+changes sections 1 to 4 they say so. Steps 1 to 4, 5b, 6 and 10 (section 9) are built, 5a in part (the phobia traits are not rollable yet): rolls and traits core (#243), the crew card (#246), the crew screen (#249), work XP (#251), mental breaks (5b), relationships (#239) and backgrounds, interests, no roles for player crew and the 0–10 scale (#415).
+Only section 7 (addictions) is design only; the drinker and stim-hooked traits stay `rollable: false`. Numbers are starting values for tuning, not promises.
 
 Grounding: the stat resolver (`src/sim/stats.ts`, "traits and implants plug in later"), role skills (`src/content/roles.ts`,
 `src/sim/crew/skills.ts`), skill XP (`src/sim/story/components.ts`), mood (`src/sim/crew/mood.ts`, `systems/mood.ts`),
@@ -426,9 +426,9 @@ The #415 changes (0–10 bars, interests, background, title, coverage, lock) are
 | 4 | Work-based XP: `grantXp`, curve, grant points, recruit and save handling | S/M | built (#251) |
 | 5a | Phobia pick penalties and mood factors; Pyrophobic, Space-sick, Afraid of the dark rollable; rename `trait.void_fear` ("Afraid of the void", `rollable: false` today) to `trait.space_sick`, with its name and short line | S | mood part built (#252): the `trait.void_fear` rename to `trait.space_sick` is done, and fire nearby, spacewalk and the −10 dark factor exist; the three stay `rollable: false` until job avoidance lands (#194 Phase 2) |
 | 5b | Mental breaks: `BreakdownC`, `BreakMemoryC`, check and stressors, `break` machine, work-drive suppression, trait weights; Battle-shy rollable; effect lines gain their break parts | M | after #194's `hazard` interrupt (Phase 3) |
-| 6 | Relationships; Hot-headed, Peacemaker, Protective rollable; Loner/Social bond half | L | next (user, 2026-11-04), before 5b; decisions in section 6 |
+| 6 | Relationships; Hot-headed, Peacemaker, Protective rollable; Loner/Social bond half | L | built (#239); decisions in section 6 |
 | 7 | Addictions; Drinker, Stim-hooked rollable | M/L | |
-| 10 | Backgrounds, interests, no roles, always armed, 0–10 (#415) | L | design; one PR in steps, section 10.13 |
+| 10 | Backgrounds, interests, no roles, always armed, 0–10 (#415) | L | built; one PR in steps, section 10.13 |
 
 Save: `RolledSkillsC`, `TraitsC`, `BreakdownC`, `BreakMemoryC`, `RelationsC`, `AddictionC` are optional components (and optional `MoodC` counters); old saves load with
 role skills and no traits. Step 4 changed what `SkillXpC` means (`SAVE_VERSION` 73, no migration).

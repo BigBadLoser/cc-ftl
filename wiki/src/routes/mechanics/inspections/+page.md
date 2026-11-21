@@ -80,7 +80,7 @@ and nothing else. Leaving the node during an inspection counts as refusing.
   refusal.
 
 To fight, draft a crew member and order them to attack an inspector. Jumping away with any still aboard counts
-as a fight too. The jump confirmation lists the inspectors aboard before you go. A jump you queued with **Charge and jump**
+as a fight too. The jump confirmation lists the inspectors aboard before you go. A jump you queued with **Jump when charged**
 never leaves with them: if inspectors are aboard when the drive is full, the jump is called off. See [Combat](../combat/) and [Boarding](../boarding/).
 
 ## Black markets

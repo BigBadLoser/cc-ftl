@@ -10,7 +10,7 @@ cc-ftl (github.com/bigbadloser/cc-ftl, a public repo) is a browser isometric shi
 
 **How the art works:**
 - All game art is pre-rendered in Blender and quantised to pixel art.
-- Models are built in Python from primitives under `tools/blender/sprites/`, rendered headless with Cycles CPU, and baked into sprite sheets listed in `public/assets/manifest.json`.
+- Models are built in Python from primitives under `tools/blender/sprites/`, rendered headless with Cycles CPU, and baked into sprite sheets listed in `public/assets/1x/manifest.json`.
 - Install Blender with `tools/blender/setup.sh`.
 - Iso tiles are 64x32 px.
 - See the prototype scripts in `tools/blender/review/proto_*.py` for the render and composite plumbing.

@@ -13,7 +13,7 @@ Sprites exist for many goods that have no item def (copper, alloy, nanites, stim
 | Energy scrap | `item.scrap_energy` | Stripped from derelicts | In game | src/content/items.ts:9; scrapper -> parts, electronics, metal |
 | Weapons scrap | `item.scrap_weapons` | Stripped from derelicts | In game | src/content/items.ts:10; scrapper -> parts, metal |
 | Comfort scrap | `item.scrap_comfort` | Stripped from derelicts | In game | src/content/items.ts:11; scrapper -> polymer, cloth |
-| Cloth | `item.cloth` | only recipe.scrap_comfort outputs it | Partial: produced, no consumer | src/content/items.ts:13; no recipe, module or trade list uses it |
+| Cloth | `item.cloth` | only recipe.scrap_comfort outputs it | Partial: produced, no consumer | src/content/items.ts:13; no recipe or module consumes it, no trade list has it; lost cargo (`sim/galaxy/cargoLoot.ts`) can hold it |
 | Metal | `item.metal` | core building material | In game | src/content/items.ts:14; costs.ts, modules cost, trade, refinery output |
 | Electronics | `item.electronics` | core component | In game | src/content/items.ts:15; refinery (rare ore), scrapper output, trade |
 | Polymer | `item.polymer` | building material | In game | src/content/items.ts:17; scrapper output, trade; flammable |

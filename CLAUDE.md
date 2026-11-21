@@ -48,7 +48,7 @@ see `docs/STATUS_ARCHIVE.md` and the October handoff snapshot in `docs/HANDOFF.m
   use them instead of local copies. Read "Writing a test" in `docs/ARCHITECTURE.md` before adding or reshaping tests: start near the moment
   tested, never weaken to save time (a shortened fast test keeps its original verbatim in `*.slow.test.ts`), import owning modules, not
   the sim index.
-- Tests share one module graph (`isolate: false`) except the files listed as isolated in `vite.config.ts`. A test that
+- Tests share one module graph (`isolate: false`) except the files listed in `tools/isolatedTests.ts` (`ISOLATED`, read by `vite.config.ts`). A test that
   mocks or spies, or changes shared or cached data (the component registry, generated nodes cached per seed), goes on that list.
 - `npm run lab -- --panel <id>`: screenshot a render lab panel, any visual drawn on its own as a grid of stills (dev page
   `/tools/lab/`). New visual work gets a panel. See `docs/RENDER_LAB.md`.

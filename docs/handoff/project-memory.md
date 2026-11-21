@@ -40,9 +40,9 @@
   3. Shipyard and hull growth (phase 5): done, now with the hull plan brushes and the 3-wide rule.
   4. Faction stock and the pirate factions and black markets (phases 2 and 2b): done. The named markets wait on station
      generation.
-  5. **Next: upgrade slots,** weapons first (phase 4). An example is a nuclear warhead in the missile launcher.
-  6. Then construction pods and drones, so your crew can grow the hull anywhere (phase 6).
-  7. Then implant tiers (phase 7).
+  5. Upgrade slots, weapons first (phase 4): built (the three general weapon upgrades and the flak cannon).
+  6. **Next: construction pods and drones,** so your crew can grow the hull anywhere (phase 6; designed, not started).
+  7. Then implant tiers (phase 7; needs its design pass).
   8. Then story missions: self-contained arcs after the tutorial goal chain (phase 8).
 - **Current focus (2026-10-28): a gap-closing pass** before more content. The game has plenty of content and systems, but how it
   feels to play needs work, and there are holes to fill. An agent play audit of the first hour and the user's own playtest
