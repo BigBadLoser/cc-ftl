@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { jscpdArgs, report } from './dupSemantic.mjs';
+import { changedSrc, jscpdArgs, report } from './dupSemantic.mjs';
 
 const pair = (lines: number, isNew: boolean, kind = 'semantic') => ({
   kind, isNew, lines, fragment: Array.from({ length: lines }, (_, i) => `line ${i}`).join('\n'),
@@ -19,6 +19,29 @@ describe('dup:semantic report', () => {
     expect(md).toContain('line 11\n  …');
     expect(md).not.toContain('line 12');
     expect(md).not.toContain('(40 lines)');
+  });
+});
+
+describe('dup:semantic on a change (PR scan)', () => {
+  const at = (first: string, second: string, isNew = true) => ({
+    ...pair(10, isNew), firstFile: { name: first, start: 1, end: 10 }, secondFile: { name: second, start: 5, end: 14 },
+  });
+  const json = { duplicates: [at('sim/a.ts', 'render/b.ts'), at('ui/c.ts', 'sim/a.ts'), at('ui/c.ts', 'ui/d.ts'), at('sim/a.ts', 'ui/e.ts', false)] };
+
+  it('keeps only new pairs with a side in a changed file, and says so', () => {
+    const md = report(json, { only: new Set(['src/render/b.ts', 'src/ui/d.ts']) });
+    expect(md).toMatch(/^2 new semantic duplicate pairs touching this change/);
+    expect(md).toContain('**src/sim/a.ts:1-10** and **src/render/b.ts:5-14**');
+    expect(md).toContain('**src/ui/c.ts:1-10** and **src/ui/d.ts:5-14**');
+    expect(md).not.toContain('src/ui/e.ts');
+    expect(report(json, { only: new Set(['src/other.ts']) })).toBe('');
+  });
+  it('reads the changed src files from git against the merge base, skipping deletions', () => {
+    const calls: string[][] = [];
+    const files = changedSrc('HEAD^1', (args) => { calls.push(args); return 'src/sim/a.ts\nsrc/ui/c.ts\n'; });
+    expect([...files]).toEqual(['src/sim/a.ts', 'src/ui/c.ts']);
+    expect(calls[0]).toEqual(['diff', '--name-only', '--diff-filter=d', 'HEAD^1...HEAD', '--', 'src']);
+    expect(changedSrc('x', () => '').size).toBe(0);
   });
 });
 
