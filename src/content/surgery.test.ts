@@ -66,10 +66,10 @@ describe('surgery and implants (#311)', () => {
   it('a surgery table beats a medical bed, and brain and spine work refuses a bed', () => {
     const built = cachedScenario('surgery');
     const sim = built.sim;
-    const gunner = pickCrew(sim, 'role.gunner')!;
-    const medic = pickCrew(sim, 'role.medic')!;
+    const patient = pickCrew(sim, 0)!;
+    const medic = pickCrew(sim, 1)!;
     const op = { kind: 'fit' as const, part: 'part.eye_right', item: 'item.cyber_eye_2' };
-    expect(surgeryChance(sim, medic, gunner, op, 'table')).toBeGreaterThan(surgeryChance(sim, medic, gunner, op, 'bed'));
+    expect(surgeryChance(sim, medic, patient, op, 'table')).toBeGreaterThan(surgeryChance(sim, medic, patient, op, 'bed'));
     const table = moduleOf(sim, 'module.surgery_table');
     const bed = moduleOf(sim, 'module.med_bed');
     expect(built.rejected).toEqual({});
@@ -78,23 +78,24 @@ describe('surgery and implants (#311)', () => {
     expect(theatreFits(sim, bed, { part: 'part.eye_right' })).toBe(true);
     expect(theatreFits(sim, bed, { part: 'part.brain' })).toBe(false);
     expect(theatreFits(sim, bed, { part: 'part.spine' })).toBe(false);
-    sim.enqueue({ type: 'crew.queueOperation', id: gunner, kind: 'fit', part: 'part.brain', item: 'item.chip_gunnery_1' });
+    sim.enqueue({ type: 'crew.queueOperation', id: patient, kind: 'fit', part: 'part.brain', item: 'item.chip_gunnery_1' });
     play(built, 1);
-    expect(bedUseOf(sim, gunner)).toBe('surgeryTable'); // the walk goes to a table, never a bed
+    expect(bedUseOf(sim, patient)).toBe('surgeryTable'); // the walk goes to a table, never a bed
   });
 
   it('a queued replacement: the patient walks to the table, the medic operates, and the outcome replays from the seed and a save', () => {
     const built = cachedScenario('surgery', { params: { queue: true } });
     const sim = built.sim;
-    const gunner = pickCrew(sim, 'role.gunner')!;
+    const patient = pickCrew(sim, 0)!;
     const before = shipStoreCount(sim, ship(sim), 'item.cyber_eye_2');
-    const events = play(built, 300 * TICK_HZ, { until: (s) => !operationsOf(s, gunner).some((o) => o.part === 'part.eye_right') });
-    const done = eventsOf(events, 'crew.surgery').find((e) => e.crew === gunner && e.part === 'part.eye_right');
-    expect(done?.by).toBe(pickCrew(sim, 'role.medic'));
+    const events = play(built, 300 * TICK_HZ, { until: (s) => !operationsOf(s, patient).some((o) => o.part === 'part.eye_right') });
+    const done = eventsOf(events, 'crew.surgery').find((e) => e.crew === patient && e.part === 'part.eye_right');
+    expect(done?.by).toBeTruthy();
+    expect(done?.by).not.toBe(patient);
     expect(done?.outcome).toBe('success'); // this seed's roll
-    expect(implantOn(sim, gunner, 'part.eye_right', 'replacement')?.item).toBe('item.cyber_eye_2');
+    expect(implantOn(sim, patient, 'part.eye_right', 'replacement')?.item).toBe('item.cyber_eye_2');
     expect(shipStoreCount(sim, ship(sim), 'item.cyber_eye_2')).toBe(before - 1);
-    expect(capacitiesOf(sim, gunner).sight).toBeCloseTo(1, 6); // the Mk II eye is as good as flesh
+    expect(capacitiesOf(sim, patient).sight).toBeCloseTo(1, 6); // the Mk II eye is as good as flesh
     const build = (): Sim => cachedScenario('surgery', { params: { queue: true } }).sim;
     expectReplayable(build, 1500, { saveAt: 900 }); // past the roll (about tick 1250)
   });
@@ -102,16 +103,16 @@ describe('surgery and implants (#311)', () => {
   it('a poor surgeon at a bed fails and botches some operations, and the same seed rolls the same outcomes', () => {
     const rolls = (): string[] => {
       const sim = cachedScenario('surgery').sim;
-      const gunner = pickCrew(sim, 'role.gunner')!;
-      const pilot = pickCrew(sim, 'role.pilot')!;
+      const patient = pickCrew(sim, 0)!;
+      const pilot = pickCrew(sim, 2)!;
       const bed = moduleOf(sim, 'module.med_bed');
       const out: string[] = [];
       for (let n = 0; n < 40; n++) {
-        if (!implantsOf(sim, gunner).length) fitImplant(sim, gunner, DERMAL, 'item.dermal_armor_1');
-        sim.enqueue({ type: 'crew.queueOperation', id: gunner, kind: 'remove', part: DERMAL, item: 'item.dermal_armor_1' });
+        if (!implantsOf(sim, patient).length) fitImplant(sim, patient, DERMAL, 'item.dermal_armor_1');
+        sim.enqueue({ type: 'crew.queueOperation', id: patient, kind: 'remove', part: DERMAL, item: 'item.dermal_armor_1' });
         sim.applyCommands();
-        const op = operationsOf(sim, gunner)[0]!;
-        finishSurgery(sim, pilot, { category: 'medical', kind: 'surgery', x: 0, y: 0, struct: 0, work: 1, progress: 1, reservedBy: pilot, target: gunner, bed, surgery: { op: op.id } });
+        const op = operationsOf(sim, patient)[0]!;
+        finishSurgery(sim, pilot, { category: 'medical', kind: 'surgery', x: 0, y: 0, struct: 0, work: 1, progress: 1, reservedBy: pilot, target: patient, bed, surgery: { op: op.id } });
         out.push(...eventsOf(sim.events.drain(), 'crew.surgery').map((e) => e.outcome));
       }
       return out;
@@ -125,23 +126,23 @@ describe('surgery and implants (#311)', () => {
   it('removing an implant returns its item to storage', () => {
     const built = cachedScenario('surgery');
     const sim = built.sim;
-    const gunner = pickCrew(sim, 'role.gunner')!;
+    const patient = pickCrew(sim, 0)!;
     const before = shipStoreCount(sim, ship(sim), 'item.dermal_armor_1');
     let removed = false;
     for (let n = 0; n < 5 && !removed; n++) { // a failed removal leaves it in: try again
-      sim.enqueue({ type: 'crew.queueOperation', id: gunner, kind: 'remove', part: 'part.dermal', item: 'item.dermal_armor_1' });
-      const events = play(built, 300 * TICK_HZ, { until: (s) => !operationsOf(s, gunner).length });
-      removed = eventsOf(events, 'crew.surgery').some((e) => e.crew === gunner && e.outcome === 'success');
+      sim.enqueue({ type: 'crew.queueOperation', id: patient, kind: 'remove', part: 'part.dermal', item: 'item.dermal_armor_1' });
+      const events = play(built, 300 * TICK_HZ, { until: (s) => !operationsOf(s, patient).length });
+      removed = eventsOf(events, 'crew.surgery').some((e) => e.crew === patient && e.outcome === 'success');
     }
     expect(removed).toBe(true);
-    expect(implantsOf(sim, gunner)).toHaveLength(0);
+    expect(implantsOf(sim, patient)).toHaveLength(0);
     expect(shipStoreCount(sim, ship(sim), 'item.dermal_armor_1')).toBe(before + 1);
   });
 
   it('a downed crew member with a lost heart is saved by an urgent replacement from stock', () => {
     const built = cachedScenario('surgery');
     const sim = built.sim;
-    const pilot = pickCrew(sim, 'role.pilot')!;
+    const pilot = pickCrew(sim, 2)!;
     sim.enqueue({ type: 'debug.setCrew', id: pilot, injuries: [{ part: 'part.heart', kind: 'injury.organ_damage', as: 'destroyed' }] });
     play(built, 20);
     expect(sim.world.has(pilot, DownedC)).toBe(true);

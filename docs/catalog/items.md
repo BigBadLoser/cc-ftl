@@ -8,6 +8,7 @@ Sprites exist for many goods that have no item def (copper, alloy, nanites, stim
 ## Items
 | Name | id | What it does | Status | Where |
 |---|---|---|---|---|
+| Implants (cyber arm, leg, eye, lungs, heart Mk I-III; spinal frame Mk I-II; neural chips Mk I-II for gunnery, piloting, engineering, medical, science; co-processor; reflex booster Mk II-III; dermal armour Mk I-III) | `item.cyber_*`, `item.spinal_frame_*`, `item.chip_*`, `item.reflex_booster_*`, `item.dermal_armor_*` | Fitted by surgery (#311); priced, no source yet | Partial | src/content/implants.ts; placeholder art `item.implant` |
 | Hull scrap | `item.scrap_hull` | Stripped from derelicts | In game | src/content/items.ts:7; flak ammo; scrapper -> metal. sim/shipgen/salvage.ts, recipes.ts |
 | Tech scrap | `item.scrap_tech` | Stripped from derelicts | In game | src/content/items.ts:8; scrapper -> electronics, parts |
 | Energy scrap | `item.scrap_energy` | Stripped from derelicts | In game | src/content/items.ts:9; scrapper -> parts, electronics, metal |
@@ -128,7 +129,7 @@ No def, no reference in `src/` (only manifest and `tools/blender`). Not obtainab
 | Gas canister | `item.gas_canister` | Sprite only | Art only | public/assets/1x/manifest.json |
 | Glass | `item.glass` | Sprite only | Art only | public/assets/1x/manifest.json |
 | Gold | `item.gold` | Sprite only | Art only | public/assets/1x/manifest.json |
-| Implant | `item.implant` | Sprite only | Art only | public/assets/1x/manifest.json |
+| Implant | `item.implant` | Placeholder icon of every implant item | In game | public/assets/1x/manifest.json; content/implants.ts `art` |
 | Luxury food | `item.luxury_food` | Sprite only | Art only | public/assets/1x/manifest.json |
 | Luxury goods | `item.luxury_goods` | Sprite only | Art only | public/assets/1x/manifest.json |
 | Medkit | `item.medkit` | Sprite only | Art only | public/assets/1x/manifest.json |
