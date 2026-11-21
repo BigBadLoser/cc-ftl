@@ -20,3 +20,15 @@ export function db(c: Ctx): Piece[] {
   const xs = n === 1 ? [Math.floor((w - 2) / 2)] : range(0, n - 1, 1).map((i) => m + Math.round((i * (w - 2 * m - 2)) / (n - 1)));
   return xs.map((x) => P(DR, x, 1, 0));
 }
+
+/**
+ * D5 ward to size (#581): med beds only, as many as the room holds. In a room deeper than wide, head to the side walls
+ * down both, a row between each, the aisle down the middle; else standing on end along the back wall, a tile between.
+ */
+export function ward(c: Ctx): Piece[] {
+  if (c.h >= c.w) return [0, 1].flatMap((s) => range(0, c.h - 2, 2).map((y) => P(MB, s === 0 ? 0 : c.w - 2, y, 1)));
+  return range(0, c.w - 1, 2).map((x) => P(MB, x, 0, 0));
+}
+
+/** The beds `ward` stands in a w x h room. */
+export const wardBeds = (w: number, h: number): number => (h >= w ? 2 * (Math.floor((h - 2) / 2) + 1) : Math.floor((w - 1) / 2) + 1);

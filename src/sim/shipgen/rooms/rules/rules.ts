@@ -7,7 +7,7 @@
 import type { ModuleDef } from '../../../registry';
 import type { RoomRole } from '../../types';
 import type { Piece } from './check';
-import { db, tr, traumaFits } from './bays';
+import { db, tr, traumaFits, ward, wardBeds } from './bays';
 import { f1 } from './farm';
 import { rw } from './refinery';
 import { AC, B, seats, BT, OB, OBL, CD, DR, EX, FB, RF, G, GT, L, LS, MB, P, RK, RP, RS, SB, SP, SW, T, bunks, messSize, count, leftover, middle, range, rowsOf, sidePairs, tables, type Beds, type Run } from './parts';
@@ -312,6 +312,8 @@ export const RULES: Partial<Record<RoomRole, readonly RuleArrangement[]>> = {
     { name: 'GY gym, sparring droids in a row', weight: 1, when: (n, r) => n.includes(EX) && r.h >= 4 && r.w >= 3 * count(n, EX), rule: gy },
   ],
   medbay: [
+    // (A big ward first: its own beds to its size, nothing else.)
+    { name: 'D5 ward to size, med beds down the walls', weight: 50, when: (n, r) => n.length > 0 && n.every((m) => m === MB) && r.w >= 5 && r.w * r.h >= 30 && count(n, MB) <= wardBeds(r.w, r.h), rule: ward },
     { name: 'D1 beds along a wall', weight: 1, rule: d1 },
     { name: 'D2 bays, pod in the middle', weight: 1, when: (_, r) => r.w >= 9, rule: d2 },
     { name: 'D3 beds down the long wall', weight: 1, when: (_, r) => r.h > r.w, rule: d3 },
