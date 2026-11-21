@@ -307,14 +307,15 @@ def _back_fill(f, mask):
 
 
 def station_rear(mask, room=0, corners=0):
-    """A ground base's rear ghost (tile.hull.station.ghost.m*[c2][.r*]): the rear ghost (out_block, o 0) lifted onto its
+    """A ground base's rear ghost (tile.hull.station.ghost.m*[c2][.r*]): the rear ghost (out_block, o 0) squashed onto its
     cut's top (station_hull_walls.FOOT_Z): the cut's lip stands where the ship's ghost meets the deck, so its ramp starts on
-    the lip's top edge."""
+    the lip's top edge and ends at the ship's ramp top."""
     from .station_hull_walls import FOOT_Z
     objs = out_block(mask, 0, room=room, corners=corners)
+    top = max(v.co.z for ob in objs[1:] for v in ob.data.vertices)
     for ob in objs[1:]:
         for v in ob.data.vertices:
-            v.co.z += FOOT_Z
+            v.co.z = FOOT_Z + v.co.z * (top - FOOT_Z) / top
     return objs
 
 
