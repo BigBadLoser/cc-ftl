@@ -23,7 +23,7 @@ Shipped and no longer listed: physical encounters, the UI consistency pass and p
 
 - **Research pass.** ([#380](https://github.com/BigBadLoser/cc-ftl/issues/380))
 - **Story arcs.** ([#383](https://github.com/BigBadLoser/cc-ftl/issues/383))
-- **Goals after the tutorial.** A rolling captain's log of goals past act 3, with a pull toward deeper space. ([#172](https://github.com/BigBadLoser/cc-ftl/issues/172), [#52](https://github.com/BigBadLoser/cc-ftl/issues/52))
+- **Goals after the tutorial.** Emergent goals from the world past act 3, with a pull toward deeper space; no captain's log or goal list (#172 is dropped, see DESIGN.md "Core loop direction"). ([#52](https://github.com/BigBadLoser/cc-ftl/issues/52))
 - **A second income and things to spend on.** Another way to earn besides deliveries, and real costs for credits. Needs your design call. ([#174](https://github.com/BigBadLoser/cc-ftl/issues/174))
 - **Recruiting prisoners.** Offer captives a place in the crew. ([#492](https://github.com/BigBadLoser/cc-ftl/issues/492))
 
