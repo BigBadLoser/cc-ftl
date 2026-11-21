@@ -13,12 +13,10 @@ profile-sim.json
 .vitest-report.json
 .tick-stats/
 
-# review and preview renders (the hash-locked core-systems frames and the current shuttle review stay tracked)
+# review and preview renders (the core-systems frames stay tracked: export_core_systems.py reuses them as approved art)
 artifacts/*
 !artifacts/core-systems-orientations/
 !artifacts/core-systems-damage/
-!artifacts/shuttle-sweepback-r12/
-!artifacts/shuttle-sweepback-r13/
 *.blend1
 .DS_Store
 *.log

@@ -94,8 +94,9 @@ shader, preventing red/green illumination of nearby hull surfaces.
 
 ## Review artifacts
 
-Current files: `artifacts/shuttle-sweepback-r13/`. B12 remains under
-`artifacts/shuttle-sweepback-r12/` for the before/after comparison.
+The review is finished and its renders are no longer tracked (the last set, B13, is in git history under
+`artifacts/shuttle-sweepback-r13/`). Rendering again writes the files below to the `--out` folder; `artifacts/` is
+gitignored. The before/after boards need a B12 set at `artifacts/shuttle-sweepback-r12/` and are skipped without it.
 
 - `transport-B-beauty.png`, `transport-B-preview.blend`: low-sample beauty
   and editable scene, showing tapered/outward-flared nose walls, the aligned hatch and swept wings.
