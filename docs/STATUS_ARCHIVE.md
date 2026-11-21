@@ -1299,10 +1299,8 @@ Build history cut from [ARCHITECTURE.md](ARCHITECTURE.md) (#594), text verbatim;
 
 ### Historical sector-grid migration
 
-### Historical sector-grid migration
-
 > October 2026 refactor notes. The plan, work branches and performance estimates below describe the migration
-> from separate ship grids. See [Sector grid](#sector-grid) for the live model and [Profiling](PROFILING.md)
+> from separate ship grids. See [Sector grid](ARCHITECTURE.md#sector-grid) for the live model and [Profiling](PROFILING.md)
 > for measuring the current desktop build.
 
 #### 1. Inventory: what assumes many grids
