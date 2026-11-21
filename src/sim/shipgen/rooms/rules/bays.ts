@@ -22,13 +22,17 @@ export function db(c: Ctx): Piece[] {
 }
 
 /**
- * D5 ward to size (#581): med beds only, as many as the room holds. In a room deeper than wide, head to the side walls
- * down both, a row between each, the aisle down the middle; else standing on end along the back wall, a tile between.
+ * D5 ward to size (#581): med beds only, as many as the room holds three tiles apart. In a room deeper than wide, head
+ * to the side walls down both, two rows between each, the aisle down the middle; else standing on end along the back
+ * wall, two tiles between.
  */
 export function ward(c: Ctx): Piece[] {
-  if (c.h >= c.w) return [0, 1].flatMap((s) => range(0, c.h - 2, 2).map((y) => P(MB, s === 0 ? 0 : c.w - 2, y, 1)));
-  return range(0, c.w - 1, 2).map((x) => P(MB, x, 0, 0));
+  if (c.h >= c.w) return [0, 1].flatMap((s) => range(0, c.h - 2, WARD).map((y) => P(MB, s === 0 ? 0 : c.w - 2, y, 1)));
+  return range(0, c.w - 1, WARD).map((x) => P(MB, x, 0, 0));
 }
 
+/** A ward's beds' pitch: a bed and two tiles. */
+const WARD = 3;
+
 /** The beds `ward` stands in a w x h room. */
-export const wardBeds = (w: number, h: number): number => (h >= w ? 2 * (Math.floor((h - 2) / 2) + 1) : Math.floor((w - 1) / 2) + 1);
+export const wardBeds = (w: number, h: number): number => (h >= w ? 2 * (Math.floor((h - 2) / WARD) + 1) : Math.floor((w - 1) / WARD) + 1);
