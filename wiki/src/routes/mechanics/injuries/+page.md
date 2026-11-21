@@ -32,7 +32,7 @@ and the capacities change the crew member's stats:
 | Sight | Eyes | Gunnery, melee, science. One eye lost costs part of it, both most of it. |
 | Consciousness | Brain | Work speed and every skill. Very low knocks them out. |
 | Breathing | Lungs | Suit air runs out sooner; a little slower at work and on foot |
-| Blood pumping | Heart | Bleeding out comes sooner; every kind of healing is slower |
+| Circulation | Heart | Bleeding out comes sooner; every kind of healing is slower |
 
 ### The Health tab
 
@@ -40,8 +40,8 @@ The crew inspector's **Health** tab shows it all at a glance:
 
 - A line across the top says what is wrong in a few words: "Bleeding. Needs first aid and a medic.", "Needs a medic.",
   "Down." or "Healthy.". Red means it needs care now.
-- On the left, their health, how fast they bleed (while they do), and every capacity. A capacity under
-  <Stat kind="tuning" id="CAPACITY_LOW_BELOW" percent /> shows red.
+- On the left, their health, how fast they bleed (while they do), and every capacity; one under 100% shows white,
+  a full one grey.
 - On the right, all ten body parts with their state: "Fine", or the worst injury, such as "Fracture, treated" or
   "Destroyed" (with "+1" when the part has more). Red only when it needs care now: bleeding, or serious and untreated.
 - Point at an injured part for its card: what is wrong, what care it needs, what it does to the crew member, and how

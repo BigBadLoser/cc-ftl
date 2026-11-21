@@ -26,7 +26,5 @@ export const STRANDED_SEC = 180;
 export const STRANDED_RETRY_SEC = 600;
 /** Bleeding at this many hp a second or more is "fast" (the Health tab). */
 export const BLEED_FAST_AT = 0.3;
-/** A capacity under this is low enough to matter: the Health tab shows it red. */
-export const CAPACITY_LOW_BELOW = 0.75;
 /** The `health` drive input (per mille) while a serious injury waits for treatment: under the recover drive's enter (700, content/policies.ts). */
 export const TREATMENT_HEALTH_INPUT = 690;

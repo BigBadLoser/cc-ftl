@@ -64,7 +64,7 @@
   .health { font-size: var(--fs-body); color: var(--text); }
   .sum { margin: -2px -10px 10px; padding: 0 10px 10px; border-bottom: 1px solid var(--line); font-size: 14px; }
   .sum.fine { color: var(--dim); }
-  .alert { color: var(--red); }
+  .sum .alert { color: var(--red); }
   .cols { display: grid; grid-template-columns: 170px 1fr; }
   .left { padding-right: 12px; border-right: 1px solid var(--line); }
   .right { padding-left: 12px; min-width: 0; }
@@ -72,7 +72,8 @@
   h4.gapped { margin-top: 14px; }
   .row { display: flex; justify-content: space-between; align-items: center; gap: 8px; min-height: 24px; white-space: nowrap; }
   .row.fine { color: var(--dim); }
-  .row.alert, .row.alert .state { color: var(--red); }
+  /* Red marks only what needs care now: the Bleeding row and an injury's state. A part's name stays white (grey when fine). */
+  .row.alert:not(.part), .part.alert .state { color: var(--red); }
   .row.gap { margin-top: 8px; }
   .part { cursor: default; }
   .part:hover { background: var(--panel-2); }

@@ -280,7 +280,7 @@ eyes and the main organs are parts, fingers are not.
   - **Sight** (eyes): gunnery, melee accuracy, science. One eye lost costs part of it, both most of it.
   - **Consciousness** (brain): every skill and work speed; very low knocks the crew member out.
   - **Breathing** (lungs): suit air lasts less, exertion slows.
-  - **Blood pumping** (heart): bleed-out time, healing speed.
+  - **Circulation** (heart): bleed-out time, healing speed.
 - **Where injuries come from.** HP stays the pool. A hit over a threshold also makes an injury on a part rolled from
   the source's weights: bullets mostly torso, blades and blows arms and head, shrapnel and blasts spread, fire burns
   several parts, vacuum lungs and eyes. Going down always adds one serious injury. Seeded RNG, so replays hold.

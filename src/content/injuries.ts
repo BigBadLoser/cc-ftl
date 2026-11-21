@@ -32,7 +32,7 @@ export const injuries = {
     // Suit air (crew/body.ts `breathMult`) and exertion.
     breathing: { name: 'Breathing', effect: 'suit air lasts less, slower when out of breath', stats: { workSpeed: 0.25, moveSpeed: 0.2 } },
     // Bleed-out time and healing speed (crew/body.ts `bleedOutMult`, `healMult`).
-    bloodPumping: { name: 'Blood pumping', effect: 'bleeds out sooner, heals slower', stats: { workSpeed: 0.15 } },
+    bloodPumping: { name: 'Circulation', effect: 'bleeds out sooner, heals slower', stats: { workSpeed: 0.15 } },
   },
   kinds: {
     'injury.bruise': { name: 'Bruise', severity: 'minor', damage: 0.1, healSec: 300 },

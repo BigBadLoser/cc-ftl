@@ -1,6 +1,6 @@
 import { CrewC, DownedC, HealthC, type Injury, type Sim } from '../sim';
 import { bleedRate, canBeInjured, capacitiesOf, injuriesOf, isBleeding, needsTreatment } from '../sim/crew/body';
-import { BLEED_FAST_AT, CAPACITY_LOW_BELOW } from '../sim/crew/tuningInjury';
+import { BLEED_FAST_AT } from '../sim/crew/tuningInjury';
 import type { BodyPartDef, Capacity } from '../sim/crew/injuryTypes';
 import { clockAt } from '../sim/clock';
 import type { UiBodyPart, UiHealth, UiInjuryCard, UiOperations, UiPartIcon, UiTone } from '../ui/crewDetailApi';
@@ -55,7 +55,7 @@ export function buildHealth(sim: Sim, id: number, operations: UiOperations | nul
   const list = injuriesOf(sim, id);
   const caps = capacitiesOf(sim, id);
   const hp = sim.world.get(id, HealthC);
-  const capTone = (v: number): UiTone => (v >= 0.995 ? 'fine' : v < CAPACITY_LOW_BELOW ? 'alert' : 'plain');
+  const capTone = (v: number): UiTone => (v >= 0.995 ? 'fine' : 'plain'); // a low capacity is an effect, not care needed now: never red
   let lastGroup = '';
   const parts: UiBodyPart[] = Object.entries(c.parts).map(([pid, def]) => {
     const group = def.group === 'limb' ? def.capacity : def.group;
