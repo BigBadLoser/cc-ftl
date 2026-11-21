@@ -34,7 +34,7 @@ const FILL_KINDS = (['hold', 'workshop', 'lounge', 'gym', 'farm', 'armoury', 'ba
 /** A lane hull's outboard bays by the hangar that are flight ops (`zones.ts`). */
 const FLIGHT = 2;
 /** Spare-floor rooms a ship has one of at most (#581). */
-const ONCE: readonly Filler[] = ['lounge', 'gym', 'workshop'];
+const ONCE: readonly Filler[] = ['lounge', 'gym', 'workshop', 'farm'];
 
 /** Floor a room may take past its plan before a leftover bay goes to a filler instead. */
 const GROW = 2.5;
@@ -296,7 +296,7 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
     const left: Filler[] = ['armoury', 'battery', 'shop', 'lab', 'provisions', 'workshop', 'lounge', 'gym', 'farm'];
     // (By department: its own kinds in turn, the same turn on both sides.)
     const turn = new Map<string, number>();
-    const once = new Set<Filler>();
+    const once = new Set<Filler>(puts0.some((p) => real(p.specs).some((r) => r.role === 'farm')) ? ['farm'] : []);
     for (const s of [0, 1] as const) for (let k = 0; k < n; k++) for (const tier of (twoTier(k) ? ['front', 'back'] : ['full']) as Tier[]) {
       if (taken(o[s][k] as Slot, tier)) continue;
       const a = area(k, k + 1, tier), here: Spot = { side: s, i: k, j: k + 1, tier, area: a };
@@ -319,11 +319,11 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
       const z = zone[k], own = z ? DEPT_FILL[z] : [], t = turn.get(`${z}${s}`) ?? 0;
       if (z) turn.set(`${z}${s}`, t + 1);
       const all: Filler[] = z ? [...own.slice(t % own.length), ...own.slice(0, t % own.length)] : a >= 12 ? left : [];
-      // (A rec room, gym or workshop once a ship: where the next would be another, the spare room beside grows over the
-      // bay instead, two bays long.)
+      // (A rec room, gym, workshop or farm once a ship: where the next would be another, the spare room beside (or the
+      // one of that kind) grows over the bay instead.)
       const kinds = all.filter((kd) => !(ONCE.includes(kd) && once.has(kd)));
       const spare = [k - 1, k + 1].filter((m) => m >= 0 && m < n && joined(Math.min(m, k))).map((m) => (tier === 'back' ? o[s][m]?.back : o[s][m]?.front))
-        .find((p): p is Put => !!p && !!p.fill && p.spot.tier === tier && p.spot.j - p.spot.i < 2 && zone[p.spot.i] === zone[k]);
+        .find((p): p is Put => !!p && (!!p.fill || (!p.item.cabins && !p.annex && !p.item.both && real(p.specs).some((r) => all[0] !== undefined && r.role === fillerSpec(all[0], a).role))) && p.spot.tier === tier && p.spot.j - p.spot.i < 2 && zone[p.spot.i] === zone[k]);
       if (kinds.length < all.length && kinds[0] !== all[0] && spare && tier !== 'back' && (tier === 'full' || sameSplit(Math.min(spare.spot.i, k), Math.max(spare.spot.j, k + 1)))) {
         replace(spare, { ...spare, spot: { ...spare.spot, i: Math.min(spare.spot.i, k), j: Math.max(spare.spot.j, k + 1), area: spare.spot.area + a } }, here);
         continue;

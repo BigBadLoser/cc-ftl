@@ -20,22 +20,24 @@ export function f1(c: Ctx): Piece[] {
   return out;
 }
 
+export const HYL = 'module.hydroponics_large';
+
 /**
- * F2, a farm floor (a room wider than deep, its door on a long wall): hydroponics beds edge to edge in rows across the
- * room, the rows in pairs facing each other over a shared aisle, a walkway kept clear from the door through every aisle.
- * The planned beds come first; the rest of the floor's are extras (#581).
+ * F2, a farm floor (a room wider than deep, its door on a long wall): large hydroponics beds stood on end across the
+ * back of the room, two tiles between them, each worked from the gap beside it; a walkway along the front to the door.
+ * The planned beds come first; the rest the floor holds are extras (#581).
  */
 export function f2(c: Ctx): Piece[] {
   const { w, h, d } = c, out: Piece[] = [];
-  const xs: number[] = [];
-  for (let x = 0; x + 1 < w; x += 2) {
-    if (x <= d && d <= x + 1) { x--; continue; }
-    xs.push(x);
-  }
-  // Rotation 0 faces the bed's access down (the row below), rotation 2 up.
-  for (let y = 0; y + 1 < h; y += 3) {
-    for (const x of xs) out.push(P(HY, x, y, 0));
-    if (y + 2 < h - 1) for (const x of xs) out.push(P(HY, x, y + 2, 2));
+  // (A bed on end is two wide and three deep; a row of them at pitch four, shifted so the door's column falls in a gap.)
+  const n = Math.floor((w + 2) / 4), span = 4 * n - 2, mid = Math.floor((w - span) / 2);
+  const inBed = (s: number): boolean => d >= s && d < s + span && (d - s) % 4 < 2;
+  const x0 = Array.from({ length: w - span + 1 }, (_, s) => s).sort((u, v) => Number(inBed(u)) - Number(inBed(v)) || Math.abs(u - mid) - Math.abs(v - mid))[0] ?? 0;
+  for (let y = 0; y + 3 < h; y += 5) for (let i = 0; i < n; i++) {
+    const x = x0 + 4 * i;
+    if (x <= d && d <= x + 1) continue;
+    // Rotation 3 works it from the east, rotation 1 from the west: the last bed faces back into the row.
+    out.push(P(HYL, x, y, i === n - 1 && n > 1 ? 1 : 3));
   }
   return out;
 }

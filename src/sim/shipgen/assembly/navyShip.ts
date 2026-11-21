@@ -64,7 +64,7 @@ export const MESS: RoomSpec = { role: 'support', dept: 'commons', mods: ['module
 export const SHIP_ROOMS: Record<ShipRoom, RoomSpec> = {
   medbay: { role: 'medbay', mods: ['module.med_bed', 'module.med_bed'], w: 5, h: 4, annex: { role: 'medbay', mods: ['module.recovery', 'module.recovery'], w: 5, h: 4 } },
   brig: { role: 'armoury', mods: ['module.stasis_wheel'], w: 7, h: 6 },
-  farm: { role: 'farm', mods: Array<string>(4).fill('module.hydroponics'), w: 4, h: 5 },
+  farm: { role: 'farm', mods: Array<string>(4).fill('module.hydroponics_large'), w: 14, h: 4 },
   pantry: { role: 'cargo', dept: 'commons', mods: ['module.storage_cold', 'module.storage_cold', 'module.storage_rack'], w: 4, h: 3 },
 };
 

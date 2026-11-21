@@ -39,7 +39,7 @@ export function fillerSpec(kind: Filler, area: number): RoomSpec {
     case 'lounge': return { role: 'support', use: 'lounge', mods: ['module.gametable', 'module.arcade', ...Array<string>(n(12, 2)).fill('module.bench')], w: 4, h: 3 };
     case 'gym': return { role: 'support', use: 'gym', mods: Array<string>(n(6, 4)).fill('module.exercise'), w: 4, h: 3 };
     case 'armoury': return { role: 'armoury', mods: [], w: 9, h: 5 };
-    case 'farm': return { role: 'farm', mods: Array<string>(n(6, 4)).fill('module.hydroponics'), w: 4, h: 3 };
+    case 'farm': return { role: 'farm', mods: Array<string>(n(16, 4)).fill('module.hydroponics_large'), w: 6, h: 4 };
     case 'pd': return { role: 'weapons', mods: Array<string>(n(15, 2)).fill('module.pointDefense'), w: 3, h: 3 };
     case 'battery': return { role: 'plant', mods: [...Array<string>(area >= 40 ? 8 : 4).fill('module.battery'), 'module.console'], w: 5, h: 4 };
     case 'shop': return { role: 'industry', mods: ['module.scrapper', 'module.storage_scrap', 'module.storage_scrap', 'module.storage_pallet'], w: 8, h: 5 };
