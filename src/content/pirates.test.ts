@@ -235,7 +235,7 @@ describe('the machines and the zealots', () => {
     expect(isHostile(sim, on(zealot), on(drone))).toBe(false);
     // With the player's ships out of play, the drones have no one to shoot: not the friendly zealots either.
     for (const id of sim.world.query(ShipC)) if (sim.world.get(id, ShipC)!.faction === 'player') sim.world.get(id, ShipC)!.state = 'wreck';
-    expect(firstFoe(sim, 'rogue')).toBe(0);
+    expect(firstFoe(sim, drone)).toBe(0);
   });
 });
 

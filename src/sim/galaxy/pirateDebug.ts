@@ -9,7 +9,7 @@ import type { Sim } from '../sim';
 const DEBUG_WAIT = 6;
 
 /**
- * Debug (`debug.pirates`, the `?scenario=pirates` start): a fleet of `faction`'s raiding role (or its patrol, for a lawful faction made a hunter) at
+ * Debug (`debug.pirates`, the `?scenario=pirates` start): a fleet of `faction`'s raiding role (or its patrol, for a lawful faction made a hunter; else its traders) at
  * `node`, waiting there, so the player's next hop into `node` meets it. `hunt` makes it hunters sent after the player instead (they follow the player).
  * It interdicts only if the faction is hostile to the player. False when it cannot be made.
  */
@@ -17,7 +17,7 @@ export function debugPirates(sim: Sim, node: string, faction: string, hunt: bool
   ensureChunkOf(sim, node);
   if (!galaxyIndex(sim.galaxy).nodes.has(node)) return false;
   const groups = sim.content.galaxy?.factions[faction]?.fleet?.groups ?? {};
-  const role = (['pirate', 'raider', 'patrol'] as const).find((r) => groups[r as FleetRole]);
+  const role = (['pirate', 'raider', 'patrol', 'trader'] as const).find((r) => groups[r as FleetRole]);
   if (!role) return false;
   const g = sim.galaxy;
   const port = { id: `${node}#0`, node, kind: 'station', size: 1, owner: faction, role, trade: false } as Port;

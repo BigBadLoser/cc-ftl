@@ -3,6 +3,7 @@ import type { GenOrigin } from '../shipgen/types';
 import type { RuinBreach, RuinDecal, RuinHook } from '../shipgen/ruinTypes';
 import { defineComponent } from '../ecs';
 import type { ShipPacket } from '../sector/packet';
+import type { Engagement } from './engagementTypes';
 
 /** The sector all ships share. Saved with the game. */
 export interface Sector {
@@ -35,6 +36,11 @@ export interface Sector {
   packet?: ShipPacket;
   /** The job scheduler's pass gate (ai/scheduler.ts): the fingerprint of the last pass's inputs and its tick. Saved, so a load runs as a continuous game. */
   sched?: { sig: number; at: number };
+  /** Fights between NPC ships going on here (combat/engagementTypes.ts; galaxy/engagements.ts). Absent or empty: none. */
+  engagements?: Engagement[];
+  /** Fleets that have fought here this galaxy turn (`meetTurn`): a fleet meets at most one other per turn, as on the map (galaxy/engagementFlow.ts). */
+  met?: number[];
+  meetTurn?: number;
 }
 
 /** 'rogue': rogue AI (robot crews under an AI core); hostile to every other faction, neutral included. */

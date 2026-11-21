@@ -6,6 +6,7 @@ import { COMMIT_MAX_FRACTION, COMMIT_WINDOW_SEC } from '../tuning';
 import { WeaponC, type Commit, type Target } from './components';
 import { shipById } from './shipQuery';
 import { targetableShip } from './targets';
+import { atBattle } from './engage';
 
 /** Charge level (0..1) at which a weapon with `chargeSec` commits its aim: the last COMMIT_WINDOW_SEC, but at most COMMIT_MAX_FRACTION of the charge. */
 export function commitCharge(chargeSec: number): number {
@@ -40,7 +41,7 @@ export function updateCommit(sim: Sim, weaponId: number, chargeSec: number, read
   const w = sim.world.get(weaponId, WeaponC);
   if (!w) return null;
   const start = commitCharge(chargeSec);
-  if (!ready || w.charge < start || !sim.sector.inCombat) {
+  if (!ready || w.charge < start || !atBattle(sim, shipIdOf(sim, sim.world.get(weaponId, ModuleC)))) {
     w.commit = null;
     return null;
   }
