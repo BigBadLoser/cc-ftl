@@ -4,6 +4,7 @@ import { groundPort, rotForPortDir } from '../modules/groundMount';
 import { isLandingPad } from '../modules/landingPad';
 import type { ModuleDef } from '../registry';
 import type { Layout } from './layout';
+import { cableFrom, openness } from './groundCable';
 
 /**
  * Turrets on open ground (#514): an asteroid base's guns and point defence, standing out on the levelled rock round its
@@ -131,7 +132,7 @@ export function placeGroundTurrets(lay: Layout, plan: GroundPlan): GroundFit {
   const ox = (bx0 + bx1) / 2, oy = (by0 + by1) / 2;
   const bearing = (x: number, y: number): number => Math.atan2(y - oy, x - ox);
   const gap = (a: number, b: number): number => { const d = Math.abs(a - b) % (2 * Math.PI); return Math.min(d, 2 * Math.PI - d); };
-  const open = openness();
+  const open = openness(lay);
   // A small per-base shake on each spot's score (the seed), so bases of the same plan do not all stand them alike.
   const shake = (x: number, y: number): number => { let k = (((plan.seed ?? 0) * 73856093) ^ (x * 19349663) ^ (y * 83492791)) >>> 0; k = Math.imul(k ^ (k >>> 15), 0x2c1b3c6d) >>> 0; return ((k ^ (k >>> 12)) >>> 0) / 0xffffffff; };
   wirePads();
@@ -225,7 +226,7 @@ export function placeGroundTurrets(lay: Layout, plan: GroundPlan): GroundFit {
     }
     if (best) return best;
     const i = port.cable.y * w + port.cable.x, r = reach[i] as number;
-    return r >= 1 && r <= MAX_CABLE ? cableFrom(i, reach) : null;
+    return r >= 1 && r <= MAX_CABLE ? cableFrom(w, i, reach) : null;
   }
 
   /**
@@ -325,22 +326,6 @@ export function placeGroundTurrets(lay: Layout, plan: GroundPlan): GroundFit {
     return free(i % w, Math.floor(i / w)) && !onPad[i] && !byCorner[i];
   }
 
-  /** Each tile's open ground to the nearest hull tile, eight ways (1 beside the hull). */
-  function openness(): Int32Array {
-    const d = new Int32Array(w * h).fill(-1);
-    const queue: number[] = [];
-    for (let i = 0; i < w * h; i++) if (lay.cells[i] !== '.') { d[i] = 0; queue.push(i); }
-    for (let q = 0; q < queue.length; q++) {
-      const i = queue[q] as number, x = i % w, y = Math.floor(i / w);
-      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
-        const nx = x + dx, ny = y + dy, j = ny * w + nx;
-        if ((dx || dy) && nx >= 0 && ny >= 0 && nx < w && ny < h && d[j] === -1) { d[j] = (d[i] as number) + 1; queue.push(j); }
-      }
-    }
-    for (let i = 0; i < w * h; i++) if (d[i] === -1) d[i] = 99;
-    return d;
-  }
-
   /**
    * For each of the four ways (LANE order), each tile's straight run to a hull wall: the tiles a cable runs on from it, straight on,
    * up to the wall it plugs into; 0 where the straight line ends anywhere else. Lets `spot` try each turn in one look.
@@ -374,21 +359,6 @@ export function placeGroundTurrets(lay: Layout, plan: GroundPlan): GroundFit {
       for (const j of [x > 0 ? i - 1 : -1, x < w - 1 ? i + 1 : -1, i - w, i + w]) if (j >= 0 && j < w * h && !d[j] && runs(j)) { d[j] = (d[i] as number) + 1; queue.push(j); }
     }
     return d;
-  }
-
-  /** The cable from a tile beside the turret down to the hull: each step one nearer, straight on where it can. */
-  function cableFrom(from: number, reach: Int32Array): number[] {
-    const run = [from];
-    let i = from, dir = -1;
-    while ((reach[i] as number) > 1) {
-      const x = i % w, steps = [x < w - 1 ? i + 1 : -1, x > 0 ? i - 1 : -1, i + w, i - w];
-      const next = steps.map((j, k) => ({ j, k })).filter(({ j }) => j >= 0 && reach[j] === (reach[i] as number) - 1);
-      const pick = next.find((q) => q.k === dir) ?? next[0];
-      if (!pick) break;
-      i = pick.j; dir = pick.k;
-      run.push(i);
-    }
-    return run;
   }
 
   /**
@@ -426,7 +396,7 @@ export function placeGroundTurrets(lay: Layout, plan: GroundPlan): GroundFit {
       const i = sy * w + sx, r = reach[i] as number;
       if (r >= MIN_CABLE && r <= MAX_CABLE && (from < 0 || r < (reach[from] as number))) from = i;
     }
-    return from < 0 ? null : cableFrom(from, reach);
+    return from < 0 ? null : cableFrom(w, from, reach);
   }
 
   /** True while the ground is one open walk: every airlock's outside reaches every pad and every turret's ring. */

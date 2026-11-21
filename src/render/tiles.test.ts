@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { Finish, Struct } from "../sim/structure";
-import { floorChain, ghostVerts, outward, replacesFloor, tileHash, wallMask, wallPieces, type CutawayMode } from "./tiles";
+import { ghostVerts } from "./ghostVerts";
+import { floorChain, outward, replacesFloor, tileHash, wallMask, wallPieces, type CutawayMode } from "./tiles";
 
 const W = Struct.Wall;
 const F = Struct.Floor;

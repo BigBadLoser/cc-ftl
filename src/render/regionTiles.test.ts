@@ -8,7 +8,8 @@ import type { Atlas, StaticSprite } from './assets/loader';
 import { createGridView } from './gridView';
 import { createWorldStack } from './worldLayers';
 import { createChunkViews, regionTiles, type ChunkRef } from './regionTiles';
-import { ghostVerts, ghostVertsIn, HullSide, hullSide, wallPieces } from './tiles';
+import { ghostVerts, ghostVertsIn } from './ghostVerts';
+import { HullSide, hullSide, wallPieces } from './tiles';
 
 /** A w x h hull ring with floor inside, stamped at sector (ox, oy), plus a few interior walls and a door. */
 function ship(ox: number, oy: number, w = 40, h = 20): ShipGrid {

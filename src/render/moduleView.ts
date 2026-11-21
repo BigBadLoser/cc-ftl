@@ -505,8 +505,7 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
   }
 
   return {
-    update,
-    pick: (ax, ay) => pickParts(mods, ax, ay),
+    update, pick: (ax, ay) => pickParts(mods, ax, ay),
     dispose() {
       for (const e of mods.values()) dropEntry(e);
       mods.clear();
