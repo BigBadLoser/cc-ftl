@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { shippedManifest } from '../../../test/support/manifest';
 import type { AssetDef } from './manifest';
-import { assembleManifest, partUrl, readManifest, type ManifestIndex, type ManifestPart } from './manifestParts';
+import { assembleManifest, partUrl, readManifest, readManifestOnce, resetManifestCache, type ManifestIndex, type ManifestPart } from './manifestParts';
 
 const stat = (sheet: string): AssetDef => ({ kind: 'static', sheet, frame: { x: 0, y: 0, w: 1, h: 1 }, anchor: { x: 0, y: 0 }, footprint: [1, 1] });
 const index: ManifestIndex = { version: 1, tile: { w: 64, h: 32 }, keyColors: {}, parts: ['b', 'a'] };

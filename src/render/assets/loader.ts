@@ -3,7 +3,7 @@ import { cellOf, MANIFEST_VERSION, type ClipDef, type LayerAsset, type Manifest,
 import { dropHalo } from '../haloTex';
 import { buildMask, keepMask } from './alphaMask';
 import { composeManifest } from './compose';
-import { fetchJson, readManifest } from './manifestParts';
+import { fetchJson, readManifestOnce } from './manifestParts';
 import { SheetStore, type Loaded, type SheetIO } from './sheetStore';
 
 /** The art directory under the asset base: 64x32 pixel art, each art pixel drawn as a hard 2x2 block (see compose.ts). */
@@ -163,7 +163,7 @@ function validate(m: Manifest): void {
 
 /** The art manifest, composed into world px: the index and its part files (see manifestParts.ts), fetched in parallel. */
 export async function loadComposed(base = assetBase()): Promise<Manifest> {
-  const m = await readManifest(`${base}${ART_DIR}/manifest.json`, fetchJson);
+  const m = await readManifestOnce(`${base}${ART_DIR}/manifest.json`, fetchJson);
   validate(m);
   return composeManifest(m, ART_DIR);
 }

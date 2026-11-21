@@ -49,3 +49,21 @@ export async function readManifest(indexUrl: string, getJson: (url: string) => P
   const loaded = await Promise.all(index.parts.map(async (p) => [p, (await getJson(partUrl(indexUrl, p))) as ManifestPart] as const));
   return assembleManifest(index, Object.fromEntries(loaded));
 }
+
+const once = new Map<string, Promise<Manifest>>();
+
+/** `readManifest`, once per index URL: the title stage and the game share one fetch of the index and its parts. A failed read is forgotten so a retry fetches again. */
+export function readManifestOnce(indexUrl: string, getJson: (url: string) => Promise<unknown>): Promise<Manifest> {
+  let p = once.get(indexUrl);
+  if (!p) {
+    p = readManifest(indexUrl, getJson);
+    once.set(indexUrl, p);
+    p.catch(() => once.delete(indexUrl));
+  }
+  return p;
+}
+
+/** Forget the manifests read so far (tests that mock fetch). */
+export function resetManifestCache(): void {
+  once.clear();
+}

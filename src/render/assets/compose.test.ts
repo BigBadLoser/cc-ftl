@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { shippedFile, shippedManifest } from '../../../test/support/manifest';
 import { composeManifest } from './compose';
 import { loadComposed } from './loader';
+import { resetManifestCache } from './manifestParts';
 import type { LayerAsset, Manifest, StaticAsset } from './manifest';
 
 
@@ -55,7 +56,10 @@ describe('the shipped art composed', () => {
 });
 
 describe('loadComposed', () => {
-  afterEach(() => vi.unstubAllGlobals());
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    resetManifestCache();
+  });
   it('loads the index and its part files and composes them into the manifest', async () => {
     const f = vi.fn(async (url: string) => {
       const body = shippedFile(url.replace('/base/', ''));
