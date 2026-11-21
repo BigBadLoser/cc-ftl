@@ -62,6 +62,12 @@ function quiet(reg: ContentRegistry = content): { sim: Sim; c: number } {
 
 /** Keep a tile burning (the fire system would otherwise grow or starve it on its own schedule). */
 const burn = (sim: Sim, t: { x: number; y: number }): void => shipGrid(sim, homeShip(sim))!.set('fire', t.x, t.y, 200);
+/** Keep only `t` burning: put out whatever spread from it, so the test is about one burning bed, not a room fire. */
+const burnOnly = (sim: Sim, t: { x: number; y: number }): void => {
+  const g = shipGrid(sim, homeShip(sim))!;
+  for (let y = g.y0; y < g.y0 + g.height; y++) for (let x = g.x0; x < g.x0 + g.width; x++) if ((x !== t.x || y !== t.y) && g.get('fire', x, y) > 0) g.set('fire', x, y, 0);
+  g.set('fire', t.x, t.y, 200);
+};
 
 describe('hazard interrupt', () => {
   it('walks a crew member off a burning tile to a safe one, and the interrupt lapses there', () => {
@@ -105,7 +111,7 @@ describe('hazard interrupt', () => {
     const t = at(sim, c);
     let back = 0;
     for (let i = 0; i < 600; i++) {
-      burn(sim, t);
+      burnOnly(sim, t); // with door vents open the room's air feeds a spreading fire, which would send them off again
       sim.step();
       const p = at(sim, c);
       if (i > 60 && p.x === t.x && p.y === t.y) back++;

@@ -208,13 +208,16 @@ export function hasIntegrity(kind: number): boolean {
   return kind === Struct.Wall || kind === Struct.Door;
 }
 
-/** Write a tile's struct kind and reset its integrity to match (full for walls/doors, 0 otherwise). Keeps the owner. */
+/** Write a tile's struct kind and reset its integrity to match (full for walls/doors, 0 otherwise), a door's vent to open. Keeps the owner. */
 export function writeStruct(grid: GridLike, x: number, y: number, kind: number): void {
   if (grid.get('struct', x, y) !== kind) grid.set('struct', x, y, kind);
   const hp = hasIntegrity(kind) ? STRUCT_MAX_HP : 0;
   if (grid.has('hp') && grid.get('hp', x, y) !== hp) grid.set('hp', x, y, hp);
   if (grid.has('jam') && grid.get('jam', x, y) !== 0) grid.set('jam', x, y, 0);
-  if (grid.has('vent') && grid.get('vent', x, y) !== 0) grid.set('vent', x, y, 0);
+  // A new door's vent starts open (the player can shut it); the vents system holds it shut while a side is hazardous or the ship has no
+  // power, and closes it for good on an airlock door, which has no vent.
+  const vent = kind === Struct.Door ? VentState.Open : VentState.Closed;
+  if (grid.has('vent') && grid.get('vent', x, y) !== vent) grid.set('vent', x, y, vent);
   if (grid.has('window') && grid.get('window', x, y) !== 0) grid.set('window', x, y, 0);
   if (kind !== Struct.Floor && grid.has('tube') && grid.get('tube', x, y) !== 0) grid.set('tube', x, y, 0);
   syncOwner(grid, x, y);

@@ -4,7 +4,7 @@ import { ModuleC, type Module } from './components';
 import { hullOutward, hullSide, rotateOffset, type Tile } from './footprint';
 import type { ModuleDef } from '../registry';
 import type { Sim } from '../sim';
-import { Struct, writeStruct } from '../structure';
+import { Struct, VentState, writeStruct } from '../structure';
 
 export type AirlockState = 'inner' | 'outer' | 'toOuter' | 'toInner';
 
@@ -76,7 +76,10 @@ export function initAirlock(sim: Sim, grid: Grid, id: number): void {
   const def = m && sim.content.modules[m.def];
   if (!m || !def?.airlock) return;
   const t = airlockTiles(def, m);
-  for (const d of [t.outer, t.inner]) writeStruct(grid, d.x, d.y, Struct.Door);
+  for (const d of [t.outer, t.inner]) {
+    writeStruct(grid, d.x, d.y, Struct.Door);
+    if (grid.has('vent')) grid.set('vent', d.x, d.y, VentState.Closed); // an airlock door has no vent (`ventableDoor`)
+  }
   for (const c of t.chamber) writeStruct(grid, c.x, c.y, Struct.Floor);
   grid.set('door', t.outer.x, t.outer.y, 0);
   grid.set('door', t.inner.x, t.inner.y, 255);
