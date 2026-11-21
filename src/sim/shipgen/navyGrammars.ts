@@ -1,4 +1,3 @@
-import { Builder } from './builder';
 import { blockFrom, localBuilder } from './blocks';
 import { noseBlock } from './navyBlocks';
 import { bands, chain, deckPair, evenDepth, jobs, mirrorBlock, no, order, propulsion, section, spanOf, twinDrives, type Ctx, type SectionPlan } from './navyKit';
@@ -16,7 +15,7 @@ import { runLen } from './topoParts';
  */
 
 const nose = (c: Ctx, f: FactionDef): number | null => {
-  const front = noseBlock(c.rng, pickNose(new Builder(c.rng), f, c.plan));
+  const front = noseBlock(c.rng, pickNose(c.rng, f, c.plan));
   return front ? c.A.placeRoot(front) : null;
 };
 
@@ -81,7 +80,7 @@ function citadelFlanked(c: Ctx, f: FactionDef): boolean {
   if (!cit) return no(c, 'citadel');
   const root = c.A.placeRoot(cit);
   c.parts.push('citadel');
-  const front = noseBlock(c.rng, pickNose(new Builder(c.rng), f, c.plan));
+  const front = noseBlock(c.rng, pickNose(c.rng, f, c.plan));
   if (!front || c.A.attach(root, front, { side: 'w' }) === null) return no(c, 'nose');
   if (!propulsion(c, root, pick(c, c.fam.propulsion))) return false;
   const cit2 = spanOf(c, [root]);
@@ -100,7 +99,7 @@ function twinHull(c: Ctx, f: FactionDef): boolean {
   if (!cit) return no(c, 'citadel');
   const root = c.A.placeRoot(cit);
   c.parts.push('citadel');
-  const front = noseBlock(c.rng, pickNose(new Builder(c.rng), f, c.plan));
+  const front = noseBlock(c.rng, pickNose(c.rng, f, c.plan));
   if (!front || c.A.attach(root, front, { side: 'w' }) === null) return no(c, 'nose');
   const rest = [...j.core.slice(2), ...j.crew, ...j.stores];
   // Side hulls profiled: a stepped outer edge (one room deeper where the hull is broadest), the same for both.
@@ -124,7 +123,7 @@ function carrierIsland(c: Ctx, f: FactionDef): boolean {
   if (bowId === null) return no(c, 'bow');
   // A nose ahead of it: the carrier's length (aspect 2.8 to 3.6) and the navy's pointed bow. The island stays the bridge and the
   // guns are already dealt out, so the nose holds stores the size of the command room and no gun (a copy of the plan).
-  const front = noseBlock(c.rng, pickNose(new Builder(c.rng), f, { ...c.plan, command: { ...cargoSpec(2), w: c.plan.command.w, h: c.plan.command.h }, weapons: [] }));
+  const front = noseBlock(c.rng, pickNose(c.rng, f, { ...c.plan, command: { ...cargoSpec(2), w: c.plan.command.w, h: c.plan.command.h }, weapons: [] }));
   if (!front || c.A.attach(bowId, front, { side: 'w' }) === null) return no(c, 'nose');
   // Crew, core, stores and the remaining guns in hull decks along the hangar: they give it real volume.
   const decks = deckPair(c, root, root, 'hull', [...j.crew, ...j.core, ...j.stores, ...more.flatMap((s: SectionPlan) => [...s.top, ...s.bottom])], 'start', { xMin: spanOf(c, [root]).xMin });

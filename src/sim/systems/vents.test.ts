@@ -1,3 +1,4 @@
+import { world as airWorld } from '../../../test/support/fixtures/air';
 import { describe, expect, it } from 'vitest';
 import { stampShip } from '../combat/ships';
 import type { ContentRegistry, ModuleDef } from '../registry';
@@ -49,8 +50,18 @@ describe('door vents', () => {
     expect(VENT_CONDUCTANCE).toBeLessThan(1);
   });
 
+  it("a new door's vent starts open; an airlock's doors have none", () => {
+    expect(vent(make())).toBe(VentState.Open);
+    const sim = airWorld(); // a ring hull whose only doors are its airlock's
+    const g = shipGrid(sim, 1)!;
+    const doors: number[] = [];
+    for (let y = g.y0; y < g.y0 + g.height; y++) for (let x = g.x0; x < g.x0 + g.width; x++) if (g.get('struct', x, y) === Struct.Door) doors.push(g.get('vent', x, y));
+    expect(doors).toEqual([VentState.Closed, VentState.Closed]);
+  });
+
   it('a closed vent seals the shut door', () => {
     const sim = make();
+    setOpen(sim, false);
     fill(sim, 2, 4, 15);
     fill(sim, 6, 8, 21);
     run(sim, 400);

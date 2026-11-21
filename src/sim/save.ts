@@ -5,6 +5,7 @@ import { restoreTasks } from './ai/task';
 import type { ContentRegistry } from './registry';
 import { SectorGrid, type SectorGridData } from './sectorGrid';
 import type { SectorArchive } from './sector/archive';
+import { nodeSize } from './sector/size';
 import { Sim } from './sim';
 import { newBonds, type BondState } from './crew/bonds';
 import { newStory, type StoryState } from './story/state';
@@ -230,7 +231,7 @@ export function deserialize(json: string, content: ContentRegistry): Sim {
   sim.tick = data.tick;
   sim.rng.setState(data.rng);
   sim.world = World.deserialize(data.world);
-  sim.sector = { ...data.sector, grid: SectorGrid.deserialize(0, data.sector.grid) };
+  sim.sector = { ...data.sector, ...nodeSize(data.sector), grid: SectorGrid.deserialize(0, data.sector.grid) };
   sim.story = { ...newStory(data.seed), ...data.story };
   sim.trade = { ...newTrade(), ...data.trade };
   sim.yard = { ...newYard(), ...data.yard };

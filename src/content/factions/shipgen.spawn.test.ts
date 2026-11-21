@@ -12,6 +12,9 @@ import { content } from '../index';
 import { factions } from './index';
 import { shipIdOf, shipGrid, shipIds } from '../../sim/regions';
 import { homeShip } from '../../sim/combat/shipQuery';
+import { hullLoad, templateHullLoad } from '../../sim/ftl/capacity';
+import { generateShip } from '../../sim/shipgen/generate';
+import type { FactionDef } from '../../sim/shipgen/types';
 
 const defs = content.modules as Record<string, ModuleDef>;
 const ids = Object.keys(factions) as (keyof typeof factions)[];
@@ -73,9 +76,21 @@ describe('ship generator: spawned in the sim', () => {
           }
         }
         expect(seen.size, `seed ${seed}`).toBe(total);
+        // Its engines carry its hull (#129): taken as a prize, it can jump without an overcharge.
+        const load = hullLoad(sim, shipId);
+        expect(load.over, `seed ${seed}: ${load.tiles} tiles on ${load.capacity}`).toBe(0);
+        expect(load.engines, `seed ${seed}`).toBeGreaterThan(0);
       }
     });
   }
+
+  it('a spawned ship measures what its template measured: hullLoad matches templateHullLoad', () => {
+    for (const id of ids) {
+      const { sim, shipId } = spawned(id, 77, 9);
+      const gen = generateShip(factions[id] as FactionDef, id, 77, 9, defs);
+      expect(hullLoad(sim, shipId), id).toEqual(templateHullLoad(defs, gen.template));
+    }
+  });
 
   it('debug.spawnGenerated stores the origin on the ship, survives a save, and rejects unknown factions', () => {
     const { sim, shipId } = spawned('faction.navy', 1234, 5);

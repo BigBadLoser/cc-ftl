@@ -1,6 +1,6 @@
 import { CHUNK_SIZE, type GridLike } from './grid';
 import { ShipGrid } from './shipGrid';
-import { loadChunkInto } from './sectorGridBulk';
+import { type ChunkTiles, loadChunkInto } from './sectorGridBulk';
 import { Struct, VentState, gasConductance, isAirless } from './structure';
 
 /**
@@ -47,6 +47,7 @@ export function fieldFrame(grid: GridLike): FieldFrame {
 }
 
 const CHUNK_SHIFT = Math.log2(CHUNK_SIZE);
+const CHUNK_MASK = CHUNK_SIZE - 1;
 
 type CondCache = { frame: FieldFrame; door: number; vent: number; cond: Float64Array; doors: Int32Array };
 const conds = new WeakMap<GridLike, CondCache>();
@@ -123,6 +124,10 @@ interface Mirror {
   readonly cy0: number;
   readonly ncx: number;
   readonly revs: Float64Array;
+  /** Per chunk, 1 when it must be compared in full at the next write-back: loaded since (written by someone else), or never written back. */
+  readonly full: Uint8Array;
+  /** The frame and tile kinds of the last `writeBackMirror` with `holds`; another frame compares every chunk in full. */
+  frame: FieldFrame | null;
 }
 
 const mirrors = new WeakMap<GridLike, Map<string, Mirror>>();
@@ -135,7 +140,7 @@ function mirrorRecord(grid: ShipGrid, field: string): Mirror {
     const cx0 = grid.x0 >> CHUNK_SHIFT, cy0 = grid.y0 >> CHUNK_SHIFT;
     const ncx = ((grid.x0 + grid.width - 1) >> CHUNK_SHIFT) - cx0 + 1, ncy = ((grid.y0 + grid.height - 1) >> CHUNK_SHIFT) - cy0 + 1;
     // NaN never equals a revision: the first use loads every chunk.
-    m = { vals: new Float64Array(grid.width * grid.height), cx0, cy0, ncx, revs: new Float64Array(ncx * ncy).fill(NaN) };
+    m = { vals: new Float64Array(grid.width * grid.height), cx0, cy0, ncx, revs: new Float64Array(ncx * ncy).fill(NaN), full: new Uint8Array(ncx * ncy).fill(1), frame: null };
     byField.set(field, m);
   }
   return m;
@@ -160,6 +165,7 @@ export function fieldMirror(grid: GridLike, field: string): Float64Array {
     if (rev === m.revs[k]) continue;
     loadChunkInto(grid.sector, field, rect, m.vals, cx, cy);
     m.revs[k] = rev;
+    m.full[k] = 1;
   }
   return m.vals;
 }
@@ -167,13 +173,47 @@ export function fieldMirror(grid: GridLike, field: string): Float64Array {
 /**
  * `writeBack` against the grid's mirror of `field` (`before` must be what `fieldMirror` returned this tick, with no write to the
  * field since): the same writes, and the mirror takes the written values so it stays equal to the field.
+ * `holds`: the tile kinds the solve can change. A chunk nobody else wrote since the last such write-back over the same frame
+ * compares only its tiles of those kinds (the rest still hold what that write-back left; #65); any other chunk compares in full.
  */
-export function writeBackMirror(grid: GridLike, field: string, vals: Float64Array, before: Float64Array, eps: number): number {
+export function writeBackMirror(grid: GridLike, field: string, vals: Float64Array, before: Float64Array, eps: number, holds?: (kind: number) => boolean): number {
   if (!(grid instanceof ShipGrid)) return writeBack(grid, field, vals, before, eps);
   const m = mirrorRecord(grid, field);
-  const wrote = grid.sector.writeDelta(field, grid.rect, vals, m.vals, eps, false, true);
+  let only: ChunkTiles | undefined;
+  if (holds) {
+    const frame = fieldFrame(grid);
+    if (m.frame !== frame) m.full.fill(1);
+    m.frame = frame;
+    const lists = chunkTilesOf(grid, frame, m, holds);
+    only = (cx, cy) => {
+      const k = cx - m.cx0 + (cy - m.cy0) * m.ncx;
+      return m.full[k] ? null : (lists[k] as Int32Array);
+    };
+  } else m.frame = null;
+  const wrote = grid.sector.writeDelta(field, grid.rect, vals, m.vals, eps, false, true, only);
   for (let k = 0; k < m.revs.length; k++) m.revs[k] = grid.sector.chunkRevision(field, m.cx0 + (k % m.ncx), m.cy0 + Math.floor(k / m.ncx));
+  m.full.fill(holds ? 0 : 1);
   return wrote;
+}
+
+const chunkLists = new WeakMap<FieldFrame, Map<(kind: number) => boolean, Int32Array[]>>();
+
+/** Per mirror chunk, the (rect index, chunk index) pairs of the frame's tiles of the kinds `holds` accepts (ChunkTiles). */
+function chunkTilesOf(grid: ShipGrid, frame: FieldFrame, m: Mirror, holds: (kind: number) => boolean): Int32Array[] {
+  let byTest = chunkLists.get(frame);
+  if (!byTest) chunkLists.set(frame, (byTest = new Map()));
+  const hit = byTest.get(holds);
+  if (hit) return hit;
+  const lists: number[][] = Array.from({ length: m.revs.length }, () => []);
+  const { width, x0, y0 } = grid;
+  for (let i = 0; i < frame.struct.length; i++) {
+    if (!holds(frame.struct[i] as number)) continue;
+    const gx = x0 + (i % width), gy = y0 + Math.floor(i / width);
+    (lists[(gx >> CHUNK_SHIFT) - m.cx0 + ((gy >> CHUNK_SHIFT) - m.cy0) * m.ncx] as number[]).push(i, ((gy & CHUNK_MASK) << CHUNK_SHIFT) + (gx & CHUNK_MASK));
+  }
+  const out = lists.map((l) => Int32Array.from(l));
+  byTest.set(holds, out);
+  return out;
 }
 
 /**
@@ -233,9 +273,7 @@ export function diffuseStep(
   // Only links that can move anything (precomputed per frame), in the sweep order, so every per-tile sum adds the same
   // terms in the same order as the full sweep. Fields are independent, so each runs over the links alone.
   const L = linksOf(frame);
-  if (fields.length === 2) {
-    linkPair(L, cond, fields[0] as Float64Array, fields[1] as Float64Array, delta[0] as Float64Array, delta[1] as Float64Array, kNormal, kVent);
-  } else for (let f = 0; f < fields.length; f++) {
+  for (let f = 0; f < fields.length; f++) {
     const v = fields[f] as Float64Array;
     const dl = delta[f] as Float64Array;
     for (let l = 0; l < L.n; l++) {
@@ -258,28 +296,6 @@ export function diffuseStep(
       const next = (v[i] as number) + (dl[i] as number);
       v[i] = floorAtZero && next < 0 ? 0 : next;
       dl[i] = 0;
-    }
-  }
-}
-
-/** The link pass of diffuseStep for two fields at once (O2 and CO2 share every link): the same terms, the same order. */
-function linkPair(
-  L: Links, cond: Float64Array, a: Float64Array, b: Float64Array, da: Float64Array, db: Float64Array, kNormal: number, kVent: number,
-): void {
-  for (let l = 0; l < L.n; l++) {
-    const i = L.i[l] as number, j = L.j[l] as number, air = L.air[l] as number;
-    const c = Math.min(cond[i] as number, cond[j] as number);
-    if (c <= 0) continue;
-    const k = (air !== 0 ? kVent : kNormal) * c;
-    const d1 = k * ((a[i] as number) - (a[j] as number));
-    const d2 = k * ((b[i] as number) - (b[j] as number));
-    if ((air & 1) === 0) {
-      da[i] = (da[i] as number) - d1;
-      db[i] = (db[i] as number) - d2;
-    }
-    if ((air & 2) === 0) {
-      da[j] = (da[j] as number) + d1;
-      db[j] = (db[j] as number) + d2;
     }
   }
 }
@@ -327,5 +343,58 @@ export class SteadyState {
   done(grid: GridLike, key: number[], wrote: number): void {
     if (wrote === 0) this.at.set(grid, key);
     else this.at.delete(grid);
+  }
+}
+
+/** Links split into four phases (horizontal pairs at even x, at odd x, vertical at even y, at odd y): no tile appears twice in a phase. */
+interface PhasedLinks extends Links {
+  /** Start offsets of each phase in i/j/air, plus the end. */
+  readonly at: Int32Array;
+}
+const phaseCache = new WeakMap<FieldFrame, PhasedLinks>();
+
+function phasesOf(frame: FieldFrame): PhasedLinks {
+  const hit = phaseCache.get(frame);
+  if (hit) return hit;
+  const L = linksOf(frame);
+  const { width } = frame;
+  const phase = (l: number): number => {
+    const i = L.i[l] as number, j = L.j[l] as number;
+    const x = i % width;
+    return j === i + 1 ? x & 1 : 2 + (((i - x) / width) & 1);
+  };
+  const order = Array.from({ length: L.n }, (_, l) => l).sort((p, q) => phase(p) - phase(q) || p - q);
+  const at = new Int32Array(5);
+  for (const l of order) at[phase(l) + 1] = (at[phase(l) + 1] as number) + 1;
+  for (let p = 0; p < 4; p++) at[p + 1] = (at[p + 1] as number) + (at[p] as number);
+  const out: PhasedLinks = {
+    n: L.n, at,
+    i: Int32Array.from(order, (l) => L.i[l] as number), j: Int32Array.from(order, (l) => L.j[l] as number), air: Uint8Array.from(order, (l) => L.air[l] as number),
+  };
+  phaseCache.set(frame, out);
+  return out;
+}
+
+/** Phase orders, one per substep in turn: each phase leads and trails equally often, so no direction leads overall. */
+const ORDERS = [[0, 1, 2, 3], [1, 0, 3, 2], [2, 3, 0, 1], [3, 2, 1, 0], [3, 2, 1, 0], [2, 3, 0, 1], [1, 0, 3, 2], [0, 1, 2, 3]] as const;
+
+/**
+ * Pairwise in-place mixing of two fields: each phase's pairs are disjoint, so a phase updates in place with no delta buffer and no
+ * second pass. `step` picks the phase order (ORDERS, in turn). With k * conductance <= 0.5 an exchange never overshoots, so values stay
+ * non-negative. Mass moves only between the two ends of a pair, so it is conserved exactly apart from airless sinks.
+ */
+export function mixPairs(frame: FieldFrame, cond: Float64Array, a: Float64Array, b: Float64Array, kNormal: number, kVent: number, step: number): void {
+  const P = phasesOf(frame);
+  for (const p of ORDERS[step % ORDERS.length] as readonly number[]) {
+    for (let l = P.at[p] as number, end = P.at[p + 1] as number; l < end; l++) {
+      const i = P.i[l] as number, j = P.j[l] as number, air = P.air[l] as number;
+      const c = Math.min(cond[i] as number, cond[j] as number);
+      if (c <= 0) continue;
+      const k = (air !== 0 ? kVent : kNormal) * c;
+      const d1 = k * ((a[i] as number) - (a[j] as number));
+      const d2 = k * ((b[i] as number) - (b[j] as number));
+      if ((air & 1) === 0) { a[i] = (a[i] as number) - d1; b[i] = (b[i] as number) - d2; }
+      if ((air & 2) === 0) { a[j] = (a[j] as number) + d1; b[j] = (b[j] as number) + d2; }
+    }
   }
 }

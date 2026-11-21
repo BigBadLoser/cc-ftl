@@ -345,6 +345,11 @@ export class GalaxyGen implements SectorContext {
 
 const gens = new WeakMap<object, Map<number, GalaxyGen>>();
 const NO_CONTENT = {};
+/**
+ * Generators kept per content object, least recently used dropped first. A game uses one seed at a time; each kept generator
+ * holds everything explored so far (tens of MB once a test has walked the map), so a longer list only grew the heap (#556).
+ */
+const GENS_KEPT = 2;
 
 /** The shared generator for a (content, seed) pair. */
 export function galaxyGen(seed: number, content: GalaxyContent | undefined): GalaxyGen {
@@ -352,9 +357,11 @@ export function galaxyGen(seed: number, content: GalaxyContent | undefined): Gal
   let bySeed = gens.get(key);
   if (!bySeed) gens.set(key, (bySeed = new Map()));
   let g = bySeed.get(seed);
-  if (!g) {
-    if (bySeed.size > 16) bySeed.clear();
-    bySeed.set(seed, (g = new GalaxyGen(seed, content)));
+  if (g) bySeed.delete(seed); // re-added below, as the most recently used
+  else {
+    g = new GalaxyGen(seed, content);
+    for (const old of bySeed.keys()) if (bySeed.size >= GENS_KEPT) bySeed.delete(old);
   }
+  bySeed.set(seed, g);
   return g;
 }

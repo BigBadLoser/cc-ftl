@@ -10,8 +10,8 @@ import { RECIPES, drawRoom, hostCompanions, pruneDoors, reserveWalkway, furnish,
 import { furnishByRule, placeFeed } from './rooms/rules/place';
 import { RULES } from './rooms/rules/rules';
 import { Layout } from './layout';
+import { stockOf, toTemplate, type Fitted } from './fitted';
 import { placeGroundTurrets, type GroundPlan } from './groundTurrets';
-import { cableRows } from '../cable';
 import { accepts } from '../items/storage';
 import { hullChoices, pickWeighted, planShip, type RoomSpec, type ShipPlan } from './plan';
 import { clusters, hub, rails } from './topoDrone';
@@ -19,6 +19,7 @@ import { ring, spine } from './topoNavy';
 import { salvage } from './topoSalvage';
 import { trimThin } from './salvage';
 import { validateTemplate } from './validate';
+import { templateHullLoad } from '../ftl/capacity';
 import { thinWalls } from './thinWalls';
 import { extractContainers, type PlacedContainer } from './containerCells';
 import { openBareDocks } from './openDocks';
@@ -52,19 +53,6 @@ const rank = (id: string, d: ModuleDef): number => {
   if (d.bed) return 14;
   return 15;
 };
-
-interface Fitted {
-  /** Why the fit-out failed (the partial layout is kept for the viewer). */
-  error?: string;
-  lay: Layout;
-  stock: Map<number, { item: string; count: number }[]>;
-  /** Bays with a vehicle in them: the module index and the vehicle (the bay's own `builtWith`, else a shuttle). */
-  vehicles: Map<number, string>;
-  /** Drone defs docked in the bay at this module index. */
-  drones: Map<number, string[]>;
-  /** Modules standing on open ground outside the hull (module indices), and the cable that wires them to it (`FinishOpts.ground`). */
-  ground?: { placed: Set<number>; cable: Set<number>; unwired: number };
-}
 
 /** Place every room's planned modules in that room; a reason string when something essential does not fit. */
 function fitOut(
@@ -238,37 +226,6 @@ function fitOut(
   return out;
 }
 
-function toTemplate(f: FactionDef, role: ShipRoleDef, factionId: string, seed: number, plan: Pick<ShipPlan, 'crew'>, rows: string[], d: Fitted): ShipTemplate {
-  const tag = (seed >>> 0).toString(16).toUpperCase().padStart(8, '0').slice(-4);
-  const modules: NonNullable<ShipTemplate['modules']> = d.lay.modules.map((m, i) => {
-    const stock = d.stock.get(i);
-    return {
-      def: m.def, x: m.x, y: m.y, rot: m.rot,
-      ...(stock && stock.length > 0 ? { stock } : {}),
-      ...(d.vehicles.has(i) ? { vehicle: d.vehicles.get(i) } : {}),
-      ...(d.drones.has(i) ? { drones: d.drones.get(i) } : {}),
-      ...(d.ground?.placed.has(i) ? { ground: true as const } : {}),
-    };
-  });
-  return {
-    name: `${f.name} ${role.id} ${factionId.replace(/^faction\./, '').slice(0, 2).toUpperCase()}-${tag}`,
-    faction: 'hostile',
-    doctrine: f.doctrine.targeting,
-    crew: plan.crew,
-    rows,
-    modules,
-    ...(d.ground && d.ground.cable.size > 0 ? { cable: cableRows(d.lay.w, d.lay.h, d.ground.cable) } : {}),
-    ...(f.doctrine.boarding ? { boarding: { ...f.doctrine.boarding } } : {}),
-  };
-}
-
-/** A container's cargo: the faction's stock list, scaled up by the container's capacity (storage caps what fits). */
-function stockOf(rng: Rng, f: FactionDef, def: ModuleDef | undefined): { stock?: { item: string; count: number }[] } {
-  const k = Math.ceil((def?.storage?.capacity ?? 0) / 3);
-  const stock = f.stock.map((s) => ({ item: s.item, count: rng.int(s.min, s.max) * k })).filter((s) => s.count > 0);
-  return stock.length > 0 ? { stock } : {};
-}
-
 /** Pick a ship role (weights scaled by depth) and one of its archetypes. */
 function pickRole(rng: Rng, f: FactionDef, depth: number): { role: ShipRoleDef; archetype: ArchetypeId } {
   const role = pickWeighted(rng, hullChoices(f, depth)) as ShipRoleDef;
@@ -282,10 +239,38 @@ function pickRole(rng: Rng, f: FactionDef, depth: number): { role: ShipRoleDef; 
 export const previewHull = (f: FactionDef, seed: number, depth: number): string =>
   pickWeighted(new Rng(attemptSeed(seed, 0)), hullChoices(f, depth)).id;
 
-/** One generation attempt (attempt `n` of `seed`): the result, or the stage that failed. */
+/** What a hull's problem begins with when its engines cannot carry it. */
+const CAPACITY_PROBLEM = 'engines carry';
+
+/** Times an attempt is built again with more engines when its hull came out bigger than its engines carry. */
+const ENGINE_TOP_UPS = 3;
+
+/** Engines a hull lacks to carry itself (`templateHullLoad`), at the capacity of the engines it has; 0 when it fits. */
+function enginesShort(defs: Record<string, ModuleDef>, t: Pick<ShipTemplate, 'rows' | 'modules'>): number {
+  const load = templateHullLoad(defs, t);
+  return load.over > 0 && load.engines > 0 ? Math.ceil(load.over / (load.capacity / load.engines)) : 0;
+}
+
+/**
+ * One generation attempt (attempt `n` of `seed`): the result, or the stage that failed. A hull its planned engines cannot carry is built
+ * again from the same seed with the engines it lacks added to the plan (the extra drives grow the hull a little, so each build checks
+ * again), up to `ENGINE_TOP_UPS` times; one still over fails `fitShell`'s check and is reseeded.
+ */
 export function generateAttempt(
   f: FactionDef, factionId: string, seed: number, depth: number, defs: Record<string, ModuleDef>, n: number,
 ): GenResult | string {
+  let extra = 0;
+  for (let k = 0; ; k++) {
+    const r = buildAttempt(f, factionId, seed, depth, defs, n, extra, k < ENGINE_TOP_UPS);
+    if (typeof r !== 'number') return r;
+    extra += r;
+  }
+}
+
+/** One build of an attempt with `extraEngines` over the budget. With `topUp`, a hull short of engines returns how many it lacks instead. */
+function buildAttempt(
+  f: FactionDef, factionId: string, seed: number, depth: number, defs: Record<string, ModuleDef>, n: number, extraEngines: number, topUp: boolean,
+): GenResult | string | number {
   const rng = new Rng(attemptSeed(seed, n));
   let role: ShipRoleDef;
   let archetype: ArchetypeId;
@@ -299,7 +284,7 @@ export function generateAttempt(
     const fam = pickWeighted(rng, hullChoices(f, depth)) as HullFamilyDef;
     role = { id: fam.id, weight: fam.weight, archetypes: [], ...(fam.bonus ? { bonus: fam.bonus } : {}), ...(fam.bays ? { bays: fam.bays } : {}) };
     archetype = 'sections';
-    plan = planShip(rng, f, role, depth, defs);
+    plan = planShip(rng, f, role, depth, defs, extraEngines, fam.hullPerRoomTile);
     const r = arrangeHull(rng, f, fam, plan, defs);
     if (typeof r === 'string') return `${fam.id}: ${r}`;
     comp = r.A;
@@ -309,12 +294,15 @@ export function generateAttempt(
     topology = r.profile;
   } else {
     ({ role, archetype } = pickRole(rng, f, depth));
-    plan = planShip(rng, f, role, depth, defs);
+    plan = planShip(rng, f, role, depth, defs, extraEngines);
     b = new Builder(rng);
     topology = TOPOLOGIES[archetype as Exclude<ArchetypeId, 'sections'>](b, f, plan);
   }
   if (!topology) return `${archetype}: structure clash`;
-  return finishLayout(rng, f, factionId, seed, role, archetype, plan, b, topology, comp, profile, defs, n);
+  const r = finishLayout(rng, f, factionId, seed, role, archetype, plan, b, topology, comp, profile, defs, n);
+  // Only a ship that failed on its engines alone is built again: any other problem reseeds it anyway.
+  const after = topUp && r.problems[0]?.startsWith(CAPACITY_PROBLEM) ? enginesShort(defs, r.template) : 0;
+  return after > 0 ? after : r;
 }
 
 /** Extra validation of a finished template (stations add their own rules), returning problems. */
@@ -364,13 +352,18 @@ export function finishLayout(
   const roles = labels.map((l) => roleOfLabel(l));
   const { rows: framed, containers } = extractContainers(drawn);
   const rows = pruneDoors(framed, roomOf, width, roles);
-  const byKey = new Map(b.parts.map((p) => [p.key, p.spec]));
-  const specs = labels.map((l) => byKey.get(l.chunk) ?? b.chunkSpecs.get(`${l.chunk}:${l.letter}`));
+  const specs = specsOf(b);
   return {
     ...fitShell(rng, f, factionId, seed, role, archetype, plan, { rows, roomOf, width, height, roles, specs, containers }, topology, defs, n, opts,
       comp ? (hall) => comp.debug(ox, oy, width, height, rows, hall, profile) : undefined),
     thin,
   };
+}
+
+/** The planned contents of each room the builder drew, by room label. */
+function specsOf(b: Builder): (RoomSpec | undefined)[] {
+  const byKey = new Map(b.parts.map((p) => [p.key, p.spec]));
+  return b.cv.labels.map((l) => byKey.get(l.chunk) ?? b.chunkSpecs.get(`${l.chunk}:${l.letter}`));
 }
 
 /** A built structure, cropped: its tiles, the room of each floor tile, and each room's role and planned contents. */
@@ -407,6 +400,9 @@ export function fitShell(
   template.modules = [...(template.modules ?? []), ...(shell.containers ?? []).map((k) => ({ ...k, ...stockOf(rng, f, defs[k.def]) }))];
   const problems = d.error ? [d.error] : validateTemplate(template, defs, opts.immobile ? { immobile: true } : {});
   if (problems.length === 0 && opts.check) problems.push(...opts.check(template, defs));
+  // A generated ship that jumps carries its hull on its engines (ftl/capacity.ts), as the player's does (#129). Hand-drawn hulls are not held to it.
+  const load = opts.immobile ? null : templateHullLoad(defs, template);
+  if (problems.length === 0 && load && load.over > 0) problems.push(`${CAPACITY_PROBLEM} ${load.capacity} of ${load.tiles} tiles`);
   const hall = (x: number, y: number): boolean => roles[roomOf[y * width + x] ?? -1] === 'hall' && !dockTile.has(y * width + x);
   const metrics = layoutMetrics(template, hall, defs);
   const bad = metricViolation(metrics, f.metrics);

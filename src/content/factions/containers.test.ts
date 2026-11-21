@@ -154,7 +154,7 @@ describe('cargo containers', () => {
     let found = 0;
     let rough = 0;
     let all = 0;
-    for (const seed of [2, 3, 14, 18]) {
+    for (const seed of [0, 6, 13, 17]) { // seeds whose scrapper carries pod strings (an engine top-up, #129, reshapes a ship)
       const g = generateShip(scrap, 'faction.scrapper', seed, 2, defs);
       expect(g.problems, `seed ${seed}`).toEqual([]);
       const ks = boxes(g.template);

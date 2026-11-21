@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ShipC } from '../../sim/combat/components';
+import { CrewC } from '../../sim/crew/components';
+import { removeCrew } from '../../sim/crew/depart';
 import { shipGrid } from '../../sim/regions';
 import { Sim } from '../../sim/sim';
 import { Struct } from '../../sim/structure';
@@ -31,6 +33,8 @@ describe('outpost air', () => {
       sim.step();
       const ship = [...sim.world.query(ShipC)][0]!;
       for (let i = 0; i < 40; i++) sim.step(); // rooms labelled, life support settled in
+      // Crew take in more oxygen than they breathe out CO2, so breathing alone lowers a room's pressure: with nobody aboard, any loss is a leak.
+      for (const c of sim.world.query(CrewC)) removeCrew(sim, c);
       const start = rooms(sim, ship);
       const bad: string[] = [];
       for (let i = 0; i < 120 * 20; i++) {

@@ -10,14 +10,7 @@ export const NORMAL_CO2 = 0.04;
 export const NORMAL_TEMP = 20;
 /** Space is a fixed sink; clamped to a gameplay-sane floor rather than 3 K. */
 export const SPACE_TEMP = -100;
-/** Explicit diffusion substeps per tick. */
-export const GAS_SUBSTEPS = 2;
-/** Fraction of the pressure difference moved per substep across a fully open link (stable at <= 0.25). */
-export const GAS_DIFFUSION = 0.2;
-/** Same, for a link into Space (a breach). */
-export const GAS_VENT = 0.25;
-/** Writes smaller than this are skipped so idle rooms don't churn field revisions. */
-export const GAS_EPSILON = 1e-4;
+// Gas solver: tuningGas.ts.
 
 // --- Temperature ---
 export const TEMP_DIFFUSION = 0.04;
@@ -83,8 +76,8 @@ export const EXTINGUISH_PER_SEC = 90;
 
 // --- Crew vitals ---
 export const CREW_MAX_HP = 100;
-export const BREATH_O2_PER_SEC = 0.05;
-export const BREATH_CO2_PER_SEC = 0.05;
+export const BREATH_O2_PER_SEC = 0.1;
+export const BREATH_CO2_PER_SEC = 0.03;
 export const O2_HARM_BELOW = 10;
 export const O2_HARM_PER_SEC = 0.4;
 export const CO2_HARM_ABOVE = 5;
@@ -216,8 +209,8 @@ export const WARN_DEBOUNCE = 400;
 /** Units per second a stack burns at flammability 1 on a fully burning tile. */
 export const ITEM_BURN_PER_SEC = 6;
 // --- Combat ---
-export const SECTOR_WIDTH = 200;
-export const SECTOR_HEIGHT = 120;
+/** A node's size in tiles: the floor every node has (a restored one too: sector/size.ts); stations and yards may grow it. */
+export const SECTOR_WIDTH = 200, SECTOR_HEIGHT = 200;
 /** Tiles a region's frame reaches beyond its bbox: the EVA ring plus one tile of vacuum for venting. */
 export const REGION_PAD = 2;
 /** Least gap in tiles between two ships' padded frames (ships are never close: user rule). */

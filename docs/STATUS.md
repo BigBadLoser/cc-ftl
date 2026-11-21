@@ -1,7 +1,7 @@
 # Project status and handoff
 
 Living document: update it whenever a milestone lands, a decision is made, or a session ends.
-Last updated: 2026-11-17.
+Last updated: 2026-11-18.
 
 **History:** completed-work logs, past PR notes and superseded decisions are in [STATUS_ARCHIVE.md](STATUS_ARCHIVE.md). Standing decisions that live there:
 - Sector grid (user, 2026-10-19). Each node uses one chunked grid. Ships keep their positions within a node, while
@@ -78,7 +78,9 @@ under `tools/shipgen/starters` are stale against them (they were already behind 
 **Priority (user, 2026-11-15): the core loop.** "Make it playable first" (2026-11-08) is met: the playtest batch #384-#390 shipped
 in #392. Next is more to find per node (#171; danger bands #382 folded in: no visible bands, physical finds, plan in the #171 comment of 2026-11-15). #380 research,
 #383 story arcs and #172/#52 goals queue behind them. The test overhaul (#371) landed in #555 (harness, scenario builder, near-test
-`check:fast`, import-cycle ratchet); follow-ups: break the sim import cycle (#553), test-worker heap growth (#556), cheaper ticks (#65).
+`check:fast`, import-cycle ratchet). Follow-ups: #553 done (no import cycles in `src`, #560); cheaper ticks (#65) partly done: temperature and
+gas solve every 4 ticks per ship with life support inside the gas solve, mood by ship, grid read cache (#565, #570), shared station/outpost test builds
+(#574), and pairwise in-place gas mixing with a sparse write-back (#589: air system time −24% to −48%; breathing retuned to 0.1 O₂ in / 0.03 CO₂ out). Test-worker heap growth (#556) fixed in #581: the galaxy generator cache keeps two seeds, so a shared worker levels off near 300 MB.
 
 - **Station generation: reviewed 2026-11-17** (stack #501, #527, #528, #529; design and file map in
   [STATION_ASSEMBLY.md](STATION_ASSEMBLY.md)).
@@ -103,7 +105,6 @@ in #392. Next is more to find per node (#171; danger bands #382 folded in: no vi
 - **Open:** recruiting prisoners (#492); #300 in-node events; #303 augments as stat modifiers; #305 shuttle landing in a bay that breaks on approach.
 - **Designed, not started:** new modules (DESIGN.md "New modules"); crew implants (#311) needs its design pass. Addictions are parked.
 - **Waiting on the user:** shield art; a feature-completeness review of #205, #238 and #203.
-- **Temporary:** NPC ships ignore engine capacity until shipgen gives big hulls enough engines (#129).
 
 ## Done since #308 (one-liners; detail in the PRs, older notes in STATUS_ARCHIVE.md)
 
@@ -141,7 +142,7 @@ The planned feature order lives in [ROADMAP.md](ROADMAP.md); the list below is t
 1. The "In progress" list above.
 2. Engine Mk II/III art (#105).
 3. Renderer follow-ups (#123): render on demand, cached static layers, per-sprite culling.
-4. Shipgen session (separate): generator backlog (#119), room layout audit (#122), hull glitches (#103), NPC engine capacity (#129).
+4. Shipgen session (separate): generator backlog (#119), room layout audit (#122), hull glitches (#103).
 
 Other open issues: #65 sim performance, #54, #53, #52, #50, #49, #48, #47, #158, #157, #193, #139, #212, #245, #485, #490, #320-#322, #162, #130-#133.
 

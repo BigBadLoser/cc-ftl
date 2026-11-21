@@ -1,12 +1,11 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
 	import { Label } from '$lib/components/ui/label/index.js';
 	import { Separator } from '$lib/components/ui/separator/index.js';
 	import Field from './Field.svelte';
 	import { lab } from './lab.svelte';
-	import { SIZES, factions, familiesOf, layoutsOf, stations, starters, type Source, type SourceKind } from './source';
+	import { SIZES, factions, familiesOf, layoutsOf, outposts, stations, starters, type Source, type SourceKind } from './source';
 
 	let { done }: { done: () => void } = $props();
 	let s = $state<Source>({ ...lab.source });
@@ -14,6 +13,7 @@
 	const kinds: { value: SourceKind; label: string }[] = [
 		{ value: 'blank', label: 'Blank grid' },
 		{ value: 'station', label: 'Generated station' },
+		{ value: 'outpost', label: 'Asteroid outpost' },
 		{ value: 'faction', label: 'Generated ship (faction)' },
 		{ value: 'starter', label: 'Starter ship template' },
 	];
@@ -24,7 +24,7 @@
 	function setKind(k: string) {
 		if (k === s.kind) return;
 		s.kind = k as SourceKind;
-		s.id = k === 'blank' ? '' : k === 'station' ? (stations()[0] as string) : k === 'faction' ? (factions()[0] as string) : (starters()[0] as { id: string }).id;
+		s.id = k === 'blank' ? '' : k === 'station' ? (stations()[0] as string) : k === 'outpost' ? (outposts()[0] as string) : k === 'faction' ? (factions()[0] as string) : (starters()[0] as { id: string }).id;
 		s.family = '';
 		s.layout = '';
 	}
@@ -33,12 +33,7 @@
 		if (s.kind === 'station' && s.layout && !layouts.some((l) => l.value === s.layout)) s.layout = '';
 	});
 	const num = (e: Event, min: number): number => Math.max(min, Math.floor(Number((e.currentTarget as HTMLInputElement).value) || 0));
-	let cases = $state<string[]>([]);
 	let caseError = $state('');
-	onMount(() => { lab.listCases().then((l) => (cases = l)).catch(() => (caseError = 'The case list needs the dev server.')); });
-	async function open(slug: string) {
-		try { await lab.loadCaseNamed(slug); done(); } catch (e) { caseError = e instanceof Error ? e.message : String(e); }
-	}
 	async function openFile(e: Event) {
 		const f = (e.currentTarget as HTMLInputElement).files?.[0];
 		if (!f) return;
@@ -58,13 +53,15 @@
 			<Field label="Size" bind:value={s.size} options={opt([...SIZES])} />
 			<Field label="Layout" bind:value={s.layout} options={layouts} none="any" />
 		</div>
+	{:else if s.kind === 'outpost'}
+		<Field label="Outpost" bind:value={s.id} options={opt(outposts())} />
 	{:else if s.kind === 'faction'}
 		<Field label="Faction" bind:value={s.id} options={opt(factions(), 'faction.')} />
 		<Field label="Hull family" bind:value={s.family} options={families} none="any" />
 	{:else}
 		<Field label="Template" bind:value={s.id} options={starters().map((t) => ({ value: t.id, label: t.name }))} />
 	{/if}
-	{#if s.kind === 'station' || s.kind === 'faction'}
+	{#if s.kind === 'station' || s.kind === 'faction' || s.kind === 'outpost'}
 		<div class="grid grid-cols-2 gap-2">
 			<div class="flex flex-col gap-1.5">
 				<Label for="seed">Seed</Label>
@@ -86,12 +83,6 @@
 			Open a case file...
 			<input type="file" accept=".json,application/json" class="hidden" onchange={openFile} />
 		</label>
-		<div class="flex max-h-40 flex-col gap-0.5 overflow-y-auto">
-			{#each cases as c (c)}
-				<button class="rounded-md px-1.5 py-1 text-left font-mono text-xs break-all hover:bg-muted" onclick={() => open(c)}>{c}</button>
-			{:else}
-				<span class="text-xs text-muted-foreground">{caseError || 'None saved yet.'}</span>
-			{/each}
-		</div>
+		{#if caseError}<span class="text-xs text-destructive">{caseError}</span>{/if}
 	</div>
 </div>

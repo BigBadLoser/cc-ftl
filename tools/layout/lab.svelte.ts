@@ -3,8 +3,9 @@ import { fitRect, fitted, previewView, type Box, type View } from './camera';
 import { designFromLayout, exists, retarget, sameTarget, type Design, type Target } from './design';
 import { DEFAULT_LAYERS, type Layers } from './gridDraw';
 import { commit, fresh, live, redo, undo, type History } from './history';
-import { addModule, contentBounds, deleteRoom, moduleDef, moduleIndex, moduleTiles, newModule, removeModule, rotateModule, takeModuleId, takeRoomId, addRoom, splitRoom, type Rect, type Layout, type Tile } from './layout';
+import { addModule, contentBounds, deleteRoom, moduleDef, moduleIndex, moduleTiles, moveModule, newModule, removeModule, takeModuleId, takeRoomId, addRoom, splitRoom, type Rect, type Layout, type Tile } from './layout';
 import { problemsOf, type Problem } from './problems';
+import { enclosedAt, fillRoom } from './fill';
 import { placementProblem, windowPlanAt } from './world';
 import { addWindow, removeWindowAt, windowIndexAt } from './windows';
 import { rejectionMessage } from '../../src/app/messages';
@@ -19,7 +20,7 @@ import { anchorFor, newPin, rebase, type Pin } from './pins';
 /** What generated the designs: the generators have no version, so the commit the dev server runs on. */
 const GENERATOR = `commit ${typeof __COMMIT__ === 'string' ? __COMMIT__ : 'dev'}`;
 export const dpr = (): number => window.devicePixelRatio || 1;
-export type Tool = 'select' | 'floor' | 'wall' | 'door' | 'beam' | 'space' | 'room' | 'module' | 'note' | 'window';
+export type Tool = 'select' | 'move' | 'floor' | 'wall' | 'door' | 'beam' | 'space' | 'room' | 'module' | 'note' | 'window';
 export interface Ghost { def: string; x: number; y: number; rot: number; error: string | null }
 
 class Lab {
@@ -70,6 +71,11 @@ class Lab {
   private idMark = 0;
   /** For tests: set both marks. */
   idMarkForTest(module: number, room: number): void { this.idMark = module; this.roomMark = room; }
+  /** The session's id marks (a paste takes new ids from them); setting only ever raises them. */
+  get marks(): { module: number; room: number } { return { module: this.idMark, room: this.roomMark }; }
+  set marks(m: { module: number; room: number }) { this.idMark = Math.max(this.idMark, m.module); this.roomMark = Math.max(this.roomMark, m.room); }
+  /** Set by the Move tool: drop its box and any piece in flight (a tool change, undo, compare, a new design). */
+  leave: (() => void) | null = null;
   /** The same for rooms. */
   private roomMark = 0;
   private timer = 0;
@@ -96,6 +102,7 @@ class Lab {
   }
 
   import(s: Source): void {
+    this.leave?.();
     try {
       const { layout, label } = buildLayout(s);
       this.source = { ...s };
@@ -152,8 +159,8 @@ class Lab {
     if (this.hist && this.from) this.hist = commit(this.hist, this.from);
     this.from = null;
   }
-  undo(): void { if (this.hist && !this.compare) { this.hist = undo(this.hist); this.afterJump(); } }
-  redo(): void { if (this.hist && !this.compare) { this.hist = redo(this.hist); this.afterJump(); } }
+  undo(): void { this.leave?.(); if (this.hist && !this.compare) { this.hist = undo(this.hist); this.afterJump(); } }
+  redo(): void { this.leave?.(); if (this.hist && !this.compare) { this.hist = redo(this.hist); this.afterJump(); } }
   private afterJump(): void {
     if (!this.hist) return;
     this.show(this.hist.present);
@@ -175,6 +182,7 @@ class Lab {
     this.flag = [];
   }
   setTool(t: Tool): void {
+    if (t !== 'move') this.leave?.();
     this.tool = t;
     if (t !== 'module') this.ghost = null;
     if (t !== 'room') this.drag = null;
@@ -249,6 +257,16 @@ class Lab {
     this.edit((cur) => addRoom(cur, r, role, id).layout);
     return id;
   }
+  /** A click with the Room tool: floor the enclosed open area under (x, y) as a new room of `role`. Returns its id, or null when the tile is not inside an enclosed area. */
+  fillRoomAt(x: number, y: number, role: string): number | null {
+    const l = this.layout;
+    const tiles = l && !this.compare ? enclosedAt(l, x, y) : null;
+    if (!l || !tiles) return null;
+    const { id, mark } = takeRoomId(l, this.roomMark);
+    this.roomMark = mark;
+    this.edit((cur) => fillRoom(cur, tiles, role, id));
+    return id;
+  }
   /** Split a room; the new half's id never repeats this session. Returns it, or null when the room cannot be split. */
   splitRoomAt(id: number, axis: 'h' | 'v'): number | null {
     const l = this.layout;
@@ -265,23 +283,32 @@ class Lab {
     const shown = this.previewDesign, edited = this.design;
     return shown && edited ? retarget(shown, edited, t) : t;
   }
-  /** R: turn the ghost, else the selected module, a quarter turn. */
-  rotate(): void {
+  /** R: turn the ghost, else the selected module, a quarter turn (clockwise; `dir` -1, Shift+R: back). */
+  rotate(dir: 1 | -1 = 1): void {
     const g = this.ghost;
     if (g) {
-      this.rot = (g.rot + 1) % 4;
+      this.rot = (g.rot + dir + 4) % 4;
       this.aim(g.def, g.x, g.y, this.rot);
-    } else this.rotateSelected();
+    } else this.rotateSelected(dir);
+  }
+  /** Arrows with the select tool: move the selected module, if the game's placement owner accepts it there (the module itself set aside). */
+  nudgeSelected(dx: number, dy: number): boolean {
+    const s = this.selected, l = this.layout;
+    if (s?.kind !== 'module' || !l || this.compare) return false;
+    const i = moduleIndex(l, s.id), m = l.modules[i];
+    if (!m || placementProblem(l, m.def, m.x + dx, m.y + dy, m.rot, i)) return true;
+    this.edit((cur) => { const k = moduleIndex(cur, s.id); return k >= 0 ? moveModule(cur, k, m.x + dx, m.y + dy, m.rot) : cur; });
+    return true;
   }
   /** Turn the selected module a quarter turn, if the game's placement owner accepts the turned footprint (the module itself set aside); else nothing changes and nothing is undoable. */
-  rotateSelected(): void {
+  rotateSelected(dir: 1 | -1 = 1): void {
     const s = this.selected, l = this.layout;
     if (s?.kind !== 'module' || !l || this.compare) return;
     const i = moduleIndex(l, s.id), m = l.modules[i];
     if (!m) return;
-    const rot = (m.rot + 1) % 4;
+    const rot = (m.rot + dir + 4) % 4;
     if (placementProblem(l, m.def, m.x, m.y, rot, i)) return;
-    this.edit((cur) => { const k = moduleIndex(cur, s.id); return k >= 0 ? rotateModule(cur, k) : cur; });
+    this.edit((cur) => { const k = moduleIndex(cur, s.id); return k >= 0 ? moveModule(cur, k, m.x, m.y, rot) : cur; });
   }
   ghostTiles(): Tile[] {
     const g = this.ghost;
@@ -292,6 +319,7 @@ class Lab {
   /** The design the preview shows: the original on the Generated tab, the edited one otherwise. */
   get previewDesign(): Design | null { return this.compare && this.tab === 'generated' ? this.originalDesign : this.design; }
   toggleCompare(): void {
+    this.leave?.();
     this.compare = !this.compare;
     if (this.compare) {
       this.diff = this.original && this.layout ? diffLayouts(this.original, this.layout) : null;
@@ -413,10 +441,6 @@ class Lab {
     this.view = view;
     return done;
   }
-  async listCases(): Promise<string[]> {
-    const res = await fetch('/__layout/cases');
-    return res.ok ? ((await res.json()) as string[]) : [];
-  }
   async loadCaseNamed(slug: string): Promise<void> {
     const res = await fetch(`/__layout/cases/${slug}`);
     if (!res.ok) throw new Error(`no case ${slug}`);
@@ -424,6 +448,7 @@ class Lab {
   }
   /** Open a case: its original and its edited design, with the notes. */
   loadCase(c: CaseFile): void {
+    this.leave?.();
     const original = decodeLayout(c.original), edited = decodeLayout(c.edited);
     this.source = { ...DEFAULT_SOURCE, ...c.source };
     this.label = `${c.name} (case)`;

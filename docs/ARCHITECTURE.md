@@ -24,6 +24,7 @@ One line per section; read the index, then only the sections your task touches.
 - [Lessons (tutorials), `src/ui/lessons/`](#lessons-tutorials-srcuilessons): UI layer only (design: DESIGN.md, "Lessons"). LessonHost.svelte builds a LessonCtx from the snapshots and...
 - [Keys, settings and the Esc menu](#keys-settings-and-the-esc-menu): Key map (src/ui/keymap/): every key the game answers to is an action in actions.ts (id, group, label,...
 - [Saves](#saves): A save is the serialized sim: ECS component stores, grid arrays (base64 typed arrays), RNG state,
+- [Enforced rules](#enforced-rules): which CLAUDE.md rules fail a check, and where (lint, ratchet tests, `pr-meta`).
 - [Quality rules](#quality-rules): Sim systems get unit tests, plus scenario tests, for example "a 1-tile breach vents a 4×4 room
 - [Milestones](#milestones): Each milestone ends with something playable or watchable in the browser.
 - [Working with Claude](#working-with-claude): Implementation uses Sonnet and Haiku subagents for well-scoped tasks: one system, one generator, one
@@ -389,7 +390,10 @@ Pixi `RenderLayer` and render group. Keep sprites in each band batchable:
 - **Fast tier, commit check** (`npm run check:fast`, before every commit): lint, typecheck, then the *near tests* of uncommitted changes
   (`tools/testFast.mjs`): test files within two imports of a changed file, plus edited test files, slow ones included only when edited. A
   `power.ts` edit runs about 6 files instead of about 300. With nothing uncommitted it checks the branch against `origin/main`, never zero
-  tests. A change to `vite.config.ts`, `src/sim/testSetup.ts` or the lockfile runs the whole fast tier.
+  tests. A change to `vite.config.ts`, `src/sim/testSetup.ts` or the lockfile runs the whole fast tier. A tuning file (`tuning*.ts`)
+  counts from the files that use a constant whose declaration changed (`tools/nearTests.mjs`), not from every importer: a median edit to
+  `tuning.ts` runs 1 file instead of about 310. A constant or helper that reads a changed one counts as changed too; a changed import
+  line or a new file falls back to the whole file.
 - **Branch check** (`npm run check:push` = lint, typecheck, `test:branch`, before pushing a work branch): every fast test Vitest's import graph
   links to a change since the merge base with `origin/main`. Most sim edits select about two thirds of the fast tier, because most tests step a
   game through `newGame` and the pipeline (#553). `git add` new files first.
@@ -1102,6 +1106,23 @@ renderer draws from the look alone (`api.lookPortrait`); no speaker keeps the pl
   galaxy seed, explored chunks, flags and a **format version**.
 - Migrations are written per version bump.
 - Content stays out of saves except as IDs.
+
+## Enforced rules
+
+Rules that fail a check rather than rely on being read. A ratchet is a baseline that may only go down: growth fails, and
+so does shrinking without lowering the baseline in the same change.
+
+| Rule | Check |
+| --- | --- |
+| Sim purity, dependency direction, pixi and bits-ui only where allowed | `npm run lint` (`eslint.config.js`) |
+| No `vitest` or `test/` imports in non-test `src` files; no unused `eslint-disable` | `npm run lint` |
+| Soft 400-line limit (ratchet) | `tools/fileSize.test.ts` |
+| No new import cycles (ratchet) | `tools/importCycles.test.ts` |
+| Systems never import each other; only `pipeline.ts` does (allow-list, empty) | `tools/systemImports.test.ts` |
+| Tests that mock or stub are isolated (list: `tools/isolatedTests.ts`) | `tools/isolatedMocks.test.ts` |
+| No new copy-paste (ratchet, jscpd 5, settings in `.jscpd.json`; part of `npm run test:rules`) | `tools/duplication.test.ts` |
+| PR links an issue, branch prefix, no model names in commits or body | `.github/workflows/pr-meta.yml` (`tools/prMeta.mjs`) |
+| Lint, typecheck and branch tests on agent work | `checks:` in `.harness.yml` |
 
 ## Quality rules
 
@@ -2244,7 +2265,7 @@ and about 270 in 30 test files.
 | `combat/targets.ts`, `combat/handlers.ts` (`setTarget`, `spawnEnemy` overlap, `scuttle`), `combat/operators.ts`, `combat/wreck.ts`, `combat/hull.ts` (`raw`) | Target and ship by grid id | M |
 | `combat/geometry.ts`, `systems/firing.ts`, `systems/impacts.ts`, `systems/pointDefence.ts` | Convert local to sector with `ship.x + m.x`, impacts subtract it back | S (projectiles already fly in sector tiles by real distance) |
 | `combat/effects.ts` (5 `sim.grids`), `systems/enemyAi.ts`, `boardingAi.ts`, `targeting.ts`, `shields.ts`, `helm.ts`, `weaponCharge.ts`, `turrets.ts` | Per-grid lookups | S–M |
-| `combat/handlers.ts` `debug.spawnEnemy`, shipgen `debug.spawnGenerated` (branch) | Sector bounds `200 x 120`, bbox overlap test, top-left placement | S |
+| `combat/handlers.ts` `debug.spawnEnemy`, shipgen `debug.spawnGenerated` (branch) | Sector bounds `200 x 200` (the node floor), bbox overlap test, top-left placement | S |
 | Shipgen (`origin/shipgen`, `src/sim/shipgen/*`) | Emits a `ShipTemplate` (ASCII rows plus modules) in local coordinates: **unaffected**; only its spawn command changes | S |
 
 **Render, app, UI**
@@ -2757,8 +2778,9 @@ and the jobs screen. There is no overall ship maximum: engine capacity, summed o
 **Engine capacity** (`sim/ftl/capacity.ts`, `ftl/overcharge.ts`). `EngineDef.hullCapacity` is the size one engine carries (Mk I 330 in
 `content/modules.ts`, Mk II 495 and Mk III 700 in `content/tiers.ts`; the starter on two Mk I is 416 / 660, 63%). `hullLoad(sim, ship)` gives tiles, capacity
 (engines with hp above 0), `over` and `ratio`; a ship with no engine module has no limit. Over capacity, `jump` rejects with `overweight` (`galaxy.jump`
-and a queued `ftl.charge` with a route) unless the command carries `overcharge`; `combat.flee` always overcharges. Only the player's ship obeys it: NPC ships
-are exempt until shipgen gives big hulls enough engines (issue #129, TODO at `hullLoad` and in `jump`). An overcharged jump calls `applyOvercharge`
+and a queued `ftl.charge` with a route) unless the command carries `overcharge`; `combat.flee` always overcharges. Generated ships obey it too: `templateHullLoad`
+(the same measure on a template) is a generation check (`fitShell`; hand-drawn templates are not held to it), and `generateAttempt` rebuilds a hull short of engines with the engines it lacks
+added to the plan (#129), so an NPC ship, and a prize taken from one, starts within capacity. An overcharged jump calls `applyOvercharge`
 before the ship is lifted: risk = overload (tiles over capacity / capacity) against `OVERCHARGE_FULL` (0.5), zero at capacity (nothing rolled). Each working
 engine rolls once for its fate (hit for 25-60% of max hp, or destroyed) and once for a fire in its room, on `sim.rng` in engine id order. Event
 `ftl.overcharged`. No fuel scaling by hull size. UI: "Size N / M" in the ship overview, and the starmap drawer's overweight line, warning and Overcharge button.

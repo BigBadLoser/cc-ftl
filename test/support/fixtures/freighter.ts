@@ -1,6 +1,7 @@
 import { CombatC, ShipC } from '../../../src/sim/combat/components';
 import { galaxyIndex, START_NODE } from '../../../src/sim/galaxy/state';
 import { newGame } from '../../../src/sim/newGame';
+import { placementGapError } from '../../../src/sim/regions';
 import type { Sim } from '../../../src/sim/sim';
 import type { EventDef } from '../../../src/sim/story/defs';
 import { playerShip } from '../../../src/sim/trade/player';
@@ -22,7 +23,18 @@ export const deploy = (sim: Sim) => {
   for (const [x, y] of [[100, 60], [20, 50], [300, 200], [40, 150], [200, 20], [350, 100]] as const) {
     sim.enqueue({ type: 'sector.deploy', x, y });
     run(sim, 1);
-    if (sim.sector.state === 'active') break;
+    if (sim.sector.state === 'active') return;
+  }
+  // None of those spots is clear (the scene's ships stand there): the first clear spot of the node.
+  const p = sim.sector.packet;
+  if (!p) return;
+  for (let x = 0; x + p.w <= sim.sector.width; x += 4) {
+    for (let y = 2; y + p.h <= sim.sector.height; y += 4) {
+      if (placementGapError(sim, { x, y, w: p.w, h: p.h })) continue;
+      sim.enqueue({ type: 'sector.deploy', x, y });
+      run(sim, 1);
+      return;
+    }
   }
 };
 export const adjacent = (sim: Sim, id: string): string[] => (galaxyIndex(sim.galaxy).adjacent.get(id) ?? []).map((e) => (e.a === id ? e.b : e.a)).sort();

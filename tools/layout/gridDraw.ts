@@ -5,11 +5,13 @@
 import type { RGB } from '../shipgen/draw';
 import { DARK, DOOR, HALL, INK, LAMP, NAMES, WALL, roleTint } from '../shipgen/labels';
 import { scaleOf, type Box, type View } from './camera';
-import type { Design } from './design';
+import type { Design, LampKind } from './design';
+import { groundRect } from './ground';
+import type { Rect } from './layout';
 
-export interface Layers { rooms: boolean; names: boolean; furniture: boolean; lamps: boolean; gridLines: boolean; shields: boolean; roof: boolean; wallsUp: boolean }
-export const DEFAULT_LAYERS: Layers = { rooms: true, names: true, furniture: true, lamps: true, gridLines: false, shields: false, roof: false, wallsUp: false };
-export const LAYER_LABELS: Record<keyof Layers, string> = { rooms: 'Rooms', names: 'Room names', furniture: 'Furniture codes', lamps: 'Lamps', gridLines: 'Tile grid', shields: 'Shields (preview)', roof: 'Roof (preview)', wallsUp: 'Walls up (preview)' };
+export interface Layers { ground: boolean; rooms: boolean; names: boolean; furniture: boolean; lamps: boolean; gridLines: boolean; shields: boolean; roof: boolean; wallsUp: boolean }
+export const DEFAULT_LAYERS: Layers = { ground: true, rooms: true, names: true, furniture: true, lamps: true, gridLines: false, shields: false, roof: false, wallsUp: false };
+export const LAYER_LABELS: Record<keyof Layers, string> = { ground: 'Asteroid ground', rooms: 'Rooms', names: 'Room names', furniture: 'Furniture codes', lamps: 'Lights', gridLines: 'Tile grid', shields: 'Shields (preview)', roof: 'Roof (preview)', wallsUp: 'Walls up (preview)' };
 export interface Mark { tiles: readonly [number, number][]; color: string; /** false: an outline only. */ fill?: boolean; /** 'square': a dashed square in each tile (where crew stand). */ shape?: 'square' }
 /** The side of a module that must sit on the hull: its tiles along that side and the step pointing out of the ship. */
 export interface HullEdge { tiles: readonly [number, number][]; out: readonly [number, number]; color: string }
@@ -17,9 +19,11 @@ export interface HullEdge { tiles: readonly [number, number][]; out: readonly [n
 const css = (c: RGB, a = 1): string => `rgba(${c[0]},${c[1]},${c[2]},${a})`;
 const BG = '#0a0c10';
 const BEAM: RGB = [90, 96, 108];
+/** Asteroid ground: a shade off the background with a touch of the rock's sand, so it reads as the site without competing with what stands on it. */
+const GROUND = '#18160f';
+const GROUND_SPECK = 'rgba(220,190,140,0.09)';
 const HATCH = 'rgba(170,178,192,0.75)';
 
-/** Draw one frame into `ctx` (already scaled to css px). */
 let hatchPattern: CanvasPattern | null = null;
 /** The beam hatch: light diagonal strokes (45 degrees, a 6 px period) on clear, over the beam's base colour. */
 function hatch(ctx: CanvasRenderingContext2D): CanvasPattern {
@@ -35,97 +39,171 @@ function hatch(ctx: CanvasRenderingContext2D): CanvasPattern {
   hatchPattern = ctx.createPattern(c, 'repeat') as CanvasPattern;
   return hatchPattern;
 }
+/**
+ * Positions in device pixels, snapped: a tile edge (in tiles) to the whole device pixel it falls on, so every tile, line and border
+ * is drawn on pixel boundaries and looks the same at every zoom and display scale (`k` device px per css px).
+ */
+interface Snap { X: (x: number) => number; Y: (y: number) => number; k: number; ox: number; oy: number; s: number }
+
+/**
+ * Draw one frame into `ctx`, which is set up in css px (any scale and translation: the grid pane's, a side-by-side half's). The drawing
+ * itself runs in device pixels, every edge snapped (`Snap`), so lines and borders stay one crisp width; only the hull edge and its arrow,
+ * drawn last, keep the css transform.
+ */
 export function drawGrid(ctx: CanvasRenderingContext2D, d: Design, v: View, dpr: number, box: Box, layers: Layers, marks: readonly Mark[], edges: readonly HullEdge[] = []): void {
   const s = scaleOf(v.zoom, dpr);
   const ox = box.w / 2 - (v.cx + 0.5) * s, oy = box.h / 2 - (v.cy + 0.5) * s;
+  const t = ctx.getTransform(), k = t.a;
+  const n: Snap = { X: (x) => Math.round(t.e + k * (ox + x * s)), Y: (y) => Math.round(t.f + k * (oy + y * s)), k, ox, oy, s };
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  const bx = Math.round(t.e), by = Math.round(t.f), bw = Math.round(box.w * k), bh = Math.round(box.h * k);
   ctx.fillStyle = BG;
-  ctx.fillRect(0, 0, box.w, box.h);
+  ctx.fillRect(bx, by, bw, bh);
   const x0 = Math.max(0, Math.floor(-ox / s)), x1 = Math.min(d.width, Math.ceil((box.w - ox) / s));
   const y0 = Math.max(0, Math.floor(-oy / s)), y1 = Math.min(d.height, Math.ceil((box.h - oy) / s));
-  const pad = s >= 6 ? 0 : -0.25; // a hairline overlap at small scales hides seams
+  const ex: number[] = [], ey: number[] = [];
+  for (let x = x0; x <= x1; x++) ex[x] = n.X(x);
+  for (let y = y0; y <= y1; y++) ey[y] = n.Y(y);
+  const gr = layers.ground ? groundRect(d.layout) : null;
+  if (gr) drawGround(ctx, gr, n);
+  const tint = (x: number, y: number, c: string): RGB => (c === '#' ? WALL : c === 'D' ? DOOR : c === '=' ? BEAM : layers.rooms ? roleTint(d.rooms[d.roomOf[y * d.width + x] ?? -1]?.role ?? 'hall') : HALL);
   for (let y = y0; y < y1; y++) {
     const row = d.rows[y] ?? '';
-    for (let x = x0; x < x1; x++) {
+    const top = ey[y] as number, h = (ey[y + 1] as number) - top;
+    // a run of tiles of one colour is one rectangle between snapped edges: no seams, no overlaps
+    for (let x = x0; x < x1;) {
       const c = row[x] ?? '.';
-      if (c === '.') continue;
-      const color: RGB = c === '#' ? WALL : c === 'D' ? DOOR : c === '=' ? BEAM : layers.rooms ? roleTint(d.rooms[d.roomOf[y * d.width + x] ?? -1]?.role ?? 'hall') : HALL;
-      ctx.fillStyle = css(color);
-      ctx.fillRect(ox + x * s + pad, oy + y * s + pad, s - 2 * pad, s - 2 * pad);
-      if (c === '=' && s >= 6) {
-        // a beam is hatched, so it reads apart from a wall; the pattern follows the tile (translated to it), so it does not swim when panning
-        ctx.save();
-        ctx.translate(ox + x * s, oy + y * s);
-        ctx.fillStyle = hatch(ctx);
-        ctx.fillRect(0, 0, s, s);
-        ctx.restore();
-      }
+      if (c === '.') { x++; continue; }
+      const color = css(tint(x, y, c));
+      let e = x + 1;
+      while (e < x1 && (row[e] ?? '.') !== '.' && css(tint(e, y, row[e] as string)) === color) e++;
+      ctx.fillStyle = color;
+      ctx.fillRect(ex[x] as number, top, (ex[e] as number) - (ex[x] as number), h);
+      x = e;
+    }
+    if (s < 6) continue;
+    for (let x = x0; x < x1; x++) {
+      if (row[x] !== '=') continue;
+      // a beam is hatched, so it reads apart from a wall; the pattern is laid in css px from the tile's corner, so it does not swim when panning
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(ex[x] as number, top, (ex[x + 1] as number) - (ex[x] as number), h);
+      ctx.clip();
+      ctx.translate(ex[x] as number, top);
+      ctx.scale(k, k);
+      ctx.fillStyle = hatch(ctx);
+      ctx.fillRect(0, 0, s + 1, s + 1);
+      ctx.restore();
     }
   }
   if (layers.gridLines && s >= 8) {
-    ctx.strokeStyle = 'rgba(255,255,255,0.07)';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    for (let x = x0; x <= x1; x++) { ctx.moveTo(Math.round(ox + x * s) + 0.5, oy + y0 * s); ctx.lineTo(Math.round(ox + x * s) + 0.5, oy + y1 * s); }
-    for (let y = y0; y <= y1; y++) { ctx.moveTo(ox + x0 * s, Math.round(oy + y * s) + 0.5); ctx.lineTo(ox + x1 * s, Math.round(oy + y * s) + 0.5); }
-    ctx.stroke();
+    // one device pixel on each tile edge
+    ctx.fillStyle = 'rgba(255,255,255,0.07)';
+    const top = ey[y0] as number, bottom = ey[y1] as number, left = ex[x0] as number, right = ex[x1] as number;
+    for (let x = x0; x <= x1; x++) ctx.fillRect(ex[x] as number, top, 1, bottom - top);
+    for (let y = y0; y <= y1; y++) ctx.fillRect(left, ey[y] as number, right - left, 1);
   }
+  const line = Math.max(1, Math.round(k));
   for (const m of d.modules) {
     if (m.lamp) {
-      if (!layers.lamps) continue;
-      const [tx, ty] = m.tiles[0] as [number, number];
-      ctx.fillStyle = css(LAMP);
-      const r = Math.max(1.5, s * 0.12);
-      ctx.beginPath();
-      ctx.arc(ox + (tx + 0.5) * s, oy + (ty + 0.5) * s, r, 0, Math.PI * 2);
-      ctx.fill();
+      if (layers.lamps) drawLamp(ctx, m.lamp, m.tiles[0] as [number, number], n, line);
       continue;
     }
     if (!layers.furniture) continue;
-    const xs = m.tiles.map((t) => t[0]), ys = m.tiles.map((t) => t[1]);
-    const mx = ox + Math.min(...xs) * s + 1, my = oy + Math.min(...ys) * s + 1, mw = m.w * s - 2, mh = m.h * s - 2;
-    if (mx > box.w || my > box.h || mx + mw < 0 || my + mh < 0) continue;
+    const xs = m.tiles.map((q) => q[0]), ys = m.tiles.map((q) => q[1]);
+    const mx = Math.min(...xs), my = Math.min(...ys);
+    // inset a pixel (css) from the footprint, then a one-pixel border inside that
+    const L = n.X(mx) + line, T = n.Y(my) + line, R = n.X(mx + m.w) - line, B = n.Y(my + m.h) - line;
+    if (L > bx + bw || T > by + bh || R < bx || B < by || R - L < 2 || B - T < 2) continue;
     ctx.fillStyle = css(DARK);
-    ctx.fillRect(mx, my, mw, mh);
-    ctx.strokeStyle = css(INK);
-    ctx.lineWidth = 1;
-    ctx.strokeRect(mx + 0.5, my + 0.5, mw - 1, mh - 1);
+    ctx.fillRect(L, T, R - L, B - T);
+    frame(ctx, L, T, R, B, line, css(INK));
     if (s >= 9) {
       ctx.fillStyle = css(INK);
-      ctx.font = `600 ${Math.min(s * 0.5, 22)}px ui-monospace, monospace`;
+      ctx.font = `600 ${Math.min(s * 0.5, 22) * k}px ui-monospace, monospace`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(m.code, mx + mw / 2, my + mh / 2);
+      ctx.fillText(m.code, (L + R) / 2, (T + B) / 2);
     }
   }
   if (layers.names && s >= 5) {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.font = `700 ${Math.max(9, Math.min(s * 0.62, 20))}px ui-monospace, monospace`;
+    ctx.font = `700 ${Math.max(9, Math.min(s * 0.62, 20)) * k}px ui-monospace, monospace`;
     ctx.lineJoin = 'round';
-    ctx.lineWidth = 3;
+    ctx.lineWidth = 3 * k;
     for (const r of d.rooms) {
       if (!r.name || r.tiles < 10) continue;
-      const px = ox + (r.lx + 0.5) * s, py = oy + (r.ly + 0.5) * s;
-      if (px < -80 || py < -20 || px > box.w + 80 || py > box.h + 20) continue;
+      const px = t.e + k * (ox + (r.lx + 0.5) * s), py = t.f + k * (oy + (r.ly + 0.5) * s);
+      if (px < bx - 80 * k || py < by - 20 * k || px > bx + bw + 80 * k || py > by + bh + 20 * k) continue;
       ctx.strokeStyle = '#000';
       ctx.strokeText(r.name, px, py);
       ctx.fillStyle = '#fff';
       ctx.fillText(r.name, px, py);
     }
   }
-  for (const m of marks) (m.shape === 'square' ? squares : outline)(ctx, m, d, ox, oy, s);
+  for (const m of marks) (m.shape === 'square' ? squares : outline)(ctx, m, d, n);
+  ctx.restore();
   for (const e of edges) hullEdge(ctx, e, ox, oy, s);
 }
 
+/**
+ * A light's mark: a yellow dot (its glow) on the tile, alone for a floor light (crew walk over it), in a square for a cage lamp and in a
+ * ring for a light mast (both solid; the mast reaches furthest). The marks are small, so they never hide what stands round them.
+ */
+function drawLamp(ctx: CanvasRenderingContext2D, kind: LampKind, [tx, ty]: [number, number], n: Snap, line: number): void {
+  const L = n.X(tx), T = n.Y(ty), R = n.X(tx + 1), B = n.Y(ty + 1), cx = (L + R) / 2, cy = (T + B) / 2;
+  ctx.fillStyle = css(LAMP);
+  ctx.beginPath();
+  ctx.arc(cx, cy, Math.max(1.5, n.s * 0.12) * n.k, 0, Math.PI * 2);
+  ctx.fill();
+  if (kind === 'floor' || n.s < 8) return;
+  ctx.strokeStyle = css(LAMP);
+  ctx.lineWidth = line;
+  if (kind === 'cage') {
+    const h = Math.round((R - L) * 0.28);
+    ctx.strokeRect(Math.round(cx) - h + line / 2, Math.round(cy) - h + line / 2, 2 * h - line, 2 * h - line);
+  } else {
+    ctx.beginPath();
+    ctx.arc(cx, cy, (R - L) * 0.32, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+}
+
+/** A rectangle's border, `w` device px wide, inside (L, T, R, B): four filled strips, so it is the same width on every side at any position. */
+function frame(ctx: CanvasRenderingContext2D, L: number, T: number, R: number, B: number, w: number, color: string): void {
+  ctx.fillStyle = color;
+  ctx.fillRect(L, T, R - L, w);
+  ctx.fillRect(L, B - w, R - L, w);
+  ctx.fillRect(L, T + w, w, B - T - 2 * w);
+  ctx.fillRect(R - w, T + w, w, B - T - 2 * w);
+}
+
+/** The levelled ground a base stands on: a flat shade with a sparse speck per tile (fixed per tile, so it does not swim when panning). */
+function drawGround(ctx: CanvasRenderingContext2D, r: Rect, n: Snap): void {
+  ctx.fillStyle = GROUND;
+  ctx.fillRect(n.X(r.x), n.Y(r.y), n.X(r.x + r.w) - n.X(r.x), n.Y(r.y + r.h) - n.Y(r.y));
+  if (n.s < 8) return;
+  ctx.fillStyle = GROUND_SPECK;
+  const d = Math.max(1, Math.round(n.s * 0.08 * n.k));
+  for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) {
+    const h = (Math.imul(x, 73856093) ^ Math.imul(y, 19349663)) >>> 0;
+    ctx.fillRect(n.X(x + ((h & 7) + 1) / 9), n.Y(y + (((h >> 3) & 7) + 1) / 9), d, d);
+  }
+}
+
 /** A dashed square outline filling each tile, with a faint fill (where crew stand). */
-function squares(ctx: CanvasRenderingContext2D, m: Mark, _d: Design, ox: number, oy: number, s: number): void {
+function squares(ctx: CanvasRenderingContext2D, m: Mark, _d: Design, n: Snap): void {
+  const w = Math.max(1, Math.round(2 * n.k)), i = Math.max(1, Math.round(n.k));
   ctx.strokeStyle = m.color;
   ctx.fillStyle = m.color.replace(/[\d.]+\)$/, '0.15)');
-  ctx.lineWidth = 2;
-  ctx.setLineDash([Math.max(3, s * 0.18), Math.max(2, s * 0.12)]);
+  ctx.lineWidth = w;
+  ctx.setLineDash([Math.max(3, n.s * 0.18) * n.k, Math.max(2, n.s * 0.12) * n.k]);
   for (const [x, y] of m.tiles) {
-    ctx.fillRect(ox + x * s, oy + y * s, s, s);
-    ctx.strokeRect(ox + x * s + 1, oy + y * s + 1, s - 2, s - 2);
+    const L = n.X(x), T = n.Y(y), R = n.X(x + 1), B = n.Y(y + 1);
+    ctx.fillRect(L, T, R - L, B - T);
+    ctx.strokeRect(L + i + w / 2, T + i + w / 2, R - L - 2 * i - w, B - T - 2 * i - w);
   }
   ctx.setLineDash([]);
 }
@@ -155,28 +233,26 @@ function hullEdge(ctx: CanvasRenderingContext2D, e: HullEdge, ox: number, oy: nu
   ctx.fill();
 }
 
-/** The outer edge of a set of tiles, drawn over the view (with a faint fill). */
-function outline(ctx: CanvasRenderingContext2D, m: Mark, d: Design, ox: number, oy: number, s: number): void {
+/** The outer edge of a set of tiles, drawn over the view (with a faint fill): a border two css px wide, inside the set, on snapped edges. */
+function outline(ctx: CanvasRenderingContext2D, m: Mark, d: Design, n: Snap): void {
   if (m.tiles.length === 0) return;
   const inSet = new Set(m.tiles.map(([x, y]) => y * d.width + x));
-  ctx.fillStyle = m.color.replace(/[\d.]+\)$/, '0.22)');
-  ctx.strokeStyle = m.color;
-  ctx.lineWidth = 2;
-  ctx.beginPath();
+  const w = Math.max(1, Math.round(2 * n.k));
+  const fill = m.color.replace(/[\d.]+\)$/, '0.22)');
   for (const [x, y] of m.tiles) {
-    if (m.fill !== false) ctx.fillRect(ox + x * s, oy + y * s, s, s);
+    const L = n.X(x), T = n.Y(y), R = n.X(x + 1), B = n.Y(y + 1);
+    if (m.fill !== false) { ctx.fillStyle = fill; ctx.fillRect(L, T, R - L, B - T); }
     const has = (dx: number, dy: number): boolean => inSet.has((y + dy) * d.width + x + dx);
-    const l = ox + x * s, t = oy + y * s;
-    if (!has(0, -1)) { ctx.moveTo(l, t); ctx.lineTo(l + s, t); }
-    if (!has(0, 1)) { ctx.moveTo(l, t + s); ctx.lineTo(l + s, t + s); }
-    if (!has(-1, 0)) { ctx.moveTo(l, t); ctx.lineTo(l, t + s); }
-    if (!has(1, 0)) { ctx.moveTo(l + s, t); ctx.lineTo(l + s, t + s); }
+    ctx.fillStyle = m.color;
+    if (!has(0, -1)) ctx.fillRect(L, T, R - L, w);
+    if (!has(0, 1)) ctx.fillRect(L, B - w, R - L, w);
+    if (!has(-1, 0)) ctx.fillRect(L, T, w, B - T);
+    if (!has(1, 0)) ctx.fillRect(R - w, T, w, B - T);
   }
-  ctx.stroke();
 }
 
 export interface KeyRoom { role: string; name: string; color: string }
-export interface KeyExtra { name: string; color: string; dot?: boolean; hatch?: boolean }
+export interface KeyExtra { name: string; color: string; dot?: boolean; hatch?: boolean; /** A light: its mark's frame (none, square, ring). */ lamp?: LampKind }
 /**
  * The room types in use (for the palette's list) and what else the grid draws that no list covers (wall, door, beam, lamps).
  * Furniture codes are the palette's module list.
@@ -186,7 +262,9 @@ export function keyOf(d: Design): { rooms: KeyRoom[]; extras: KeyExtra[] } {
   const rooms = roles.map((role) => ({ role, name: NAMES[role] ?? role, color: css(roleTint(role)) }));
   rooms.push({ role: 'hall', name: 'corridor', color: css(HALL) });
   const extras: KeyExtra[] = [{ name: 'wall / hull', color: css(WALL) }, { name: 'door', color: css(DOOR) }];
+  if (d.layout.ground) extras.push({ name: 'asteroid ground', color: GROUND });
   if (d.rows.some((r) => r.includes('='))) extras.push({ name: 'beam', color: css(BEAM), hatch: true });
-  if (d.modules.some((m) => m.lamp)) extras.push({ name: 'lamp', color: css(DARK), dot: true });
+  const lamps = new Set(d.modules.map((m) => m.lamp));
+  for (const [kind, name] of [['floor', 'floor light'], ['cage', 'cage lamp'], ['mast', 'light mast']] as const) if (lamps.has(kind)) extras.push({ name, color: css(DARK), dot: true, lamp: kind });
   return { rooms, extras };
 }
