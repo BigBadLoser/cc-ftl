@@ -324,7 +324,10 @@ export function wallPieces(
     const id = `tile.hull.ghost.m${mask}`;
     const legacy = room ? [`${id}.r${room}`, id] : [id];
     const se = (mask & 6) === 6 && wallCorners(kindAt, x, y, mask) & 2;
-    return [{ chain: se ? [...legacy.map((i) => i.replace(id, `${id}c2`)), ...legacy] : legacy, order: 0 }];
+    const chain = se ? [...legacy.map((i) => i.replace(id, `${id}c2`)), ...legacy] : legacy;
+    // A ground base's cut (walls up) has a lip where the ship's ghost meets the deck: its ghost starts on the lip's top edge.
+    const lifted = look === "station" && level !== "low" ? chain.map((i) => i.replace("tile.hull.", "tile.hull.station.")) : [];
+    return [{ chain: [...lifted, ...chain], order: 0 }];
   }
   // Corner fills (wallCorners): `m<mask>c<bits>` first, today's `m<mask>` last, so partial art falls back cleanly.
   const c = wallCorners(kindAt, x, y, mask);

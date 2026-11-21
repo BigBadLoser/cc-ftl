@@ -306,6 +306,18 @@ def _back_fill(f, mask):
             f.poly([core.G(*a, za), core.G(*b, za), core.G(*b, zb), core.G(*a, zb)], tone)
 
 
+def station_rear(mask, room=0, corners=0):
+    """A ground base's rear ghost (tile.hull.station.ghost.m*[c2][.r*]): the rear ghost (out_block, o 0) lifted onto its
+    cut's top (station_hull_walls.FOOT_Z): the cut's lip stands where the ship's ghost meets the deck, so its ramp starts on
+    the lip's top edge."""
+    from .station_hull_walls import FOOT_Z
+    objs = out_block(mask, 0, room=room, corners=corners)
+    for ob in objs[1:]:
+        for v in ob.data.vertices:
+            v.co.z += FOOT_Z
+    return objs
+
+
 def drop(side):
     """The belly alone (for a door set into the near hull): side s along x at +y, e along y at +x."""
     m = core.Mesh(f"hull_drop_{side}", flat=True)

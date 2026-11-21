@@ -20,7 +20,7 @@ import re
 
 from .door_block import door                   # the metal door (door_block, its metal look)
 from .floors import floor
-from .hull import drop, out_block, vert
+from .hull import drop, out_block, station_rear, vert
 from .wall3d import block, end_face, hull_cap, hull_cap_end    # the relief walls (wall3d.py)
 from .wall3d_variants import PAIRS
 from .walls import corner_sets
@@ -59,6 +59,8 @@ for _m in range(16):
                 continue
             SPRITES.append((f"tile.hull.ghost.m{_m}{f'c{_c}' if _c else ''}{f'.r{_r}' if _r else ''}", (1, 1), "wire",
                             lambda m=_m, r=_r, c=_c: out_block(m, 0, room=r, corners=c)))
+            SPRITES.append((f"tile.hull.station.ghost.m{_m}{f'c{_c}' if _c else ''}{f'.r{_r}' if _r else ''}", (1, 1),
+                            "wire", lambda m=_m, r=_r, c=_c: station_rear(m, r, c)))   # (a ground base's: on its cut)
 def _variant(fn, tr):
     """fn built as a straight piece's variant (wall3d.VARIANT = tr)."""
     def build():
