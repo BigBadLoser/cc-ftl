@@ -119,11 +119,13 @@ export function furnishByRule(
   // Every door's frames, plain and notched, the largest first (a room with cut corners is furnished to its walls).
   const frames = entries.flatMap((e) => [frameOf(floor, e, flip), frameOf(floor, e, !flip), ...[frameOf(floor, e, flip, true), frameOf(floor, e, !flip, true)].filter((f) => f.cut.length > 0)])
     .map((f, i) => ({ f, i })).sort((a, b) => b.f.w * b.f.h - a.f.w * a.f.h || a.i - b.i).map((q) => q.f);
-  const want = tally(need), at = entries.map((e) => e.at);
+  const at = entries.map((e) => e.at);
   const start = lay.modules.length;
   const undo = (): void => { while (lay.modules.length > start) lay.pop(); };
   for (const arr of order(rng, list, need, { ...(frames[0] as Frame), defs: lay.defs })) {
     const deep = arr.deep ? entries.flatMap((e) => [frameOf(floor, e, flip, false, arr.deep), frameOf(floor, e, !flip, false, arr.deep)]).filter((f) => f.w >= (arr.deep as number)) : [];
+    // (An arrangement may stand smaller modules in for the planned ones: a farm's small beds where the large won't lie.)
+    const sub = arr.swap, use = sub ? need.map((m) => sub[m] ?? m) : need, want = tally(use);
     for (const f of [...deep.sort((a, b) => b.h - a.h), ...frames]) {
       if (arr.when && !arr.when(need, { ...f, defs: lay.defs })) continue;
       const doors: { x: number; y: number }[] = [];
@@ -131,9 +133,9 @@ export function furnishByRule(
         const t = f.map(x, y);
         if ((x !== f.d || y !== f.h - 1) && at.some((e) => e.x === t.x && e.y === t.y)) doors.push({ x, y });
       }
-      const pieces = arr.rule({ w: f.w, h: f.h, d: f.d, need, defs: lay.defs, doors, ...(f.cut.length > 0 ? { cut: f.cut } : {}) });
+      const pieces = arr.rule({ w: f.w, h: f.h, d: f.d, need: use, defs: lay.defs, doors, ...(f.cut.length > 0 ? { cut: f.cut } : {}) });
       // A rule with nothing to place for a planned room does not fit this frame.
-      if (pieces.length === 0 && need.length > 0) continue;
+      if (pieces.length === 0 && use.length > 0) continue;
       const got = tally(pieces.map((p) => p.def));
       // The rule's own planned modules all there (it places every one of a kind, or none and leaves it to the placer).
       if ([...want].some(([id, n]) => (got.get(id) ?? 0) > 0 && (got.get(id) ?? 0) < n)) continue;
