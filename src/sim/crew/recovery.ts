@@ -10,7 +10,7 @@ import { CrewC, DownedC, PathC, PositionC, RecoveringC, type Crew, type Downed, 
 import { clearPath } from './helpers';
 import { tendingOf, treatmentMult } from './treatment';
 import { grantXp } from './xp';
-import { giveUpTreatment, healMult, seeksTreatment, treatmentStarted } from './body';
+import { giveUpTreatment, healMult, seeksTreatment } from './body';
 import { STRANDED_SEC } from './tuningInjury';
 import { damageCrew } from './injure';
 
@@ -118,8 +118,9 @@ export function restInCare(sim: Sim, crew: number, rec: Recovering, health: Heal
   if (health.hp < health.max) return;
   const pod = !!podModule(sim, rec.bed);
   // In a medical bed they stay on, healed, until a medic has treated their serious injuries (crew/injuryCare.ts); a pod does not treat. With no medic
-  // started on them within STRANDED_SEC of lying down, they give up and get up (and do not come back for it for a while).
-  if (!pod && seeksTreatment(sim, crew) && !treatmentStarted(sim, crew) && sim.tick - (rec.since ?? sim.tick) >= STRANDED_SEC * TICK_HZ) giveUpTreatment(sim, crew);
+  // tending them for STRANDED_SEC (since they lay down, or since the last medic left), they give up and get up (and do not come back for it for a while).
+  if (!pod && tendingOf(sim, rec.bed).medic) rec.since = sim.tick;
+  if (!pod && seeksTreatment(sim, crew) && sim.tick - (rec.since ?? sim.tick) >= STRANDED_SEC * TICK_HZ) giveUpTreatment(sim, crew);
   if (pod || !seeksTreatment(sim, crew)) leaveCare(sim, crew, rec);
 }
 

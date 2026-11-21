@@ -254,7 +254,7 @@ export interface Recovering {
   bed: number;
   /** A medicinal item was used on this stay (crew/treatment.ts): its heal multiplier, as `Downed.treated`. */
   treated?: number;
-  /** The tick the stay began (a patient waiting for treatment gives up after `STRANDED_SEC`, crew/recovery.ts). */
+  /** The tick the stay began, or a medic last tended them (a patient waiting for treatment gives up `STRANDED_SEC` after it, crew/recovery.ts). */
   since?: number;
 }
 export const RecoveringC = defineComponent<Recovering>('recovering');
