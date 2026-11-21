@@ -129,6 +129,21 @@ describe('crew injuries (#601)', () => {
     expect(sim.world.has(gunner, RecoveringC)).toBe(false);
   });
 
+  it('a patient whose medic started and then left still gets up after STRANDED_SEC', () => {
+    const built = cachedScenario('injuries');
+    const sim = built.sim;
+    for (const c of playerCrew(sim)) sim.world.get(c, PrioritiesC)!.medical = 0; // nobody tends the bed
+    const gunner = playerCrew(sim).find((id) => injuriesOf(sim, id).some((i) => i.kind === 'injury.fracture'))!;
+    play(built, 120 * TICK_HZ, { until: (s) => s.world.has(gunner, RecoveringC) });
+    const inj = injuriesOf(sim, gunner).find((i) => i.sev === 'serious' && !i.treated)!;
+    inj.treat = 1; // a medic made a start, then went off
+    const lay = sim.tick;
+    play(built, (STRANDED_SEC + 120) * TICK_HZ, { until: (s) => !s.world.has(gunner, RecoveringC) });
+    expect(sim.world.has(gunner, RecoveringC)).toBe(false);
+    expect((sim.tick - lay) / TICK_HZ).toBeGreaterThanOrEqual(STRANDED_SEC);
+    expect(seeksTreatment(sim, gunner)).toBe(false);
+  });
+
   it('a destroyed eye stays lost, and takes no further injury', () => {
     const sim = cachedNewGame(3);
     const id = human(sim);

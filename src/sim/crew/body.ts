@@ -115,9 +115,6 @@ export const isBleeding = (sim: Sim, id: number): boolean => injuriesOf(sim, id)
 /** Does a serious injury wait for a medic's treatment? */
 export const needsTreatment = (sim: Sim, id: number): boolean => injuriesOf(sim, id).some((i) => i.sev === 'serious' && !i.treated);
 
-/** Has a medic started (or finished) treating any of their serious injuries? */
-export const treatmentStarted = (sim: Sim, id: number): boolean => injuriesOf(sim, id).some((i) => i.sev === 'serious' && (!!i.treated || (i.treat ?? 0) > 0));
-
 /**
  * Do they go and get treated: a serious injury waits for a medic and they have not given up on it lately (`untended`, a stay in a medical bed that timed out,
  * crew/recovery.ts). The recover drive's health input, the bed choice and the medical bed stay ask it.
