@@ -26,6 +26,7 @@ import { DoorJam, Struct, writeStruct } from '../structure';
 import { stochasticRound } from '../stochastic';
 import { EXTINGUISH_PER_SEC, REPAIR_PER_SEC, XP_PER_WORK_SEC } from '../tuning';
 import { grantXp } from './xp';
+import { stopBleeding } from './injure';
 import { workSkill, workSkillMult } from './workSkill';
 import { bedStandTile, bedUseOf, findFreeBed } from './beds';
 import { handInPatient, rescueSpot } from '../away/rescue';
@@ -78,6 +79,7 @@ function work(sim: Sim, crew: number, job: Job, speed: number): WorkResult {
     case 'repair': return repair(sim, job, speed);
     case 'rescue': return rescue(sim, crew, job);
     case 'tend': return 'working'; // held until the patient is out of the bed (autojobs drops it)
+    case 'aid': return timed(job, speed, () => { if (stopBleeding(sim, job.target ?? 0)) sim.events.emit({ type: 'crew.patched', crew: job.target ?? 0, by: crew }); return 'done'; });
     case 'operate': return 'working'; // held until the operate-jobs system drops it
     case 'passage': return 'wait'; // the holder waits at the boarding tile until the site's run boards them (away/passage.ts)
     case 'patrol': return timed(job, 1, () => 'done'); // stand watch at the stop, then the director posts the next one

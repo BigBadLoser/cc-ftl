@@ -31,9 +31,9 @@ export function bedCareRank(sim: Sim, side: Faction | undefined, bed: number): C
   return ranks.includes('normal') || !ranks.length ? 'normal' : ranks.includes('low') ? 'low' : 'never';
 }
 
-/** Whether `crew`'s side may take this job at all, as far as care goes: a rescue or tend job is never theirs for a still-fighting enemy. Other jobs: true. */
+/** Whether `crew`'s side may take this job at all, as far as care goes: a rescue, first-aid or tend job is never theirs for a still-fighting enemy. Other jobs: true. */
 export function jobCareFits(sim: Sim, crew: number, job: Job): boolean {
-  if (job.kind === 'rescue') return careRank(sim, sideOf(sim, crew), job.target ?? 0) !== 'never';
+  if (job.kind === 'rescue' || job.kind === 'aid') return careRank(sim, sideOf(sim, crew), job.target ?? 0) !== 'never';
   if (job.kind === 'tend') return bedCareRank(sim, sideOf(sim, crew), job.target ?? 0) !== 'never';
   return true;
 }

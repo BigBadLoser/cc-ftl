@@ -15,7 +15,7 @@ import { CombatC, IonC } from './components';
 import { damageStruct } from './hull';
 
 import { damageTakenMul } from '../upgrades/stats';
-import { armorOf } from '../robots/core';
+import { damageCrew } from '../crew/injure';
 import { stunCrew } from '../robots/halt';
 import { stunDronesNear } from '../drones/bay';
 
@@ -123,14 +123,13 @@ function crewDamage(sim: Sim, at: Impact, amount: number, radius: number): void 
     if (!pos || shipIdOf(sim, pos) !== at.shipId || sim.world.has(id, DeadC) || sim.world.has(id, DownedC)) continue;
     const o = origin(pos);
     if (Math.max(Math.abs(o.x - at.x), Math.abs(o.y - at.y)) > radius) continue;
-    const health = sim.world.get(id, HealthC);
-    if (health) health.hp = Math.max(0, health.hp - amount * (1 - armorOf(sim, id)));
+    damageCrew(sim, id, amount, 'blast', { armor: true });
   }
 }
 
 /**
  * Lightning from the module on the impact tile: the `targets` nearest living crew within `radius` tiles (Chebyshev) of the hit take `amount` hp
- * (armour counts) and are stunned if ion-vulnerable. Nearest first, ties by id, so it never touches the rng. No module on the tile, no arc.
+ * (armour counts; a burn may follow, crew/injure.ts) and are stunned if ion-vulnerable. Nearest first, ties by id, so the pick never touches the rng. No module on the tile, no arc.
  */
 function arc(sim: Sim, at: Impact, amount: number, radius: number, targets: number): void {
   const grid = shipGrid(sim, at.shipId);
@@ -145,8 +144,7 @@ function arc(sim: Sim, at: Impact, amount: number, radius: number, targets: numb
   }
   near.sort((a, b) => a.d - b.d || a.id - b.id);
   for (const n of near.slice(0, targets)) {
-    const health = sim.world.get(n.id, HealthC);
-    if (health) health.hp = Math.max(0, health.hp - amount * (1 - armorOf(sim, n.id)));
+    damageCrew(sim, n.id, amount, 'fire', { armor: true }); // an electric burn
     stunCrew(sim, n.id);
     sim.events.emit({ type: 'projectile.arc', projectile: at.projectile, weapon: at.weapon, ship: at.shipId, x: at.x, y: at.y, tx: n.x, ty: n.y });
   }

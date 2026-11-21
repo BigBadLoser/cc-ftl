@@ -5,14 +5,14 @@ import type { EventEffect, RemoteAction } from './story/defs';
 import type { StationJobKind } from './galaxy/types';
 import type { DealPhase } from './trade/types';
 import type { ItemQty, ShotLook } from './registry';
+import type { InjuryEvent } from './crew/injuryTypes';
 
-/** Why a ship turned up in the current grid (`ship.arrived`). */
-export type ArriveReason = 'spawn' | 'scene' | 'fleet' | 'jump-in';
-/** Why a ship left the current grid (`ship.departed`). */
-export type DepartReason = 'jump-away' | 'fled' | 'fleet' | 'scene' | 'wrecked';
+/** Why a ship turned up in the current grid (`ship.arrived`). */ export type ArriveReason = 'spawn' | 'scene' | 'fleet' | 'jump-in';
+/** Why a ship left the current grid (`ship.departed`). */ export type DepartReason = 'jump-away' | 'fled' | 'fleet' | 'scene' | 'wrecked';
 
 /** Outbound notifications for UI and audio. */
 export type SimEvent =
+  | InjuryEvent
   | { type: 'debug.markerSpawned'; entity: number; x: number; y: number }
   | { type: 'crew.jobDone'; crew: number; kind: JobKind; ship: number; x: number; y: number }
   /** A room caught fire (first burning tile in a room with no fire). */

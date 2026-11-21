@@ -22,18 +22,24 @@ export const HAZARD_HEAT = 2;
 export const HAZARD_COLD = 4;
 export const HAZARD_FIRE = 8;
 
-/** Harm per second from a tile: thin air, CO2, heat, cold and fire. */
-export function tileHarm(grid: Grid, x: number, y: number, suited: boolean, airless: boolean): number {
-  let harm = 0;
+/** Harm per second from a tile, by cause: thin air and CO2 (`air`, the vacuum injury source), heat and cold (`temp`), and fire (the fire source). */
+export function tileHarmParts(grid: Grid, x: number, y: number, suited: boolean, airless: boolean): { air: number; temp: number; fire: number } {
+  let air = 0;
+  let temp = 0;
   const o2 = grid.get('o2', x, y);
   const co2 = grid.get('co2', x, y);
-  const temp = grid.get('temp', x, y);
-  if (!suited && !airless && o2 < O2_HARM_BELOW) harm += (O2_HARM_BELOW - o2) * O2_HARM_PER_SEC;
-  if (!suited && !airless && co2 > CO2_HARM_ABOVE) harm += (co2 - CO2_HARM_ABOVE) * CO2_HARM_PER_SEC;
-  if (temp > hotAbove(suited)) harm += (temp - hotAbove(suited)) * TEMP_HARM_PER_SEC;
-  if (!airless && !suited && temp < COLD_BELOW) harm += (COLD_BELOW - temp) * TEMP_HARM_PER_SEC;
-  harm += (FIRE_CREW_DAMAGE * grid.get('fire', x, y)) / 255;
-  return harm;
+  const t = grid.get('temp', x, y);
+  if (!suited && !airless && o2 < O2_HARM_BELOW) air += (O2_HARM_BELOW - o2) * O2_HARM_PER_SEC;
+  if (!suited && !airless && co2 > CO2_HARM_ABOVE) air += (co2 - CO2_HARM_ABOVE) * CO2_HARM_PER_SEC;
+  if (t > hotAbove(suited)) temp += (t - hotAbove(suited)) * TEMP_HARM_PER_SEC;
+  if (!airless && !suited && t < COLD_BELOW) temp += (COLD_BELOW - t) * TEMP_HARM_PER_SEC;
+  return { air, temp, fire: (FIRE_CREW_DAMAGE * grid.get('fire', x, y)) / 255 };
+}
+
+/** Harm per second from a tile: thin air, CO2, heat, cold and fire (the sum of `tileHarmParts`). */
+export function tileHarm(grid: Grid, x: number, y: number, suited: boolean, airless: boolean): number {
+  const h = tileHarmParts(grid, x, y, suited, airless);
+  return h.air + h.temp + h.fire;
 }
 
 /** The hazards (bits) of a tile for a crew member breathing from a suit (`suited`) or not breathing at all (`airless`). */

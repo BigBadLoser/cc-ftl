@@ -228,7 +228,7 @@ export type Command =
    */
   | { type: 'debug.spawnCrew'; ship: number; x: number; y: number; role: string; faction?: Faction; lodge?: true; carry?: { event: string; origin: string; purse: number } }
   /** Debug (the inspector scenario): set a crew member's traits, skill XP, wielded hand weapon (no storage needed), hunger and rest. Fields left out stay. */
-  | { type: 'debug.setCrew'; id: number; traits?: string[]; xp?: Partial<Record<SkillName, number>>; weapon?: string | null; hunger?: number; rest?: number; /** Set hp (0 downs them on the next vitals pass). */ hp?: number; /** Stun them until this tick (the boarding scene's sleeping raider crew). */ stun?: number }
+  | { type: 'debug.setCrew'; id: number; traits?: string[]; xp?: Partial<Record<SkillName, number>>; weapon?: string | null; hunger?: number; rest?: number; /** Set hp (0 downs them on the next vitals pass). */ hp?: number; /** Stun them until this tick (the boarding scene's sleeping raider crew). */ stun?: number; /** Injuries to add (crew/injure.ts `addInjury`; `as` a scar or a lost part). */ injuries?: { part: string; kind: string; as?: 'scar' | 'destroyed' }[] }
   /** Debug (the breaks scenario): start a mental break of `kind` on a crew member now, from `context` (default low mood), for `sec` seconds (default the kind's own). Rejected without a mood. */
   | { type: 'debug.breakCrew'; id: number; kind: BreakKind; context?: BreakContext; sec?: number }
   /** Debug (the bonds scenario): change what crew members `a` and `b` think of each other, both ways, by `delta` for the bond reason `reason` (default a chat). Rejected without a mood. */

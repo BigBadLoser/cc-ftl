@@ -6,6 +6,7 @@ import type { FactionDef } from './shipgen/types';
 import type { StationDef } from './shipgen/stationTypes';
 import type { WorkCategory } from './crew/components';
 import type { CareerDef, UpbringingDef } from './crew/background';
+import type { InjuryContent } from './crew/injuryTypes';
 
 /** Crew skills the stat resolver knows (0 = untrained; roles add levels). */
 export type SkillName = 'gunnery' | 'piloting' | 'shielding' | 'melee' | 'construction' | 'hacking' | 'medicine' | 'science' | 'cooking' | 'botany' | 'industry';
@@ -17,8 +18,7 @@ export interface ShipTemplate {
   modules?: { def: string; x: number; y: number; rot: number; stock?: ItemQty[]; /** Standing production orders of a crafting module (e.g. keep 10 rations). */ orders?: { recipe: string; mode: 'count' | 'keep'; target: number }[]; /** Vehicle def stowed in this module (a vehicle bay). */ vehicle?: string; /** Drone defs docked in this module's slots, in order (a drone bay). */ drones?: string[]; /** Container modules: the side of the footprint clamped to the frame (default 'n'). */ clamp?: 'n' | 'e' | 's' | 'w'; /** A hydroponics bed: the crop (CropDef id) it is set to sow. */ crop?: string; /** A hydroponics bed: starts this many seconds into growing its crop (debug scenarios). */ grown?: number; /** A hydroponics bed: starts with its crop ready to harvest. */ ready?: true; /** Stands on open rock ground outside the hull (template '.'), wired to it by cable (`cable`): an asteroid base's turret. */ ground?: true; /** An airlock for the crew's walks outside, not a berth for ships (a prefab base's wing and greenhouse airlocks): no dock is chosen here. */ crew?: true }[];
   /** '.' space, '#' wall, '_' floor, 'D' door, '=' beam. Rows may differ in length; short rows pad with space. */
   rows: string[];
-  /** Floor finishes, row for row with `rows`: 'h' heavy plate, 'c' clean tile, 'k' carpet, anything
-   *  else the plain deck (structure.ts FINISH_CHARS). Absent: every floor plain. */
+  /** Floor finishes, row for row with `rows`: 'h' heavy plate, 'c' clean tile, 'k' carpet, anything else the plain deck (structure.ts FINISH_CHARS). Absent: every floor plain. */
   floors?: string[];
   /** Ground power cable, row for row with `rows`: '+' (cable.ts CABLE_CHAR) on a '.' tile that is rock ground once the base stands (an asteroid base's site). */
   cable?: string[];
@@ -114,14 +114,14 @@ export interface ContentRegistry {
   creatures?: CreatureDefs;
   /** Ore kinds in asteroid rock (content/ores.ts) by id. Absent = asteroids carry no ore. */
   ores?: Record<string, OreDef>;
-  /** Research projects (content/research.ts) by id. Absent = nothing to research. */
-  research?: Record<string, ResearchDef>;
+  /** Research projects (content/research.ts) by id. Absent = nothing to research. */ research?: Record<string, ResearchDef>;
   /** The research tree's bands in order (ids are `ResearchDef.category`). */
   researchBands?: { id: string; name: string }[];
   /** Shipyard hull expansion at stations (yard/): which stations offer it, the tiers and the prices. Absent = no yards. */
   yard?: YardDef;
-  /** Black-market service sets (blackmarket/defs.ts) by id. Absent = no black markets. */
-  blackMarkets?: Record<string, BlackMarketDef>;
+  /** Black-market service sets (blackmarket/defs.ts) by id. Absent = no black markets. */ blackMarkets?: Record<string, BlackMarketDef>;
+  /** Body parts, capacities, injury kinds and sources (content/injuries.ts, crew/injuryTypes.ts). Absent = nobody is injured. */
+  injuries?: InjuryContent;
 }
 
 /**

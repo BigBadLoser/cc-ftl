@@ -32,6 +32,7 @@ import { yard } from './yard';
 import { blackMarkets } from './blackMarkets';
 import { creatures } from './creatures';
 import { ores } from './ores';
+import { injuries } from './injuries';
 import { starterShip, starterShipId } from './ships/starter';
 import { starterShips } from './ships/starterShips';
 import { rogueShipyard, rogueShipyardId } from './ships/rogue';
@@ -70,6 +71,7 @@ export const content = {
   trade,
   creatures,
   ores,
+  injuries,
   research,
   researchBands: [...researchBands],
 } satisfies ContentRegistry;

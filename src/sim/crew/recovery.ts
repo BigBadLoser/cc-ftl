@@ -5,16 +5,18 @@ import { shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { BED_HEAL_PER_SEC, POD_HEAL_PER_SEC, XP_PER_HP_HEALED } from '../tuning';
-import { bedStandTile, bedUsable } from './beds';
+import { bedStandTile, bedUsable, bedUseOf } from './beds';
 import { CrewC, DownedC, PathC, PositionC, RecoveringC, type Crew, type Downed, type Health, type Position, type Recovering } from './components';
 import { clearPath } from './helpers';
 import { tendingOf, treatmentMult } from './treatment';
 import { grantXp } from './xp';
+import { healMult, needsTreatment } from './body';
+import { damageCrew } from './injure';
 
 /**
  * Recovery pods (DESIGN.md "Recovery pod"; `ModuleDef.recovery`). A powered tank a hurt crew member lies in and heals to full with no medic, out of
  * action meanwhile (`RecoveringC`, counted by `isIncapacitated`); a downed patient carried there is stabilised, heals to `GET_UP_HP` as `Downed`
- * and carries on to full as `Recovering`. HP only: lasting injuries and surgery would slot in at `careHealStep`. The patient lies on the pod's anchor
+ * and carries on to full as `Recovering`. Lasting injuries are treated and healed in crew/injuryCare.ts; surgery (slice 2) would slot in there. The patient lies on the pod's anchor
  * tile (the render draws them floating in the tank); they get out onto its access tile. A pod that loses power ejects a walking patient and
  * pauses a downed one (no healing, no bleeding).
  */
@@ -31,15 +33,19 @@ export function careBed(sim: Sim, bed: number): Module | undefined {
   return m && m.hp > 0 && sim.content.modules[m.def]?.medical ? m : undefined;
 }
 
-/** Is a treatment bed (a medical bed or a recovery pod) on the crew member's ship theirs to use now: free (a pod also powered) or the one they have claimed? The `care` drive input, before the walk is planned. */
+/**
+ * Is a treatment bed (a medical bed or a recovery pod; only a medical bed for a serious injury waiting for treatment, `bedUseOf`) on the crew member's ship
+ * theirs to use now: free (a pod also powered) or the one they have claimed? The `care` drive input, before the walk is planned.
+ */
 export function careAvailable(sim: Sim, crew: number): boolean {
   const pos = sim.world.get(crew, PositionC);
   if (!pos) return false;
   const ship = shipIdOf(sim, pos);
+  const podsToo = bedUseOf(sim, crew) !== 'treatment';
   for (const id of sim.world.query(ModuleC)) {
     const m = sim.world.get(id, ModuleC) as Module;
     const def = sim.content.modules[m.def];
-    if (def?.medical && (bedUsable(def, m) || (berthOf(def, m, crew) >= 0 && m.hp > 0 && (!def.recovery || m.powered))) && shipIdOf(sim, m) === ship) return true;
+    if (def?.medical && (podsToo || !def.recovery) && (bedUsable(def, m) || (berthOf(def, m, crew) >= 0 && m.hp > 0 && (!def.recovery || m.powered))) && shipIdOf(sim, m) === ship) return true;
   }
   return false;
 }
@@ -96,19 +102,20 @@ export function careHealStep(sim: Sim, crew: number, who: Pick<Downed, 'bed' | '
   const tend = pod ? { medic: 0, mult: 1 } : tendingOf(sim, who.bed); // a pod needs no medic; a medical bed heals faster while one tends it
   const care = tend.mult * treatmentMult(sim, shipIdOf(sim, bed), who);
   const before = health.hp;
-  health.hp = Math.min(health.max, health.hp + ((pod ? POD_HEAL_PER_SEC : BED_HEAL_PER_SEC) * care - harm) / TICK_HZ);
+  health.hp = Math.min(health.max, health.hp + ((pod ? POD_HEAL_PER_SEC : BED_HEAL_PER_SEC) * care * healMult(sim, crew) - harm) / TICK_HZ);
   if (tend.medic && health.hp > before) grantXp(sim, tend.medic, 'medicine', (health.hp - before) * XP_PER_HP_HEALED);
   return true;
 }
 
-/** A patient lying in a treatment bed, one tick: heal to full and get out; out at once (taking the harm) when the bed is gone, wrecked or (a pod) without power, or the air or fire harms them. */
+/** A patient lying in a treatment bed, one tick: heal to full (and, in a medical bed, be treated) and get out; out at once (taking the harm) when the bed is gone, wrecked or (a pod) without power, or the air or fire harms them. */
 export function restInCare(sim: Sim, crew: number, rec: Recovering, health: Health, harm: number): void {
   if (harm > 0 || !careHealStep(sim, crew, rec, health, harm)) {
-    health.hp = Math.max(0, health.hp - harm / TICK_HZ);
+    damageCrew(sim, crew, harm / TICK_HZ, null);
     leaveCare(sim, crew, rec);
     return;
   }
-  if (health.hp >= health.max) leaveCare(sim, crew, rec);
+  // In a medical bed they stay on, healed, until a medic has treated their serious injuries (crew/injuryCare.ts); a pod does not treat.
+  if (health.hp >= health.max && (podModule(sim, rec.bed) || !needsTreatment(sim, crew))) leaveCare(sim, crew, rec);
 }
 
 /** A stabilised downed patient in a pod has reached `GET_UP_HP`: they are no longer downed, and stay to full. */

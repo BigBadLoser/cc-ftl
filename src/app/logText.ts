@@ -32,6 +32,11 @@ export function createDescriber(sim: Sim) {
   const handoverOf = (deal: number) => sim.trade.deals.find((d) => d.id === deal)?.handover;
   const factionName = (id: string) => sim.content.galaxy?.factions[id]?.name ?? id;
   const item = (id: string) => sim.content.items[id]?.name ?? id;
+  const partName = (id: string) => (sim.content.injuries?.parts[id]?.name ?? id).toLowerCase();
+  const kindName = (id: string) => sim.content.injuries?.kinds[id]?.name ?? id;
+  const injuryLine = (e: Extract<SimEvent, { type: 'crew.injured' }>) => e.severity === 'destroyed'
+    ? sim.content.injuries?.parts[e.part]?.vital ? `${crewName(e.crew)}: the ${partName(e.part)} gave out` : `${crewName(e.crew)} lost the ${partName(e.part)}`
+    : `${crewName(e.crew)}: ${kindName(e.kind).toLowerCase()} on the ${partName(e.part)}, needs a medic`;
   const sub = (s: UiSubject | null): { subject?: UiSubject } => (s ? { subject: s } : {});
   const onShip = (id: number) => sub(shipSubject(sim, id));
   const node = (id: string) => sub({ kind: 'node', id });
@@ -99,6 +104,8 @@ export function createDescriber(sim: Sim) {
         const hurt = [e.damaged ? `${e.damaged} damaged` : '', e.destroyed ? `${e.destroyed} destroyed` : '', e.fires ? `${e.fires} fire${e.fires === 1 ? '' : 's'}` : ''].filter(Boolean).join(', ');
         return mine(e.ship) ? { kind: 'warning', tone: hurt ? 'bad' : 'warn', text: `Overcharged jump${hurt ? `: ${hurt}` : ''}` } : null;
       }
+      case 'crew.injured': return player(e.crew) && e.severity !== 'minor' ? { kind: 'crew', tone: e.severity === 'destroyed' ? 'bad' : 'warn', text: injuryLine(e), ...sub(crewSubject(sim, e.crew)) } : null;
+      case 'crew.scarred': return player(e.crew) ? { kind: 'crew', tone: 'warn', text: `${crewName(e.crew)}: the ${kindName(e.kind).toLowerCase()} on the ${partName(e.part)} healed badly and left a scar`, ...sub(crewSubject(sim, e.crew)) } : null;
       case 'crew.knockedDown': return { kind: 'crew', tone: side(e.crew), text: `${crewName(e.crew)} was knocked down`, ...sub(crewSubject(sim, e.crew)) };
       case 'crew.imprisoned': return { kind: 'crew', tone: side(e.crew), text: `${crewName(e.crew)} locked up aboard ${shipName(e.ship)}`, ...sub(crewSubject(sim, e.crew)) };
       case 'crew.surrendered': return { kind: 'crew', tone: side(e.crew), text: `${crewName(e.crew)} surrenders`, ...sub(crewSubject(sim, e.crew)) };

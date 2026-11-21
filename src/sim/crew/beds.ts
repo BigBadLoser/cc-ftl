@@ -7,6 +7,7 @@ import { walkOpts } from '../eva/route';
 import { findPath, type PathOpts, type Tile } from './pathfind';
 import { shipIdOf } from '../regions';
 import { berthHolder, freeBerth, releaseBerth } from './berths';
+import { needsTreatment } from './body';
 
 /** A bed tile a planner must not use (a hazard there for this sleeper). */
 export type BedSkip = (x: number, y: number) => boolean;
@@ -23,17 +24,22 @@ export function isIntactBed(sim: Sim, id: number, shipId: number): boolean {
   return !!m && m.hp > 0 && !!sim.content.modules[m.def]?.bed && shipIdOf(sim, m) === shipId;
 }
 
-/** Who a bed is for: a sleeper, a patient who can walk to treatment, or a critical (downed) one. */
-export type BedUse = 'sleep' | 'walking' | 'critical';
+/** Who a bed is for: a sleeper, a patient who can walk to treatment, one whose serious injury needs a medic's treatment (a medical bed: a pod does not treat), or a critical (downed) one. */
+export type BedUse = 'sleep' | 'walking' | 'treatment' | 'critical';
 const BED_ORDER: Record<BedUse, readonly BedKind[]> = {
   sleep: ['ordinary'],
   walking: ['medical', 'recovery'],
+  treatment: ['medical'],
   critical: ['recovery', 'medical', 'ordinary'],
 };
 
-/** The use a hurt crew member's bed search is for: critical when downed or carried (the game's incapacitated-by-injury test), else walking. The one place that decides. */
+/**
+ * The use a hurt crew member's bed search is for: critical when downed or carried (the game's incapacitated-by-injury test), treatment when a serious
+ * injury waits for a medic (crew/body.ts `needsTreatment`), else walking. The one place that decides.
+ */
 export function bedUseOf(sim: Sim, crew: number): BedUse {
-  return sim.world.has(crew, DownedC) || sim.world.has(crew, CarriedC) ? 'critical' : 'walking';
+  if (sim.world.has(crew, DownedC) || sim.world.has(crew, CarriedC)) return 'critical';
+  return needsTreatment(sim, crew) ? 'treatment' : 'walking';
 }
 
 /** Which kind of bed a module is: a recovery pod, a medical bed (patients only) or an ordinary bed. */

@@ -71,7 +71,8 @@ export interface UiGearSlot {
 
 export interface UiCrewDetail {
   id: number;
-  health: { hp: number; maxHp: number; conditions: UiCondition[] };
+  /** `injuries`: one line per injury (part, kind and state), then the capacities they lower; empty when unhurt (#601). */
+  health: { hp: number; maxHp: number; conditions: UiCondition[]; injuries: UiCondition[] };
   /** Null for crew without moods (robots). `source`: the trait that set or changed the factor. `strain`: what can set off a break now whatever the mood. */
   mood: { value: number; base: number; factors: { label: string; value: number; source?: string }[]; workMult: number; strain: string } | null;
   skills: UiSkillDetail[];

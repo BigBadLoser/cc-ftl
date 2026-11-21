@@ -114,6 +114,7 @@ describe('capturing a ship', () => {
     for (const c of party) sim.world.get(c, HealthC)!.max = sim.world.get(c, HealthC)!.hp = 100000;
     const last = raiders[raiders.length - 1]!;
     sim.world.remove(last, SurrenderedC);
+    sim.world.get(last, HealthC)!.max = sim.world.get(last, HealthC)!.hp = 100000; // stays up: a bleeding wound (#601) would otherwise wear it down to surrender
     run(sim, 200);
     expect(ship(sim, 2).state).toBe('active');
     expect(ship(sim, 2).faction).toBe('hostile');

@@ -31,6 +31,8 @@ export { SAVE_VERSION, serialize, deserialize, migrate, type SaveData } from './
 export { runSummary, type RunSummary } from './runSummary';
 export { Struct, Finish, SHIP_FIELDS, isWalkable, isEvaWalkable, writeStruct, type StructKind, type FinishKind } from './structure';
 export * from './crew/components';
+export * from './crew/injuryTypes';
+export { capacitiesOf, injuriesOf, isBleeding, partCondition } from './crew/body';
 export { findPath, type Tile, type PathGoal } from './crew/pathfind';
 export { stat, statBase, statBreakdown, modifierSources, type Modifier, type ModifierOrigin, type ModifierSource, type StatBreakdown, type StatName } from './stats';
 export * from './items/components';

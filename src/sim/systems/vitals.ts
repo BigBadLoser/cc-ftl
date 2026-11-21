@@ -6,7 +6,9 @@ import {
   type Crew, type Downed, type Health, type Position,
 } from '../crew/components';
 import { killCrew } from '../crew/death';
-import { tileHarm } from '../crew/hazard';
+import { tileHarmParts } from '../crew/hazard';
+import { healMult, isBleeding, mustBeDown, vitalLost } from '../crew/body';
+import { damageCrew, injureOnDown } from '../crew/injure';
 import { hasSuitAir } from '../eva/suit';
 import { WreckC } from '../robots/components';
 import { AboardC, VehicleC, type Vehicle } from '../vehicles/components';
@@ -24,7 +26,8 @@ import { grantXp } from '../crew/xp';
 /**
  * Living crew breathe (use O2, emit CO2 on their tile) and take environmental harm. At 0 hp they
  * are downed and bleed out unless a rescuer stabilizes them in a bed, where they heal and
- * eventually get up. A downed crew whose air is still lethal keeps bleeding even in a bed.
+ * eventually get up. A downed crew whose air is still lethal keeps bleeding even in a bed. Injuries (crew/body.ts) can knock a crew member out
+ * whatever their hp, keep them down in bed, and a lost vital organ bleeds them out; a bleeding wound stops their regeneration; blood pumping scales healing.
  * Crew aboard a vehicle (no tile: `AboardC`) keep their vitals too (`vitalsAboard`): the cabin is pressurised, so air and the tile fields do not reach
  * them, but hunger harms, a wound bleeds and they can go down or die in flight.
  * Crew without a Health component are ignored. Species flags: `airless` bodies neither breathe nor mind thin air, CO2 or
@@ -47,35 +50,42 @@ export function vitalsSystem(sim: Sim): void {
       grid.set('co2', pos.x, pos.y, grid.get('co2', pos.x, pos.y) + BREATH_CO2_PER_SEC / TICK_HZ);
     }
 
-    const harm = tileHarm(grid, pos.x, pos.y, suited, airless) + ((sim.world.get(id, NeedsC)?.hunger ?? 1) <= 0 ? STARVE_HARM_PER_SEC : 0);
+    const parts = tileHarmParts(grid, pos.x, pos.y, suited, airless);
+    const starve = (sim.world.get(id, NeedsC)?.hunger ?? 1) <= 0 ? STARVE_HARM_PER_SEC : 0;
+    const harm = parts.air + parts.temp + parts.fire + starve;
     const resting = sim.world.get(id, RecoveringC);
     if (resting) {
       restInCare(sim, id, resting, health, harm); // a recovery pod: heals to full, out of action meanwhile
     } else if (!downed) {
       if (health.hp <= 0) {
         // Already at 0 (combat damage): go down without regenerating first.
-      } else if (harm > 0) health.hp = Math.max(0, health.hp - harm / TICK_HZ);
-      else if (!species?.mechanical) health.hp = Math.min(health.max, health.hp + REGEN_PER_SEC / TICK_HZ);
-      if (health.hp <= 0) {
+      } else if (harm > 0) {
+        // Through the one damage owner: thin air and fire add up to injuries (crew/injure.ts), heat, cold and hunger only take hp.
+        damageCrew(sim, id, parts.air / TICK_HZ, 'vacuum', { dose: true });
+        damageCrew(sim, id, parts.fire / TICK_HZ, 'fire', { dose: true });
+        damageCrew(sim, id, (parts.temp + starve) / TICK_HZ, null);
+      } else if (!species?.mechanical && !isBleeding(sim, id)) health.hp = Math.min(health.max, health.hp + (REGEN_PER_SEC * healMult(sim, id)) / TICK_HZ);
+      if (health.hp <= 0 || mustBeDown(sim, id)) {
         if (species?.wreck) wreck(sim, id);
         else if (species?.creature) killCrew(sim, id); // creatures die outright (the corpse stays)
         else down(sim, id, pos);
       }
-    } else if (downed.stabilized && harm < BED_HEAL_PER_SEC && podModule(sim, downed.bed)) {
-      // Carried to a recovery pod: no medic needed; at GET_UP_HP they stay on as a pod patient to full (crew/recovery.ts).
-      if (careHealStep(sim, id, downed, health, harm) && health.hp >= GET_UP_HP) startRecovery(sim, id, downed);
-    } else if (downed.stabilized && harm < BED_HEAL_PER_SEC) {
+    } else if (downed.stabilized && !vitalLost(sim, id) && harm < BED_HEAL_PER_SEC && podModule(sim, downed.bed)) {
+      // Carried to a recovery pod: no medic needed; at GET_UP_HP they stay on as a pod patient to full (crew/recovery.ts). Knocked out, they stay down.
+      if (careHealStep(sim, id, downed, health, harm) && health.hp >= GET_UP_HP && !mustBeDown(sim, id)) startRecovery(sim, id, downed);
+    } else if (downed.stabilized && !vitalLost(sim, id) && harm < BED_HEAL_PER_SEC) {
       // Heals at the bed rate, faster while a medic tends a medical bed (crew/treatment.ts `tendingOf`: the one answer; the XP goes to the tender).
       const ship = shipIdOf(sim, pos);
       const tend = tendingOf(sim, downed.bed);
       const care = tend.mult * treatmentMult(sim, ship, downed);
       const before = health.hp;
-      health.hp = Math.min(health.max, health.hp + (BED_HEAL_PER_SEC * care - harm) / TICK_HZ);
+      health.hp = Math.min(health.max, health.hp + (BED_HEAL_PER_SEC * care * healMult(sim, id) - harm) / TICK_HZ);
       if (tend.medic && health.hp > before) grantXp(sim, tend.medic, 'medicine', (health.hp - before) * XP_PER_HP_HEALED);
-      if (health.hp >= GET_UP_HP) getUp(sim, id, downed);
+      if (health.hp >= GET_UP_HP && !mustBeDown(sim, id)) getUp(sim, id, downed); // knocked out (crew/body.ts), they stay down until it heals
     } else {
-      health.hp = Math.max(0, health.hp - harm / TICK_HZ);
-      if (!downed.patched || harm > 0) downed.bleed -= 1 / TICK_HZ; // first aid stops the bleeding, not a fire or empty air
+      damageCrew(sim, id, harm / TICK_HZ, null);
+      // First aid stops the bleeding, not a fire or empty air; a lost vital organ bleeds them out even in a bed (only surgery could save them).
+      if (!downed.patched || harm > 0 || vitalLost(sim, id)) downed.bleed -= 1 / TICK_HZ;
       if (downed.bleed <= 0) die(sim, id, downed);
     }
   }
@@ -93,16 +103,16 @@ function vitalsAboard(sim: Sim, id: number): void {
   const species = sim.content.species[(sim.world.get(id, CrewC) as Crew).species];
   const harm = (sim.world.get(id, NeedsC)?.hunger ?? 1) <= 0 ? STARVE_HARM_PER_SEC : 0;
   if (!downed) {
-    if (harm > 0) health.hp = Math.max(0, health.hp - harm / TICK_HZ);
-    else if (health.hp > 0 && !species?.mechanical) health.hp = Math.min(health.max, health.hp + REGEN_PER_SEC / TICK_HZ);
-    if (health.hp > 0) return;
+    if (harm > 0) damageCrew(sim, id, harm / TICK_HZ, null);
+    else if (health.hp > 0 && !species?.mechanical && !isBleeding(sim, id)) health.hp = Math.min(health.max, health.hp + (REGEN_PER_SEC * healMult(sim, id)) / TICK_HZ);
+    if (health.hp > 0 && !mustBeDown(sim, id)) return;
     if (species?.wreck) wreck(sim, id);
     else if (species?.creature) killCrew(sim, id);
     else down(sim, id, null);
     return;
   }
-  health.hp = Math.max(0, health.hp - harm / TICK_HZ);
-  if (!downed.patched || harm > 0) downed.bleed -= 1 / TICK_HZ;
+  damageCrew(sim, id, harm / TICK_HZ, null);
+  if (!downed.patched || harm > 0 || vitalLost(sim, id)) downed.bleed -= 1 / TICK_HZ;
   if (downed.bleed <= 0) die(sim, id, downed);
 }
 
@@ -115,6 +125,7 @@ function down(sim: Sim, id: number, pos: Position | null): void {
     pos.toY = pos.y;
     pos.progress = 0;
   }
+  injureOnDown(sim, id); // going down always adds a serious injury (it can shorten the bleed-out: a hurt heart)
   sim.world.add(id, DownedC, { bleed: bleedOutSec(sim, id), stabilized: false, bed: 0 });
   crew.activity = 'downed';
   sim.events.emit({ type: 'crew.downed', crew: id });

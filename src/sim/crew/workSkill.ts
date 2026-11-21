@@ -11,7 +11,7 @@ import type { Job } from './components';
 const JOB_SKILL: Partial<Record<Job['kind'], SkillName>> = {
   build: 'construction', module: 'construction', deconstruct: 'construction', moduleDecon: 'construction', repair: 'construction',
   extinguish: 'construction', forceDoor: 'construction', fit: 'construction', mend: 'construction', salvage: 'construction',
-  assemble: 'construction', plant: 'botany', harvest: 'botany', research: 'science', hack: 'hacking',
+  assemble: 'construction', aid: 'medicine', plant: 'botany', harvest: 'botany', research: 'science', hack: 'hacking',
 };
 
 /** Skills whose level speeds their job kinds here (science and hacking speed research and hacks where those are worked). */

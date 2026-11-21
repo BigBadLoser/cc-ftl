@@ -1,6 +1,7 @@
 import { shipIdOf } from '../regions';
 import { CrewC, HealthC } from '../crew/components';
 import { heldItems } from '../items/held';
+import { damageCrew } from '../crew/injure';
 import { spillItems } from '../items/stacks';
 import { storageAdd } from '../items/storage';
 import { ModuleC } from '../modules/components';
@@ -138,10 +139,7 @@ function run(sim: Sim, eff: EventEffect, ctx: EffectCtx): string | null {
     }
     case 'crewDamage': {
       const ids = targets(sim, eff.who, ctx);
-      for (const id of ids) {
-        const h = sim.world.get(id, HealthC);
-        if (h) h.hp = Math.max(0, h.hp - eff.amount);
-      }
+      for (const id of ids) damageCrew(sim, id, eff.amount, 'blade'); // an accident: a blow
       return `${names(sim, ids)} takes ${eff.amount} damage`;
     }
     case 'crewHeal': {

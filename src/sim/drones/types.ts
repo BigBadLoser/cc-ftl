@@ -10,7 +10,7 @@ export type DroneJobDef =
   /** Put out fires no bigger than `maxFire` intensity, at `rate` times a crew member's extinguish speed. */
   | { kind: 'extinguish'; rate: number; maxFire: number }
   /**
-   * First aid: a downed patient is patched in `patchSec` seconds (the bleeding stops; they still need a bed), a conscious wounded one is
+   * First aid: a downed patient is patched in `patchSec` seconds (the bleeding stops; they still need a bed), so is a bleeding wound on one standing; a conscious wounded one is
    * healed `healPerSec` hp a second up to `healTo` of their max hp. Never a mechanical body.
    */
   | { kind: 'firstAid'; patchSec: number; healPerSec: number; healTo: number }

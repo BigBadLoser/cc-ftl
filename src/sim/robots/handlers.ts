@@ -13,6 +13,8 @@ import { walkOpts } from '../eva/route';
 import { createCrew } from '../crew/spawn';
 import { AllegianceC, EquipC, FighterC } from '../fight/components';
 import { TraitsC } from '../crew/traits';
+import { canBeInjured } from '../crew/body';
+import { addInjury } from '../crew/injure';
 import { SkillXpC } from '../story/components';
 import { ModuleC } from '../modules/components';
 import { footprintTiles } from '../modules/footprint';
@@ -107,6 +109,8 @@ export const robotHandlers: { [T in RobotCommand]: Handler<T> } = {
     const hp = sim.world.get(cmd.id, HealthC);
     if (hp && cmd.hp !== undefined) hp.hp = Math.max(0, Math.min(hp.max, cmd.hp));
     if (cmd.stun !== undefined) sim.world.add(cmd.id, StunC, { until: cmd.stun });
+    if (cmd.injuries && !canBeInjured(sim, cmd.id)) return reject(sim, cmd.type, 'noInjuries');
+    for (const i of cmd.injuries ?? []) addInjury(sim, cmd.id, i.part, i.kind, i.as);
   },
   'debug.spawnCrew': (sim, cmd) => {
     const grid = shipGrid(sim, cmd.ship);

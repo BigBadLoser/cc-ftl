@@ -67,6 +67,7 @@ export default defineConfig({
             { title: 'Air and door vents', to: '/mechanics/air/' },
             { title: 'Crew', to: '/mechanics/crew/' },
             { title: 'Mood, relationships and breaks', to: '/mechanics/mood/' },
+            { title: 'Injuries and healing', to: '/mechanics/injuries/' },
             { title: 'Food and farming', to: '/mechanics/food/' },
             { title: 'Drones', to: '/mechanics/drones/' },
             { title: 'Ship combat', to: '/mechanics/combat/' },
