@@ -146,3 +146,24 @@ probe.end('render/myPass'); // same string, properly nested
 Get a probe without importing the profiler: take a `Probe` as a parameter or option (the loop and renderer have `probe` / `setProbe`;
 `main.ts` holds the live one and swaps in the no-op when profiling is off). New sim systems need nothing: `pipeline.ts` labels each
 system `sim/<exported function name minus "System">` automatically. Keep labels few and stable; per-entity labels cost more than they tell.
+
+## History
+
+### Render batching history (#389)
+
+Moved from the "Batching (#389)" rules in ARCHITECTURE.md "Rendering".
+
+- A roofed
+  ship drew a mesh per livery mask, hundreds of draws per pass (#389, `?scenario=fight` inset 589 -> 60).
+- (hand-culling 10k of them moved
+  `render/gl` by nothing, #389)
+- A whole-node rebuild
+  (`?scenario=busy`, `__cc.liveryAtlas(true)`): one 210-270 ms frame became 9-13 frames of at most ~40 ms (headless).
+
+Measuring batching:
+
+- Measure with the draw counter (the `render/drawCalls` counter of the profiler, `app/profiler/install.ts`) at `?scenario=busy` zoomed out, and see which instruction broke each batch
+  with the scratch tracer approach in #389 (walk `renderGroup.instructionSet`). `__cc.additiveMerge(false)` and
+  `__cc.crewAtlas(false)`, `__cc.renderGroups(false)`, `__cc.depthBands(false)` and `__cc.liveryAtlas(false)` (rebuilds the scenes) (with `?hook`) switch back to the old paths
+  for same-frame render diffs (`depthBands(n)` tries a band width).
+

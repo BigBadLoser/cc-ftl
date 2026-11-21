@@ -3,7 +3,7 @@ import { BASELINE, BASELINE_COMMIT, variantKey, type BenchVariant } from './salv
 import { BENCH_HOURS, BENCH_TICKS, formatBench, runBench, setupBench } from './salvageBench';
 
 /**
- * The salvage throughput bench (docs/ARCHITECTURE.md "Throughput check", #286). It runs the real salvage loop on a big derelict for 2 game hours and
+ * The salvage throughput bench (docs/ARCHITECTURE.md "Throughput bench", #286). It runs the real salvage loop on a big derelict for 2 game hours and
  * reads the scrap brought home. The numbers in `salvageBench.baseline.ts` were measured on slice 3's staging (the old salvage-team baseline no
  * longer applies); later changes must not fall below them (the mean at least the baseline, each seed at least 90% of its own).
  *

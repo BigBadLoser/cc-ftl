@@ -47,6 +47,15 @@ def normalize(items):
     return sets
 
 
+# Shared sprite pipeline files the core-systems frames are rendered with (keys the render cache).
+PIPELINE_FILES = ('palette.json', 'tools/blender/palette_extra.json', 'tools/blender/setup.sh',
+                  'tools/blender/lib/palette.py', 'tools/blender/sprites/__init__.py', 'tools/blender/sprites/core.py',
+                  'tools/blender/sprites/post.py', 'tools/blender/sprites/scale.py', 'tools/blender/sprites/cmbkit.py',
+                  'tools/blender/sprites/damage.py', 'tools/blender/sprites/env_build.py', 'tools/blender/sprites/pack.py',
+                  'tools/blender/sprites/pod_muzzle.py', 'tools/blender/sprites/geom_digest.py',
+                  'tools/blender/sprites/sprite_cache.py', 'tools/blender/sprites/crew_cache.py')
+
+
 def export(out):
     import bpy
     from lib import palette
@@ -67,7 +76,9 @@ def export(out):
     core.setup_scene(); post.select(False)  # exact approved environment quantisation palette
     assert not core._state['sun'].data.use_shadow
     assert abs(core._state['sun'].data.energy - 3.9) < 1e-6
-    build_hash = hashlib.sha256((lock_path.read_text() + bpy.app.version_string + 'SS4/S4/env').encode()).hexdigest()
+    # The shared pipeline is not approval-locked (#597) but still feeds the pixels, so it keys the render cache.
+    pipeline = ''.join(hashlib.sha256((ROOT / f).read_bytes()).hexdigest() for f in PIPELINE_FILES)
+    build_hash = hashlib.sha256((lock_path.read_text() + pipeline + bpy.app.version_string + 'SS4/S4/env').encode()).hexdigest()
     cache = ROOT / '.cache/core-systems-final' / build_hash
     cache.mkdir(parents=True, exist_ok=True)
     settings = {'blenderVersion': bpy.app.version_string, 'pinnedBlender': pinned,

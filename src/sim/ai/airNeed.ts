@@ -12,7 +12,7 @@ import { IntentC } from './components';
 import { AwayC } from '../away/components';
 
 /**
- * The air drive's inputs (#286 slice 1; docs/DESIGN.md "Air as a need", docs/ARCHITECTURE.md "Dependency on crew AI Phase 3"). The need
+ * The air drive's inputs (#286 slice 1; docs/DESIGN.md "Air as a need", docs/STATUS_ARCHIVE.md "Dependency on crew AI Phase 3"). The need
  * exists only while a suited crew member who breathes stands in thin air, so their tank drains. Salvage teams and the shipyard's
  * contractors keep their own air logic until salvage moves onto away sites (slice 3): for them the need is absent.
  *
