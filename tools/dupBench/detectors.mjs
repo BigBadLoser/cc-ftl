@@ -11,6 +11,8 @@ const JSCPD = join(REPO, 'node_modules/.bin/jscpd');
 const SIMILARITY = process.env.DUPBENCH_SIMILARITY_TS ?? join(homedir(), '.cargo/bin/similarity-ts');
 /** A directory with eslint, typescript-eslint and eslint-plugin-sonarjs installed (not a dependency of the repo). */
 const SONAR_DIR = process.env.DUPBENCH_SONAR_DIR;
+const HTTP_URL = process.env.DUPBENCH_SEMANTIC_URL;
+const HTTP_MODELS = HTTP_URL ? (process.env.DUPBENCH_SEMANTIC_MODELS ?? '').split(',').filter(Boolean) : [];
 
 const timed = (fn) => {
   const t0 = performance.now();
@@ -95,6 +97,13 @@ export function detectors({ only } = {}) {
       sweep: [0.4, 0.5, 0.6375, 0.7, 0.8],
       run: (root) => jscpd(root, ['--semantic', '--kind', 'semantic', '--semantic-same-threshold', '0.4', '--semantic-download']),
     },
+    // Other embedding models over an OpenAI-compatible API (e.g. Ollama): DUPBENCH_SEMANTIC_URL=http://127.0.0.1:11434/v1
+    // DUPBENCH_SEMANTIC_MODELS=a,b. Score scales differ by model, so these sweep wide from a low cutoff.
+    ...HTTP_MODELS.map((model) => ({
+      id: `semantic-${model.replace(/[^a-z0-9.]+/gi, '_')}`,
+      sweep: [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],
+      run: (root) => jscpd(root, ['--semantic', '--kind', 'semantic', '--semantic-url', HTTP_URL, '--semantic-model', model, '--semantic-same-threshold', '0.3']),
+    })),
   ];
   return list.filter((d) => (!only || only.some((o) => d.id.startsWith(o))) && (d.enabled?.() ?? true));
 }
