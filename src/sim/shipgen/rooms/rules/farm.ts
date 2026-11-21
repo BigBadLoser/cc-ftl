@@ -22,41 +22,31 @@ export function f1(c: Ctx): Piece[] {
 
 export const HYL = 'module.hydroponics_large';
 
-/**
- * F2, a farm floor too shallow for the large beds to lie two to a wall: small beds stood on end across the back of the
- * room, two tiles between them, each worked from the gap beside it, centred, the door's column in a gap; a walkway
- * along the front (#581).
- */
-export function f2(c: Ctx): Piece[] {
-  const { w, d } = c, n = c.need.filter((m) => m === HY).length, span = 3 * n - 2;
-  if (span > w) return [];
-  const mid = Math.floor((w - span) / 2), inBed = (s: number): boolean => d >= s && d < s + span && (d - s) % 3 === 0;
-  const x0 = Array.from({ length: w - span + 1 }, (_, s) => s).sort((u, v) => Number(inBed(u)) - Number(inBed(v)) || Math.abs(u - mid) - Math.abs(v - mid))[0] ?? 0;
-  // Rotation 3 works it from the east, rotation 1 from the west: the last bed faces back into the row.
-  return Array.from({ length: n }, (_, i) => P(HY, x0 + 3 * i, 0, i === n - 1 && n > 1 ? 1 : 3));
-}
+/** A hydroponics bed lying along a wall: its width and depth. */
+const BED: Readonly<Record<string, [number, number]>> = { [HYL]: [3, 2], [HY]: [2, 1] };
 
 /**
- * F3, a farm floor deep enough for two rows (a room wider than deep, its door on a long wall): the large beds half on the
- * back wall and half on the front, lying along them, each pair facing the other over the aisle between; spread evenly,
- * the front ones clear of the door (#581).
+ * F3, a farm floor (a room wider than deep, its door on a long wall): its beds (all large or all small) half on the back
+ * wall and half on the front, lying along them, each pair facing the other over the aisle between, two tiles apart,
+ * spread evenly, the front ones clear of the door (#581).
  */
 export function f3(c: Ctx): Piece[] {
-  const { w, h, d } = c, n = c.need.filter((m) => m === HYL).length, back = Math.ceil(n / 2), front = n - back;
-  const at = (m: number, i: number): number => Math.round(((i + 0.5) * w) / m - 1.5);
+  const { w, h, d } = c, def = c.need[0] ?? HYL, [bw, bd] = BED[def] ?? [3, 2], n = c.need.length;
+  const back = Math.ceil(n / 2), front = n - back;
+  const at = (m: number, i: number): number => Math.round(((i + 0.5) * w) / m - bw / 2);
   const out: Piece[] = [];
-  for (let i = 0; i < back; i++) out.push(P(HYL, at(back, i), 0, 0));
+  for (let i = 0; i < back; i++) out.push(P(def, at(back, i), 0, 0));
   for (let i = 0; i < front; i++) {
     let x = at(front, i);
-    // (Slide off the door's column, toward the room's middle side of it where that keeps inside the walls.)
-    if (d >= x && d <= x + 2) x = d - x <= 1 && d + 1 + 3 <= w ? d + 1 : d - 3 >= 0 ? d - 3 : d + 1;
-    out.push(P(HYL, x, h - 2, 2));
+    // (Slide off the door's column, to whichever side keeps inside the walls, the nearer first.)
+    if (d >= x && d < x + bw) x = d - x < bw / 2 && d + 1 + bw <= w ? d + 1 : d - bw >= 0 ? d - bw : d + 1;
+    out.push(P(def, x, h - bd, 2));
   }
   return out;
 }
 
-/** Whether F3 suits a room: its large beds two to a wall with two tiles between, a row to each long wall and an aisle. */
-export const f3Fits = (need: readonly string[], r: { w: number; h: number }): boolean => {
-  const n = need.filter((m) => m === HYL).length;
-  return n > 0 && n === need.length && r.h >= 5 && Math.ceil(n / 2) * 5 - 2 + 2 <= r.w;
+/** Whether F3 suits a room planned with these beds (or, `as`, with that bed standing in for each): two to a wall with two tiles between, a row to each long wall and an aisle. */
+export const f3Fits = (need: readonly string[], r: { w: number; h: number }, as?: string): boolean => {
+  const def = as ?? need[0] ?? '', bed = BED[def], n = need.length;
+  return !!bed && n > 0 && need.every((m) => m === need[0] && !!BED[m]) && r.h >= 2 * bed[1] + 1 && Math.ceil(n / 2) * (bed[0] + 2) - 2 <= r.w;
 };

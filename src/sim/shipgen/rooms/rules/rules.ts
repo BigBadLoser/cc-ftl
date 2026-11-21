@@ -8,7 +8,7 @@ import type { ModuleDef } from '../../../registry';
 import type { RoomRole } from '../../types';
 import type { Piece } from './check';
 import { db, pods2, pods2Fit, tr, traumaFits, ward, wardBeds } from './bays';
-import { HY, HYL, f1, f2, f3, f3Fits } from './farm';
+import { HY, HYL, f1, f3, f3Fits } from './farm';
 import { rw } from './refinery';
 import { AC, B, seats, BT, OB, OBL, CD, DR, EX, FB, RF, G, GT, L, LS, MB, P, RK, RP, RS, SB, SP, SW, T, bunks, messSize, count, leftover, middle, range, rowsOf, sidePairs, tables, type Beds, type Run } from './parts';
 import { PB, VB, AI, CR, bank, core, crates, lifeWalls, lifeWallsFit, machines, machinesFit, podsFit, pods, shuttle, walkwayFits, walkwayHold } from './plant';
@@ -330,8 +330,8 @@ export const RULES: Partial<Record<RoomRole, readonly RuleArrangement[]>> = {
   shields: [{ name: 'S1 gens, batteries between', weight: 1, rule: (c) => spread(c, c.need.filter((m) => c.defs[m]?.shieldGen), false) }],
   farm: [
     { name: 'F1 greenhouse: beds on end down both long walls', weight: 1, when: (_, r) => r.h > r.w && r.w >= 4, rule: f1 },
-    { name: 'F3 farm floor: large beds half on each long wall, facing over the aisle', weight: 50, when: f3Fits, rule: f3 },
-    { name: 'F2 farm floor: small beds on end across the back, two tiles apart (too shallow for the large to lie two to a wall)', weight: 50, when: (n, r) => n.length > 0 && n.every((m) => m === HYL) && r.w >= 6 && r.h >= 3 && !f3Fits(n, r), rule: f2, swap: { [HYL]: HY } },
+    { name: 'F3 farm floor: beds half on each long wall, facing over the aisle', weight: 50, when: (n, r) => f3Fits(n, r), rule: f3 },
+    { name: 'F3s farm floor, small beds standing in where the large will not lie two to a wall', weight: 50, when: (n, r) => n[0] === HYL && !f3Fits(n, r) && f3Fits(n, r, HY), rule: f3, swap: { [HYL]: HY } },
   ],
   bridge: [
     { name: "CO chief's office, desk and planters", weight: 1, when: (n, r) => !n.includes('module.helm') && !n.some((m) => OPS.includes(m)) && r.w >= 5 && r.w <= 10 && r.h >= 4 && r.h <= 6, rule: co },
