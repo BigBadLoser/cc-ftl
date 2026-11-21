@@ -367,7 +367,7 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
     const k = (fr.maint?.guns.length ?? 0) + j, out = battery[site], inn = battery[k];
     if (out && inn && guns(out) > guns(inn)) { battery[site] = inn; battery[k] = out; }
   }
-  return { fr, lay, score: got?.score ?? Infinity, viable, nodes, why, pins: battery.length, sites: fr.maint?.guns.length ?? 0, battery, puts: got?.puts.length ?? 0 };
+  return { fr, lay, zone, score: got?.score ?? Infinity, viable, nodes, why, pins: battery.length, sites: fr.maint?.guns.length ?? 0, battery, puts: got?.puts.length ?? 0 };
 
   function toPieces(puts: Put[]): Piece[] {
     const part = (sp: Spot, spec: Specs, fill?: boolean): Part => {
