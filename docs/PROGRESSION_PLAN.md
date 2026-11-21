@@ -15,6 +15,11 @@ its blueprint is known.
   model per tier.
 - **Starting state:** the player starts knowing only the basic blueprints.
 
+**Status (2026-11-21):** phases 1, 2, 2b, 3, 4 and 5 are built (blueprints and tiers `content/tiers.ts`, research `content/research.ts`, faction standing and pirate
+factions, black-market services, weapon upgrade slots #338, shipyard refit and engine capacity with overcharge #134). Still planned: 6 (construction pods
+and drones; `module.pod_bay` is for mining pods only), 7 (implants, #311), 8 (story missions, #383). The text below is the original plan; the phases
+marked built are history.
+
 ## Phases
 
 **Build order (user decision, 2026-10-26):** 1 (plus the tier art pack), 3 (research), 5 (shipyard hull expansion),

@@ -14,9 +14,9 @@ These aren't features. They're the aims we use to choose which features to build
 
 Shipped and no longer listed: physical encounters, the UI consistency pass and prisoners ([#116](https://github.com/BigBadLoser/cc-ftl/issues/116)); see the [changelog](../CHANGELOG.md).
 
-- **Core loop: more to find per node.** One node-content table weighted by distance tier (no visible bands), with physical finds (small wrecks, probes, cargo pods, beacons, anomalies) that crew reach by shuttle or EVA, and some nodes left quiet on purpose. Loot and ore quality then scale with tier, and deep-only content follows later. Danger bands (#382) are folded in. ([#171](https://github.com/BigBadLoser/cc-ftl/issues/171))
+- **Core loop: more to find per node.** One node-content table weighted by distance tier (no visible bands), with physical finds (small wrecks, probes, cargo pods, beacons, anomalies) that crew reach by shuttle or EVA, and some nodes left quiet on purpose. Started: the node content table, four asteroid field kinds and lost cargo ([#517](https://github.com/BigBadLoser/cc-ftl/pull/517)) are in; probes, beacons and anomalies are not. Loot and ore quality then scale with tier, and deep-only content follows later. Danger bands (#382) are folded in. ([#171](https://github.com/BigBadLoser/cc-ftl/issues/171))
 - **Station assembly follow-ups.** The [station assembler](STATION_ASSEMBLY.md) generates stations and outposts on
-  `main`. See [project status](STATUS.md#in-progress) for remaining performance and validation work.
+  `main`. The generator, ground turrets, landing pads, station hull look and off-thread builds have shipped. See [project status](STATUS.md#in-progress) for what remains (#444, #561, soft-limit files, assembler tests).
   ([#460](https://github.com/BigBadLoser/cc-ftl/issues/460))
 
 ## Next

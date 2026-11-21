@@ -15,15 +15,15 @@ One line per section; read the index, then only the sections your task touches.
 - [Ship systems (M3 decisions)](#ship-systems-m3-decisions): Power: one network per ship for now, with module priorities deciding what loses power in a shortage; reactors burn energy crystals and battery banks store power (planned).
 - [Combat](#combat): FTL's decision-making with physical consequences, in a shared sector.
 - [Exploration & events](#exploration--events): Away teams board derelicts and stations (they're grids in the same world).
-  - [Salvaging derelicts (user decisions, 2026-11-01; not built yet)](#salvaging-derelicts-user-decisions-2026-11-01-not-built-yet): Salvage is one order from the inspector. The crew then run it on their own, like any other work.
+  - [Salvaging derelicts (user decisions, 2026-11-01; built)](#salvaging-derelicts-user-decisions-2026-11-01-built): Salvage is one order from the inspector. The crew then run it on their own, like any other work.
   - [Air, away sites and salvage (#286; built)](#air-away-sites-and-salvage-286-built): Rebuilds salvage on general systems: suit air as a crew drive (crew AI Phase 3), away sites with passage jobs, crew rotation and shuttle round trips; salvage becomes an away site plus its jobs. Issue #286.
 - [Starmap and factions](#starmap-and-factions): Galaxy: endless, generated in chunks as you push outward, shaped by a terrain of dense filaments, nebula...
 - [Economy](#economy): General model from day one: items with tags and stack sizes, storage, recipes (inputs, outputs,
-  - [New modules: comfort, medical, gear, food (user decisions, 2026-11-04; not built yet)](#new-modules-comfort-medical-gear-food-user-decisions-2026-11-04-not-built-yet): Arcade, recovery pod, workbench, water purifier, hydroponics crops and meals...
+  - [New modules: comfort, medical, gear, food (user decisions, 2026-11-04; built except the workbench, #320)](#new-modules-comfort-medical-gear-food-user-decisions-2026-11-04-built-except-the-workbench-320): Arcade, recovery pod, workbench, water purifier, hydroponics crops and meals...
   - [Trade](#trade): Credits are a separate currency, shown in the top bar. You can also barter: items for items, no credits.
-- [Progression (user decisions, 2026-10-26; not built yet)](#progression-user-decisions-2026-10-26-not-built-yet): Depth should pay off: better gear, a bigger ship and new stories come from going further out, so credits...
+- [Progression (user decisions, 2026-10-26; blueprints, tiers, research and refits built; implants and construction pods not)](#progression-user-decisions-2026-10-26-blueprints-tiers-research-and-refits-built-implants-and-construction-pods-not): Depth should pay off: better gear, a bigger ship and new stories come from going further out, so credits...
   - [Core loop direction (user decisions, 2026-11-08; issue #52)](#core-loop-direction-user-decisions-2026-11-08-issue-52): Emergent goals, research over buying plus drop-only loot, danger is distance, no empty nodes, escape pods later. Each gets its own design discussion.
-  - [Weapon upgrades and flak (user decisions, 2026-11-04; not built yet)](#weapon-upgrades-and-flak-user-decisions-2026-11-04-not-built-yet): Upgrades are items slotted into ship weapons, one slot each...
+  - [Weapon upgrades and flak (user decisions, 2026-11-04; built, #338)](#weapon-upgrades-and-flak-user-decisions-2026-11-04-built-338): Upgrades are items slotted into ship weapons, one slot each...
   - [Drones (user decisions, 2026-11-04; slice 1, inside the ship, built)](#drones-user-decisions-2026-11-04-slice-1-inside-the-ship-built): Small flying robots run by the AI core, inside and out: defence, repair and medic...
   - [Where blueprints are sold (user decision, 2026-10-26)](#where-blueprints-are-sold-user-decision-2026-10-26): Each station type has its own reason to visit:
   - [Pirate factions and the black market (user decisions, 2026-10-26 and 2026-10-27; the factions (slice 1, #135) and the black-market services (slice 2, #136) are built; spawning the named markets is not)](#pirate-factions-and-the-black-market-user-decisions-2026-10-26-and-2026-10-27-the-factions-slice-1-135-and-the-black-market-services-slice-2-136-are-built-spawning-the-named-markets-is-not): Today there is one pirate faction (the Scrappers) and the pirate den, a hostile station built to be...
@@ -38,7 +38,7 @@ One line per section; read the index, then only the sections your task touches.
   - [Combat view (user decisions, 2026-10-29)](#combat-view-user-decisions-2026-10-29): It replaces the colony HUD during a fight: the nav strip, node strip, drawers, build tools, inspector and...
   - [UI soft rules (user decisions, 2026-10-28)](#ui-soft-rules-user-decisions-2026-10-28): These are soft rules. They set the default direction. An agent or session should always feel free to suggest
   - [Trade window and station panel (user decisions, 2026-11-05; built)](#trade-window-and-station-panel-user-decisions-2026-11-05-built): one floating trade window for every partner; the station panel as an open comms channel with a contact per service and a live sensor view.
-  - [Boarding in ship combat (user decisions, 2026-10-29; not built yet)](#boarding-in-ship-combat-user-decisions-2026-10-29-not-built-yet): The sim already boards both ways (shuttle, dock at an airlock, crew fight aboard, hold the bridge to...
+  - [Boarding in ship combat (user decisions, 2026-10-29; built except the teleporter)](#boarding-in-ship-combat-user-decisions-2026-10-29-built-except-the-teleporter): The sim already boards both ways (shuttle, dock at an airlock, crew fight aboard, hold the bridge to...
   - [Lessons: the tutorial system (user decisions, 2026-10-29)](#lessons-the-tutorial-system-user-decisions-2026-10-29): The goal chain (src/sim/story/goals.ts) says what to do next; lessons teach how a feature works. They are a
 - [Open questions](#open-questions): Mood and breakdown severity.
 - [Generated ships](#generated-ships): Enemy ships are generated at encounter time from a faction (src/content/factions/.ts, satisfies FactionDef).
@@ -150,7 +150,7 @@ Cybernetic implants are everywhere. Neon is both mood and information.
 - **Species** are base bodies (organic, synthetic, hybrid) with real sim effects (no breathing, fire
   resistance, fast repair…). **Implants** add on top, with trade-offs: power draw, maintenance,
   stability, vulnerability to EMP/ion and hacking.
-- Relationships (friends, rivals, grief) later.
+- Relationships (friends, rivals, grief): built (#239; see the crew catalog).
 
 ### Schedules (#412, user decisions 2026-11-09)
 
@@ -367,9 +367,9 @@ FTL's decision-making with physical consequences, in a shared sector.
 - Event pools are weighted by danger tier and faction territory (the current node's, set on every jump).
 - **Presentation:** a signal pauses in a small window; flavour and optional leads arrive in-world and can be ignored.
 
-### Physical encounters (user decisions, 2026-11-03; not built yet)
+### Physical encounters (user decisions, 2026-11-03; built, #173)
 
-Issue #173. Build after #287, which generalises away-site owners. Scenes replace the stubbed `physical` outcome.
+Issue #173. Built (scenes in `src/sim/scene`, rules in `content/sceneRules.ts`); the text below is the design it followed.
 
 **Principle: emergent objectives.** The game creates situations, constraints and opportunities, and the player decides what to do.
 An encounter is a part of a living world, not a quest dressed as a scene. The scene says what exists and under what conditions.
@@ -501,7 +501,7 @@ scripts. Not every scene has one.
   encounter may add or override a rule when it has a reason (robbing the pirate you once spared sets a "betrayed" flag). The world
   reacts the same way to the same action wherever it happens.
 
-### Salvaging derelicts (user decisions, 2026-11-01; not built yet)
+### Salvaging derelicts (user decisions, 2026-11-01; built)
 
 Rebuilt on general systems (#286): see [Air, away sites and salvage (#286; built)](#air-away-sites-and-salvage-286-built). The salvage teams below are what #277 built; since #286 slice 3 an away site does their work.
 
@@ -777,7 +777,7 @@ Built in slices 2a and 2b (#295); ARCHITECTURE.md "Away sites and the air drive"
 - **Standing** = base standing + reputation + a share of reputation with related factions. Reputation is kept per faction (`navy`,
   `meridian`, `helix`, `vantor`, `traders`, `pirates`, `drones`), the same numbers trade prices and hailing use (a station or ship
   trades on its owner's standing). Hostile below -2, friendly from 3. Who is at war and who shares standing is a pairwise table.
-- **The starmap view** (not built on `main` yet) has three zoom levels: **sector** (nodes, routes, exits, bodies, nebula), **cluster**
+- **The starmap view** (built, PixiJS, #124) has three zoom levels: **sector** (nodes, routes, exits, bodies, nebula), **cluster**
   (sectors as patches, for planning a route) and **galaxy** (clusters joined by gates and rift lanes).
 
 ## Economy
@@ -789,7 +789,7 @@ Built in slices 2a and 2b (#295); ARCHITECTURE.md "Away sites and the air drive"
 - **Terminology:** a **node** is one playable grid or location, a **sector** is a group of nodes, a **cluster** is a group of
   sectors, and sectors are linked by **hyperlanes**.
 
-### New modules: comfort, medical, gear, food (user decisions, 2026-11-04; not built yet)
+### New modules: comfort, medical, gear, food (user decisions, 2026-11-04; built except the workbench, #320)
 
 Every new module feeds a system that already exists and changes play. None is decoration.
 
@@ -840,7 +840,7 @@ Every new module feeds a system that already exists and changes play. None is de
   voids the deal (credits back, goods lost).
 - Stations have no grid yet, so their deliveries are instant (temporary).
 
-## Progression (user decisions, 2026-10-26; not built yet)
+## Progression (user decisions, 2026-10-26; blueprints, tiers, research and refits built; implants and construction pods not)
 
 Depth should pay off: better gear, a bigger ship and new stories come from going further out, so credits are worth saving
 and risk is worth taking.
@@ -848,7 +848,7 @@ and risk is worth taking.
 - **Where better gear comes from:**
   - **Bought:** station markets sell better gear in higher danger tiers.
   - **Salvaged:** tougher wrecks sometimes yield gear (a maybe, not the main source).
-  - **Research:** a planned research system (see below).
+  - **Research:** the research module and projects (built, #97; see below).
 - **What gets tiers:**
   - **Weapons:** only simple weapons at the start; better ones come with progress. Full weapon tiers may come later.
   - **Shield generators, engines, reactors:** tiered.
@@ -925,7 +925,7 @@ Each point below gets its own design discussion before it is built.
 - **Losing the ship:** plan for escape pods (survivors reach a station with a worn starter hull, and the wreck can be
   salvaged back). Not urgent.
 
-### Weapon upgrades and flak (user decisions, 2026-11-04; not built yet)
+### Weapon upgrades and flak (user decisions, 2026-11-04; built, #338)
 
 Upgrades are items slotted into ship weapons. Build plan: PROGRESSION_PLAN step 4.
 
@@ -1180,7 +1180,7 @@ are unchanged. After the answer the window stays open with how it ended and the 
     airlock, where no shuttle is sent).
   - **Releasing a frozen prisoner (built, #116):** the slab is opened (the empty slab stays in its slot or on the floor) and the release is the same
     as before sealing: they leave, and the faction they were taken from gains standing. A slab on a cart or in a shuttle is released once it is set down.
-- **Look study: stasis slab and stasis wheel (user decisions, November 2026; the sim is built, the art not yet wired in).** The
+- **Look study: stasis slab and stasis wheel (user decisions, November 2026; the sim and the art are built: `render/stasisArt.ts`, manifest entries).** The
   sprites are a preview-only Blender family (`slab`, `tools/blender/sprites/slab_*.py`), not in the manifest.
   - **The slab:** a prisoner travels as a stasis slab, a two-tile item crew cart around. A steel-framed face (unlit,
     a screen) with the prisoner's crew sprite pressed into it by a shader, cyan field lines in the side channels, heavy
@@ -1409,10 +1409,10 @@ window. It is a floating window that can be moved and pinned, not a modal, so it
 - **Art:** the hologram is the station's 48px starmap icon, scaled up and tinted cyan with scanlines in code
   (`StationSensors.svelte`). The user preferred it to dedicated hologram sprites (2026-11-08), so none are planned.
 
-### Boarding in ship combat (user decisions, 2026-10-29; not built yet)
+### Boarding in ship combat (user decisions, 2026-10-29; built except the teleporter)
 
-The sim already boards both ways (shuttle, dock at an airlock, crew fight aboard, hold the bridge to capture). The combat
-HUD from #184 does not show or drive it. Offence is the focus; defence stays automatic (crew fight boarders, the player
+The sim boards both ways (shuttle, dock at an airlock, crew fight aboard, hold the bridge to capture), and the combat HUD drives it
+(`ui/combat/BoardPicker.svelte`, `BoardingCard.svelte`; boarding HUD #214, #226; sabotage orders in `sim/boarding/sabotage.ts`). Only the teleporter below is not built. Offence is the focus; defence stays automatic (crew fight boarders, the player
 drafts) and only gains visibility: an alert when boarders dock and intruder marks on the inset.
 
 - **Launch from the HUD.** A BOARD action (B) opens a party picker: the shuttle and its seats, crew with weapon and
