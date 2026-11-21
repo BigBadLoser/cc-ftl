@@ -64,12 +64,12 @@ function program(plan: ShipPlan, defs: Record<string, ModuleDef>, inBattery: num
   // (A lane hull's escape pods: one room of four, two bays long.)
   const pods: RoomSpec[] = hangars ? [] : [{ ...fillerSpec('pods', 64), mods: Array<string>(4).fill('module.pod_bay'), w: 14, h: 4 }];
   // (Mirrored, the point defence is its pair of turrets only: the plan's own room goes.)
-  // (Mirrored, on a lane hull's single-tier side hulls: an annex (the pantry) is part of its host; the med bay keeps its
-  // trauma room behind it, in stores' forward bays.)
+  // (Mirrored, on a lane hull's single-tier side hulls: an annex (the pantry) is cut three wide from its host's end; the
+  // med bay keeps its trauma room behind it, in stores' forward bays.)
   const own = (r: RoomSpec): RoomSpec => {
     if (!mirror || !r.annex || r.role === 'medbay') return r;
     const { annex, ...host } = r;
-    return { ...host, mods: [...r.mods, ...annex.mods], w: r.w + Math.ceil((annex.w * annex.h) / r.h) };
+    return { ...host, beside: { ...annex, w: 3 }, w: r.w + 4 };
   };
   const singles = [...lone.filter((r) => !(mirror && r.mods.every((m) => m === 'module.pointDefense'))), ...cores, ...plan.quarters.filter((q) => !q.block), ...plan.support.filter((r) => !(mirror && r.role === 'plant')).map(brig).map(mess).map(own), ...plan.cargo.map(brig).map(racked), ...(hangars ? plan.hangars : pods)];
   const items: Item[] = blocks ? cabinPairs.map((p) => ({ specs: [p[0], p[1]], both: true, cabins: true })) : [];

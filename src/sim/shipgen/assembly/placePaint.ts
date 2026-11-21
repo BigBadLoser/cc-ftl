@@ -66,6 +66,9 @@ export function paintPlaced(plan: ShipPlan, { fr, lay, battery }: Placed): Regio
         // hull at a short end where a corridor is.)
         const id = g.room(h.role, { spec: h, ...(access ? { access } : {}), ...(fr.lane ? (!q.row ? { doorAlong: 'x' as const } : h.role === 'cargo' ? { doorAlong: 'y' as const } : {}) : {}) });
         paint(id, q.x0, q.x1, (y) => rows(q, d(y)));
+        // (A room cut from its stern end, entered only through it: the mess's pantry.)
+        const cut = h.beside;
+        if (cut && q.x1 - q.x0 >= cut.w + 6) paint(g.room(cut.role, { spec: cut, access: [id] }), q.x1 - cut.w, q.x1, (y) => rows(q, d(y)));
         return id;
       }) as [number, number];
       front.set(q, ids); frontOf.set(q, ids);

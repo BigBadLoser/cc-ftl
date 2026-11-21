@@ -78,6 +78,8 @@ export interface RoomSpec {
    * (a mess's pantry).
    */
   annex?: RoomSpec;
+  /** A room cut from this room's own end, entered only through it (a lane hull's pantry off its mess, #581). */
+  beside?: RoomSpec;
   /** The station assembly: set on an annex as it is laid in a row, right after its room. */
   annexed?: boolean;
 }
