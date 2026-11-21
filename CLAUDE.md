@@ -146,6 +146,7 @@ see `docs/STATUS_ARCHIVE.md` and the October handoff snapshot in `docs/HANDOFF.m
     builds on, decisions the user's requirements hinge on, tricky reviews or fixes). Delegate what is well scoped and
     can be checked from a report.
   - Subagents default to Sonnet, which handles most well-scoped work.
+  - No subagents for art (sprites, Blender, art prompts): the main session does art work itself (user, 2026-11-21).
   - Keep one Opus agent (the `opus-fixer` type in `.claude/agents`, 1-hour cache) open for bug fixes and work that
     really needs Opus, and reuse it by message rather than starting new ones, so its cache isn't rebuilt every time. Use
     it only when Opus is needed, and tell the user when it gets a task. Other subagents keep the 5-minute cache.

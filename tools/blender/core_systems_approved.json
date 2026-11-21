@@ -4,22 +4,6 @@
   "currentMainVerified": "71d83c23953eda87b5f7cb0a77a45c8b63d73156",
   "renderCoreUnchangedOnMain": true,
   "files": {
-    "palette.json": "702f0f4388bf6badf4a9a761be077b04c59e6f2538c20c6907215f3ab2718495",
-    "tools/blender/palette_extra.json": "c54912d2f9c002f7c187c821ec394a82a73b61f13e9b2b35f80230e582790544",
-    "tools/blender/setup.sh": "4f7322b7749a263fb975bf298d476d0f33d189fc804518515c55c622bc04530b",
-    "tools/blender/lib/palette.py": "277815512ad48dcb2bcf877530358f9963788bfa80edf5e0d977feee4c6edcc4",
-    "tools/blender/sprites/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "tools/blender/sprites/core.py": "2ed9454ce078ca273ac90e0abf5e1de35f1bb7854ad0fe56d30c387a70d2709a",
-    "tools/blender/sprites/post.py": "5c66a0b568b6585e6362f3324c2833398bb7d27fdd03c67c1f7eb27c4aef336a",
-    "tools/blender/sprites/scale.py": "e98bfd8dcd64b0447c81326d9fb714d8252d54339364a71219a0b987b29d68c4",
-    "tools/blender/sprites/cmbkit.py": "d2738e9018985d8588752612660599a50037a18489b750b011760e117839b3e4",
-    "tools/blender/sprites/damage.py": "3cf057b6be7b8e2536890f39f931f688e40a60d81394df66463b7dbd8b333637",
-    "tools/blender/sprites/env_build.py": "b0d78affcd3adc33f5fa8e9df856ef7bbfbcaeca3dd7d1946cf1db8f7ccd7e8e",
-    "tools/blender/sprites/pack.py": "1e4b478f6aba0a57e3818d0d7bfc7091f2b3cb3b3046c3adefcc5bcbb7bb42fb",
-    "tools/blender/sprites/pod_muzzle.py": "cf7e803aafb5bc02fd1d346cbbd188c4e916c114b537c53b1df99115de69cf89",
-    "tools/blender/sprites/geom_digest.py": "4dd3aa5747743b18c2961d62705de52c7beeb27dc0565f3786e001da141ad278",
-    "tools/blender/sprites/sprite_cache.py": "151b38c6b06b33644d545a0d25340727eddf6c9fd84f656165de883f2a59dc3c",
-    "tools/blender/sprites/crew_cache.py": "b6d3df7567c0ef8a4e9de6f08d2942286f705909673dce2fa6c7fe8247f2a658",
     "tools/blender/sprites/core_systems_blockout.py": "52b45c543be6209f907078ddd90d8171f07a6fac86db0a453a8a551d1679919b",
     "tools/blender/sprites/core_systems_detail.py": "216a4439ed99d4c568aef0489c51f8c7c8109d99c17180c0cae340eee203a606",
     "tools/blender/sprites/core_systems_finish.py": "7b41d5e7abc346e66bf9e19405b97cf7557fa6fb0a599ec21bbfa9bbcedad9ca",
@@ -72,24 +56,6 @@
     "artifacts/core-systems-damage/frames/life_support.r0.destroyed.png": "7bcefb3cae57905d8acaa6ea13220dfca8dd9c10fb3d7e9b96675deb9763467f",
     "artifacts/core-systems-damage/frames/life_support.r0.destroyed.glow.png": "118b259ff92bff2fc7a69d9da4b5ede91219f9c05d8376b6c3ac7480c7a7e623"
   },
-  "pipelineFiles": [
-    "palette.json",
-    "tools/blender/palette_extra.json",
-    "tools/blender/setup.sh",
-    "tools/blender/lib/palette.py",
-    "tools/blender/sprites/__init__.py",
-    "tools/blender/sprites/core.py",
-    "tools/blender/sprites/post.py",
-    "tools/blender/sprites/scale.py",
-    "tools/blender/sprites/cmbkit.py",
-    "tools/blender/sprites/damage.py",
-    "tools/blender/sprites/env_build.py",
-    "tools/blender/sprites/pack.py",
-    "tools/blender/sprites/pod_muzzle.py",
-    "tools/blender/sprites/geom_digest.py",
-    "tools/blender/sprites/sprite_cache.py",
-    "tools/blender/sprites/crew_cache.py"
-  ],
   "modelFiles": [
     "tools/blender/sprites/core_systems_blockout.py",
     "tools/blender/sprites/core_systems_detail.py",
@@ -728,5 +694,6 @@
       "team.cloth": "#ffff00",
       "team.accent": "#00ffff"
     }
-  }
+  },
+  "note": "Locks the approved frames and the core-systems model files. The shared sprite pipeline is not locked: it keeps changing on main (#597)."
 }

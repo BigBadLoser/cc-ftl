@@ -12,6 +12,7 @@ One line per section; read the index, then only the sections your task touches.
   - [Schedules (#412, user decisions 2026-11-09)](#schedules-412-user-decisions-2026-11-09): A 24-hour ship clock (a game hour is 40 s), 24 hour blocks per crew member (Any, Work, Sleep, Free) with presets, emergency overrides, away trips go on duty and come home for Sleep (Free on a site: work on, home at the first chance).
   - [EVA and spacesuits](#eva-and-spacesuits): Suits live at the airlock, no locker or suit item, and no suit limit (#416): any airlock or shuttle has one for whoever needs it...
   - [Robots and the rogue AI](#robots-and-the-rogue-ai): Robots are not crew, androids will be. A robot is a moving module run by its ship's AI core: not an...
+  - [Injuries and cyberware (user decisions, 2026-11-21; #311)](#injuries-and-cyberware-user-decisions-2026-11-21-311): Ten body parts feeding capacities as stat modifiers, injuries by source, first aid, treatment and surgery (med bed or surgery table), implants as items per part with tiers, Purist and Chrome moods.
 - [Ship systems (M3 decisions)](#ship-systems-m3-decisions): Power: one network per ship for now, with module priorities deciding what loses power in a shortage; reactors burn energy crystals and battery banks store power (planned).
 - [Combat](#combat): FTL's decision-making with physical consequences, in a shared sector.
 - [Exploration & events](#exploration--events): Away teams board derelicts and stations (they're grids in the same world).
@@ -265,6 +266,97 @@ the user picks from mocks) and a HUD clock come later.
   - AI-faction derelicts are rogue AI shipyards and factories (fabricators, cores, robots).
 - **Combat drones** (a launched weapon class) come later. They will build on the AI core's tier and the EMP effect.
 
+### Injuries and cyberware (user decisions, 2026-11-21; #311)
+
+Lasting harm on top of HP, and implants that replace or improve body parts. Between "a few body parts" and RimWorld:
+eyes and the main organs are parts, fingers are not.
+
+- **Body map: ten parts.** Head: brain, left eye, right eye. Torso: heart, lungs, spine. Limbs: left arm, right arm,
+  left leg, right leg. Each part has a condition 0..1 that its injuries lower. No gut (user, 2026-11-21).
+- **Capacities.** Parts feed capacities, and capacities become stat modifiers under an `injury` origin of the stat
+  resolver (so the inspector breakdown names them):
+  - **Manipulation** (arms): work speed, melee, construction, industry, cooking.
+  - **Moving** (legs, spine): move speed, carry capacity.
+  - **Sight** (eyes): gunnery, melee accuracy, science. One eye lost costs part of it, both most of it.
+  - **Consciousness** (brain): every skill and work speed; very low knocks the crew member out.
+  - **Breathing** (lungs): suit air lasts less, exertion slows.
+  - **Blood pumping** (heart): bleed-out time, healing speed.
+- **Where injuries come from.** HP stays the pool. A hit over a threshold also makes an injury on a part rolled from
+  the source's weights: bullets mostly torso, blades and blows arms and head, shrapnel and blasts spread, fire burns
+  several parts, vacuum lungs and eyes. Going down always adds one serious injury. Seeded RNG, so replays hold.
+- **Severity ladder.**
+  1. Bruise, cut, burn: heals on its own. Fresh cuts and punctures bleed slowly.
+  2. Fracture, deep burn, concussion, organ damage: heals only once treated; untreated it may set as a permanent
+     scar (a small lasting loss on the part).
+  3. Destroyed: a limb or eye is lost. A destroyed vital organ (brain, heart, lungs) downs the crew member, who dies
+     without surgery in time. Only cyberware restores a lost part.
+- **Care tiers.**
+  - **First aid:** in place, by any crew with the Medical priority or the medic drone. Stops bleeding. Crew can now
+    bleed while standing, not only when downed.
+  - **Treatment:** at a medical bed; the medic's Medicine skill and the supplies used set the healing quality.
+  - **Recovery pod:** speeds healing of treated injuries; no surgery.
+  - **Surgery:** below.
+- **Surgery.** A medical bed can operate at higher risk; a new **surgery table** module lowers the risk and is needed
+  for brain and spine work. Operations: repair an organ, amputate a destroyed limb, fit or remove an implant. Success
+  comes from the surgeon's Medicine, the bed or table, the supplies and the operation's difficulty. A failure injures
+  the part; a bad failure destroys it. Surgery never kills outright, but bleeding afterwards can.
+- **Implants are items** (`ItemDef.implant`: slot, tier, modifiers; the weapon-upgrade pattern), one per part.
+  Replacements: cyber arms, legs, eyes, lungs, heart. Augments that keep the flesh part: neural chip (brain), spine
+  reinforcement, dermal armour (the dermal slot, see the table).
+  - **Tiers:** Mk I a crude prosthetic (about 80% of flesh), Mk II flesh plus a little, Mk III clearly better; unique
+    implants are found only, with special effects. Basic ones are researched (#380), higher tiers bought or found.
+  - **Implant load** (summed cyber points) measures "heavily augmented" for the zealot rule (`augmentedCrew()`).
+    Zealot crews spawn as humans with implants and `species.augmented` is retired.
+- **Implant table (first pass, draft for the user to edit, 2026-11-21).** Numbers are starting points for tuning.
+  Capacity values are the part's contribution against flesh = 1.0. Load is the implant's cyber points.
+  Slots are the ten parts plus one **dermal** slot (skin, body-wide, no flesh part).
+
+  | Implant | Slot | Mk I | Mk II | Mk III | Load I/II/III |
+  |---|---|---|---|---|---|
+  | Cyber arm | arm (L or R) | manipulation 0.8 | 1.0, melee +1 | 1.2, melee +2, carry +2 | 1 / 2 / 3 |
+  | Cyber leg | leg (L or R) | moving 0.8 | 1.0 | 1.15 | 1 / 2 / 3 |
+  | Cyber eye | eye (L or R) | sight 0.8 | 1.0, gunnery +1 (a pair: +2) | 1.1, no darkness penalty | 1 / 2 / 3 |
+  | Cyber lungs | lungs | breathing 0.8 | 1.0, suit air x1.25 | 1.0, suit air x1.6, no thin-air work penalty | 1 / 2 / 3 |
+  | Cyber heart | heart | blood pumping 0.8 | 1.0, bleed-out x1.5 | 1.0, bleed-out x2, healing x1.5 | 1 / 2 / 3 |
+  | Spinal frame | spine | moving 0.8 (restores a destroyed spine) | 1.0, carry +2 | - | 2 / 3 |
+  | Neural chip | brain (augment) | +1 to one skill (one item per skill) | +2 to one skill | co-processor: +1 every skill, work x1.05 | 1 / 2 / 3 |
+  | Reflex booster | spine (augment) | - | move x1.1, melee +1 | move x1.15, melee +2 | - / 2 / 3 |
+  | Dermal armour | dermal | armor 0.05 | armor 0.1 | armor 0.15 | 1 / 2 / 3 |
+
+  - **No cyber brain.** A destroyed brain is death. Augments sit beside the flesh part; a replacement takes its place
+    (fitting one onto a healthy part removes the flesh, so it is a choice).
+  - **Where they come from.** Mk I of the arm, leg, eye, lungs, heart and neural chip: researched, then made at the
+    fabricator from parts and components. Mk II: bought at research stations and corporation stations (Helix
+    Biosystems' speciality), and researched later. Mk III: black market and found. Reflex booster and dermal armour
+    Mk II-III are military: contraband, and carried by navy and mercenary crews.
+  - **Unique implants (found only, examples):** *Halcyon Heart* (bleed-out x4, healing x2), *Ghost Eye* (sees enemy
+    crew through roofs within a few tiles), *Grip Hands* (a cyber arm, work x1.3 on EVA). Zealot relics drop from
+    zealot crews.
+  - **Heavily augmented** = load 6 or more. Zealots trade on standing or on enough heavily augmented crew. Zealot crews
+    spawn with a random load of 4-9.
+  - **Ion:** an ion hit on a crew member shuts every implant down for about 2 s per load point, capped (a shut-down
+    replacement counts as a destroyed part meanwhile; augments just stop).
+  - **Moods:** Purist -4 per implant on themselves, -2 near crew at load 6+; Chrome +2 per load point up to +8,
+    and -3 while at load 0. Anyone: "lost a limb" -10 fading over two days.
+- **Trade-offs.**
+  - **Trait moods:** a *Purist* trait hates implants on themselves and dislikes crew with many; a *Chrome* trait is
+    proud of theirs and wants more. Losing a part is a mood hit for a while for anyone.
+  - **Surgery risk** (above).
+  - **Ion and EMP** (suggested): an ion hit shuts implants down for a few seconds (cyber eyes go blind, cyber legs lock).
+  - **Repair, not medicine** (suggested): damaged cyberware is mended by the Repair skill with parts (the robot `mend`
+    job), so engineers are the cyber-docs.
+  - **Contraband** (suggested): military-grade implants are contraband that inspections find on your crew.
+  - Hacking risk later, once hacking exists.
+- **Slices.**
+  1. Injury core (sim): body map, capacities and modifiers, injury sources, bleeding and first aid, med-bed treatment,
+     natural healing and scars, log lines, a plain injury list in the inspector, `?scenario=injuries`, wiki page.
+  2. Surgery and implants (sim, #311): surgery job and risk, surgery table (placeholder art first), implant defs,
+     fit and remove, ion effects, cyber repair, Purist and Chrome, zealots on implants (`SAVE_VERSION` bump), research
+     and station stock.
+  3. Visuals: a Health tab with a body diagram (static mocks first), crew art for missing and cyber limbs and eyes,
+     surgery table art, implant icons.
+  4. Later: a station clinic service, contraband implants, hacking.
+
 ## Ship systems (M3 decisions)
 
 - **Power:** one network per ship for now, with module priorities deciding what loses power in a
@@ -293,7 +385,8 @@ the user picks from mocks) and a HUD clock come later.
 - **Atmosphere:** per tile, with gas spreading between tiles. Doors block gas when closed. Floor tiles
   next to space vent.
 - **Injury:** at 0 HP a crew member is **downed** and bleeds out on a timer. Another crew member can
-  carry them to a bed to stabilise them. If the timer runs out, they die permanently.
+  carry them to a bed to stabilise them. If the timer runs out, they die permanently. Lasting injuries on body parts:
+  see "Injuries and cyberware" under Crew.
 - The **economy** (items, storage, hauling, build costs) is its own milestone (M3b).
 
 ## Combat
@@ -709,7 +802,7 @@ Built in slices 2a and 2b (#295); ARCHITECTURE.md "Away sites and the air drive"
   drop), so the first trip already has a hauling seat.
 - The panel's "no shuttle" and "no crew" come from the site (no free shuttle with suits; passages open but untaken for a while).
 - The wreck stays until the party has left its side, then goes as today.
-- **Throughput.** Scrap brought home per game hour is held to the bench's baseline (ARCHITECTURE.md "Away sites and the air drive", "Throughput check"). With staging (slice 3) it was re-based: 6 crew bring home about 380 units a game hour (the salvage teams: about 370), and more crew is never slower.
+- **Throughput.** Scrap brought home per game hour is held to the bench's baseline (ARCHITECTURE.md "Away sites and the air drive", "Throughput bench"). With staging (slice 3) it was re-based: 6 crew bring home about 380 units a game hour (the salvage teams: about 370), and more crew is never slower.
 
 #### How the general design covers each salvage special case
 

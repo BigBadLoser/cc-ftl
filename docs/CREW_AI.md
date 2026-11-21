@@ -538,6 +538,6 @@ Planned as three PRs: (A) the engine and `policies` content with Phase 2-equival
 - Refill nests through the errand's `resume`: the job stays reserved and resumes when the tank is full.
 - Critical (`urgent.below` 500, `breaksFinish`) sets a carried patient down.
 - A blocked drive (`onMissing: 'block'`) raises the pickup request (`PickupC`, alert `crew.airUnreachable`).
-- See ARCHITECTURE.md "Slice 1 is built".
+- See ARCHITECTURE.md "Away sites and the air drive" (slice 1).
 
 **The return drive (#286 slice 2a).** `return` (after `air` in `policy.colonist`) reads `awayReturn` (away/crew.ts) and walks an away crew member to their site's shuttle and floats them aboard (`ai/machines/return.ts`). Its due line (rest 25, hunger 35, charge 30) sits above sleep, eat and charge, which never lie down on the site; robots have it too (`policy.robot`), since a need a crew member lacks is satisfied. Riders and pickups read 0 (slice 2b). See ARCHITECTURE.md "Slice 2a is built" and "Slice 2b is built".

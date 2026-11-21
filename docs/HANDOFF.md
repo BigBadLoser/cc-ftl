@@ -32,7 +32,7 @@ The refactor's `SectorGrid` is really the node grid. It gets renamed after rende
   - steps 1–4: `SectorGrid` chunks, windows, the field systems per region, the owner layer, the gap rule;
   - step 8: vehicles as `BodyC`.
 
-  The plan is in the [historical sector-grid migration notes](ARCHITECTURE.md#historical-sector-grid-migration).
+  The plan is in the [historical sector-grid migration notes](STATUS_ARCHIVE.md#historical-sector-grid-migration).
   There are no save migrations: bump `SAVE_VERSION`.
 
 ## Branches waiting on the user (pushed, not merged)
