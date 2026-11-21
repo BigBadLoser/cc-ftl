@@ -61,6 +61,7 @@ Player-facing changes, newest first. Each dated entry is a deploy of the live ga
 
 ### Changed
 
+- Door vents now start open on every new door, so air evens out across the ship by default; they still shut by themselves on fire, smoke, bad air, heat, cold or a power loss. Airlock doors have no vent. ([#592](https://github.com/BigBadLoser/cc-ftl/pull/592))
 - Breathing: crew now use up oxygen faster than they breathe out CO₂, so a ship without life support runs low on oxygen first, with about an hour of warning before the air starts to hurt. Air also costs less to simulate again, so busy stations and fleets run lighter. ([#589](https://github.com/BigBadLoser/cc-ftl/pull/589))
 - Air costs less to simulate: each ship's air updates in batches a few times a second instead of every moment, so large ships and stations run lighter. Life support still tops up a breached room as before. ([#570](https://github.com/BigBadLoser/cc-ftl/pull/570))
 - Enemy engines: generated ships now carry enough engines to move their hull, as your ship must, so most NPC ships have more engines than before and are harder to hit, early raiders most of all. Every node is now at least 200 tiles tall (older saves too), so big arrivals have room to appear, and stations sit a little lower in their node. ([#568](https://github.com/BigBadLoser/cc-ftl/pull/568))
