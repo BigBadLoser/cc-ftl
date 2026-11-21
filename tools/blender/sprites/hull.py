@@ -14,7 +14,7 @@ import math
 
 from . import core
 from . import wallart as A
-from .walls import BEV, CURVE, DROP, DZ, GN, ZG, Spec, emit, half_cell
+from .walls import SHELF_CELLS, BEV, CURVE, DROP, DZ, FOOT_PX, GN, RAMP_CELLS, RAMP_PX, ZART, ZG, Spec, emit, half_cell
 
 C = 1 / GN
 ZB = DROP - CURVE          # straight part of the belly below the deck
@@ -23,8 +23,8 @@ CH = 0.07                  # that chamfer's size
 STEP_DEPTH = (0.0, 0.12, 0.2, 0.05)   # extra depth per quarter tile: a broken lower silhouette
 
 
-ZGR = ZG                  # rear ghost crest height: the same as the front rim, so the two meet flush at corners
-RUNG = ZGR / math.tan(math.radians(55))   # its slope toward the room at 55 deg (13.webp: an ~19 px band)
+# The rear ghost (o 0) traces a partition's low stub (walls.py: the skirt on the pixel grid): an upright foot at the room
+# side, the ramp up from it RAMP_CELLS cells to the skirt's top, flat behind its crest to the hull's back.
 
 
 class Out(Spec):
@@ -34,6 +34,7 @@ class Out(Spec):
         self.mask, self.o, self.variant, self.part, self.room = mask, o, variant if o in (1, 2) else 0, part, room
         self.corners = corners
         self._lines = None
+        self.tee = not o and (mask & 14 == 14 or mask & 7 == 7)     # rear ghost: a partition meets it (a T)
         self.drop_y = bool(o & 1) and o != 4
         self.drop_x = bool(o & 2) and o != 4
         self.open_y = self.drop_y or not mask & 4
@@ -51,6 +52,8 @@ class Out(Spec):
         self.foot = ZG - BEV
 
     def cover(self, i, j):
+        if not self.o and self._inner((i + 0.5) / GN - 0.5, (j + 0.5) / GN - 0.5) * GN > RAMP_CELLS - SHELF_CELLS:
+            return None                     # the rear ghost ends at its ramp's top: nothing behind it
         return half_cell(self.keep, i, j)
 
     def dist(self, x, y):
@@ -77,11 +80,16 @@ class Out(Spec):
             d.append(x + 0.5)
         if m & 6 == 6 and not self.corners & 2:
             d.append(max(0.5 - x, 0.5 - y))
+        if m & 14 == 14 and not self.corners & 4:          # a partition off a run along x (an arm off a straight hull
+            d.append(max(x + 0.5, 0.5 - y))                # run is a partition): rooms both sides of it, a T
+        if m & 7 == 7 and not self.corners & 1:            # ... off a run along y
+            d.append(max(0.5 - x, y + 0.5))
         return min(d)
 
     def topz(self, x, y):
         if not self.o:
-            return ZGR * min(1.0, max(0.0, self._inner(x, y)) / RUNG)
+            d = self._inner(x, y)
+            return 0.0 if d <= 0 else (FOOT_PX + RAMP_PX * min(RAMP_CELLS - SHELF_CELLS, d * GN)) / ZART
         return ZG - max(0.0, BEV - self.dist(x, y))
 
     def _s(self, x, y):
@@ -133,16 +141,15 @@ class Out(Spec):
                     v = 0
                     for da, db in ((1, 0), (0, 1)):
                         n = K[a + da][b + db] if a + da < GN and b + db < GN else k
-                        if n is not None and n != k and "flat" in (k, n):
+                        if n is not None and n != k and "flat" in (k, n) and not self.tee:
                             v = max(v, 2)                              # crest; slope-to-slope mitres stay unlined
+                            #   (a T's crest and mitres are drawn as lines: _tee)
                     if self.o and self._edge(x, y) < C and not self.dist(x, y) < BEV:
                         v = max(v, 1)                                  # outline (the outer side has the crest)
                     if not self.o and k in ("x", "y") and (a == 0 if k == "y" else b == 0):
                         v = max(v, 1)                                  # rear slope: a fall line at every tile seam
                     if self.o and self.dist(x, y) - BEV < C and k == "flat":
                         v = 2                                          # the front rim's outer crest
-                    if not self.o and k != "flat" and self._inner(x, y) < C:
-                        v = max(v, 1)                                  # the rear slope's toe
                     if self.o in (1, 2, 3) and k == "flat" and (
                             (a == 0 and self.o != 2 and self.mask & 8) or (b == 0 and self.o != 1 and self.mask & 1)):
                         v = max(v, 1)                                  # front rim: its seam across the rim top
@@ -153,7 +160,8 @@ class Out(Spec):
         return self._lines[i][j]
 
     def col_top(self, i, j, kind, x, y):
-        return A.ghost_line(self._line(i, j))
+        v = self._line(i, j)
+        return A.ghost_line(min(v, 1) if not self.o else v)      # (the rear ghost's lines all one tone)
 
     def _fs(self, face, x, y):
         if face == "d":
@@ -169,6 +177,8 @@ class Out(Spec):
     def col_face(self, face, x, y, z):
         s = self._fs(face, x, y)
         if self.part == "rim":
+            if not self.o and not self.tee and (z < DZ * 1.5 or s < C or s > 1 - C):   # (a T's: behind the wall)
+                return A.ghost_line(1)                                 # the rear foot: its line on the deck, its ends
             return A.ghost_line(0)                                     # the rim's own faces are see-through
         f = (self.foot - z) / (self.foot + self.drop_at(x, y))
         return A.hull_out_face(face, s, min(max(f, 0.0), 1.0), self.variant)
@@ -212,12 +222,101 @@ def out_block(mask, o, variant=0, part="rim", room=0, corners=0):
     brightness as alpha; drawn in the sorted layer). part "belly": the solid armour below the deck (drawn UNDER the
     floor layer, so a deck in front of it hides it)."""
     m = core.Mesh(f"hull_ghost{o}_{mask}_{variant}_{part}_{room}_{corners}", flat=True)
-    emit(m, Out(mask, o, variant, part, room, corners))
+    sp = Out(mask, o, variant, part, room, corners)
+    if part == "rim" and o == 0:                      # the rear ghost: only its lines (hull_wire), no surfaces (they
+        from .hull_wire import wire                   #   drew nothing and hid lines behind them)
+        wire(m, sp)
+        _rise(m, mask, room, corners)
+        from .hull_wire import behind_stem
+        f = _Fill(f"hull_ghost_fill_{mask}_{room}_{corners}", flat=True)
+        sp.col_top = sp.col_skirt = lambda *a: None if behind_stem(sp, a[-2], a[-1]) else FILL   # noqa: E731 (a faint
+        sp.col_face = lambda face, x, y, z: FILL if sp._inner(x, y) < 0.5 / GN else None   # noqa: E731 (fill,
+        emit(f, sp)                                                         #   rendered on their own; of the faces
+                                                                            #   only the foot's on the room side: the
+                                                                            #   rest are cut ends no line bounds)
+        _back_fill(f, mask)
+        fill = [f.build()] if f.f else []
+    else:
+        emit(m, sp)
+        fill = []
     if not m.f:                                       # a corner piece with no camera-facing outer edge
         m.poly([core.G(0, 0, 0), core.G(0.001, 0, 0), core.G(0, 0.001, 0)], "dark")
     if part == "rim":
-        return [_dummy(f"ghost_plate_{o}_{mask}_{room}_{corners}"), m.build()]
+        return [_dummy(f"ghost_plate_{o}_{mask}_{room}_{corners}"), m.build()] + fill
     return [m.build()]
+
+
+FILL = "gFill"                              # the rear ghost's surfaces: almost transparent
+FADE = ("hsK", "hsK", "hsXK", "hbXhsXK")   # the rising lines' tones, bottom up: their alpha fades with height
+
+
+def _back_edges(mask):
+    """The cut hull's back edges on the deck (a px in from the tile's unconnected -x / -y edges), each run on to the
+    tile's edge where the next tile along carries it, so a run has no gap at the seams."""
+    e = -0.5 + C
+    out = []
+    if not mask & 1:
+        out.append(((-0.5 if mask & 8 else e, e), (0.5, e)))
+    if not mask & 8:
+        out.append(((e, 0.5), (e, -0.5 if mask & 1 else e)))
+    return out
+
+
+def _rise(m, mask, room, corners):
+    """The rear ghost's faint lines rising from the cut hull's back edge on the deck, where the ship's outer hull face stands, at each tile
+    seam (each tile draws its back corner), fading as they go: the hull it stands for, hinted (Space Haven's far-side
+    hull ghosts, walls fully collapsed)."""
+    from .walls import hull_top
+    e = -0.5 + C                            # (a px in from the tile's back edges: on the cut hull's edge, not past it)
+    pts = [(e, e)]
+    z0 = 0.02; z1 = hull_top() / 6          # (from the cut hull's back edge on the deck: short, as in the reference)
+    for a, b in _back_edges(mask):
+        m.poly([core.G(*a, z0), core.G(*b, z0), core.G(*b, z0 + DZ), core.G(*a, z0 + DZ)], "gW2")   # (that edge's line)
+    for px, py in pts:
+        a, b = (px, py), (px + C / 2, py - C / 2)      # (1 px wide on screen, on one side of the seam)
+        if not mask & 9:                                # (a back corner: 2 px, centred on it)
+            a = (px - C / 2, py + C / 2)
+        for k, tone in enumerate(FADE):
+            za, zb = z0 + (z1 - z0) * k / len(FADE), z0 + (z1 - z0) * (k + 1) / len(FADE)
+            m.poly([core.G(*a, za), core.G(*b, za), core.G(*b, zb), core.G(*a, zb)], tone)
+
+
+class _Fill(core.Mesh):
+    """The rear ghost's fill mesh: a polygon given no colour is left out."""
+    def poly(self, pts, color, flip=False):
+        if color is not None:
+            super().poly(pts, color, flip)
+
+
+BACK = (FILL, "gFillB1", "gFillB2", "gFillB3", "gFillB4", "gFillB5")   # the back face's fill, bottom up (from the slopes' own)
+
+
+def _back_fill(f, mask):
+    """The rear ghost's back face (the ship's outer hull, where _rise's lines stand) as a faint fill, fading out as it
+    rises over the lines' height."""
+    from .walls import hull_top
+    e = -0.5 + C
+    z0, z1 = 0.02, hull_top() / 6
+    step = (z1 - z0) / len(BACK)
+    lo = z0 + step * 4                                                  # (the bottom band 2/3 of the lines' height, the
+    cuts = [z0] + [lo + (z1 - lo) * k / (len(BACK) - 1) for k in range(len(BACK))]  # fade in the rest: ends with them)
+    for a, b in _back_edges(mask):
+        for k, tone in enumerate(BACK):
+            za, zb = cuts[k], cuts[k + 1]
+            f.poly([core.G(*a, za), core.G(*b, za), core.G(*b, zb), core.G(*a, zb)], tone)
+
+
+def station_rear(mask, room=0, corners=0):
+    """A ground base's rear ghost (tile.hull.station.ghost.m*[c2][.r*]): the rear ghost (out_block, o 0) squashed onto its
+    cut's top (station_hull_walls.FOOT_Z): the cut's lip stands where the ship's ghost meets the deck, so its ramp starts on
+    the lip's top edge and ends at the ship's ramp top."""
+    from .station_hull_walls import FOOT_Z
+    objs = out_block(mask, 0, room=room, corners=corners)
+    top = max(v.co.z for ob in objs[1:] for v in ob.data.vertices)
+    for ob in objs[1:]:
+        for v in ob.data.vertices:
+            v.co.z = FOOT_Z + v.co.z * (top - FOOT_Z) / top
+    return objs
 
 
 def drop(side):

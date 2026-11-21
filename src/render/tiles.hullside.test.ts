@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { Struct } from "../sim/structure";
-import { HullSide, hullSide, replacesFloor, wallPieces } from "./tiles";
+import { hideReach, HullSide, hullSide, replacesFloor, wallPieces } from "./tiles";
 
 const K: Record<string, number> = { " ": Struct.Space, "#": Struct.Wall, _: Struct.Floor, D: Struct.Door, "=": Struct.Beam };
 const ship = (rows: string[]) => (x: number, y: number) => K[rows[y]?.[x] ?? " "] ?? Struct.Space;
@@ -50,6 +50,23 @@ describe("hull side (far hull stays full in cutaway, near hull is a ghost)", () 
     const k = ship(["      ", " #####", " #___#", " ####_#", "    #_#", "    ###"].map((r) => r.padEnd(7)));
     expect(hullSide(k, 4, 3)).toBe(HullSide.Near);
     expect(hullSide(k, 2, 1)).toBe(HullSide.Far);
+  });
+  it("a ground base's far wall stands full unless the base lies behind it within the wall's reach (its rooms far apart)", () => {
+    // Room B's north wall (7, 6): another room up the screen 5 steps back (2, 1) shows over its top; 3 steps back it is hidden.
+    const rows = (d: number) =>
+      Array.from({ length: 10 }, (_, y) =>
+        Array.from({ length: 12 }, (_, x) => {
+          const [ax, ay] = [x - d, y - d];
+          if (ax >= 0 && ax < 3 && ay >= 0 && ay < 3) return ax === 1 && ay === 1 ? "_" : "#";
+          if (x >= 6 && x < 11 && y >= 6) return x > 6 && x < 10 && y > 6 && y < 9 ? "_" : "#";
+          return " ";
+        }).join(""));
+    const base = hideReach("station");
+    expect(hullSide(ship(rows(0)), 7, 6, base)).toBe(HullSide.Far);
+    expect(wallPieces(ship(rows(0)), 7, 6, Struct.Wall, "auto", true, undefined, null, "station")[0]?.chain[0]).toBe("tile.wall.full.m10");
+    expect(hullSide(ship(rows(2)), 7, 6, base)).toBe(HullSide.Near);
+    // A ship keeps looking the whole ray: any of it behind the wall cuts it.
+    expect(hullSide(ship(rows(0)), 7, 6)).toBe(HullSide.Near);
   });
   it("a run with floor in front is not near hull, even with space at its +x+y diagonal", () => {
     // (2, 2): a partition along x, rooms at -y and +y, space only at the SE diagonal (a diagonal breach or notch).

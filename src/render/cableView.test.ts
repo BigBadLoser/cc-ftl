@@ -25,4 +25,11 @@ describe('cable depth', () => {
     expect(cableDepth(9, 24, [piece])).toBeLessThan(front);
     expect(cableDepth(14, 19, [piece])).toBeLessThan(front); // past -y
   });
+
+  it('a cable tile beside a landing pad keeps its own depth: the pad lies flat, sorted at its back tile', () => {
+    const pad = { footprint: [9, 9], solid: false, groundMount: true, vehicleBay: { pad: true } } as unknown as ModuleDef;
+    const piece = { def: pad, x: 10, y: 20, rot: 0 };
+    expect(cableDepth(19, 24, [piece])).toBe(depthKey(19, 24));
+    expect(cableDepth(14, 29, [piece])).toBe(depthKey(14, 29));
+  });
 });

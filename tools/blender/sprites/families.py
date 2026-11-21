@@ -98,8 +98,8 @@ def jobs(name):
         props_ = [s for s in props.SPRITES if not s[0].startswith("fx.fire.")]    # combat fx and tile fire: family fx
         return props_ + logistics.SPRITES + itemart.SPRITES, False
     if name == "walls":
-        from . import envtiles
-        return envtiles.SPRITES, lambda sid: (False if sid.startswith("tile.floor") else   # (palette sets
+        from . import envtiles, wall_diag
+        return envtiles.SPRITES + wall_diag.wall_jobs(), lambda sid: (False if sid.startswith("tile.floor") else   # (palette sets
                                               "walls+hull+walls_aa" if envtiles._WALL.match(sid) else "walls+hull")
         #   "walls" and "hull": the relief walls', hull's, doors' and faction looks' colours, no other family's;
         #   "walls_aa": the second look's teal AA group, on the pieces built in it, envtiles._plain)
@@ -144,7 +144,9 @@ def jobs(name):
     if name == "station_hull":      # the station hull look (#524): a ground base's hull, its rock berm and livery mask
         import os
         from . import station_hull, station_hull_walls
-        walls = station_hull_walls.jobs()               # (their own module: a change to them keeps the rest cached)
+        from . import wall_diag
+        walls = station_hull_walls.jobs() + wall_diag.station_jobs()   # (their own modules: a change to them keeps the
+        #                                                                rest cached)
         if os.environ.get("STATION_JOBS") == "walls":      # (just the walls-up pieces: a quick look)
             return walls, station_hull.PALETTE
         return station_hull.jobs() + walls, station_hull.PALETTE  # (callables: each selects it itself)

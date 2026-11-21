@@ -26,10 +26,13 @@ RAMPS = {"wall": (("wK", "wD", "wM", "wS", "wL", "wH"), ("wK", "wXD", "wXM", "wX
          "blue": (("bK", "bD", "bM", "bT", "bL", "bH"), ("bXK", "bXD", "bXM", "bD", "bM", "bXH")),
          "ochre": (("oK", "oD", "oM", "oT", "oL", "oH"), ("oXK", "oXD", "oXM", "oD", "oXH", "oH")),
          "rose": (("rK", "rD", "rM", "rM", "rL", "rH"), ("rK", "rXD", "rXM", "rXM", "rXL", "rL")),  # factions: 2nd tone
+         "wallQ": (("wK", "wQD", "wQM", "wQS", "wQL", "wQH"), ()),     # (a diagonal wall's face, square on: DIAG)
          "steel": (("hsK", "hsD", "hsM", "hsS", "hsL", "hsH"),                                     # the hull from
                    ("hsXK", "hsXD", "hsXM", "hsXS", "hsXL", "hsL"))}                               # outside
-CUT = "wK"                                    # a sliced top (cutaway level)
+CUT = "cutK"                                  # a sliced top (cutaway level): a neutral black, not the walls' dark teal
 HARD = True                                   # hard edges: no chamfers, so an edge is one crisp line
+DIAG = False                                  # while a diagonal wall's piece builds (rotated square on): its fronts
+#                                               take the in-between ramp (RAMPS "wallQ")
 SHADE = 2                                     # how many ramp levels darker the shade (+x) side sits
 
 
@@ -37,6 +40,11 @@ def tone(fam, lvl, n, side=None):
     """Palette name of a surface of family fam, base level lvl, with outward grid normal n; side = the axis of the face
     the part stands on (its tops and slopes then stay in that face's ramp)."""
     ys, xs = RAMPS[fam]
+    if DIAG and fam == "wall" and abs(n.z) < 0.3 and n.y > 0.7:   # (a diagonal wall's front, between the lit and
+        ys = RAMPS["wallQ"][0]                                     # shade sides' ramps)
+        return ys[max(0, min(5, lvl))]
+    if DIAG and fam == "wall" and 0.3 < n.z <= 0.85 and n.y > 0.3:  # (... and its ramp's slope: in between too)
+        return RAMPS["wallQ"][0][max(0, min(5, lvl + 1))]
     if n.z > 0.85:
         step = 1                              # a ledge's top: one step lighter (Space Haven's soft highlights)
     elif n.z > 0.3:
@@ -690,7 +698,7 @@ def block(mask, fam, deco=None, name=None, level="cut", corners=0, shell=None, d
         if not getattr(sp, "no_skirt", False):
             skirt(k, sp, ax, plane, a, b, "blue" if hull else "wall", ends)
         if top <= sp.zs + 0.05:
-            if style().shelf and not hull:              # a stub over a shelf: the face's art from the shelf up to
+            if style().shelf and not hull and top > W.shelf_top() + 0.01:   # a stub over a shelf: the face's art from the shelf up to
                 from .faction.shell import _ends        # the cut (its lip and seams), cut off there, over a backing
                 from .wall3d_v2 import lip_heights      # (a wall's end face: the backing only)
                 k.top = top
@@ -763,6 +771,9 @@ def end_face(fam, side, level="up", corners=0):
     walls.end_face does) left the floor showing through the wall's open end. It takes in the raised frame on the
     wall's visible face: one smooth face with a lit lip under the cap and a dark outline round its silhouette, down
     the wall's edges and on along the slope of the skirts' cut sections (in the plates' tone)."""
+    if fam == "wall" and level == "low":     # (walls down: the near hull cut flush with the deck shows it all)
+        from .wall3d_end_low import low_end
+        return low_end(side, corners)
     t, top, zs = W.profile(fam, level)
     run_ = W.skirt_run()
     hi = W.wall_back() + W.TW

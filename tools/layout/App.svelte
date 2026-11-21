@@ -32,6 +32,8 @@
 		const levels = ladder(dpr());
 		lab.view = { cx: v[0] as number, cy: v[1] as number, zoom: levels[Math.min(levels.length - 1, v[2] as number)] as number };
 	};
+	// `&walls=up`: the preview's walls up (the game's wall view toggle), for shots of the far walls.
+	if (q.get('walls') === 'up') lab.layers.wallsUp = true;
 	if (q.has('case')) void lab.loadCaseNamed(q.get('case') as string).then(() => setTimeout(at, 1500));
 	else if (q.has('station') || q.has('outpost') || q.has('faction') || q.has('starter')) {
 		const kind = q.has('station') ? 'station' : q.has('outpost') ? 'outpost' : q.has('faction') ? 'faction' : 'starter';

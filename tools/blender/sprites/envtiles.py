@@ -20,7 +20,7 @@ import re
 
 from .door_block import door                   # the metal door (door_block, its metal look)
 from .floors import floor
-from .hull import drop, out_block, vert
+from .hull import drop, out_block, station_rear, vert
 from .wall3d import block, end_face, hull_cap, hull_cap_end    # the relief walls (wall3d.py)
 from .wall3d_variants import PAIRS
 from .walls import corner_sets
@@ -57,8 +57,10 @@ for _m in range(16):
         for _r in (0, 1, 8, 9):                    # ... and which unconnected N / W sides face a room
             if _r & _m:
                 continue
-            SPRITES.append((f"tile.hull.ghost.m{_m}{f'c{_c}' if _c else ''}{f'.r{_r}' if _r else ''}", (1, 1), "ghost",
+            SPRITES.append((f"tile.hull.ghost.m{_m}{f'c{_c}' if _c else ''}{f'.r{_r}' if _r else ''}", (1, 1), "wire",
                             lambda m=_m, r=_r, c=_c: out_block(m, 0, room=r, corners=c)))
+            SPRITES.append((f"tile.hull.station.ghost.m{_m}{f'c{_c}' if _c else ''}{f'.r{_r}' if _r else ''}", (1, 1),
+                            "wire", lambda m=_m, r=_r, c=_c: station_rear(m, r, c)))   # (a ground base's: on its cut)
 def _variant(fn, tr):
     """fn built as a straight piece's variant (wall3d.VARIANT = tr)."""
     def build():
@@ -88,6 +90,8 @@ for _o, _clear in OUT_MASK.items():
             SPRITES.append((f"tile.hull.belly.o{_o}.m{_m}.v1", (1, 1), "block",
                             lambda m=_m, o=_o: out_block(m, o, 1, "belly")))
 SPRITES.append(("tile.hull.ghost.vert", (1, 1), "ghost", vert))
+from .hull_near import sprites as _near_ghosts      # noqa: E402 (the near hull's ghost, walls down: tile.hull.ghost.n.*)
+SPRITES += _near_ghosts()
 SPRITES.append(("tile.hull.full.m15", (1, 1), "block", lambda: block(15, "hull", level="up")))   # (the engine's
 #   stand-in, render/assets/fallback.ts: the far hull itself is tile.wall.full.m* + tile.hull.cap.m*, tiles.ts)
 END_CORNERS = {"s": (0, 2, 4, 6), "e": (0, 1, 2, 3)}   # the corner fills reaching each end face's edge
@@ -95,8 +99,10 @@ for _s in ("s", "e"):
     for _lv, _pre in PRE.items():
         for _c in END_CORNERS[_s]:
             _cs = f".c{_c}" if _c else ""
+            _end = (lambda s=_s, lv=_lv, c=_c: end_face("wall", s, lv, c))
             SPRITES.append((f"tile.wall.{_pre}end.{_s}{_cs}", (1, 1), "block",
-                            lambda s=_s, lv=_lv, c=_c: end_face("wall", s, lv, c)))
+                            _plain(_end) if _lv == "low" else _end))   # (walls down: traced from the wall's piece,
+            #   so built in its look: wall3d_end_low)
     for _c in END_CORNERS[_s]:                      # the far hull's end over tile.wall.full.end.* (wall3d.hull_cap_end)
         SPRITES.append((f"tile.hull.cap.end.{_s}{f'.c{_c}' if _c else ''}", (1, 1), "block",
                         lambda s=_s, c=_c: hull_cap_end(s, c)))

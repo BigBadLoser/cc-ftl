@@ -1,4 +1,4 @@
-import { Container, Sprite, type Texture } from "pixi.js";
+import { Container, Sprite } from "pixi.js";
 import { animNow } from './animClock';
 import type { Atlas, StaticSprite } from "./assets/loader";
 import { CHUNK_SIZE, type Grid } from "../sim/grid";
@@ -8,7 +8,7 @@ import { tubeRuns } from "../sim/tube";
 import { tubeTiles } from "./tubeArt";
 import { Finish, Struct, STRUCT_MAX_HP } from "../sim/structure";
 import { MARK_FIELDS } from "../sim/marks";
-import { decodeWindow, type WindowTile } from "../sim/windows";
+import { decodeWindow } from "../sim/windows";
 import { depthKey } from "./iso";
 import type { Layers } from "./layers";
 import { lightTint, mulColor, pulsePhase } from "./lightTint";
@@ -19,15 +19,16 @@ import { addStatic } from "./sprites";
 import { haloTex } from "./haloTex";
 import { beamIds, DEFAULT_BEAM_LOOK, type BeamLook } from "./beamArt";
 import { createChunkViews, regionTiles, type ChunkRef } from "./regionTiles";
-import { artKind, doorShownOpen, floorChain, ghostVertsIn, HULL_REACH, HullSide, hullSide, replacesFloor, wallPieces, type CutawayMode } from "./tiles";
+import { artKind, doorShownOpen, floorChain, hideReach, HULL_REACH, HullSide, hullSide, outward, replacesFloor, wallPieces, type CutawayMode } from "./tiles";
+import { ghostVertsIn } from "./ghostVerts";
 import { CarpetSprite } from "./carpetPaint";
 import { DRAWN_MARKINGS, markPieces, WALKWAY_PAINT } from "./deckMarks";
 import { HullSprite } from "./hullPaint";
 import { keepsOldPiece } from "./jobHull";
 import type { BuildGate } from "./buildBudget";
-import { iso } from "./iso";
-import { bellyIds, engineHullTiles, exteriorIds, gridHullKeys, isStationPiece, PLAIN_PAINT, type HullKeys, type HullLook, type HullPaint } from "./hullArt";
-import { bermId, lowId } from "./stationHull";
+import { engineHullTiles, exteriorIds, gridHullKeys, isStationPiece, PLAIN_PAINT, type HullKeys, type HullLook, type HullPaint } from "./hullArt";
+import { addPaintSprite, createHullDrawer, type Tinted } from "./hullDraw";
+import { deckHalf, diagWallPieces, halfSprite } from "./diagWall";
 
 export type { CutawayMode };
 
@@ -73,19 +74,6 @@ interface Door {
   /** Index inside the chunk's arrays. */
   ci: number;
 }
-interface Tinted {
-  spr: Sprite;
-  /** Local tile, and its index inside the chunk's arrays. */
-  x: number;
-  y: number;
-  ci: number;
-  wall: boolean;
-  /** Walls and doors darken as their integrity drops. */
-  solid: boolean;
-  /** Paint multiplied over the light: the hull's armour, or its deco on a deco layer, or the carpet's. */
-  paint?: number;
-}
-
 /** The tile sprites of one sector chunk of the region. */
 interface TileChunk {
   c: ChunkRef;
@@ -159,6 +147,13 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
   const wallAt = tiles.wallAt; // rock walls stay RockWall: never hull
   // The wall pieces' neighbours: unroofed, a tube's near junction stands in for its wall tiles (no wall there, its ends face it).
   const pieceAt = (x: number, y: number): number => (ghosts && tiles.inside(x, y) && tube.junction.has(y * width + x) ? Struct.Space : wallAt(x, y));
+  /**
+   * A ground base's cut hull that faces away from the camera (cut because the base lies behind it on screen): space behind it
+   * at -x, -y or their diagonal. A side diagonal's step (space only at +x -y or -x +y) keeps its own cut ghost.
+   */
+  const rearCut = (x: number, y: number): boolean =>
+    host.hullLook?.() === "station" && hullSide(pieceAt, x, y, hideReach("station")) === HullSide.Near && !outward(pieceAt, x, y) &&
+    [[0, -1], [-1, 0], [-1, -1]].some(([dx, dy]) => pieceAt(x + dx!, y + dy!) === Struct.Space);
   const lockDoor = (i: number): boolean => airlocks.has(i) || tube.port.has(i);
   // Beam tiles under a cargo container are its seat, not frame: no beam sprite there, and the frame's beams end at it.
   const boxAt = (x: number, y: number): boolean => {
@@ -169,6 +164,17 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
     return !!(m && host.overlayWorld.modules[m.def]?.container);
   };
   const frameKindAt = (x: number, y: number): number => (kindAt(x, y) === Struct.Beam && boxAt(x, y) ? Struct.Space : kindAt(x, y));
+
+  const drawHull = createHullDrawer({
+    atlas, L, width, has, wallAt, pieceAt, rearCut,
+    paint: () => host.hullPaint?.(),
+    look: () => host.hullLook?.(),
+    ghosts: () => ghosts,
+    mode: () => mode,
+    blockHull: () => blockHull,
+    lockRow: () => lockRow,
+    tubeRow: () => tube.row,
+  });
 
   function clearChunk(v: TileChunk): void {
     for (const s of v.owned) s.destroy();
@@ -295,7 +301,9 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
           // Behind a tube (its far door's row, its near door and their neighbours) the hull takes its base piece too: a design's
           // relief would show round the tube's port and junction.
           const base = own || tube.row.has(idx) || tube.junction.has(idx);
-          const drew = hull && (!lockDoor(idx) || !ghosts) ? drawHull(hull, x, y, k, ci, v, false, base, decodeWindow(windows?.[ci] ?? 0), tube.row.has(idx) || tube.port.has(idx)) : false;
+          // A far hull diagonal with the walls standing (#561): its own wall and cap, in place of the hull's cut pieces.
+          const diag = hull && ghosts && mode !== "down" && k !== Struct.Floor ? diagWallPieces(hull, x, y, host.hullLook?.() ?? "ship") : null;
+          const drew = hull && !diag && (!lockDoor(idx) || !ghosts) ? drawHull(hull, x, y, k, ci, v, false, base, decodeWindow(windows?.[ci] ?? 0), tube.row.has(idx) || tube.port.has(idx)) : false;
           const special = own && !drew;
           // Under an airlock's door tile the near hull's belly still runs below the deck (its own sprite is the wall above).
           if (hull && ghosts && lockDoor(idx)) drawHull(hull, x, y, k, ci, v, true);
@@ -303,28 +311,41 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
           if (hull && gapAt(x, y) && !drew) drawHull(hull, x, y, k, ci, v, true);
           // Roofed, a tile with the hull from outside has no floor plate (its edge showed below the hull's foot).
           const fin = finish?.[ci] ?? 0;
-          const f = (ghosts && !engineUp && replacesFloor(pieceAt, x, y, mode)) || (drew && !ghosts) ? undefined : atlas.firstOf(floorChain(x, y, fin));
+          // (A far diagonal's tiles keep their deck: the diagonal wall stands on it.)
+          const f = (ghosts && !engineUp && !diag && replacesFloor(pieceAt, x, y, mode, hideReach(host.hullLook?.() ?? "ship"))) || (drew && !ghosts) ? undefined : atlas.firstOf(floorChain(x, y, fin));
           if (f && fin === Finish.Carpet && f === atlas.stat("tile.floor.carpet")) {
             // The carpet is grey art the hull-paint step recolours: the ship's carpet paint times the light.
             const spr = addPaintSprite(f, x, y, 0, v.floor, CarpetSprite);
             owned.push(spr);
-            tinted.push({ spr, x, y, ci, wall: false, solid: false, paint: host.hullPaint?.().carpet ?? PLAIN_PAINT.carpet });
+            tinted.push({ spr, x, y, ci, wall: !!diag, solid: false, paint: host.hullPaint?.().carpet ?? PLAIN_PAINT.carpet });
           } else if (f) {
             const made = addStatic(L, f, x, y, 0, v.floor);
             owned.push(...made);
-            tinted.push({ spr: made[0] as Sprite, x, y, ci, wall: false, solid: false });
+            // (A far diagonal's deck lies under a wall tile, whose own cell has no room light: lit as its wall is.)
+            tinted.push({ spr: made[0] as Sprite, x, y, ci, wall: !!diag, solid: false });
+          }
+          // A diagonal's inner tile whose cut hull dropped the plate: the cut covers half of it, the other half is deck.
+          const half = !f && ghosts && hull && k !== Struct.Floor ? deckHalf(hull, x, y) : null;
+          const deck = half ? atlas.firstOf(floorChain(x, y, fin)) : undefined;
+          if (half && deck) {
+            const made = addStatic(L, halfSprite(deck, half), x, y, 0, v.floor);
+            owned.push(...made);
+            tinted.push({ spr: made[0] as Sprite, x, y, ci, wall: true, solid: false });
           }
           if (f && k === Struct.Floor && anyMarks) drawMarks(x, y, ci, v);
           if (k === Struct.Floor) continue;
           // The engine's hull row (walls up or roofed) is the engine's own bulkhead sprite: no hull wall on it.
           if (special) continue;
-          for (const piece of wallPieces(pieceAt, x, y, stone ? Struct.RockWall : k, mode, ghosts, gapAt, decodeWindow(windows?.[ci] ?? 0), host.hullLook?.() ?? "ship")) {
-            if (drew && !keepsOldPiece(k, ghosts, piece.under)) continue; // (a door stays, without its old belly)
+          // With the walls down the far hull's ghost (its outline) stays, over its cut hull; so does a ground base's back-facing
+          // cut hull's (its rear ramp ghost, at every level).
+          const outline = drew && ghosts && (hullSide(wallAt, x, y, hideReach(host.hullLook?.() ?? "ship")) === HullSide.Far || rearCut(x, y));
+          for (const piece of diag ?? wallPieces(pieceAt, x, y, stone ? Struct.RockWall : k, mode, ghosts, gapAt, decodeWindow(windows?.[ci] ?? 0), host.hullLook?.() ?? "ship")) {
+            if (drew && !keepsOldPiece(k, ghosts, piece.under) && !(outline && !piece.under)) continue; // (a door stays, without its old belly)
             const s = atlas.firstOf(piece.chain);
             if (!s) continue;
             // Roofed (no ghosts): walls and hull sort a little earlier so the roof plate of the tile behind them covers
             // their shared top edge (they all end flush at the roof top).
-            const made = addStatic(L, s, x, y, depthKey(x, y) + piece.order * 0.001 - (ghosts ? 0 : 0.15), piece.under ? L.under : L.sorted);
+            const made = addStatic(L, s, x, y, depthKey(x, y) + piece.order * 0.001 - (ghosts ? 0 : 0.15) + (outline ? 0.003 : 0), piece.under ? L.under : L.sorted);
             owned.push(...made);
             const isDoor = k === Struct.Door;
             if (isDoor) {
@@ -387,81 +408,6 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
         }
       }
     }
-  }
-
-  /** A sprite recoloured by its tint (hullPaint.ts, carpetPaint.ts: the paint times the light), anchored like `addStatic`. */
-  function addPaintSprite<T extends Sprite>(s: StaticSprite, x: number, y: number, key: number, parent: Container, Make: new (t: Texture) => T): T {
-    const p = iso(x, y);
-    const spr = new Make(s.tex);
-    spr.position.set(Math.round(p.x - s.ax), Math.round(p.y - s.ay));
-    spr.zIndex = key;
-    parent.addChild(spr);
-    return spr;
-  }
-
-  /**
-   * The new hull's sprites on tile (x, y), if it has them: roofed, the exterior pieces (hullArt.exteriorIds) and the
-   * belly under them; in cutaway the belly of a near hull tile or of a floor its hull reaches (`low` its cut top). Each
-   * piece takes the armour paint, its deco layer (`<id>.tint`) the deco paint. `bellyOnly`: just the belly below the deck
-   * (an engine's hull row); `base`: a straight run's base design only (an engine's row, an airlock's door). False if it
-   * drew nothing.
-   */
-  function drawHull(h: HullKeys, x: number, y: number, k: number, ci: number, v: TileChunk, bellyOnly = false, base = false, win: WindowTile | null = null, behind = false): boolean {
-    const paint = host.hullPaint?.() ?? PLAIN_PAINT;
-    const look = host.hullLook?.() ?? "ship";
-    const put = (id: string, z: number, parent: Container, solid: boolean) => {
-      const s = atlas.stat(id);
-      if (!s) return;
-      for (const [pid, col] of [[id, paint.armour], [`${id}.tint`, paint.deco]] as const) {
-        const ps = pid === id ? s : atlas.stat(pid);
-        if (!ps) continue;
-        // A station piece keeps its own grey (lit only, no armour paint); its `.tint` livery takes the deco paint.
-        const bare = pid === id && isStationPiece(id);
-        const spr = addPaintSprite(ps, x, y, z + (pid === id ? 0 : 0.0005), parent, bare ? Sprite : HullSprite);
-        v.owned.push(spr);
-        v.tinted.push({ spr, x, y, ci, wall: true, solid, paint: bare ? undefined : col });
-      }
-    };
-    // A ground base's berm (stationHull.ts) heaps against the hull's foot, over the tile's piece.
-    const berm = () => {
-      const id = look === "station" ? bermId(h, x, y, has, !ghosts) : null;
-      if (id) put(id, z + 0.002, L.sorted, solid);
-      return !!id;
-    };
-    const solid = k !== Struct.Floor;
-    const z = depthKey(x, y);
-    if (bellyOnly) {
-      const b = bellyIds(h, x, y, has, k !== Struct.Floor, look);
-      if (b?.under) put(b.under, z, L.under, solid);
-      return !!b?.under;
-    }
-    if (!ghosts) {
-      const ext = exteriorIds(h, x, y, has, base, win, look);
-      if (!ext) return false;
-      // The roof stand-in at the roof plating's depth: over the tile's piece, under the hull of the tiles in front. `behind`: a
-      // tube's hull row or far door, sorted (roof and all) under the tube's art, whose first tile shares the row's front tile's depth.
-      ext.forEach((id) => put(id, z + (id.startsWith("tile.roof.") ? (behind ? -0.04 : 0.9) : behind ? -0.05 : 0), L.sorted, solid));
-      const b = bellyIds(h, x, y, has, false, look);
-      if (b?.under) put(b.under, z, L.under, solid);
-      berm();
-      return true;
-    }
-    if (k !== Struct.Floor && hullSide(wallAt, x, y) !== HullSide.Near) return false;
-    if (look === "station") {
-      // A ground base's near hull: the station's foot (no belly), the berm against it.
-      const foot = lowId(h, x, y, has);
-      if (foot) put(foot, z + 0.001, L.sorted, solid);
-      return berm() || !!foot;
-    }
-    const heaped = berm();
-    const b = bellyIds(h, x, y, has, k !== Struct.Floor, look);
-    if (!b) return heaped;
-    if (b.under) put(b.under, z, L.under, solid);
-    // Behind the thruster block the engine's hull sprite carries the wall's lower section: the belly's cut top would cover it.
-    // Beside a camera-facing airlock's door its hull sprite carries the outer half of the cut hull (the inner half is
-    // inside its full-height row and would show through the row's end cut).
-    if (b.low && !blockHull.has(y * width + x) && !lockRow.has(y * width + x) && !tube.row.has(y * width + x)) put(b.low, z + 0.001, L.sorted, solid);
-    return true;
   }
 
   function updateDoors(v: TileChunk): void {
@@ -575,3 +521,4 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
     },
   };
 }
+

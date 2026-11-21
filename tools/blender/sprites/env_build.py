@@ -66,12 +66,16 @@ def _show(objs, on):
 
 
 def render_sprite(sid, kind, objs, want_uv=False):
-    if kind == "ghost":
+    if kind in ("ghost", "wire"):                       # ("wire": the rear hull ghost's renderer, hull_wire.render)
         xs = core.extent_px(objs)
         xmin, xmax, ymin, ymax = xs
         W = 2 * (int(math.ceil(max(-xmin, xmax))) + 5)
         H = 2 * (int(math.ceil(max(-ymin, ymax))) + 5)
-        c, al = render_ghost(objs, W, H)
+        if kind == "wire":
+            from .hull_wire import render
+            c, al = render(objs, W, H)
+        else:
+            c, al = render_ghost(objs, W, H)
         c, al = _pad1(c), np.pad(al, 1)
         z = np.zeros((H + 2, W + 2, 4), np.uint8)
         return c, al > 0, z, (W + 2) // 2, (H + 2) // 2, al
@@ -110,7 +114,7 @@ def render_sprite(sid, kind, objs, want_uv=False):
     elif kind.startswith("decal:"):                     # a quarter-tile decal ("decal:<qi><qj>"): only its quarter's px,
         op = op & quarter_mask(W, H, int(kind[6]), int(kind[7]))     # the rest of the mesh is margin for the px on its edge
         c, op = _pad1(c), _pad1(op)
-    elif kind in ("block", "wide", "over", "fx", "ghost"):
+    elif kind in ("block", "wide", "over", "fx", "ghost", "wire"):
         c, op = _pad1(c), _pad1(op)
     else:
         c, op = post.outline(c, op, True)

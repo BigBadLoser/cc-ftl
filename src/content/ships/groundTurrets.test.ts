@@ -20,6 +20,11 @@ import { SuitC } from '../../sim/eva/components';
 import { WeaponC } from '../../sim/combat/components';
 import { mannedConsole } from '../../sim/combat/operators';
 import { MODS, provoke, run, setup, type Ev } from '../../../test/support/fixtures/groundTurrets';
+import { assembleStation } from '../../sim/shipgen/assembly/station';
+import type { StationDef } from '../../sim/shipgen/stationTypes';
+import type { ModuleDef } from '../../sim/registry';
+import { stationRecipes } from '../stationRecipes';
+import { templateCable } from '../../sim/cable';
 
 /** Ground turrets on an asteroid trading post (#514): guns and point defence out on the levelled rock, cabled to the base. */
 
@@ -59,6 +64,23 @@ describe('ground turrets', () => {
       expect(run.length).toBeGreaterThanOrEqual(3);
       expect(run.some((c) => N4.some(([dx, dy]) => g.get('struct', c.x + dx, c.y + dy) === Struct.Wall && ownerAt(sim, c.x + dx, c.y + dy) === base))).toBe(true);
     }
+  });
+
+  it('no cable runs into or along a hull corner (a bend or a diagonal step): it plugs into the middle of a straight run', () => {
+    const defs = content.modules as Record<string, ModuleDef>;
+    for (const id of ['station.trading', 'station.mining', 'station.farming'] as const)
+      for (const seed of [1, 2, 3]) {
+        const t = assembleStation(content.stations[id] as StationDef, id, 'station', seed, defs, stationRecipes.prefab[0]!).template;
+        const hull = (x: number, y: number) => t.rows[y]?.[x] === '#' || t.rows[y]?.[x] === 'D';
+        const cable = new Set(templateCable(t).map((c) => `${c.x},${c.y}`));
+        for (const c of templateCable(t))
+          for (const [dx, dy] of N4) {
+            const [x, y] = [c.x + dx, c.y + dy];
+            if (t.rows[y]?.[x] !== '#' || cable.has(`${x},${y}`)) continue;
+            const straight = (hull(x - 1, y) && hull(x + 1, y)) !== (hull(x, y - 1) && hull(x, y + 1));
+            expect(straight, `${id} seed ${seed}: cable at ${c.x},${c.y} into the corner at ${x},${y}`).toBe(true);
+          }
+      }
   });
 
   it('every ground turret is a 3x3 ground mount, and its cable starts square on at the middle of the side its rotation faces', () => {

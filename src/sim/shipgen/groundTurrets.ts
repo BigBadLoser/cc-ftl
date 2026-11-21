@@ -4,6 +4,7 @@ import { groundPort, rotForPortDir } from '../modules/groundMount';
 import { isLandingPad } from '../modules/landingPad';
 import type { ModuleDef } from '../registry';
 import type { Layout } from './layout';
+import { cableFrom, openness } from './groundCable';
 
 /**
  * Turrets on open ground (#514): an asteroid base's guns and point defence, standing out on the levelled rock round its
@@ -95,12 +96,21 @@ export function placeGroundTurrets(lay: Layout, plan: GroundPlan): GroundFit {
     for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const r = lay.inBounds(x + dx, y + dy) ? (lay.roomOf[(y + dy) * w + x + dx] ?? -1) : -1; if (r >= 0 && arrivals.has(r)) return true; }
     return false;
   };
-  // A hull wall a cable may plug into (not an airlock, not beside an arrivals room). Turrets and cables only take ground, so it is
-  // worked out once (the turret search asks it many times over).
+  // A hull wall a cable may plug into (not an airlock, not beside an arrivals room, not a corner: the middle of a straight run, hull
+  // on both sides of it along the run and not across, so never a bend, a diagonal's step or a T). Turrets and cables only take
+  // ground, so it is worked out once (the turret search asks it many times over).
+  const hullAt = (x: number, y: number): boolean => lay.inBounds(x, y) && (lay.at(x, y) === '#' || lay.at(x, y) === 'D');
+  const straight = (x: number, y: number): boolean => (hullAt(x - 1, y) && hullAt(x + 1, y)) !== (hullAt(x, y - 1) && hullAt(x, y + 1));
   const plugs = new Uint8Array(w * h);
+  // Ground beside a corner of the hull: no cable runs there (it would run into the corner, or along it).
+  const byCorner = new Uint8Array(w * h);
   for (let i = 0; i < w * h; i++) {
     const x = i % w, y = Math.floor(i / w);
-    if (lay.at(x, y) === '#' && (lay.occ[i] === -1 || !lay.defs[lay.modules[lay.occ[i] as number]!.def]?.airlock) && !besideArrivals(x, y)) plugs[i] = 1;
+    if (lay.at(x, y) === '#' && !straight(x, y)) for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) if (lay.inBounds(x + dx, y + dy)) byCorner[(y + dy) * w + x + dx] = 1;
+  }
+  for (let i = 0; i < w * h; i++) {
+    const x = i % w, y = Math.floor(i / w);
+    if (lay.at(x, y) === '#' && straight(x, y) && (lay.occ[i] === -1 || !lay.defs[lay.modules[lay.occ[i] as number]!.def]?.airlock) && !besideArrivals(x, y)) plugs[i] = 1;
   }
   const wallAt = (x: number, y: number): boolean => x >= 0 && y >= 0 && x < w && y < h && plugs[y * w + x] === 1;
   // Where the turrets gather: the command room's middle (else the middle of the floor).
@@ -122,7 +132,7 @@ export function placeGroundTurrets(lay: Layout, plan: GroundPlan): GroundFit {
   const ox = (bx0 + bx1) / 2, oy = (by0 + by1) / 2;
   const bearing = (x: number, y: number): number => Math.atan2(y - oy, x - ox);
   const gap = (a: number, b: number): number => { const d = Math.abs(a - b) % (2 * Math.PI); return Math.min(d, 2 * Math.PI - d); };
-  const open = openness();
+  const open = openness(lay);
   // A small per-base shake on each spot's score (the seed), so bases of the same plan do not all stand them alike.
   const shake = (x: number, y: number): number => { let k = (((plan.seed ?? 0) * 73856093) ^ (x * 19349663) ^ (y * 83492791)) >>> 0; k = Math.imul(k ^ (k >>> 15), 0x2c1b3c6d) >>> 0; return ((k ^ (k >>> 12)) >>> 0) / 0xffffffff; };
   wirePads();
@@ -168,7 +178,7 @@ export function placeGroundTurrets(lay: Layout, plan: GroundPlan): GroundFit {
   return out;
 
   /**
-   * The landing pads (#509): each stands on its box, turned so its port side faces the shortest cable to a hull wall (the same cable rules
+   * The landing pads (#509): each stands on its box, turned so its port side (a camera-facing side) faces the shortest cable to a hull wall (the same cable rules
    * as a turret's, from the port tile `groundPort` gives), clear of the airlock approaches. A pad no cable reaches is counted in `unwired`.
    */
   function wirePads(): void {
@@ -178,6 +188,8 @@ export function placeGroundTurrets(lay: Layout, plan: GroundPlan): GroundFit {
       let best: { rot: number; run: number[] } | null = null;
       for (let rot = 0; rot < 4; rot++) {
         const port = groundPort(def, { x, y, rot });
+        // Its cable comes out of a side facing the camera (+x or +y, the bottom of it on screen), never from behind it.
+        if (port.dir.x + port.dir.y <= 0) continue;
         const reach = hullReach();
         const first = port.cable.y * w + port.cable.x;
         if (!lay.inBounds(port.cable.x, port.cable.y) || !runs(first) || approach[first]) continue;
@@ -214,7 +226,7 @@ export function placeGroundTurrets(lay: Layout, plan: GroundPlan): GroundFit {
     }
     if (best) return best;
     const i = port.cable.y * w + port.cable.x, r = reach[i] as number;
-    return r >= 1 && r <= MAX_CABLE ? cableFrom(i, reach) : null;
+    return r >= 1 && r <= MAX_CABLE ? cableFrom(w, i, reach) : null;
   }
 
   /**
@@ -311,23 +323,7 @@ export function placeGroundTurrets(lay: Layout, plan: GroundPlan): GroundFit {
 
   /** Whether a cable may run over a tile: open ground, nothing on it, not already cabled, not on a pad. */
   function runs(i: number): boolean {
-    return free(i % w, Math.floor(i / w)) && !onPad[i];
-  }
-
-  /** Each tile's open ground to the nearest hull tile, eight ways (1 beside the hull). */
-  function openness(): Int32Array {
-    const d = new Int32Array(w * h).fill(-1);
-    const queue: number[] = [];
-    for (let i = 0; i < w * h; i++) if (lay.cells[i] !== '.') { d[i] = 0; queue.push(i); }
-    for (let q = 0; q < queue.length; q++) {
-      const i = queue[q] as number, x = i % w, y = Math.floor(i / w);
-      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
-        const nx = x + dx, ny = y + dy, j = ny * w + nx;
-        if ((dx || dy) && nx >= 0 && ny >= 0 && nx < w && ny < h && d[j] === -1) { d[j] = (d[i] as number) + 1; queue.push(j); }
-      }
-    }
-    for (let i = 0; i < w * h; i++) if (d[i] === -1) d[i] = 99;
-    return d;
+    return free(i % w, Math.floor(i / w)) && !onPad[i] && !byCorner[i];
   }
 
   /**
@@ -365,21 +361,6 @@ export function placeGroundTurrets(lay: Layout, plan: GroundPlan): GroundFit {
     return d;
   }
 
-  /** The cable from a tile beside the turret down to the hull: each step one nearer, straight on where it can. */
-  function cableFrom(from: number, reach: Int32Array): number[] {
-    const run = [from];
-    let i = from, dir = -1;
-    while ((reach[i] as number) > 1) {
-      const x = i % w, steps = [x < w - 1 ? i + 1 : -1, x > 0 ? i - 1 : -1, i + w, i - w];
-      const next = steps.map((j, k) => ({ j, k })).filter(({ j }) => j >= 0 && reach[j] === (reach[i] as number) - 1);
-      const pick = next.find((q) => q.k === dir) ?? next[0];
-      if (!pick) break;
-      i = pick.j; dir = pick.k;
-      run.push(i);
-    }
-    return run;
-  }
-
   /**
    * The cable for a turret at (x, y), or null when it may not stand there. The shortest run of at most one bend: out from
    * the middle of a side, then (where it must) one turn and straight into a hull wall, square on. Where no such run
@@ -415,7 +396,7 @@ export function placeGroundTurrets(lay: Layout, plan: GroundPlan): GroundFit {
       const i = sy * w + sx, r = reach[i] as number;
       if (r >= MIN_CABLE && r <= MAX_CABLE && (from < 0 || r < (reach[from] as number))) from = i;
     }
-    return from < 0 ? null : cableFrom(from, reach);
+    return from < 0 ? null : cableFrom(w, from, reach);
   }
 
   /** True while the ground is one open walk: every airlock's outside reaches every pad and every turret's ring. */

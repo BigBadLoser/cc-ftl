@@ -19,6 +19,11 @@ END_W = 0.25                        # its end blocks along a tile (the middle bl
 LIP_D, LIP_H = PX, 3 * PZ           # the lip at the face's foot: its depth (2 px), its height
 MID_DROP = 3 * PZ                   # the middle block's top: its front edge this far under its back
 SHELF = 4 / 32                      # the ramp's top a flat step this deep against the wall (4 px)
+POSTS = "tile"  # a face's posts while a piece builds: "tile" (at each tile edge), "none" (a diagonal wall's fill),
+#   "all" (its join: one post the face's length); either of the last two with no lip or rail seams, nor a ramp panel
+PLAIN = False   # every field plain (no panel) while a piece builds: a diagonal wall's fill and joins
+NUDGE = True    # the px nudges that centre a face's parts between its posts on screen (_nudge); off for a face seen
+#   square on (a diagonal wall), where depth moves nothing sideways
 PX0 = 0.875     # where the camera's px boundaries fall along the default wall's front (in px, off u's own grid)
 _STYLE = []
 
@@ -32,21 +37,66 @@ def plain_relief():
     return _STYLE[0]
 
 
-def _blocks(a, b):
-    """The rail's blocks over [a, b], on each tile's grid: (u0, u1, middle?)."""
+
+SNAP = {"y": 0.25, "x": 0.75}   # per face axis: the phase (in px of height) of the screen's px rows on a straight face
+#   (_paint); thin bands sit on whole rows there so a 1 px line runs in clean pairs, not dots
+
+
+YD = 64 / 4                  # screen px down per unit a part stands proud of a straight face
+
+
+def _row(z, d, half=0.0):
+    """z on the screen's row grid for a part d proud of a straight face (NUDGE; SNAP's phase, moved half a row with
+    half=0.5: the other way a 1 px line's two-px steps can pair up)."""
+    if _AX[0] is None:
+        return z
+    ph = (SNAP[_AX[0]] + YD * d if NUDGE else SNAPD + YD * d / SQ) + half
+    return (round(z * W.ZART - ph) + ph) / W.ZART
+
+
+_AX = [None]
+
+
+def _paint(k, ax, plane, u0, u1, z0, z1, d, fam, tone, foot=0.0, top=None):
+    """T.paint, its top and foot on the screen's px rows on a straight face (_row; foot: the foot's half-row choice,
+    top: the top's own, snapped alone, else the height kept)."""
+    _AX[0] = ax
+    dd = d + T.PAINT
+    h = z1 - z0                                         # (its foot on a row, its height whole px as near as can be:
+    z0 = _row(z0, dd, foot)                             #   snapping both ends alone could take or add a px)
+    if top is not None:
+        z1 = _row(z1, dd, top)
+    elif _AX[0] is not None:
+        z1 = z0 + max(1, round(h * W.ZART)) / W.ZART
+    else:
+        z1 = z0 + h
+    if z1 - z0 > 1e-6:
+        T.paint(k, ax, plane, u0, u1, z0, z1, d, fam, tone)
+
+def _nudge(ax):
+    """The px a face's rail and lip seams move along u to sit centred between its posts on screen (a part's depth moves
+    it a px sideways per LINE, one way on each axis's faces): (rail, lip)."""
+    if not NUDGE:
+        return 0.0, 0.0
+    return (T.LINE, -T.LINE) if ax == "y" else (T.LINE, 0.0)
+
+
+def _blocks(a, b, sh=0.0):
+    """The rail's blocks over [a, b], on each tile's grid: (u0, u1, middle?); the middle block moved sh along u."""
     out = []
     for c in range(-1, 2):
-        for u0, u1, mid in ((c - 0.5, c - 0.5 + END_W, False), (c - 0.5 + END_W, c + 0.5 - END_W, True),
-                            (c + 0.5 - END_W, c + 0.5, False)):
+        for u0, u1, mid in ((c - 0.5, c - 0.5 + END_W + sh, False), (c - 0.5 + END_W + sh, c + 0.5 - END_W + sh, True),
+                            (c + 0.5 - END_W + sh, c + 0.5, False)):
             q0, q1 = max(a, u0), min(b, u1)
             if q1 - q0 > 1e-6:
                 out.append((q0, q1, mid))
     return out
 
 
-def _thirds(a, b):
-    """The lip's seams over [a, b] (each a px from u): a tile in three 10 px sections."""
-    return [u for c in range(-1, 2) for u in (c - 0.5 + 10.3 / 32, c - 0.5 + 21.3 / 32) if a + T.LINE < u < b - T.LINE]
+def _thirds(a, b, sh=0.0):
+    """The lip's seams over [a, b] (each a px from u): a tile in three 10 px sections, moved sh along u."""
+    return [u for c in range(-1, 2) for u in (c - 0.5 + 10.3 / 32 + sh, c - 0.5 + 21.3 / 32 + sh)
+            if a + T.LINE < u < b - T.LINE]
 
 
 def _mitres(ends):
@@ -72,19 +122,22 @@ def _lip(k, ax, plane, a, b, ends, zs, top, fam):
     zf = zg if room else min(zg, top)                   # seams up to it, no seam over it)
     if not room and top - zl - LIP_H < 0.01:
         return zg, zl + LIP_H
-    T.paint(k, ax, plane, a, b, zl + LIP_H, zg + PZ if room else top, 0.0, fam, 2)             # (the face over it)
+    _paint(k, ax, plane, a, b, zl + LIP_H, zg + PZ if room else top, 0.0, fam, 2)             # (the face over it)
     if room:
-        T.paint(k, ax, plane, a, b, zg, zg + PZ, T.PAINT, fam, 1)
-    for u in _thirds(a, b):
+        _paint(k, ax, plane, a, b, zg, zg + PZ, T.PAINT, fam, 1)
+    for u in (_thirds(a, b, _nudge(ax)[1]) if POSTS == "tile" else []):
         op, out = T.OPEN, T.LIP_OUT
         if op and out and (op[0] < u < op[0] + out * T.LINE or op[1] - out * T.LINE < u < op[1]):
             u += out * T.LINE * (-1 if u < (op[0] + op[1]) / 2 else 1)   # (a window's seam by its post, the opening
             #   widened past it: moved out with the opening's end)
         q0, q1 = u, u + 0.7 * T.LINE
+        if not NUDGE:                                   # (square on: one whole screen px)
+            n = round(_px(u, 0.0))
+            q0, q1 = _u(n, 0.0), _u(n + 1, 0.0)
         dq, zq = LIP_D + T.PAINT, zl + LIP_H + T.PAINT
         prism(k, ax, plane, q0, q1, [(0.0, zh), (dq, zh), (dq, zq), (0.0, zq)], fam, 2,
               cols=[False, None, None, False])
-        T.paint(k, ax, plane, q0, q1, zl + LIP_H, zf, T.PAINT, fam, 1)
+        _paint(k, ax, plane, q0, q1, zl + LIP_H, zf, T.PAINT, fam, 1)
     return (zg + PZ if room else zg), zl + LIP_H
 
 
@@ -99,7 +152,9 @@ def _rail(k, ax, plane, a, b, ends, top, fam):
     mit = _mitres(ends)
     z0 = rail_foot(top)
     z1 = z0 + RAIL_H                                    # (under the cap's black)
-    bl = (T.RAIL_LAYOUT or _blocks)(a, b)
+    bl = (T.RAIL_LAYOUT(a, b) if T.RAIL_LAYOUT else [(a, b, POSTS == "none" and not GAP)] if POSTS != "tile"
+          else _blocks(a, b, _nudge(ax)[0]))           # (over a join's post an end block, over a fill a middle one;
+    #                                                   over a diagonal's gap column, GAP, an end block: solid on)
     for i, (u0, u1, mid) in enumerate(bl):
         d = MID_D if mid else RAIL_D
         zb = z0 - PZ if mid else z0
@@ -110,9 +165,9 @@ def _rail(k, ax, plane, a, b, ends, top, fam):
         prism(k, ax, plane, u0, u1, prof, fam, 3, mitre=m,       # (no end where it runs on into another set-back
               cap=tuple(False if jn else None for jn in joins))  # block: a window's rail, RAIL_LAYOUT)
         zt = z1 - MID_DROP if mid else z1
-        T.paint(k, ax, plane, u0, u1, zt - PZ, zt, d, fam, 5)                                    # its top edge lit
+        _paint(k, ax, plane, u0, u1, zt - PZ, zt, d, fam, 5)                                    # its top edge lit
         nxt = bl[i + 1][2] if i + 1 < len(bl) else False
-        if mid and u1 < b - 1e-6 and not nxt:           # (a seam where it meets the end block on its right, as the
+        if mid and u1 < b - 1e-6 and not nxt and NUDGE:  # (a seam where it meets the end block on its right, as the
             e = RAIL_D + 2 * T.PAINT                    # end block's side shows on its left: a sheet the px left of
             prism(k, ax, plane, u1 - 0.75 * T.LINE, u1 + 0.25 * T.LINE,   # the end block, up to its top; in front
                   [(e - T.PAINT, zb), (e, zb), (e, z1), (e - T.PAINT, z1)], fam, 2,   # of it, so the px is whole)
@@ -120,13 +175,24 @@ def _rail(k, ax, plane, a, b, ends, top, fam):
     return z0
 
 
+USCALE = 1.0                    # a square-on piece built a tile long to be drawn this long (the px grid kept whole)
+SNAPD = 0.125                     # the row phase on a face seen square on (_row)
+SQ = 2 ** -0.5                  # a screen px along a face seen square on (a diagonal wall), in LINEs
+PX0D = 0.0                      # where its px boundaries fall (in px, off u's grid) on a piece centred on its tile
+
+
 def _px(u, d):
-    """u on the default wall's front, d proud of it, in screen px (a depth shifts it a px left per LINE)."""
+    """u on the default wall's front, d proud of it, in screen px (a depth shifts it a px left per LINE; square on, a
+    px is SQ of a LINE and depth moves nothing)."""
+    if not NUDGE:
+        return u * USCALE / (SQ * T.LINE) + PX0D
     return u / T.LINE + PX0 - d / T.LINE
 
 
 def _u(n, d):
     """The u that falls on px boundary n at depth d (_px's inverse)."""
+    if not NUDGE:
+        return (n - PX0D) * SQ * T.LINE / USCALE
     return (n - PX0 + d / T.LINE) * T.LINE
 
 
@@ -143,39 +209,88 @@ def wall_face(k, ax, plane, a, b, ends, zs, top, full):
     if not full:
         return
     zh = _rail(k, ax, plane, a, b, ends, top, F)                                                 # the rail
-    for f0, f1 in T.posts(k, ax, plane, a, b, ends, zlt, zh, F, groove=False):    # (the posts plain, on down to the
-        T.paint(k, ax, plane, f0, f1, zb, zh, 0.0, F, 2)                          # lip's top) ... the field
-        if f1 - f0 < 0.3 or (T.OPEN and ax == "y" and f0 < T.OPEN[1] and f1 > T.OPEN[0]):
+    if POSTS == "all":                                   # (a diagonal wall's join: one post the face's length)
+        T.slab(k, ax, plane, a, b, zlt, zh, FR, F, 3, ends=(False, False))
+    fields = ([] if POSTS == "all" else [(a, b)] if POSTS == "none"
+              else T.posts(k, ax, plane, a, b, ends, zlt, zh, F, groove=False))
+    for f0, f1 in fields:    # (the posts plain, on down to the
+        _paint(k, ax, plane, f0, f1, zb, zh, 0.0, F, 2)                          # lip's top) ... the field
+        if POSTS == "none" and GAP and not NUDGE:
+            _gap(k, ax, plane, f0, f1, zb, zh)           # (a diagonal's gap between panels: stacked boxes)
+            continue
+        if f1 - f0 < 0.3 or PLAIN or (T.OPEN and ax == "y" and f0 < T.OPEN[1] and f1 > T.OPEN[0]):
             continue
         w = f1 - f0
-        p0, p1, q0, q1 = f0 + 0.04, f1 - 0.04 - LINE, zb + 0.1, zh - 0.06    # (its right side a px further in)
+        p0, p1, q0, q1 = f0 + 0.04, f1 - 0.04 - LINE, zb + 0.1, zh - 0.06    # (its right side a px further in,
+        if ax == "y" and NUDGE:                          # two on the lit faces: the same px between it and either post;
+            p1 -= LINE                                   # none seen square on)
+        elif not NUDGE:
+            p1 += LINE                                   # (square on: even)
         n0, n1 = round(_px(p0, PAINT)), round(_px(p1, PAINT))                   # (its parts on whole px, each
         p0, p1 = _u(n0, PAINT), _u(n1, PAINT)                                   # at its own depth)
         b0 = q0                                          # (the raised bar and fine lines placed as before ...)
         b1 = q1
         q0, q1 = q0 - 2 * PZ, q1 - 2 * PZ                # (... the panel's top and foot 2 px down, the slot with it)
-        T.paint(k, ax, plane, p0, p1, q0, q1, PAINT, F, 1)                                        # panel outline
-        T.paint(k, ax, plane, _u(n0 + 1, 2 * PAINT), _u(n1 - 1, 2 * PAINT), q0 + 0.026, q1 - 0.026, 2 * PAINT, F, 2)
+        _AX[0] = ax                                      # (its foot's steps paired from its sides' feet, its top's
+        o0, o1 = _row(q0, 2 * PAINT, 0.5), _row(q1, 2 * PAINT, 0.5)            # from their tops; a px wide all round)
+        q0, q1 = o0, o1
+        e = 1 / W.ZART
+        T.paint(k, ax, plane, p0, p1, q0, q1, PAINT, F, 1)                                       # panel outline
+        T.paint(k, ax, plane, _u(n0 + 1, 2 * PAINT), _u(n1 - 1, 2 * PAINT), q0 + e, q1 - e, 2 * PAINT, F, 2)
         if T.VARIANT[0]:                                 # (a straight run's top design in the panel)
             from . import wall3d_variants as V
             V.wall_top(k, ax, plane, p0 + LINE, p1 - LINE, q0 + 0.026, q1 - 0.026, F, T.VARIANT[0])
             continue
         bw, nc = 0.42 * w, n0 + n1                       # (centred on the panel: twice its centre, in px)
-        ns = _odd(bw / LINE + 2, nc % 2)                 # the slot's width in px (a px round the bars)
-        nl = _odd(0.5 * w / LINE, nc % 2)                # the fine lines'
-        T.paint(k, ax, plane, _u((nc - ns) / 2, 3 * PAINT), _u((nc + ns) / 2, 3 * PAINT), q1 - 0.27 - PZ, q1 - 0.07,
+        lw = LINE if NUDGE else SQ * LINE / USCALE       # (a screen px along the face)
+        ns = _odd(bw / lw + 2, nc % 2)                   # the slot's width in px (a px round the bars)
+        nl = _odd(0.5 * w / lw, nc % 2)                  # the fine lines'
+        _paint(k, ax, plane, _u((nc - ns) / 2, 3 * PAINT), _u((nc + ns) / 2, 3 * PAINT), q1 - 0.27 - PZ, q1 - 0.07,
                 3 * PAINT, F, 0)                         # (its foot a px further down)
         for j in range(2):                                                                       # ochre bars
             bz = q1 - 0.09 - j * 0.085 - PZ              # (a px down, in the slot)
-            T.paint(k, ax, plane, _u((nc - ns) / 2 + 1, 4 * PAINT), _u((nc + ns) / 2 - 1, 4 * PAINT), bz - 0.05, bz,
+            _paint(k, ax, plane, _u((nc - ns) / 2 + 1, 4 * PAINT), _u((nc + ns) / 2 - 1, 4 * PAINT), bz - 0.05, bz,
                     4 * PAINT, "ochre", 3)
         zr = b1 - 0.5
         prism(k, ax, plane, _u(n0 + 1, FR), _u(n1 - 1, FR), [(0.0, zr - 0.07), (FR, zr - 0.07), (FR, zr), (0.0, zr)],
               F, 3, cols=[False, None, None, False], cap=False, mitre=(0.0, lambda d, z: d - FR))  # raised bar: its
         gap = (zr - 0.07 - b0) / 3                       # front the panel's full width between its seams, its top's
         for zz in (zr - 0.07 - gap, zr - 0.07 - 2 * gap):  # back cut a px short at its right end ... the two lines
-            T.paint(k, ax, plane, _u((nc - nl) / 2, 3 * PAINT), _u((nc + nl) / 2, 3 * PAINT), zz - 0.026, zz,
+            _paint(k, ax, plane, _u((nc - nl) / 2, 3 * PAINT), _u((nc + nl) / 2, 3 * PAINT), zz - 0.026, zz,
                     3 * PAINT, F, 1)                                                            # evenly under it
+
+
+GAP = False                                     # a diagonal's gaps between panels get columns of stacked boxes
+
+
+def _gap(k, ax, plane, f0, f1, zb, zh):
+    """A gap between a diagonal's panels (square on): a dark recess the panels' height, a column of three stacked
+    boxes in it for every 14 px or so of its width, each box lit along its top, a short slot in the lowest."""
+    F, PAINT, PZ_ = "wall", T.PAINT, PZ
+    n0, n1 = round(_px(f0, PAINT)), round(_px(f1, PAINT))
+    q0, q1 = zb + 0.1 - 2 * PZ_, zh - 0.06 - 2 * PZ_            # (the panels' outline, top and foot)
+    _AX[0] = ax
+    nc = max(1, round((n1 - n0) / 14))
+    cw = (n1 - n0 - 2) // nc                                  # (each column's px, a px margin each side)
+    x = n0 + (n1 - n0 - nc * cw) // 2
+    row = 1 / W.ZART
+    for c in range(nc):
+        c0, c1 = x + c * cw + 1, x + (c + 1) * cw - 1
+        _paint(k, ax, plane, _u(c0, PAINT), _u(c1, PAINT), q0, q1, PAINT, F, 1, foot=0.5, top=0.5)  # the recess
+        h = (q1 - q0 - 4 * row) / 3
+        for j in range(3):
+            z1 = q1 - row - j * (h + row)
+            z0 = z1 - h
+            _paint(k, ax, plane, _u(c0 + 1, 2 * PAINT), _u(c1 - 1, 2 * PAINT), z0, z1, 2 * PAINT, F, 2, foot=0.5,
+                   top=0.5)
+            _paint(k, ax, plane, _u(c0 + 1, 3 * PAINT), _u(c1 - 1, 3 * PAINT), z1 - row, z1, 3 * PAINT, F, 3,
+                   foot=0.5, top=0.5)                                                              # its lit top
+            if j == 2:
+                _paint(k, ax, plane, _u(c0, 4 * PAINT), _u(c1, 4 * PAINT), q1 - row, q1, 4 * PAINT, F, 1,
+                       foot=0.5, top=0.5)                                                          # the recess's top
+                m = (c0 + c1) // 2
+                _paint(k, ax, plane, _u(m - 2, 3 * PAINT), _u(m + 2, 3 * PAINT), z0 + 2 * row, z0 + 3 * row,
+                       3 * PAINT, F, 1, foot=0.5, top=0.5)                                         # a short slot
 
 
 def skirt(k, sp, ax, plane, a, b, fam, ends=None):
@@ -207,6 +322,10 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
         return T.P(ax, plane, u, zsurf(dd), dd) + nrm * rise
     g, rise, clip = T.LINE / 2, T.PAINT, lambda q: T._clip(T._clip(q, lo), hi)   # noqa: E731
     d0, d1 = max(0.02, T.style().shelf), run_ if ft else run_ - 0.045   # (from the shelf's edge to the toe's)
+    _SK[:] = _slope_grid(zsurf, zs, ft, run_)
+    sd, pdd, su, lw = _SK
+    if not NUDGE:                               # (square on: the slope's edges on whole screen px)
+        g, d0 = 0.0, sd(d0)                     # (no tile seams: the pieces run on as one face)
     off = T.seam()
     segs = []
     for s0, s1 in T.spans(a, b):
@@ -225,13 +344,58 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
             poly = clip([(q[0], q[2]), (q[1], q[2]), (q[1], q[3]), (q[0], q[3])])
             if len(poly) >= 3:
                 T.plate(k, poly, pt, nrm, 0.0, rise, fam, 3)      # (the slope a shade lighter)
-        poly = clip([(e0 + g, d0), (e1 - g, d0), (e1 - g, d0 + 0.4 / 32), (e0 + g, d0 + 0.4 / 32)])
+        e0, e1 = (e0, e1) if NUDGE else (su(e0) - lw / 2, su(e1) + lw / 2)   # (square on: over the joins)
+        poly = clip([(e0 + g, d0), (e1 - g, d0), (e1 - g, d0 + pdd), (e0 + g, d0 + pdd)])
         if len(poly) >= 3:                      # the step's edge lit (the slope's top px, at the shelf)
             T.plate(k, poly, pt, nrm, 0.0, rise + T.PAINT, fam, 5, base=rise)
+    boxes = []
     for u0, u1, field in segs:
         poly = clip([(u0 + g, d0), (u1 - g, d0), (u1 - g, d1), (u0 + g, d1)])
-        if len(poly) >= 3 and field and u1 - u0 >= 0.36 and T.style().skirt == "panel":
-            panel(k, pt, nrm, clip, u0, u1, a, b, off, g, d0, run_, ft, fam, rise)
+        if len(poly) >= 3 and field and u1 - u0 >= 0.36 and T.style().skirt == "panel" and POSTS == "tile":
+            boxes.append(panel(k, pt, nrm, clip, u0, u1, a, b, off, g, d0, run_, ft, fam, rise))
+    if NUDGE or T.style().skirt != "panel":
+        return
+    hz = _hz(run_, ft)                          # square on: the seam on across the whole face, box to box
+    for s0, s1 in T.spans(a, b):
+        e0, e1 = s0 - (run_ if abs(s0 - a) < 1e-6 else 0.0), s1 + (run_ if abs(s1 - b) < 1e-6 else 0.0)
+        cuts = sorted(q for q in boxes if q and e0 < q[0] < e1)
+        x = su(e0)
+        for f0, f1 in cuts + [(su(e1), None)]:
+            poly = clip([(x, hz), (f0, hz), (f0, hz + pdd), (x, hz + pdd)])
+            if len(poly) >= 3:                  # (a px on past a corner's mitre: over the slanted seam's end, no
+                lo_u, hi_u = min(p[0] for p in poly), max(p[0] for p in poly)   # break where the two meet)
+                cut0, cut1 = lo_u > x + 1e-6, hi_u < f0 - 1e-6       # (an end the mitre clipped)
+                poly = [(p[0] - (lw if cut0 and p[0] - lo_u < 1e-6 else 0.0)
+                         + (lw if cut1 and hi_u - p[0] < 1e-6 else 0.0), p[1]) for p in poly]
+            if f0 - x > 1e-6 and len(poly) >= 3:
+                T.plate(k, poly, pt, nrm, 0.0, rise + 6 * T.PAINT, fam, 1, base=rise, fixed=DLINE)   # (proud
+                #   enough to stay over the slanted ramp past the mitre)
+            x = f1
+
+
+DLINE = "wM"                                    # the ramp's seam lines' tone, square on (crisp, so between its own
+#                                                 line tone and the next up: a slanted face's anti-aliased ones read so)
+_SK = [None, 0.4 / 32, None, T.LINE]              # the slope's grid, as skirt last set it (_slope_grid)
+
+
+def _slope_grid(zsurf, zs, ft, run_):
+    """For a square-on (diagonal) slope: a d onto whole screen rows (a z's row, as _row's, at its depth), a row's d,
+    a u onto whole screen px, and a px's u. A straight face keeps its art px (NUDGE)."""
+    if NUDGE:
+        return (lambda dd: dd), 0.4 / 32, (lambda u: u), T.LINE
+    f = lambda dd: zsurf(dd) * W.ZART - YD * dd / SQ                        # noqa: E731
+    kk = -(zs - ft) / run_ * W.ZART - YD / SQ
+    ph = SNAPD + 0.5                             # (the slope's plates half a row off the face's: whole rows)
+    sd = lambda dd: dd + (round(f(dd) - ph) + ph - f(dd)) / kk               # noqa: E731
+    su = lambda u: _u(round(_px(u, 0.0)), 0.0)                               # noqa: E731
+    return sd, 1 / abs(kk), su, SQ * T.LINE / USCALE
+
+
+def _hz(run_, ft):
+    """The ramp's seam across, its top (the panel's bottom seam 4 rows up)."""
+    sd, pd = _SK[0], _SK[1]
+    dn = 0.12 * run_ if ft else 0.0
+    return sd(0.88 * run_ + dn - 2 * pd) - 4 * pd
 
 
 def panel(k, pt, nrm, clip, u0, u1, a, b, off, g, d0, run_, ft, fam, rise):
@@ -239,21 +403,26 @@ def panel(k, pt, nrm, clip, u0, u1, a, b, off, g, d0, run_, ft, fam, rise):
     step's lit edge), its bottom 2 px up; either side a seam across to the slope's edges, 3 px over the panel's bottom
     one (a window tile, T.BARE: only that seam, on across: wall3d_iwin_ramp's pockets cut it)."""
     PAINT, LINE = T.PAINT, T.LINE
+    sd, pd_, su, lw = _SK
+    if not NUDGE:
+        LINE = lw
 
     def rect(q):
         return [(q[0], q[2]), (q[1], q[2]), (q[1], q[3]), (q[0], q[3])]
     w = u1 - u0
     im = 0.2 * min(1.0, w / 0.76)
     dn = 0.12 * run_ if ft else 0.0                 # (the panel down to the toe's edge)
-    fu0, fu1, fd0, fd1 = u0 + 0.06, u1 - 0.06, 0.12 * run_ + dn, 0.88 * run_ + dn
-    pd = ed = 0.4 / 32                              # (about an art px down the slope)
-    fd0, fd1 = fd0 + 4 * pd, fd1 - 2 * pd
+    fu0, fu1, fd0, fd1 = su(u0 + 0.06), su(u1 - 0.06), 0.12 * run_ + dn, 0.88 * run_ + dn
+    pd = ed = pd_                                   # (about an art px down the slope; square on, a screen row)
+    fd0, fd1 = sd(fd0 + 4 * pd), sd(fd1 - 2 * pd)
     fd0 = max(fd0, d0 + pd) + pd
     sb = fd1 - ed                                   # (the bottom seam's top)
     hz = fd1 - 4 * pd
-    ea = u0 - off - (run_ if abs(u0 - off - a) < 1e-6 else 0.0) + g
-    eb = u1 + off + (run_ if abs(u1 + off - b) < 1e-6 else 0.0) - g
+    ea = su(u0 - off - (run_ if abs(u0 - off - a) < 1e-6 else 0.0)) + g
+    eb = su(u1 + off + (run_ if abs(u1 + off - b) < 1e-6 else 0.0)) - g
     for q in ((ea, eb, hz, hz + ed),) if T.BARE else ((ea, fu0, hz, hz + ed), (fu1, eb, hz, hz + ed)):
+        if not NUDGE:
+            break                                   # (square on, skirt draws it on across)
         poly = clip(rect(q))
         if len(poly) >= 3:
             T.plate(k, poly, pt, nrm, 0.0, rise + PAINT, fam, 1, base=rise)
@@ -261,15 +430,18 @@ def panel(k, pt, nrm, clip, u0, u1, a, b, off, g, d0, run_, ft, fam, rise):
         return
     for q in ((fu0, fu1, fd0, fd0 + ed), (fu0, fu1, fd1 - ed, fd1), (fu0, fu0 + LINE, fd0, fd1),
               (fu1 - LINE, fu1, fd0, fd1)):
-        T.plate(k, rect(q), pt, nrm, 0.0, rise + PAINT, fam, 1, base=rise)
-    iu0, iu1 = u0 + im + LINE, u1 - im - LINE       # the light plate (a px in at its top and sides, a px down)
-    id0, id1 = 0.3 * run_ + dn + 2 * pd, 0.52 * run_ + dn + pd
+        T.plate(k, rect(q), pt, nrm, 0.0, rise + PAINT, fam, 1, base=rise, fixed=None if NUDGE else DLINE)
+    iu0, iu1 = su(u0 + im) + LINE, su(u1 - im) - LINE   # the light plate (a px in at its top and sides, a px down)
+    if not NUDGE:
+        iu0, iu1 = iu0 - LINE, iu1 + LINE       # (square on: a px wider each side)
+    id0, id1 = sd(0.3 * run_ + dn + 2 * pd), sd(0.52 * run_ + dn + pd)
     if T.VARIANT[1]:                                # (a straight run's ramp design: its own drawing in the frame)
         from . import wall3d_variants as V
         V.ramp_plain(lambda q, lvl, n: T.plate(k, q, pt, nrm, 0.0, rise + n * PAINT, fam, lvl, base=rise),
                      fu0 + LINE, fu1 - LINE, fd0 + 0.03, iu0, iu1, id1, sb, pd, T.VARIANT[1])
-        return
+        return fu0, fu1
     T.plate(k, rect((iu0, iu1, id0, id1)), pt, nrm, 0.0, rise + 2 * PAINT, fam, 4, base=rise)
-    su0, su1 = u0 + im + 0.02, u1 - im - 0.02      # the dark slot (a px down, clear of the bottom seam)
-    sd0, sd1 = 0.66 * run_ + dn + pd, min(0.74 * run_ + dn + pd, sb - 1e-3)
+    su0, su1 = su(u0 + im + 0.02), su(u1 - im - 0.02)   # the dark slot (a px down, clear of the bottom seam)
+    sd0, sd1 = sd(0.66 * run_ + dn + pd), min(sd(0.74 * run_ + dn + pd), sb - 1e-3)
     T.plate(k, rect((su0, su1, sd0, sd1)), pt, nrm, 0.0, rise + 2 * PAINT, fam, 0, base=rise)
+    return fu0, fu1

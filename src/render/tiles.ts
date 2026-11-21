@@ -114,8 +114,19 @@ export function outward(kindAt: KindAt, x: number, y: number): number {
 /** The fewest connected tiles of the back edge that stand full height in cutaway (`backEdge`). */
 const BACK_MIN = 3;
 
-/** How far `clearTo` and `hidesShip` look (tiles). */
+/** How far `clearTo` looks (tiles). */
 export const HULL_RAY = 16;
+
+/**
+ * How far behind a ground base's full far wall `hidesShip` looks (tiles diagonally up the screen): as far as the wall's top
+ * reaches. A diagonal step back rises one tile height (TILE_H, 64 px) on screen and the hull top stands ROOF_Z * Z_PX
+ * (about 161 px) over the floor, so a full wall covers what lies up to 3 steps behind it; anything further back shows over
+ * its top (the base's other rooms across the ground). A ship looks the whole HULL_RAY.
+ */
+const HIDE_RAY = 3;
+
+/** How far `hidesShip` looks for a hull look (`hullSide`'s `reach`): a ground base its walls' reach, a ship HULL_RAY. */
+export const hideReach = (look: HullLook): number => (look === "station" ? HIDE_RAY : HULL_RAY);
 
 /**
  * How far a tile's `hullSide` can depend on the struct (tiles): the rays (HULL_RAY) of tiles up to BACK_MIN away (the
@@ -147,21 +158,21 @@ export const HullSide = { None: 0, Far: 1, Near: 2 } as const;
  * space through a breach, a notch or a gap stays a partition (cut in cutaway, never a ghost), while concave hull steps
  * and thick hull keep their outline.
  */
-export function hullSide(kindAt: KindAt, x: number, y: number): number {
-  return sideOf(kindAt, x, y, true);
+export function hullSide(kindAt: KindAt, x: number, y: number, reach = HULL_RAY): number {
+  return sideOf(kindAt, x, y, true, reach);
 }
 
 /** `hullSide`; `corners` false leaves out the notch corner rule (it asks the sides of the corner's two neighbours). */
-function sideOf(kindAt: KindAt, x: number, y: number, corners: boolean): number {
+function sideOf(kindAt: KindAt, x: number, y: number, corners: boolean, reach: number): number {
   if (isNear(kindAt, x, y)) return HullSide.Near;
   if (kindAt(x, y) === Struct.RockWall || !touchesSpace(kindAt, x, y)) return HullSide.None;
   // Only the ship's top and back edges stand full: a far wall with the ship behind it on screen is cut (`hidesShip`),
   // and so is what is left of the back edge in bits of fewer than BACK_MIN tiles (no lone pillars).
-  if (farOutline(kindAt, x, y)) return backEdge(kindAt, x, y) ? HullSide.Far : HullSide.Near;
+  if (farOutline(kindAt, x, y)) return backEdge(kindAt, x, y, reach) ? HullSide.Far : HullSide.Near;
   // A notch's inner corner (space only diagonally at +x -y or -x +y, facing none itself) where the hull on both sides
   // of it is cut is cut with it, not left standing as a partition stub.
   const sp = (dx: number, dy: number) => kindAt(x + dx, y + dy) === Struct.Space;
-  const cut = (i: number, j: number) => (kindAt(i, j) === Struct.Wall || kindAt(i, j) === Struct.Door) && sideOf(kindAt, i, j, false) === HullSide.Near;
+  const cut = (i: number, j: number) => (kindAt(i, j) === Struct.Wall || kindAt(i, j) === Struct.Door) && sideOf(kindAt, i, j, false, reach) === HullSide.Near;
   if (corners && !outward(kindAt, x, y))
     for (const [dx, dy] of [[1, -1], [-1, 1]] as const) if (sp(dx, dy) && cut(x + dx, y) && cut(x, y + dy)) return HullSide.Near;
   return HullSide.None;
@@ -187,10 +198,10 @@ function farOutline(kindAt: KindAt, x: number, y: number): boolean {
  * Whether the far hull wall at (x, y) stands full height: nothing of the ship lies behind it on screen, and it joins at
  * least BACK_MIN such walls (4-connected, so a 45 degree staircase's steps join through their corners).
  */
-function backEdge(kindAt: KindAt, x: number, y: number): boolean {
+function backEdge(kindAt: KindAt, x: number, y: number, reach: number): boolean {
   const stands = (i: number, j: number) => {
     const k = kindAt(i, j);
-    return (k === Struct.Wall || k === Struct.Door) && touchesSpace(kindAt, i, j) && !isNear(kindAt, i, j) && farOutline(kindAt, i, j) && !hidesShip(kindAt, i, j);
+    return (k === Struct.Wall || k === Struct.Door) && touchesSpace(kindAt, i, j) && !isNear(kindAt, i, j) && farOutline(kindAt, i, j) && !hidesShip(kindAt, i, j, reach);
   };
   if (!stands(x, y)) return false;
   const seen = new Set([`${x},${y}`]);
@@ -209,12 +220,12 @@ function backEdge(kindAt: KindAt, x: number, y: number): boolean {
 
 /**
  * Whether a far hull wall at (x, y) stands in front of the ship on screen: some ship tile lies straight behind it (up the
- * screen, toward -x -y). Only the ship's top and back edges, with nothing of it behind them, stand full height in
+ * screen, toward -x -y) within `reach` tiles (`hideReach`). Only the ship's top and back edges, with nothing of it behind them, stand full height in
  * cutaway; a far wall that would hide part of the ship (a step in a side, the back wall across a notch) is cut with
  * the near hull instead.
  */
-function hidesShip(kindAt: KindAt, x: number, y: number): boolean {
-  for (let k = 1; k <= HULL_RAY; k++) if (kindAt(x - k, y - k) !== Struct.Space) return true;
+function hidesShip(kindAt: KindAt, x: number, y: number, reach: number): boolean {
+  for (let k = 1; k <= reach; k++) if (kindAt(x - k, y - k) !== Struct.Space) return true;
   return false;
 }
 
@@ -239,16 +250,16 @@ export function nearOut(kindAt: KindAt, x: number, y: number): number {
 }
 
 /** True if the hull tile at (x, y) draws as a ghost at this level (the near hull always, every hull side in `low`). */
-function ghostAt(kindAt: KindAt, x: number, y: number, level: WallLevel): boolean {
+function ghostAt(kindAt: KindAt, x: number, y: number, level: WallLevel, reach: number): boolean {
   if (kindAt(x, y) !== Struct.Wall) return false;
-  const side = hullSide(kindAt, x, y);
+  const side = hullSide(kindAt, x, y, reach);
   return side === HullSide.Near || (side === HullSide.Far && level === "low");
 }
 
 /** True if the hull ghost at (x, y) (the near hull, or any hull side in `down`) replaces the floor plate under it. */
-export function replacesFloor(kindAt: KindAt, x: number, y: number, mode: CutawayMode = "auto"): boolean {
+export function replacesFloor(kindAt: KindAt, x: number, y: number, mode: CutawayMode = "auto", reach = HULL_RAY): boolean {
   if (!solidish(kindAt(x, y))) return false;
-  const side = hullSide(kindAt, x, y);
+  const side = hullSide(kindAt, x, y, reach);
   return side === HullSide.Near || (side === HullSide.Far && wallLevel(mode) === "low");
 }
 
@@ -286,7 +297,8 @@ export function wallPieces(
   look: HullLook = "ship",
 ): Piece[] {
   const level = wallLevel(mode);
-  const side = hullSide(kindAt, x, y);
+  const reach = hideReach(look);
+  const side = hullSide(kindAt, x, y, reach);
   const o = side === HullSide.Near ? outward(kindAt, x, y) : 0;
   if (kind === Struct.Door) {
     const ax = solidish(kindAt(x - 1, y)) && solidish(kindAt(x + 1, y)) ? "x" : "y";
@@ -312,7 +324,10 @@ export function wallPieces(
     const id = `tile.hull.ghost.m${mask}`;
     const legacy = room ? [`${id}.r${room}`, id] : [id];
     const se = (mask & 6) === 6 && wallCorners(kindAt, x, y, mask) & 2;
-    return [{ chain: se ? [...legacy.map((i) => i.replace(id, `${id}c2`)), ...legacy] : legacy, order: 0 }];
+    const chain = se ? [...legacy.map((i) => i.replace(id, `${id}c2`)), ...legacy] : legacy;
+    // A ground base's cut (walls up) has a lip where the ship's ghost meets the deck: its ghost starts on the lip's top edge.
+    const lifted = look === "station" && level !== "low" ? chain.map((i) => i.replace("tile.hull.", "tile.hull.station.")) : [];
+    return [{ chain: [...lifted, ...chain], order: 0 }];
   }
   // Corner fills (wallCorners): `m<mask>c<bits>` first, today's `m<mask>` last, so partial art falls back cleanly.
   const c = wallCorners(kindAt, x, y, mask);
@@ -320,8 +335,8 @@ export function wallPieces(
     c ? [...new Set([`${base}c${c}${sfx}`, `${base}c${c}`, base + sfx, base])] : [base + sfx, base];
   const end = (pre: string, side: string, bits: number) =>
     bits ? [`${pre}end.${side}.${cs(bits)}`, `${pre}end.${side}`] : [`${pre}end.${side}`];
-  const endS = mask & 4 && ((ghosts && ghostAt(kindAt, x, y + 1, level)) || gap(x, y + 1));
-  const endE = mask & 2 && ((ghosts && ghostAt(kindAt, x + 1, y, level)) || gap(x + 1, y));
+  const endS = mask & 4 && ((ghosts && ghostAt(kindAt, x, y + 1, level, reach)) || gap(x, y + 1));
+  const endE = mask & 2 && ((ghosts && ghostAt(kindAt, x + 1, y, level, reach)) || gap(x + 1, y));
   if (hull) {
     // The far hull's inside face is the partitions': the full-height wall piece (the hull stays full in the
     // cutaway), with the hull over the partitions' height drawn on it (`tile.hull.cap.*`: the black band and the
@@ -342,47 +357,4 @@ export function wallPieces(
   if (endS) out.push({ chain: end(pre, "s", c & 6), order: 1 });
   if (endE) out.push({ chain: end(pre, "e", c & 3), order: 1 });
   return out;
-}
-
-/**
- * Tiles carrying a front-ghost vertical edge line (`tile.hull.ghost.vert`, drawn at the tile's front corner): the
- * corners where the near hull's silhouette turns or ends (walls pass 12, complib.ghost_verts).
- */
-export function ghostVerts(kindAt: KindAt, width: number, height: number): { x: number; y: number }[] {
-  return vertsOver(kindAt, 0, 0, width, height);
-}
-
-/**
- * The ghost verts whose tile lies in [x0, x1) x [y0, y1) (one chunk view's share). A vert at tile (x, y) only depends
- * on the hull tiles in [x, x + 1] x [y, y + 1], so the sweep reaches one tile past the rectangle's +x / +y sides.
- */
-export function ghostVertsIn(kindAt: KindAt, x0: number, y0: number, x1: number, y1: number): { x: number; y: number }[] {
-  return vertsOver(kindAt, x0, y0, x1 + 1, y1 + 1).filter((t) => t.x >= x0 && t.y >= y0 && t.x < x1 && t.y < y1);
-}
-
-function vertsOver(kindAt: KindAt, x0: number, y0: number, x1: number, y1: number): { x: number; y: number }[] {
-  const seg = new Map<string, { x: number; y: number; dirs: Set<string>; n: number }>();
-  const put = (px: number, py: number, d: string) => {
-    const k = `${px},${py}`;
-    const e = seg.get(k) ?? { x: px, y: py, dirs: new Set<string>(), n: 0 };
-    e.dirs.add(d);
-    e.n++;
-    seg.set(k, e);
-  };
-  for (let y = y0; y < y1; y++)
-    for (let x = x0; x < x1; x++) {
-      if (kindAt(x, y) !== Struct.Wall) continue;
-      const o = nearOut(kindAt, x, y);
-      if (!o) continue;
-      const m = wallMask(kindAt, x, y);
-      const segs: [number, number, number, number, string][] = [];
-      if (o === 1 && m & 8) segs.push([x - 0.5, y + 0.5, x + 0.5, y + 0.5, "y"]);
-      if (o === 2 && m & 1) segs.push([x + 0.5, y - 0.5, x + 0.5, y + 0.5, "x"]);
-      if (o === 3) segs.push([x - 0.5, y + 0.5, x + 0.5, y - 0.5, "d"]);
-      for (const [ax, ay, bx, by, d] of segs) {
-        put(ax, ay, d);
-        put(bx, by, d);
-      }
-    }
-  return [...seg.values()].filter((e) => e.n === 1 || e.dirs.size > 1).map((e) => ({ x: e.x - 0.5, y: e.y - 0.5 }));
 }

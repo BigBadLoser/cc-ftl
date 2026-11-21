@@ -25,6 +25,30 @@
  "wK": {
   "hex": "#0a1113"
  },
+ "cutK": {
+  "hex": "#08090b"
+ },
+ "farSeam": {
+  "hex": "#526c9e"
+ },
+ "gFill": {
+  "hex": "#060709"
+ },
+ "wQH": {
+  "hex": "#5e9791", "set": "walls", "flat": true, "aa": "teal"
+ },
+ "wQL": {
+  "hex": "#487877", "set": "walls", "flat": true, "aa": "teal"
+ },
+ "wQS": {
+  "hex": "#3a6463", "set": "walls", "flat": true, "aa": "teal"
+ },
+ "wQM": {
+  "hex": "#2c5051", "set": "walls", "flat": true, "aa": "teal"
+ },
+ "wQD": {
+  "hex": "#1c3638", "set": "walls", "flat": true, "aa": "teal"
+ },
  "wXL": {
   "hex": "#3e6868"
  },
@@ -4084,5 +4108,56 @@
   "stPT": {"hex": "#8699a4", "set": "station"},
   "stPS": {"hex": "#6e8694", "set": "station"},
   "stPLo": {"hex": "#8699a4", "set": "station"},
-  "stPM": {"hex": "#5c7585", "set": "station"}
+  "stPM": {"hex": "#5c7585", "set": "station"},
+ "gFillN0": {
+  "hex": "#2a2e34"
+ },
+ "gFillN1": {
+  "hex": "#23262b"
+ },
+ "gFillN2": {
+  "hex": "#1c1f23"
+ },
+ "gFillN3": {
+  "hex": "#16181c"
+ },
+ "gFillN4": {
+  "hex": "#111315"
+ },
+ "gFillN5": {
+  "hex": "#0c0e0f"
+ },
+ "gFillN6": {
+  "hex": "#090a0b"
+ },
+ "gFillN7": {
+  "hex": "#060607"
+ },
+ "gFillN8": {
+  "hex": "#030304"
+ },
+ "gFillN9": {
+  "hex": "#010202"
+ },
+ "gFillN10": {
+  "hex": "#000000"
+ },
+ "gFillB1": {
+  "hex": "#050607"
+ },
+ "gFillB2": {
+  "hex": "#040405"
+ },
+ "gFillB3": {
+  "hex": "#030304"
+ },
+ "gFillB4": {
+  "hex": "#020203"
+ },
+ "gFillB5": {
+  "hex": "#010101"
+ },
+ "gW2s": {
+  "hex": "#353b41"
+ }
 }

@@ -34,7 +34,7 @@ export const PREFAB_PADS = 2;
 /** A module's outer width; floor tiles in a tube, wall to wall (the ground between two modules it joins). */
 const OUT = PREFAB_WIDE + 2, TUBE = 3;
 /** A landing pad's side, and the ground between it and its airlock's wall (the collar and one more). */
-const PAD = 9, APRON = 2;
+const PAD = 9, APRON = 5;     // (a pad's side and its gap from the arrivals' airlock)
 /** Arrivals' length (it stands on customs, as long as a module is wide); the market hall and the mess, inside. */
 const ARRIVALS = 9, MESS_WIDE = 11;
 /** The market hall (wide, long): the trading post's court; the small trade hall of a farm or a mine. */
