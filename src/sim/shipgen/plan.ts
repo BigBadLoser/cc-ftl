@@ -259,8 +259,9 @@ export function planShip(rng: Rng, f: FactionDef, role: ShipRoleDef, depth: numb
       support.push({ role: 'plant', mods: ['module.lifeSupport', ...(fab ? ['module.fabricator'] : [])], w: fab ? 4 : 3, h: 3 });
     }
   }
-  const cargo: RoomSpec[] = [];
-  for (let left = b.crates; left > 0; left -= 6) cargo.push(cargoSpec(Math.min(6, left)));
+  // One hold, or two (halves) past six crates.
+  const holds = b.crates > 6 ? 2 : b.crates > 0 ? 1 : 0;
+  const cargo: RoomSpec[] = Array.from({ length: holds }, (_, i) => cargoSpec(Math.ceil((b.crates - i) / holds)));
   const hangars: RoomSpec[] = Array.from({ length: role.bays ?? (f.doctrine.boarding ? 1 : 0) }, () => ({
     role: 'hangar' as const, mods: ['module.vehicle_bay'], w: 5, h: 7, vehicle: true,
   }));
