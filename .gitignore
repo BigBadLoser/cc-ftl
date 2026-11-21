@@ -12,3 +12,15 @@ profile.json
 profile-sim.json
 .vitest-report.json
 .tick-stats/
+
+# review and preview renders (the hash-locked core-systems frames and the current shuttle review stay tracked)
+artifacts/*
+!artifacts/core-systems-orientations/
+!artifacts/core-systems-damage/
+!artifacts/shuttle-sweepback-r12/
+!artifacts/shuttle-sweepback-r13/
+*.blend1
+.DS_Store
+*.log
+*.orig
+*.rej
