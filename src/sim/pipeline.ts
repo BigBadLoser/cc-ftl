@@ -7,6 +7,7 @@ import { evaFloatSystem } from './systems/evaFloat';
 import { alertsSystem } from './systems/alerts';
 import { atmosphereSystem } from './systems/atmosphere';
 import { autoJobsSystem } from './systems/autojobs';
+import { surgerySystem } from './systems/surgery';
 import { stasisSystem } from './stasis/system';
 import { droneSystem } from './systems/drones';
 import { carrySystem } from './systems/carry';
@@ -144,6 +145,8 @@ export const pipeline: readonly System[] = [
   injurySystem,
   // Auto jobs after vitals, so a crew member who just went down gets a rescue job this tick.
   autoJobsSystem,
+  // Surgery after vitals and autojobs: an urgent replacement is queued as soon as a heart or lungs is lost, and jobs follow the patients lying ready.
+  surgerySystem,
   // Prisoner holding after power (a wheel's power is fresh) and autojobs: carts that ended are set down, reserves drain or refill, thawed prisoners
   // step out, and the stasis jobs are kept and posted (sim/stasis).
   stasisSystem,

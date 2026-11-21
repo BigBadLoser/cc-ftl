@@ -213,6 +213,16 @@ export const furniture = {
     asset: 'module.recovery', footprint: [2, 2], solid: true, access: [0, 2], power: -3, flammability: 0.2, bed: true, medical: true, recovery: true,
     maxHp: 120, buildWork: 180, cost: [{ item: 'item.metal', count: 10 }, { item: 'item.electronics', count: 8 }],
   },
+  // A surgery table (#311): a patient lies on it for an operation (crew/surgery.ts), safer than a medical bed, and the only place for brain and spine work. Powered.
+  // Also a bed and medical, so the bed code finds it; nobody lies on it for anything else. Placeholder art: the medical bed's.
+  'module.surgery_table': {
+    scrap: 'tech',
+    name: 'Surgery table',
+    category: 'life',
+    description: "An operating table under surgical lights. A surgeon fits and removes implants, repairs organs and amputates here, with less risk than at a medical bed. Brain and spine surgery needs one. Needs power.",
+    asset: 'module.med_bed', footprint: [1, 2], solid: false, power: -2, flammability: 0.3, bed: true, medical: true, surgery: true,
+    maxHp: 80, buildWork: 160, cost: [{ item: 'item.metal', count: 8 }, { item: 'item.electronics', count: 8 }],
+  },
   // A stasis wheel (#116): prisoners sealed in stasis slabs stand in its ten slots, frozen while it is powered (it draws only while it holds one). Built with
   // ten empty slabs. Crew load it at the hatch, the tile beyond the footprint's front corner. Unpowered or destroyed, each slab runs on its reserve.
   'module.stasis_wheel': {

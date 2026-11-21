@@ -160,8 +160,9 @@ import { newYard, type YardState } from './yard/types';
  * v128 (prefab base tubes, #508): the `tube` grid field (a tube's floor tile, drawn as a glass tube: sim/tube.ts).
  * v129 (one deal flow, #548): a trader's deal (`Deal.courier` 'them') runs on the station's real shuttle through every phase (no shuttle is made up for it, nor for an inspection or a yard order); `TraderDef.shuttle` removed.
  * v130 (crew injuries, #601): `InjuriesC` on crew (body-part injuries, crew/injuryTypes.ts), job kind 'aid' (first aid), `debug.setCrew.injuries`.
+ * v131 (surgery and implants, #311): `ImplantsC` holds `{ part, item }` fitted implants (was item ids), `OperationsC` (the surgery queue), job kind 'surgery' with `Job.surgery`.
  */
-export const SAVE_VERSION = 130;
+export const SAVE_VERSION = 131;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {

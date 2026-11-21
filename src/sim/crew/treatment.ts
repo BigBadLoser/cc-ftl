@@ -33,7 +33,7 @@ export function bedsToTend(sim: Sim): Set<number> {
   const medicalBed = (id: number): boolean => {
     const m = sim.world.get(id, ModuleC);
     const def = m && sim.content.modules[m.def];
-    return !!m && m.hp > 0 && !!def?.medical && !def.recovery;
+    return !!m && m.hp > 0 && !!def?.medical && !def.recovery && !def.surgery; // a surgery table's patient waits for the surgeon (systems/surgery.ts)
   };
   for (const id of sim.world.query(DownedC)) {
     const d = sim.world.get(id, DownedC);

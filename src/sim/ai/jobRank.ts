@@ -2,6 +2,7 @@ import { bedCareRank, careRank } from '../crew/care';
 import { hostileWithin } from '../crew/stress';
 import { traitFlag } from '../crew/traits';
 import { CrewC, type Job, type Position, type Priorities } from '../crew/components';
+import { OperationsC } from '../crew/implantTypes';
 import { freeOperatorFor, jobFits } from '../crew/jobFit';
 import { operateAffinity } from '../combat/operators';
 import { ModuleC } from '../modules/components';
@@ -55,6 +56,7 @@ const SUPPORT_REPAIR_BONUS = 10000;
 export function repairUrgency(sim: Sim, job: Job): number {
   if (job.kind === 'rescue') return careRank(sim, 'player', job.target ?? 0) === 'low' ? -1 : 1; // a bleeding-out crew member goes ahead of standing work of the same priority (tending a stable patient), whatever the walk; a prisoner after all of it
   if (job.kind === 'aid') return careRank(sim, 'player', job.target ?? 0) === 'low' ? -1 : 1; // a bleeding wound, like a rescue
+  if (job.kind === 'surgery') return careRank(sim, 'player', job.target ?? 0) === 'low' ? -1 : sim.world.get(job.target ?? 0, OperationsC)?.list[0]?.urgent ? 2 : 0; // a life-saving replacement beats even a rescue
   if (job.kind === 'tend') return bedCareRank(sim, 'player', job.target ?? 0) === 'low' ? -1 : 0;
   if (job.kind !== 'repair') return 0;
   const m = sim.world.get(job.target ?? 0, ModuleC);

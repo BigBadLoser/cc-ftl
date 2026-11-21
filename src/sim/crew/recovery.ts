@@ -5,7 +5,8 @@ import { shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { BED_HEAL_PER_SEC, POD_HEAL_PER_SEC, XP_PER_HP_HEALED } from '../tuning';
-import { bedStandTile, bedUsable, bedUseOf } from './beds';
+import { bedServes, bedStandTile, bedUsable, bedUseOf } from './beds';
+import { awaitsSurgeryAt, giveUpSurgery, surgeryUnderway } from './surgery';
 import { CrewC, DownedC, PathC, PositionC, RecoveringC, type Crew, type Downed, type Health, type Position, type Recovering } from './components';
 import { clearPath } from './helpers';
 import { tendingOf, treatmentMult } from './treatment';
@@ -42,11 +43,11 @@ export function careAvailable(sim: Sim, crew: number): boolean {
   const pos = sim.world.get(crew, PositionC);
   if (!pos) return false;
   const ship = shipIdOf(sim, pos);
-  const podsToo = bedUseOf(sim, crew) !== 'treatment';
+  const use = bedUseOf(sim, crew);
   for (const id of sim.world.query(ModuleC)) {
     const m = sim.world.get(id, ModuleC) as Module;
     const def = sim.content.modules[m.def];
-    if (def?.medical && (podsToo || !def.recovery) && (bedUsable(def, m) || (berthOf(def, m, crew) >= 0 && m.hp > 0 && (!def.recovery || m.powered))) && shipIdOf(sim, m) === ship) return true;
+    if (def?.medical && bedServes(def, use) && (bedUsable(def, m) || (berthOf(def, m, crew) >= 0 && m.hp > 0 && (!(def.recovery || def.surgery) || m.powered))) && shipIdOf(sim, m) === ship) return true;
   }
   return false;
 }
@@ -119,9 +120,12 @@ export function restInCare(sim: Sim, crew: number, rec: Recovering, health: Heal
   const pod = !!podModule(sim, rec.bed);
   // In a medical bed they stay on, healed, until a medic has treated their serious injuries (crew/injuryCare.ts); a pod does not treat. With no medic
   // tending them for STRANDED_SEC (since they lay down, or since the last medic left), they give up and get up (and do not come back for it for a while).
-  if (!pod && tendingOf(sim, rec.bed).medic) rec.since = sim.tick;
-  if (!pod && seeksTreatment(sim, crew) && sim.tick - (rec.since ?? sim.tick) >= STRANDED_SEC * TICK_HZ) giveUpTreatment(sim, crew);
-  if (pod || !seeksTreatment(sim, crew)) leaveCare(sim, crew, rec);
+  // Lying where their next operation can be done (crew/surgery.ts), they stay for it; with no surgeon at work on them for STRANDED_SEC, they give up on it the same way.
+  if (!pod && (tendingOf(sim, rec.bed).medic || surgeryUnderway(sim, crew))) rec.since = sim.tick;
+  const stranded = sim.tick - (rec.since ?? sim.tick) >= STRANDED_SEC * TICK_HZ;
+  if (!pod && seeksTreatment(sim, crew) && stranded) giveUpTreatment(sim, crew);
+  if (!pod && awaitsSurgeryAt(sim, crew, rec.bed) && stranded) giveUpSurgery(sim, crew);
+  if (pod || (!seeksTreatment(sim, crew) && !awaitsSurgeryAt(sim, crew, rec.bed))) leaveCare(sim, crew, rec);
 }
 
 /** A stabilised downed patient in a pod has reached `GET_UP_HP`: they are no longer downed, and stay to full. */

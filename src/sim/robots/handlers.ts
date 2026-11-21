@@ -1,3 +1,5 @@
+import { operationError } from '../crew/surgery';
+import { fitImplant } from '../crew/surgeryOutcome';
 import { takePassenger } from '../consent/passage';
 import { ConsentC } from '../consent/components';
 import { factionsHostile } from '../combat/factions';
@@ -111,6 +113,11 @@ export const robotHandlers: { [T in RobotCommand]: Handler<T> } = {
     if (cmd.stun !== undefined) sim.world.add(cmd.id, StunC, { until: cmd.stun });
     if (cmd.injuries && !canBeInjured(sim, cmd.id)) return reject(sim, cmd.type, 'noInjuries');
     for (const i of cmd.injuries ?? []) addInjury(sim, cmd.id, i.part, i.kind, i.as);
+    for (const i of cmd.implants ?? []) {
+      const err = operationError(sim, cmd.id, { kind: 'fit', part: i.part, item: i.item });
+      if (err) return reject(sim, cmd.type, err);
+      fitImplant(sim, cmd.id, i.part, i.item);
+    }
   },
   'debug.spawnCrew': (sim, cmd) => {
     const grid = shipGrid(sim, cmd.ship);

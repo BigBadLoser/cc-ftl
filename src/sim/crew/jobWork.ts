@@ -27,6 +27,7 @@ import { stochasticRound } from '../stochastic';
 import { EXTINGUISH_PER_SEC, REPAIR_PER_SEC, XP_PER_WORK_SEC } from '../tuning';
 import { grantXp } from './xp';
 import { stopBleeding } from './injure';
+import { finishSurgery } from './surgeryOutcome';
 import { workSkill, workSkillMult } from './workSkill';
 import { bedStandTile, bedUseOf, findFreeBed } from './beds';
 import { handInPatient, rescueSpot } from '../away/rescue';
@@ -78,6 +79,7 @@ function work(sim: Sim, crew: number, job: Job, speed: number): WorkResult {
     case 'extinguish': return extinguish(sim, job, speed);
     case 'repair': return repair(sim, job, speed);
     case 'rescue': return rescue(sim, crew, job);
+    case 'surgery': return timed(job, speed, () => { finishSurgery(sim, crew, job); return 'done'; });
     case 'tend': return 'working'; // held until the patient is out of the bed (autojobs drops it)
     case 'aid': return timed(job, speed, () => { if (stopBleeding(sim, job.target ?? 0)) sim.events.emit({ type: 'crew.patched', crew: job.target ?? 0, by: crew }); return 'done'; });
     case 'operate': return 'working'; // held until the operate-jobs system drops it
