@@ -3,6 +3,7 @@ import { cellOf, MANIFEST_VERSION, type ClipDef, type LayerAsset, type Manifest,
 import { dropHalo } from '../haloTex';
 import { buildMask, keepMask } from './alphaMask';
 import { composeManifest } from './compose';
+import { fetchJson, readManifest } from './manifestParts';
 import { SheetStore, type Loaded, type SheetIO } from './sheetStore';
 
 /** The art directory under the asset base: 64x32 pixel art, each art pixel drawn as a hard 2x2 block (see compose.ts). */
@@ -160,17 +161,11 @@ function validate(m: Manifest): void {
   }
 }
 
-async function fetchManifest(url: string): Promise<Manifest> {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Cannot load ${url} (${res.status})`);
-  const m = (await res.json()) as Manifest;
-  validate(m);
-  return m;
-}
-
-/** The art manifest, composed into world px. */
+/** The art manifest, composed into world px: the index and its part files (see manifestParts.ts), fetched in parallel. */
 export async function loadComposed(base = assetBase()): Promise<Manifest> {
-  return composeManifest(await fetchManifest(`${base}${ART_DIR}/manifest.json`), ART_DIR);
+  const m = await readManifest(`${base}${ART_DIR}/manifest.json`, fetchJson);
+  validate(m);
+  return composeManifest(m, ART_DIR);
 }
 
 export async function loadAtlas(base = assetBase(), hooks?: AtlasHooks): Promise<Atlas> {

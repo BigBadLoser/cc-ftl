@@ -1,0 +1,15 @@
+{
+"sheets":{
+"corpse":{"image":"sprites/corpse.png"}
+},
+"assets":{
+"decay.corpse":{"kind":"static","sheet":"corpse","frame":{"x":1,"y":1,"w":77,"h":49},"anchor":{"x":32,"y":33},"footprint":[1,1]},
+"decay.corpse.r1":{"kind":"static","sheet":"corpse","frame":{"x":375,"y":1,"w":89,"h":37},"anchor":{"x":35,"y":21},"footprint":[1,1]},
+"decay.corpse.r2":{"kind":"static","sheet":"corpse","frame":{"x":234,"y":1,"w":76,"h":44},"anchor":{"x":44,"y":22},"footprint":[1,1]},
+"decay.corpse.r3":{"kind":"static","sheet":"corpse","frame":{"x":79,"y":1,"w":89,"h":46},"anchor":{"x":54,"y":30},"footprint":[1,1]},
+"decay.corpse.v1":{"kind":"static","sheet":"corpse","frame":{"x":311,"y":1,"w":63,"h":44},"anchor":{"x":32,"y":31},"footprint":[1,1]},
+"decay.corpse.v1.r1":{"kind":"static","sheet":"corpse","frame":{"x":465,"y":1,"w":64,"h":32},"anchor":{"x":35,"y":25},"footprint":[1,1]},
+"decay.corpse.v1.r2":{"kind":"static","sheet":"corpse","frame":{"x":530,"y":1,"w":63,"h":30},"anchor":{"x":31,"y":25},"footprint":[1,1]},
+"decay.corpse.v1.r3":{"kind":"static","sheet":"corpse","frame":{"x":169,"y":1,"w":64,"h":45},"anchor":{"x":29,"y":32},"footprint":[1,1]}
+}
+}

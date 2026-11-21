@@ -1,6 +1,6 @@
 # Catalog: art and rendering
 
-The sprite manifest (`public/assets/1x/manifest.json`, 11,399 asset ids in the families below) is built by the Blender pipeline (`npm run sprites`). A manifest entry is **not** content:
+The sprite manifest (`public/assets/1x/manifest.json` index and `manifest/<family>.json` parts, 11,399 asset ids in the families below) is built by the Blender pipeline (`npm run sprites`). A manifest entry is **not** content:
 a sprite can exist with no def and no system behind it. This file lists the art-only leftovers and the render systems. Per-content art status (a def whose sprite is missing) is in each area file.
 Method: an id counts as art-only when its `family.name` string appears nowhere in `src/` outside tests (checked with ripgrep; dynamically built ids such as `${stem}.d0` are the one thing it can miss).
 

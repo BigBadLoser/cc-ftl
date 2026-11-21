@@ -9,6 +9,9 @@ import json
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from sprites import manifest_io  # noqa: E402
+
 import numpy as np
 from PIL import Image, ImageDraw
 
@@ -29,7 +32,7 @@ ROLES = (("patrol", "navy"), ("pirate", "pirate"), ("raider", "drone"), ("trader
 class Set:
     def __init__(self, d):
         self.d = Path(d)
-        self.m = json.loads((self.d / "manifest.json").read_text())
+        self.m = manifest_io.read_manifest(self.d)
         self.k = 2 if self.m["tile"]["w"] == 64 else 1          # to world px
         self._img = {}
 

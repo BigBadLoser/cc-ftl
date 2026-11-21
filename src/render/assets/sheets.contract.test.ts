@@ -1,13 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { cellOf, type Manifest } from './manifest';
+import { shippedManifest } from '../../../test/support/manifest';
+import { cellOf } from './manifest';
 
-const raws = import.meta.glob('../../../public/assets/*/manifest.json', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
 /** Every sheet image under public/assets (keys only: nothing is loaded). */
 const files = new Set(Object.keys(import.meta.glob('../../../public/assets/*/sprites/*.png')).map((k) => k.replace('../../../public/assets/', '')));
-const load = (dir: string): Manifest => JSON.parse(raws[`../../../public/assets/${dir}/manifest.json`] as string) as Manifest;
 
 const dir = '1x';
-const m = load(dir);
+const m = shippedManifest(dir);
 
 describe('shipped manifest', () => {
   it('has the tile size of the art', () => {

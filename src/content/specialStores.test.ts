@@ -5,7 +5,7 @@ import { newGame } from '../sim/newGame';
 import { shipGrid } from '../sim/regions';
 import { accepts } from '../sim/items/storage';
 import { content } from './index';
-import manifest from '../../public/assets/1x/manifest.json';
+import { shippedManifest } from '../../test/support/manifest';
 
 /** The storage set's special stores (armory, cold store, tank): buildable, each taking only its own goods. */
 const STORES = ['module.storage_armory', 'module.storage_cold', 'module.storage_tank'] as const;
@@ -37,7 +37,7 @@ describe('special stores', () => {
   });
 
   it.each(STORES)('%s has its fill sprites at every rotation', (id) => {
-    const assets = manifest.assets as Record<string, unknown>;
+    const assets = shippedManifest().assets as Record<string, unknown>;
     for (const fill of ['empty', 'partial', 'full']) {
       expect(assets[`${id}.${fill}`]).toBeDefined();
       for (const r of [1, 2, 3]) expect(assets[`${id}.r${r}.${fill}`]).toBeDefined();

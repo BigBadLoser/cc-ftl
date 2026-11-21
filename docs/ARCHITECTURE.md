@@ -552,7 +552,7 @@ palette.json    the single palette, read by Blender scripts and the game
     `?crewmb=N` and `?envmb=N` override the budgets in MiB.
   - Not done: GPU texture compression (KTX2/Basis), and splitting the big static env sheets (vehicle_bay, weapons, containers)
     by family, which would shave the ~245 MiB the starting ship's env sheets take.
-- **One art set (`public/assets/1x/`):** `manifest.json` and `sprites/`. It is 64x32 pixel art that the game draws at half
+- **One art set (`public/assets/1x/`):** the split manifest (`manifest.json` index plus `manifest/<family>.json` parts, see the pipeline notes below) and `sprites/`. It is 64x32 pixel art that the game draws at half
   resolution, so each art pixel is a hard 2x2 block. The game's geometry (`iso.ts` `TILE_W`/`TILE_H` = 128x64, `Z_PX`) is in
   world px, and `ART_SCALE` (2) is the world px per art px that hand-tuned pixel literals are multiplied by.
   - `src/render/assets/compose.ts` turns the manifest into the one the renderer sees, in world px: frames, anchors, clip
@@ -581,6 +581,12 @@ palette.json    the single palette, read by Blender scripts and the game
     Check with `npm test -- src/render/assets`.
 - **Run with `npm run sprites`** (Blender headless, writes `public/assets/1x/`). Generated sheets, JSON and the manifest are
   **committed**, because Cloudflare's build doesn't run Blender.
+- **The manifest is split on disk (#596):** `manifest.json` is a small index (version, tile, keyColors, heights, `parts`) and
+  `manifest/<part>.json` holds one family's sheets and assets, one entry per line, so a family rebuild rewrites only its own file
+  and a diff shows only the sprites that changed. A part is the sheet name without its `.N` page suffix; every crew layer is in
+  `crew`. `tools/blender/sprites/manifest_io.py` reads and writes it (`read_manifest` gives the whole manifest; `pack.save_manifest`
+  writes only the parts that changed); `src/render/assets/manifestParts.ts` assembles it in the game (index first, then every part
+  in parallel). Tests read it whole with `shippedManifest()` from `test/support/manifest.ts`.
 - **Families:** the art is split into families that each render into their own sheets and are merged
   into the manifest (their old sheets and ids are replaced, everything else is kept), so one family can
   be rebuilt alone: `npm run sprites -- public/assets walls,consoles`. Families: `crew`, `portraits` (crew portrait renders, see "Crew"), `robots` (robot
@@ -604,7 +610,7 @@ palette.json    the single palette, read by Blender scripts and the game
   ```
 
   Then copy `$OUT/1x/sprites/refinery{,.glow}.png` into `public/assets/1x/sprites/` and merge `manifest.fragment.json` (sheets and
-  assets) into `public/assets/1x/manifest.json`, never replacing it. The pack was made at pipeline revision e8c50906;
+  assets) into the manifest (`pack.load_manifest`, `pack.merge`, `pack.save_manifest` on `public/assets/1x/manifest.json`), never replacing it. The pack was made at pipeline revision e8c50906;
   `refinery_pipeline.provenance` hashes the renderer files, so a renderer change invalidates its frame cache and the art should be
   re-exported. The `.blend` and review images are not kept in the repo.
 - **Module state art (`moduleArt.ts` `stateArt`, `moduleView.ts`):** any module whose art has `<asset>.rN.unpowered` shows it while
@@ -625,7 +631,7 @@ palette.json    the single palette, read by Blender scripts and the game
   ```
 
   Then copy `$OUT/1x/sprites/{reactor,life_support}{,.glow}.png` into `public/assets/1x/sprites/` and merge `manifest.fragment.json`
-  (sheets and assets) into `public/assets/1x/manifest.json`, replacing only those ids. Geometry, material or reference changes need a
+  (sheets and assets) into the manifest (`pack.merge`, then `pack.save_manifest`), replacing only those ids. Geometry, material or reference changes need a
   new approval lock. The `.blend` files and review images are not kept in the repo.
 - **Wall corner fills (`walls`, the 47-tile blob set):** wall and hull pieces are picked by the 4-neighbour mask
   (N1 E2 S4 W8) plus corner bits (`tiles.ts` `wallCorners`: NE 1, SE 2, SW 4, NW 8, set when both arms beside the

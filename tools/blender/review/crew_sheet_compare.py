@@ -16,12 +16,13 @@ from PIL import Image
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from sprites import crew_trim  # noqa: E402
+from sprites import manifest_io  # noqa: E402
 
 
 class Set:
     def __init__(self, d):
         self.d = Path(d)
-        self.m = json.loads((self.d / "manifest.json").read_text())
+        self.m = manifest_io.read_manifest(self.d)
         self._img = {}
 
     def layers(self):

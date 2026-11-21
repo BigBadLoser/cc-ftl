@@ -9,11 +9,12 @@ import { weapons } from '../../src/content/weapons.ts';
 import { vehicles } from '../../src/content/vehicles.ts';
 import { items } from '../../src/content/items.ts';
 import type { Manifest, StaticAsset } from '../../src/render/assets/manifest.ts';
+import { readManifest } from '../../src/render/assets/manifestParts.ts';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const assetsRoot = resolve(root, '../public/assets/1x');
 const target = join(root, 'static/generated/sprites');
-const manifest = JSON.parse(await readFile(join(assetsRoot, 'manifest.json'), 'utf8')) as Manifest;
+const manifest: Manifest = await readManifest(`${assetsRoot}/manifest.json`, async (file) => JSON.parse(await readFile(file, 'utf8')) as unknown);
 if (manifest.version !== 1) throw Error('Unsupported sprite manifest version: ' + manifest.version);
 const modules: Record<string, ModuleDef> = { ...baseModules, ...tierModules };
 const chosen = new Map<string, { source: string; icon: boolean }>();
