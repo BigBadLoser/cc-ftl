@@ -34,18 +34,24 @@ def _top(u, u0):
     return pts[-1][1]
 
 
-def bed(f, u0, a, flank=None, saddle=None, openings=()):
+def bed(f, u0, a, flank=None, saddle=None, openings=(), gaps=(), slots=()):
     """The Mk I's heavy_bed, from u0 to its front (1.5): sump, side castings with access castings, lugs and the rear
     saddle. flank(v, side) replaces the access castings (a concept's own flank equipment); saddle(u0) replaces the rear
-    saddle; openings [(u0, u1)] cut the side castings through between a low sill and a top rail."""
+    saddle; openings [(u0, u1)] cut the side castings through between a low sill and a top rail; gaps [(u0, u1)] cut
+    the sump down to a low sill (where a ring passes under the casing)."""
     m = T._m()
-    f.box((u0 + 0.15 + 1.4) / 2, 0, 0.2, 1.4 - u0 - 0.15, 1.55, 0.5, "steelD", top="steel")
-    cuts = sorted({u0, u0 + 0.56, -0.76, 0.32, 1.5, *[x for o in openings for x in o]})
+    marks = sorted({u0 + 0.15, 1.4, *[x for g in gaps for x in g]})
+    for p, q in zip(marks, marks[1:]):
+        if not any(g0 <= p and q <= g1 for g0, g1 in gaps):
+            f.box((p + q) / 2, 0, 0.2, q - p, 1.55, 0.5, "steelD", top="steel")
+    cuts = sorted({u0, u0 + 0.56, -0.76, 0.32, 1.5, *[x for o in (*openings, *slots) for x in o]})
     for side in (-1, 1):
         v = side * 1.13
         for p, q in zip(cuts, cuts[1:]):
             tp, tq = _top(p, u0), _top(q, u0)
-            if any(o0 <= p and q <= o1 for o0, o1 in openings):
+            if any(o0 <= p and q <= o1 for o0, o1 in slots):
+                m.prism(f, [(p, 0), (p, 0.3), (q, 0.3), (q, 0)], v - 0.26, v + 0.26, "navy", "blueGrey")
+            elif any(o0 <= p and q <= o1 for o0, o1 in openings):
                 m.prism(f, [(p, 0), (p, 0.3), (q, 0.3), (q, 0)], v - 0.26, v + 0.26, "navy", "blueGrey")
                 m.prism(f, [(p, tp - 0.16), (p, tp), (q, tq), (q, tq - 0.16)], v - 0.26, v + 0.26, "navy", "blueGrey")
             else:
@@ -70,7 +76,7 @@ def bed(f, u0, a, flank=None, saddle=None, openings=()):
                 "steelD", "steel")
 
 
-def casing(fs, a, uc, crown=True):
+def casing(fs, a, uc, crown=True, ducts=True, lid=True):
     """The armoured casing continued from the cut back to a rear cap at uc (the Mk I's -2.15 moved): its section,
     staves, rear clamp ring and petals, injector plate and the crown ducts' rear ends."""
     m = T._m()
@@ -89,13 +95,14 @@ def casing(fs, a, uc, crown=True):
         annulus(fs, uc - 0.12, uc - 0.05, 0.26, 0.58, a, "steelD", "steel", sides=16)
         fs.hcyl(uc - 0.1, uc - 0.05, 0, a, 0.255, "navy", sides=8, capstart="navy")
         T.bolts(fs, uc - 0.13, a, 0.43)
-    for side in (-1, 1):
+    for side in ((-1, 1) if ducts else ()):
         curved_pipe(fs, [(-1.6 + du, side * 0.7, a + 0.58), (-1.25 + du, side * 0.8, a + 0.75),
                          (T.CUT + 0.1, side * 0.8, a + 0.76), (-1.25, side * 0.8, a + 0.75)], 0.15, "steelL", steps=4, sides=12)
         D.seg(fs, (-1.6 + du, side * 0.7, a + 0.58), (-1.5 + du, side * 0.76, a + 0.67), 0.2, "brass", 12,
               cap="steelL", capstart="steelL")
     # The service lid on the crown, repeated over the new length.
-    D.panel(fs, (-1.48 + du + T.CUT) / 2, 0, a + 1.015, 0.64, 0.44, "blueGrey", t=0.02, ring=0.05, bolts=True)
+    if lid:
+        D.panel(fs, (-1.48 + du + T.CUT) / 2, 0, a + 1.015, 0.64, 0.44, "blueGrey", t=0.02, ring=0.05, bolts=True)
 
 
 # ---- Q: nested turbopumps --------------------------------------------------------------------------------------------
