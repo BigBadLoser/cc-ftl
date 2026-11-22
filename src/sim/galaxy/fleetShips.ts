@@ -4,15 +4,13 @@ import { liftShip } from '../sector/packet';
 import type { Sim } from '../sim';
 import { retreat, strand } from './agenda';
 import { isWarmedElsewhere, playerShipInfo, spawnContact, warmContact } from './arrivals';
-import { minersField } from './traffic';
+import { callingStation, minersField } from './business';
 import { graceHolds } from './grace';
 import { inspectingFleets } from '../inspect/holds';
 import { nodesWithin } from './graph';
-import { owe, portsAt } from './portIndex';
-import { dockPort } from './dock';
+import { owe } from './portIndex';
 import type { Rect } from '../grid';
 import { AsteroidC } from '../asteroids/components';
-import { TraderC } from '../trade/types';
 import { FLEET_NODE_SHIPS, STRANDED_INTEGRITY, WARM_HOPS } from './tuning';
 import type { Contact, Fleet } from './types';
 
@@ -60,7 +58,7 @@ export function materialiseFleet(sim: Sim, f: Fleet, node: string = f.node): voi
 }
 
 /**
- * Where a fleet's business is in the node (#603): a miner by the nearest rock of the field it works (`minersField`), a trader by the station it calls at (`dockPort`), so its
+ * Where a fleet's business is in the node (#603): a miner by the nearest rock of the field it works (`minersField`), a trader by the station it calls at (`callingStation`), so its
  * ships turn up there (`freeSpot`'s anchor); anyone else, or a node without that place in play, by the player.
  */
 export function businessAnchor(sim: Sim, f: Fleet, node: string): Rect | undefined {
@@ -75,10 +73,8 @@ export function businessAnchor(sim: Sim, f: Fleet, node: string): Rect | undefin
     const gap = (p: Rect) => Math.hypot(p.x + p.w / 2 - cx, p.y + p.h / 2 - cy);
     return parts.reduce((best, p) => (gap(p) < gap(best) ? p : best));
   }
-  if (f.role !== 'trader') return undefined;
-  const port = dockPort(portsAt(sim, node), f.role);
-  const station = port && sim.world.query(TraderC, ShipC).find((id) => sim.world.get(id, TraderC)?.port === port.id);
-  const s = station ? sim.world.get(station, ShipC) : undefined;
+  const station = callingStation(sim, f, node);
+  const s = station !== undefined ? sim.world.get(station, ShipC) : undefined;
   return s ? { x: s.x, y: s.y, w: s.width, h: s.height } : undefined;
 }
 

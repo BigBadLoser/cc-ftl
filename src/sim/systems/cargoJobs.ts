@@ -9,6 +9,7 @@ import { DEFAULT_CARRY_CAPACITY, PLAN_INTERVAL } from '../tuning';
 import { cargoSpace } from '../vehicles/cargo';
 import { VehicleC } from '../vehicles/components';
 import { boardingTile, cargoTile } from '../vehicles/geometry';
+import { vehicleDefOf } from '../vehicles/lifecycle';
 import { shipById } from '../combat/shipQuery';
 
 /** Units already promised to a vehicle's hold by pending hauls. */
@@ -22,7 +23,7 @@ function promised(res: Reservations, vehicle: number): number {
  * Shuttle cargo hauling, planned like the other hauls (it runs before the floor-clearing planner so it gets first
  * claim). LOAD: loose stacks on a prize ship go to a shuttle stowed or docked on that grid (nowhere else to put them).
  * UNLOAD: a shuttle with cargo at a boarding tile on a live player ship is emptied into the nearest storage that
- * accepts each item. At a docking airlock both go through its unloaders: crew work the keep-out tile in front of a chute. Crew do the walking as ordinary 'hauling' jobs; the pilot stays at the controls.
+ * accepts each item; so is a mining pod home on any ship (an NPC miner's crew unload their pod as the player's do, #603). At a docking airlock both go through its unloaders: crew work the keep-out tile in front of a chute. Crew do the walking as ordinary 'hauling' jobs; the pilot stays at the controls.
  * A hold sealed by a trade (`Vehicle.outbound`: goods waiting to be sold) is never unloaded here; the trade system loads it.
  */
 export function cargoJobsSystem(sim: Sim): void {
@@ -43,7 +44,7 @@ export function cargoJobsSystem(sim: Sim): void {
         const src = { ref: { kind: 'floor' as const, id: sid }, x: s.x, y: s.y, avail };
         makeHaul(sim, res, 'hauling', at.shipId, src, { kind: 'vehicle', id }, s.item, Math.min(avail, room, DEFAULT_CARRY_CAPACITY));
       }
-    } else if (ship.faction === 'player' && (ship.state === 'active' || ship.state === 'disabled') && !v.outbound) {
+    } else if ((ship.faction === 'player' || (v.homeShip === at.shipId && !!vehicleDefOf(sim, v)?.mining)) && (ship.state === 'active' || ship.state === 'disabled') && !v.outbound) {
       for (const q of v.cargo) {
         const avail = q.count - (res.out.get(refKey('vehicle', id, q.item)) ?? 0);
         if (avail <= 0) continue;
