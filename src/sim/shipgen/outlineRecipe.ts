@@ -42,6 +42,10 @@ export interface ProgramRules {
   holds?: boolean;
   /** Floor a small room may take, as a multiple of its plan. */
   grow?: number;
+  /** A point-defence turret a side, a pair of 4x4 rooms (where the sides do not mirror: mirrored, the part fixes it). */
+  pd?: boolean;
+  /** Cabin blocks for the beds where the part's cabin strip is too short for them (else the layout fails). */
+  blocks?: boolean;
 }
 
 /**
@@ -60,6 +64,8 @@ export interface DeptRules {
   once?: readonly Filler[];
   /** Spare-floor rooms where bays have no department (a cruiser), in order. */
   spare?: readonly Filler[];
+  /** The forward section's departments, bow to aft, in each order it may take (the best cut of them all). */
+  forward?: readonly (readonly ShipDept[])[];
 }
 
 export interface OutlineRecipe {
@@ -80,8 +86,8 @@ export interface OutlineRecipe {
   /** Guns every ship of the type carries, one to a room, in pairs (`ShipRoleDef.guns`). */
   gunRooms?: number;
   bonus?: Partial<Record<'weapons' | 'engines' | 'crew' | 'crates' | 'shields' | 'pointDefense' | 'reactors', number>>;
-  /** How the crew sleeps; `together`: its barracks one room. */
-  crew: { sleep: Sleep; together?: boolean };
+  /** How the crew sleeps; `rooms`: its barracks that many rooms (one wall of pieces each), not the plan's. */
+  crew: { sleep: Sleep; rooms?: number };
   /** Passenger beds past the crew's, single cabins: a base and more a depth. */
   passengers?: { base: number; perDepth: number };
   /** Rooms past the plan's (a pantry comes off the mess). */

@@ -7,8 +7,8 @@ import type { BayPart } from './part';
  * shoulder.
  */
 export const DECKS: BayPart = {
-  // (Its annex (the pantry) beside the mess; a hold may take all its bays.)
-  program: { beside: true, holds: true },
+  // (Its annex (the pantry) beside the mess; a hold may take all its bays; its cabins on the strip or not at all.)
+  program: { beside: true, holds: true, blocks: false },
   // (The forward section's aftmost flat stretch, by its shoulder down to the deck.)
   dock: ({ xBand, xS, CW, depth, flat }) => {
     let peak = 0, at = -1;

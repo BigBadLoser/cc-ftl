@@ -80,7 +80,7 @@ function program(plan: ShipPlan, defs: Record<string, ModuleDef>, inBattery: num
   // (A point-defence turret a side, a mirrored pair of 4x4 rooms.)
   const pd: RoomSpec = { role: 'weapons', mods: ['module.pointDefense'], w: 4, h: 4 };
   // (Mirrored, the pair is fixed beside the guns.)
-  if (!mirror) items.push({ specs: [pd, { ...pd }], both: true });
+  if (!mirror && rules.pd) items.push({ specs: [pd, { ...pd }], both: true });
   // (Mirrored, life support is a room a side: the plan's units shared out, rounded up to a pair, the fabricator to one.)
   const plants = mirror ? plan.support.filter((r) => r.role === 'plant') : [];
   if (plants.length > 0) {
@@ -359,6 +359,7 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
   // them, cabin blocks as anywhere.
   const strip: Put[] = [];
   const geo: BayGeo = { fr, bays, minDepth, joined };
+  let short = false;
   if (part.strip) {
     const beds = plan.quarters.filter((q) => q.block).reduce((t, q) => t + q.mods.length, 0), ks = part.strip(geo, beds);
     for (const s of [0, 1] as const) {
@@ -368,7 +369,7 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
         strip.push({ item: { specs: on(cab, s), both: false, cabins: true }, specs: on(cab, s), spot: { side: s, i, j, tier: 'full', area: area(i, j, 'full') }, strip: c });
         need -= c;
       }
-      if (need > 0) strip.length = 0;
+      if (need > 0) { strip.length = 0; short = true; }
       if (need > 0) break;
     }
   }
@@ -390,9 +391,10 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
       need[depts.of(r)] = { area: n.area + 0.5 * (r.w * r.h + (r.annex ? r.annex.w * r.annex.h : 0)), rooms: n.rooms + (r.annex ? 1 : 0.5), ...(n.deep || r.annex ? { deep: true } : {}) };
     }
     alone = new Set((Object.keys(need) as Dept[]).filter((d) => (need[d]?.rooms ?? 0) <= 1));
-    zone = zonesOf(fr, bays, new Set(guns0.map((p) => p.spot.i)), flight, need, (k) => area(k, k + 1, 'full'), part.zones);
+    zone = zonesOf(fr, bays, new Set(guns0.map((p) => p.spot.i)), flight, need, (k) => area(k, k + 1, 'full'), part.zones, depts.forward);
     nodes = 0;
-    dfs(occ0, pre, rest, 0);
+    // (Where cabin blocks may not stand in for a short strip, no layout.)
+    if (!short || pr.blocks) dfs(occ0, pre, rest, 0);
     if (best) break;
   }
   const got = best as { puts: Put[]; score: number } | null;

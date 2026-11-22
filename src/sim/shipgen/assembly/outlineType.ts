@@ -64,7 +64,7 @@ export function cabinBeds(n: number): RoomSpec[] {
 }
 
 /**
- * The crew's quarters as the recipe sleeps them: the plan's barracks (bunks, or single beds; one room where `together`),
+ * The crew's quarters as the recipe sleeps them: the plan's barracks (bunks, or single beds; the recipe's number of rooms),
  * or every bed a cabin in a pair of cabin blocks (one each side, cut by the layout: cabinBlock.ts). `spare` beds past the
  * crew's. Then the passengers' cabins, where it carries them.
  */
@@ -78,8 +78,10 @@ export function shipQuarters(r: OutlineRecipe, planned: readonly RoomSpec[], cre
     const n = Math.ceil((sleepersIn(q.mods) + Math.floor(spare / planned.length) + (i < spare % planned.length ? 1 : 0)) / per);
     return { ...q, mods: Array<string>(n).fill(sleep === 'beds' ? 'module.bed' : SLEEPER.def), ...barracksSize(n, true) };
   });
-  const all = rooms.flatMap((q) => q.mods);
-  return [...(r.crew.together && rooms[0] ? [{ ...rooms[0], mods: all, ...barracksSize(all.length) }] : rooms), ...pax];
+  // (A recipe's number of rooms: the pieces shared out between them, one wall of them each.)
+  const all = rooms.flatMap((q) => q.mods), k = Math.min(r.crew.rooms ?? 0, all.length);
+  const shared = Array.from({ length: k }, (_, i) => all.slice(Math.round((i * all.length) / k), Math.round(((i + 1) * all.length) / k)));
+  return [...(k > 0 && rooms[0] ? shared.map((mods) => ({ ...(rooms[0] as RoomSpec), mods, ...barracksSize(mods.length, true) })) : rooms), ...pax];
 }
 
 /**
