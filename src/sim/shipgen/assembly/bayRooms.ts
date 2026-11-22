@@ -71,8 +71,9 @@ function program(plan: ShipPlan, defs: Record<string, ModuleDef>, inBattery: num
   // recipe has it beside too (`trauma`), four wide.)
   const own = (r: RoomSpec): RoomSpec => {
     if (!beside || !r.annex || (r.role === 'medbay' && !trauma)) return r;
+    // (A trauma room a third of its ward's length, four columns at least, as laid: a larger ward a larger trauma room.)
     const { annex, ...host } = r, w = r.role === 'medbay' ? 4 : 3;
-    return { ...host, beside: { ...annex, w }, w: r.w + w + 1 };
+    return { ...host, beside: { ...annex, w, ...(r.role === 'medbay' ? { share: 1 / 3 } : {}) }, w: r.w + w + 1 };
   };
   const singles = [...lone.filter((r) => !(mirror && r.mods.every((m) => m === 'module.pointDefense'))), ...cores, ...plan.quarters.filter((q) => !q.block), ...plan.support.filter((r) => !(mirror && r.role === 'plant')).map(brig).map(mess).map(own), ...plan.cargo.map(brig).map(racked), ...(hangars ? plan.hangars : pods)];
   const items: Item[] = blocks ? cabinPairs.map((p) => ({ specs: [p[0], p[1]], both: true, cabins: true })) : [];

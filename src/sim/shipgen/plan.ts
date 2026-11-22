@@ -80,6 +80,8 @@ export interface RoomSpec {
   annex?: RoomSpec;
   /** A room cut from this room's own end, entered only through it (a lane hull's pantry off its mess, #581). */
   beside?: RoomSpec;
+  /** Cut beside its host (`beside`): its share of the host's length as laid, never under its own `w` (a trauma room). */
+  share?: number;
   /** The station assembly: set on an annex as it is laid in a row, right after its room. */
   annexed?: boolean;
 }
