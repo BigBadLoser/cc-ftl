@@ -261,7 +261,17 @@ def mount(R, hu, hv, hz, ca, sa):
 SITE = 0.12                                                       # the incision, this far over the mattress
 SPREAD = (0.15, 0.1)                                              # the tools' spots round it (along the bed, across)
 BZ, SLEEVE = 1.96, 0.38                                          # the boom's height; the piston sleeve under its end
-HUB_ON = (0.75, 0.78, 0.92)                                      # over the patient's belly, the piston out
+# Over the patient's belly, the piston out. The sleeper sprite reads about 0.35 tile nearer the foot when its head points toward the
+# camera (bed r1, r2: +x or +y) than away from it (r0, r3), so the hub sits per view (`face`), each over the belly as drawn.
+HUB_AWAY, HUB_TOWARD = (0.75, 0.78, 0.92), (0.4, 0.78, 0.92)
+HUB_ON = HUB_AWAY
+
+
+def face(rot, hand):
+    """Set HUB_ON for a rig turned `rot` with handedness `hand`: the bed's head lies along its local +u (MK), which K turns to
+    +x, +y, -x, -y by rotation; toward the camera when that is +x or +y."""
+    global HUB_ON
+    HUB_ON = HUB_TOWARD if (rot in (0, 1)) == (hand == 1) else HUB_AWAY
 HUB_IDLE = (1.0, 0.0, BZ - 0.06 - SLEEVE - 0.05)                  # swung over the tile beside the bed's head, piston in
 
 

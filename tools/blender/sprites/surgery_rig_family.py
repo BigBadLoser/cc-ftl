@@ -16,7 +16,7 @@ surgery_rig_anim.FPS; the game picks them from the operation's progress."""
 from . import core, post
 from . import env_build as E
 from .research_kit import holo_item
-from .surgery_rig import build, holo_layer
+from .surgery_rig import build, face, holo_layer
 from .surgery_rig_anim import PHASES, SCAN, pose, scan, still
 
 A = "module.surgery_rig"
@@ -46,6 +46,7 @@ def _base(hand):
 def base_job(rot, hand=1):
     """The body idle and lit, and the front folded by the column."""
     def run(rot=rot, hand=hand):
+        face(rot, hand)
         a, out = _base(hand), []
         for st in ("idle", "active"):
             _fresh()
@@ -63,6 +64,7 @@ def base_job(rot, hand=1):
 def phase_job(rot, ph, hand=1):
     """Every frame of one animation phase's front."""
     def run(rot=rot, ph=ph, hand=hand):
+        face(rot, hand)
         n, a = PHASES[ph], _base(hand)
         return [it for it in (_front(f"{a}.front.r{rot}.{ph}" + (f".f{i}" if i else ""), pose(ph, i / n), rot, hand)
                               for i in range(n)) if it]
@@ -72,6 +74,7 @@ def phase_job(rot, ph, hand=1):
 def holo_job(rot, hand=1):
     """The console hologram's scan sweep, the rig at work as its holdout."""
     def run(rot=rot, hand=hand):
+        face(rot, hand)
         out, a = [], _base(hand)
         for i in range(SCAN):
             _fresh()
