@@ -67,7 +67,8 @@ def main():
             sys.exit(f"{mpath} holds {have} px tiles but the pipeline renders {core.TILE_W} px: wrong outdir")
     names = (["crew", "robots", "aliens", "portraits"] + list(families.ALL)) if what == "all" else what.split(",")
     for name in names:
-        if opts.get("adopt") and name in ("crew", "robots", "aliens", "portraits", "sol", "damage_sol", "marks"):
+        if opts.get("adopt") and name in ("crew", "robots", "aliens", "portraits", "sol", "sol_tiers", "damage_sol",
+                                         "damage_sol_tiers", "marks"):
             continue                                    # (their own caches and renderers: --adopt is for env_build's)
         m = pack.load_manifest(mpath, base())
         if name == "crew":
@@ -95,12 +96,18 @@ def main():
             from sprites import crew_marks
             sheets, assets = crew_marks.build(out)
             pack.merge(m, "marks", sheets, assets)
-        elif name == "sol":
+        elif name in ("sol", "sol_tiers"):
             from sprites import sol_pack
-            sheets, assets = sol_pack.build(out)
-            for fam in sol_pack.SHEETS:
+            fams = sol_pack.SHEETS if name == "sol" else sol_pack.TIER_SHEETS
+            sheets, assets = sol_pack.build(out, fams=fams)
+            for fam in fams:
                 pack.merge(m, fam, {k: v for k, v in sheets.items() if pack.owned(k, fam)},
                            {k: a for k, a in assets.items() if pack.owned(a["sheet"], fam)})
+        elif name in ("damage_sol", "damage_sol_tiers"):
+            from sprites import sol_damage
+            sheets, assets = (sol_damage.build(out) if name == "damage_sol" else
+                              sol_damage.build(out, kinds=sol_damage.TIER_KINDS, family=name))
+            pack.merge(m, name, sheets, assets)
         else:
             from sprites import env_build
             core.setup_scene()

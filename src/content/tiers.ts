@@ -9,7 +9,7 @@ import { modules as base } from './modules';
  * All the numbers are here, provisional, to tune in one place. A tier lists only what differs from Mk I.
  *  - `footprint`: grows per tier, along its local y (the hull-edge engine grows inboard); the shield generator is 2x2, 2x3, 3x3.
  *  - `minDanger` / `price`: the station danger tier a blueprint is sold from, and its base price (the sale price grows with danger).
- *  - `tint`: the placeholder outline colour (see `ModuleDef.tierArt`, render/tierArt.ts); unused by tiers with their own art (reactor, shield generator); only the engine tiers are placeholders now.
+ *  - `tint`: the placeholder outline colour (see `ModuleDef.tierArt`, render/tierArt.ts) of a tier without art of its own; every tier has its own art now.
  */
 interface Tier {
   footprint: [number, number];
@@ -85,5 +85,7 @@ export const tierModules: Record<string, ModuleDef> = {
     const stem = n === 2 ? 'shield_gen' : 'shield_gen_3x3';
     return { asset: `module.${stem}`, roofAsset: `roof.${stem}`, deploySec: 2, shieldGen: { layersPerPower: t.layersPerPower, rechargeSec: t.rechargeSec } };
   }, true),
-  ...tiered('module.engine', ENGINE, (t) => ({ engine: { evasionPerPower: t.evasionPerPower, fuelFactor: t.fuelFactor, hullCapacity: t.hullCapacity } })),
+  // Mk II (4x6) and Mk III (4x7) have their own sprites (`module.engine_mk2`, `module.engine_mk3`): the Heavy Kestrel lengthened
+  // inboard, a propellant tank between its side castings, field rings on the casing and sponson pumps.
+  ...tiered('module.engine', ENGINE, (t, n) => ({ asset: `module.engine_mk${n}`, engine: { evasionPerPower: t.evasionPerPower, fuelFactor: t.fuelFactor, hullCapacity: t.hullCapacity } }), true),
 };

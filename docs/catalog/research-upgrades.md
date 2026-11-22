@@ -12,8 +12,8 @@ Planned: research overhaul with materials from the world and finds that add proj
 | Reactor Mk III | `research.reactor.mk3` | Unlocks module.reactor.mk3 (needs Mk II) | In game | src/content/research.ts:25-39 (project()); sim/research/*; ui/ResearchTree.svelte |
 | Shield gen Mk II | `research.shieldGen.mk2` | Unlocks module.shieldGen.mk2 | In game | src/content/research.ts:25-39 (project()); sim/research/*; ui/ResearchTree.svelte |
 | Shield gen Mk III | `research.shieldGen.mk3` | Unlocks module.shieldGen.mk3 (needs Mk II) | In game | src/content/research.ts:25-39 (project()); sim/research/*; ui/ResearchTree.svelte |
-| Engine Mk II | `research.engine.mk2` | Unlocks module.engine.mk2 | Partial: placeholder art | src/content/research.ts:25-39 (project()); sim/research/*; ui/ResearchTree.svelte |
-| Engine Mk III | `research.engine.mk3` | Unlocks module.engine.mk3 (needs Mk II) | Partial: placeholder art | src/content/research.ts:25-39 (project()); sim/research/*; ui/ResearchTree.svelte |
+| Engine Mk II | `research.engine.mk2` | Unlocks module.engine.mk2 | In game | src/content/research.ts:25-39 (project()); sim/research/*; ui/ResearchTree.svelte |
+| Engine Mk III | `research.engine.mk3` | Unlocks module.engine.mk3 (needs Mk II) | In game | src/content/research.ts:25-39 (project()); sim/research/*; ui/ResearchTree.svelte |
 | Repair drone | `research.drone.repair` | Unlocks recipe.drone_repair | In game | src/content/research.ts:48; sim/research/*; ui/ResearchTree.svelte |
 | Medic drone | `research.drone.medic` | Unlocks recipe.drone_medic | In game | src/content/research.ts:53; sim/research/*; ui/ResearchTree.svelte |
 | Defence drone | `research.drone.defence` | Unlocks recipe.drone_defence | In game | src/content/research.ts:58; sim/research/*; ui/ResearchTree.svelte |

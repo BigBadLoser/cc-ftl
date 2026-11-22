@@ -21,7 +21,7 @@ CASSETTE_Z_FIT=.66
 CENTRE={0:(-1.5,-2),1:(-2,-1.5),2:(-1.5,-2),3:(-2,-1.5)}
 DEPTH=5                 # tiles inboard from the hull row: 5 (Mk I), 6 (Mk II), 7 (Mk III); see set_tier
 TIER=1
-VARIANT="A"             # the tier fit-out study's concept (tierkit.VARIANTS)
+VARIANT="KB"            # the tier fit-out concept (tierkit; KB is the approved one)
 
 
 def set_tier(tier,variant="A"):
