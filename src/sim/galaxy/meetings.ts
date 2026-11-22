@@ -10,6 +10,7 @@ import { report } from './news';
 import { portOf, owe } from './portIndex';
 import { fightPressure } from './pressure';
 import { portNode } from './ports';
+import { strain } from './war';
 import { leaveWreck } from './wrecks';
 import type { Fleet, NewsItem } from './types';
 
@@ -146,6 +147,9 @@ export function aftermath(sim: Sim, m: Meeting, c: Clash, turn: number, names: r
   const nameL = (w === a ? names[1] : names[0]) as string;
   const lost = (w === a ? c.b : c.a).lost;
   const loserSide = w === a ? c.b : c.a;
+  // War weariness counts every ship lost, on both sides, win or draw (fightPressure strains for the loser's losses).
+  const own = c.kind === 'draw' ? c.a.lost.length + c.b.lost.length : (w === a ? c.a : c.b).lost.length;
+  if (own) strain(sim, a.faction, b.faction, 0, own);
   if (c.kind === 'draw') {
     news({ kind: 'clash', who: names[0] as string, faction: a.faction, foe: names[1] as string, foeFaction: b.faction });
   } else {

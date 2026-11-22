@@ -4,6 +4,9 @@ import { cachedWorld } from '../../test/support/world';
 import { stepCoarse } from '../sim/galaxy/coarse';
 import { nodeOwner, sectorNeighbours, sectorOwner, structureOwner, tidyControl } from '../sim/galaxy/control';
 import { flipSector } from '../sim/galaxy/flip';
+import { nodesWithin } from '../sim/galaxy/graph';
+import { portNode } from '../sim/galaxy/ports';
+import { FLEET_AREA_HOPS } from '../sim/galaxy/tuning';
 import { econOf } from '../sim/galaxy/market';
 import { owe, portsAt } from '../sim/galaxy/portIndex';
 import { addPressure, fightPressure, playerFightPressure } from '../sim/galaxy/pressure';
@@ -400,6 +403,24 @@ describe('review fixes', () => {
     sim.galaxy.turn = tickAt(2 + CONSOLIDATE_TICKS);
     tidyControl(sim, id as string);
     expect(sim.galaxy.control[id as string]).toBeUndefined();
+  });
+
+  it('a fleet out of the area but homed in it (so stepped by fleets.ts) moves home when its port is captured, not dropped', () => {
+    const sim = base();
+    const area = nodesWithin(sim, sim.galaxy.current, FLEET_AREA_HOPS);
+    const index = galaxyIndex(sim.galaxy);
+    const outside = [...index.nodes.keys()].find((n) => !area.has(n));
+    const pick = sim.galaxy.fleets.map((f) => ({ f, sector: index.nodes.get(portNode(f.home))?.sector })).find(
+      ({ f, sector }) => sector && area.has(portNode(f.home)) && f.faction === sectorOwner(sim, sector) && f.ships.every((x) => x.ship === undefined) && candidates(sim, index.sectors.size).includes(sector),
+    );
+    expect(pick && outside).toBeTruthy();
+    const { f, sector } = pick!;
+    f.node = outside!;
+    const home = f.home;
+    flipSector(sim, sector!, enemyOf(sim, f.faction), tickAt(1));
+    const kept = sim.galaxy.fleets.find((x) => x.id === f.id);
+    expect(kept).toBeDefined();
+    expect(kept!.home).not.toBe(home);
   });
 
   it("a port that changes hands trades as its new owner's market, even when its old economy was already built", () => {

@@ -3,6 +3,7 @@ import { cachedWorld } from '../../test/support/world';
 import { stepCoarse } from '../sim/galaxy/coarse';
 import { sectorOwners, simulatedSectors } from '../sim/galaxy/control';
 import { wouldFight } from '../sim/galaxy/clash';
+import { aftermath } from '../sim/galaxy/meetings';
 import { fightPressure } from '../sim/galaxy/pressure';
 import { atWar, baselineStance, mayChange, pairKey, stanceOf } from '../sim/galaxy/relations';
 import { ensureChunk, galaxyIndex, START_NODE } from '../sim/galaxy/state';
@@ -84,6 +85,20 @@ describe('the stance of a pair: the table is the baseline, the saved state the d
     const before = sim.galaxy.war[pairKey('meridian', 'helix')]?.tired ?? 0;
     fightPressure(sim, START_NODE, 'meridian', 'helix', 2, false);
     expect(sim.galaxy.war[pairKey('meridian', 'helix')]?.tired).toBeGreaterThan(before);
+  });
+
+  it('a fight strains the pair for every ship lost, on both sides, in a draw and on the winning side too', () => {
+    const sim = base();
+    const tired = (): number => sim.galaxy.war[pairKey('meridian', 'helix')]?.tired ?? 0;
+    const a = { faction: 'meridian', home: '', role: 'patrol', ships: [] } as unknown as Fleet;
+    const b = { faction: 'helix', home: '', role: 'patrol', ships: [] } as unknown as Fleet;
+    const side = (n: number, fate: 'hurt' | 'fled') => ({ lost: Array.from({ length: n }, () => ({})) as never, fate });
+    const t0 = tired();
+    aftermath(sim, { a, b, node: START_NODE }, { kind: 'draw', winner: null, share: 0.5, a: side(1, 'hurt'), b: side(1, 'hurt') }, 1, ['A', 'B']);
+    const t1 = tired();
+    expect(t1).toBeGreaterThan(t0);
+    aftermath(sim, { a, b, node: START_NODE }, { kind: 'driven', winner: 'a', share: 0.6, a: side(2, 'hurt'), b: side(0, 'fled') }, 2, ['A', 'B']);
+    expect(tired()).toBeGreaterThan(t1);
   });
 });
 

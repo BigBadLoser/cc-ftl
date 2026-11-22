@@ -51,9 +51,9 @@ export function flipSector(sim: Sim, sectorId: string, to: string, turn: number)
   g.fleets = g.fleets.filter((f) => {
     const old = before.get(f.home);
     if (!old || !changed.has(old.id) || f.faction !== old.owner) return true;
-    // A fleet with real ships in the player's node only changes its home; the rest go home (in the area) or are disbanded (frozen).
+    // A fleet with real ships in the player's node only changes its home; the rest go home (simulated: node or home in the area, as fleets.ts steps them) or are disbanded (frozen).
     const live = f.ships.some((s) => s.ship !== undefined);
-    const home = area.has(f.node) || live ? newHome(sim, f, portNode(f.home), changed) : null;
+    const home = area.has(f.node) || area.has(portNode(f.home)) || live ? newHome(sim, f, portNode(f.home), changed) : null;
     if (!home) return live;
     f.home = home.id;
     if (!live) headHome(sim, f);
