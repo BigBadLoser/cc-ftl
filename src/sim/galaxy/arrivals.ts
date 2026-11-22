@@ -2,6 +2,7 @@ import { guardPacked } from '../packedGuard';
 import { CombatC, ShipC, type Faction, type Ship } from '../combat/components';
 import { factionsHostile } from '../combat/factions';
 import { spawnShip } from '../combat/ships';
+import type { Rect } from '../grid';
 import { placementGapError } from '../regions';
 import { generateShip } from '../shipgen/generate';
 import { Rng } from '../rng';
@@ -138,15 +139,31 @@ export function playerShipInfo(sim: Sim): { id: number; ship: Ship } | null {
 const SPOT_RINGS = [70, 95, 125, 160];
 const SPOT_DIRS = 12;
 
+/** Rings close around an anchor (`freeSpot`): from just clear of it outwards, ANCHOR_STEP tiles apart. */
+const ANCHOR_RINGS = 6;
+const ANCHOR_STEP = 10;
+
 /**
  * Where a ship of w x h tiles appears: the first spot on rings around the player's ship that passes the same checks as
  * `sector.deploy` (inside the sector bounds, then the gap rule `placementGapError`). Null when nothing fits. Deterministic.
+ * With an `anchor` (a rectangle in sector tiles: the station a trader calls at, the field a miner works), the rings go round that first, close
+ * in, and the player's rings are the fallback.
  */
-export function freeSpot(sim: Sim, w: number, h: number): { x: number; y: number } | null {
+export function freeSpot(sim: Sim, w: number, h: number, anchor?: Rect): { x: number; y: number } | null {
+  if (anchor) {
+    const near = Math.max(anchor.w, anchor.h) / 2 + Math.max(w, h) / 2;
+    const rings = Array.from({ length: ANCHOR_RINGS }, (_, i) => near + (i + 1) * ANCHOR_STEP);
+    const spot = ringSpot(sim, w, h, anchor.x + anchor.w / 2, anchor.y + anchor.h / 2, rings);
+    if (spot) return spot;
+  }
   const me = playerShipInfo(sim)?.ship;
   const cx = me ? me.x + me.width / 2 : sim.sector.width / 2;
   const cy = me ? me.y + me.height / 2 : sim.sector.height / 2;
-  for (const r of SPOT_RINGS) {
+  return ringSpot(sim, w, h, cx, cy, SPOT_RINGS);
+}
+
+function ringSpot(sim: Sim, w: number, h: number, cx: number, cy: number, rings: readonly number[]): { x: number; y: number } | null {
+  for (const r of rings) {
     for (let k = 0; k < SPOT_DIRS; k++) {
       const a = (k * 2 * Math.PI) / SPOT_DIRS;
       const x = Math.round(cx + r * Math.cos(a) - w / 2);
@@ -163,14 +180,14 @@ export function freeSpot(sim: Sim, w: number, h: number): { x: number; y: number
  * faction's combat side, the rest neutral (a scene may set the side, and cap the crew); one the player provoked always comes back hostile. Returns false (the contact stays, unspawned) when its
  * generator faction is missing, no layout comes out or nothing fits. Reports `ship.arrived` (with `opts.reason`, default 'spawn'), so every way a ship turns up here is covered.
  */
-export function spawnContact(sim: Sim, node: string, c: Contact, opts: { side?: Faction; crew?: number; reason?: ArriveReason } = {}): boolean {
+export function spawnContact(sim: Sim, node: string, c: Contact, opts: { side?: Faction; crew?: number; reason?: ArriveReason; anchor?: Rect } = {}): boolean {
   if (sim.galaxy.current !== node || c.ship !== undefined) return false;
   const def = sim.content.factions?.[c.shipgen];
   if (!def) return false;
   const key = contactKey(c);
   const gen = shipFor(sim, c, def);
   if (!gen) return false;
-  const spot = freeSpot(sim, gen.width, gen.height);
+  const spot = freeSpot(sim, gen.width, gen.height, opts.anchor);
   if (!spot) return false;
   generated(sim).delete(key);
   // A hired escort fights for whoever pays it.
