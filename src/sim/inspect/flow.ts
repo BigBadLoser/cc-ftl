@@ -20,6 +20,7 @@ import { patrolBoards } from './patrol';
 import { refuseConsequences } from './settle';
 import { endInspection, go, leave } from './start';
 import { InspectionC, inspections, type Inspection } from './types';
+import { PLAYER } from '../side';
 
 const alive = (sim: Sim, id: number): boolean => sim.world.has(id, CrewC) && !sim.world.has(id, DeadC);
 
@@ -87,7 +88,7 @@ function step(sim: Sim, id: number, insp: Inspection): void {
   const ship = shipById(sim, insp.ship);
   if (insp.phase === 'fight') {
     // Over once nobody of theirs stands aboard (the player's ship lost or left is abortInspections / the checks below).
-    if (!ship || ship.faction !== 'player' || sim.sector.state !== 'active' || !standing(sim, insp)) release(sim, id, insp);
+    if (!ship || ship.faction !== PLAYER || sim.sector.state !== 'active' || !standing(sim, insp)) release(sim, id, insp);
     return;
   }
   if (insp.npc) {
@@ -96,8 +97,8 @@ function step(sim: Sim, id: number, insp: Inspection): void {
     if (insp.phase !== 'leave' && (atBattle(sim, insp.station) || atBattle(sim, insp.ship) || shipsHostile(sim, insp.station, insp.ship))) return leave(sim, id, insp, 'off');
   } else {
     // The player turned on the ship that sent them (fired on it): its inspectors aboard fight too.
-    if (station && insp.phase !== 'leave' && factionsHostile(station.faction, 'player')) return fightInspection(sim, id, insp);
-    if (!station || station.state !== 'active' || !ship || ship.faction !== 'player' || sim.sector.state !== 'active') return endInspection(sim, id);
+    if (station && insp.phase !== 'leave' && factionsHostile(station.faction, PLAYER)) return fightInspection(sim, id, insp);
+    if (!station || station.state !== 'active' || !ship || ship.faction !== PLAYER || sim.sector.state !== 'active') return endInspection(sim, id);
     if (insp.phase !== 'leave' && sim.sector.inCombat) return leave(sim, id, insp, 'off');
   }
   if (!insp.crew.some((c) => alive(sim, c))) return endInspection(sim, id);

@@ -21,6 +21,7 @@ import { rollLoadout } from '../upgrades/loadout';
 import { hullSum } from './hull';
 import { modulesOn, type DefTest } from '../modules/byShip';
 import type { RolledCrew } from '../crew/roll';
+import { PLAYER } from '../side';
 
 const isShieldGen: DefTest = (d) => !!d.shieldGen;
 
@@ -160,7 +161,7 @@ export function spawnShip(
   }
   spawnCrew(sim, ship, template.crew ?? [], opts.rest, opts.rolls);
   // Every hull burns crystals by the one rule; a ship that is not the player's starts with days of them in its stores (the player's template says what it carries).
-  if (opts.faction !== 'player') stockFuel(sim, ship, NPC_FUEL_DAYS);
+  if (opts.faction !== PLAYER) stockFuel(sim, ship, NPC_FUEL_DAYS);
   if (opts.gen) shipCreated(sim, ship, opts.gen);
   sim.events.emit({ type: 'ship.spawned', ship, faction: opts.faction });
   return ship;

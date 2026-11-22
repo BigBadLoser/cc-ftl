@@ -5,6 +5,7 @@ import { CombatC } from '../combat/components';
 import { reputationOf } from '../story/state';
 import { augmentedCrew } from './augmentation';
 import { TraderC, type Trader, type TraderDef, type TradeFactionDef } from './types';
+import { isPlayers, PLAYER } from '../side';
 
 /** Stable 32-bit mix of integers (seed, identity), so a trader's stock does not depend on when it is first hailed. */
 function mix(...parts: number[]): number {
@@ -92,7 +93,7 @@ export function ensureTrader(sim: Sim, id: number): Trader | null {
   const have = sim.world.get(id, TraderC);
   if (have) return have;
   const ship = sim.world.get(id, ShipC);
-  if (!ship || ship.faction === 'player') return null;
+  if (!ship || ship.faction === PLAYER) return null;
   const profile = profileFor(sim, ship);
   if (!profile) return null;
   const t = rollTrader(sim, profile, tradeFactionOf(ship), ship.name, ship.gen?.seed ?? id, ship.immobile === true, ship.gen?.owner);
@@ -132,5 +133,5 @@ function aimingAtPlayer(sim: Sim, id: number): boolean {
   const t = c?.target;
   if (!t) return false;
   if (t.vehicle) return false;
-  return sim.world.get(t.ship, ShipC)?.faction === 'player';
+  return isPlayers(sim, t.ship);
 }

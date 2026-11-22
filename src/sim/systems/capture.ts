@@ -8,6 +8,7 @@ import { AllegianceC } from '../fight/components';
 import { inEngagement, opposed } from '../galaxy/engagements';
 import { takeShip } from '../galaxy/engagementPrize';
 import type { Sim } from '../sim';
+import { PLAYER } from '../side';
 
 /** Factions that may take a ship: the player takes enemy ships; raiders or the rogue AI take the player's. */
 const ATTACKERS: readonly Faction[] = ['player', 'hostile', 'rogue'];
@@ -34,7 +35,7 @@ export function captureSystem(sim: Sim): void {
     let captor = 0;
     if (captureReady(sim, id)) {
       for (const f of sim.sector.inCombat ? ATTACKERS : []) {
-        if (!factionsHostile(f, ship.faction) || (f !== 'player' && ship.faction !== 'player')) continue;
+        if (!factionsHostile(f, ship.faction) || (f !== PLAYER && ship.faction !== PLAYER)) continue;
         need = bridgeHold(sim, id, f)?.ticks ?? null;
         if (need !== null) {
           attacker = f;
@@ -63,7 +64,7 @@ export function captureSystem(sim: Sim): void {
     if (captor) {
       sim.world.remove(id, CaptureProgressC);
       takeShip(sim, id, captor);
-    } else if (ship.faction !== 'player') {
+    } else if (ship.faction !== PLAYER) {
       capturePrize(sim, id);
     } else {
       sim.world.remove(id, CaptureProgressC);

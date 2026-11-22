@@ -7,10 +7,11 @@ import { WRECK_BELOW } from '../tuning';
 import { CombatC, ShipC, WeaponC, type Ship } from './components';
 import { shipIdOf } from '../regions';
 import { guestOn } from '../consent/guests';
+import { isPlayers, PLAYER } from '../side';
 
 /** Was the player shooting at the ship: a player ship's ship-wide target, or a weapon of one aimed at it? */
 function playerTargets(sim: Sim, shipId: number): boolean {
-  const mine = (id: number): boolean => sim.world.get(id, ShipC)?.faction === 'player';
+  const mine = (id: number): boolean => isPlayers(sim, id);
   for (const id of sim.world.query(ShipC, CombatC)) if (mine(id) && sim.world.get(id, CombatC)?.target?.ship === shipId) return true;
   for (const id of sim.world.query(WeaponC)) {
     const w = sim.world.get(id, WeaponC);
@@ -25,7 +26,7 @@ function playerTargets(sim: Sim, shipId: number): boolean {
  */
 export function wreckShip(sim: Sim, shipId: number): void {
   const ship = sim.world.get(shipId, ShipC) as Ship;
-  if (ship.faction !== 'player' && playerTargets(sim, shipId)) ship.killedBy = 'player';
+  if (ship.faction !== PLAYER && playerTargets(sim, shipId)) ship.killedBy = 'player';
   reportDeparted(sim, shipId, 'wrecked');
   ship.state = 'wreck';
   delete ship.yielded; // nobody is left to answer for it

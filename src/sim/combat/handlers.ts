@@ -18,6 +18,7 @@ import { battleStations, holdAll } from './stations';
 import { factionsHostile } from './factions';
 import { generateShip } from '../shipgen/generate';
 import { spawnDerelict } from './derelict';
+import { PLAYER } from '../side';
 
 type CombatCommandType = Extract<Command['type'], `combat.${string}` | 'debug.spawnEnemy' | 'debug.spawnGenerated' | 'debug.spawnDerelict'>;
 type Handler<T extends CombatCommandType> = (sim: Sim, cmd: Extract<Command, { type: T }>) => void;
@@ -107,7 +108,7 @@ export const combatHandlers: { [T in CombatCommandType]: Handler<T> } = {
     // Aiming a held weapon at an enemy is the order to shoot: it fires once when charged, then stays on hold. Aiming at a ship that is not hostile
     // only aims (battle stations on a neutral), and drops a shot still pending from an earlier aim: a shot needs a volley or an auto weapon, and that
     // shot is what turns it (combat/provoke.ts).
-    if (weapon.mode === 'hold' && target) weapon.once = !!target.vehicle || factionsHostile(shipById(sim, target.ship)?.faction, 'player');
+    if (weapon.mode === 'hold' && target) weapon.once = !!target.vehicle || factionsHostile(shipById(sim, target.ship)?.faction, PLAYER);
   },
   'combat.setWeaponMode': (sim, cmd) => {
     const weapon = sim.world.get(cmd.weaponId, WeaponC);
@@ -156,7 +157,7 @@ export const combatHandlers: { [T in CombatCommandType]: Handler<T> } = {
     if (!shipCanAct(ship)) return reject(sim, cmd.type, 'yielded');
     if (ship.immobile) return reject(sim, cmd.type, 'immobile');
     // The player's ship leaves through the galaxy: charge the drive, then jump (`to`, else the cheapest affordable neighbour).
-    if (ship.faction === 'player') return void (sim.galaxy.event ? leave(sim, cmd.type) : flee(sim, entity));
+    if (ship.faction === PLAYER) return void (sim.galaxy.event ? leave(sim, cmd.type) : flee(sim, entity));
     if (combat.ftl < FTL_CHARGE_SEC) return reject(sim, cmd.type, 'notCharged');
     reportDeparted(sim, cmd.ship, 'fled');
     ship.state = 'fled';

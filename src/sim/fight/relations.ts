@@ -5,7 +5,7 @@ import { factionsHostile, rogueAlly } from '../combat/factions';
 
 import { InertC } from '../robots/components';
 import { isBreaking, isIncapacitated } from '../crew/helpers';
-import { crewOf, PLAYER, type Side } from '../side';
+import { crewOf, PLAYER, type Side, isPlayers } from '../side';
 import type { Sim } from '../sim';
 import { AllegianceC, EquipOrderC, FighterC, SurrenderedC } from './components';
 import { shipById } from '../combat/shipQuery';
@@ -162,15 +162,15 @@ export function isInvader(sim: Sim, crew: number): boolean {
 export function isOnOurSide(sim: Sim, crew: number): boolean {
   const faction = sim.world.get(crew, AllegianceC)?.faction;
   if (!faction) return false;
-  if (faction === 'player') return true;
-  if (factionsHostile('player', faction)) return false;
+  if (faction === PLAYER) return true;
+  if (factionsHostile(PLAYER, faction)) return false;
   const pos = sim.world.get(crew, PositionC);
-  return !!pos && shipById(sim, shipIdOf(sim, pos))?.faction === 'player';
+  return !!pos && isPlayers(sim, shipIdOf(sim, pos));
 }
 
 /** True if the player directs this crew member in combat: player side and drafted. */
 export function isPlayerControlled(sim: Sim, crew: number): boolean {
-  return sim.world.get(crew, AllegianceC)?.faction === 'player' && sim.world.has(crew, DraftedC);
+  return isPlayers(sim, crew, { held: false }) && sim.world.has(crew, DraftedC);
 }
 
 /**

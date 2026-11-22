@@ -2,7 +2,6 @@ import { INSPECT_BAN_TURNS, INSPECT_BRIBE_CHANCE, INSPECT_PATROL_REFUSE_HIT, INS
 import type { Command } from '../commands';
 import { standingHit } from '../galaxy/standing';
 import { CrewC, PositionC } from '../crew/components';
-import { AllegianceC } from '../fight/components';
 import { ItemStackC } from '../items/components';
 import { holdsGoods, spillItems, stackSizeOf } from '../items/stacks';
 import type { ItemQty } from '../registry';
@@ -13,6 +12,7 @@ import { VehicleC } from '../vehicles/components';
 import { cargoTile } from '../vehicles/geometry';
 import { InspectionC, type Inspection } from './types';
 import { leave } from './start';
+import { isPlayers } from '../side';
 
 /**
  * Settling an inspection that found contraband (#138): `inspect.settle` while the lead inspector waits ('settle').
@@ -41,7 +41,7 @@ function dropSpots(sim: Sim, vehicle: number, insp: Inspection): { x: number; y:
   const out: { x: number; y: number }[] = [];
   const at = cargoTile(sim, vehicle);
   if (at?.shipId === insp.ship) out.push(at);
-  const people = [...insp.crew, ...sim.world.query(CrewC).filter((c) => sim.world.get(c, AllegianceC)?.faction === 'player')];
+  const people = [...insp.crew, ...sim.world.query(CrewC).filter((c) => isPlayers(sim, c, { held: false }))];
   for (const c of people) {
     const p = sim.world.get(c, PositionC);
     if (p && shipIdOf(sim, p) === insp.ship) out.push({ x: Math.round(p.x), y: Math.round(p.y) });

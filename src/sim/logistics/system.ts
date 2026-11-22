@@ -14,6 +14,7 @@ import { releasePilot } from './pilot';
 import { salvageWatch } from './salvage';
 import { RETRY_TICKS } from './settle';
 import { TransferC, type Transfer, type TransferBlock } from './components';
+import { PLAYER } from '../side';
 
 /** Queued orders look for a shuttle this often (ticks); a pilot walking to the bay gives up after this many seconds. */
 const LOOK_EVERY = 10;
@@ -27,7 +28,7 @@ function shuttleBusy(sim: Sim): boolean {
   return sim.world.query(VehicleC).some((id) => {
     const v = sim.world.get(id, VehicleC) as Vehicle;
     const def = vehicleDefOf(sim, v);
-    return vehicleFaction(sim, v) === 'player' && !!def && def.class !== 'pod' && (def.cargo ?? 0) > 0; // a pod cannot carry a transfer, waiting for it is no wait
+    return vehicleFaction(sim, v) === PLAYER && !!def && def.class !== 'pod' && (def.cargo ?? 0) > 0; // a pod cannot carry a transfer, waiting for it is no wait
   });
 }
 

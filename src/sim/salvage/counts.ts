@@ -11,6 +11,7 @@ import { Struct } from '../structure';
 import { SCRAP_TYPES } from './components';
 import { partCount, partsOf } from './plan';
 import { scrapItem, expectedYield } from './yield';
+import { PLAYER } from '../side';
 
 /** What stripping one scrap type from a wreck would take and give. */
 export interface SalvageCount {
@@ -53,7 +54,7 @@ export function hostilesAboard(sim: Sim, ship: number): { crew: number; sacs: nu
   let crew = 0, sacs = 0, nests = 0;
   for (const id of sim.world.query(CrewC, PositionC, AllegianceC)) {
     if (sim.world.has(id, DeadC) || sim.world.has(id, SurrenderedC)) continue;
-    if (factionsHostile(sim.world.get(id, AllegianceC)?.faction, 'player') && shipIdOf(sim, sim.world.get(id, PositionC)) === ship) crew++;
+    if (factionsHostile(sim.world.get(id, AllegianceC)?.faction, PLAYER) && shipIdOf(sim, sim.world.get(id, PositionC)) === ship) crew++;
   }
   for (const id of sim.world.query(EggSacC)) if (sim.world.get(id, EggSacC)?.ship === ship) sacs++;
   for (const id of sim.world.query(NestC)) if (sim.world.get(id, NestC)?.ship === ship) nests++;

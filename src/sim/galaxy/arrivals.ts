@@ -21,6 +21,7 @@ import {
 import { SCAVENGER_CHANCE, SCAVENGER_FACTION, SCAVENGER_MAX_DANGER } from './tuningHeat';
 import type { Contact } from './types';
 import { isProvoked } from './groups';
+import { PLAYER } from '../side';
 
 /**
  * Generated ships by contact key (faction shipgen, seed, depth), per content registry. Generation is a pure function of the key, so
@@ -131,7 +132,7 @@ export function playerShipInfo(sim: Sim): { id: number; ship: Ship } | null {
   guardPacked(sim, 'playerShipInfo');
   for (const id of sim.world.query(ShipC, CombatC)) {
     const ship = sim.world.get(id, ShipC) as Ship;
-    if (ship.faction === 'player' && ship.state === 'active') return { id, ship };
+    if (ship.faction === PLAYER && ship.state === 'active') return { id, ship };
   }
   return null;
 }
@@ -245,7 +246,7 @@ function hostileShipsHere(sim: Sim, contacts: readonly Contact[]): number {
   let n = contacts.filter((c) => c.ship === undefined && isHostileFaction(sim, c.faction)).length;
   for (const id of sim.world.query(ShipC)) {
     const s = sim.world.get(id, ShipC);
-    if (s && (s.state === 'active' || s.state === 'disabled') && factionsHostile(s.faction, 'player')) n++;
+    if (s && (s.state === 'active' || s.state === 'disabled') && factionsHostile(s.faction, PLAYER)) n++;
   }
   return n;
 }

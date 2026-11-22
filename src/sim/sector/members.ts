@@ -1,7 +1,6 @@
 import type { DepartReason } from '../events';
 import { CrewC, DeadC, JobC, PositionC } from '../crew/components';
 import { EvaFloatC } from '../eva/components';
-import { AllegianceC } from '../fight/components';
 import { ItemStackC } from '../items/components';
 import { ModuleC } from '../modules/components';
 import type { ComponentKey } from '../ecs';
@@ -15,6 +14,7 @@ import { AboardC, VehicleC } from '../vehicles/components';
 import { vehicleFaction } from '../vehicles/lifecycle';
 import { StasisC } from '../stasis/components';
 import { slabPlace } from '../stasis/query';
+import { PLAYER, isPlayers } from '../side';
 
 /**
  * Which non-player vehicles docked at the ship's airlocks travel with it: `true` all of them, `false` (the default) none
@@ -39,7 +39,7 @@ function attached(sim: Sim, onShip: Set<number>): { own: number[]; foreign: numb
     const stowed = v.state === 'stowed' && onShip.has(v.home);
     const docked = v.state === 'docked' && onShip.has(v.dock);
     if (!stowed && !docked) continue;
-    (stowed || vehicleFaction(sim, v) === 'player' ? own : foreign).push(id);
+    (stowed || vehicleFaction(sim, v) === PLAYER ? own : foreign).push(id);
   }
   return { own, foreign };
 }
@@ -94,10 +94,10 @@ export interface JumpWarnings {
 export function jumpWarnings(sim: Sim, ship: number): JumpWarnings {
   const lifting = new Set(liftSet(sim, ship, { withDocked: false }));
   const w = sim.world;
-  const crew = w.query(CrewC).filter((id) => !lifting.has(id) && !w.has(id, DeadC) && w.get(id, AllegianceC)?.faction === 'player');
+  const crew = w.query(CrewC).filter((id) => !lifting.has(id) && !w.has(id, DeadC) && isPlayers(sim, id, { held: false }));
   const vehicles = w.query(VehicleC).filter((id) => {
     const v = w.get(id, VehicleC);
-    return !lifting.has(id) && !!v && vehicleFaction(sim, v) === 'player';
+    return !lifting.has(id) && !!v && vehicleFaction(sim, v) === PLAYER;
   });
   const hostileDocked = attached(sim, onShipSet(sim, ship)).foreign;
   return { crew, vehicles, hostileDocked, inspectors: inspectorsAboard(sim, ship) };

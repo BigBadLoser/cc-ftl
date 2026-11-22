@@ -2,12 +2,12 @@ import { CrewC } from '../crew/components';
 import { wontDo } from '../crew/wontDo';
 import { stat } from '../stats';
 import type { Sim } from '../sim';
-import { AllegianceC } from './components';
+import { isPlayers } from '../side';
 
 /** True for a person on the player's crew (a species with moods): always armed, hunts by skill (docs/TRAITS.md 10.9). Robots and NPC kinds keep their kind's rules. */
 export function isPlayerPerson(sim: Sim, id: number): boolean {
   const crew = sim.world.get(id, CrewC);
-  return !!crew && !!sim.content.species[crew.species]?.mood && sim.world.get(id, AllegianceC)?.faction === 'player';
+  return !!crew && !!sim.content.species[crew.species]?.mood && isPlayers(sim, id, { held: false });
 }
 
 /** Hand weapons of a kind (not ion: a stunner is a special tool), best first: tier, then damage. */

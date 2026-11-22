@@ -1,13 +1,13 @@
 import { DraftedC, JobC, PositionC } from '../crew/components';
 import { abortTask, reserveJob } from '../ai/task';
 import { refusesConsole } from '../crew/jobFit';
-import { shipById } from '../combat/shipQuery';
 import { ModuleC } from '../modules/components';
 import { accessTile } from '../modules/footprint';
 import { shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { EmbarkOrderC } from '../vehicles/components';
 import { FighterC } from './components';
+import { isPlayers } from '../side';
 
 /**
  * Send a drafted crew member to man a console of the player's ship (a battle station): they take its 'operate' job, walk to its
@@ -22,7 +22,7 @@ export function manStation(sim: Sim, crew: number, module: number): string | nul
   const m = sim.world.get(module, ModuleC);
   const def = m && sim.content.modules[m.def];
   const at = m && def && accessTile(def, m.x, m.y, m.rot);
-  if (!m || !def?.console || !at || m.hp <= 0 || shipById(sim, shipIdOf(sim, m))?.faction !== 'player') return 'badTarget';
+  if (!m || !def?.console || !at || m.hp <= 0 || !isPlayers(sim, shipIdOf(sim, m))) return 'badTarget';
   if (shipIdOf(sim, pos) !== shipIdOf(sim, m)) return 'otherShip';
   if (refusesConsole(sim, crew, module)) return 'wontDo';
   let jobId = 0;

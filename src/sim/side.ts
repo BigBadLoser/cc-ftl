@@ -1,5 +1,4 @@
-import { ShipC, type ShipState } from './combat/components';
-import { shipById } from './combat/shipQuery';
+import { ShipC, type Ship, type ShipState } from './combat/components';
 import { CrewC, DeadC, PositionC } from './crew/components';
 import { AllegianceC, PrisonerC, SurrenderedC } from './fight/components';
 import { ItemStackC, StorageC } from './items/components';
@@ -8,6 +7,9 @@ import { guardPacked } from './packedGuard';
 import { shipIdAt, shipIdOf } from './regions';
 import type { Sim } from './sim';
 import { VehicleC } from './vehicles/components';
+
+/** The ship behind an id (0 or a non-ship: none). Not `shipById`: that module imports this one. */
+const shipById = (sim: Sim, id: number): Ship | undefined => (id ? sim.world.get(id, ShipC) : undefined);
 
 /**
  * Whose is this: the one owner of "which side controls this ship, crew member, module, stack or vehicle" and of the collections by side
@@ -18,13 +20,18 @@ import { VehicleC } from './vehicles/components';
  * `guardPacked` unless `packedOk` says "nobody / none while the ship is away" is the right answer (see `packedGuard.ts`).
  */
 export type Side = string;
-export const PLAYER: Side = 'player';
+export const PLAYER = 'player' satisfies Side;
+
+export interface HeldOpt {
+  /** `false`: a prisoner counts as its own allegiance, not as its holder's (the roster of who fights for whom, as opposed to who holds them). */
+  held?: boolean;
+}
 
 /**
  * Who controls an entity, or null when it has no side. Ship: its faction. Crew: its allegiance; a prisoner is held by `PrisonerC.holder` (the
  * player when absent). Vehicle: its home ship's side. Module, storage, item stack: the ship it stands on.
  */
-export function sideOf(sim: Sim, entity: number): Side | null {
+export function sideOf(sim: Sim, entity: number, opts: HeldOpt = {}): Side | null {
   const w = sim.world;
   const ship = w.get(entity, ShipC);
   if (ship) return ship.faction;
@@ -33,14 +40,14 @@ export function sideOf(sim: Sim, entity: number): Side | null {
   const allegiance = w.get(entity, AllegianceC);
   if (allegiance) {
     const prisoner = w.get(entity, PrisonerC);
-    return prisoner ? (prisoner.holder ?? PLAYER) : allegiance.faction;
+    return prisoner && opts.held !== false ? (prisoner.holder ?? PLAYER) : allegiance.faction;
   }
   const at = w.get(entity, ModuleC) ?? w.get(entity, ItemStackC);
   return at ? (shipById(sim, shipIdOf(sim, at))?.faction ?? null) : null;
 }
 
 /** True if the entity is on the player's side (`sideOf`). */
-export const isPlayers = (sim: Sim, entity: number): boolean => sideOf(sim, entity) === PLAYER;
+export const isPlayers = (sim: Sim, entity: number, opts: HeldOpt = {}): boolean => sideOf(sim, entity, opts) === PLAYER;
 
 export interface PackedOpt {
   /** Answer "none" while the side's ship is a hyperspace packet, instead of flagging the read (`guardPacked`). */

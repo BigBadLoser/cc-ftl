@@ -12,6 +12,7 @@ import { RolledSkillsC, TraitsC, traitMult } from './traits';
 import { BackgroundC, InterestsC, WONT_DO_CATEGORY, WontDoC } from './background';
 import { defaultPriorities } from './profile';
 import { WONT_DO_WHY, blockWork } from './workBlock';
+import { PLAYER } from '../side';
 
 /**
  * Create one crew member of a role on a tile. The species comes from the role (default human). `name` defaults to a
@@ -33,7 +34,7 @@ export function createCrew(
     : (sim.content.crewNames[sim.rng.int(0, Math.max(0, sim.content.crewNames.length - 1))] ?? 'Crew'));
   const id = sim.world.createEntity();
   sim.world.add(id, CrewC, { name, role: roleId, species: speciesId, appearanceSeed: rolled ? rolled.appearanceSeed : sim.rng.int(0, 0x7fffffff), activity: 'idle' });
-  if (opts.faction === 'player') ensurePerson(sim, id); // other sides get an identity when they join the player's crew (the bond pass)
+  if (opts.faction === PLAYER) ensurePerson(sim, id); // other sides get an identity when they join the player's crew (the bond pass)
   sim.world.add(id, PositionC, { x: tile.x, y: tile.y, toX: tile.x, toY: tile.y, progress: 0, facing: 0 });
   sim.world.add(id, PathC, { steps: [] });
   sim.world.add(id, PrioritiesC, { ...role.priorities });
@@ -57,7 +58,7 @@ export function createCrew(
       if (cat) blockWork(sim, id, cat, WONT_DO_WHY);
     }
   }
-  if (opts.faction === 'player') issueKit(sim, id);
+  if (opts.faction === PLAYER) issueKit(sim, id);
   const hp = Math.round((species.maxHp ?? CREW_MAX_HP) * traitMult(sim, id, 'maxHpMult'));
   sim.world.add(id, HealthC, { hp, max: hp });
   sim.world.add(id, AllegianceC, { faction: opts.faction });

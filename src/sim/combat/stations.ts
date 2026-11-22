@@ -3,6 +3,7 @@ import { shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { CombatC, ShipC, WeaponC } from './components';
 import { factionsHostile } from './factions';
+import { isPlayers, PLAYER } from '../side';
 
 /** Every weapon of a ship on hold (remembering its mode), or back to the mode it had (`combat.holdAll`). */
 export function holdAll(sim: Sim, ship: number, hold: boolean): void {
@@ -32,8 +33,8 @@ export function dropAims(sim: Sim, ship: number, drop: (target: number) => boole
   }
 }
 
-const playerShips = (sim: Sim): number[] => sim.world.query(ShipC, CombatC).filter((id) => sim.world.get(id, ShipC)?.faction === 'player');
-const peaceful = (sim: Sim, ship: number): boolean => !factionsHostile(sim.world.get(ship, ShipC)?.faction, 'player');
+const playerShips = (sim: Sim): number[] => sim.world.query(ShipC, CombatC).filter((id) => isPlayers(sim, id));
+const peaceful = (sim: Sim, ship: number): boolean => !factionsHostile(sim.world.get(ship, ShipC)?.faction, PLAYER);
 
 /**
  * `combat.battleStations`: the player's combat view at any time. On, the player's consoles are manned with no fight on (operateJobs reads

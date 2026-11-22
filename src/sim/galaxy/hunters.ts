@@ -15,6 +15,7 @@ import {
   HUNT_BUDGET_BASE, HUNT_BUDGET_MAX, HUNT_BUDGET_PER_PRESSURE, HUNT_COOLDOWN, HUNT_MAX_CHANCE, HUNT_PER_PRESSURE, HUNT_RANGE,
   HUNT_SHIPS_MAX, HUNT_SHIPS_PER, HUNT_TURNS, MAX_HUNTERS,
 } from './tuningHeat';
+import { PLAYER } from '../side';
 
 /**
  * Hunters (see tuningHeat.ts): factions that want the player send fleets after them. Each turn every faction that is hostile to the player and has an
@@ -75,7 +76,7 @@ export function huntersHere(sim: Sim): { fleet: number; faction: string; ships: 
     if (!f.hunt || f.standDown || f.node !== g.current) continue;
     const ships = f.ships.map((c) => c.ship).filter((id): id is number => {
       const s = id === undefined ? undefined : sim.world.get(id, ShipC);
-      return !!s && (s.state === 'active' || s.state === 'disabled') && factionsHostile(s.faction, 'player');
+      return !!s && (s.state === 'active' || s.state === 'disabled') && factionsHostile(s.faction, PLAYER);
     }).sort((a, b) => a - b);
     if (ships.length) out.push({ fleet: f.id, faction: f.faction, ships });
   }

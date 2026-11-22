@@ -5,6 +5,7 @@ import { atBattle } from '../combat/engage';
 import { TICK_HZ } from '../time';
 import { shipIdOf } from '../regions';
 import { shipById } from '../combat/shipQuery';
+import { PLAYER } from '../side';
 
 /**
  * Roof parts (weapon turrets, shield dishes, AI sensor masts, point-defence turrets) move toward a target of 1 (out) or 0 (stowed) at
@@ -25,7 +26,7 @@ export function deploySystem(sim: Sim): void {
     const state = ship?.state;
     const alive = m.powered && m.hp > 0 && state !== 'wreck' && state !== 'fled';
     // Battle stations run the player's guns out with no fight on.
-    const wanted = def.aiCore ? alive : alive && ((!!ship && atBattle(sim, shipIdOf(sim, m))) || (!!sim.sector.stations && ship?.faction === 'player'));
+    const wanted = def.aiCore ? alive : alive && ((!!ship && atBattle(sim, shipIdOf(sim, m))) || (!!sim.sector.stations && ship?.faction === PLAYER));
     const step = 1 / (Math.max(def.deploySec, 0.05) * TICK_HZ);
     d.amount = wanted ? Math.min(1, d.amount + step) : Math.max(0, d.amount - step);
   }

@@ -17,6 +17,7 @@ import type { Sim } from '../sim';
 import { PRIZE_VALUE_PER_COST, PRIZE_VALUE_PER_WALL_HP } from '../tuning';
 import { shipIdOf, shipGrid } from '../regions';
 import { factionOfShip } from '../galaxy/heat';
+import { isPlayers, PLAYER } from '../side';
 
 /** Hull value estimate of a grid: module build costs scaled by hp, plus wall integrity. Sizes the loot stocked on a prize. */
 export function prizeValue(sim: Sim, shipId: number): number {
@@ -45,7 +46,7 @@ export function imprison(sim: Sim, crew: number, ship: number): void {
   if (!sim.world.has(crew, SurrenderedC)) sim.world.add(crew, SurrenderedC, { tick: sim.tick });
   const s = sim.world.get(ship, ShipC);
   const from = s ? factionOfShip(sim, ship, s, sim.world.get(ship, PrizeC)?.from ?? s.faction) : null;
-  sim.world.add(crew, PrisonerC, { tick: sim.tick, ...(from && from !== 'player' ? { from } : {}) });
+  sim.world.add(crew, PrisonerC, { tick: sim.tick, ...(from && from !== PLAYER ? { from } : {}) });
   (sim.world.get(crew, CrewC) as Crew).activity = sim.world.has(crew, DownedC) ? 'downed' : sim.world.has(crew, InertC) ? 'inert' : 'idle';
   sim.events.emit({ type: 'crew.imprisoned', crew, ship });
 }
@@ -89,7 +90,7 @@ export function capturePrize(sim: Sim, entity: number): void {
     const faction = sim.world.get(id, AllegianceC)?.faction;
     if (faction === from) {
       if (sim.world.has(id, SurrenderedC) || sim.world.has(id, DownedC) || sim.world.has(id, InertC)) imprison(sim, id, entity);
-    } else if (faction === 'player') {
+    } else if (faction === PLAYER) {
       sim.world.remove(id, DraftedC); // the boarders go back to work (salvage) instead of standing at attention
     }
   }
@@ -102,7 +103,7 @@ export function scuttle(sim: Sim, shipId: number): string | null {
   const ship = sim.world.get(entity, ShipC);
   if (!ship || ship.state !== 'prize') return 'notPrize';
   for (const id of sim.world.query(CrewC, PositionC)) {
-    if (shipIdOf(sim, sim.world.get(id, PositionC)) === shipId && sim.world.get(id, AllegianceC)?.faction === 'player'
+    if (shipIdOf(sim, sim.world.get(id, PositionC)) === shipId && isPlayers(sim, id, { held: false })
       && !sim.world.has(id, PrisonerC) && !sim.world.has(id, DeadC)) return 'crewAboard';
   }
   sim.world.remove(entity, PrizeC);

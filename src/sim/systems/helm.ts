@@ -10,6 +10,7 @@ import { grantXp } from '../crew/xp';
 import { modulesOn, type DefTest } from '../modules/byShip';
 import { settleDeparture, settleOrder } from '../ftl/order';
 import { refreshCruise } from '../combat/cruise';
+import { PLAYER } from '../side';
 
 /**
  * Evasion and the FTL drive. Both need a pilot at a powered helm. Evasion is the sum of powered engines'
@@ -35,7 +36,7 @@ export function helmSystem(sim: Sim): void {
     const boost = pilot ? 1 + SKILL_STEP * skill : 0;
     combat.pilot = skill;
     combat.evasion = Math.min(EVASION_CAP, engines * boost + (pilot && engines > 0 && overchargeActive(combat, 'engines') ? OVERCHARGE_ENGINE_EVASION : 0));
-    if (ship.faction === 'player' && sim.tick % CRUISE_EVERY === 0) refreshCruise(sim, id, combat);
+    if (ship.faction === PLAYER && sim.tick % CRUISE_EVERY === 0) refreshCruise(sim, id, combat);
     // Piloting XP only while the helm matters: evading in a fight, or the drive actually charging. A seated pilot with a full drive in peacetime learns nothing.
     if (pilot && engines > 0 && (sim.sector.inCombat || combat.ftl < FTL_CHARGE_SEC)) grantXp(sim, pilot.crew, 'piloting', XP_PER_WORK_SEC / TICK_HZ);
     if (pilot && engines > 0) combat.ftl = Math.min(FTL_CHARGE_SEC, combat.ftl + boost / TICK_HZ);

@@ -6,6 +6,7 @@ import { AllegianceC } from '../fight/components';
 import { shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { ConsentC, type Grant } from './components';
+import { isPlayers } from '../side';
 
 /** Which grants of an owner a call means: those for this site and from this ship (each absent: any). */
 export interface GrantKey {
@@ -64,7 +65,7 @@ export function guestHere(sim: Sim, crew: number): Grant | undefined {
 
 /** The lodging grant the crew member lives where they stand by (a passenger: consent/components.ts `lodge`), if any. */
 export function lodgingHere(sim: Sim, crew: number): Grant | undefined {
-  if (sim.world.get(crew, AllegianceC)?.faction === 'player') return undefined; // the common case, without the ship lookup
+  if (isPlayers(sim, crew, { held: false })) return undefined; // the common case, without the ship lookup
   const g = guestHere(sim, crew);
   return g?.lodge ? g : undefined;
 }
@@ -78,7 +79,7 @@ export function hasLeaveFrom(sim: Sim, from: number): boolean {
 /** True while one of the player's crew stands aboard the ship uninvited (alive, no grant covering them). */
 export function uninvitedOn(sim: Sim, ship: number): boolean {
   for (const id of sim.world.query(CrewC, PositionC)) {
-    if (sim.world.has(id, DeadC) || sim.world.get(id, AllegianceC)?.faction !== 'player') continue;
+    if (sim.world.has(id, DeadC) || !isPlayers(sim, id, { held: false })) continue;
     if (shipIdOf(sim, sim.world.get(id, PositionC) as { x: number; y: number }) === ship && !guestOn(sim, id, ship)) return true;
   }
   return false;

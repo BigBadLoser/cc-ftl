@@ -60,7 +60,7 @@ export function stowedShuttles(sim: Sim, eva: boolean): number {
   guardPacked(sim, 'stowedShuttles');
   return sim.world.query(VehicleC).filter((id) => {
     const v = sim.world.get(id, VehicleC);
-    return !!v && v.state === 'stowed' && vehicleFaction(sim, v) === 'player' && (!eva || !!vehicleDefOf(sim, v)?.eva);
+    return !!v && v.state === 'stowed' && vehicleFaction(sim, v) === PLAYER && (!eva || !!vehicleDefOf(sim, v)?.eva);
   }).length;
 }
 

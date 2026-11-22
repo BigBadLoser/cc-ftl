@@ -1,5 +1,4 @@
 import { goalTiles, reaches, startLabels, viewOf } from '../ai/navView';
-import { ShipC } from '../combat/components';
 import { ContainerC } from '../containers/components';
 import { shipIdAt , shipIdOf } from '../regions';
 import { JobC } from '../crew/components';
@@ -9,6 +8,7 @@ import { moduleSite } from '../modules/footprint';
 import type { Sim } from '../sim';
 import { ItemStackC, StorageC, type HaulRef } from './components';
 import { storageCount, storageSpace, storageTake } from './storage';
+import { isPlayers } from '../side';
 
 /**
  * The item index: where stock is, how much of it is spoken for. Not a system; planners call it.
@@ -138,7 +138,7 @@ export function nearestStorageFor(sim: Sim, shipId: number, item: string, at: { 
  * delivered. Other ships' and stations' stock is not ours: a docked station's crates must not satisfy a 'keep' order.
  */
 export function totalStock(sim: Sim, item: string): number {
-  const ours = (shipId: number): boolean => sim.world.get(shipId, ShipC)?.faction === 'player';
+  const ours = (shipId: number): boolean => isPlayers(sim, shipId);
   let n = 0;
   for (const id of sim.world.query(ItemStackC)) {
     const s = sim.world.get(id, ItemStackC);

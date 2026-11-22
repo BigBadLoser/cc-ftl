@@ -16,7 +16,6 @@ import { repKey } from './standing';
 import { RESCUE_REPUTATION } from './tuning';
 import type { Encounter, EventGrid, Fleet } from './types';
 import { CrewC, DeadC, PositionC } from '../crew/components';
-import { AllegianceC } from '../fight/components';
 import { ModuleC } from '../modules/components';
 import { shipIdOf } from '../regions';
 import { VehicleC } from '../vehicles/components';
@@ -25,6 +24,7 @@ import { observeLeave, observeScene } from '../scene/observer';
 import { settleVisits } from '../scene/visit';
 import { departScene, openScene, tendScene } from '../scene/open';
 import type { SceneSpec } from '../scene/types';
+import { isPlayers, PLAYER } from '../side';
 
 /**
  * Event grids: a temporary deep-space pocket (node id `event:<id>`) where an encounter is settled, with the player's packet and what its scene
@@ -42,7 +42,7 @@ export const inEvent = (sim: Sim): boolean => sim.galaxy.event !== null;
 export const hostilesPresent = (sim: Sim): number =>
   sim.world.query(ShipC).filter((id) => {
     const s = sim.world.get(id, ShipC);
-    return !!s && s.state === 'active' && factionsHostile(s.faction, 'player');
+    return !!s && s.state === 'active' && factionsHostile(s.faction, PLAYER);
   }).length;
 
 /**
@@ -87,11 +87,11 @@ export function crewAway(sim: Sim): boolean {
   const mine = (ship: number): boolean => ship === home;
   for (const id of sim.world.query(VehicleC)) {
     const v = sim.world.get(id, VehicleC);
-    if (!v || vehicleFaction(sim, v) !== 'player') continue;
+    if (!v || vehicleFaction(sim, v) !== PLAYER) continue;
     // Stowed in a bay: a shuttle in another ship's bay (a prize's) stays with that ship, like the prize itself; only player crew sitting in it
     // (embarked crew have no position) would be left behind.
     if (v.state === 'stowed') {
-      const aboard = [v.pilot, ...v.passengers].some((c) => c !== 0 && sim.world.get(c, AllegianceC)?.faction === 'player');
+      const aboard = [v.pilot, ...v.passengers].some((c) => c !== 0 && isPlayers(sim, c, { held: false }));
       if (!mine(v.homeShip) && aboard) return true;
       continue;
     }
@@ -99,7 +99,7 @@ export function crewAway(sim: Sim): boolean {
     if (!dock || !mine(shipIdOf(sim, dock))) return true;
   }
   for (const id of sim.world.query(CrewC, PositionC)) {
-    if (sim.world.has(id, DeadC) || sim.world.get(id, AllegianceC)?.faction !== 'player') continue;
+    if (sim.world.has(id, DeadC) || !isPlayers(sim, id, { held: false })) continue;
     if (!mine(shipIdOf(sim, sim.world.get(id, PositionC) as { x: number; y: number }))) return true;
   }
   return false;
