@@ -236,6 +236,7 @@ def main():
     p.add_argument("--beauty-state",choices=("idle","active","both"),default="both")
     p.add_argument("--tier",type=int,default=1,choices=(1,2,3),help="Mk I / II / III (4x5 / 4x6 / 4x7)")
     p.add_argument("--variant",default="KB",help="the tier fit-out (tierkit; only KB remains)")
+    p.add_argument("--parts",help="render only these sprite parts (comma list, e.g. flame), merged into the --out fragment")
     p.add_argument("--asset",help="sprite family (default module.engine, module.engine_mk<n> for a tier)")
     a=p.parse_args(sys.argv[sys.argv.index("--")+1:])
     global ASSET
@@ -253,6 +254,8 @@ def main():
                    ("machine.open",False),("machine.open",True),("bell",False),("bell",True),("flame",True))
             for part,hot in parts:
                 if part not in ("hull","block","end") and a.sprite_state!="both" and hot!=(a.sprite_state=="active"):
+                    continue
+                if a.parts and part not in a.parts.split(","):
                     continue
                 sid,entry=sprite(a.out,r,hot,part,stage,a.preview)
                 entries[sid]=entry
