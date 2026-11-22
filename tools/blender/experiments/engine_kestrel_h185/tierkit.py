@@ -26,7 +26,7 @@ from sprites.cmbkit import hazard_strip
 from geometry import annulus, curved_pipe, sleeve, torus
 
 CUT = -1.5              # the Mk I powerhead's faces inboard of this go (the injector plate, rear armour and clamps)
-CUTS = {"J": {"powerhead": -0.75, "services": -0.75}, **{k: {"bed": 99} for k in ["Q", "R", "S", "T", "U", "V", "W", "X", "Y", "AA", "AB", "AC"]}}
+CUTS = {"J": {"powerhead": -0.75, "services": -0.75}, **{k: {"bed": 99} for k in ["Q", "R", "S", "T", "U", "V", "W", "X", "Y", "AA", "AB", "AC", "BA", "BB", "BC"]}}
 
 
 def cut(variant, name):
@@ -344,9 +344,11 @@ def build(f, fs, tier, variant):
         import tier_r7
         import tier_r8
         import tier_r9
+        import tier_r10
         VARIANTS.update({"M": tier_r5.bottle, "N": tier_r5.thermal, "P": tier_r5.turbo,
                          "Q": tier_r6.nested, "R": tier_r6.rings, "S": tier_r6.turbo,
                          "T": tier_r7.ring_drive, "U": tier_r7.pump_crown, "V": tier_r7.turbo_compound,
                          "W": tier_r8.ring_drive, "X": tier_r8.pump_crown, "Y": tier_r8.hybrid,
-                         "AA": tier_r9.sponsons, "AB": tier_r9.bottle, "AC": tier_r9.everything})
+                         "AA": tier_r9.sponsons, "AB": tier_r9.bottle, "AC": tier_r9.everything,
+                         "BA": tier_r10.twin, "BB": tier_r10.armoured, "BC": tier_r10.open_frame})
     VARIANTS[variant](f, fs, tier, _m().THRUST_Z)
