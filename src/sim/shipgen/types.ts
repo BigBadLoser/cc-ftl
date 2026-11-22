@@ -88,6 +88,8 @@ export interface ShipRoleDef {
   bonus?: Partial<Record<keyof ShipBudget, number>>;
   /** Shuttle bays (with shuttles). */
   bays?: number;
+  /** Mining pod bays (with pods), and the ore store beside them (`podDeck`, as a mining station's). */
+  pods?: number;
 }
 
 /** The architectural policy of a faction: how the builder shapes its ships. */
@@ -129,6 +131,7 @@ export interface HullFamilyDef {
   weight: Scaled;
   bonus?: Partial<Record<keyof ShipBudget, number>>;
   bays?: number;
+  pods?: number;
   /**
    * Hull tiles a built hull of this family takes per tile of the rooms it holds (engine rooms included), measured over generated ships: the
    * planner books the engines that hull will need up front (`planShip`), so the engine top-up (`generateAttempt`) seldom has to build twice.

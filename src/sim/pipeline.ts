@@ -82,6 +82,7 @@ import { captureSystem } from './systems/capture';
 import { cargoJobsSystem } from './systems/cargoJobs';
 import { galaxySystem } from './systems/galaxy';
 import { engagementSystem } from './systems/engagement';
+import { npcTrafficSystem } from './systems/npcTraffic';
 import { storySystem } from './systems/story';
 import { recruitsSystem } from './systems/recruits';
 import { tradeSystem } from './systems/trade';
@@ -273,6 +274,8 @@ export const pipeline: readonly System[] = [
   captureSystem,
   // Fights between NPC ships in the player's node start, take in their ships and end (after ship state and capture, before the galaxy system reaps the losses).
   engagementSystem,
+  // NPC ships go about their business in the node: station shuttles call at traders, miners' pods go out, patrols inspect NPC ships (after the fights, which they give way to).
+  npcTrafficSystem,
   // Starmap after ship state (contacts of wrecked or fled ships are dropped) and before events: an arrival spawns its
   // ship for the next tick's systems. Does not run while the sector is deploying (the whole pipeline is skipped then).
   galaxySystem,
