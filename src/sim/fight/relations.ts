@@ -6,7 +6,7 @@ import { factionsHostile, rogueAlly } from '../combat/factions';
 import { InertC } from '../robots/components';
 import { isBreaking, isIncapacitated } from '../crew/helpers';
 import type { Sim } from '../sim';
-import { AllegianceC, EquipOrderC, FighterC, SurrenderedC } from './components';
+import { AllegianceC, EquipOrderC, FighterC, PrisonerC, SurrenderedC } from './components';
 import { shipById } from '../combat/shipQuery';
 import { opposed } from '../galaxy/engagements';
 import { AboardC, VehicleC } from '../vehicles/components';
@@ -28,6 +28,12 @@ export function crewShipOf(sim: Sim, crew: number): number {
   const id = pos ? shipIdOf(sim, pos) : (aboard && sim.world.get(aboard.vehicle, VehicleC)?.homeShip) ?? 0;
   return id && shipById(sim, id)?.faction === a.faction ? id : 0;
 }
+
+/** The one answer to "is this the player's prisoner" (the prisoner panels, alerts, ransom and the seal mark read it): a prisoner no NPC captor holds (`Prisoner.holder`, #615). */
+export const isPlayersPrisoner = (sim: Sim, crew: number): boolean => {
+  const p = sim.world.get(crew, PrisonerC);
+  return !!p && p.holder === undefined;
+};
 
 /**
  * True if the two crew members are on opposing sides (see factionsHostile: neutral fights nobody, rogue everybody), serve ships on opposite sides of

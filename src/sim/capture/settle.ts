@@ -50,7 +50,7 @@ export function releasePrisoner(sim: Sim, crew: number): string | null {
   const p = sim.world.get(crew, PrisonerC);
   const frozen = slabPlace(sim, crew);
   const pos = sim.world.get(crew, PositionC);
-  if (!p || (!pos && !frozen)) return 'notPrisoner';
+  if (!p || p.holder !== undefined || (!pos && !frozen)) return 'notPrisoner'; // an NPC captor's prisoners are not the player's to release
   if (frozen && (frozen.kind === 'carried' || frozen.kind === 'shuttle')) return 'inTransit';
   const shipId = frozen ? frozen.ship : shipIdOf(sim, pos);
   const ship = sim.world.get(shipId, ShipC);

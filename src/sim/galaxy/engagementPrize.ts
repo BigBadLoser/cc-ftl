@@ -1,6 +1,8 @@
 import { CombatC, ShipC } from '../combat/components';
 import { dropAims } from '../combat/stations';
 import type { Sim } from '../sim';
+import { imprisonCrew } from '../capture/prize';
+import { factionOfShip } from './heat';
 import { headHome } from './agenda';
 import type { Engagement } from '../combat/engagementTypes';
 import { engagements, sideIn, sideShips } from './engagements';
@@ -34,6 +36,8 @@ export function takeShip(sim: Sim, ship: number, captor: number): void {
   const name = contact?.name ?? s.name;
   e.members[lose] = e.members[lose].filter((m) => m.ship !== ship);
   if (!e.taken?.includes(lose)) (e.taken ??= []).push(lose);
+  // The beaten crew become the captor's prisoners, as the player's do on a prize (capture/prize.ts `imprisonCrew`): taken before the ship changes hands, so `from` is the faction they flew for.
+  imprisonCrew(sim, ship, s.faction, factionOfShip(sim, captor, by, by.faction) ?? by.faction);
   s.faction = by.faction;
   if (from && contact) {
     from.ships = from.ships.filter((c) => c !== contact);
@@ -47,7 +51,7 @@ export function takeShip(sim: Sim, ship: number, captor: number): void {
   } else {
     e.members[win].push({ ship, prize: true });
   }
-  delete s.yielded; // settled: it was taken (its beaten crew stay aboard as captives and never give it up again: `isPrize`)
+  delete s.yielded; // settled: it was taken (its beaten crew are the captor's prisoners, held aboard or sealed into a wheel (stasis/system.ts), and it never yields again: `isPrize`)
   // The ship is on the captor's side now: neither aims at the other any more (#609 review), even while the node is otherwise in combat.
   const side = new Set(e.members[win].map((m) => m.ship));
   for (const id of side) {

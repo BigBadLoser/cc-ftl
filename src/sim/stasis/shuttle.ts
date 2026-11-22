@@ -5,6 +5,7 @@ import { CarriedC, CrewC, DeadC, PositionC } from '../crew/components';
 import { origin } from '../crew/helpers';
 import { removeCrew } from '../crew/depart';
 import { PrisonerC } from '../fight/components';
+import { isPlayersPrisoner } from '../fight/relations';
 import { CarryingC, ItemStackC, StorageC } from '../items/components';
 import { spillItems } from '../items/stacks';
 import { storageCount } from '../items/storage';
@@ -31,7 +32,7 @@ import { RACK_LOAD_SEC, RACK_SLOTS, SLAB_ITEM } from './tuning';
 
 /** A prisoner the crew will seal: marked, in the world, alive, not carried. */
 const toSeal = (sim: Sim, id: number): boolean =>
-  sealMarked(sim, id) && sim.world.has(id, PositionC) && !sim.world.has(id, DeadC) && !sim.world.has(id, CarriedC) && !sim.world.has(id, StasisC);
+  isPlayersPrisoner(sim, id) && sealMarked(sim, id) && sim.world.has(id, PositionC) && !sim.world.has(id, DeadC) && !sim.world.has(id, CarriedC) && !sim.world.has(id, StasisC);
 
 /** Marked prisoners on a prize whose slabs no wheel there can take (they go by shuttle), ascending ids. */
 export function shuttleSeals(sim: Sim, ship: number): number[] {

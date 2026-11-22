@@ -2296,6 +2296,10 @@ Design: DESIGN.md "Prisoners and prizes". Slice 1 is sim, content and app only; 
   rises while the crew member stands there, and the slab goes in the wheel only at the end. `stowProgress(world, wheel)` and `stowingNow` are the reads
   render uses: `render/stasisLoad.ts` plays the 63-tick loading animation (`stasisload.<patch>.r<rot>` patches over the wheel, `stasisArt.loadingAt`)
   over that progress, only when the slab goes to slot 0 (`stowSlotIn`), and `crewView` hides the crew member's own cart while it plays (the patches draw it).
+- **Who holds them (#615).** `Prisoner.holder` is the galaxy faction of an NPC captor (absent for the player's; `isPlayersPrisoner` is the one
+  answer the prisoner UI, ransom and release ask). `holdsHere(prisoner, ship)` (order.ts) says whose ships work the seal: the player's, or those flying
+  for the holder; `sealMarked` is the player's mark, always on for an NPC holder's. `takeShip` calls `imprisonCrew` (capture/prize.ts, shared with `capturePrize`).
+  The stasis system posts, keeps and works the jobs for either side alike; the shuttle run from a prize stays the player's.
 - **The system** (`stasisSystem`, after power and autojobs): a cart whose carrier no longer holds the slab's job is set down on the floor (the job
   turns into a pickup); reserves drain one tick a tick while `slabDraining` and refill `REFILL_PER_TICK` in a powered wheel; at 0 the prisoner thaws
   (no PrisonerC or SurrenderedC, drafted where the slab was, hostile). The "Stasis failing" alert is derived from state (`app/stasisAlert.ts`).

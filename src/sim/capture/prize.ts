@@ -33,8 +33,11 @@ export function prizeValue(sim: Sim, shipId: number): number {
   return Math.round(value);
 }
 
-/** Hold a surrendered or downed crew member in place as a prisoner (they stay subdued even if they recover). */
-export function imprison(sim: Sim, crew: number, ship: number): void {
+/**
+ * Hold a surrendered or downed crew member in place as a prisoner (they stay subdued even if they recover). `holder` is the galaxy faction of an NPC
+ * captor (#615); the player's prisoners carry none.
+ */
+export function imprison(sim: Sim, crew: number, ship: number, holder?: string): void {
   abortTask(sim, crew, 'imprisoned');
   sim.world.remove(crew, DraftedC);
   const f = sim.world.get(crew, FighterC);
@@ -45,9 +48,17 @@ export function imprison(sim: Sim, crew: number, ship: number): void {
   if (!sim.world.has(crew, SurrenderedC)) sim.world.add(crew, SurrenderedC, { tick: sim.tick });
   const s = sim.world.get(ship, ShipC);
   const from = s ? factionOfShip(sim, ship, s, sim.world.get(ship, PrizeC)?.from ?? s.faction) : null;
-  sim.world.add(crew, PrisonerC, { tick: sim.tick, ...(from && from !== 'player' ? { from } : {}) });
+  sim.world.add(crew, PrisonerC, { tick: sim.tick, ...(from && from !== 'player' ? { from } : {}), ...(holder ? { holder } : {}) });
   (sim.world.get(crew, CrewC) as Crew).activity = sim.world.has(crew, DownedC) ? 'downed' : sim.world.has(crew, InertC) ? 'inert' : 'idle';
   sim.events.emit({ type: 'crew.imprisoned', crew, ship });
+}
+
+/** The crew of `shipId` on the side `side` who are subdued (surrendered, downed or inert) become prisoners of `holder` (the player's when none). */
+export function imprisonCrew(sim: Sim, shipId: number, side: Faction, holder?: string): void {
+  for (const id of sim.world.query(CrewC, PositionC)) {
+    if (shipIdOf(sim, sim.world.get(id, PositionC)) !== shipId || sim.world.get(id, AllegianceC)?.faction !== side) continue;
+    if (sim.world.has(id, SurrenderedC) || sim.world.has(id, DownedC) || sim.world.has(id, InertC)) imprison(sim, id, shipId, holder);
+  }
 }
 
 /**
@@ -83,13 +94,11 @@ export function capturePrize(sim: Sim, entity: number): void {
   }
   const combat = sim.world.get(entity, CombatC);
   if (combat) Object.assign(combat, { target: null, volley: false, hold: true });
+  imprisonCrew(sim, entity, from);
   for (const id of sim.world.query(CrewC, PositionC)) {
     const pos = sim.world.get(id, PositionC);
     if (shipIdOf(sim, pos) !== entity) continue;
-    const faction = sim.world.get(id, AllegianceC)?.faction;
-    if (faction === from) {
-      if (sim.world.has(id, SurrenderedC) || sim.world.has(id, DownedC) || sim.world.has(id, InertC)) imprison(sim, id, entity);
-    } else if (faction === 'player') {
+    if (sim.world.get(id, AllegianceC)?.faction === 'player') {
       sim.world.remove(id, DraftedC); // the boarders go back to work (salvage) instead of standing at attention
     }
   }
