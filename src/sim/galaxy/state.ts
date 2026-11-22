@@ -34,9 +34,12 @@ export interface GalaxyIndex {
 }
 
 const indexes = new WeakMap<GalaxyState, { size: number; index: GalaxyIndex }>();
+/** How many chunks a galaxy has, counted once and then kept by `ensureChunk` (counting the keys on every `galaxyIndex` call was O(chunks) on the hottest path). */
+const chunkCounts = new WeakMap<GalaxyState, number>();
 
 export function galaxyIndex(g: GalaxyState): GalaxyIndex {
-  const size = Object.keys(g.chunks).length;
+  let size = chunkCounts.get(g);
+  if (size === undefined) chunkCounts.set(g, (size = Object.keys(g.chunks).length));
   const hit = indexes.get(g);
   if (hit && hit.size === size) return hit.index;
   const index: GalaxyIndex = { nodes: new Map(), sectors: new Map(), edges: new Map(), adjacent: new Map() };
@@ -69,6 +72,7 @@ export function ensureChunk(sim: Sim, cx: number, cy: number): boolean {
   if (sim.galaxy.chunks[key]) return false;
   const chunk = galaxyGen(sim.seed, sim.content.galaxy).chunk(cx, cy);
   sim.galaxy.chunks[key] = chunk;
+  chunkCounts.set(sim.galaxy, (chunkCounts.get(sim.galaxy) ?? Object.keys(sim.galaxy.chunks).length - 1) + 1);
   populate(sim, chunk);
   sim.galaxy.rev++;
   sim.events.emit({ type: 'galaxy.chunk', key });
