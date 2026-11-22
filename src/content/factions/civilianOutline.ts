@@ -8,7 +8,7 @@ import type { OutlineRecipe, Profile } from '../../sim';
  */
 const LINER: readonly Profile[] = [
   { id: 'liner.deck', nose: { style: 'round', len: [8, 11], front: [3, 4] },
-    sections: [{ len: [28, 34], half: [9, 10], taper: 1 }, { len: [18, 24], half: [5, 5] }, { len: [14, 18], half: [8, 9], taper: 1 }, { len: [14, 20], half: [5, 5] }],
+    sections: [{ len: [20, 25], half: [9, 10], taper: 1 }, { len: [20, 26], half: [5, 5] }, { len: [16, 20], half: [8, 9], taper: 1 }, { len: [14, 20], half: [5, 5] }],
     stern: { kind: 'flare', len: [7, 9], out: [3, 4] } },
 ];
 
@@ -16,7 +16,7 @@ export const civilianOutline = {
   liner: {
     family: 'liner', profiles: LINER, maxBeam: 33, crew: { sleep: 'bunks', rooms: 2 }, passengers: { base: 6, perDepth: 1 },
     // (Its point defence the plan's own room's: no turret pair.)
-    rooms: ['medbay', 'pantry'], layout: { kind: 'bays', decks: true, program: { pd: false } },
+    rooms: ['medbay', 'pantry', 'lounge'], layout: { kind: 'bays', decks: true, program: { pd: false } },
     depts: {
       // (Its guns with the systems, a hangar with the stores: it has no flight deck or battery to put them in.)
       of: { weapons: 'systems', hangar: 'stores' },

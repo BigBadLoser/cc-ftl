@@ -7,8 +7,8 @@ import type { RoomRole } from './types';
  * (`FactionDef.outline`, keyed by type id). The outline pipeline runs a recipe's layout and asks nothing about its type.
  */
 
-/** Rooms a ship may have past its plan's: a med bay with its trauma room, a brig, a farm, the mess's pantry. */
-export type ShipRoom = 'medbay' | 'brig' | 'farm' | 'pantry';
+/** Rooms a ship may have past its plan's: a med bay with its trauma room, a brig, a farm, the mess's pantry, a lounge. */
+export type ShipRoom = 'medbay' | 'brig' | 'farm' | 'pantry' | 'lounge';
 
 /** How a ship's people sleep: barracks of bunks, barracks of single beds, or every bed a cabin. */
 export type Sleep = 'bunks' | 'beds' | 'cabins';
