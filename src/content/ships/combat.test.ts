@@ -267,6 +267,20 @@ describe('evasion, point defence, shields', () => {
     expect(layersAfter(true)).toBe(2);
   });
 
+  it('shields are down out of combat (stowed dishes) and up once combat or battle stations deploy them', () => {
+    const sim = newGame(1, registry({ 'ship.dummy': dummy }));
+    expect(combatOf(sim, 1).shield.layers).toBe(0); // from the first frame, before any tick
+    run(sim, 400);
+    expect(sim.sector.inCombat).toBe(false);
+    expect(combatOf(sim, 1).shield).toMatchObject({ layers: 0, max: 0 });
+    sim.enqueue({ type: 'combat.battleStations', on: true });
+    run(sim, 20 * 30);
+    expect(combatOf(sim, 1).shield.layers).toBeGreaterThan(0);
+    sim.enqueue({ type: 'combat.battleStations', on: false });
+    run(sim, 20 * 30);
+    expect(combatOf(sim, 1).shield.max).toBe(0);
+  });
+
   it('point defence intercepts some missiles', () => {
     const reg = registry({ 'ship.gun': gunShip('module.missileLauncher', ['role.gunner'], [withMissiles], 'hostile') });
     const sim = newGame(1, reg);

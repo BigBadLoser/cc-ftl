@@ -32,12 +32,8 @@ function selectVariant(id: string, candidates: string[], icon = false): void {
   const source = candidates.find(candidate => manifest.assets[candidate]?.kind === 'static');
   if (source) chosen.set(id, { source, icon });
 }
-for (const [id, def] of Object.entries(modules)) {
-  // Tier variants that share placeholder art should not advertise a distinct
-  // model. Only use their own art if it really exists in the manifest.
-  const declared = def.asset;
-  if (def.tierArt && declared === modules['module.engine']?.asset) continue;
-  select(declared);
+for (const def of Object.values(modules)) {
+  select(def.asset);
 }
 for (const def of Object.values(vehicles)) {
   if (!def.asset) continue;

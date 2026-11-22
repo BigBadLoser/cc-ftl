@@ -9,7 +9,6 @@ import { iso } from './iso';
 import { AirlockC } from '../sim/modules/airlock';
 import { TICK_HZ } from '../sim/time';
 import { PREVIEW_LEVEL, layersOf } from './layerPick';
-import { tierBase } from './tierArt';
 import { steady } from './vehicleBayArt';
 import { turretStem } from './turretView';
 
@@ -57,10 +56,8 @@ export function createModuleThumbs(extract: ExtractSystem, atlas: Atlas, defs: R
     // A fixed preview state: powered, idle, an airlock with both doors shut and nothing docked, bays holding their craft.
     const id = world.createEntity();
     if (def.airlock) world.add(id, AirlockC, { state: 'toInner', timer: Math.round((def.airlock.cycleSec * TICK_HZ) / 2), request: null });
-    const tb = def.tierArt ? tierBase(m, def) : null;
-    const [bw, bh] = tb ? rotatedSize(tb.def, rot) : [w, h];
-    const bf = tb ? { x: tb.m.x + bw - 1, y: tb.m.y + bh - 1 } : { x: w - 1, y: h - 1 };
-    const layers = layersOf(world, id, tb?.m ?? m, tb?.def ?? def, { active: false, now: 0, airlock: { level: PREVIEW_LEVEL, roofed: false, collar: null }, bay: steady(true) });
+    const bf = { x: w - 1, y: h - 1 };
+    const layers = layersOf(world, id, m, def, { active: false, now: 0, airlock: { level: PREVIEW_LEVEL, roofed: false, collar: null }, bay: steady(true) });
     world.destroyEntity(id);
     for (const layer of layers) {
       const art = resolveArt(atlas, layer.chain, layer.key);
