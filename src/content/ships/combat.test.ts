@@ -267,6 +267,23 @@ describe('evasion, point defence, shields', () => {
     expect(layersAfter(true)).toBe(2);
   });
 
+  it('the shield dome is up for the renderer only while the shield console is manned', () => {
+    const shieldManned = (operated: boolean): boolean | undefined => {
+      const sim = newGame(1, registry({ 'ship.dummy': dummy }));
+      sim.enqueue({ type: 'debug.spawnEnemy', template: 'ship.dummy', x: 100, y: 50 });
+      if (operated) {
+        for (const id of sim.world.query(CrewC)) {
+          if (sim.world.get(id, CrewC)!.role === 'role.engineer') sim.enqueue({ type: 'crew.setPriority', id, category: 'operating', value: 1 });
+        }
+      }
+      run(sim, 400);
+      expect(combatOf(sim, 1).shield.layers).toBeGreaterThan(0); // the shield works either way
+      return combatOf(sim, 1).shield.manned;
+    };
+    expect(shieldManned(false)).toBe(false);
+    expect(shieldManned(true)).toBe(true);
+  });
+
   it('point defence intercepts some missiles', () => {
     const reg = registry({ 'ship.gun': gunShip('module.missileLauncher', ['role.gunner'], [withMissiles], 'hostile') });
     const sim = newGame(1, reg);

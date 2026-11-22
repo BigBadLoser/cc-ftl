@@ -20,6 +20,8 @@ export function shieldSystem(sim: Sim): void {
     if (!ship || !s) continue;
     s.max = ship.state === 'wreck' || ship.state === 'fled' || ship.state === 'prize' ? 0 : shieldCapacity(sim, id, true);
     if (s.layers > s.max) s.layers = s.max;
+    const op = s.max > 0 ? mannedConsole(sim, id, 'shields') : null;
+    s.manned = !!op;
     const combat = sim.world.get(id, CombatC);
     if (combat && fireBlocked(combat)) {
       s.layers = 0; // a vent or an overheat holds the shields down
@@ -30,7 +32,6 @@ export function shieldSystem(sim: Sim): void {
       s.timer = 0;
       continue;
     }
-    const op = mannedConsole(sim, id, 'shields');
     const rate = SHIELD_REGEN_MULT * (1 + (op ? SHIELD_OPERATED_BONUS + SKILL_STEP * skillOf(sim, op.crew, 'shielding') : 0)) * (combat && overchargeActive(combat, 'shields') ? OVERCHARGE_SHIELD_REGEN : 1);
     if (op) grantXp(sim, op.crew, 'shielding', XP_PER_WORK_SEC / TICK_HZ);
     s.timer += rate / TICK_HZ;

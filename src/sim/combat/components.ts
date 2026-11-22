@@ -176,7 +176,11 @@ export interface Combat {
   ftlOrder?: { jump: string[] | null; withDocked?: number[]; overcharge?: true } | null;
   /** A departure waiting for the ship's drones out in space (drones/recall.ts); the helm retries it every tick. Absent or null: none. */
   departHold?: DepartHold | null;
-  shield: { layers: number; max: number; /** Seconds toward the next layer. */ timer: number };
+  shield: {
+    layers: number; max: number; /** Seconds toward the next layer. */ timer: number;
+    /** Derived each tick (shields.ts, from `mannedConsole`): someone mans a powered shield console. The renderer shows the dome only then; absent = no. */
+    manned?: boolean;
+  };
   heat: Heat;
   /** Chance 0..1 that an incoming shot misses; derived each tick from powered engines and the pilot. */
   evasion: number;

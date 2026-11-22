@@ -410,7 +410,7 @@ FTL's decision-making with physical consequences, in a shared sector.
     no operator, weapons don't fire.
   - **Relief:** a weapons or helm console left empty for 12 s in a fight (its operator went to eat or sleep) is taken by idle crew of a role
     that relieves stations (engineers, medics, worker and repair bots), whatever their operating priority; priority 0 still opts out.
-  - The **shield console** works unmanned at base strength; an operator speeds up recharge.
+  - The **shield console** works unmanned at base strength; an operator speeds up recharge. The shield dome is drawn only while the console is manned (`shield.manned`).
   - The **helm** pilot gives evasion and charges the FTL drive to flee. With no pilot, there is no
     evasion and no escape.
   - The **AI core** operates the **point-defence modules** automatically (they do nothing without a

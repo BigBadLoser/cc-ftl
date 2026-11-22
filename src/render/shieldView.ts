@@ -106,7 +106,7 @@ export function paintDome(u: DomeUniforms, st: DomeState, hits: readonly DomeHit
 }
 
 /**
- * Shield domes: one per ship with shields (or a break or collapse still playing), fitted to its hull, drawn by the dome
+ * Shield domes: one per ship with shields (or a break or collapse still playing), drawn only while its shield console is manned (`shield.manned`, the sim's answer), fitted to its hull, drawn by the dome
  * shader (shieldDome.ts), plus the fx_shield sprite pieces at the hit point. Lives in the sector air layer, so the main
  * view and the combat panel's camera both draw it. Reads the sim only.
  */
@@ -168,7 +168,8 @@ export function createShieldView(
       return;
     }
     d.hits = d.hits.filter((x) => domeAge(x.at, hitSec(x), now) >= 0);
-    d.mesh.visible = shown && paintDome(d.u, d.state, d.hits, c.heat.overcharge.shields.left > 0, now);
+    const lit = paintDome(d.u, d.state, d.hits, c.heat.overcharge.shields.left > 0, now);
+    d.mesh.visible = shown && !!c.shield.manned && lit;
   }
 
   let clock = 0;
@@ -176,6 +177,7 @@ export function createShieldView(
     hit(ship, kind, from) {
       const s = world.get(ship, ShipC);
       if (!s) return;
+      if (!world.get(ship, CombatC)?.shield.manned) return; // no dome drawn, no flash on it
       const d = domes.get(ship);
       const fit = d?.fit ?? boxFit(s);
       const p = rimPoint(fit, from);
