@@ -1,7 +1,7 @@
 """The surgical rig's upright body and its operator console (surgery_rig.py builds the rest): a floor flange bolted
 down, a flared collar, two white armour shells over a gunmetal core with a lit waist band and a front panel, the
 shoulder housing and the riser. A projector set flush into the body's left side (-u) throws the surgeon's console: a
-translucent pane facing -u (turned a little toward the viewer), where the operating surgeon stands, showing a body scan of
+translucent pane beside it facing +v, across the bed's foot to the open tile on its other long side, where the operating surgeon stands, showing a body scan of
 the patient with the incision marked, and the tool rack.
 
 The hologram is its own layer (`holo`): rendered alone with the rig as holdout and baked to partial alpha, as the
@@ -14,7 +14,7 @@ C = (0.0, -0.04)                                                  # the body's a
 LINE, FILM = "rgHolo", "rgHoloF"
 LENS_A, LENS_Z = math.pi - 0.35, 0.92                             # the projector: its heading round the body, height
 LENS = (C[0] + 0.182 * math.cos(LENS_A), C[1] + 0.182 * math.sin(LENS_A), LENS_Z)   # its lens
-PANE = dict(u=-0.6, v=0.06, z=0.86, w=0.42, h=0.5, lean=0.25, yaw=0.2)   # the console pane: foot centre, width (along v), height
+PANE = dict(u=-0.6, v=0.15, z=0.86, w=0.42, h=0.5, lean=0.25, yaw=1.88)  # the console pane: foot centre, width, height; facing the tile across the bed's foot (0, 2)
 
 
 def at(r, a, z=0.0):

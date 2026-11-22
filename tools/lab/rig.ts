@@ -95,7 +95,7 @@ export const rigPanel: LabPanel = {
           return (t) => {
             drawLayers({ parts, glows: [] }, 'sleep', pose.dir, t);
             host.removeChildren();
-            const rig = { bedFront, active: s.active, progress: s.active ? t * TICK_HZ : 0, work, mirror: rigMirror(rigM.rot, bedDef, { x: 0, y: 0, rot }) };
+            const rig = { frontAt: bedFront, active: s.active, progress: s.active ? t * TICK_HZ : 0, work, mirror: rigMirror(rigM.rot, bedDef, { x: 0, y: 0, rot }) };
             const look = { off: false, now: t * 1000, hp: 100, maxHp: 100, has };
             
             for (const l of rigLayers(rigM, rigDef, rig, look)) {
