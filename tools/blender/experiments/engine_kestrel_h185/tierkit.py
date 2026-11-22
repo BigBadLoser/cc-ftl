@@ -338,4 +338,7 @@ VARIANTS = {"J": magnetic, "K": turbopumps, "L": inline}
 def build(f, fs, tier, variant):
     """The tier's inboard fit-out on frame f (final coordinates); fs is a frame whose mesh the caller squashes about
     the thrust axis by model.CASSETTE_Z_FIT, as the cassette is, for castings that continue its round section."""
+    if variant not in VARIANTS:
+        import tier_r5
+        VARIANTS.update({"M": tier_r5.bottle, "N": tier_r5.thermal, "P": tier_r5.turbo})
     VARIANTS[variant](f, fs, tier, _m().THRUST_Z)
