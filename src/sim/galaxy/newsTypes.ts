@@ -5,7 +5,7 @@
  * The coarse tier (coarse.ts) reports borders: `front`: fighting on the border of the sector `who` (`faction` presses, `foeFaction` defends); `fell`: the sector `who` fell to `faction` from `foeFaction`;
  * `held`: `faction` held the sector `who` against `foeFaction`; `war`: `faction` went to war with `foeFaction`; `peace`: the war between them ended (war.ts).
  */
-export type NewsKind = 'destroyed' | 'driven' | 'clash' | 'raid' | 'cut' | 'loot' | 'shortage' | 'rebuilt' | 'hunt' | 'front' | 'fell' | 'held' | 'war' | 'peace' | 'joined' | 'taken';
+export type NewsKind = 'destroyed' | 'driven' | 'clash' | 'raid' | 'cut' | 'loot' | 'shortage' | 'rebuilt' | 'hunt' | 'front' | 'fell' | 'held' | 'war' | 'peace' | 'joined' | 'taken' | 'seized';
 
 export interface NewsItem {
   id: number;

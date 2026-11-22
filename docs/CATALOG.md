@@ -33,12 +33,12 @@ Counts are table rows per status (each row is one entry, so a row that groups se
 | [research-upgrades](catalog/research-upgrades.md) | Research, blueprints, weapon upgrades | 28 | 5 | 0 | 0 | 0 | 1 |
 | [economy](catalog/economy.md) | Trade, traders, jobs, contraband, hauling, production | 38 | 0 | 0 | 1 | 0 | 2 |
 | [events-story](catalog/events-story.md) | Events, scenes, goals, lessons, story engine | 27 | 0 | 0 | 0 | 0 | 5 |
-| [galaxy-starmap](catalog/galaxy-starmap.md) | Map generator, structures, jumps, fleets, wars, heat, starmap UI | 24 | 2 | 0 | 0 | 0 | 2 |
+| [galaxy-starmap](catalog/galaxy-starmap.md) | Map generator, structures, jumps, fleets, wars, heat, starmap UI | 25 | 2 | 0 | 0 | 0 | 2 |
 | [environment](catalog/environment.md) | Air, power, fire, heat, light, rooms, hull, roof | 26 | 4 | 0 | 0 | 0 | 1 |
 | [ui](catalog/ui.md) | Windows, panels, menus, kit | 29 | 4 | 0 | 1 | 1 | 1 |
-| [dev-tools](catalog/dev-tools.md) | Scenarios, debug commands, labs, profilers, test tools | 0 | 0 | 0 | 0 | 43 | 0 |
+| [dev-tools](catalog/dev-tools.md) | Scenarios, debug commands, labs, profilers, test tools | 0 | 0 | 0 | 0 | 44 | 0 |
 | [art](catalog/art.md) | Manifest families, art-only sprites, render systems | 16 | 2 | 11 | 0 | 0 | 3 |
-| **Total** | | 496 | 68 | 59 | 4 | 48 | 26 |
+| **Total** | | 497 | 68 | 59 | 4 | 49 | 26 |
 
 ## Commonly confused
 

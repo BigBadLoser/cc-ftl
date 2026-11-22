@@ -43,10 +43,15 @@ export interface Inspection {
    * world with the inspection. Absent: the ship's own real shuttle, which goes home and stays. Goes with #551 (such ships get a hangar at generation).
    */
   standIn?: true;
+  /**
+   * The inspected ship is an NPC's (a patrol inspecting a trader or miner in the player's node, #603): the same search, settled by itself when it ends
+   * (nothing is asked of the player: no alert, no log line, no trip hold; `seized` news when they take cargo). Absent: the player's ship.
+   */
+  npc?: true;
   /** A bribe was offered and turned down: it is not offered again. */
   bribeFailed?: true;
   /** How it ended: the player's answer, 'clean' (nothing found), 'fled' (the player left) or 'off' (a fight, the station gone). */
-  outcome?: 'fined' | 'bribed' | 'refused' | 'clean' | 'fled' | 'off' | 'fought';
+  outcome?: 'fined' | 'bribed' | 'refused' | 'clean' | 'fled' | 'off' | 'fought' | 'seized';
   /** Set while the party cannot reach the work: no inspector has made it aboard, or a search job nobody can take (the urgent alert). */
   blocked?: true;
 }
@@ -60,3 +65,6 @@ export type InspectChoice = 'fine' | 'bribe' | 'refuse';
  * empty store changes the save bytes of games that never had an inspection).
  */
 export const inspections = (sim: Sim): number[] => sim.world.query(VehicleC).filter((id) => sim.world.has(id, InspectionC));
+
+/** The inspections of the player's ship (the alert, the answer, the trip hold): the one filter for "does this inspection concern the player". */
+export const playerInspections = (sim: Sim): number[] => inspections(sim).filter((id) => !sim.world.get(id, InspectionC)?.npc);

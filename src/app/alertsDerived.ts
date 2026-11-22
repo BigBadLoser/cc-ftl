@@ -17,7 +17,7 @@ import { suitAir, suitDef } from '../sim/eva/suit';
 import { isHeldOffline } from '../sim/modules/hold';
 import { fuelLow, hasFuel } from '../sim/modules/energy';
 import { AwayC, AwaySiteC, SiteRunC } from '../sim/away/components';
-import { InspectionC, inspections } from '../sim/inspect/types';
+import { InspectionC, playerInspections } from '../sim/inspect/types';
 import { EVA_AIR_LOW_FRAC, O2_ALERT_BELOW, O2_ALERT_CLEAR_ABOVE } from '../sim/tuning';
 import type { UiAlert, UiAlertKind, UiSubject } from '../ui/api';
 import { breakWhat } from './breakText';
@@ -269,7 +269,7 @@ export function deriveAlerts(sim: Sim, held: (key: string) => boolean): Map<stri
     const def = sim.content.events?.[n.event];
     if (def?.lead && n.id > 0) add({ kind: 'story.lead', key: `ev${n.event}`, text: def.text, subject: null, notice: { id: n.id, lead: true, title: def.title } });
   }
-  for (const id of inspections(sim)) {
+  for (const id of playerInspections(sim)) {
     const insp = sim.world.get(id, InspectionC)!;
     const lead = insp.crew.find(alive);
     if (insp.phase === 'settle' && lead !== undefined) {

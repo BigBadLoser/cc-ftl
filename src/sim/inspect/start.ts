@@ -18,7 +18,7 @@ import { ALT, BodyC } from '../body';
 import { INSPECTOR_ROLE, INSPECTORS } from '../blackmarket/tuning';
 import { destroyJob } from '../crew/jobEnd';
 import { partyJobs } from './search';
-import { InspectionC, inspections, type Inspection } from './types';
+import { InspectionC, inspections, playerInspections, type Inspection } from './types';
 
 /** Inspectors work their inspection's own jobs (patrol, the category nobody aboard the player's ship has work in) and nothing else. */
 function inspectorPriorities(): Priorities {
@@ -27,9 +27,9 @@ function inspectorPriorities(): Priorities {
   return p;
 }
 
-/** The live inspection (any phase), if one is under way. */
+/** The player's live inspection (any phase), if one is under way (an NPC ship's inspection is not the player's: `playerInspections`). */
 export function liveInspection(sim: Sim): [number, Inspection] | undefined {
-  for (const id of inspections(sim)) return [id, sim.world.get(id, InspectionC) as Inspection];
+  for (const id of playerInspections(sim)) return [id, sim.world.get(id, InspectionC) as Inspection];
   return undefined;
 }
 
@@ -38,13 +38,15 @@ export function liveInspection(sim: Sim): [number, Inspection] | undefined {
  * `freeShuttle`, #548) with the party aboard, serving an away site on the player's ship (owner 'inspect'; nothing on it is the party's loot, they
  * work inside). The run launches it, docks at a free airlock, else hovers and the party goes out of the hatch in suits (EVA boarding). The inspectors
  * are neutral, aboard by the station's leave (an 'inspect' grant, working). A patrol sends theirs the same way from its ship. False when it cannot
- * be sent (no shuttle free, a site already open on the ship, no crew could be made).
+ * be sent (no shuttle free, a site already open on the ship, no crew could be made). `target` is the ship inspected: the player's by default, or an NPC
+ * ship (#603: a patrol inspecting a trader in the player's node; `Inspection.npc`), one inspection a ship at a time.
  */
-export function startInspection(sim: Sim, station: number, faction: string, name: string): boolean {
+export function startInspection(sim: Sim, station: number, faction: string, name: string, target?: number): boolean {
   const free = freeShuttle(sim, station);
   const st = sim.world.get(station, ShipC);
-  const ship = homeShip(sim);
-  if (!st || !ship || sim.world.has(ship, AwaySiteC) || liveInspection(sim)) return false;
+  const ship = target ?? homeShip(sim);
+  const npc = target !== undefined && target !== homeShip(sim);
+  if (!st || !ship || sim.world.has(ship, AwaySiteC) || (npc ? inspections(sim).some((id) => sim.world.get(id, InspectionC)?.ship === ship) : liveInspection(sim))) return false;
   if ('error' in free && free.error === 'courierBusy') return false; // its shuttle is out on another job: later
   const vehicle = 'error' in free ? standIn(sim, station) : free.vehicle;
   if (!vehicle) return false;
@@ -67,13 +69,13 @@ export function startInspection(sim: Sim, station: number, faction: string, name
     sim.world.add(id, AwayC, { site: ship, vehicle, cat: 'patrol' });
     crew.push(id);
   }
-  sim.world.add(vehicle, InspectionC, { station, ship, faction, name, phase: 'fly', timer: 0, crew, jobs: [], found: [], value: 0, ...('error' in free ? { standIn: true as const } : {}) });
+  sim.world.add(vehicle, InspectionC, { station, ship, faction, name, phase: 'fly', timer: 0, crew, jobs: [], found: [], value: 0, ...('error' in free ? { standIn: true as const } : {}), ...(npc ? { npc: true as const } : {}) });
   if (crew.length === 0) {
     endInspection(sim, vehicle);
     return false;
   }
   grant(sim, ship, { by: 'inspect', faction: 'neutral', site: ship, crew: [...crew], from: station, work: true });
-  sim.events.emit({ type: 'inspect.started', inspection: vehicle, faction, name, crew: [...crew] });
+  if (!npc) sim.events.emit({ type: 'inspect.started', inspection: vehicle, faction, name, crew: [...crew] });
   return true;
 }
 

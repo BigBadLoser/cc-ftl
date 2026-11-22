@@ -52,6 +52,8 @@ export function installDebugHook(sim: Sim, r: Renderer, loop?: Loop): { onEvents
     moduleMemo: (on: boolean) => setModuleMemo(on),
     /** Roof every ship but wrecks, the player's and stations included (render checks of roof art). */
     roofAll: (on: boolean) => r.setRoofAll(on),
+    /** Roof other ships (true, the default) or show them cut away like the player's (the debug panel's roof toggle; screenshots of NPC interiors). */
+    roofEnemies: (on: boolean) => r.setRoofEnemies(on),
     /** Advance a frozen sim by `n` ticks (one by one, so events and commands behave as in play). */
     stepTicks: (n: number) => { for (let i = 0; i < n; i++) sim.step(); },
     screenOf: (shipId: number, x: number, y: number) => r.screenOf(shipId, x, y),
