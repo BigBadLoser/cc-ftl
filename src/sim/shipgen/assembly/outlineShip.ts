@@ -29,19 +29,20 @@ import { SPACE, type RegionGrid } from './regions';
  */
 
 function scaled(sil: Silhouette, sx: number, sy: number): Mask {
-  const W0 = Math.round(sil.length * sx);
+  // A chamfered section (a liner's drum) keeps its length in tiles, so its rooms keep their size; the rest scales.
+  const cols: number[] = [];
+  let src = 0, flex = 0;
+  for (const [a, b] of [...(sil.chamfer ?? []), [sil.length, sil.length - 1] as [number, number]]) {
+    const x0 = cols.length, end = cols.length + Math.round((flex + a - src) * sx) - Math.round(flex * sx), last = a === sil.length;
+    for (let x = x0; x < end; x++) { const c = src + Math.floor((x - x0) / sx); cols.push(last ? c : Math.min(a - 1, c)); }
+    flex += a - src;
+    for (let c = a; c <= b; c++) cols.push(c);
+    src = b + 1;
+  }
+  const W0 = cols.length;
   const bodyAt = (c: number): number => sil.body[Math.min(c, sil.body.length - 1)] as number;
   const H0 = Math.max(...sil.body.map((b) => Math.round(b * sy) + sil.axis - b));
-  // A chamfered section's columns sampled from its nearer end, so its two ends mirror whatever the scale.
-  const colOf = (x: number): number => {
-    for (const [a, b] of sil.chamfer ?? []) {
-      const X0 = Math.round(a * sx), X1 = Math.round((b + 1) * sx) - 1;
-      if (x < X0 || x > X1) continue;
-      const e = Math.min(b - a, Math.floor(Math.min(x - X0, X1 - x) / sx));
-      return x - X0 <= X1 - x ? a + e : b - e;
-    }
-    return Math.floor(x / sx);
-  };
+  const colOf = (x: number): number => cols[x] as number;
   const base = (x: number, y: number): boolean => {
     if (x < 0 || x >= W0 || Math.abs(y) > H0) return false;
     const c = colOf(x), b = bodyAt(c), hb = Math.round(b * sy), d = Math.abs(y);
