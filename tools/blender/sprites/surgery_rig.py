@@ -210,7 +210,7 @@ def mount(R, hu, hv, hz, ca, sa):
 SITE = 0.12                                                       # the incision, this far over the mattress
 SPREAD = (0.15, 0.1)                                              # the tools' spots round it (along the bed, across)
 BZ, SLEEVE = 1.96, 0.38                                          # the boom's height; the piston sleeve under its end
-HUB_ON = (0.78, 0.86, 0.92)                                       # over the patient's belly, the piston out
+HUB_ON = (0.88, 0.9, 0.92)                                       # over the patient's belly, the piston out
 HUB_IDLE = (1.0, 0.0, BZ - 0.06 - SLEEVE - 0.05)                  # swung over the tile beside the bed's head, piston in
 
 
