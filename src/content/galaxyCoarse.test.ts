@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { coarseWorld, measurePace } from '../../test/support/fixtures/coarse';
+import { exploredWorld, measurePace } from '../../test/support/fixtures/coarse';
 import { cachedWorld } from '../../test/support/world';
 import { stepCoarse } from '../sim/galaxy/coarse';
 import { nodeOwner, sectorLanes, sectorOwner, structureOwner } from '../sim/galaxy/control';
@@ -376,9 +376,11 @@ describe('the player\'s fights', () => {
 });
 
 describe('the pace guard', () => {
-  it('flips now and then and never twice in one region at once (the long sweep is in galaxyCoarse.slow.test.ts)', () => {
-    const pace = measurePace(coarseWorld(3, 5), 150);
+  it('flips now and then, with little ping-pong, and never twice in one region at once (the long sweep is in galaxyCoarse.slow.test.ts)', () => {
+    const { sim, walker } = exploredWorld(3, 30);
+    const pace = measurePace(sim, walker, 60);
     expect(pace.doubles).toBe(0);
     expect(pace.galaxy).toBeGreaterThan(0);
+    expect(pace.retakes).toBeLessThanOrEqual(0.45);
   });
 });

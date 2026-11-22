@@ -9,7 +9,7 @@ export const COARSE_TURNS = 8;
 /** A sector flips only after its pressure has stayed over FLIP_THRESHOLD this many coarse ticks in a row (so nothing changes between two quick looks). */
 export const FLIP_TICKS = 3;
 /** A sector that just changed hands cannot change again for this many coarse ticks (no flip-flopping). */
-export const FLIP_COOLDOWN = 4;
+export const FLIP_COOLDOWN = 8;
 /**
  * At most this many sectors change hands per coarse tick, galaxy-wide (strongest pressure first), and never two within FLIP_SPACING lanes of each other
  * (about the player's 9-hop region), so a player looking twice in a row never sees two changes nearby.
@@ -56,3 +56,7 @@ export const HELD_SHARE = 0.6;
 /** Expansion: what an unowned sector counts as defence at a claim, and how much slower than a war push a claim builds. */
 export const UNOWNED_DEFENCE = 0.5;
 export const EXPAND_RATE = 1;
+
+/** Consolidation: a sector just taken has its defence multiplied by up to 1 + CONSOLIDATE_BONUS, fading linearly over CONSOLIDATE_TICKS coarse ticks. */
+export const CONSOLIDATE_BONUS = 3;
+export const CONSOLIDATE_TICKS = 24;

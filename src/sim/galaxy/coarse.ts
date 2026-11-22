@@ -8,7 +8,7 @@ import { atWarContent } from './relations';
 import { START_NODE, galaxyIndex, nodeOf, type GalaxyIndex } from './state';
 import { FLEET_AREA_HOPS } from './tuning';
 import {
-  COARSE_TURNS, DEFENDER_EDGE, FACTION_MIN_SECTORS, FALLOFF, FLIPS_PER_TICK, FLIP_COOLDOWN, FLIP_SPACING, FLIP_THRESHOLD, FLIP_TICKS, NEWS_PER_TICK, OWED_WEIGHT, PIRATE_FLIP_MULT, PIRATE_HOLD,
+  COARSE_TURNS, CONSOLIDATE_BONUS, CONSOLIDATE_TICKS, DEFENDER_EDGE, FACTION_MIN_SECTORS, FALLOFF, FLIPS_PER_TICK, FLIP_COOLDOWN, FLIP_SPACING, FLIP_THRESHOLD, FLIP_TICKS, NEWS_PER_TICK, OWED_WEIGHT, PIRATE_FLIP_MULT, PIRATE_HOLD,
   PIRATE_RAID, PRESSURE_DECAY, PRESSURE_EPS, PRESSURE_KEEP, PRESSURE_MAX, PUSH_RATE, PUSH_SWING, SECTOR_BASE, SECTOR_HUB, SECTOR_PORT, STRENGTH_LANES, UNOWNED_DEFENCE, EXPAND_RATE,
 } from './tuningCoarse';
 
@@ -20,6 +20,7 @@ import {
  * 3. a sector flips after FLIP_TICKS ticks in a row over the threshold, at most FLIPS_PER_TICK per tick galaxy-wide and never two within FLIP_SPACING lanes
  *    of each other in one tick, strongest first (flip.ts);
  * An unowned sector is claimed the same way (no defender but UNOWNED_DEFENCE, a slower push; pirates and the rogue AI do not settle): expansion.
+ *    A sector just taken consolidates (extra defence fading over CONSOLIDATE_TICKS), so borders advance one way instead of trading sectors back and forth.
  * 4. never flipped: the start sector, a cluster's hub, a faction's last FACTION_MIN_SECTORS sectors, the sector the player is in, and one that flipped in the last FLIP_COOLDOWN ticks. Pirates raid
  *    rather than hold: stronger pushing, weaker holding, a higher flip threshold.
  * All rolls are hashes of (seed, sector, tick index): no Rng, no catch-up. Cost is O(sectors) per tick, and it runs wherever the player is.
@@ -87,6 +88,16 @@ const isPirate = (sim: Sim, f: string): boolean => sim.content.galaxy?.factions[
 /** The pressure a sector needs to count towards a flip to `by`. */
 const thresholdFor = (sim: Sim, by: string): number => FLIP_THRESHOLD * (isPirate(sim, by) ? PIRATE_FLIP_MULT : 1);
 
+/**
+ * A sector just taken consolidates: its defence is multiplied by up to 1 + CONSOLIDATE_BONUS, fading to nothing over CONSOLIDATE_TICKS ticks, so the line
+ * that took it holds it and borders advance one way for a while instead of trading the same sector back and forth.
+ */
+function consolidation(sim: Sim, id: string, turn: number): number {
+  const since = sim.galaxy.control[id]?.since ?? 0;
+  if (!since) return 1;
+  return 1 + CONSOLIDATE_BONUS * Math.max(0, 1 - (turn - since) / (CONSOLIDATE_TICKS * COARSE_TURNS));
+}
+
 /** Factions that settle unowned space: not pirates (they raid) and not the rogue AI. */
 const settles = (sim: Sim, by: string): boolean => {
   const kind = sim.content.galaxy?.factions[by]?.kind;
@@ -97,11 +108,11 @@ const settles = (sim: Sim, by: string): boolean => {
  * The strongest push on `target` this tick: from a lane-adjacent sector of an enemy at war with its owner, or, for an unowned sector (no defender but
  * UNOWNED_DEFENCE), of any faction that settles; who and how hard (0..1 of full, scaled by EXPAND_RATE for a claim), or null.
  */
-function bestPush(sim: Sim, f: Field, target: string, owner: string | null): { by: string; share: number } | null {
+function bestPush(sim: Sim, f: Field, target: string, owner: string | null, turn: number): { by: string; share: number } | null {
   const content = sim.content.galaxy;
   if (!content) return null;
   let best: { by: string; share: number } | null = null;
-  const defence = owner ? f.strength(owner, target) * DEFENDER_EDGE * (isPirate(sim, owner) ? PIRATE_HOLD : 1) : UNOWNED_DEFENCE;
+  const defence = owner ? f.strength(owner, target) * DEFENDER_EDGE * (isPirate(sim, owner) ? PIRATE_HOLD : 1) * consolidation(sim, target, turn) : UNOWNED_DEFENCE;
   for (const a of f.lanes.get(target) ?? []) {
     const by = f.owners.get(a);
     if (!by || by === owner || (owner ? !atWarContent(content, by, owner) : !settles(sim, by))) continue;
@@ -156,7 +167,7 @@ export function stepCoarse(sim: Sim, turn: number): void {
   for (const id of targets) {
     const owner = f.owners.get(id) ?? null;
     const cur = g.control[id]?.pressure;
-    const push = bestPush(sim, f, id, owner);
+    const push = bestPush(sim, f, id, owner, turn);
     if (!push && !cur) continue;
     const c = controlOf(sim, id);
     if (push) {
