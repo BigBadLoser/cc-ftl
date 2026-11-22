@@ -55,11 +55,11 @@ export const SHIP_ROOMS: Record<ShipRoom, RoomSpec> = {
 
 /**
  * The commons a ship adds to its plan: a mess for three crew or more (its pantry off it where the recipe has one; a table
- * for every four aboard, crew and passengers, up to four), the recipe's extra rooms.
+ * for every four aboard, crew and passengers, up to four, three with a pantry), the recipe's extra rooms.
  */
 export function shipCommons(r: OutlineRecipe, crew: number, depth: number): RoomSpec[] {
-  // (With passengers: a table for every four aboard (four seats each), up to four, in rows across a room five deep.)
-  const extra = r.rooms ?? [], pax = paxOf(r, depth), tables = Math.min(4, Math.ceil((crew + pax) / 4));
+  // (With passengers: a table for every four aboard (four seats each), up to four (three with a pantry beside it, the two in two bays), in rows across a room five deep.)
+  const extra = r.rooms ?? [], pax = paxOf(r, depth), tables = Math.min(extra.includes('pantry') ? 3 : 4, Math.ceil((crew + pax) / 4));
   const sized: RoomSpec = pax > 0 ? { ...MESS, mods: ['module.galley', ...Array<string>(tables).fill('module.mess_table')], w: Math.max(7, 3 * tables + 3), h: 5 } : MESS;
   const mess: RoomSpec = extra.includes('pantry') ? { ...sized, annex: SHIP_ROOMS.pantry } : sized;
   return [...(crew >= 3 ? [mess] : []), ...extra.filter((k) => k !== 'pantry').map((k) => SHIP_ROOMS[k])];

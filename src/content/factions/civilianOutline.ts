@@ -32,7 +32,7 @@ export const civilianOutline = {
     family: 'liner', profiles: LINER, maxBeam: 33, crew: { sleep: 'bunks', rooms: 1 }, passengers: { base: 6, perDepth: 1 },
     // (Its point defence the plan's own room's: no turret pair. Its passengers' lounges the drum's corners. Any room
     // may take a single-tier bay: its machinery rooms are small.)
-    rooms: ['sickbay'], layout: { kind: 'bays', drum: true, program: { pd: false, least: 64 } },
+    rooms: ['sickbay', 'pantry'], layout: { kind: 'bays', drum: true, program: { pd: false, least: 64 } },
     depts: {
       // (Its guns with the systems, a hangar with the stores: it has no flight deck or battery to put them in.)
       of: { weapons: 'systems', hangar: 'stores' },
