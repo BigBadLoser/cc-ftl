@@ -14,8 +14,8 @@ import type { BayPart } from './part';
 
 /** Tiles the pod reaches forward of the bow, and out past the hull's side. */
 const AHEAD = 7, OUT = 1;
-/** Its forward corners' cuts: the outer a long bevel, the inner a tile. */
-const CUT = 5, INNER = 1;
+/** Its forward corners' cuts, outer and inner (by the spine). */
+const CUT = 3, INNER = 3;
 
 /** The side the pod stands on: the hull's length decides, so seeds differ. */
 const sideOf = (W: number): 1 | -1 => (W % 2 === 0 ? 1 : -1);
