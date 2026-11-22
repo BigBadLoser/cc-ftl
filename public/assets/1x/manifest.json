@@ -79065,7 +79065,7 @@
    "kind": "static",
    "sheet": "engine",
    "frame": {
-    "x": 2842,
+    "x": 2833,
     "y": 1,
     "w": 90,
     "h": 168
@@ -79083,7 +79083,7 @@
    "kind": "static",
    "sheet": "engine",
    "frame": {
-    "x": 2933,
+    "x": 2924,
     "y": 1,
     "w": 90,
     "h": 168
@@ -79137,7 +79137,7 @@
    "kind": "static",
    "sheet": "engine",
    "frame": {
-    "x": 1440,
+    "x": 953,
     "y": 1,
     "w": 465,
     "h": 315
@@ -79156,14 +79156,14 @@
    "kind": "static",
    "sheet": "engine",
    "frame": {
-    "x": 488,
+    "x": 1419,
     "y": 1,
-    "w": 486,
-    "h": 317
+    "w": 477,
+    "h": 282
    },
    "anchor": {
     "x": -84,
-    "y": 74
+    "y": 71
    },
    "footprint": [
     5,
@@ -79194,7 +79194,7 @@
    "kind": "static",
    "sheet": "engine",
    "frame": {
-    "x": 975,
+    "x": 488,
     "y": 1,
     "w": 464,
     "h": 316
@@ -79285,7 +79285,7 @@
    "kind": "static",
    "sheet": "engine",
    "frame": {
-    "x": 1906,
+    "x": 1897,
     "y": 1,
     "w": 233,
     "h": 185
@@ -79303,7 +79303,7 @@
    "kind": "static",
    "sheet": "engine",
    "frame": {
-    "x": 2140,
+    "x": 2131,
     "y": 1,
     "w": 233,
     "h": 185
@@ -79558,7 +79558,7 @@
    "kind": "static",
    "sheet": "engine",
    "frame": {
-    "x": 2374,
+    "x": 2365,
     "y": 1,
     "w": 233,
     "h": 185
@@ -79576,7 +79576,7 @@
    "kind": "static",
    "sheet": "engine",
    "frame": {
-    "x": 2608,
+    "x": 2599,
     "y": 1,
     "w": 233,
     "h": 185
@@ -79650,7 +79650,7 @@
    "kind": "static",
    "sheet": "engine",
    "frame": {
-    "x": 3024,
+    "x": 3015,
     "y": 1,
     "w": 233,
     "h": 167
@@ -79668,7 +79668,7 @@
    "kind": "static",
    "sheet": "engine",
    "frame": {
-    "x": 3258,
+    "x": 3249,
     "y": 1,
     "w": 233,
     "h": 167
@@ -79921,7 +79921,7 @@
    "kind": "static",
    "sheet": "engine",
    "frame": {
-    "x": 3492,
+    "x": 3483,
     "y": 1,
     "w": 233,
     "h": 167
@@ -79939,7 +79939,7 @@
    "kind": "static",
    "sheet": "engine",
    "frame": {
-    "x": 3726,
+    "x": 3717,
     "y": 1,
     "w": 233,
     "h": 167

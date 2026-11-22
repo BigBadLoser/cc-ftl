@@ -81,13 +81,17 @@ def _jet(nt, rot):
         nt.links.new(vec.outputs[0], tx.inputs["Vector"])
         return tx.outputs["Fac"]
 
-    end = op("POWER", clamp(op("MULTIPLY", op("SUBTRACT", u1 - MOUTH, d), 0.22)), 1.5)   # out before the envelope ends
-    cw = op("ADD", 0.5, op("MULTIPLY", dp, 0.05))                                          # the core's width
+    L = u1 - MOUTH
+    t = clamp(op("DIVIDE", dp, L))                                                       # 0 at the mouth, 1 at the tip
+    end = op("SUBTRACT", 1, op("POWER", t, 2.2))                                           # fades out over its back half
+    taper = op("SUBTRACT", 1, op("MULTIPLY", op("POWER", t, 1.6), 0.55))                  # narrows to a point, no blob
+    cw = op("MULTIPLY", op("ADD", 0.45, op("MULTIPLY", dp, 0.035)), taper)                # the core's width
     hot = gauss(op("DIVIDE", rho, cw), 2.0)
     feather = op("ADD", 0.5, op("MULTIPLY", noise(0.25, 0.9, 1.8), 1.0))
-    sheath = gauss(op("DIVIDE", rho, op("MULTIPLY", op("ADD", 0.85, op("MULTIPLY", dp, 0.11)), feather)), 2.2)
-    strength = op("MULTIPLY", op("MULTIPLY", op("ADD", op("MULTIPLY", hot, op("MULTIPLY", 2.2, feather)),
-                                                op("MULTIPLY", sheath, 0.3)), decay(4.5)), end)
+    sw = op("MULTIPLY", op("MULTIPLY", op("ADD", 0.8, op("MULTIPLY", dp, 0.09)), feather), taper)
+    sheath = gauss(op("DIVIDE", rho, sw), 2.2)
+    strength = op("MULTIPLY", op("MULTIPLY", op("ADD", op("MULTIPLY", hot, op("MULTIPLY", 0.75, feather)),
+                                                op("MULTIPLY", sheath, 0.16)), decay(14.0)), end)
     # White at the core near the mouth, cooling to cyan outward and downstream.
     temperature = clamp(op("SUBTRACT", op("ADD", op("MULTIPLY", op("DIVIDE", rho, op("MULTIPLY", cw, 2.2)), 0.5),
                                           op("MULTIPLY", dp, 0.07)),
