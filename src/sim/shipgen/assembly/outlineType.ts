@@ -35,6 +35,9 @@ export function outlineRole(f: FactionDef, type: string, r: OutlineRecipe): Ship
   return { id: type, weight: fam.weight, archetypes: [], bonus, ...((r.bays ?? fam.bays) ? { bays: r.bays ?? fam.bays } : {}), ...(r.gunRooms ? { guns: r.gunRooms } : {}) };
 }
 
+/** The passengers a type carries at `depth`. */
+const paxOf = (r: OutlineRecipe, depth: number): number => (r.passengers ? r.passengers.base + Math.round(r.passengers.perDepth * depth) : 0);
+
 /** A mess: a galley and tables down a long narrow room, the crew's commons. */
 export const MESS: RoomSpec = { role: 'support', dept: 'commons', mods: ['module.galley', 'module.mess_table'], w: 6, h: 3 };
 /**
@@ -43,16 +46,22 @@ export const MESS: RoomSpec = { role: 'support', dept: 'commons', mods: ['module
  */
 export const SHIP_ROOMS: Record<ShipRoom, RoomSpec> = {
   medbay: { role: 'medbay', mods: ['module.med_bed', 'module.med_bed'], w: 5, h: 4, annex: { role: 'medbay', mods: ['module.recovery', 'module.recovery'], w: 5, h: 4 } },
+  sickbay: { role: 'medbay', mods: ['module.med_bed', 'module.med_bed'], w: 5, h: 4 },
   brig: { role: 'armoury', mods: ['module.stasis_wheel'], w: 7, h: 6 },
   farm: { role: 'farm', mods: Array<string>(4).fill('module.hydroponics_large'), w: 14, h: 4 },
   pantry: { role: 'cargo', dept: 'commons', mods: ['module.storage_cold', 'module.storage_cold', 'module.storage_rack'], w: 4, h: 3 },
   lounge: { role: 'support', use: 'lounge', mods: ['module.gametable', 'module.arcade', 'module.bench', 'module.bench'], w: 7, h: 4 },
 };
 
-/** The commons a ship adds to its plan: a mess for three crew or more (its pantry off it where the recipe has one), the recipe's extra rooms. */
-export function shipCommons(r: OutlineRecipe, crew: number): RoomSpec[] {
-  const extra = r.rooms ?? [];
-  const mess: RoomSpec = extra.includes('pantry') ? { ...MESS, annex: SHIP_ROOMS.pantry } : MESS;
+/**
+ * The commons a ship adds to its plan: a mess for three crew or more (its pantry off it where the recipe has one; a table
+ * for every four aboard, crew and passengers, up to four), the recipe's extra rooms.
+ */
+export function shipCommons(r: OutlineRecipe, crew: number, depth: number): RoomSpec[] {
+  // (With passengers: a table for every four aboard (four seats each), up to four, in rows across a room five deep.)
+  const extra = r.rooms ?? [], pax = paxOf(r, depth), tables = Math.min(4, Math.ceil((crew + pax) / 4));
+  const sized: RoomSpec = pax > 0 ? { ...MESS, mods: ['module.galley', ...Array<string>(tables).fill('module.mess_table')], w: Math.max(7, 3 * tables + 3), h: 5 } : MESS;
+  const mess: RoomSpec = extra.includes('pantry') ? { ...sized, annex: SHIP_ROOMS.pantry } : sized;
   return [...(crew >= 3 ? [mess] : []), ...extra.filter((k) => k !== 'pantry').map((k) => SHIP_ROOMS[k])];
 }
 
@@ -73,7 +82,7 @@ export function cabinBeds(n: number): RoomSpec[] {
  * crew's. Then the passengers' cabins, where it carries them.
  */
 export function shipQuarters(r: OutlineRecipe, planned: readonly RoomSpec[], crew: number, spare: number, depth: number): RoomSpec[] {
-  const pax = r.passengers ? cabinBeds(r.passengers.base + Math.round(r.passengers.perDepth * depth)) : [];
+  const pax = r.passengers ? cabinBeds(paxOf(r, depth)) : [];
   const sleep = r.crew.sleep;
   if (sleep === 'cabins') return [...cabinBeds(crew + spare), ...pax];
   // Barracks: the spare beds shared out, a bunk sleeping two (single beds where the type has them, a piece each).

@@ -77,6 +77,8 @@ export interface Silhouette {
   body: number[];
   /** A gun battery (with `drawSilhouette`'s `guns`): how many sites, and the straight stretches it may stand on, best first. */
   battery?: { guns: number; runs: [number, number][]; /** A gun room's floor columns and rows (set by the outline). */ w?: number; h?: number };
+  /** Rounded sections' columns [first, last]: an outline samples them from both ends in, so the scaled curve mirrors. */
+  round?: [number, number][];
 }
 
 const pick = (rng: Rng, r: Range): number => rng.int(r[0], r[1]);
@@ -95,7 +97,7 @@ function noseHalf(style: NoseStyle, i: number, n: number, front: number, h: numb
 }
 
 /** The body's half-widths bow to stern: nose or pod, then the sections joined by their tapers. */
-function body(rng: Rng, p: Profile, drive?: Drive): { outer: number[]; bodyStart: number } {
+function body(rng: Rng, p: Profile, drive?: Drive): { outer: number[]; bodyStart: number; round: [number, number][] } {
   const secs = p.sections
     .map((part) => one(rng, part))
     .filter((s) => s.chance === undefined || rng.chance(s.chance))
@@ -123,7 +125,7 @@ function body(rng: Rng, p: Profile, drive?: Drive): { outer: number[]; bodyStart
     }
     while (h < H0) { h = Math.min(H0, h + 2); outer.push(h); }
   }
-  const bodyStart = outer.length;
+  const bodyStart = outer.length, round: [number, number][] = [];
   let prev = H0;
   for (const [i, s] of secs.entries()) {
     const start = outer.length;
@@ -134,6 +136,7 @@ function body(rng: Rng, p: Profile, drive?: Drive): { outer: number[]; bodyStart
         const e = Math.min(k, s.len - 1 - k);
         outer.push(e >= r ? s.half : Math.max(lo, Math.round(s.half - r + Math.sqrt(r * r - (r - e) ** 2))));
       }
+      round.push([start, outer.length - 1]);
       prev = secs[i + 1]?.half ?? s.half;
       continue;
     }
@@ -141,7 +144,7 @@ function body(rng: Rng, p: Profile, drive?: Drive): { outer: number[]; bodyStart
     while (prev > s.half) { for (let k = 0; k < s.taper; k++) outer.push(prev); prev--; }
     while (outer.length - start < s.len) outer.push(s.half);
   }
-  return { outer, bodyStart };
+  return { outer, bodyStart, round };
 }
 
 /**
@@ -240,7 +243,7 @@ export interface Drive { rng?: Rng; grow?: number; hold?: number }
 
 /** With `guns`, that many gun sites stand in place of the profile's embrasures (PROTOTYPE, #581); with `drive`, the drive section redrawn. */
 export function drawSilhouette(rng: Rng, p: Profile, guns?: number, drive?: Drive): Silhouette {
-  const { outer, bodyStart } = body(rng, p, drive);
+  const { outer, bodyStart, round } = body(rng, p, drive);
   let st = one(rng, p.stern), sLen = pick(rng, st.len), sOut = pick(rng, st.out);
   if (drive?.rng) { st = one(drive.rng, p.stern); sLen = pick(drive.rng, st.len); sOut = pick(drive.rng, st.out); }
   const rate = st.rate ?? 2;
@@ -319,5 +322,5 @@ export function drawSilhouette(rng: Rng, p: Profile, guns?: number, drive?: Driv
   const y0 = Math.min(...ys), y1 = Math.max(...ys);
   const w = Math.max(...used.map((r) => Math.max(r.lastIndexOf('#'), r.lastIndexOf('>')))) + 1;
   const bodyHalf = top.map((t, x) => (x < sternFrom ? t : (pre[x] as number)));
-  return { rows: used.slice(y0, y1 + 1).map((r) => r.slice(0, w)), axis: axis - y0, length: w, body: bodyHalf, ...(battery ? { battery } : {}) };
+  return { rows: used.slice(y0, y1 + 1).map((r) => r.slice(0, w)), axis: axis - y0, length: w, body: bodyHalf, ...(battery ? { battery } : {}), ...(round.length > 0 ? { round } : {}) };
 }

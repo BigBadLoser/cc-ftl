@@ -8,8 +8,8 @@ import type { BayPart, DockSite } from './part';
  * A liner's drum (PROTOTYPE, #581): the widest section, its corners rounded, cut square. A garden in the middle, a ring
  * corridor round it (its north and south runs out to the hull's ends), single cabins in bands outboard (north and south
  * cut along the hull, fore and aft either side of the spine), lounges in the rounded corners. The spine runs in to the
- * ring from fore and aft. Every room but the corners is a rectangle. The rest of the ship is on bays: crew, mess, sick
- * bay and stores ahead of the drum (the airlocks just forward of it), the machinery aft.
+ * ring from fore and aft. Every room but the corners is a rectangle. The rest of the ship is on bays: crew, mess, sick bay
+ * and stores ahead of the drum (the airlocks in the middle of that section, clear of the drum), the machinery aft.
  */
 
 /** Rows (and columns from the drum's ends), out to in: a band of rooms, a wall, the ring (two), a wall, the garden. */
@@ -17,6 +17,8 @@ const BAND = 4, RING = 2;
 const GARDEN = BAND + 1 + RING + 1 + 1;
 /** A cabin's columns, its wall included. */
 const CABIN = 4;
+/** A corner lounge's least floor. */
+const LOUNGE = 9;
 
 /** The drum's columns [x0, x1] (its end walls): the run round the deepest column at least three quarters its depth. */
 function span(depth: (x: number) => number, a: number, b: number): { x0: number; x1: number } | null {
@@ -39,10 +41,11 @@ function cellOf(x0: number, x1: number, T: number, x: number, y: number): string
   const RING0 = BAND + 2, RING1 = BAND + 1 + RING;
   if (f >= RING0 && f <= RING1) return 'hall';
   if (f <= BAND) {
-    // North and south: a lounge in each corner, then cabins along the hull, near-equal, a wall between each.
-    if (e <= GARDEN - 2) return `lounge:${side}${end}`;
-    if (e === GARDEN - 1) return null;
-    const a = x0 + GARDEN, n = x1 - GARDEN - a + 1, k = Math.max(1, Math.floor((n + 1) / CABIN));
+    // North and south: a lounge in each corner (over the fore and aft cabins), then cabins along the hull, near-equal, a
+    // wall between each.
+    if (e <= BAND) return `lounge:${side}${end}`;
+    if (e === BAND + 1) return null;
+    const a = x0 + BAND + 2, n = x1 - BAND - 2 - a + 1, k = Math.max(1, Math.floor((n + 1) / CABIN));
     for (let i = 0; i < k; i++) {
       const c0 = a + Math.round((i * (n + 1)) / k), c1 = a + Math.round(((i + 1) * (n + 1)) / k) - 2;
       if (x >= c0 && x <= c1) return `cabin:${side}${i}`;
@@ -82,6 +85,10 @@ function cells(fr: Frame): Map<string, [number, number][]> {
     const got = out.get(k) ?? [];
     got.push([x, y]); out.set(k, got);
   }
+  // (A corner the hull's curve leaves too small for a lounge is plating.)
+  const wall = out.get('wall') ?? [];
+  for (const [k, ts] of out) if (k.startsWith('lounge:') && ts.length < LOUNGE) { wall.push(...ts); out.delete(k); }
+  out.set('wall', wall);
   return out;
 }
 
@@ -95,11 +102,14 @@ export const DRUM: BayPart = {
   // (Its annex (the pantry) beside the mess; a hold may take all its bays; the cabins the drum's or none.)
   program: { beside: true, holds: true, blocks: false },
   skip: (s: DockSite) => { const d = span(s.depth, s.xBand + MIN_DEPTH + s.CW + 2, s.xS); return d && [d.x0, d.x1]; },
-  // (The airlocks just ahead of the drum: the first flat stretch forward of it.)
+  // (The airlocks in the forward section, clear of the drum for a shuttle to dock: its middle, else the nearest flat
+  // stretch forward of that, else aft of it.)
   dock: (s) => {
     const d = span(s.depth, s.xBand + MIN_DEPTH + s.CW + 2, s.xS);
     if (!d) return -1;
-    for (let x = d.x0 - s.CW - 1; x > s.xBand + MIN_DEPTH; x--) if (s.flat(x)) return x;
+    const lo = s.xBand + MIN_DEPTH + 1, hi = d.x0 - s.CW - MIN_DEPTH - 1, mid = Math.round((s.xBand + d.x0 - s.CW) / 2);
+    for (let x = Math.min(mid, hi); x >= lo; x--) if (s.flat(x)) return x;
+    for (let x = mid + 1; x <= hi; x++) if (s.flat(x)) return x;
     return -1;
   },
   zones: { forward: (b, fr) => b.x0 < (fr.skip?.[0] ?? Infinity), other: () => 'systems' },

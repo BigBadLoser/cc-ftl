@@ -7,8 +7,11 @@ import type { RoomRole } from './types';
  * (`FactionDef.outline`, keyed by type id). The outline pipeline runs a recipe's layout and asks nothing about its type.
  */
 
-/** Rooms a ship may have past its plan's: a med bay with its trauma room, a brig, a farm, the mess's pantry, a lounge. */
-export type ShipRoom = 'medbay' | 'brig' | 'farm' | 'pantry' | 'lounge';
+/**
+ * Rooms a ship may have past its plan's: a med bay with its trauma room, a sick bay (one room), a brig, a farm, the mess's
+ * pantry, a lounge.
+ */
+export type ShipRoom = 'medbay' | 'sickbay' | 'brig' | 'farm' | 'pantry' | 'lounge';
 
 /** How a ship's people sleep: barracks of bunks, barracks of single beds, or every bed a cabin. */
 export type Sleep = 'bunks' | 'beds' | 'cabins';
@@ -43,6 +46,8 @@ export interface ProgramRules {
   holds?: boolean;
   /** Floor a small room may take, as a multiple of its plan. */
   grow?: number;
+  /** Floor any room may take whatever its plan (a bay's worth: the small machinery rooms of a single-tier hull). */
+  least?: number;
   /** A point-defence turret a side, a pair of 4x4 rooms (where the sides do not mirror: mirrored, the part fixes it). */
   pd?: boolean;
   /** Cabin blocks for the beds where the part's cabin strip is too short for them (else the layout fails). */

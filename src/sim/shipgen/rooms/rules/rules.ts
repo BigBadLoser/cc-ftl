@@ -60,9 +60,19 @@ const through = (c: Ctx): boolean => (c.doors ?? []).some((t) => t.y === 0) && !
  * pair. A room walked through (a door in its back wall too) lines the walls either side of the way through instead.
  */
 function b1(c: Ctx): Piece[] {
-  const { w, h, d } = c, bank = beds(c);
+  const { w, h, d } = c;
+  let bank = beds(c);
   if (w >= h && !through(c)) {
-    const top = bunks(bank, 0, w - 1, 0, 0), left = bunks(bank, 0, d - 2, h - 2, 2), right = bunks(bank, w - 1, d + 2, h - 2, 2);
+    // Half the pairs on the back wall, half on the door wall either side of the door (two rows, as a barracks is built);
+    // the back wall first, as many as it holds, where that leaves a bed over.
+    const all = bank.left, half = Math.min(all, 2 * Math.ceil(all / 4)), back = { def: bank.def, left: half };
+    let top = bunks(back, 0, w - 1, 0, 0);
+    bank = { def: bank.def, left: all - half + back.left };
+    let left = bunks(bank, 0, d - 2, h - 2, 2), right = bunks(bank, w - 1, d + 2, h - 2, 2);
+    if (bank.left > 0) {
+      bank = beds(c);
+      top = bunks(bank, 0, w - 1, 0, 0); left = bunks(bank, 0, d - 2, h - 2, 2); right = bunks(bank, w - 1, d + 2, h - 2, 2);
+    }
     const runs: Run[] = [
       { from: 0, to: w - 1, n: top.pairs, at: (v, end) => (end ? P(GT, v, 0, 1) : P(GT, v, 1, 0)) },
       { from: 0, to: d - 2, n: left.pairs, door: true, at: (v, end) => (end ? P(GT, v, h - 2, 1) : P(GT, v, h - 2, 2)) },
@@ -293,7 +303,8 @@ function consoleRow(c: Ctx, list: readonly string[]): Piece[] {
 /** Arrangements by room role. A room takes one that suits it (seeded), else the plain fallback (place.ts). */
 export const RULES: Partial<Record<RoomRole, readonly RuleArrangement[]>> = {
   quarters: [
-    { name: 'B1 bunk pairs on the long walls', weight: 2, when: (n, r) => pieces(n, r.defs) >= 2, rule: b1 },
+    // (Barracks as built: B1 wherever it fits; the others where it does not place every bed.)
+    { name: 'B1 bunk pairs on the long walls', weight: 50, when: (n, r) => pieces(n, r.defs) >= 2, rule: b1 },
     { name: 'B3 two bays, shared tables', weight: 1, when: (n, r) => pieces(n, r.defs) >= 2 && pieces(n, r.defs) <= 8, rule: b3 },
     { name: 'B4 bunks on the back wall, a rec corner', weight: 1, when: (n, r) => { const k = pieces(n, r.defs); return k >= 2 && k <= 2 * pairsAcross(r.w) && r.w >= 6 && r.h >= 5; }, rule: b4 },
     { name: 'C1 cabin', weight: 1, when: (n, r) => pieces(n, r.defs) === 1, rule: (c) => [P(sleeper(c.need, c.defs), 0, 0, 0), P('module.storage_locker', c.w - 1, 0, 0)] },

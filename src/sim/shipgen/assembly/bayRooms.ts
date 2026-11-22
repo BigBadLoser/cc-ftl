@@ -241,7 +241,7 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
         // (A lane hull's bays run bigger: a small room there may take up to four times its plan.)
         // (A department's one room a side may take all its bays; on a lane hull, so may a hold: spare floor is storage.)
         const sole = rs.every((h) => alone.has(depts.of(h)) || (pr.holds && roomKind(h) === 'cargo'));
-        if (a < want || (a > Math.max(cap * 1.3, want * pr.grow) && !sole) || !rs.every((h) => fits(h, ln, rw))) continue;
+        if (a < want || (a > Math.max(cap * 1.3, want * pr.grow, pr.least) && !sole) || !rs.every((h) => fits(h, ln, rw))) continue;
         let via: Part['via'] | undefined;
         if (tier === 'back') { const v = backVia(o, side, i, j, specs); if (!v) continue; via = v; } else if (!hallOk) continue;
         // A front room nothing may open through, over back tiers still free with no corridor beside them, leaves a

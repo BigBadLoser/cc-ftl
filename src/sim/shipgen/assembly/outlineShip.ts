@@ -32,9 +32,19 @@ function scaled(sil: Silhouette, sx: number, sy: number): Mask {
   const W0 = Math.round(sil.length * sx);
   const bodyAt = (c: number): number => sil.body[Math.min(c, sil.body.length - 1)] as number;
   const H0 = Math.max(...sil.body.map((b) => Math.round(b * sy) + sil.axis - b));
+  // A rounded section's columns sampled from its nearer end, so its two ends mirror whatever the scale.
+  const colOf = (x: number): number => {
+    for (const [a, b] of sil.round ?? []) {
+      const X0 = Math.round(a * sx), X1 = Math.round((b + 1) * sx) - 1;
+      if (x < X0 || x > X1) continue;
+      const e = Math.min(b - a, Math.floor(Math.min(x - X0, X1 - x) / sx));
+      return x - X0 <= X1 - x ? a + e : b - e;
+    }
+    return Math.floor(x / sx);
+  };
   const base = (x: number, y: number): boolean => {
     if (x < 0 || x >= W0 || Math.abs(y) > H0) return false;
-    const c = Math.floor(x / sx), b = bodyAt(c), hb = Math.round(b * sy), d = Math.abs(y);
+    const c = colOf(x), b = bodyAt(c), hb = Math.round(b * sy), d = Math.abs(y);
     // Rounded by distance from the axis, so the two sides mirror (Math.round takes -2.5 to -2 but 2.5 to 3).
     const raw = d <= hb ? Math.round(d / sy) : b + d - hb;
     return sil.rows[sil.axis + Math.sign(y) * raw]?.[c] === '#';
@@ -166,7 +176,7 @@ export function outlineInputs(
   const kit = { ...planned.kit, ...(planned.kit.reactor === REACTOR_TIERS[0] && defs[up] ? { reactor: up } : {}), ...(tierUp ? { engine: engineUp } : {}) };
   // The type's commons and quarters (a few spare beds past the crew's, its passengers' cabins) join the plan, their power counted.
   const quarters = shipQuarters(recipe, planned.quarters, planned.crew.length, rng.int(2, 4), depth);
-  const plan: ShipPlan = { ...planned, kit, quarters, support: [...planned.support, ...shipCommons(recipe, planned.crew.length)] };
+  const plan: ShipPlan = { ...planned, kit, quarters, support: [...planned.support, ...shipCommons(recipe, planned.crew.length, depth)] };
   const fixed = recipe.engines;
   if (fixed) plan.engines = fixed + (tierUp ? extra - 1 : extra);
   plan.reactors = reactorsFor(plan, defs);
