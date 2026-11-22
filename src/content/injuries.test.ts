@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { CrewC, DownedC, HealthC, JobC, PositionC, PrioritiesC } from '../sim/crew/components';
 import { StasisC } from '../sim/stasis/components';
+import { vitalsSystem } from '../sim/systems/vitals';
+import { shipGrid, shipIdOf } from '../sim/regions';
+import { BED_HEAL_PER_SEC, HOT_ABOVE, TEMP_HARM_PER_SEC } from '../sim/tuning';
 import { InjuriesC } from '../sim/crew/injuryTypes';
-import { capacitiesOf, canBeInjured, injuriesOf, isBleeding, partCondition } from '../sim/crew/body';
+import { capacitiesOf, canBeInjured, healMult, injuriesOf, isBleeding, partCondition } from '../sim/crew/body';
 import { addInjury, damageCrew, injureOnDown } from '../sim/crew/injure';
 import { injuryStep } from '../sim/crew/injuryCare';
 import { SCAR_AFTER_SEC, STRANDED_SEC } from '../sim/crew/tuningInjury';
@@ -184,6 +187,29 @@ describe('crew injuries (#601)', () => {
     play(built, 2);
     expect(sim.world.has(gunner, RecoveringC)).toBe(false);
     expect(sim.world.has(gunner, DownedC)).toBe(true);
+  });
+
+  it('a stabilised patient whose wounds slow healing below the room harm keeps bleeding out', () => {
+    const sim = cachedNewGame(3);
+    const id = human(sim);
+    for (const c of playerCrew(sim)) sim.world.get(c, PrioritiesC)!.medical = 0;
+    sim.world.get(id, HealthC)!.hp = 0;
+    run(sim, 2);
+    const downed = sim.world.get(id, DownedC)!;
+    expect(downed).toBeDefined();
+    addInjury(sim, id, 'part.heart', 'injury.organ_damage');
+    addInjury(sim, id, 'part.heart', 'injury.organ_damage');
+    downed.stabilized = true;
+    sim.world.get(id, HealthC)!.hp = 10;
+    const heal = BED_HEAL_PER_SEC * healMult(sim, id);
+    expect(heal).toBeLessThan(BED_HEAL_PER_SEC);
+    const pos = sim.world.get(id, PositionC)!;
+    const grid = shipGrid(sim, shipIdOf(sim, pos))!;
+    grid.set('temp', pos.x, pos.y, HOT_ABOVE + (heal + BED_HEAL_PER_SEC) / 2 / TEMP_HARM_PER_SEC); // harm between the two rates
+    const bleed = downed.bleed;
+    vitalsSystem(sim);
+    expect(sim.world.get(id, DownedC)!.bleed).toBeLessThan(bleed);
+    expect(sim.world.get(id, HealthC)!.hp).toBeGreaterThanOrEqual(0);
   });
 
   it('a prisoner frozen in stasis neither bleeds nor heals', () => {

@@ -74,10 +74,11 @@ export function vitalsSystem(sim: Sim): void {
         else if (species?.creature) killCrew(sim, id); // creatures die outright (the corpse stays)
         else down(sim, id, pos);
       }
-    } else if (downed.stabilized && !vitalLost(sim, id) && harm < BED_HEAL_PER_SEC && podModule(sim, downed.bed)) {
+    } else if (downed.stabilized && !vitalLost(sim, id) && harm < BED_HEAL_PER_SEC * healMult(sim, id) && podModule(sim, downed.bed)) {
       // Carried to a recovery pod: no medic needed; at GET_UP_HP they stay on as a pod patient to full (crew/recovery.ts). Knocked out, they stay down.
       if (careHealStep(sim, id, downed, health, harm) && health.hp >= GET_UP_HP && !mustBeDown(sim, id)) startRecovery(sim, id, downed);
-    } else if (downed.stabilized && !vitalLost(sim, id) && harm < BED_HEAL_PER_SEC) {
+    } else if (downed.stabilized && !vitalLost(sim, id) && harm < BED_HEAL_PER_SEC * healMult(sim, id)) {
+      // (Against the healing their wounds allow: harm that outpaces it is a bleed-out, below, not an hp loss in bed.)
       // Heals at the bed rate, faster while a medic tends a medical bed (crew/treatment.ts `tendingOf`: the one answer; the XP goes to the tender).
       const ship = shipIdOf(sim, pos);
       const tend = tendingOf(sim, downed.bed);
