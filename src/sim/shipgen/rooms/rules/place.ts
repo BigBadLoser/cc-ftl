@@ -13,6 +13,7 @@ import { placeOne } from '../../fit';
 import type { Layout } from '../../layout';
 import type { RoomRole } from '../../types';
 import { furnishBastion } from './bastion';
+import { C as CH } from './parts';
 import { roomProblems, type Piece } from './check';
 import { RULES, type RuleArrangement } from './rules';
 
@@ -144,12 +145,13 @@ export function furnishByRule(
       // the room then fails, again with the extras added one at a time after the rest, each only if the room still works.
       for (const lean of [false, true]) {
         const left = new Map(want), extras: Piece[] = [];
-        let ok = true;
+        let ok = true, unseated = false;
         for (const p of pieces) {
           const q = toLayout(f, p, lay.defs);
           if ((left.get(p.def) ?? 0) <= 0) {
             if (q && lean) extras.push(q);
             else if (q && lay.fitError(q.def, q.x, q.y, q.rot, room) === null) lay.push(q);
+            else unseated ||= p.def === CH;
             continue;
           }
           left.set(p.def, (left.get(p.def) as number) - 1);
@@ -162,12 +164,13 @@ export function furnishByRule(
           for (let k = got.get(id) ?? 0; ok && k < n; k++) ok = !!placeOne(lay, rng, id, [room], { rots: rots(id), ok: works });
         }
         if (ok && works()) {
+          // (A chair the rule drew that cannot stand leaves its table unseated: the arrangement does not suit the room.)
           for (const q of extras) {
-            if (lay.fitError(q.def, q.x, q.y, q.rot, room) !== null) continue;
+            if (lay.fitError(q.def, q.x, q.y, q.rot, room) !== null) { unseated ||= q.def === CH; continue; }
             lay.push(q);
-            if (!works()) lay.pop();
+            if (!works()) { lay.pop(); unseated ||= q.def === CH; }
           }
-          return lay.modules.slice(start).map((_, i) => start + i);
+          if (!unseated) return lay.modules.slice(start).map((_, i) => start + i);
         }
         undo();
       }

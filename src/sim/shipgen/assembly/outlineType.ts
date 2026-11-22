@@ -2,6 +2,7 @@ import type { ModuleDef } from '../../registry';
 import { enginesShort, previewHull } from '../generate';
 import type { OutlineRecipe, ShipRoom } from '../outlineRecipe';
 import type { RoomSpec } from '../plan';
+import { messFloor } from '../rooms/rules/mess';
 import type { FactionDef, GenResult, HullFamilyDef, ShipRoleDef } from '../types';
 import { SLEEPER, barracksSize, sleepersIn } from './quarters';
 
@@ -39,7 +40,7 @@ export function outlineRole(f: FactionDef, type: string, r: OutlineRecipe): Ship
 const paxOf = (r: OutlineRecipe, depth: number): number => (r.passengers ? r.passengers.base + Math.round(r.passengers.perDepth * depth) : 0);
 
 /** A mess: a galley and tables down a long narrow room, the crew's commons. */
-export const MESS: RoomSpec = { role: 'support', dept: 'commons', mods: ['module.galley', 'module.mess_table'], w: 6, h: 3 };
+export const MESS: RoomSpec = { role: 'support', dept: 'commons', mods: ['module.galley', 'module.mess_table'], ...messFloor(1) };
 /**
  * The bigger ships' extra rooms: a med bay with its trauma room behind (a liner's ward with one beside it), a brig round a stasis wheel, a small farm, the
  * mess's pantry (cold stores always), a lounge (a liner's passengers').
@@ -60,9 +61,9 @@ export const SHIP_ROOMS: Record<ShipRoom, RoomSpec> = {
  * for every four aboard, crew and passengers, up to four, three with a pantry), the recipe's extra rooms.
  */
 export function shipCommons(r: OutlineRecipe, crew: number, depth: number): RoomSpec[] {
-  // (With passengers: a table for every four aboard (four seats each), up to four (three with a pantry beside it, the two in two bays), in rows across a room five deep.)
+  // (With passengers: a table for every four aboard (four seats each), up to four (three with a pantry beside it, the two in two bays), sized by `messFloor`.)
   const extra = r.rooms ?? [], pax = paxOf(r, depth), tables = Math.min(extra.includes('pantry') ? 3 : 4, Math.ceil((crew + pax) / 4));
-  const sized: RoomSpec = pax > 0 ? { ...MESS, mods: ['module.galley', ...Array<string>(tables).fill('module.mess_table')], w: Math.max(7, 3 * tables + 3), h: 5 } : MESS;
+  const sized: RoomSpec = pax > 0 ? { ...MESS, mods: ['module.galley', ...Array<string>(tables).fill('module.mess_table')], ...messFloor(tables) } : MESS;
   const mess: RoomSpec = extra.includes('pantry') ? { ...sized, annex: SHIP_ROOMS.pantry } : sized;
   return [...(crew >= 3 ? [mess] : []), ...extra.filter((k) => k !== 'pantry').map((k) => SHIP_ROOMS[k])];
 }

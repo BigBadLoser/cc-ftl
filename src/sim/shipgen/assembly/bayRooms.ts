@@ -9,6 +9,7 @@ import { fillers, type Layout, type Part, type Piece, type Placed } from './plac
 import { onHall, opensThrough, roomKind } from './roomAccess';
 import { fillerSpec, maxArea, type Filler } from './roomSize';
 import type { ProgramRules } from '../outlineRecipe';
+import { messFloor } from '../rooms/rules/mess';
 import { cutStrip, type BayGeo, type BayPart } from './parts';
 import { zonesOf, type Dept, type Depts, type Need } from './zones';
 
@@ -60,9 +61,12 @@ function program(plan: ShipPlan, defs: Record<string, ModuleDef>, inBattery: num
     ? [{ ...core, mods: core.mods.filter((m) => m !== 'module.droneBay'), w: 5, h: 4 }, { role: 'core', mods: ['module.droneBay'], w: 5, h: 4, ...(core.drones ? { drones: core.drones } : {}) }]
     : [{ ...core, w: 5, h: 4 }];
   if (core?.drones) delete (cores[0] as RoomSpec).drones;
-  // (And a mess of 7x5 at least: the crew's commons. Mirrored, on a lane hull's side hulls four rows deep, 9x4.)
-  const [mw, mh] = mirror ? [9, 4] : [7, 5];
-  const mess = (r: RoomSpec): RoomSpec => (r.mods.includes('module.galley') ? { ...r, w: Math.max(r.w, mw), h: mirror ? mh : Math.max(r.h, mh) } : r);
+  // (And a mess of `messFloor` at least: the crew's commons. Mirrored, on a lane hull's side hulls four rows deep.)
+  const mess = (r: RoomSpec): RoomSpec => {
+    if (!r.mods.includes('module.galley')) return r;
+    const f = messFloor(r.mods.filter((m) => m === 'module.mess_table').length, r.mods.filter((m) => m === 'module.galley').length, mirror ? 4 : 0);
+    return { ...r, w: Math.max(r.w, f.w), h: mirror ? f.h : Math.max(r.h, f.h) };
+  };
   // (A lane hull's escape pods: one room of four, two bays long.)
   const pods: RoomSpec[] = hangars ? [] : [{ ...fillerSpec('pods', 64), mods: Array<string>(4).fill('module.pod_bay'), w: 14, h: 4 }];
   // (Mirrored, the point defence is its pair of turrets only: the plan's own room goes.)
