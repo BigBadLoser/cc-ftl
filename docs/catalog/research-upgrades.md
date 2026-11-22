@@ -57,4 +57,4 @@ Nine `recipe.upg_*` (coolant, capacitor, housing, prism, focus, frag, rail, chai
 | Research module | `module.research` | Bench where crew work projects; several speed it up | Partial: buildable only | no ship template or room places one; see modules.md |
 | Research bands | `researchBands` | Power, Defence, Propulsion, Automation tabs | In game | src/content/research.ts:45; ui/ResearchBand.svelte |
 | Research overhaul | `-` | Materials from the world, locked weapons, finds that add projects | Planned | issue #380 |
-| Reactor, shield, engine art tiers | `-` | Mk II/III art: reactor and shield have own sprites; engine tiers are tinted placeholders | Partial: engine placeholders | issue #105; render/tierArt.ts |
+| Reactor, shield, engine art tiers | `-` | Mk II/III art: every tier has its own sprites | In game | content/tiers.ts; engine: tools/blender/experiments/engine_kestrel_h185/tier_kb.py (#105) |

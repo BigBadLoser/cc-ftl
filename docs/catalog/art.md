@@ -59,7 +59,7 @@ Not counted above: 6 `decay.*` and 15 `fx.*` ids (blood, bodybag, corpse, frost,
 |---|---|---|---|---|
 | Iso scene and layers | `scene.ts, iso.ts, layers.ts, depthSort.ts` | Pixi isometric scene, depth bands, camera | In game | src/render/scene.ts |
 | Hull, walls, roofs, rock | `hullPaint.ts, hullArt.ts, roofView.ts, rockRoofView.ts, tiles.ts` | Hull keys, wall tiles, roof art, light-tinted roofs | In game | src/render/ |
-| Modules and turrets | `moduleView.ts, moduleArt.ts, turretView.ts, tierArt.ts` | Module states, rotation, turret aim; tier outline for a tier without art (none now) | In game | src/render/ |
+| Modules and turrets | `moduleView.ts, moduleArt.ts, turretView.ts` | Module states, rotation, turret aim | In game | src/render/ |
 | Crew rendering | `crewView.ts, crewAtlas.ts, crewSprites.ts, handWeapon.ts, portrait.ts` | Layered crew with gear and clips, portraits | In game | src/render/ |
 | Shots, shields, fx | `shotLook.ts, shieldView.ts, fx/*, fxView.ts, beamArt.ts` | Projectiles, shield domes, explosions, atmosphere | In game | src/render/ |
 | Vehicles, drones, pods | `shuttleView.ts, podView.ts, droneView.ts, vehicleBayArt.ts` | Craft and bays | In game | src/render/ |

@@ -30,7 +30,7 @@ Counts are table rows per status (each row is one entry, so a row that groups se
 | [stations](catalog/stations.md) | Station kinds, services, shipyard, black markets | 15 | 6 | 0 | 0 | 0 | 1 |
 | [combat](catalog/combat.md) | Ship combat, boarding, capture, hand weapons, cover | 29 | 3 | 11 | 0 | 0 | 0 |
 | [drones-vehicles-robots](catalog/drones-vehicles-robots.md) | Drones, shuttles, pods, robots | 13 | 1 | 0 | 0 | 0 | 4 |
-| [research-upgrades](catalog/research-upgrades.md) | Research, blueprints, weapon upgrades | 30 | 3 | 0 | 0 | 0 | 1 |
+| [research-upgrades](catalog/research-upgrades.md) | Research, blueprints, weapon upgrades | 31 | 2 | 0 | 0 | 0 | 1 |
 | [economy](catalog/economy.md) | Trade, traders, jobs, contraband, hauling, production | 37 | 0 | 0 | 1 | 0 | 3 |
 | [events-story](catalog/events-story.md) | Events, scenes, goals, lessons, story engine | 27 | 0 | 0 | 0 | 0 | 5 |
 | [galaxy-starmap](catalog/galaxy-starmap.md) | Map generator, structures, jumps, fleets, wars, heat, starmap UI | 21 | 2 | 0 | 0 | 0 | 2 |

@@ -233,7 +233,7 @@ def main():
     p.add_argument("--sprite-state",choices=("idle","active","both"),default="both")
     p.add_argument("--beauty-state",choices=("idle","active","both"),default="both")
     p.add_argument("--tier",type=int,default=1,choices=(1,2,3),help="Mk I / II / III (4x5 / 4x6 / 4x7)")
-    p.add_argument("--variant",default="KB",help="the tier fit-out concept (tierkit; KB is the approved one)")
+    p.add_argument("--variant",default="KB",help="the tier fit-out (tierkit; only KB remains)")
     p.add_argument("--asset",help="sprite family (default module.engine, module.engine_mk<n> for a tier)")
     a=p.parse_args(sys.argv[sys.argv.index("--")+1:])
     global ASSET
