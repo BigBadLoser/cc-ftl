@@ -52,7 +52,7 @@ export function closeFrame(fr: Frame, { g, hall, docks, paint }: FrameGrid): voi
       for (let tx = x0; tx < x1; tx++) area += rowsAt(tx);
       const mods = area >= 8 ? ['module.vending', 'module.bench'] : area >= 3 ? ['module.vending'] : [];
       for (const sign of [-1, 1]) {
-        const id = mods.length ? g.hall('hall', undefined, { role: 'hall', mods, w: x1 - x0, h: 2 }) : hall;
+        const id = mods.length ? g.hall('hall', undefined, { role: 'hall', use: 'alcove', mods, w: x1 - x0, h: 2 }) : hall;
         for (let tx = x0; tx < x1; tx++) paint(id, tx, tx + 1, (y) => sign * y >= lane.yc + 2 && sign * y <= fr.outer(tx) - 1);
       }
       i = j;

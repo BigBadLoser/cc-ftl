@@ -2,6 +2,7 @@ import type { Rng } from '../rng';
 import type { ModuleDef, ShipTemplate } from '../registry';
 import { lightRoom, placeOne, rotsOf } from './fit';
 import { furnishByRule, placeFeed } from './rooms/rules/place';
+import { furnishAlcove } from './rooms/alcove';
 import { RULES } from './rooms/rules/rules';
 import { Layout, type PlacedModule } from './layout';
 import { rotatedSize } from '../modules/footprint';
@@ -103,8 +104,8 @@ export function fitOut(
     // still dress them.
     roles.forEach((role, room) => {
       const spec = specs[room], mods = spec?.mods ?? [];
-      if (spec?.sealed || (!spec && role !== 'hall' && role !== 'plaza') || !RULES[role] || (o.bareHalls && role === 'hall')) return;
-      const got = furnishByRule(lay, rng, room, role, mods, rots, spec?.bastion ? { bastion: true } : {});
+      if (spec?.sealed || (!spec && role !== 'hall' && role !== 'plaza') || !RULES[role] || (o.bareHalls && role === 'hall' && spec?.use !== 'alcove')) return;
+      const got = spec?.use === 'alcove' ? furnishAlcove(lay, room, mods) : furnishByRule(lay, rng, room, role, mods, rots, spec?.bastion ? { bastion: true } : {});
       if (got) furnished.add(room);
       for (const idx of got ?? []) {
         const id = lay.modules[idx]?.def as string;
