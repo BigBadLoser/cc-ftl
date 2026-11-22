@@ -1,4 +1,5 @@
 import type { BaysLayout, ProgramRules } from '../../outlineRecipe';
+import { COCKPIT } from './cockpit';
 import { DECKS } from './decks';
 import { DRUM } from './drum';
 import { LANE } from './lane';
@@ -7,7 +8,7 @@ import type { BayPart } from './part';
 /** The battery: gun rooms along a maintenance corridor (its frame and bays from the mask's `battery`, battery.ts). */
 const BATTERY: BayPart = {};
 
-const PARTS: Record<'battery' | 'lane' | 'decks' | 'drum', BayPart> = { battery: BATTERY, lane: LANE, decks: DECKS, drum: DRUM };
+const PARTS: Record<'battery' | 'lane' | 'decks' | 'drum' | 'cockpit', BayPart> = { battery: BATTERY, lane: LANE, decks: DECKS, drum: DRUM, cockpit: COCKPIT };
 
 /** The room program's rules where no part or recipe sets them. */
 const PROGRAM: Required<ProgramRules> = { pods: false, mirror: false, beside: false, trauma: false, holds: false, grow: 2.5, least: 0, pd: true, blocks: true };

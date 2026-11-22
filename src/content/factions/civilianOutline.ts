@@ -40,7 +40,7 @@ const TUG: readonly Profile[] = [
 
 export const civilianOutline = {
   freighter: {
-    family: 'freighter', profiles: TUG, maxBeam: 27, crew: { sleep: 'bunks', rooms: 1 }, layout: { kind: 'bays', program: { pd: false, least: 64 } },
+    family: 'freighter', profiles: TUG, maxBeam: 27, crew: { sleep: 'bunks', rooms: 1 }, layout: { kind: 'bays', cockpit: true, program: { pd: false, least: 64 } },
     // (Its cargo the truss's containers: no holds aboard.)
     bonus: { crates: -8 }, truss: { banks: [4, 5], layers: 1 },
   },

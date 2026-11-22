@@ -29,7 +29,7 @@ export interface BlocksLayout { kind: 'blocks'; guns: 'forward' | 'spread' }
  *   in its deep ones; command, stores and systems forward.
  * - `drum`: a liner's drum amidships, its own rooms (parts/drum.ts): a garden, a ring corridor, cabins outboard.
  */
-export interface BaysLayout { kind: 'bays'; battery?: boolean; lane?: boolean; decks?: boolean; drum?: boolean; program?: ProgramRules }
+export interface BaysLayout { kind: 'bays'; battery?: boolean; lane?: boolean; decks?: boolean; drum?: boolean; /** A pusher's bridge in a pod on a front corner (PROTOTYPE). */ cockpit?: boolean; program?: ProgramRules }
 
 /** A bay ship's room program past its plan (bayRooms.ts), each set by its parts and over them by the recipe. */
 export interface ProgramRules {
