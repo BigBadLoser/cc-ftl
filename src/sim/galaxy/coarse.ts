@@ -1,5 +1,6 @@
 import type { Sim } from '../sim';
-import { controlOf, sectorNeighbours, sectorOwners, simulatedSectors, tidyControl } from './control';
+import { controlOf, sectorNeighbours, sectorOwners, simulatedSectors, structureOwner, tidyControl } from './control';
+import { portOf } from './portIndex';
 import { flipSector, reportFell } from './flip';
 import { nodesWithin } from './graph';
 import { strHash, unit } from './hash';
@@ -40,9 +41,14 @@ class Field {
 
   constructor(private readonly sim: Sim, readonly index: GalaxyIndex, readonly lanes: Map<string, string[]>) {
     this.owners = sectorOwners(sim);
+    const turn = sim.galaxy.turn;
     for (const [port, st] of Object.entries(sim.galaxy.ports)) {
       const sector = index.nodes.get(port.slice(0, port.indexOf('#')))?.sector;
-      if (sector) this.owed.set(sector, (this.owed.get(sector) ?? 0) + st.queue.length);
+      if (!sector) continue;
+      // Ships still owed: rebuild.ts only builds inside the fleet area, so count what the elapsed time would have built, wherever the port is.
+      const each = sim.content.galaxy?.fleet.ports[portOf(sim, port)?.kind ?? 'station']?.rebuildTurns ?? 0;
+      const built = turn >= st.next && each > 0 ? 1 + Math.floor((turn - st.next) / each) : 0;
+      this.owed.set(sector, (this.owed.get(sector) ?? 0) + Math.max(0, st.queue.length - built));
     }
   }
 
@@ -53,7 +59,10 @@ class Field {
     const owner = this.owners.get(id);
     const defs = this.sim.content.galaxy?.structures;
     let stations = 0;
-    for (const nid of s?.nodes ?? []) for (const st of this.index.nodes.get(nid)?.structures ?? []) if (st.genOwner === owner && defs?.[st.def]?.kind === 'station') stations++;
+    for (const nid of s?.nodes ?? []) {
+      const node = this.index.nodes.get(nid);
+      for (const st of node?.structures ?? []) if (node && structureOwner(this.sim, node, st) === owner && defs?.[st.def]?.kind === 'station') stations++;
+    }
     w = Math.max(0.2, SECTOR_BASE + (s?.hub ? SECTOR_HUB : 0) + SECTOR_PORT * stations - OWED_WEIGHT * (this.owed.get(id) ?? 0));
     this.weights.set(id, w);
     return w;
@@ -130,6 +139,8 @@ function mayFlip(sim: Sim, f: Field, id: string, owner: string | null, by: strin
   if (!s || s.hub || id === START_SECTOR) return false;
   if (turn - (sim.galaxy.control[id]?.since || -Infinity) < FLIP_COOLDOWN * COARSE_TURNS) return false;
   if (owner && (count.get(owner) ?? 0) <= FACTION_MIN_SECTORS) return false;
+  // Pressure outlives a peace for a few ticks: the taker must still be at war with the holder.
+  if (owner && !atWar(sim, by, owner)) return false;
   if (!(f.lanes.get(id) ?? []).some((a) => f.owners.get(a) === by)) return false;
   return nodeOf(sim, sim.galaxy.current)?.sector !== id;
 }

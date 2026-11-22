@@ -100,7 +100,8 @@ export function stepWar(sim: Sim, turn: number, tick: number, flips: readonly { 
     const key = pairKey(r.a, r.b);
     if (seen.has(key) || !mayChange(content, r.a, r.b)) continue;
     seen.add(key);
-    const e = g.war[key];
+    // A war that has run quietly since the start has no entry yet: make one so time at war wears it down like any other.
+    const e = g.war[key] ?? (alive.has(r.a) && alive.has(r.b) && stanceOf(sim, r.a, r.b) === 'war' ? pairOf(sim, r.a, r.b) : undefined);
     if (e) {
       e.heat *= HEAT_DECAY;
       if (e.stance === 'war') e.tired += TIRED_TICK;
