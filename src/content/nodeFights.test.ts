@@ -225,6 +225,36 @@ describe('allies come to the player\'s aid', () => {
     expect(eventsOf(run(cold.sim, TICK_HZ), 'engagement.started')).toHaveLength(0);
   });
 
+  it('a stalemate never sends away a side that cannot jump: a station that came to aid stays and the attacker leaves; stations only end in a standoff (#609 review)', () => {
+    const { sim, navy, merc } = attacked(AID_STANDING);
+    (sim.world.get(navy, ShipC) as { immobile?: true }).immobile = true; // an armed station
+    run(sim, TICK_HZ);
+    const e = engagements(sim)[0] as { calm?: number; hull?: number; leaving?: { side: number } };
+    expect(e).toBeDefined();
+    // The station is the weaker side, yet it cannot jump: the attacker is the one that goes.
+    const hit = sim.world.query(ModuleC).find((id) => shipIdOf(sim, sim.world.get(id, ModuleC) as { x: number; y: number }) === navy) as number;
+    (sim.world.get(hit, ModuleC) as { hp: number }).hp = 1;
+    run(sim, TICK_HZ - 1);
+    expect(sim.world.get(navy, ShipC)?.integrity).toBeLessThan(sim.world.get(merc, ShipC)?.integrity as number);
+    e.calm = sim.tick - ENGAGE_STALE_SEC * TICK_HZ;
+    e.hull = 0;
+    run(sim, TICK_HZ);
+    expect(e.leaving?.side).toBe(1);
+
+    // Neither side can jump: the fight ends at once as a standoff, holding no fleet.
+    const both = attacked(AID_STANDING);
+    for (const id of [both.navy, both.merc]) (both.sim.world.get(id, ShipC) as { immobile?: true }).immobile = true;
+    run(both.sim, TICK_HZ);
+    const f = engagements(both.sim)[0] as { calm?: number; hull?: number };
+    expect(f).toBeDefined();
+    f.calm = both.sim.tick - ENGAGE_STALE_SEC * TICK_HZ;
+    f.hull = 0;
+    const out = run(both.sim, TICK_HZ);
+    expect(eventsOf(out, 'engagement.ended')).toMatchObject([{ winner: null, stats: false }]);
+    expect(engagements(both.sim)).toEqual([]);
+    expect(engagedFleets(both.sim).size).toBe(0);
+  });
+
   it('armed stations count; a faction never aids against itself', () => {
     const { sim, navy } = attacked(AID_STANDING);
     (sim.world.get(navy, ShipC) as { immobile?: true }).immobile = true;

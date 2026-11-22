@@ -87,6 +87,11 @@ export interface Ship {
   killedBy?: 'player';
   /** Every enemy crew member is subdued and the player cannot reach the ship: it waits for the player's answer, let them go or take prisoners (`ship.settle`, capture/settle.ts). Cleared when the ship is reached or settled. */
   yielded?: true;
+  /**
+   * Taken in a fight between NPC ships (galaxy/engagementPrize.ts `takeShip`, #603): its beaten crew aboard are its captor's captives, so it never yields
+   * in a fight again, this one or a later one (`crewedFoe`). Kept with the ship, not the fight record.
+   */
+  taken?: true;
   /** Its loss (destroyed by the player, or taken) has been counted towards the player's notoriety. */
   tallied?: true;
   /** A bounty target: the id of the station job that wants it destroyed (galaxy/jobs.ts). */
