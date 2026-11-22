@@ -32,9 +32,9 @@ function scaled(sil: Silhouette, sx: number, sy: number): Mask {
   const W0 = Math.round(sil.length * sx);
   const bodyAt = (c: number): number => sil.body[Math.min(c, sil.body.length - 1)] as number;
   const H0 = Math.max(...sil.body.map((b) => Math.round(b * sy) + sil.axis - b));
-  // A rounded section's columns sampled from its nearer end, so its two ends mirror whatever the scale.
+  // A chamfered section's columns sampled from its nearer end, so its two ends mirror whatever the scale.
   const colOf = (x: number): number => {
-    for (const [a, b] of sil.round ?? []) {
+    for (const [a, b] of sil.chamfer ?? []) {
       const X0 = Math.round(a * sx), X1 = Math.round((b + 1) * sx) - 1;
       if (x < X0 || x > X1) continue;
       const e = Math.min(b - a, Math.floor(Math.min(x - X0, X1 - x) / sx));

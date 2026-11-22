@@ -1,14 +1,15 @@
 import type { RoomSpec } from '../../plan';
 import { BAND as SPINE, MIN_DEPTH, type Frame } from '../frame';
 import { SOLID } from '../regions';
+import { fillerSpec } from '../roomSize';
 import type { BayPart, DockSite } from './part';
 
 /**
  * A liner's drum (PROTOTYPE, #581): the widest section, its corners rounded. In the middle a square: a ring corridor
  * round a garden, the ring's outer walls on the hull line of the sections either side (that line runs on through the
  * drum), its sides as long as it is wide. Outboard of the square, north and south, a band of single cabins along the
- * hull, a suite in each corner (it reaches the ring's corner for its door); fore and aft of the square two cabins either
- * side of the spine (one on it, one outboard on the ring), which runs in to the ring. The rest of the ship is on bays: crew, mess, med bay and stores ahead of
+ * hull, a suite in each corner (it reaches the ring's corner for its door); fore and aft of the square a shared room
+ * either side of the spine (lounges forward, gyms aft), which runs in to the ring. The rest of the ship is on bays: crew, mess, med bay and stores ahead of
  * the drum (the airlocks in the middle of that section, clear of the drum), the machinery aft.
  */
 
@@ -21,6 +22,7 @@ const CABIN = 4;
 /** A corner suite's least floor. */
 const SUITE = 9;
 
+
 /** The drum: its end walls x0, x1, its hull's top row T, the sections' hull row H, the ring's end walls r0, r1. */
 interface Drum { x0: number; x1: number; T: number; H: number; r0: number; r1: number }
 
@@ -32,10 +34,10 @@ function drumIn(top: (x: number) => number, a: number, b: number): Drum | null {
   let m = a;
   for (let x = a; x <= b; x++) if (top(x) > top(m)) m = x;
   const T = top(m), deep = 0.75 * T;
+  // (Its end columns, straight up from the sections either side, are its end walls.)
   let x0 = m, x1 = m;
   while (x0 - 1 >= a && top(x0 - 1) >= deep) x0--;
   while (x1 + 1 <= b && top(x1 + 1) >= deep) x1++;
-  x0--; x1++;
   // The square's outer walls on the hull row of the sections either side (the higher: a neck is narrower).
   const H = Math.max(top(x0 - 1), top(x1 + 1)), k = Math.floor((x1 - x0 - 2 * H) / 2);
   if (T - H - 1 < ROWS || H - 4 < SPINE + 1 || k < END + 1) return null;
@@ -67,13 +69,11 @@ function cellOf(d: Drum, x: number, y: number): string | null {
     if (ay === H - 3 || x === r0 + 3 || x === r1 - 3) return null;
     return 'garden';
   }
-  // The spine in through the ring's end walls; fore and aft of the square, either side of it, a cabin on the spine and,
-  // where there are rows for two, one outboard of it on the ring.
+  // The spine in through the ring's end walls; fore and aft of the square, either side of it, a shared room: lounges
+  // forward, gyms aft.
   if (ay < SPINE) return 'hall';
   if (x === r0 || x === r1 || ay === SPINE) return null;
-  const n = H - 1 - SPINE, mid = SPINE + 1 + Math.floor((n - 1) / 2);
-  if (n < 2 * ROWS + 1) return `cabin:${side}${end}`;
-  return ay === mid ? null : `cabin:${side}${end}${ay < mid ? 'i' : 'o'}`;
+  return `${end === 'f' ? 'lounge' : 'gym'}:${side}`;
 }
 
 /** The drum where the frame has one. */
@@ -102,6 +102,8 @@ function cells(fr: Frame): Map<string, [number, number][]> {
 const SPECS: Record<string, (area: number) => RoomSpec> = {
   cabin: () => ({ role: 'quarters', mods: ['module.bed'], w: 3, h: 3 }),
   suite: () => ({ role: 'quarters', mods: ['module.bed', 'module.bed'], w: 4, h: 3 }),
+  lounge: (a) => fillerSpec('lounge', a),
+  gym: (a) => fillerSpec('gym', a),
   garden: (a) => ({ role: 'support', mods: [...Array<string>(Math.max(2, Math.floor(a / 12))).fill('module.planter'), 'module.bench', 'module.bench'], w: 5, h: 5 }),
 };
 /** Beds a drum room holds. */

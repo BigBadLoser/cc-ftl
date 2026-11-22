@@ -7,7 +7,7 @@ import type { OutlineRecipe, Profile } from '../../sim';
  * (a square ring round a garden, its walls on the hull line of the sections either side), the machinery aft, the drive.
  * The sections either side of the drum one width, so that line runs straight through it.
  */
-const DRUM = (len: [number, number]): { len: [number, number]; half: [number, number]; round: [number, number] } => ({ len, half: [15, 15], round: [8, 9] });
+const DRUM = (len: [number, number]): { len: [number, number]; half: [number, number]; chamfer: [number, number] } => ({ len, half: [15, 15], chamfer: [3, 3] });
 const LINER: readonly Profile[] = [
   // A round bow, a long forward section, a flared drive.
   { id: 'liner.drum', nose: { style: 'round', len: [8, 10], front: [3, 4] },
@@ -36,9 +36,10 @@ export const civilianOutline = {
     depts: {
       // (Its guns with the systems, a hangar with the stores: it has no flight deck or battery to put them in.)
       of: { weapons: 'systems', hangar: 'stores' },
-      // (Spare floor: power and a workshop by the machinery, a lounge or gym by the crew; only holds more than once.)
-      fill: { systems: ['battery', 'workshop'], hab: ['lounge', 'gym'] },
-      once: ['lounge', 'gym', 'workshop', 'farm', 'battery', 'provisions'],
+      // (Spare floor: power and a workshop by the machinery, stores by the crew (the lounges and gyms are the drum's);
+      // only holds more than once.)
+      fill: { systems: ['battery', 'workshop'], hab: ['hold'] },
+      once: ['workshop', 'farm', 'battery', 'provisions'],
       // (Ahead of the drum: the crew and their mess, and the stores and sick bay; the machinery aft of it. No command
       // run: its bridge is the bow.)
       forward: [['hab', 'stores'], ['stores', 'hab']],

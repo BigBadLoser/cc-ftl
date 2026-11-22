@@ -13,8 +13,8 @@ import type { Filler } from './roomSize';
  */
 export type Dept = ShipDept;
 
-/** A department's rooms a side: floor, slots, and whether one has an annex (a bay of two tiers). */
-export type Need = { area: number; rooms: number; deep?: boolean };
+/** A department's rooms a side: floor, slots, whether one has an annex (a bay of two tiers), its longest room's columns. */
+export type Need = { area: number; rooms: number; deep?: boolean; len?: number };
 
 /** A room's department by default (a recipe's `DeptRules.of` over it). */
 function deptOf(r: RoomSpec): Dept {
@@ -52,7 +52,8 @@ export function zonesOf(
       for (const [n, d] of order.entries()) {
         const run = runs[n] as number[], nd = need[d];
         const slots = run.reduce((t, k) => t + tiers(k), 0), got = run.reduce((t, k) => t + area(k), 0);
-        if (nd && (slots < Math.ceil(nd.rooms) || (nd.deep && !run.some((k) => tiers(k) > 1)))) cost += 1000;
+        const long = run.length > 0 ? (bays[run[run.length - 1] as number] as Bay).x1 - (bays[run[0] as number] as Bay).x0 : 0;
+        if (nd && (slots < Math.ceil(nd.rooms) || (nd.deep && !run.some((k) => tiers(k) > 1)) || long < (nd.len ?? 0))) cost += 1000;
         cost += Math.abs(got / floor - (nd?.area ?? 0) / total);
       }
       if (!best || cost < best.cost) best = { cost, of: runs.flatMap((r, n) => r.map(() => order[n] as Dept)) };

@@ -392,7 +392,7 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
     const need: Partial<Record<Dept, Need>> = {};
     for (const r of rest.flatMap((it) => real(it.specs))) {
       const n = need[depts.of(r)] ?? { area: 0, rooms: 0 };
-      need[depts.of(r)] = { area: n.area + 0.5 * (r.w * r.h + (r.annex ? r.annex.w * r.annex.h : 0)), rooms: n.rooms + (r.annex ? 1 : 0.5), ...(n.deep || r.annex ? { deep: true } : {}) };
+      need[depts.of(r)] = { area: n.area + 0.5 * (r.w * r.h + (r.annex ? r.annex.w * r.annex.h : 0)), rooms: n.rooms + (r.annex ? 1 : 0.5), ...(n.deep || r.annex ? { deep: true } : {}), len: Math.max(n.len ?? 0, r.w) };
     }
     alone = new Set((Object.keys(need) as Dept[]).filter((d) => (need[d]?.rooms ?? 0) <= 1));
     zone = zonesOf(fr, bays, new Set(guns0.map((p) => p.spot.i)), flight, need, (k) => area(k, k + 1, 'full'), part.zones, depts.forward);
