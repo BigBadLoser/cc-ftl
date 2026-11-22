@@ -71,7 +71,7 @@ function aside(c: Ctx, id: string, pieces: readonly Piece[], clear: ReadonlySet<
  * count from `most` up whose tables leave `most` clear, those spread evenly along it; else the count that leaves the
  * most clear, if that is `least` at least. Empty when none does.
  */
-export function tablesClear(c: Ctx, most: number, least: number, lay: (m: number) => Piece[]): Piece[] {
+function lineClear(c: Ctx, most: number, least: number, lay: (m: number) => Piece[]): Piece[] {
   if (most < 1) return [];
   const clear = doorways(c);
   const free = (p: Piece): boolean => { const d = c.defs[p.def]; return (d ? footprintTiles(d, p.x, p.y, p.rot) : [p]).every((t) => !clear.has(key(t.x, t.y))); };
@@ -89,6 +89,22 @@ export function tablesClear(c: Ctx, most: number, least: number, lay: (m: number
     return keep(pieces, most <= 1 ? [ok[(ok.length - 1) >> 1] as Piece] : Array.from({ length: most }, (_, i) => ok[Math.round((i * (ok.length - 1)) / (most - 1))] as Piece));
   }
   return best && best.ok.length >= least && best.ok.length > 0 ? keep(best.pieces, best.ok) : [];
+}
+
+/**
+ * `lineClear` where the line may stand a tile off the middle across the room: moved that far across (`tall`: along x),
+ * for a doorway on one side that a centred table's chairs would block. The centred line first, then a tile either way;
+ * the first that holds `most` tables, else the one with the most.
+ */
+export function tablesClear(c: Ctx, most: number, least: number, lay: (m: number) => Piece[], tall = false): Piece[] {
+  let best: Piece[] = [];
+  const n = (ps: Piece[]): number => ps.filter((p) => p.def === T).length;
+  for (const shift of [0, -1, 1]) {
+    const got = lineClear(c, most, least, (m) => lay(m).map((p) => (tall ? { ...p, x: p.x + shift } : { ...p, y: p.y + shift })));
+    if (n(got) >= most) return got;
+    if (n(got) > n(best)) best = got;
+  }
+  return best;
 }
 
 /** A mess arrangement as laid: see the file comment. */

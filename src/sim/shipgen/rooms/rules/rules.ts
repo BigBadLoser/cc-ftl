@@ -154,7 +154,7 @@ function m4(c: Ctx): Piece[] {
     : [P(G, 0, off(c, 0, 0, 0, 1), 3), ...(c.h >= 5 ? [P(G, 0, off(c, 0, c.h - 1, c.h - 2, -1), 3)] : [])];
   return [...galleys, ...bands.flatMap(([a, b], k) => {
     const most = Math.floor(n / lines) + (k < n % lines ? 1 : 0), least = Math.floor(planned / lines) + (k < planned % lines ? 1 : 0);
-    return tablesClear(c, most, least, (m) => (tall ? middle(a as number, 2, b as number, c.h - 1, false, true, m) : middle(2, a as number, c.w - 1, b as number, true, true, m)));
+    return tablesClear(c, most, least, (m) => (tall ? middle(a as number, 2, b as number, c.h - 1, false, true, m) : middle(2, a as number, c.w - 1, b as number, true, true, m)), tall);
   })];
 }
 
