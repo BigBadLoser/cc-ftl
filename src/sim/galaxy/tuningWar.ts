@@ -52,3 +52,15 @@ export const JOIN_STANDING = 2;
 export const JOIN_WIN_STANDING = 3;
 /** Ships (and armed stations) of a faction the player stands at least AID_STANDING with take on a ship that fires on the player in their node. */
 export const AID_STANDING = 3;
+
+/**
+ * NPC ships going about their business in the player's node (#603, galaxy/traffic.ts). At most NPC_ACTIVITIES actions run at once (a station shuttle's
+ * call, an NPC's mining pod out, a patrol's inspection of an NPC ship). A station's shuttle calls at a visiting trader for TRADE_HOP_SEC, then rests
+ * TRADE_HOP_EVERY_SEC before it calls again. A patrol in the node inspects a non-hostile NPC trader or miner in a galaxy turn whose roll passes
+ * INSPECT_NPC_CHANCE (one at a time); with INSPECT_NPC_SEIZE (or when the search found contraband) the inspectors seize cargo and the news says so.
+ */
+export const NPC_ACTIVITIES = 2;
+export const TRADE_HOP_SEC = 30;
+export const TRADE_HOP_EVERY_SEC = 90;
+export const INSPECT_NPC_CHANCE = 0.5;
+export const INSPECT_NPC_SEIZE = 0.2;

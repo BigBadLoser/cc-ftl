@@ -126,7 +126,7 @@ describe('node content in generated sectors', () => {
           const kinds = n.structures.filter((s) => placed.has(s.def));
           // A faction's own station may be a research one too, so only the table's non-station kinds are exclusive.
           expect(kinds.filter((s) => s.def !== 'structure.station_research').length).toBeLessThanOrEqual(1);
-          const fk = n.faction ? (galaxy.factions as Record<string, { kind: string }>)[n.faction]?.kind : null;
+          const fk = n.genFaction ? (galaxy.factions as Record<string, { kind: string }>)[n.genFaction]?.kind : null;
           if (fk === 'pirates' || fk === 'rogue') expect(kinds.some((s) => s.def === 'structure.station_research')).toBe(false);
           if (n.id === 's.0.0.n0') expect(kinds.some((s) => s.def === 'structure.derelict')).toBe(false);
         }

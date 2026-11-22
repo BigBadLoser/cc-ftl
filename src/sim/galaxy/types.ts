@@ -1,9 +1,13 @@
 import type { ItemQty } from '../registry';
+import type { PairState, SectorControl } from './controlTypes';
 import type { FleetRole, ShipSize } from './defs';
 import type { Vec } from './geometry';
+import type { NewsItem } from './newsTypes';
 import type { SceneSpec, SceneWatch } from '../scene/types';
+export type { PairState, SectorControl };
 
 export type { FleetRole, ShipSize } from './defs';
+export type { NewsItem, NewsKind } from './newsTypes';
 
 /**
  * The starmap model. Terms (user decision): a **node** is one playable location (older code says "sector" for it); a
@@ -14,7 +18,8 @@ export type { FleetRole, ShipSize } from './defs';
 /** A structure at a node: its StructureDef id and the faction that owns it (null = nobody, e.g. a derelict). */
 export interface StructureRef {
   def: string;
-  owner: string | null;
+  /** The generated owner. Read the current one through `structureOwner` (control.ts): territory can change hands. */
+  genOwner: string | null;
 }
 
 /** A ship present at a node when the galaxy was generated (galaxy faction, generator seed, depth). */
@@ -32,8 +37,8 @@ export interface NodeData {
   y: number;
   name: string;
   danger: number;
-  /** Territory (the sector's faction); null = open space. */
-  faction: string | null;
+  /** Territory as generated (the sector's faction); null = open space. Read the current owner through `nodeOwner` (control.ts). */
+  genFaction: string | null;
   structures: StructureRef[];
   /** Item ids the node can supply (from its structures). */
   resources: string[];
@@ -49,7 +54,8 @@ export interface SectorData {
   /** Radius of the disc the nodes (plus padding) lie in. */
   r: number;
   name: string;
-  faction: string | null;
+  /** The generated faction. Read the current owner through `sectorOwner` (control.ts). */
+  genFaction: string | null;
   danger: number;
   nodes: string[];
   /** Padded convex hull of the nodes, counter-clockwise. */
@@ -152,27 +158,6 @@ export interface WreckSeed {
   /** The galaxy faction it flew for. */
   faction: string;
   turn: number;
-}
-
-/**
- * What the news log reports (news.ts). `destroyed`: `who` destroyed `foe`; `driven`: `who` drove `foe` off; `clash`: `who` and `foe` fought to a bloody draw;
- * `raid`: `who` raided a den and destroyed `foe`; `cut`: a trade route is cut, `foe` (a trader) was lost near here; `loot`: `who` took `count` of `item`
- * from `foe`; `shortage`: the port here is short of `item`; `rebuilt`: `who` was launched from the port here; `hunt`: `who` set out from here after the player.
- */
-export type NewsKind = 'destroyed' | 'driven' | 'clash' | 'raid' | 'cut' | 'loot' | 'shortage' | 'rebuilt' | 'hunt' | 'joined' | 'taken';
-
-export interface NewsItem {
-  id: number;
-  turn: number;
-  kind: NewsKind;
-  /** Where it happened (a node id; for a clash on a lane, the end it was settled at). */
-  node: string;
-  who: string;
-  faction: string;
-  foe?: string;
-  foeFaction?: string;
-  item?: string;
-  count?: number;
 }
 
 /**
@@ -459,6 +444,10 @@ export interface GalaxyState {
   travel: Travel | null;
   /** A distress call waiting for its tug, or null (stranded.ts). */
   distress: Distress | null;
+  /** Sectors whose control differs from their generated state, by sector id (control.ts). No entry = the generated owner, no pressure. */
+  control: Record<string, SectorControl>;
+  /** Faction pairs whose stance differs from the relations table's baseline, or that carry war weariness or friction, by sorted pair key (relations.ts, war.ts). */
+  war: Record<string, PairState>;
   /** Bumped on every change the starmap view shows. */
   rev: number;
 }
