@@ -28,13 +28,13 @@ const LINER: readonly Profile[] = [
 ];
 
 /**
- * A freighter: a pusher. A short, blunt hull (bridge forward, looking down the truss; crew, workshop, machinery, drive)
+ * A freighter: a pusher. A short hull, its bow near square (its cockpit's pod gives it its shape) (bridge forward, looking down the truss; crew, workshop, machinery, drive)
  * behind a long truss of sealed containers it pushes (`truss`): big ship, small floor.
  */
 const TUG: readonly Profile[] = [
-  { id: 'tug.block', nose: { style: 'stepped', len: [4, 6], front: [5, 6] }, sections: [{ len: [20, 26], half: [9, 10] }],
+  { id: 'tug.block', nose: { style: 'stepped', len: [2, 3], front: [8, 9] }, sections: [{ len: [20, 26], half: [9, 10] }],
     stern: { kind: 'flare', len: [6, 8], out: [2, 3] } },
-  { id: 'tug.round', nose: { style: 'round', len: [5, 7], front: [5, 6] }, sections: [{ len: [18, 24], half: [10, 11] }],
+  { id: 'tug.round', nose: { style: 'round', len: [3, 3], front: [8, 9] }, sections: [{ len: [18, 24], half: [10, 11] }],
     stern: { kind: 'bank', len: [0, 0], out: [0, 0] } },
 ];
 
