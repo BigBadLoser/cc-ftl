@@ -255,6 +255,6 @@ def rig(state, rot, *_):
             aim = (site[0] + SPREAD[0] * ca, site[1] + SPREAD[1] * sa, site[2] + up)       # each its own spot
             arm(R, sh, (ca, sa), tan, kind, wrist, aim, True)
         else:                                                                          # folded: curled in over the ring,
-            arm(R, sh, (ca, sa), tan, kind, (hu + 0.2 * ca, hv + 0.2 * sa, hz + 0.08),      # the tool down into its middle
-                (hu + 0.13 * ca, hv + 0.13 * sa, hz - 0.22), False, curl=True)
+            arm(R, sh, (ca, sa), tan, kind, (hu + 0.22 * ca, hv + 0.22 * sa, hz + 0.16),    # knee leaning back a little,
+                (hu + 0.15 * ca, hv + 0.15 * sa, hz - 0.1), False, curl=True)                # the tool down into its middle
     return k.build()
