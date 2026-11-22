@@ -13,6 +13,7 @@ import {
   NOTORIETY_WEIGHT, OUTLAW_KINDS, STATION_NOTORIETY, WANTED_AT,
 } from './tuningHeat';
 import type { FleetRole } from './defs';
+import { playerFightPressure } from './pressure';
 
 /**
  * The player's notoriety (see tuningHeat.ts). One number on `GalaxyState.heat`, written only here: kills and captures the player made
@@ -107,6 +108,7 @@ function charge(sim: Sim, id: number, ship: Ship, captured: boolean): boolean {
     sim.story.reputation[key] = reputationOf(sim.story, key) - KILL_REPUTATION;
   }
   addNotoriety(sim, n, faction);
+  playerFightPressure(sim, faction);
   return outlaw || tier === 'hostile';
 }
 

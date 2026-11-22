@@ -1,5 +1,6 @@
 import type { Sim } from '../sim';
 import { repKey } from '../galaxy/standing';
+import { nodeOwnerAt } from '../galaxy/control';
 import { galaxyIndex, nodeOf } from '../galaxy/state';
 import type { GoalActDef, GoalCheck } from './defs';
 import { giveItems, setFlag } from './effects';
@@ -43,7 +44,7 @@ function payReward(sim: Sim, act: GoalActDef): void {
   const r = act.reward;
   if (r.credits) addCredits(sim, r.credits);
   for (const q of r.items ?? []) giveItems(sim, q.item, q.count);
-  const owner = r.reputation ? nodeOf(sim, sim.galaxy.current)?.faction : null;
+  const owner = r.reputation ? nodeOwnerAt(sim, sim.galaxy.current) : null;
   if (r.reputation && owner) {
     const key = repKey(sim, owner);
     sim.story.reputation[key] = reputationOf(sim.story, key) + r.reputation;

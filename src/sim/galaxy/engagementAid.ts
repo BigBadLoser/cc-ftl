@@ -11,7 +11,7 @@ import { engagementId } from './engagementFlow';
 import { engagements, inEngagement, sideIn } from './engagements';
 import { contactOf, shipmates } from './groups';
 import { factionOfShip } from './heat';
-import { stanceBetween } from './relations';
+import { stanceOf } from './relations';
 import { standing, tierOf } from './standing';
 import { AID_STANDING } from './tuningWar';
 
@@ -42,7 +42,7 @@ export function canAid(sim: Sim, id: number, foe: string | null): boolean {
   const owner = factionOfShip(sim, id, s, s.faction);
   const content = sim.content.galaxy;
   if (!owner || !content || owner === foe || tierOf(sim, owner) === 'hostile' || standing(sim, owner) < AID_STANDING) return false;
-  return !foe || stanceBetween(content, owner, foe) !== 'allied';
+  return !foe || stanceOf(sim, owner, foe) !== 'allied';
 }
 
 const member = (sim: Sim, ship: number): EngagementMember => {
