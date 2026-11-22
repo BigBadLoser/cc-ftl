@@ -103,6 +103,17 @@ export function createDescriber(sim: Sim) {
       case 'crew.imprisoned': return { kind: 'crew', tone: side(e.crew), text: `${crewName(e.crew)} locked up aboard ${shipName(e.ship)}`, ...sub(crewSubject(sim, e.crew)) };
       case 'crew.surrendered': return { kind: 'crew', tone: side(e.crew), text: `${crewName(e.crew)} surrenders`, ...sub(crewSubject(sim, e.crew)) };
       case 'robot.wrecked': return { kind: isOnOurSide(sim, e.crew) ? 'crew.died' : 'kill', tone: side(e.crew), text: `${crewName(e.crew)} wrecked`, ...sub(crewTile(sim, e.crew)) };
+      case 'engagement.started': return e.kind === 'aid'
+        ? { kind: 'combat', tone: 'good', text: `${e.who} comes to your aid against ${e.foe}`, ...(e.ship ? onShip(e.ship) : here()) }
+        : { kind: 'combat', tone: 'warn', text: `Fight: ${e.who} (${factionName(e.faction)}) attacks ${e.foe} (${factionName(e.foeFaction)})`, ...(e.ship ? onShip(e.ship) : here()) };
+      case 'engagement.ended': {
+        const [won, lost] = e.winner === 1 ? [e.foe, e.who] : [e.who, e.foe];
+        const end = e.winner === null ? `${e.who} and ${e.foe} ${e.stats ? 'broke off' : 'both left the fight'}` : e.taken ? `${won} took ${lost}` : `${won} won the fight against ${lost}`;
+        if (!e.standing || !e.faction || e.joined === undefined) return { kind: 'combat', tone: 'info', text: end, ...here() };
+        const [helped, fought] = e.joined === 0 ? [e.who, e.foe] : [e.foe, e.who];
+        const deed = e.winner === e.joined ? 'drive off' : 'stand against';
+        return { kind: 'combat', tone: 'good', text: `${end}. ${helped}'s crew saw you ${deed} ${fought}: +${e.standing} standing with ${factionName(e.faction)}`, ...here() };
+      }
       case 'galaxy.hunt': return { kind: 'galaxy', tone: 'bad', text: `${factionName(e.faction)} hunters are on your trail (${e.ships} ship${e.ships === 1 ? '' : 's'})`, ...node(e.node) };
       case 'galaxy.distressSent': return { kind: 'galaxy', tone: 'info', text: 'Distress call sent: help is on its way', ...node(e.node) };
       case 'galaxy.towArrived': return { kind: 'galaxy', tone: 'good', text: `A tug brought ${e.fuel} fuel${e.paid ? `, ${e.paid} ₵ paid` : ''}${e.owed ? `, ${e.owed} ₵ owed` : ''}`, ...here() };

@@ -10,6 +10,7 @@ import { ProjectileC, ShipC, type Faction, type Target } from './components';
 import { isDormant } from './dormant';
 import { factionsHostile, rogueAlly } from './factions';
 import { shipById } from './shipQuery';
+import { opposed } from '../galaxy/engagements';
 
 /**
  * Who a ship's defences may shoot (point defence, defence drones): only what is already hostile, so defending never provokes anyone
@@ -28,7 +29,9 @@ export function shipCentre(sim: Sim, ship: number): { x: number; y: number } | n
  */
 export function atWarWith(sim: Sim, ship: number, faction: Faction | undefined, homeShip: number): boolean {
   const mine = shipById(sim, ship)?.faction;
-  if (!mine || !faction || mine === 'neutral' || faction === 'neutral' || !factionsHostile(mine, faction) || truceHolds(sim)) return false;
+  if (!mine || !faction || truceHolds(sim)) return false;
+  if (opposed(sim, ship, homeShip)) return true; // on opposite sides of a fight between NPC ships here (galaxy/engagements.ts)
+  if (mine === 'neutral' || faction === 'neutral' || !factionsHostile(mine, faction)) return false;
   if (mine === 'rogue' && rogueAlly(sim, homeShip)) return false;
   if (faction === 'rogue' && rogueAlly(sim, ship)) return false;
   return true;

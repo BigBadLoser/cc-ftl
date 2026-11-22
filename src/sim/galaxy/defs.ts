@@ -113,6 +113,11 @@ export interface GalaxyFactionDef {
    * hail like traders.
    */
   guardsRoutes?: true;
+  /**
+   * A beaten ship that yields to it in a fight between NPC ships (`Ship.yielded`) is taken as its prize, crew and all (the pirate habit); without it
+   * the beaten ship is let go and leaves (galaxy/engagementPrize.ts `answerYields`). The player answers for itself (capture/settle.ts).
+   */
+  takesPrizes?: true;
 }
 
 /**

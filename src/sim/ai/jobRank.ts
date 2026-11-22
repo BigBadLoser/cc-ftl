@@ -4,6 +4,7 @@ import { traitFlag } from '../crew/traits';
 import { CrewC, type Job, type Position, type Priorities } from '../crew/components';
 import { freeOperatorFor, jobFits } from '../crew/jobFit';
 import { operateAffinity } from '../combat/operators';
+import { atBattle } from '../combat/engage';
 import { ModuleC } from '../modules/components';
 import { AllegianceC } from '../fight/components';
 import { shipIdOf } from '../regions';
@@ -26,9 +27,9 @@ import { EVA_JOB_PENALTY, OPERATE_MAX_LEVEL, PHOBIA_BATTLE_RADIUS, PHOBIA_JOB_PE
 function canRelieve(sim: Sim, crewId: number, job: Job): boolean {
   const role = sim.world.get(crewId, CrewC)?.role;
   const player = sim.world.get(crewId, AllegianceC)?.faction === 'player';
-  if (!role || !(player || sim.content.roles[role]?.relievesStations) || !sim.sector.inCombat || sim.tick - (job.freeSince ?? sim.tick) < RELIEF_AFTER_SEC * TICK_HZ) return false;
+  if (!role || !(player || sim.content.roles[role]?.relievesStations) || sim.tick - (job.freeSince ?? sim.tick) < RELIEF_AFTER_SEC * TICK_HZ) return false;
   const m = sim.world.get(job.target ?? 0, ModuleC);
-  return !!m && sim.content.modules[m.def]?.console !== 'shields' && freeOperatorFor(sim, shipIdOf(sim, m), job) === 0;
+  return !!m && atBattle(sim, shipIdOf(sim, m)) && sim.content.modules[m.def]?.console !== 'shields' && freeOperatorFor(sim, shipIdOf(sim, m), job) === 0;
 }
 
 /**
