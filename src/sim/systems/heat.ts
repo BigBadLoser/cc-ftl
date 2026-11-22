@@ -2,6 +2,7 @@ import { CombatC, ShipC } from '../combat/components';
 import { OVERCHARGE_SYSTEMS, passiveCooling, ventRadiatorCooling, addHeat, shieldsDown } from '../combat/heat';
 import { IDLE_COOL_PER_SEC, LOCKOUT_EXIT_HEAT, OVERCHARGE_HEAT_PER_SEC, VENT_COOL_PER_SEC, VENT_SEC } from '../combat/heatTuning';
 import type { Sim } from '../sim';
+import { atBattle } from '../combat/engage';
 import { TICK_HZ } from '../time';
 
 /**
@@ -25,7 +26,7 @@ export function heatSystem(sim: Sim): void {
       }
     }
     if (h.value <= 0 && h.lockout === 0 && h.vent === 0) continue;
-    if (!sim.sector.inCombat || ship.state !== 'active') {
+    if (!atBattle(sim, id) || ship.state !== 'active') {
       h.value = Math.max(0, h.value - IDLE_COOL_PER_SEC / TICK_HZ);
       h.lockout = 0;
       h.vent = 0;

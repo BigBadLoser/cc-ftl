@@ -8,17 +8,35 @@ import { isBreaking, isIncapacitated } from '../crew/helpers';
 import type { Sim } from '../sim';
 import { AllegianceC, EquipOrderC, FighterC, SurrenderedC } from './components';
 import { shipById } from '../combat/shipQuery';
+import { opposed } from '../galaxy/engagements';
+import { AboardC, VehicleC } from '../vehicles/components';
 import type { Faction } from '../combat/components';
 import { AlienC } from '../aliens/components';
 import { StationCrewC, WantedC } from '../stations/components';
 import { AwayC } from '../away/components';
 
 /**
- * True if the two crew members are on opposing sides (see factionsHostile: neutral fights nobody, rogue everybody), or one
- * is wanted by the station the other belongs to (an intruder, or invited crew who attacked: stations/alarm).
+ * The ship a crew member serves, or 0: the one a boarding party left (`Allegiance.ship`), else the ship of their own side they stand on or whose
+ * shuttle they ride. A crew member aboard a ship of another side (a prisoner, a guest) serves none of theirs there.
+ */
+export function crewShipOf(sim: Sim, crew: number): number {
+  const a = sim.world.get(crew, AllegianceC);
+  if (!a) return 0;
+  if (a.ship !== undefined) return a.ship;
+  const pos = sim.world.get(crew, PositionC);
+  const aboard = pos ? undefined : sim.world.get(crew, AboardC);
+  const id = pos ? shipIdOf(sim, pos) : (aboard && sim.world.get(aboard.vehicle, VehicleC)?.homeShip) ?? 0;
+  return id && shipById(sim, id)?.faction === a.faction ? id : 0;
+}
+
+/**
+ * True if the two crew members are on opposing sides (see factionsHostile: neutral fights nobody, rogue everybody), serve ships on opposite sides of
+ * a fight between NPC ships here (galaxy/engagements.ts: NPCs fight each other as they would the player), or one is wanted by the station the other
+ * belongs to (an intruder, or invited crew who attacked: stations/alarm).
  */
 export function isHostile(sim: Sim, a: number, b: number): boolean {
   if (factionsHostile(sim.world.get(a, AllegianceC)?.faction, sim.world.get(b, AllegianceC)?.faction) && !machineAllies(sim, a, b)) return true;
+  if (sim.sector.engagements?.length && opposed(sim, crewShipOf(sim, a), crewShipOf(sim, b))) return true;
   const wanted = (x: number, y: number): boolean => {
     const w = sim.world.get(x, WantedC);
     return !!w && sim.world.get(y, StationCrewC)?.station === w.station;
@@ -53,6 +71,7 @@ export function playerFoes(sim: Sim): number[] {
  * for every pair (a machine ally only ever removes hostility), so a caller may skip the pairwise search.
  */
 export function mayHaveHostilePair(sim: Sim, crew: readonly number[]): boolean {
+  if (sim.sector.engagements?.length) return true; // NPC crews of one side may serve ships on opposite sides of a fight
   const factions: (Faction | undefined)[] = [];
   for (const id of crew) {
     if (sim.world.has(id, WantedC)) return true;
@@ -116,7 +135,7 @@ export function headingAboard(sim: Sim, crew: number): boolean {
 }
 
 /**
- * True if the crew member is on a ship of another faction than their own (a boarder). Aliens never are, nor is anyone aboard by the ship's leave (a
+ * True if the crew member is on a ship of another faction than their own, or of the other side of a fight between NPC ships (a boarder). Aliens never are, nor is anyone aboard by the ship's leave (a
  * consent grant: an aid party, the shipyard's contractors, a skiff's party let dock, consent/).
  */
 export function isInvader(sim: Sim, crew: number): boolean {
@@ -125,7 +144,9 @@ export function isInvader(sim: Sim, crew: number): boolean {
   const pos = sim.world.get(crew, PositionC);
   const id = pos ? shipIdOf(sim, pos) : 0;
   const ship = pos && shipById(sim, id);
-  return !!faction && !!ship && ship.faction !== faction && !guestOn(sim, crew, id);
+  if (!faction || !ship || guestOn(sim, crew, id)) return false;
+  const own = sim.world.get(crew, AllegianceC)?.ship;
+  return ship.faction !== faction || (own !== undefined && own !== id && opposed(sim, own, id));
 }
 
 /**

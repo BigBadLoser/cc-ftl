@@ -1,5 +1,6 @@
 import { banned, breachTruce, truceHolds } from '../blackmarket/truce';
 import { markProvoked, shipmates } from '../galaxy/groups';
+import { noteJoin } from '../galaxy/engagements';
 import type { Sim } from '../sim';
 import { ShipC } from './components';
 import { wake } from './dormant';
@@ -31,6 +32,7 @@ export function provokable(sim: Sim, ship: number): boolean {
 export function hostileAct(sim: Sim, ship: number, why: 'fired' | 'boarded' | 'ambush' | 'inspection'): void {
   const s = sim.world.get(ship, ShipC);
   if (!s || s.faction === 'player' || (s.state !== 'active' && s.state !== 'disabled')) return;
+  noteJoin(sim, ship); // a fight between NPC ships here: the player takes a side (galaxy/engagements.ts)
   if (truceHolds(sim)) return breachTruce(sim);
   if (banned(sim)) return; // the ban has every ship there for its length, and gives them back after
   // A den or outpost wakes, and is then provoked like any ship (a no-op for a den, hostile already): one act turns a neutral outpost.

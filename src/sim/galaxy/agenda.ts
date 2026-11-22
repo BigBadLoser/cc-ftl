@@ -220,10 +220,11 @@ export function strand(sim: Sim, f: Fleet, turn: number): void {
   f.dwell = intIn(REPAIR_TURNS, rnd(sim, f, turn, SALT.repair));
 }
 
-/** The fleet runs for home (or, at home, for a neighbouring node and back): one hop now, the rest of the way as its route. */
+/** The fleet runs for home (or, at home or with no way home known, for a neighbouring node, and back home if there): one hop now, the rest of the way as its route. */
 export function retreat(sim: Sim, f: Fleet, turn: number): void {
   const home = portNode(f.home);
-  const path = f.node === home ? [reachFrom(sim, home).order[1], home].filter((n): n is string => !!n) : pathTo(sim, f.node, home);
+  const way = f.node === home ? [] : pathTo(sim, f.node, home);
+  const path = way.length ? way : [reachFrom(sim, f.node).order[1], f.node === home ? home : undefined].filter((n): n is string => !!n);
   if (!path.length) return;
   f.from = f.node;
   f.node = path[0] as string;

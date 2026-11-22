@@ -22,7 +22,6 @@ const BASELINE: Record<string, number> = {
   'src/render/scene.ts': 987,
   'src/render/shuttleView.ts': 405,
   'src/sim/commands.ts': 425,
-  'src/sim/events.ts': 425,
   'src/sim/galaxy/types.ts': 453,
   'src/sim/registry.ts': 694,
   'src/sim/shipgen/arranger.ts': 418,

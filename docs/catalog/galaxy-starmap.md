@@ -2,7 +2,7 @@
 
 Terminology: a **node** is one playable grid, a **sector** is a group of nodes, **hyperlanes** link sectors; clusters (provinces) group sectors under a faction.
 The map is generated lazily in chunks from the world seed (`sim/galaxy/generator.ts`) and is turn-based (a turn comes from a jump or from waiting).
-Fleets of every faction persist, follow agendas, fight each other off-screen and can hunt the player. Code reads "sector" for a node in older places (rename pending).
+Fleets of every faction persist, follow agendas, fight each other (off-screen by stats, in the player's node as real ships) and can hunt the player. Code reads "sector" for a node in older places (rename pending).
 
 ## Node structures (`content.galaxy.structures`)
 | Name | id | What it does | Status | Where |
@@ -26,6 +26,8 @@ Fleets of every faction persist, follow agendas, fight each other off-screen and
 | Encounters and interdiction | `-` | Crossings, ambush odds, evade, bribe, fight | In game | sim/galaxy/encounters.ts, encounterOdds.ts, respond.ts; ui/StarmapEncounter.svelte |
 | Fleets and NPC traffic | `-` | Persistent fleets with home ports, agendas, rebuilds | In game | sim/galaxy/fleets.ts, agenda.ts, roster.ts, rebuild.ts; content/galaxyFleets.ts |
 | Off-screen wars | `-` | Hostile fleets that meet fight in a stats mini-sim; wrecks and news | In game | sim/galaxy/meetings.ts, clash.ts, wrecks.ts, news.ts |
+| Fights in the player's node | `-` | Fleets at war that meet in the player's node fight as real ships until a side is out or jumps away, no time limit; a stalemate sends the weaker side away; boarders board and take each other's ships (stats fallback when a side has no room or the player leaves); an urgent alert; firing on one side joins the other (+2 standing, +3 more on a win) (#603) | In game | sim/galaxy/engagements.ts, engagementFlow.ts; combat/engage.ts; systems/engagement.ts |
+| Allies aid the player | `-` | Armed ships and stations of a faction at standing 3+ take on a ship that fires on the player (#603) | In game | sim/galaxy/engagementAid.ts |
 | Heat (notoriety) and hunters | `-` | Kills and captures raise heat; factions send hunters; an urgent alert fires when hunters reach the player's node | In game | sim/galaxy/heat.ts, hunters.ts, tuningHeat.ts |
 | Stranding and distress tug | `-` | Broken fleets and the player can be towed | In game | sim/galaxy/stranded.ts; ui/StrandedBanner.svelte |
 | Opening grace period | `-` | No fights until act one is done or a timer passes | In game | sim/galaxy/grace.ts |

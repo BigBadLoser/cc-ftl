@@ -4,7 +4,8 @@ export { Grid, DenseGrid, CHUNK_SIZE, type FieldSpec, type FieldType, type GridD
 export { SectorGrid, type SectorGridData } from './sectorGrid';
 export { newSectorGrid, stampGrid } from './stamp';
 export { CommandQueue, type Command, type QueuedCommand } from './commands';
-export { EventBuffer, type SimEvent } from './events';
+export { type SimEvent } from './events';
+export { EventBuffer } from './eventBuffer';
 export { Sim, TICK_HZ } from './sim';
 export type { UpgradeDef, UpgradeMods } from './upgrades/types';
 export type { CreatureDefs, SuitDef, VehicleDef, WeaponDef, Effect, SkillName, ContentRegistry, ShipTemplate, RoleDef, SpeciesDef, ModuleDef, ModuleCategory, ScrapType, ItemDef, HandWeaponDef, HandWeaponArt, WeaponFamily, ItemQty, RecipeDef, CropDef, ResearchDef } from './registry';
@@ -103,7 +104,7 @@ export { TaskC, IntentC, InterruptC, PickupC } from './ai/components';
 export type { Task, Intent, Interrupt, DriveId, MachineId, TaskClass, PolicyDef, DriveDef, DriveInput, CrewKind, ScheduleBlock, ScheduleDef, BlockRule } from './ai/types';
 export { captureReady, isAiRun } from './capture/control';
 export { playerCrewAboard, type PlayerAboard } from './boarding/aboard';
-export { playerReach } from './boarding/reach';
+export { boardersReach } from './boarding/reach';
 export { SabotageOrderC } from './boarding/components';
 export { loseStrandedCrew } from './boarding/stranded';
 export { CoreRaiderC, CoreRaidC, coreObjective } from './capture/coreRaid';

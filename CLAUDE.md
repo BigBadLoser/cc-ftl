@@ -103,6 +103,8 @@ see `docs/STATUS_ARCHIVE.md` and the October handoff snapshot in `docs/HANDOFF.m
   3. Mark the PR ready once the fixes are batched in. That is the testing round: CI runs the full suite (and another Codex
      review runs). Fix whatever it finds; after a later merge of `main`, CI runs again on the push. CI and Codex review
      it, and only the user merges it to `main`. Nothing reaches `main` any other way.
+  From the moment a PR opens, the `steward` skill (`.claude/skills/steward/SKILL.md`) looks after it: subscribe to it, fix
+  CI failures and review findings, reply on each thread and resolve it once fixed, and say when it is ready to merge.
   Docs-only changes (`*.md`, no code) skip the PR and go straight to `main`.
 - Small bug fixes found together go in one PR on one `fix/…` branch, not a PR each.
 - `CHANGELOG.md` holds player-facing patch notes; refactors, tests and tooling stay out. When a PR with a player-visible

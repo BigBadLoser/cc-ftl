@@ -1,7 +1,9 @@
+import { truceHolds } from '../blackmarket/truce';
 import type { Sim } from '../sim';
 import { chase, headHome, retreat, strand } from './agenda';
 import { clash, wouldFight, type Clash, type SideResult } from './clash';
 import { cargoCap, cargoLoad } from './dock';
+import { engagedFleets } from './engagements';
 import { unit } from './hash';
 import { fleetName } from './names';
 import { report } from './news';
@@ -13,8 +15,8 @@ import type { Fleet, NewsItem } from './types';
 
 /**
  * NPC-vs-NPC meetings (living world stage 4). When fleets of factions that fight on sight share a node at the end of a turn, or cross on one lane in opposite
- * directions, outside the player's node, the stats mini-sim (clash.ts) decides it - nothing is simulated ship by ship. The player's own node keeps real combat: a fleet
- * there, or one that has just left it, never takes part. Each fleet meets at most one other per turn; fleets go in id order and nodes in id order, so the outcome is a
+ * directions, outside the player's node, the stats mini-sim (clash.ts) decides it - nothing is simulated ship by ship. In the player's own live node they fight as
+ * real ships instead (`liveMeetings`, #603: engagementFlow.ts); a fleet that has just left it never takes part. Each fleet meets at most one other per turn; fleets go in id order and nodes in id order, so the outcome is a
  * function of the seed, the fleets and the turn.
  *
  * Consequences (`apply`):
@@ -35,6 +37,28 @@ export interface Meeting {
   b: Fleet;
   /** Where it was settled. */
   node: string;
+}
+
+/**
+ * The meetings in the player's node (#603): fleets there of factions that fight on sight, not already in a fight nor among `done` (those that fought
+ * this turn), in id order, each in one at most. Never where a black market's truce holds. Only while the node is live (the ship deployed, no event grid); they are played out ship by ship (engagementFlow.ts `startMeeting`).
+ */
+export function liveMeetings(sim: Sim, done: ReadonlySet<number> = new Set()): Meeting[] {
+  const g = sim.galaxy;
+  if (sim.sector.state !== 'active' || g.event || sim.sector.node !== g.current || truceHolds(sim)) return [];
+  const busy = new Set([...engagedFleets(sim), ...done]);
+  const here = g.fleets.filter((f) => f.node === g.current && f.ships.length > 0 && !busy.has(f.id)).sort((p, q) => p.id - q.id);
+  const out: Meeting[] = [];
+  for (let i = 0; i < here.length; i++) {
+    const a = here[i] as Fleet;
+    for (let j = i + 1; j < here.length && !busy.has(a.id); j++) {
+      const b = here[j] as Fleet;
+      if (busy.has(b.id) || !wouldFight(sim, a, b)) continue;
+      out.push({ a, b, node: g.current });
+      busy.add(a.id).add(b.id);
+    }
+  }
+  return out;
 }
 
 /** Meetings among `fleets` (those that stepped this turn): same node at the end of the turn, or opposite directions on one lane. */
@@ -103,10 +127,18 @@ function settleSide(sim: Sim, f: Fleet, r: SideResult, node: string, turn: numbe
 
 /** Apply a settled meeting: ships, wrecks, rebuilds, flight, loot, chase and news. */
 export function apply(sim: Sim, m: Meeting, c: Clash, turn: number): void {
+  const names = [fleetName(m.a), fleetName(m.b)] as const; // named as they came to the fight
+  settleSide(sim, m.a, c.a, m.node, turn);
+  settleSide(sim, m.b, c.b, m.node, turn);
+  aftermath(sim, m, c, turn, names);
+}
+
+/**
+ * What a settled fight leads to once its losses are taken: news, loot, chase. Shared by the stats fight and the fight played out ship by ship in the
+ * player's node (engagementFlow.ts), where the ships lost were already forgotten by `reap`.
+ */
+export function aftermath(sim: Sim, m: Meeting, c: Clash, turn: number, names: readonly [string, string] = [fleetName(m.a), fleetName(m.b)]): void {
   const { a, b, node } = m;
-  const names = [fleetName(a), fleetName(b)] as const;
-  settleSide(sim, a, c.a, node, turn);
-  settleSide(sim, b, c.b, node, turn);
   const news = (item: Omit<NewsItem, 'id' | 'turn' | 'node'>): void => report(sim, { node, ...item }, turn);
   if (c.kind === 'avoided') return;
   const [w, l] = c.winner === 'b' ? [b, a] : [a, b];
