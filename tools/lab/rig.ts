@@ -78,6 +78,8 @@ export const rigPanel: LabPanel = {
             root.addChild(Object.assign(new Sprite(st.tex), { x: Math.round(x - st.ax), y: Math.round(y - st.ay) }));
             if (st.glow) root.addChild(Object.assign(new Sprite(st.glow), { x: Math.round(x - st.ax), y: Math.round(y - st.ay), blendMode: 'add' as const }));
           };
+          const back = new Container(); // rig layers that sort behind the bed (a rig on its far side), as moduleView's depth order puts them
+          root.addChild(back);
           const st = s.active ? 'active' : 'idle';
           draw([`${BED}${rot ? `.r${rot}` : ''}.${st}`, `${BED}.${st}`, BED], ox, oy);
           const pose = bedPose(bedDef, 0, 0, rot, true), p = iso(pose.x - bedFront.x, pose.y - bedFront.y);
@@ -95,14 +97,16 @@ export const rigPanel: LabPanel = {
           return (t) => {
             drawLayers({ parts, glows: [] }, 'sleep', pose.dir, t);
             host.removeChildren();
-            const rig = { frontAt: bedFront, active: s.active, progress: s.active ? t * TICK_HZ : 0, work, mirror: rigMirror(rigM.rot, bedDef, { x: 0, y: 0, rot }) };
+            back.removeChildren();
+            const frontAt = rigM.x + rigM.y > bedFront.x + bedFront.y ? { x: rigM.x, y: rigM.y } : bedFront; // as rigView
+            const rig = { frontAt, active: s.active, progress: s.active ? t * TICK_HZ : 0, work, mirror: rigMirror(rigM.rot, bedDef, { x: 0, y: 0, rot }) };
             const look = { off: false, now: t * 1000, hp: 100, maxHp: 100, has };
-            
             for (const l of rigLayers(rigM, rigDef, rig, look)) {
               const st = l.chain.map((c) => ctx.atlas.stat(c)).find(Boolean);
               if (!st) continue;
-              host.addChild(Object.assign(new Sprite(st.tex), { x: Math.round(rp.x - st.ax), y: Math.round(rp.y - st.ay) }));
-              if (st.glow) host.addChild(Object.assign(new Sprite(st.glow), { x: Math.round(rp.x - st.ax), y: Math.round(rp.y - st.ay), blendMode: 'add' as const }));
+              const at = l.sortAt ?? rigM, into = at.x + at.y < bedFront.x + bedFront.y ? back : host;
+              into.addChild(Object.assign(new Sprite(st.tex), { x: Math.round(rp.x - st.ax), y: Math.round(rp.y - st.ay) }));
+              if (st.glow) into.addChild(Object.assign(new Sprite(st.glow), { x: Math.round(rp.x - st.ax), y: Math.round(rp.y - st.ay), blendMode: 'add' as const }));
             }
           };
         },
