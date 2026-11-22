@@ -74,10 +74,7 @@ def bottle_plumbed(f, fs, tier, a, trunk=False):
                     sides=10,
                 )
                 G.valve_wheel(f, "-u", v, zb + rb + 0.08, ru - 0.07, r=0.1)
-            if trunk:
-                if big:
-                    f.vcyl(pb + 0.2, v, zb + rb - 0.06, 0.14, 0.1, "steelD", top="plate", sides=12)
-            else:
+            if not trunk:
                 # Relief valve and gauge on the body's crown, a manway on Mk III.
                 ku = (pb + qb) / 2 + 0.05
                 f.vcyl(ku, v, zb + rb - 0.04, 0.06, 0.14, "steel", top="steelL", sides=10)
