@@ -331,6 +331,31 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
         replace(spare, { ...spare, spot: { ...spare.spot, i: Math.min(spare.spot.i, k), j: Math.max(spare.spot.j, k + 1), area: spare.spot.area + a } }, here);
         continue;
       }
+      // (Storage next (a hold, provisions): storage beside it at its tier (whatever its department's), or in front of it in the bay, takes the
+      // bay instead: one larger store.)
+      if (fillerSpec(kinds[0] ?? 'hold', a).role === 'cargo') {
+        const hold = (p: Put | null | undefined): p is Put => !!p && !p.item.cabins && !p.annex && !p.item.both && real(p.specs).every((r) => r.role === 'cargo');
+        const f0 = o[s][k]?.front;
+        if (tier === 'back' && hold(f0) && f0.spot.tier === 'front' && f0.spot.j - f0.spot.i === 1 && f0.spot.i === k) {
+          replace(f0, { ...f0, spot: { side: s, i: k, j: k + 1, tier: 'full', area: area(k, k + 1, 'full') } }, here);
+          continue;
+        }
+        const by = [k - 1, k + 1].filter((m) => m >= 0 && m < n && joined(Math.min(m, k))).map((m) => (tier === 'back' ? o[s][m]?.back : o[s][m]?.front))
+          .find((p): p is Put => hold(p) && p.spot.tier === tier && (tier === 'full' || sameSplit(Math.min(p.spot.i, k), Math.max(p.spot.j, k + 1))) && (tier !== 'back' || !!wayIn(p)));
+        // (A full-depth store beside a bay of two tiers, both still free, takes the whole bay where that stays a rectangle.)
+        const deep = tier === 'front' && !taken(o[s][k] as Slot, 'back') ? [k - 1, k + 1].filter((m) => m >= 0 && m < n && joined(Math.min(m, k))).map((m) => o[s][m]?.front)
+          .find((p): p is Put => hold(p) && p.spot.tier === 'full' && square({ ...p.spot, i: Math.min(p.spot.i, k), j: Math.max(p.spot.j, k + 1) })) : undefined;
+        if (!by && deep) {
+          const whole: Spot = { side: s, i: k, j: k + 1, tier: 'full', area: area(k, k + 1, 'full') };
+          replace(deep, { ...deep, spot: { ...deep.spot, i: Math.min(deep.spot.i, k), j: Math.max(deep.spot.j, k + 1), area: deep.spot.area + whole.area } }, whole);
+          continue;
+        }
+        if (by) {
+          const v = tier === 'back' ? wayIn(by) : undefined;
+          replace(by, { ...by, spot: { ...by.spot, i: Math.min(by.spot.i, k), j: Math.max(by.spot.j, k + 1), area: by.spot.area + a, ...(v ? { via: v } : {}) } }, here);
+          continue;
+        }
+      }
       for (const kd of [...kinds, 'hold'] as Filler[]) {
         const c = racked(fillerSpec(kd, a)), v = tier === 'back' ? backVia(o, s, k, k + 1, on(c, s)) : undefined;
         if (tier === 'back' && !v) continue;
