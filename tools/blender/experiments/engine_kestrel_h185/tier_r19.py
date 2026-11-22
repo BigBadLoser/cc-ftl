@@ -39,7 +39,7 @@ def bottle_plumbed(f, fs, tier, a, trunk=False):
     vs = (0,) if not big else (-0.42, 0.42)
     rb = 0.44 if not big else 0.4
     zb = 0.06 + rb
-    pb = u0 + 0.3
+    pb = u0 + (0.25 if trunk else 0.3)
 
     def sump(segs):
         q = segs[0][1] - 0.05
@@ -54,8 +54,13 @@ def bottle_plumbed(f, fs, tier, a, trunk=False):
             for u in (pb + 0.08, qb - 0.08):
                 f.hcyl(u - 0.035, u + 0.035, v, zb, rb + 0.025, "brass", sides=24, cap="brass", capstart="brass")
             f.box((pb + qb) / 2, v, 0, 0.14, rb * 1.5, zb - rb * 0.6, "navy", top="blueGrey")
-            # Drain valve on the dome.
-            D.seg(f, (pb - 0.2, v, zb - 0.1), (pb - 0.28, v, zb - 0.1), 0.045, "steel", 8, cap="steelL")
+            if trunk:
+                # JB's hand valve on the dome's nose.
+                D.seg(f, (pb - 0.2, v, zb), (pb - 0.3, v, zb), 0.06, "steel", 10, cap="steelL")
+                G.valve_wheel(f, "-u", v, zb, pb - 0.3, r=0.11)
+            else:
+                # Drain valve on the dome.
+                D.seg(f, (pb - 0.2, v, zb - 0.1), (pb - 0.28, v, zb - 0.1), 0.045, "steel", 8, cap="steelL")
             # Outlet riser from the shoulder up into the header, an isolation valve on it.
             ru = pb + 0.06
             if not trunk:
@@ -69,12 +74,16 @@ def bottle_plumbed(f, fs, tier, a, trunk=False):
                     sides=10,
                 )
                 G.valve_wheel(f, "-u", v, zb + rb + 0.08, ru - 0.07, r=0.1)
-            # Relief valve and gauge on the body's crown.
-            ku = (pb + qb) / 2 + 0.05 if not trunk else pb + 0.12
-            f.vcyl(ku, v, zb + rb - 0.04, 0.06, 0.14, "steel", top="steelL", sides=10)
-            f.vcyl(ku, v, zb + rb + 0.1, 0.09, 0.05, "brass", top="brass", sides=10)
-            if big:
-                f.vcyl(qb - 0.15, v, zb + rb - 0.06, 0.14, 0.1, "steelD", top="plate", sides=12)
+            if trunk:
+                if big:
+                    f.vcyl((pb + qb) / 2, v, zb + rb - 0.06, 0.14, 0.1, "steelD", top="plate", sides=12)
+            else:
+                # Relief valve and gauge on the body's crown, a manway on Mk III.
+                ku = (pb + qb) / 2 + 0.05
+                f.vcyl(ku, v, zb + rb - 0.04, 0.06, 0.14, "steel", top="steelL", sides=10)
+                f.vcyl(ku, v, zb + rb + 0.1, 0.09, 0.05, "brass", top="brass", sides=10)
+                if big:
+                    f.vcyl(qb - 0.15, v, zb + rb - 0.06, 0.14, 0.1, "steelD", top="plate", sides=12)
         if trunk:
             tz = zb + rb + (0.1 if big else 0)
             if not big:
