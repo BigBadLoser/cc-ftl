@@ -1,5 +1,5 @@
 import type { ModuleDef } from '../../registry';
-import { reactorSpec, unflat, type RoomSpec, type ShipPlan } from '../plan';
+import { coreSpec, reactorSpec, unflat, type RoomSpec, type ShipPlan } from '../plan';
 import { bayLayout, type Bay } from './bays';
 import { cabinsFor } from './cabinBlock';
 import type { Frame } from './frame';
@@ -56,7 +56,8 @@ function program(plan: ShipPlan, defs: Record<string, ModuleDef>, inBattery: num
   const { lone } = gunsAndReactors(plan, defs);
   // (Prototype sizes, here until the plan takes them: a 5x4 brig; the core split into an AI core room and a drone room, 5x4 each.)
   const brig = (r: RoomSpec): RoomSpec => (r.mods.includes('module.stasis_wheel') ? { ...r, w: 5, h: 4 } : r);
-  const core = plan.core;
+  // (A turret pair of the layout's own needs the core to run it, where the plan has none.)
+  const core = plan.core ?? (!mirror && rules.pd ? coreSpec() : null);
   const cores: RoomSpec[] = !core ? [] : core.mods.includes('module.droneBay')
     ? [{ ...core, mods: core.mods.filter((m) => m !== 'module.droneBay'), w: 5, h: 4 }, { role: 'core', mods: ['module.droneBay'], w: 5, h: 4, ...(core.drones ? { drones: core.drones } : {}) }]
     : [{ ...core, w: 5, h: 4 }];
