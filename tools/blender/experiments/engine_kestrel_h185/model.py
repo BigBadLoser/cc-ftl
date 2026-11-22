@@ -24,7 +24,7 @@ TIER=1
 VARIANT="KB"            # the tier fit-out concept (tierkit; KB is the approved one)
 
 
-def set_tier(tier,variant="A"):
+def set_tier(tier,variant="KB"):
     """Build the Mk <tier> engine: DEPTH 4 + tier. The hull row stays at u = 2 and the frame's origin on the module's
     front tile, so for r0 / r3 (hull row at the back) the frame centre moves with the depth."""
     global DEPTH,TIER,VARIANT

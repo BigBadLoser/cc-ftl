@@ -4963,6 +4963,10 @@
    "image": "sprites/damage_sol.png",
    "glow": "sprites/damage_sol.glow.png"
   },
+  "damage_sol_tiers": {
+   "image": "sprites/damage_sol_tiers.png",
+   "glow": "sprites/damage_sol_tiers.glow.png"
+  },
   "decay": {
    "image": "sprites/decay.png"
   },
@@ -4990,6 +4994,14 @@
   "engine": {
    "image": "sprites/engine.png",
    "glow": "sprites/engine.glow.png"
+  },
+  "engine_mk2": {
+   "image": "sprites/engine_mk2.png",
+   "glow": "sprites/engine_mk2.glow.png"
+  },
+  "engine_mk3": {
+   "image": "sprites/engine_mk3.png",
+   "glow": "sprites/engine_mk3.glow.png"
   },
   "env": {
    "image": "sprites/env.png",
@@ -79920,6 +79932,2339 @@
    },
    "footprint": [
     5,
+    4
+   ]
+  },
+  "module.engine_mk2.bell.r0": {
+   "kind": "static",
+   "sheet": "engine_mk2",
+   "frame": {
+    "x": 1173,
+    "y": 207,
+    "w": 101,
+    "h": 115
+   },
+   "anchor": {
+    "x": -118,
+    "y": 243
+   },
+   "footprint": [
+    4,
+    6
+   ]
+  },
+  "module.engine_mk2.bell.r0.active": {
+   "kind": "static",
+   "sheet": "engine_mk2",
+   "frame": {
+    "x": 1275,
+    "y": 207,
+    "w": 164,
+    "h": 115
+   },
+   "anchor": {
+    "x": -118,
+    "y": 243
+   },
+   "footprint": [
+    4,
+    6
+   ],
+   "glow": true
+  },
+  "module.engine_mk2.bell.r0.damaged": {
+   "kind": "static",
+   "sheet": "damage_sol_tiers",
+   "frame": {
+    "x": 1703,
+    "y": 619,
+    "w": 105,
+    "h": 115
+   },
+   "anchor": {
+    "x": -114,
+    "y": 243
+   },
+   "footprint": [
+    4,
+    6
+   ]
+  },
+  "module.engine_mk2.bell.r0.destroyed": {
+   "kind": "static",
+   "sheet": "damage_sol_tiers",
+   "frame": {
+    "x": 2502,
+    "y": 619,
+    "w": 101,
+    "h": 104
+   },
+   "anchor": {
+    "x": -118,
+    "y": 232
+   },
+   "footprint": [
+    4,
+    6
+   ]
+  },
+  "module.engine_mk2.bell.r1": {
+   "kind": "static",
+   "sheet": "engine_mk2",
+   "frame": {
+    "x": 571,
+    "y": 207,
+    "w": 118,
+    "h": 126
+   },
+   "anchor": {
+    "x": -46,
+    "y": 96
+   },
+   "footprint": [
+    6,
+    4
+   ]
+  },
+  "module.engine_mk2.bell.r1.active": {
+   "kind": "static",
+   "sheet": "engine_mk2",
+   "frame": {
+    "x": 690,
+    "y": 207,
+    "w": 181,
+    "h": 126
+   },
+   "anchor": {
+    "x": -46,
+    "y": 96
+   },
+   "footprint": [
+    6,
+    4
+   ],
+   "glow": true
+  },
+  "module.engine_mk2.bell.r1.damaged": {
+   "kind": "static",
+   "sheet": "damage_sol_tiers",
+   "frame": {
+    "x": 1229,
+    "y": 619,
+    "w": 120,
+    "h": 128
+   },
+   "anchor": {
+    "x": -44,
+    "y": 98
+   },
+   "footprint": [
+    6,
+    4
+   ]
+  },
+  "module.engine_mk2.bell.r1.destroyed": {
+   "kind": "static",
+   "sheet": "damage_sol_tiers",
+   "frame": {
+    "x": 2120,
+    "y": 619,
+    "w": 120,
+    "h": 110
+   },
+   "anchor": {
+    "x": -54,
+    "y": 80
+   },
+   "footprint": [
+    6,
+    4
+   ]
+  },
+  "module.engine_mk2.bell.r2": {
+   "kind": "static",
+   "sheet": "engine_mk2",
+   "frame": {
+    "x": 872,
+    "y": 207,
+    "w": 118,
+    "h": 126
+   },
+   "anchor": {
+    "x": 164,
+    "y": 96
+   },
+   "footprint": [
+    4,
+    6
+   ]
+  },
+  "module.engine_mk2.bell.r2.active": {
+   "kind": "static",
+   "sheet": "engine_mk2",
+   "frame": {
+    "x": 991,
+    "y": 207,
+    "w": 181,
+    "h": 126
+   },
+   "anchor": {
+    "x": 227,
+    "y": 96
+   },
+   "footprint": [
+    4,
+    6
+   ],
+   "glow": true
+  },
+  "module.engine_mk2.bell.r2.damaged": {
+   "kind": "static",
+   "sheet": "damage_sol_tiers",
+   "frame": {
+    "x": 1105,
+    "y": 619,
+    "w": 123,
+    "h": 129
+   },
+   "anchor": {
+    "x": 169,
+    "y": 99
+   },
+   "footprint": [
+    4,
+    6
+   ]
+  },
+  "module.engine_mk2.bell.r2.destroyed": {
+   "kind": "static",
+   "sheet": "damage_sol_tiers",
+   "frame": {
+    "x": 2241,
+    "y": 619,
+    "w": 125,
+    "h": 110
+   },
+   "anchor": {
+    "x": 164,
+    "y": 80
+   },
+   "footprint": [
+    4,
+    6
+   ]
+  },
+  "module.engine_mk2.bell.r3": {
+   "kind": "static",
+   "sheet": "engine_mk2",
+   "frame": {
+    "x": 1440,
+    "y": 207,
+    "w": 101,
+    "h": 115
+   },
+   "anchor": {
+    "x": 219,
+    "y": 243
+   },
+   "footprint": [
+    6,
+    4
+   ]
+  },
+  "module.engine_mk2.bell.r3.active": {
+   "kind": "static",
+   "sheet": "engine_mk2",
+   "frame": {
+    "x": 1542,
+    "y": 207,
+    "w": 164,
+    "h": 115
+   },
+   "anchor": {
+    "x": 282,
+    "y": 243
+   },
+   "footprint": [
+    6,
+    4
+   ],
+   "glow": true
+  },
+  "module.engine_mk2.bell.r3.damaged": {
+   "kind": "static",
+   "sheet": "damage_sol_tiers",
+   "frame": {
+    "x": 1911,
+    "y": 619,
+    "w": 104,
+    "h": 114
+   },
+   "anchor": {
+    "x": 223,
+    "y": 242
+   },
+   "footprint": [
+    6,
+    4
+   ]
+  },
+  "module.engine_mk2.bell.r3.destroyed": {
+   "kind": "static",
+   "sheet": "damage_sol_tiers",
+   "frame": {
+    "x": 2604,
+    "y": 619,
+    "w": 99,
+    "h": 104
+   },
+   "anchor": {
+    "x": 219,
+    "y": 232
+   },
+   "footprint": [
+    6,
+    4
+   ]
+  },
+  "module.engine_mk2.block.r1": {
+   "kind": "static",
+   "sheet": "engine_mk2",
+   "frame": {
+    "x": 1,
+    "y": 207,
+    "w": 90,
+    "h": 168
+   },
+   "anchor": {
+    "x": -12,
+    "y": 128
+   },
+   "footprint": [
+    6,
+    4
+   ]
+  },
+  "module.engine_mk2.block.r2": {
+   "kind": "static",
+   "sheet": "engine_mk2",
+   "frame": {
+    "x": 92,
+    "y": 207,
+    "w": 90,
+    "h": 168
+   },
+   "anchor": {
+    "x": 102,
+    "y": 128
+   },
+   "footprint": [
+    4,
+    6
+   ]
+  },
+  "module.engine_mk2.end.r1": {
+   "kind": "static",
+   "sheet": "engine_mk2",
+   "frame": {
+    "x": 1707,
+    "y": 207,
+    "w": 31,
+    "h": 95
+   },
+   "anchor": {
+    "x": 0,
+    "y": 96
+   },
+   "footprint": [
+    6,
+    4
+   ]
+  },
+  "module.engine_mk2.end.r2": {
+   "kind": "static",
+   "sheet": "engine_mk2",
+   "frame": {
+    "x": 1739,
+    "y": 207,
+    "w": 31,
+    "h": 95
+   },
+   "anchor": {
+    "x": 31,
+    "y": 96
+   },
+   "footprint": [
+    4,
+    6
+   ]
+  },
+  "module.engine_mk2.hull.r0": {
+   "kind": "static",
+   "sheet": "engine_mk2",
+   "frame": {
+    "x": 183,
+    "y": 207,
+    "w": 97,
+    "h": 128
+   },
+   "anchor": {
+    "x": -64,
+    "y": 208
+   },
+   "footprint": [
+    4,
+    6
+   ]
+  },
+  "module.engine_mk2.hull.r1": {
+   "kind": "static",
+   "sheet": "engine_mk2",
+   "frame": {
+    "x": 379,
+    "y": 207,
+    "w": 95,
+    "h": 127
+   },
+   "anchor": {
+    "x": 0,
+    "y": 128
+   },
+   "footprint": [
+    6,
+    4
+   ]
+  },
+  "module.engine_mk2.hull.r2": {
+   "kind": "static",
+   "sheet": "engine_mk2",
+   "frame": {
+    "x": 475,
+    "y": 207,
+    "w": 95,
+    "h": 127
+   },
+   "anchor": {
+    "x": 95,
+    "y": 128
+   },
+   "footprint": [
+    4,
+    6
+   ]
+  },
+  "module.engine_mk2.hull.r3": {
+   "kind": "static",
+   "sheet": "engine_mk2",
+   "frame": {
+    "x": 281,
+    "y": 207,
+    "w": 97,
+    "h": 128
+   },
+   "anchor": {
+    "x": 161,
+    "y": 208
+   },
+   "footprint": [
+    6,
+    4
+   ]
+  },
+  "module.engine_mk2.machine.open.r0": {
+   "kind": "static",
+   "sheet": "engine_mk2",
+   "frame": {
+    "x": 1,
+    "y": 1,
+    "w": 277,
+    "h": 205
+   },
+   "anchor": {
+    "x": 128,
+    "y": 190
+   },
+   "footprint": [
+    4,
+    6
+   ]
+  },
+  "module.engine_mk2.machine.open.r0.active": {
+   "kind": "static",
+   "sheet": "engine_mk2",
+   "frame": {
+    "x": 279,
+    "y": 1,
+    "w": 277,
+    "h": 205
+   },
+   "anchor": {
+    "x": 128,
+    "y": 190
+   },
+   "footprint": [
+    4,
+    6
+   ]
+  },
+  "module.engine_mk2.machine.open.r0.damaged": {
+   "kind": "static",
+   "sheet": "damage_sol_tiers",
+   "frame": {
+    "x": 1551,
+    "y": 1,
+    "w": 277,
+    "h": 205
+   },
+   "anchor": {
+    "x": 128,
+    "y": 190
+   },
+   "footprint": [
+    4,
+    6
+   ],
+   "glow": true
+  },
+  "module.engine_mk2.machine.open.r0.damaged.flicker": {
+   "kind": "static",
+   "sheet": "damage_sol_tiers",
+   "frame": {
+    "x": 1829,
+    "y": 1,
+    "w": 277,
+    "h": 205
+   },
+   "anchor": {
+    "x": 128,
+    "y": 190
+   },
+   "footprint": [
+    4,
+    6
+   ],
+   "glow": true
+  },
+  "module.engine_mk2.machine.open.r0.destroyed": {
+   "kind": "static",
+   "sheet": "damage_sol_tiers",
+   "frame": {
+    "x": 338,
+    "y": 428,
+    "w": 282,
+    "h": 189
+   },
+   "anchor": {
+    "x": 133,
+    "y": 174
+   },
+   "footprint": [
+    4,
+    6
+   ]
+  },
+  "module.engine_mk2.machine.open.r1": {
+   "kind": "static",
+   "sheet": "engine_mk2",
+   "frame": {
+    "x": 2225,
+    "y": 1,
+    "w": 226,
+    "h": 176
+   },
+   "anchor": {
+    "x": 192,
+    "y": 181
+   },
+   "footprint": [
+    6,
+    4
+   ]
+  },
+  "module.engine_mk2.machine.open.r1.active": {
+   "kind": "static",
+   "sheet": "engine_mk2",
+   "frame": {
+    "x": 2452,
+    "y": 1,
+    "w": 226,
+    "h": 176
+   },
+   "anchor": {
+    "x": 192,
+    "y": 181
+   },
+   "footprint": [
+    6,
+    4
+   ]
+  },
+  "module.engine_mk2.machine.open.r1.damaged": {
+   "kind": "static",
+   "sheet": "damage_sol_tiers",
+   "frame": {
+    "x": 2591,
+    "y": 428,
+    "w": 226,
+    "h": 176
+   },
+   "anchor": {
+    "x": 192,
+    "y": 181
+   },
+   "footprint": [
+    6,
+    4
+   ],
+   "glow": true
+  },
+  "module.engine_mk2.machine.open.r1.damaged.flicker": {
+   "kind": "static",
+   "sheet": "damage_sol_tiers",
+   "frame": {
+    "x": 2818,
+    "y": 428,
+    "w": 226,
+    "h": 176
+   },
+   "anchor": {
+    "x": 192,
+    "y": 181
+   },
+   "footprint": [
+    6,
+    4
+   ]
+  },
+  "module.engine_mk2.machine.open.r1.destroyed": {
+   "kind": "static",
+   "sheet": "damage_sol_tiers",
+   "frame": {
+    "x": 451,
+    "y": 619,
+    "w": 217,
+    "h": 174
+   },
+   "anchor": {
+    "x": 192,
+    "y": 179
+   },
+   "footprint": [
+    6,
+    4
+   ]
+  },
+  "module.engine_mk2.machine.open.r2": {
+   "kind": "static",
+   "sheet": "engine_mk2",
+   "frame": {
+    "x": 2679,
+    "y": 1,
+    "w": 226,
+    "h": 176
+   },
+   "anchor": {
+    "x": 34,
+    "y": 181
+   },
+   "footprint": [
+    4,
+    6
+   ]
+  },
+  "module.engine_mk2.machine.open.r2.active": {
+   "kind": "static",
+   "sheet": "engine_mk2",
+   "frame": {
+    "x": 2906,
+    "y": 1,
+    "w": 226,
+    "h": 176
+   },
+   "anchor": {
+    "x": 34,
+    "y": 181
+   },
+   "footprint": [
+    4,
+    6
+   ]
+  },
+  "module.engine_mk2.machine.open.r2.damaged": {
+   "kind": "static",
+   "sheet": "damage_sol_tiers",
+   "frame": {
+    "x": 3045,
+    "y": 428,
+    "w": 226,
+    "h": 176
+   },
+   "anchor": {
+    "x": 34,
+    "y": 181
+   },
+   "footprint": [
+    4,
+    6
+   ],
+   "glow": true
+  },
+  "module.engine_mk2.machine.open.r2.damaged.flicker": {
+   "kind": "static",
+   "sheet": "damage_sol_tiers",
+   "frame": {
+    "x": 3272,
+    "y": 428,
+    "w": 226,
+    "h": 176
+   },
+   "anchor": {
+    "x": 34,
+    "y": 181
+   },
+   "footprint": [
+    4,
+    6
+   ],
+   "glow": true
+  },
+  "module.engine_mk2.machine.open.r2.destroyed": {
+   "kind": "static",
+   "sheet": "damage_sol_tiers",
+   "frame": {
+    "x": 978,
+    "y": 224,
+    "w": 229,
+    "h": 193
+   },
+   "anchor": {
+    "x": 37,
+    "y": 178
+   },
+   "footprint": [
+    4,
+    6
+   ]
+  },
+  "module.engine_mk2.machine.open.r3": {
+   "kind": "static",
+   "sheet": "engine_mk2",
+   "frame": {
+    "x": 557,
+    "y": 1,
+    "w": 277,
+    "h": 205
+   },
+   "anchor": {
+    "x": 149,
+    "y": 190
+   },
+   "footprint": [
+    6,
+    4
+   ]
+  },
+  "module.engine_mk2.machine.open.r3.active": {
+   "kind": "static",
+   "sheet": "engine_mk2",
+   "frame": {
+    "x": 835,
+    "y": 1,
+    "w": 277,
+    "h": 205
+   },
+   "anchor": {
+    "x": 149,
+    "y": 190
+   },
+   "footprint": [
+    6,
+    4
+   ]
+  },
+  "module.engine_mk2.machine.open.r3.damaged": {
+   "kind": "static",
+   "sheet": "damage_sol_tiers",
+   "frame": {
+    "x": 2107,
+    "y": 1,
+    "w": 277,
+    "h": 205
+   },
+   "anchor": {
+    "x": 149,
+    "y": 190
+   },
+   "footprint": [
+    6,
+    4
+   ],
+   "glow": true
+  },
+  "module.engine_mk2.machine.open.r3.damaged.flicker": {
+   "kind": "static",
+   "sheet": "damage_sol_tiers",
+   "frame": {
+    "x": 2385,
+    "y": 1,
+    "w": 277,
+    "h": 205
+   },
+   "anchor": {
+    "x": 149,
+    "y": 190
+   },
+   "footprint": [
+    6,
+    4
+   ],
+   "glow": true
+  },
+  "module.engine_mk2.machine.open.r3.destroyed": {
+   "kind": "static",
+   "sheet": "damage_sol_tiers",
+   "frame": {
+    "x": 3280,
+    "y": 224,
+    "w": 294,
+    "h": 191
+   },
+   "anchor": {
+    "x": 166,
+    "y": 176
+   },
+   "footprint": [
+    6,
+    4
+   ]
+  },
+  "module.engine_mk2.machine.r0": {
+   "kind": "static",
+   "sheet": "engine_mk2",
+   "frame": {
+    "x": 1113,
+    "y": 1,
+    "w": 277,
+    "h": 187
+   },
+   "anchor": {
+    "x": 128,
+    "y": 172
+   },
+   "footprint": [
+    4,
+    6
+   ]
+  },
+  "module.engine_mk2.machine.r0.active": {
+   "kind": "static",
+   "sheet": "engine_mk2",
+   "frame": {
+    "x": 1391,
+    "y": 1,
+    "w": 277,
+    "h": 187
+   },
+   "anchor": {
+    "x": 128,
+    "y": 172
+   },
+   "footprint": [
+    4,
+    6
+   ]
+  },
+  "module.engine_mk2.machine.r0.damaged": {
+   "kind": "static",
+   "sheet": "damage_sol_tiers",
+   "frame": {
+    "x": 872,
+    "y": 428,
+    "w": 277,
+    "h": 187
+   },
+   "anchor": {
+    "x": 128,
+    "y": 172
+   },
+   "footprint": [
+    4,
+    6
+   ],
+   "glow": true
+  },
+  "module.engine_mk2.machine.r0.damaged.flicker": {
+   "kind": "static",
+   "sheet": "damage_sol_tiers",
+   "frame": {
+    "x": 1150,
+    "y": 428,
+    "w": 277,
+    "h": 187
+   },
+   "anchor": {
+    "x": 128,
+    "y": 172
+   },
+   "footprint": [
+    4,
+    6
+   ],
+   "glow": true
+  },
+  "module.engine_mk2.machine.r0.destroyed": {
+   "kind": "static",
+   "sheet": "damage_sol_tiers",
+   "frame": {
+    "x": 2313,
+    "y": 428,
+    "w": 277,
+    "h": 178
+   },
+   "anchor": {
+    "x": 128,
+    "y": 163
+   },
+   "footprint": [
+    4,
+    6
+   ]
+  },
+  "module.engine_mk2.machine.r1": {
+   "kind": "static",
+   "sheet": "engine_mk2",
+   "frame": {
+    "x": 3133,
+    "y": 1,
+    "w": 226,
+    "h": 176
+   },
+   "anchor": {
+    "x": 192,
+    "y": 181
+   },
+   "footprint": [
+    6,
+    4
+   ]
+  },
+  "module.engine_mk2.machine.r1.active": {
+   "kind": "static",
+   "sheet": "engine_mk2",
+   "frame": {
+    "x": 3360,
+    "y": 1,
+    "w": 226,
+    "h": 176
+   },
+   "anchor": {
+    "x": 192,
+    "y": 181
+   },
+   "footprint": [
+    6,
+    4
+   ]
+  },
+  "module.engine_mk2.machine.r1.damaged": {
+   "kind": "static",
+   "sheet": "damage_sol_tiers",
+   "frame": {
+    "x": 3499,
+    "y": 428,
+    "w": 224,
+    "h": 176
+   },
+   "anchor": {
+    "x": 192,
+    "y": 181
+   },
+   "footprint": [
+    6,
+    4
+   ],
+   "glow": true
+  },
+  "module.engine_mk2.machine.r1.damaged.flicker": {
+   "kind": "static",
+   "sheet": "damage_sol_tiers",
+   "frame": {
+    "x": 3724,
+    "y": 428,
+    "w": 224,
+    "h": 176
+   },
+   "anchor": {
+    "x": 192,
+    "y": 181
+   },
+   "footprint": [
+    6,
+    4
+   ],
+   "glow": true
+  },
+  "module.engine_mk2.machine.r1.destroyed": {
+   "kind": "static",
+   "sheet": "damage_sol_tiers",
+   "frame": {
+    "x": 887,
+    "y": 619,
+    "w": 217,
+    "h": 171
+   },
+   "anchor": {
+    "x": 192,
+    "y": 176
+   },
+   "footprint": [
+    6,
+    4
+   ]
+  },
+  "module.engine_mk2.machine.r2": {
+   "kind": "static",
+   "sheet": "engine_mk2",
+   "frame": {
+    "x": 3587,
+    "y": 1,
+    "w": 226,
+    "h": 176
+   },
+   "anchor": {
+    "x": 34,
+    "y": 181
+   },
+   "footprint": [
+    4,
+    6
+   ]
+  },
+  "module.engine_mk2.machine.r2.active": {
+   "kind": "static",
+   "sheet": "engine_mk2",
+   "frame": {
+    "x": 3814,
+    "y": 1,
+    "w": 226,
+    "h": 176
+   },
+   "anchor": {
+    "x": 34,
+    "y": 181
+   },
+   "footprint": [
+    4,
+    6
+   ]
+  },
+  "module.engine_mk2.machine.r2.damaged": {
+   "kind": "static",
+   "sheet": "damage_sol_tiers",
+   "frame": {
+    "x": 1,
+    "y": 619,
+    "w": 224,
+    "h": 176
+   },
+   "anchor": {
+    "x": 30,
+    "y": 181
+   },
+   "footprint": [
+    4,
+    6
+   ],
+   "glow": true
+  },
+  "module.engine_mk2.machine.r2.damaged.flicker": {
+   "kind": "static",
+   "sheet": "damage_sol_tiers",
+   "frame": {
+    "x": 226,
+    "y": 619,
+    "w": 224,
+    "h": 176
+   },
+   "anchor": {
+    "x": 30,
+    "y": 181
+   },
+   "footprint": [
+    4,
+    6
+   ],
+   "glow": true
+  },
+  "module.engine_mk2.machine.r2.destroyed": {
+   "kind": "static",
+   "sheet": "damage_sol_tiers",
+   "frame": {
+    "x": 669,
+    "y": 619,
+    "w": 217,
+    "h": 173
+   },
+   "anchor": {
+    "x": 25,
+    "y": 178
+   },
+   "footprint": [
+    4,
+    6
+   ]
+  },
+  "module.engine_mk2.machine.r3": {
+   "kind": "static",
+   "sheet": "engine_mk2",
+   "frame": {
+    "x": 1669,
+    "y": 1,
+    "w": 277,
+    "h": 187
+   },
+   "anchor": {
+    "x": 149,
+    "y": 172
+   },
+   "footprint": [
+    6,
+    4
+   ]
+  },
+  "module.engine_mk2.machine.r3.active": {
+   "kind": "static",
+   "sheet": "engine_mk2",
+   "frame": {
+    "x": 1947,
+    "y": 1,
+    "w": 277,
+    "h": 187
+   },
+   "anchor": {
+    "x": 149,
+    "y": 172
+   },
+   "footprint": [
+    6,
+    4
+   ]
+  },
+  "module.engine_mk2.machine.r3.damaged": {
+   "kind": "static",
+   "sheet": "damage_sol_tiers",
+   "frame": {
+    "x": 1428,
+    "y": 428,
+    "w": 277,
+    "h": 187
+   },
+   "anchor": {
+    "x": 149,
+    "y": 172
+   },
+   "footprint": [
+    6,
+    4
+   ],
+   "glow": true
+  },
+  "module.engine_mk2.machine.r3.damaged.flicker": {
+   "kind": "static",
+   "sheet": "damage_sol_tiers",
+   "frame": {
+    "x": 1706,
+    "y": 428,
+    "w": 277,
+    "h": 187
+   },
+   "anchor": {
+    "x": 149,
+    "y": 172
+   },
+   "footprint": [
+    6,
+    4
+   ]
+  },
+  "module.engine_mk2.machine.r3.destroyed": {
+   "kind": "static",
+   "sheet": "damage_sol_tiers",
+   "frame": {
+    "x": 1984,
+    "y": 428,
+    "w": 328,
+    "h": 179
+   },
+   "anchor": {
+    "x": 200,
+    "y": 164
+   },
+   "footprint": [
+    6,
+    4
+   ]
+  },
+  "module.engine_mk3.bell.r0": {
+   "kind": "static",
+   "sheet": "engine_mk3",
+   "frame": {
+    "x": 1691,
+    "y": 223,
+    "w": 101,
+    "h": 115
+   },
+   "anchor": {
+    "x": -150,
+    "y": 259
+   },
+   "footprint": [
+    4,
+    7
+   ]
+  },
+  "module.engine_mk3.bell.r0.active": {
+   "kind": "static",
+   "sheet": "engine_mk3",
+   "frame": {
+    "x": 1793,
+    "y": 223,
+    "w": 164,
+    "h": 115
+   },
+   "anchor": {
+    "x": -150,
+    "y": 259
+   },
+   "footprint": [
+    4,
+    7
+   ],
+   "glow": true
+  },
+  "module.engine_mk3.bell.r0.damaged": {
+   "kind": "static",
+   "sheet": "damage_sol_tiers",
+   "frame": {
+    "x": 2016,
+    "y": 619,
+    "w": 103,
+    "h": 114
+   },
+   "anchor": {
+    "x": -150,
+    "y": 258
+   },
+   "footprint": [
+    4,
+    7
+   ]
+  },
+  "module.engine_mk3.bell.r0.destroyed": {
+   "kind": "static",
+   "sheet": "damage_sol_tiers",
+   "frame": {
+    "x": 2704,
+    "y": 619,
+    "w": 101,
+    "h": 100
+   },
+   "anchor": {
+    "x": -156,
+    "y": 244
+   },
+   "footprint": [
+    4,
+    7
+   ]
+  },
+  "module.engine_mk3.bell.r1": {
+   "kind": "static",
+   "sheet": "engine_mk3",
+   "frame": {
+    "x": 1089,
+    "y": 223,
+    "w": 118,
+    "h": 126
+   },
+   "anchor": {
+    "x": -46,
+    "y": 96
+   },
+   "footprint": [
+    7,
+    4
+   ]
+  },
+  "module.engine_mk3.bell.r1.active": {
+   "kind": "static",
+   "sheet": "engine_mk3",
+   "frame": {
+    "x": 1208,
+    "y": 223,
+    "w": 181,
+    "h": 126
+   },
+   "anchor": {
+    "x": -46,
+    "y": 96
+   },
+   "footprint": [
+    7,
+    4
+   ],
+   "glow": true
+  },
+  "module.engine_mk3.bell.r1.damaged": {
+   "kind": "static",
+   "sheet": "damage_sol_tiers",
+   "frame": {
+    "x": 1350,
+    "y": 619,
+    "w": 118,
+    "h": 126
+   },
+   "anchor": {
+    "x": -46,
+    "y": 96
+   },
+   "footprint": [
+    7,
+    4
+   ]
+  },
+  "module.engine_mk3.bell.r1.destroyed": {
+   "kind": "static",
+   "sheet": "damage_sol_tiers",
+   "frame": {
+    "x": 2367,
+    "y": 619,
+    "w": 134,
+    "h": 105
+   },
+   "anchor": {
+    "x": -30,
+    "y": 75
+   },
+   "footprint": [
+    7,
+    4
+   ]
+  },
+  "module.engine_mk3.bell.r2": {
+   "kind": "static",
+   "sheet": "engine_mk3",
+   "frame": {
+    "x": 1390,
+    "y": 223,
+    "w": 118,
+    "h": 126
+   },
+   "anchor": {
+    "x": 164,
+    "y": 96
+   },
+   "footprint": [
+    4,
+    7
+   ]
+  },
+  "module.engine_mk3.bell.r2.active": {
+   "kind": "static",
+   "sheet": "engine_mk3",
+   "frame": {
+    "x": 1509,
+    "y": 223,
+    "w": 181,
+    "h": 126
+   },
+   "anchor": {
+    "x": 227,
+    "y": 96
+   },
+   "footprint": [
+    4,
+    7
+   ],
+   "glow": true
+  },
+  "module.engine_mk3.bell.r2.damaged": {
+   "kind": "static",
+   "sheet": "damage_sol_tiers",
+   "frame": {
+    "x": 1469,
+    "y": 619,
+    "w": 118,
+    "h": 126
+   },
+   "anchor": {
+    "x": 164,
+    "y": 96
+   },
+   "footprint": [
+    4,
+    7
+   ]
+  },
+  "module.engine_mk3.bell.r2.destroyed": {
+   "kind": "static",
+   "sheet": "damage_sol_tiers",
+   "frame": {
+    "x": 1588,
+    "y": 619,
+    "w": 114,
+    "h": 118
+   },
+   "anchor": {
+    "x": 166,
+    "y": 88
+   },
+   "footprint": [
+    4,
+    7
+   ]
+  },
+  "module.engine_mk3.bell.r3": {
+   "kind": "static",
+   "sheet": "engine_mk3",
+   "frame": {
+    "x": 1958,
+    "y": 223,
+    "w": 101,
+    "h": 115
+   },
+   "anchor": {
+    "x": 251,
+    "y": 259
+   },
+   "footprint": [
+    7,
+    4
+   ]
+  },
+  "module.engine_mk3.bell.r3.active": {
+   "kind": "static",
+   "sheet": "engine_mk3",
+   "frame": {
+    "x": 2060,
+    "y": 223,
+    "w": 164,
+    "h": 115
+   },
+   "anchor": {
+    "x": 314,
+    "y": 259
+   },
+   "footprint": [
+    7,
+    4
+   ],
+   "glow": true
+  },
+  "module.engine_mk3.bell.r3.damaged": {
+   "kind": "static",
+   "sheet": "damage_sol_tiers",
+   "frame": {
+    "x": 1809,
+    "y": 619,
+    "w": 101,
+    "h": 115
+   },
+   "anchor": {
+    "x": 251,
+    "y": 259
+   },
+   "footprint": [
+    7,
+    4
+   ]
+  },
+  "module.engine_mk3.bell.r3.destroyed": {
+   "kind": "static",
+   "sheet": "damage_sol_tiers",
+   "frame": {
+    "x": 2806,
+    "y": 619,
+    "w": 105,
+    "h": 99
+   },
+   "anchor": {
+    "x": 250,
+    "y": 243
+   },
+   "footprint": [
+    7,
+    4
+   ]
+  },
+  "module.engine_mk3.block.r1": {
+   "kind": "static",
+   "sheet": "engine_mk3",
+   "frame": {
+    "x": 519,
+    "y": 223,
+    "w": 90,
+    "h": 168
+   },
+   "anchor": {
+    "x": -12,
+    "y": 128
+   },
+   "footprint": [
+    7,
+    4
+   ]
+  },
+  "module.engine_mk3.block.r2": {
+   "kind": "static",
+   "sheet": "engine_mk3",
+   "frame": {
+    "x": 610,
+    "y": 223,
+    "w": 90,
+    "h": 168
+   },
+   "anchor": {
+    "x": 102,
+    "y": 128
+   },
+   "footprint": [
+    4,
+    7
+   ]
+  },
+  "module.engine_mk3.end.r1": {
+   "kind": "static",
+   "sheet": "engine_mk3",
+   "frame": {
+    "x": 2225,
+    "y": 223,
+    "w": 31,
+    "h": 95
+   },
+   "anchor": {
+    "x": 0,
+    "y": 96
+   },
+   "footprint": [
+    7,
+    4
+   ]
+  },
+  "module.engine_mk3.end.r2": {
+   "kind": "static",
+   "sheet": "engine_mk3",
+   "frame": {
+    "x": 2257,
+    "y": 223,
+    "w": 31,
+    "h": 95
+   },
+   "anchor": {
+    "x": 31,
+    "y": 96
+   },
+   "footprint": [
+    4,
+    7
+   ]
+  },
+  "module.engine_mk3.hull.r0": {
+   "kind": "static",
+   "sheet": "engine_mk3",
+   "frame": {
+    "x": 701,
+    "y": 223,
+    "w": 97,
+    "h": 128
+   },
+   "anchor": {
+    "x": -96,
+    "y": 224
+   },
+   "footprint": [
+    4,
+    7
+   ]
+  },
+  "module.engine_mk3.hull.r1": {
+   "kind": "static",
+   "sheet": "engine_mk3",
+   "frame": {
+    "x": 897,
+    "y": 223,
+    "w": 95,
+    "h": 127
+   },
+   "anchor": {
+    "x": 0,
+    "y": 128
+   },
+   "footprint": [
+    7,
+    4
+   ]
+  },
+  "module.engine_mk3.hull.r2": {
+   "kind": "static",
+   "sheet": "engine_mk3",
+   "frame": {
+    "x": 993,
+    "y": 223,
+    "w": 95,
+    "h": 127
+   },
+   "anchor": {
+    "x": 95,
+    "y": 128
+   },
+   "footprint": [
+    4,
+    7
+   ]
+  },
+  "module.engine_mk3.hull.r3": {
+   "kind": "static",
+   "sheet": "engine_mk3",
+   "frame": {
+    "x": 799,
+    "y": 223,
+    "w": 97,
+    "h": 128
+   },
+   "anchor": {
+    "x": 193,
+    "y": 224
+   },
+   "footprint": [
+    7,
+    4
+   ]
+  },
+  "module.engine_mk3.machine.open.r0": {
+   "kind": "static",
+   "sheet": "engine_mk3",
+   "frame": {
+    "x": 1,
+    "y": 1,
+    "w": 309,
+    "h": 221
+   },
+   "anchor": {
+    "x": 128,
+    "y": 206
+   },
+   "footprint": [
+    4,
+    7
+   ]
+  },
+  "module.engine_mk3.machine.open.r0.active": {
+   "kind": "static",
+   "sheet": "engine_mk3",
+   "frame": {
+    "x": 311,
+    "y": 1,
+    "w": 309,
+    "h": 221
+   },
+   "anchor": {
+    "x": 128,
+    "y": 206
+   },
+   "footprint": [
+    4,
+    7
+   ]
+  },
+  "module.engine_mk3.machine.open.r0.damaged": {
+   "kind": "static",
+   "sheet": "damage_sol_tiers",
+   "frame": {
+    "x": 1,
+    "y": 1,
+    "w": 309,
+    "h": 222
+   },
+   "anchor": {
+    "x": 128,
+    "y": 207
+   },
+   "footprint": [
+    4,
+    7
+   ]
+  },
+  "module.engine_mk3.machine.open.r0.damaged.flicker": {
+   "kind": "static",
+   "sheet": "damage_sol_tiers",
+   "frame": {
+    "x": 311,
+    "y": 1,
+    "w": 309,
+    "h": 222
+   },
+   "anchor": {
+    "x": 128,
+    "y": 207
+   },
+   "footprint": [
+    4,
+    7
+   ]
+  },
+  "module.engine_mk3.machine.open.r0.destroyed": {
+   "kind": "static",
+   "sheet": "damage_sol_tiers",
+   "frame": {
+    "x": 2663,
+    "y": 1,
+    "w": 385,
+    "h": 205
+   },
+   "anchor": {
+    "x": 132,
+    "y": 190
+   },
+   "footprint": [
+    4,
+    7
+   ]
+  },
+  "module.engine_mk3.machine.open.r1": {
+   "kind": "static",
+   "sheet": "engine_mk3",
+   "frame": {
+    "x": 2481,
+    "y": 1,
+    "w": 258,
+    "h": 192
+   },
+   "anchor": {
+    "x": 224,
+    "y": 197
+   },
+   "footprint": [
+    7,
+    4
+   ]
+  },
+  "module.engine_mk3.machine.open.r1.active": {
+   "kind": "static",
+   "sheet": "engine_mk3",
+   "frame": {
+    "x": 2740,
+    "y": 1,
+    "w": 258,
+    "h": 192
+   },
+   "anchor": {
+    "x": 224,
+    "y": 197
+   },
+   "footprint": [
+    7,
+    4
+   ]
+  },
+  "module.engine_mk3.machine.open.r1.damaged": {
+   "kind": "static",
+   "sheet": "damage_sol_tiers",
+   "frame": {
+    "x": 1208,
+    "y": 224,
+    "w": 258,
+    "h": 192
+   },
+   "anchor": {
+    "x": 224,
+    "y": 197
+   },
+   "footprint": [
+    7,
+    4
+   ]
+  },
+  "module.engine_mk3.machine.open.r1.damaged.flicker": {
+   "kind": "static",
+   "sheet": "damage_sol_tiers",
+   "frame": {
+    "x": 1467,
+    "y": 224,
+    "w": 258,
+    "h": 192
+   },
+   "anchor": {
+    "x": 224,
+    "y": 197
+   },
+   "footprint": [
+    7,
+    4
+   ]
+  },
+  "module.engine_mk3.machine.open.r1.destroyed": {
+   "kind": "static",
+   "sheet": "damage_sol_tiers",
+   "frame": {
+    "x": 311,
+    "y": 224,
+    "w": 356,
+    "h": 202
+   },
+   "anchor": {
+    "x": 224,
+    "y": 195
+   },
+   "footprint": [
+    7,
+    4
+   ]
+  },
+  "module.engine_mk3.machine.open.r2": {
+   "kind": "static",
+   "sheet": "engine_mk3",
+   "frame": {
+    "x": 2999,
+    "y": 1,
+    "w": 258,
+    "h": 192
+   },
+   "anchor": {
+    "x": 34,
+    "y": 197
+   },
+   "footprint": [
+    4,
+    7
+   ]
+  },
+  "module.engine_mk3.machine.open.r2.active": {
+   "kind": "static",
+   "sheet": "engine_mk3",
+   "frame": {
+    "x": 3258,
+    "y": 1,
+    "w": 258,
+    "h": 192
+   },
+   "anchor": {
+    "x": 34,
+    "y": 197
+   },
+   "footprint": [
+    4,
+    7
+   ]
+  },
+  "module.engine_mk3.machine.open.r2.damaged": {
+   "kind": "static",
+   "sheet": "damage_sol_tiers",
+   "frame": {
+    "x": 1726,
+    "y": 224,
+    "w": 257,
+    "h": 192
+   },
+   "anchor": {
+    "x": 33,
+    "y": 197
+   },
+   "footprint": [
+    4,
+    7
+   ],
+   "glow": true
+  },
+  "module.engine_mk3.machine.open.r2.damaged.flicker": {
+   "kind": "static",
+   "sheet": "damage_sol_tiers",
+   "frame": {
+    "x": 1984,
+    "y": 224,
+    "w": 257,
+    "h": 192
+   },
+   "anchor": {
+    "x": 33,
+    "y": 197
+   },
+   "footprint": [
+    4,
+    7
+   ]
+  },
+  "module.engine_mk3.machine.open.r2.destroyed": {
+   "kind": "static",
+   "sheet": "damage_sol_tiers",
+   "frame": {
+    "x": 3575,
+    "y": 224,
+    "w": 257,
+    "h": 191
+   },
+   "anchor": {
+    "x": 33,
+    "y": 196
+   },
+   "footprint": [
+    4,
+    7
+   ]
+  },
+  "module.engine_mk3.machine.open.r3": {
+   "kind": "static",
+   "sheet": "engine_mk3",
+   "frame": {
+    "x": 621,
+    "y": 1,
+    "w": 309,
+    "h": 221
+   },
+   "anchor": {
+    "x": 181,
+    "y": 206
+   },
+   "footprint": [
+    7,
+    4
+   ]
+  },
+  "module.engine_mk3.machine.open.r3.active": {
+   "kind": "static",
+   "sheet": "engine_mk3",
+   "frame": {
+    "x": 931,
+    "y": 1,
+    "w": 309,
+    "h": 221
+   },
+   "anchor": {
+    "x": 181,
+    "y": 206
+   },
+   "footprint": [
+    7,
+    4
+   ]
+  },
+  "module.engine_mk3.machine.open.r3.damaged": {
+   "kind": "static",
+   "sheet": "damage_sol_tiers",
+   "frame": {
+    "x": 621,
+    "y": 1,
+    "w": 309,
+    "h": 221
+   },
+   "anchor": {
+    "x": 181,
+    "y": 206
+   },
+   "footprint": [
+    7,
+    4
+   ]
+  },
+  "module.engine_mk3.machine.open.r3.damaged.flicker": {
+   "kind": "static",
+   "sheet": "damage_sol_tiers",
+   "frame": {
+    "x": 931,
+    "y": 1,
+    "w": 309,
+    "h": 221
+   },
+   "anchor": {
+    "x": 181,
+    "y": 206
+   },
+   "footprint": [
+    7,
+    4
+   ]
+  },
+  "module.engine_mk3.machine.open.r3.destroyed": {
+   "kind": "static",
+   "sheet": "damage_sol_tiers",
+   "frame": {
+    "x": 1241,
+    "y": 1,
+    "w": 309,
+    "h": 206
+   },
+   "anchor": {
+    "x": 181,
+    "y": 191
+   },
+   "footprint": [
+    7,
+    4
+   ]
+  },
+  "module.engine_mk3.machine.r0": {
+   "kind": "static",
+   "sheet": "engine_mk3",
+   "frame": {
+    "x": 1241,
+    "y": 1,
+    "w": 309,
+    "h": 203
+   },
+   "anchor": {
+    "x": 128,
+    "y": 188
+   },
+   "footprint": [
+    4,
+    7
+   ]
+  },
+  "module.engine_mk3.machine.r0.active": {
+   "kind": "static",
+   "sheet": "engine_mk3",
+   "frame": {
+    "x": 1551,
+    "y": 1,
+    "w": 309,
+    "h": 203
+   },
+   "anchor": {
+    "x": 128,
+    "y": 188
+   },
+   "footprint": [
+    4,
+    7
+   ]
+  },
+  "module.engine_mk3.machine.r0.damaged": {
+   "kind": "static",
+   "sheet": "damage_sol_tiers",
+   "frame": {
+    "x": 3669,
+    "y": 1,
+    "w": 309,
+    "h": 203
+   },
+   "anchor": {
+    "x": 128,
+    "y": 188
+   },
+   "footprint": [
+    4,
+    7
+   ],
+   "glow": true
+  },
+  "module.engine_mk3.machine.r0.damaged.flicker": {
+   "kind": "static",
+   "sheet": "damage_sol_tiers",
+   "frame": {
+    "x": 1,
+    "y": 224,
+    "w": 309,
+    "h": 203
+   },
+   "anchor": {
+    "x": 128,
+    "y": 188
+   },
+   "footprint": [
+    4,
+    7
+   ]
+  },
+  "module.engine_mk3.machine.r0.destroyed": {
+   "kind": "static",
+   "sheet": "damage_sol_tiers",
+   "frame": {
+    "x": 668,
+    "y": 224,
+    "w": 309,
+    "h": 198
+   },
+   "anchor": {
+    "x": 128,
+    "y": 183
+   },
+   "footprint": [
+    4,
+    7
+   ]
+  },
+  "module.engine_mk3.machine.r1": {
+   "kind": "static",
+   "sheet": "engine_mk3",
+   "frame": {
+    "x": 3517,
+    "y": 1,
+    "w": 258,
+    "h": 192
+   },
+   "anchor": {
+    "x": 224,
+    "y": 197
+   },
+   "footprint": [
+    7,
+    4
+   ]
+  },
+  "module.engine_mk3.machine.r1.active": {
+   "kind": "static",
+   "sheet": "engine_mk3",
+   "frame": {
+    "x": 3776,
+    "y": 1,
+    "w": 258,
+    "h": 192
+   },
+   "anchor": {
+    "x": 224,
+    "y": 197
+   },
+   "footprint": [
+    7,
+    4
+   ]
+  },
+  "module.engine_mk3.machine.r1.damaged": {
+   "kind": "static",
+   "sheet": "damage_sol_tiers",
+   "frame": {
+    "x": 2242,
+    "y": 224,
+    "w": 261,
+    "h": 192
+   },
+   "anchor": {
+    "x": 224,
+    "y": 197
+   },
+   "footprint": [
+    7,
+    4
+   ],
+   "glow": true
+  },
+  "module.engine_mk3.machine.r1.damaged.flicker": {
+   "kind": "static",
+   "sheet": "damage_sol_tiers",
+   "frame": {
+    "x": 2504,
+    "y": 224,
+    "w": 257,
+    "h": 192
+   },
+   "anchor": {
+    "x": 224,
+    "y": 197
+   },
+   "footprint": [
+    7,
+    4
+   ]
+  },
+  "module.engine_mk3.machine.r1.destroyed": {
+   "kind": "static",
+   "sheet": "damage_sol_tiers",
+   "frame": {
+    "x": 3833,
+    "y": 224,
+    "w": 250,
+    "h": 190
+   },
+   "anchor": {
+    "x": 224,
+    "y": 195
+   },
+   "footprint": [
+    7,
+    4
+   ]
+  },
+  "module.engine_mk3.machine.r2": {
+   "kind": "static",
+   "sheet": "engine_mk3",
+   "frame": {
+    "x": 1,
+    "y": 223,
+    "w": 258,
+    "h": 192
+   },
+   "anchor": {
+    "x": 34,
+    "y": 197
+   },
+   "footprint": [
+    4,
+    7
+   ]
+  },
+  "module.engine_mk3.machine.r2.active": {
+   "kind": "static",
+   "sheet": "engine_mk3",
+   "frame": {
+    "x": 260,
+    "y": 223,
+    "w": 258,
+    "h": 192
+   },
+   "anchor": {
+    "x": 34,
+    "y": 197
+   },
+   "footprint": [
+    4,
+    7
+   ]
+  },
+  "module.engine_mk3.machine.r2.damaged": {
+   "kind": "static",
+   "sheet": "damage_sol_tiers",
+   "frame": {
+    "x": 2762,
+    "y": 224,
+    "w": 258,
+    "h": 192
+   },
+   "anchor": {
+    "x": 34,
+    "y": 197
+   },
+   "footprint": [
+    4,
+    7
+   ],
+   "glow": true
+  },
+  "module.engine_mk3.machine.r2.damaged.flicker": {
+   "kind": "static",
+   "sheet": "damage_sol_tiers",
+   "frame": {
+    "x": 3021,
+    "y": 224,
+    "w": 258,
+    "h": 192
+   },
+   "anchor": {
+    "x": 34,
+    "y": 197
+   },
+   "footprint": [
+    4,
+    7
+   ],
+   "glow": true
+  },
+  "module.engine_mk3.machine.r2.destroyed": {
+   "kind": "static",
+   "sheet": "damage_sol_tiers",
+   "frame": {
+    "x": 621,
+    "y": 428,
+    "w": 250,
+    "h": 188
+   },
+   "anchor": {
+    "x": 26,
+    "y": 193
+   },
+   "footprint": [
+    4,
+    7
+   ]
+  },
+  "module.engine_mk3.machine.r3": {
+   "kind": "static",
+   "sheet": "engine_mk3",
+   "frame": {
+    "x": 1861,
+    "y": 1,
+    "w": 309,
+    "h": 203
+   },
+   "anchor": {
+    "x": 181,
+    "y": 188
+   },
+   "footprint": [
+    7,
+    4
+   ]
+  },
+  "module.engine_mk3.machine.r3.active": {
+   "kind": "static",
+   "sheet": "engine_mk3",
+   "frame": {
+    "x": 2171,
+    "y": 1,
+    "w": 309,
+    "h": 203
+   },
+   "anchor": {
+    "x": 181,
+    "y": 188
+   },
+   "footprint": [
+    7,
+    4
+   ]
+  },
+  "module.engine_mk3.machine.r3.damaged": {
+   "kind": "static",
+   "sheet": "damage_sol_tiers",
+   "frame": {
+    "x": 3049,
+    "y": 1,
+    "w": 309,
+    "h": 204
+   },
+   "anchor": {
+    "x": 181,
+    "y": 189
+   },
+   "footprint": [
+    7,
+    4
+   ],
+   "glow": true
+  },
+  "module.engine_mk3.machine.r3.damaged.flicker": {
+   "kind": "static",
+   "sheet": "damage_sol_tiers",
+   "frame": {
+    "x": 3359,
+    "y": 1,
+    "w": 309,
+    "h": 204
+   },
+   "anchor": {
+    "x": 181,
+    "y": 189
+   },
+   "footprint": [
+    7,
+    4
+   ],
+   "glow": true
+  },
+  "module.engine_mk3.machine.r3.destroyed": {
+   "kind": "static",
+   "sheet": "damage_sol_tiers",
+   "frame": {
+    "x": 1,
+    "y": 428,
+    "w": 336,
+    "h": 190
+   },
+   "anchor": {
+    "x": 208,
+    "y": 175
+   },
+   "footprint": [
+    7,
     4
    ]
   },
