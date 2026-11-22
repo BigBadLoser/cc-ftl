@@ -42,7 +42,7 @@ export const civilianOutline = {
   freighter: {
     family: 'freighter', profiles: TUG, maxBeam: 27, crew: { sleep: 'bunks', rooms: 1 }, layout: { kind: 'bays', program: { pd: false, least: 64 } },
     // (Its cargo the truss's containers: no holds aboard.)
-    bonus: { crates: -8 }, truss: { banks: [5, 7], layers: 2 },
+    bonus: { crates: -8 }, truss: { banks: [5, 7], layers: 1 },
   },
   liner: {
     // (Two gun rooms, one a side, aft with the machinery.)

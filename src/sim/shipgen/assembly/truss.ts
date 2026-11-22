@@ -5,7 +5,7 @@ import type { TrussSpec } from '../outlineRecipe';
 /**
  * A pusher's truss (PROTOTYPE, #581): the cargo a freighter pushes ahead of its hull, frame and sealed containers, no
  * floor. A spine three beams deep runs forward from the hull's bow on its axis; either side of it a bank of large
- * containers stood across it, their doors clamped to the spine, a rib between each two; with a second layer, a rail
+ * containers stood across it a tile apart, their doors clamped to the spine; with a second layer, a rail
  * outboard of the first bank and a second bank clamped to it. The hull pushes it: its bridge looks down the spine.
  */
 
@@ -21,7 +21,7 @@ export function addTruss(rng: Rng, t: TrussSpec, s: { rows: string[]; roomOf: In
   const n = rng.int(t.banks[0], t.banks[1]), layers = t.layers;
   // The truss's half-depth: the spine, then each layer's bank and the rail outboard of it.
   const half = SPINE + layers * (CL + 1);
-  const len = n * (CW + 1) + 1, gap = 2;
+  const len = n * (CW + 1) - 1, gap = 2;
   const padY = Math.max(0, half + 1 - axis, half + 1 - (s.height - 1 - axis));
   const W = s.width + len + gap, H = s.height + 2 * padY, a = axis + padY, ox = len + gap;
   const cells: string[][] = Array.from({ length: H }, () => Array<string>(W).fill('.'));
@@ -36,11 +36,10 @@ export function addTruss(rng: Rng, t: TrussSpec, s: { rows: string[]; roomOf: In
   // The spine, on to the hull's bow wall.
   for (let y = a - SPINE; y <= a + SPINE; y++) for (let x = x0; x < W && cells[y]?.[x] === '.'; x++) set(x, y, '=');
   for (const side of [-1, 1]) for (let l = 0; l < layers; l++) {
-    // A bank: its rows outward from the spine (or the rail inboard of it), a rib each side of each container, the rail beyond.
+    // A bank: its rows outward from the spine (or the rail inboard of it), a tile of space between containers, the rail beyond.
     const inner = SPINE + 1 + l * (CL + 1);
     const ys = Array.from({ length: CL }, (_, k) => a + side * (inner + k));
-    for (let i = 0; i <= n; i++) for (const y of ys) set(x0 + i * (CW + 1), y, '=');
-    for (let i = 0; i < n; i++) for (const y of ys) for (let k = 0; k < CW; k++) set(x0 + i * (CW + 1) + 1 + k, y, box);
+    for (let i = 0; i < n; i++) for (const y of ys) for (let k = 0; k < CW; k++) set(x0 + i * (CW + 1) + k, y, box);
     if (l < layers - 1) for (let x = x0; x < x0 + len; x++) set(x, a + side * (inner + CL), '=');
   }
   const { rows, containers } = extractContainers(cells.map((r) => r.join('')));
