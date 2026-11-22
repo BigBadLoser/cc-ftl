@@ -22,13 +22,13 @@ const mod = (def: string, x: number, y: number, rot: number): Module => ({ def, 
 /**
  * `?panel=rig`: the surgical rig (#311) beside a medical bed with a sleeper, as the game draws them (`rigLayers`: body, the front overlay at the bed's front,
  * the console hologram), stepped through an operation: an idle cell, then `frames` stills spread evenly over a job of `sec` seconds (the timeline of
- * render/rigFrame.ts; each cell's note names the phase and frame). `rot=0..3` turns the bed, `&play` runs the operation.
+ * render/rigFrame.ts; each cell's note names the phase and frame). `rot=0..3` turns the bed, `side=0|1` picks the long side the rig stands on, `&play` runs the operation.
  */
 export const rigPanel: LabPanel = {
   id: 'rig',
   title: 'Surgical rig',
   zoom: 1,
-  help: 'frames=16 (stills through the operation), sec=60 (its length), rot=0 (the bed turned; the rig stands at its first fitting side)',
+  help: 'frames=16 (stills through the operation), sec=60 (its length), rot=0 (the bed turned), side=0 (which long side of the bed the rig stands on: 0 or 1; one of them draws the mirrored art)',
   async cells(ctx) {
     const frames = Math.max(1, Number(ctx.params.get('frames') ?? 16)), sec = Math.max(1, Number(ctx.params.get('sec') ?? 60));
     const rot = Math.max(0, Math.min(3, Number(ctx.params.get('rot') ?? 0)));
@@ -44,7 +44,9 @@ export const rigPanel: LabPanel = {
     const has = (id: string): boolean => !!ctx.atlas.stat(id);
     // The rig's own spot: the first of its four rotations and the tiles round the bed that face the bed's foot from a long side.
     const spots = [-1, 0, 1, 2].flatMap((y) => [-1, 0, 1, 2].flatMap((x) => [0, 1, 2, 3].map((r) => ({ x, y, r }))));
-    const at = spots.find((s) => rigFitsBed(rigDef, s.x, s.y, s.r, bedDef, 0, 0, rot));
+    const side = Number(ctx.params.get('side') ?? 0) ? 1 : 0;
+    const fits = spots.filter((s) => rigFitsBed(rigDef, s.x, s.y, s.r, bedDef, 0, 0, rot));
+    const at = fits[side] ?? fits[0];
     if (!at) return [];
     const [bw, bd] = rot % 2 === 0 ? bedDef.footprint : [bedDef.footprint[1], bedDef.footprint[0]];
     const rigM = mod(RIG, at.x, at.y, at.r);
@@ -57,10 +59,10 @@ export const rigPanel: LabPanel = {
       return {
         label: s.label,
         note: f ? `${f.phase} f${f.frame} @${Math.floor(s.t * RIG_FPS)}` : 'no operation',
-        w: 300, h: 300, at: s.t, loop: s.active ? sec : undefined, newRow: i % 5 === 0,
+        w: 300, h: 360, at: s.t, loop: s.active ? sec : undefined, newRow: i % 5 === 0,
         mount(root) {
-          const ox = 150, oy = 200;
-          const clip = new Graphics().rect(0, 0, 300, 300).fill(0xffffff); // the floor reaches past the cell: keep the next cell's off this one
+          const ox = 150, oy = 260;
+          const clip = new Graphics().rect(0, 0, 300, 360).fill(0xffffff); // the floor reaches past the cell: keep the next cell's off this one
           root.addChild(clip);
           root.mask = clip;
           const place = (tx: number, ty: number): { x: number; y: number } => { const p = iso(tx - bedFront.x, ty - bedFront.y); return { x: ox + p.x, y: oy + p.y }; };
