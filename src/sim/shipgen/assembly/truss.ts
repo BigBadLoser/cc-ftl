@@ -19,9 +19,13 @@ const SPINE = 1;
 
 export interface Trussed { rows: string[]; roomOf: Int16Array; width: number; height: number; containers: PlacedContainer[] }
 
+/** Large containers a bank holds at `depth`: the recipe's draw, more the deeper, up to its most. */
+export const banksAt = (rng: Rng, t: TrussSpec, depth: number): number =>
+  Math.min(t.max ?? Infinity, rng.int(t.banks[0], t.banks[1]) + Math.round((t.perDepth ?? 0) * depth));
+
 /** The rows with the truss ahead of the hull (`axis` its centre row), the rooms moved with them. */
-export function addTruss(rng: Rng, t: TrussSpec, s: { rows: string[]; roomOf: Int16Array; width: number; height: number }, axis: number): Trussed {
-  const n = rng.int(t.banks[0], t.banks[1]), layers = t.layers;
+export function addTruss(rng: Rng, t: TrussSpec, s: { rows: string[]; roomOf: Int16Array; width: number; height: number }, axis: number, depth: number): Trussed {
+  const n = banksAt(rng, t, depth), layers = t.layers;
   // The truss's half-depth: the spine, then each layer's bank and the rail outboard of it.
   const half = SPINE + layers * (CL + 1);
   const padY = Math.max(0, half + 1 - axis, half + 1 - (s.height - 1 - axis));

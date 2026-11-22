@@ -290,7 +290,7 @@ export function assembleOutline(
   const at = (cx: number, cy: number): string => snap.rows[cy]?.[cx] ?? '.';
   const rows = snap.rows.map((r, y) => [...r].map((c, cx) => (c === 'D' && [at(cx + 1, y), at(cx - 1, y), at(cx, y + 1), at(cx, y - 1)].includes('.') ? '#' : c)).join(''));
   // A pusher's truss ahead of its hull (its centre row the grid's row 0).
-  const shell = r.truss ? addTruss(rng, r.truss, { rows, roomOf: snap.roomOf, width: snap.width, height: snap.height }, -snap.y0) : { rows, roomOf: snap.roomOf, width: snap.width, height: snap.height };
+  const shell = r.truss ? addTruss(rng, r.truss, { rows, roomOf: snap.roomOf, width: snap.width, height: snap.height }, -snap.y0, depth) : { rows, roomOf: snap.roomOf, width: snap.width, height: snap.height };
   return fitShell(
     rng, f, factionId, seed, role, 'sections', { crew: plan.crew } as Pick<ShipPlan, 'crew'>,
     { ...shell, roles: g.regions.map((r) => r.role), specs: g.regions.map((r) => r.spec) },

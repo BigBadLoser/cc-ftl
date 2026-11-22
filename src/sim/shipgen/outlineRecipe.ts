@@ -78,9 +78,10 @@ export interface DeptRules {
 
 /**
  * A pusher's truss (PROTOTYPE, #581): frame and sealed containers ahead of the hull, no floor (assembly/truss.ts). `banks`
- * the large containers along each side, a draw; `layers` the banks either side of the spine, out from it.
+ * the large containers along each side, a draw, `perDepth` more a depth, `max` at most; `layers` the banks either side of
+ * the spine, out from it.
  */
-export interface TrussSpec { banks: [number, number]; layers: 1 | 2 }
+export interface TrussSpec { banks: [number, number]; perDepth?: number; max?: number; layers: 1 | 2 }
 
 export interface OutlineRecipe {
   /** The hull family whose budget it plans with. */
