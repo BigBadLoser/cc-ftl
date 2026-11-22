@@ -27,8 +27,11 @@ export function addDoors(cell: string[], id: number, rg: Region, sh: Shape, grid
   // (A door into an airlock's hall at its end by the spine, clear of the airlock at the hull's.)
   const dock = (x: number, y: number): boolean => [floor(x, y - 1), floor(x, y + 1), floor(x + 1, y), floor(x - 1, y)].some((b) => b >= 0 && b !== id && (grid.regions[b] as Region).role === 'dock');
   const inward = rg.doors === 1 && pick.length > 0 && pick.every(([x, y]) => dock(x, y));
+  // (Or, `doorOut`, at its outer end three rows clear of the airlock.)
+  const far = Math.max(...pick.map(([, y]) => Math.abs(y))), out = pick.filter(([, y]) => Math.abs(y) <= far - 3);
+  const outward = inward && !!rg.doorOut && out.length > 0;
   for (let k = 0; k < Math.min(rg.doors, pick.length); k++) {
-    const [x, y] = (inward ? pick.reduce((a, b) => (Math.abs(b[1]) < Math.abs(a[1]) ? b : a)) : rg.doorFirst ? pick.reduce((a, b) => (b[0] < a[0] || (b[0] === a[0] && b[1] < a[1]) ? b : a)) : pick[Math.floor(((k + 0.5) * pick.length) / Math.min(rg.doors, pick.length))]) as [number, number];
+    const [x, y] = (outward ? out.reduce((a, b) => (Math.abs(b[1]) > Math.abs(a[1]) ? b : a)) : inward ? pick.reduce((a, b) => (Math.abs(b[1]) < Math.abs(a[1]) ? b : a)) : rg.doorFirst ? pick.reduce((a, b) => (b[0] < a[0] || (b[0] === a[0] && b[1] < a[1]) ? b : a)) : pick[Math.floor(((k + 0.5) * pick.length) / Math.min(rg.doors, pick.length))]) as [number, number];
     cell[(y + half) * size + x + half] = 'D';
   }
 }

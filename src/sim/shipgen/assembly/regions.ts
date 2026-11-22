@@ -28,6 +28,8 @@ export interface Region {
   /** Regions this room may open a door onto (default: any hall). */
   access?: number[];
   doors: number; /** One door at its frontage's bow end, not the middle (fixtures fill the rest). */ doorFirst?: boolean;
+  /** Its one door into an airlock's hall at its outer end, clear of the airlock (an offset cockpit's: its helm in line, outboard). */
+  doorOut?: boolean;
   /** Doors in a wall running along this axis where it has any (a lane hull's forward rooms: onto the spine). */
   doorAlong?: 'x' | 'y';
   /** Wall rank among rooms: the lower gives way. Defaults to creation order. */

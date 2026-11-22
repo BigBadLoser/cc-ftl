@@ -15,7 +15,7 @@ import type { BayPart } from './part';
 /** Tiles the pod reaches forward of the bow, and out past the hull's side. */
 const AHEAD = 7, OUT = 1;
 /** Its forward corners' cuts, outer and inner (by the spine). */
-const CUT = 3, INNER = 3;
+const CUT = 1, INNER = 3;
 
 /** The side the pod stands on: the hull's length decides, so seeds differ. */
 const sideOf = (W: number): 1 | -1 => (W % 2 === 0 ? 1 : -1);
@@ -45,8 +45,9 @@ export const COCKPIT: BayPart = {
       if (d + (outer - r) < CUT || d + (r - BAND) < INNER || 2 * (r - T) > xBr - 1 - x || (k !== SPACE && k !== SOLID)) continue;
       g.set(ox + x, s * r, bridge);
     }
-    // Its door off the airlocks' corridor behind it, so the helm at its nose faces forward.
+    // Its door off the airlocks' corridor behind it, at its outer end: the helm, in line with it, faces forward at the
+    // pod's outer forward corner.
     const reg = g.regions[bridge];
-    if (reg && dockAt === xBr + 1) reg.access = [docks[s > 0 ? 1 : 0]];
+    if (reg && dockAt === xBr + 1) Object.assign(reg, { access: [docks[s > 0 ? 1 : 0]], doorOut: true });
   },
 };
