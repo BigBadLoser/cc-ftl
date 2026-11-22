@@ -4,6 +4,7 @@ import { cachedWorld } from '../../test/support/world';
 import { stepCoarse } from '../sim/galaxy/coarse';
 import { nodeOwner, sectorNeighbours, sectorOwner, structureOwner, tidyControl } from '../sim/galaxy/control';
 import { flipSector } from '../sim/galaxy/flip';
+import { econOf } from '../sim/galaxy/market';
 import { owe, portsAt } from '../sim/galaxy/portIndex';
 import { addPressure, fightPressure, playerFightPressure } from '../sim/galaxy/pressure';
 import { atWar } from '../sim/galaxy/relations';
@@ -399,6 +400,19 @@ describe('review fixes', () => {
     sim.galaxy.turn = tickAt(2 + CONSOLIDATE_TICKS);
     tidyControl(sim, id as string);
     expect(sim.galaxy.control[id as string]).toBeUndefined();
+  });
+
+  it("a port that changes hands trades as its new owner's market, even when its old economy was already built", () => {
+    const sim = base();
+    const sectors = galaxyIndex(sim.galaxy).sectors;
+    const found = candidates(sim, sectors.size).flatMap((id) => sectors.get(id)!.nodes.flatMap((n) => portsAt(sim, n)).filter((p) => econOf(sim, p)).map((p) => [id, p] as const))[0];
+    expect(found).toBeDefined();
+    const [id, port] = found!;
+    const before = econOf(sim, port);
+    flipSector(sim, id, enemyOf(sim, sectorOwner(sim, id) as string), tickAt(1));
+    const after = portsAt(sim, port.node).find((p) => p.id === port.id)!;
+    expect(after.owner).not.toBe(port.owner);
+    expect(econOf(sim, after)).not.toBe(before);
   });
 });
 
