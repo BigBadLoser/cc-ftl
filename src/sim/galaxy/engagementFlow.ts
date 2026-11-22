@@ -10,10 +10,11 @@ import { shipCanAct } from '../combat/shipQuery';
 import { dropAims } from '../combat/stations';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
-import { retreat, strand } from './agenda';
+import { strand } from './agenda';
 import { clash, type Clash, type SideResult } from './clash';
 import { engagements, sideShips } from './engagements';
-import { liftFleet } from './fleetShips';
+import { liftFleet, sendOff } from './fleetShips';
+import { answerYields } from './engagementPrize';
 import { aftermath, apply, liveMeetings, type Meeting } from './meetings';
 import { fleetName } from './names';
 import { report } from './news';
@@ -230,8 +231,7 @@ function leave(sim: Sim, e: Engagement): void {
   for (const id of e.fleets[l.side]) {
     const f = fleetById(sim, id);
     if (!f || f.node !== e.node) continue;
-    liftFleet(sim, f);
-    retreat(sim, f, sim.galaxy.turn);
+    sendOff(sim, f);
   }
 }
 
@@ -284,6 +284,7 @@ export function tendEngagements(sim: Sim): void {
     }
     aim(sim, e);
     if (sim.tick % TICK_HZ !== 0) continue;
+    answerYields(sim, e);
     stalemate(sim, e);
     leave(sim, e);
   }

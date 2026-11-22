@@ -202,7 +202,8 @@ they are stamped into the [sector grid](#sector-grid).
   mechanic: NPCs fight, board, capture and defend against each other as they do against the player. There are no player-only or NPC-only
   copies of a mechanic. When a path turns out to be player-only, generalise the existing system by its subject (which ship or crew acts,
   which it targets) instead of adding an NPC variant beside it. For example, `boarding/party.ts` `boardTargets` picks the ship a party goes
-  for, `fight/relations.ts` `crewShipOf` says which ship a crew member serves, and `captureSystem` lets either side's boarders take a ship.
+  for, `fight/relations.ts` `crewShipOf` says which ship a crew member serves, `captureSystem` lets either side's boarders take a ship, and a beaten ship yields to whoever fights it (`crewedFoe`, `hopeless`,
+  `boardersReach`), answered by the player's deal or by an NPC foe's habit (`answerYields`).
 
 **Galaxy.**
 - Chunked and seeded, generated on demand (see "Starmap" below).

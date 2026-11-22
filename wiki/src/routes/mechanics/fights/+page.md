@@ -18,6 +18,9 @@ In a war zone or pirate country, where many hostile fleets pass through, you wil
 - Boarding crews board each other too. A raider's shuttle docks at the ship it is fighting and its crew fight the
   defenders. If they hold the bridge of a ship whose crew are all down or have given up, they take the ship, and it
   leaves with their fleet.
+- A beaten ship with no fight left in it (hull failing, guns dead, no way to run) gives up to the ship it was fighting, just
+  as it would to you. Pirates take it with its crew still aboard, and it leaves with their fleet. Everyone else lets it go,
+  and it jumps away.
 - There is no time limit. The fight ends only when one side is destroyed, taken or has jumped away. If neither side
   can hurt the other for about a minute, the weaker side gives up and jumps away. The ship's log and the news say how it
   ended.

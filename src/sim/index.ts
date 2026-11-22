@@ -104,7 +104,7 @@ export { TaskC, IntentC, InterruptC, PickupC } from './ai/components';
 export type { Task, Intent, Interrupt, DriveId, MachineId, TaskClass, PolicyDef, DriveDef, DriveInput, CrewKind, ScheduleBlock, ScheduleDef, BlockRule } from './ai/types';
 export { captureReady, isAiRun } from './capture/control';
 export { playerCrewAboard, type PlayerAboard } from './boarding/aboard';
-export { playerReach } from './boarding/reach';
+export { boardersReach } from './boarding/reach';
 export { SabotageOrderC } from './boarding/components';
 export { loseStrandedCrew } from './boarding/stranded';
 export { CoreRaiderC, CoreRaidC, coreObjective } from './capture/coreRaid';

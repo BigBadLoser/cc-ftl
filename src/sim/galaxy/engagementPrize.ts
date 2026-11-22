@@ -1,7 +1,9 @@
 import { ShipC } from '../combat/components';
 import type { Sim } from '../sim';
 import { headHome } from './agenda';
-import { engagements, sideIn } from './engagements';
+import type { Engagement } from '../combat/engagementTypes';
+import { engagements, sideIn, sideShips } from './engagements';
+import { sendOff } from './fleetShips';
 import { report } from './news';
 import { owe } from './portIndex';
 import type { Fleet } from './types';
@@ -46,4 +48,29 @@ export function takeShip(sim: Sim, ship: number, captor: number): void {
   }
   report(sim, { node: e.node, kind: 'taken', who: e.names[win], faction: e.factions[win], foe: name, foeFaction: e.factions[lose] }, sim.galaxy.turn);
   sim.galaxy.rev++;
+}
+
+/**
+ * A ship beaten in a fight between NPC ships yields (`Ship.yielded`, set by the same shipState rule as for the player: crew all subdued, no foe
+ * boarding it), and its foe answers as the player would, by its faction's habit (`GalaxyFactionDef.takesPrizes`): a pirate takes the ship as its
+ * prize, crew aboard (`takeShip`); anyone else lets it go, and its fleet jumps away (`sendOff`), so the fight ends with the foe the winner. Only in
+ * meetings: in an aid fight the yielding ship attacked the player, who answers it.
+ */
+export function answerYields(sim: Sim, e: Engagement): void {
+  if (e.kind !== 'meeting') return;
+  for (const side of [0, 1] as const) {
+    const foe = side === 0 ? 1 : 0;
+    for (const id of sideShips(sim, e, side)) {
+      const s = sim.world.get(id, ShipC);
+      const captor = sideShips(sim, e, foe)[0];
+      if (!s?.yielded || captor === undefined) continue;
+      delete s.yielded;
+      if (sim.content.galaxy?.factions[e.factions[foe]]?.takesPrizes) {
+        takeShip(sim, id, captor);
+        continue;
+      }
+      const own = e.fleets[side].map((x) => sim.galaxy.fleets.find((f) => f.id === x)).find((f) => f?.ships.some((c) => c.ship === id));
+      if (own) sendOff(sim, own);
+    }
+  }
 }

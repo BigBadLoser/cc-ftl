@@ -195,3 +195,6 @@ updates `wiki/` and `docs/CATALOG.md` in its PR.
 9. No time limit and no draws by time (review of #609): fleets at war in one node fight until a side is out (wrecked, taken) or jumps away. A
    badly hurt ship flees by the enemy AI's rule and its fleet goes with it; after `ENGAGE_STALE_SEC` (60 s) with no damage, the weaker side
    (lower integrity share; on a tie the side that did not start it) jumps away.
+10. NPCs treat each other as they treat the player, through the same systems (ARCHITECTURE.md "One answer per question"): boarding
+    parties board their foe, a held bridge takes the ship for the captor's fleet, and a beaten ship yields to its foe, whose faction answers
+    by its habit (`GalaxyFactionDef.takesPrizes`: pirates take it, crew aboard; others let it go and it jumps away). No NPC prisoners.
