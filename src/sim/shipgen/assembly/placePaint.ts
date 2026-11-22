@@ -7,7 +7,7 @@ import { SOLID, type RegionGrid } from './regions';
 import type { Part, Placed } from './placeLayout';
 
 /** PROTOTYPE (#581): paints a placed layout's room outlines (no fit-out): the frame's bridge, drive and corridors, then each part. */
-export function paintPlaced(plan: ShipPlan, { fr, lay, battery }: Placed): RegionGrid {
+export function paintPlaced(plan: ShipPlan, { fr, lay, battery, paint: own }: Placed): RegionGrid {
   const { W, xS, dockAt, used, engine, lane } = fr;
   const fg = frameGrid(fr, plan), { g, hall, docks, paint } = fg;
   const stubs = lay.stubs.map((s) => ({ ...s, id: g.hall('hall') })), maint = fr.maint ? g.hall('hall') : -1;
@@ -126,6 +126,7 @@ export function paintPlaced(plan: ShipPlan, { fr, lay, battery }: Placed): Regio
     });
   }
   closeFrame(fr, fg);
+  own?.(fg);
   for (const s of stubs) paint(s.id, s.x, s.x + 1, (y) => Math.abs(y) >= BAND);
   return g;
 }

@@ -3,6 +3,7 @@ import { reactorSpec, unflat, type RoomSpec, type ShipPlan } from '../plan';
 import { bayLayout, type Bay } from './bays';
 import { cabinsFor } from './cabinBlock';
 import type { Frame } from './frame';
+import type { FrameGrid } from './frameGrid';
 import { gunsAndReactors, programPairs, type Pair } from './pairs';
 import { fillers, type Layout, type Part, type Piece, type Placed } from './placeLayout';
 import { onHall, opensThrough, roomKind } from './roomAccess';
@@ -104,7 +105,7 @@ export interface BayRules { depts: Depts; part: BayPart & { program: Required<Pr
 export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleDef>, budget: number, rules: BayRules): Placed & { puts: number; zone: (Dept | undefined)[] } {
   const bays = bayLayout(fr), n = bays.length, { depts, part } = rules, pr = part.program;
   const { gunPairs } = gunsAndReactors(plan, defs);
-  const order = program(plan, defs, fr.maint ? gunPairs.length : 0, pr);
+  const order = program(plan, defs, fr.maint ? gunPairs.length : 0, pr, !part.cabins);
   const bay = (k: number): Bay => bays[k] as Bay;
   const rowsAt = (b: Bay, x: number, tier: Tier, split?: number): number => {
     const d = (b.row?.depth ?? fr.depth)(x), [f, k] = b.tiers;
@@ -359,9 +360,11 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
   // them, cabin blocks as anywhere.
   const strip: Put[] = [];
   const geo: BayGeo = { fr, bays, minDepth, joined };
-  let short = false;
+  // (A part's own cabins, where it has them: as many as the plan's cabin beds, or no layout.)
+  const beds = plan.quarters.filter((q) => q.block).reduce((t, q) => t + q.mods.length, 0);
+  let short = !!part.cabins && part.cabins(fr) < beds;
   if (part.strip) {
-    const beds = plan.quarters.filter((q) => q.block).reduce((t, q) => t + q.mods.length, 0), ks = part.strip(geo, beds);
+    const ks = part.strip(geo, beds);
     for (const s of [0, 1] as const) {
       let need = s === 0 ? Math.ceil(beds / 2) : Math.floor(beds / 2);
       for (const { i, j, c } of cutStrip(geo, ks, need)) {
@@ -383,7 +386,7 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
     });
     const pre = [...strip, ...guns0], occ0 = pre.reduce<Occ>((o, p) => take(o, p.spot, p), [emptySide(), emptySide()]);
     const inBattery = fr.maint || guns0.length > 0 ? gunPairs.length : 0;
-    const rest = pre.length > 0 ? program(plan, defs, inBattery, pr, strip.length === 0) : order;
+    const rest = pre.length > 0 ? program(plan, defs, inBattery, pr, !part.cabins && strip.length === 0) : order;
     // (Each department's rooms' floor and slots a side: half each room's, a mirrored pair's both; an annex its own slot.)
     const need: Partial<Record<Dept, Need>> = {};
     for (const r of rest.flatMap((it) => real(it.specs))) {
@@ -406,7 +409,7 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
     const k = (fr.maint?.guns.length ?? 0) + j, out = battery[site], inn = battery[k];
     if (out && inn && guns(out) > guns(inn)) { battery[site] = inn; battery[k] = out; }
   }
-  return { fr, lay, zone, score: got?.score ?? Infinity, viable, nodes, why, pins: battery.length, sites: fr.maint?.guns.length ?? 0, battery, puts: got?.puts.length ?? 0 };
+  return { ...(part.paint ? { paint: (fg: FrameGrid) => part.paint?.(fr, fg, beds) } : {}), fr, lay, zone, score: got?.score ?? Infinity, viable, nodes, why, pins: battery.length, sites: fr.maint?.guns.length ?? 0, battery, puts: got?.puts.length ?? 0 };
 
   function toPieces(puts: Put[]): Piece[] {
     const part = (sp: Spot, spec: Specs, fill?: boolean): Part => {

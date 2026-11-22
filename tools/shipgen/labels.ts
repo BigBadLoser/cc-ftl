@@ -57,6 +57,7 @@ export function roomKind(role: string, mods: readonly string[]): string {
   if (has('storage_ore') || has('storage_ore_large')) return 'ore';
   if (has('exercise')) return 'gym';
   if (has('arcade')) return 'rec';
+  if (has('planter')) return 'garden';
   if (role === 'support' && has('storage_locker')) return 'suits';
   return NAMES[role] ?? role;
 }

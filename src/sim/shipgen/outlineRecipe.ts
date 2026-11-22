@@ -24,8 +24,9 @@ export interface BlocksLayout { kind: 'blocks'; guns: 'forward' | 'spread' }
  *   cross corridor ahead of it, a corridor down each side hull. The lane narrows where a side hull is too shallow.
  * - `decks`: passenger decks aft of the airlocks: single cabins both sides of the spine (its shallow bays), the commons
  *   in its deep ones; command, stores and systems forward.
+ * - `drum`: a liner's drum amidships, its own rooms (parts/drum.ts): a garden, a ring corridor, cabins outboard.
  */
-export interface BaysLayout { kind: 'bays'; battery?: boolean; lane?: boolean; decks?: boolean; program?: ProgramRules }
+export interface BaysLayout { kind: 'bays'; battery?: boolean; lane?: boolean; decks?: boolean; drum?: boolean; program?: ProgramRules }
 
 /** A bay ship's room program past its plan (bayRooms.ts), each set by its parts and over them by the recipe. */
 export interface ProgramRules {
@@ -86,7 +87,7 @@ export interface OutlineRecipe {
   /** Guns every ship of the type carries, one to a room, in pairs (`ShipRoleDef.guns`). */
   gunRooms?: number;
   bonus?: Partial<Record<'weapons' | 'engines' | 'crew' | 'crates' | 'shields' | 'pointDefense' | 'reactors', number>>;
-  /** How the crew sleeps; `rooms`: its barracks that many rooms (one wall of pieces each), not the plan's. */
+  /** How the crew sleeps; `rooms`: its barracks that many rooms (pieces along two walls), not the plan's. */
   crew: { sleep: Sleep; rooms?: number };
   /** Passenger beds past the crew's, single cabins: a base and more a depth. */
   passengers?: { base: number; perDepth: number };

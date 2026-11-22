@@ -17,8 +17,12 @@ export function bayLayout(fr: Frame): Bay[] {
   // On a lane hull, aft of the cross corridor: out from each side corridor, and in from it to the lane where it has both.
   const out: Row | undefined = lane && { c: lane.yc, dir: 1, depth: (x) => outer(x) - lane.yc - BAND - 1 };
   const blocks: [number, number, Row?][] = [[xBand, dockAt - 1]];
-  // (Outboard, round its alcoves.)
-  if (!out) blocks.push([dockAt + CW + 1, xS]);
+  // (Outboard, round its alcoves; round a part's own columns, `skip`.)
+  if (!out) {
+    const sk = fr.skip;
+    if (sk && sk[0] > dockAt) blocks.push([dockAt + CW + 1, sk[0]], [sk[1] + 1, xS]);
+    else blocks.push([dockAt + CW + 1, xS]);
+  }
   else for (const [a, b] of outboardRuns(fr)) blocks.push([a, b, out]);
   // (Inboard, between the lane's airlocks.)
   if (lane) {

@@ -82,10 +82,10 @@ export function shipQuarters(r: OutlineRecipe, planned: readonly RoomSpec[], cre
     const n = Math.ceil((sleepersIn(q.mods) + Math.floor(spare / planned.length) + (i < spare % planned.length ? 1 : 0)) / per);
     return { ...q, mods: Array<string>(n).fill(sleep === 'beds' ? 'module.bed' : SLEEPER.def), ...barracksSize(n, true) };
   });
-  // (A recipe's number of rooms: the pieces shared out between them, one wall of them each.)
+  // (A recipe's number of rooms: the pieces shared out between them, along two walls.)
   const all = rooms.flatMap((q) => q.mods), k = Math.min(r.crew.rooms ?? 0, all.length);
   const shared = Array.from({ length: k }, (_, i) => all.slice(Math.round((i * all.length) / k), Math.round(((i + 1) * all.length) / k)));
-  return [...(k > 0 && rooms[0] ? shared.map((mods) => ({ ...(rooms[0] as RoomSpec), mods, ...barracksSize(mods.length, true) })) : rooms), ...pax];
+  return [...(k > 0 && rooms[0] ? shared.map((mods) => ({ ...(rooms[0] as RoomSpec), mods, ...barracksSize(mods.length) })) : rooms), ...pax];
 }
 
 /**

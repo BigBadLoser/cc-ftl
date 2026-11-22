@@ -25,7 +25,11 @@ export interface Pod { len: Range; half: Range }
  * A stretch of body at one half-width, reached from the one before by a taper of `taper` tiles along per tile out
  * (default 2; 1 is a hard 45-degree shoulder).
  */
-export interface Section { len: Range; half: Range; taper?: number; chance?: number }
+export interface Section {
+  len: Range; half: Range; taper?: number; chance?: number;
+  /** Its corners rounded as quarter circles of this radius, in place of tapers in and out (a liner's drum). */
+  round?: Range;
+}
 
 /** A body part: one section, or a choice of sections picked per seed (how a recipe moves its masses between seeds). */
 export type Part = Section | readonly Section[];
@@ -95,11 +99,11 @@ function body(rng: Rng, p: Profile, drive?: Drive): { outer: number[]; bodyStart
   const secs = p.sections
     .map((part) => one(rng, part))
     .filter((s) => s.chance === undefined || rng.chance(s.chance))
-    .map((s) => ({ len: pick(rng, s.len), half: pick(rng, s.half), taper: s.taper ?? 2 }));
+    .map((s) => ({ len: pick(rng, s.len), half: pick(rng, s.half), taper: s.taper ?? 2, round: s.round ? pick(rng, s.round) : 0 }));
   if (drive?.rng && secs.length > 1) {
     // The drive section drawn again from its own options, `grow` tiles wider (never past the section ahead of it).
     const s = one(drive.rng, p.sections[p.sections.length - 1] as Part), ahead = (secs[secs.length - 2] as { half: number }).half;
-    secs[secs.length - 1] = { len: pick(drive.rng, s.len), half: Math.min(ahead, pick(drive.rng, s.half) + (drive.grow ?? 0)), taper: s.taper ?? 2 };
+    secs[secs.length - 1] = { len: pick(drive.rng, s.len), half: Math.min(ahead, pick(drive.rng, s.half) + (drive.grow ?? 0)), taper: s.taper ?? 2, round: 0 };
   }
   const H0 = (secs[0] as { half: number }).half;
   const outer: number[] = [];
@@ -121,8 +125,18 @@ function body(rng: Rng, p: Profile, drive?: Drive): { outer: number[]; bodyStart
   }
   const bodyStart = outer.length;
   let prev = H0;
-  for (const s of secs) {
+  for (const [i, s] of secs.entries()) {
     const start = outer.length;
+    if (s.round > 0) {
+      // Its corners quarter circles down to the sections either side (no taper in or out); the next starts from its own half.
+      const lo = Math.max(prev, secs[i + 1]?.half ?? 0), r = Math.min(s.round, s.half - lo, Math.floor(s.len / 2));
+      for (let k = 0; k < s.len; k++) {
+        const e = Math.min(k, s.len - 1 - k);
+        outer.push(e >= r ? s.half : Math.max(lo, Math.round(s.half - r + Math.sqrt(r * r - (r - e) ** 2))));
+      }
+      prev = secs[i + 1]?.half ?? s.half;
+      continue;
+    }
     while (prev < s.half) { prev++; for (let k = 0; k < s.taper; k++) outer.push(prev); }
     while (prev > s.half) { for (let k = 0; k < s.taper; k++) outer.push(prev); prev--; }
     while (outer.length - start < s.len) outer.push(s.half);

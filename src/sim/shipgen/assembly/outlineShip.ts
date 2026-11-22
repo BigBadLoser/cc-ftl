@@ -247,7 +247,7 @@ function bayGrid(plans: ShipPlan[], lanes: Silhouette[][], maxBeam: number, defs
         const m = j === 0 && k === 0 ? m0 : scaled(sil, sx, sy);
         if (2 * m.H + 3 > maxBeam) continue;
         for (const plan of plans) {
-          const fr = outlineFrame(plan, m, defs[plan.kit.engine]?.engine?.hullCapacity ?? 0, ENGINE_GAP, lane, rules.part.dock);
+          const fr = outlineFrame(plan, m, defs[plan.kit.engine]?.engine?.hullCapacity ?? 0, ENGINE_GAP, lane, rules.part);
           if (!fr) continue;
           // (A lane hull's floor is far past its rooms' plan: its reactors light the hull's.)
           const lit = fr.lane ? { ...plan, reactors: reactorsFor(plan, defs, Math.round(LIT * fr.area)) } : plan;
