@@ -12,7 +12,7 @@ import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { strand } from './agenda';
 import { clash, type Clash, type SideResult } from './clash';
-import { engagements, sideShips } from './engagements';
+import { engagements, sideIn, sideShips } from './engagements';
 import { liftFleet, sendOff } from './fleetShips';
 import { answerYields } from './engagementPrize';
 import { aftermath, apply, liveMeetings, type Meeting } from './meetings';
@@ -204,15 +204,30 @@ function boarding(sim: Sim, e: Engagement): boolean {
 }
 
 /**
+ * Can the side leave the fight: a fleet of it here with a ship in play that is not a station (`sendOff` moves fleets; a station never jumps). An armed
+ * station that came to the player's aid (engagementAid.ts) is on a side with no fleet of its own. The one answer for who may be sent away.
+ */
+function canLeave(sim: Sim, e: Engagement, side: 0 | 1): boolean {
+  return e.fleets[side].some((id) => {
+    const f = fleetById(sim, id);
+    return !!f && f.node === e.node && f.ships.some((c) => c.ship !== undefined && !sim.world.get(c.ship, ShipC)?.immobile && sideIn(sim, e, c.ship) === side);
+  });
+}
+
+/**
  * Once a second: note whether the fight did damage (or a boarding party is still at it). After ENGAGE_STALE_SEC without, the weaker side (the lower integrity share; on a tie side 1,
- * the one that did not start it) gives up and jumps away (`leave`).
+ * the one that did not start it) gives up and jumps away (`leave`); a side that cannot leave (`canLeave`: stations only) stays and the other leaves
+ * instead, and with neither able to leave the fight ends as a standoff (no winner, nothing held).
  */
 function stalemate(sim: Sim, e: Engagement): void {
   const now = hullOf(sim, e, 0) + hullOf(sim, e, 1);
   if (e.calm === undefined || e.hull === undefined || now < e.hull - 1e-6 || boarding(sim, e)) e.calm = sim.tick;
   e.hull = now;
   if (e.leaving || sim.tick - e.calm < ENGAGE_STALE_SEC * TICK_HZ) return;
-  e.leaving = { side: shareOf(sim, e, 0) < shareOf(sim, e, 1) ? 0 : 1, since: sim.tick };
+  const weaker: 0 | 1 = shareOf(sim, e, 0) < shareOf(sim, e, 1) ? 0 : 1;
+  const side = [weaker, weaker === 0 ? 1 : 0].find((x) => canLeave(sim, e, x as 0 | 1)) as 0 | 1 | undefined;
+  if (side === undefined) return close(sim, e, null, false);
+  e.leaving = { side, since: sim.tick };
 }
 
 /**
@@ -233,6 +248,8 @@ function leave(sim: Sim, e: Engagement): void {
     if (!f || f.node !== e.node) continue;
     sendOff(sim, f);
   }
+  // What is left of that side cannot jump (a station that came to aid it): it stands down, and the other side holds the field.
+  if (sideShips(sim, e, l.side).length) close(sim, e, l.side === 0 ? 1 : 0, false);
 }
 
 /** Settle what is left of a meeting by the stats fight: both fleets' ships are lifted out (damage is not carried, as on any lift) and `clash` decides. */
