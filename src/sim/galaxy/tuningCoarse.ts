@@ -20,6 +20,12 @@ export const FLIP_SPACING = 6;
 export const FLIP_THRESHOLD = 1;
 export const PRESSURE_MAX = 2.5;
 
+/**
+ * The simulated area: the coarse tick runs over every chunk within this many chunks of the player's (generated on the tick when missing; the app's prefetch builds them
+ * ahead off-thread, PREFETCH_RING). The 9-hop fleet area reaches 2 chunks, so 5 is 2.5 times that. A wider map holds more borders for wars to move.
+ */
+export const SIM_RING = 5;
+
 /** A sector's weight in a faction's strength: a base, plus a hub bonus, plus per station it owns there; each ship its ports still owe takes OWED_WEIGHT off. */
 export const SECTOR_BASE = 1;
 export const SECTOR_HUB = 1;
@@ -60,3 +66,9 @@ export const EXPAND_RATE = 1;
 /** Consolidation: a sector just taken has its defence multiplied by up to 1 + CONSOLIDATE_BONUS, fading linearly over CONSOLIDATE_TICKS coarse ticks. */
 export const CONSOLIDATE_BONUS = 3;
 export const CONSOLIDATE_TICKS = 24;
+
+/** Two sectors border each other when a hyperlane joins them or their space (the discs the nodes lie in) comes within this many units (control.ts `sectorNeighbours`). */
+export const CONTACT_GAP = 300;
+
+/** A new game runs this many coarse ticks of history first (warmup.ts), so borders start lived-in. */
+export const WARMUP_TICKS = 200;

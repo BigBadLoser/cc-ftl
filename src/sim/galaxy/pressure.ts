@@ -1,8 +1,9 @@
 import type { Sim } from '../sim';
-import { atWarContent } from './relations';
-import { controlOf, nodeOwnerAt, sectorLanes, sectorOwner, tidyControl } from './control';
+import { atWar } from './relations';
+import { controlOf, nodeOwnerAt, sectorNeighbours, sectorOwner, tidyControl } from './control';
 import { galaxyIndex, nodeOf } from './state';
 import { PRESSURE_EPS, PRESSURE_MAX } from './tuningCoarse';
+import { strain } from './war';
 
 /**
  * Pressure on a sector: an enemy faction pushing on it (`SectorControl.pressure`). The coarse tick (coarse.ts) builds it at the fronts and decays it;
@@ -26,7 +27,7 @@ export function addPressure(sim: Sim, node: string, by: string, amount: number):
   if (owner === null) return;
   const c = controlOf(sim, n.sector);
   const cur = c.pressure;
-  if (by === owner || !atWarContent(content, by, owner)) {
+  if (by === owner || !atWar(sim, by, owner)) {
     if (by === owner && cur) {
       cur.value -= amount;
       if (cur.value < PRESSURE_EPS) delete c.pressure;
@@ -43,6 +44,7 @@ export function addPressure(sim: Sim, node: string, by: string, amount: number):
 /** A real fight settled at `node` (meetings.ts): `winner` beat `loser`, who lost `lost` ships; `raid` = a patrol raiding a den. Feeds `addPressure` for whichever side holds the ground. */
 export function fightPressure(sim: Sim, node: string, winner: string, loser: string, lost: number, raid: boolean): void {
   const owner = nodeOwnerAt(sim, node);
+  strain(sim, winner, loser, 0, lost);
   if (owner !== winner && owner !== loser) return;
   addPressure(sim, node, winner, (FINE_BASE + FINE_PER_LOSS * lost) * (raid ? FINE_RAID : 1));
 }
@@ -55,6 +57,6 @@ export function playerFightPressure(sim: Sim, victim: string | null): void {
   const content = sim.content.galaxy;
   const node = nodeOf(sim, sim.galaxy.current);
   if (!content || !node || !victim || nodeOwnerAt(sim, node.id) !== victim) return;
-  const by = (sectorLanes(galaxyIndex(sim.galaxy)).get(node.sector) ?? []).map((a) => sectorOwner(sim, a)).find((o) => !!o && o !== victim && atWarContent(content, o, victim));
+  const by = (sectorNeighbours(galaxyIndex(sim.galaxy)).get(node.sector) ?? []).map((a) => sectorOwner(sim, a)).find((o) => !!o && o !== victim && atWar(sim, o, victim));
   if (by) addPressure(sim, node.id, by, FINE_BASE + FINE_PER_LOSS);
 }

@@ -4,7 +4,9 @@ import type { GalaxyContent } from '../sim/galaxy/defs';
 import { visibleFleets } from '../sim/galaxy/fleets';
 import { fleetName } from '../sim/galaxy/names';
 import { portOf } from '../sim/galaxy/portIndex';
-import { galaxyIndex, START_NODE } from '../sim/galaxy/state';
+import { nodeOwnerAt } from '../sim/galaxy/control';
+import { ensureArea, galaxyIndex, START_NODE } from '../sim/galaxy/state';
+import { SIM_RING } from '../sim/galaxy/tuningCoarse';
 import { newGame } from '../sim/newGame';
 import { deserialize, serialize } from '../sim/save';
 import type { Sim } from '../sim/sim';
@@ -25,8 +27,14 @@ function turns(sim: Sim, n: number, each?: (turn: number) => void): void {
     each?.(sim.galaxy.turn);
   }
 }
-const parked = (seed: number): Sim => {
+/** A new game with the whole simulated area generated (the coarse tick would do it on its first tick, adding fleets to the area). */
+const generated = (seed: number): Sim => {
   const sim = newGame(seed, content);
+  ensureArea(sim, sim.galaxy.current, SIM_RING);
+  return sim;
+};
+const parked = (seed: number): Sim => {
+  const sim = generated(seed);
   sim.sector.state = 'deploying';
   return sim;
 };
@@ -123,7 +131,6 @@ describe('agendas', () => {
 
   it.each([21, 23])('seed %i: traders stop at stations, miners at ore fields, patrols in their territory, pirates near their den, and all rest at home', (seed) => {
     const { sim, stops, restedHome } = observe(seed);
-    const index = galaxyIndex(sim.galaxy);
     const seenRoles = new Set<string>();
     for (const f of sim.galaxy.fleets) {
       const home = portNode(f.home);
@@ -133,7 +140,7 @@ describe('agendas', () => {
         // (Stops are recorded when a fleet arrives at the end of the leg it planned: a fleet beaten in a clash runs for home through nodes it never chose.)
         if (f.role === 'trader') expect(kinds(sim, node)).toContain('station');
         if (f.role === 'miner') expect(kinds(sim, node)).toContain('asteroids');
-        if (f.role === 'patrol') expect(index.nodes.get(node)?.genFaction).toBe(f.faction);
+        if (f.role === 'patrol') expect(nodeOwnerAt(sim, node)).toBe(f.faction);
       }
     }
     expect(seenRoles.has('trader') || seenRoles.has('miner') || seenRoles.has('patrol')).toBe(true);
@@ -214,7 +221,7 @@ describe('persistence: nothing disappears except by destruction', () => {
   }, 60000);
 
   it('a ship wrecked in the player\'s node is gone for good; its port owes a replacement and builds it after the rebuild time', () => {
-    const sim = newGame(24, content);
+    const sim = generated(24);
     const g = sim.galaxy;
     const f = g.fleets.find((x) => x.role === 'patrol') as Fleet;
     const port = portOf(sim, f.home)!;

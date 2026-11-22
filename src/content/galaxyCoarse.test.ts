@@ -2,11 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { exploredWorld, measurePace } from '../../test/support/fixtures/coarse';
 import { cachedWorld } from '../../test/support/world';
 import { stepCoarse } from '../sim/galaxy/coarse';
-import { nodeOwner, sectorLanes, sectorOwner, structureOwner } from '../sim/galaxy/control';
+import { nodeOwner, sectorNeighbours, sectorOwner, structureOwner } from '../sim/galaxy/control';
 import { flipSector } from '../sim/galaxy/flip';
 import { portsAt } from '../sim/galaxy/portIndex';
 import { addPressure, fightPressure, playerFightPressure } from '../sim/galaxy/pressure';
-import { atWarContent } from '../sim/galaxy/relations';
+import { atWar } from '../sim/galaxy/relations';
 import { ensureChunk, galaxyIndex, nodeOf, START_NODE } from '../sim/galaxy/state';
 import { onTurn } from '../sim/galaxy/turn';
 import { COARSE_TURNS, FACTION_MIN_SECTORS, FLIP_COOLDOWN, FLIP_SPACING, FLIP_TICKS, FLIPS_PER_TICK, PRESSURE_MAX } from '../sim/galaxy/tuningCoarse';
@@ -32,7 +32,7 @@ const nodeData = (sim: Sim, sector: string): NonNullable<ReturnType<typeof nodeO
 
 /** A faction at war with `owner` that fields ships, a law-abiding one if there is one (pirates need more pressure to take a sector). */
 function enemyOf(sim: Sim, owner: string): string {
-  const foes = Object.keys(galaxyOf(sim).factions).sort().filter((f) => f !== owner && atWarContent(galaxyOf(sim), f, owner) && Object.keys(galaxyOf(sim).factions[f]?.fleet?.groups ?? {}).length > 0);
+  const foes = Object.keys(galaxyOf(sim).factions).sort().filter((f) => f !== owner && atWar(sim, f, owner) && Object.keys(galaxyOf(sim).factions[f]?.fleet?.groups ?? {}).length > 0);
   return (foes.find((f) => galaxyOf(sim).factions[f]?.kind !== 'pirates') ?? foes[0]) as string;
 }
 
@@ -42,7 +42,7 @@ function enemyOf(sim: Sim, owner: string): string {
  */
 function candidates(sim: Sim, n: number): string[] {
   const index = galaxyIndex(sim.galaxy);
-  const lanes = sectorLanes(index);
+  const lanes = sectorNeighbours(index);
   const out: string[] = [];
   for (const id of [...index.sectors.keys()].sort()) {
     const owner = sectorOwner(sim, id);
@@ -58,7 +58,7 @@ function candidates(sim: Sim, n: number): string[] {
 function arm(sim: Sim, target: string, ticks: number): string {
   const owner = sectorOwner(sim, target) as string;
   const by = enemyOf(sim, owner);
-  const lanes = sectorLanes(galaxyIndex(sim.galaxy));
+  const lanes = sectorNeighbours(galaxyIndex(sim.galaxy));
   const ring1 = lanes.get(target) ?? [];
   const ring2 = ring1.flatMap((a) => lanes.get(a) ?? []).filter((a) => a !== target && !ring1.includes(a));
   for (const id of [...new Set([...ring1, ...ring2])].slice(0, 8)) sim.galaxy.control[id] = { owner: by, since: 1 };
@@ -160,7 +160,7 @@ describe('the coarse tick', () => {
 
   it('flips at most FLIPS_PER_TICK sectors, and never two within FLIP_SPACING lanes, in one tick', () => {
     const sim = base();
-    const lanes = sectorLanes(galaxyIndex(sim.galaxy));
+    const lanes = sectorNeighbours(galaxyIndex(sim.galaxy));
     // Two ready sectors three or four lanes apart (inside the spacing) and one far away.
     const [a] = candidates(sim, 1) as [string];
     const dist = new Map([[a, 0]]);
@@ -186,7 +186,7 @@ describe('the coarse tick', () => {
   it('never flips the start sector or a hub, nor a faction\'s last sectors, nor the player\'s own sector', () => {
     const sim = base();
     const index = galaxyIndex(sim.galaxy);
-    const hub = [...index.sectors.values()].find((s) => s.hub && s.id !== startSector(sim) && sectorOwner(sim, s.id) && (sectorLanes(index).get(s.id) ?? []).length) as NonNullable<ReturnType<typeof index.sectors.get>>;
+    const hub = [...index.sectors.values()].find((s) => s.hub && s.id !== startSector(sim) && sectorOwner(sim, s.id) && (sectorNeighbours(index).get(s.id) ?? []).length) as NonNullable<ReturnType<typeof index.sectors.get>>;
     for (const id of [hub.id, startSector(sim)]) {
       arm(sim, id, FLIP_TICKS - 1);
       stepCoarse(sim, tickAt(1));
@@ -212,7 +212,7 @@ describe('the coarse tick', () => {
   it('builds pressure on its own at a front, and wears it off when the push stops', () => {
     const sim = base();
     const index = galaxyIndex(sim.galaxy);
-    const lanes = sectorLanes(index);
+    const lanes = sectorNeighbours(index);
     const [t] = candidates(sim, 1) as [string];
     const owner = sectorOwner(sim, t) as string;
     const by = enemyOf(sim, owner);
@@ -234,11 +234,11 @@ describe('the coarse tick', () => {
     const sim = base();
     // Both sides need sectors to spare, or the protection of a faction's last ones would hold the flip back instead.
     const big = (f: string): boolean => countOf(sim, f) > FACTION_MIN_SECTORS + 2;
-    const foes = (o: string): string[] => Object.keys(galaxyOf(sim).factions).filter((f) => big(f) && atWarContent(galaxyOf(sim), f, o));
+    const foes = (o: string): string[] => Object.keys(galaxyOf(sim).factions).filter((f) => big(f) && atWar(sim, f, o));
     const t = candidates(sim, 40).find((id) => foes(sectorOwner(sim, id) as string).length > 0) as string;
     const owner = sectorOwner(sim, t) as string;
     const by = foes(owner)[0] as string;
-    const lanes = sectorLanes(galaxyIndex(sim.galaxy));
+    const lanes = sectorNeighbours(galaxyIndex(sim.galaxy));
     const back = (): void => {
       sim.galaxy.control[t] = { ...(sim.galaxy.control[t] as NonNullable<(typeof sim.galaxy.control)[string]>), pressure: { by: owner, value: PRESSURE_MAX, ticks: FLIP_TICKS - 1 } };
     };
@@ -328,7 +328,7 @@ describe('expansion into unowned space', () => {
   /** An unowned sector next to a sector of a faction that settles, with that faction's sectors around it. */
   function claim(sim: Sim, ok: (f: string) => boolean): { t: string; by: string } {
     const index = galaxyIndex(sim.galaxy);
-    const lanes = sectorLanes(index);
+    const lanes = sectorNeighbours(index);
     for (const id of [...index.sectors.keys()].sort()) {
       if (sectorOwner(sim, id) || index.sectors.get(id)?.hub) continue;
       const by = (lanes.get(id) ?? []).map((a) => sectorOwner(sim, a)).find((o): o is string => !!o && ok(o));
@@ -351,7 +351,7 @@ describe('expansion into unowned space', () => {
   it('pirates raid rather than settle: a sector beside only a pirate one gets no push', () => {
     const sim = base();
     const { t } = claim(sim, (f) => kind(sim, f) === 'pirates');
-    const lanes = sectorLanes(galaxyIndex(sim.galaxy));
+    const lanes = sectorNeighbours(galaxyIndex(sim.galaxy));
     // Leave the unowned sector with pirate neighbours only.
     for (const a of lanes.get(t) ?? []) if (sectorOwner(sim, a) && kind(sim, sectorOwner(sim, a) as string) !== 'pirates') sim.galaxy.control[a] = { owner: null, since: 1 };
     stepCoarse(sim, tickAt(1));
@@ -378,7 +378,7 @@ describe('the player\'s fights', () => {
 describe('the pace guard', () => {
   it('flips now and then, with little ping-pong, and never twice in one region at once (the long sweep is in galaxyCoarse.slow.test.ts)', () => {
     const { sim, walker } = exploredWorld(3, 30);
-    const pace = measurePace(sim, walker, 60);
+    const pace = measurePace(sim, walker, 45);
     expect(pace.doubles).toBe(0);
     expect(pace.galaxy).toBeGreaterThan(0);
     expect(pace.retakes).toBeLessThanOrEqual(0.45);

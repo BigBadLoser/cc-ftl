@@ -3,7 +3,8 @@ import { advance, capOf, type Econ, econOf, factorAt, moveStock, stockAt } from 
 import { bindMarkets, unbindMarkets } from '../sim/galaxy/marketLive';
 import { portOf } from '../sim/galaxy/portIndex';
 import type { Port } from '../sim/galaxy/ports';
-import { galaxyIndex } from '../sim/galaxy/state';
+import { ensureArea, galaxyIndex } from '../sim/galaxy/state';
+import { SIM_RING } from '../sim/galaxy/tuningCoarse';
 import { newGame } from '../sim/newGame';
 import { deserialize, serialize } from '../sim/save';
 import type { Sim } from '../sim/sim';
@@ -240,9 +241,12 @@ describe('NPC traders and miners', () => {
 
   it('fleets caught up after an absence trade against the same markets as fleets stepped through it', () => {
     const k = 40;
+    // The whole simulated area is generated first, as the coarse tick would make it on its first tick (that adds fleets to the stepped run only).
     const stepped = parked(SEED);
+    ensureArea(stepped, stepped.galaxy.current, SIM_RING);
     turns(stepped, k);
     const away = parked(SEED);
+    ensureArea(away, away.galaxy.current, SIM_RING);
     const home = away.galaxy.current;
     away.galaxy.current = '__elsewhere__';
     away.galaxy.turn += k;

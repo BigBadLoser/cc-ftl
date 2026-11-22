@@ -23,7 +23,7 @@ function regionOf(sim: Sim, node: string): string {
 const LOOK: Record<NewsItem['kind'], Pick<UiNews, 'icon' | 'tone'>> = {
   destroyed: { icon: 'skull', tone: 'red' }, raid: { icon: 'skull', tone: 'red' }, driven: { icon: 'evasion', tone: 'amber' }, clash: { icon: 'combat', tone: 'amber' },
   cut: { icon: 'trade', tone: 'amber' }, loot: { icon: 'stock', tone: 'amber' }, shortage: { icon: 'stock', tone: 'dim' }, rebuilt: { icon: 'ship', tone: 'green' }, hunt: { icon: 'combat', tone: 'red' },
-  front: { icon: 'combat', tone: 'amber' }, fell: { icon: 'skull', tone: 'red' }, held: { icon: 'evasion', tone: 'green' },
+  front: { icon: 'combat', tone: 'amber' }, fell: { icon: 'skull', tone: 'red' }, held: { icon: 'evasion', tone: 'green' }, war: { icon: 'combat', tone: 'red' }, peace: { icon: 'trade', tone: 'green' },
 };
 
 /** What happened, with names: for news the player's sensors cover. */
@@ -42,6 +42,8 @@ function precise(sim: Sim, n: NewsItem): string {
     case 'front': return `${factionName(sim, n.faction)} presses ${factionName(sim, n.foeFaction)} on the border at ${n.who}`;
     case 'fell': return n.foeFaction ? `${n.who} fell to ${factionName(sim, n.faction)}` : `${factionName(sim, n.faction)} claimed ${n.who}`;
     case 'held': return `${factionName(sim, n.faction)} held ${n.who} against ${factionName(sim, n.foeFaction)}`;
+    case 'war': return `${factionName(sim, n.faction)} declared war on ${factionName(sim, n.foeFaction)}`;
+    case 'peace': return `${factionName(sim, n.faction)} and ${factionName(sim, n.foeFaction)} made peace`;
   }
 }
 
@@ -60,6 +62,8 @@ function rumour(sim: Sim, n: NewsItem): string {
     case 'front': return `${a} and ${b} are fighting along a border near ${here}`;
     case 'fell': return n.foeFaction ? `A sector near ${here} has fallen to ${a}` : `${a} has claimed a sector near ${here}`;
     case 'held': return `${a} held a border sector near ${here} against ${b}`;
+    case 'war': return `${a} and ${b} have gone to war (word from near ${here})`;
+    case 'peace': return `${a} and ${b} have made peace (word from near ${here})`;
   }
 }
 

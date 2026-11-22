@@ -154,7 +154,8 @@ export { isHiddenOutpost, discoverOutpost } from './outposts/state';
 export { isDormant, wake, type WakeReason } from './combat/dormant';
 export { DISCOVER_RANGE } from './systems/outposts';
 export * from './galaxy/types';
-export { stanceBetween, spillSources } from './galaxy/relations';
+export { warmGalaxy } from './galaxy/warmup';
+export { baselineStance, stanceOf, atWar, spillSources } from './galaxy/relations';
 export type {
   FactionRelationDef, FactionSpecialityDef, Stance, GalaxyFactionDef, StructureDef, NodeContentTable, NodeContentDef, TierCurve, GalaxyContent, StandingTier, DangerRange, FactionFleetDef, FleetContent, FleetGroupDef, MarketContent, MarketRates, PortKind, PortKindDef, ShipClassDef,
 } from './galaxy/defs';
@@ -185,7 +186,7 @@ export { populateCargo } from './galaxy/populateCargo';
 export { containerAt, openRefusal } from './containers/open';
 export { ContainerC } from './containers/components';
 export { newsFeed, report as reportNews } from './galaxy/news';
-export { clash, fleetPower, shipPower, atWar, wouldFight, type Clash } from './galaxy/clash';
+export { clash, fleetPower, shipPower, wouldFight, type Clash } from './galaxy/clash';
 export { resolveMeetings, findMeetings } from './galaxy/meetings';
 export { placeWrecks, leaveWreck } from './galaxy/wrecks';
 export { cargoCap, cargoLoad, dockPort } from './galaxy/dock';

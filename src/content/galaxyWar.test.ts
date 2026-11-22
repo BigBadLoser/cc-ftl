@@ -9,10 +9,11 @@ import { galaxyIndex } from '../sim/galaxy/state';
 import { newGame } from '../sim/newGame';
 import { deserialize, serialize } from '../sim/save';
 import type { Sim } from '../sim/sim';
-import { atWar } from '../sim/galaxy/clash';
+import { atWar } from '../sim/galaxy/relations';
 import { encounterKind } from '../sim/galaxy/encounters';
 import { nodesWithin, syncFleets } from '../sim/galaxy/fleets';
-import { ensureChunk, nodeState } from '../sim/galaxy/state';
+import { ensureArea, ensureChunk, nodeState } from '../sim/galaxy/state';
+import { SIM_RING } from '../sim/galaxy/tuningCoarse';
 import { arrive } from '../sim/galaxy/travel';
 import { onTurn } from '../sim/galaxy/turn';
 import { NEWS_MAX } from '../sim/galaxy/tuningWar';
@@ -37,6 +38,7 @@ function farWorld(seed = 3): Sim {
   if (!den) throw new Error('no den');
   sim.galaxy.current = den.id;
   arrive(sim);
+  ensureArea(sim, den.id, SIM_RING); // the coarse tick simulates this much: have it all there, so turns do not add fleets
   return sim;
 }
 /** Teleport the player to a node (it drops and waits to deploy), and deploy along the north edge. */
@@ -333,7 +335,9 @@ describe('catching up with meetings', () => {
     b.galaxy.current = here;
     syncFleets(b, b.galaxy.turn);
     expect(a.galaxy.news.length).toBeGreaterThan(0);
-    const strip = (s: Sim) => JSON.stringify(s.galaxy.news.map((n) => ({ ...n, id: 0 })));
+    // (The coarse tier's border news belongs to the stepped run: a catch-up covers the fleets, not the borders.)
+    const fights = (s: Sim) => s.galaxy.news.filter((n) => !['front', 'fell', 'held', 'war', 'peace'].includes(n.kind));
+    const strip = (s: Sim) => JSON.stringify(fights(s).map((n) => ({ ...n, id: 0 })));
     expect(strip(b)).toBe(strip(a));
     const shape = (s: Sim) => JSON.stringify(s.galaxy.fleets.map((f) => [f.id, f.node, f.ships.length, !!f.damaged, f.cargo ?? null]));
     expect(shape(b)).toBe(shape(a));

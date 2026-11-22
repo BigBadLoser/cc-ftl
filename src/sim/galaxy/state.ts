@@ -12,7 +12,7 @@ export const START_NODE = 's.0.0.n0';
 export function newGalaxy(seed: number): GalaxyState {
   return {
     current: START_NODE, chunks: {}, discovered: {}, visited: {}, nodes: {}, rng: (seed ^ 0x6a1a7e5) >>> 0,
-    nextArrival: 0, nextId: 1, jumps: 0, turn: 0, turnClock: 0, fleets: [], encounters: [], event: null, signal: null, provoked: [], lastResult: null, nextFleet: 1, ports: {}, markets: {}, news: [], nextNews: 1, days: 0, heat: { notoriety: 0, hunted: {} }, jobs: [], claims: [], jobLog: [], recruitLog: [], nextJob: 1, travel: null, distress: null, control: {}, rev: 0,
+    nextArrival: 0, nextId: 1, jumps: 0, turn: 0, turnClock: 0, fleets: [], encounters: [], event: null, signal: null, provoked: [], lastResult: null, nextFleet: 1, ports: {}, markets: {}, news: [], nextNews: 1, days: 0, heat: { notoriety: 0, hunted: {} }, jobs: [], claims: [], jobLog: [], recruitLog: [], nextJob: 1, travel: null, distress: null, control: {}, war: {}, rev: 0,
   };
 }
 
@@ -83,15 +83,18 @@ export function ensureChunkOf(sim: Sim, id: string): void {
   ensureChunk(sim, cx, cy);
 }
 
-/** The lazy frontier: generate every chunk within FRONTIER_RING of the node's chunk. */
-export function ensureAround(sim: Sim, nodeId: string): void {
+/** Generate every chunk within `ring` of the node's chunk. */
+export function ensureArea(sim: Sim, nodeId: string, ring: number): void {
   const key = chunkOfId(nodeId);
   if (!key) return;
   const [cx, cy] = key.split(',').map(Number) as [number, number];
-  for (let dy = -FRONTIER_RING; dy <= FRONTIER_RING; dy++) {
-    for (let dx = -FRONTIER_RING; dx <= FRONTIER_RING; dx++) ensureChunk(sim, cx + dx, cy + dy);
+  for (let dy = -ring; dy <= ring; dy++) {
+    for (let dx = -ring; dx <= ring; dx++) ensureChunk(sim, cx + dx, cy + dy);
   }
 }
+
+/** The lazy frontier: generate every chunk within FRONTIER_RING of the node's chunk. (The coarse tier simulates a wider area, SIM_RING, coarse.ts.) */
+export const ensureAround = (sim: Sim, nodeId: string): void => ensureArea(sim, nodeId, FRONTIER_RING);
 
 export const nodeOf = (sim: Sim, id: string): NodeData | undefined => galaxyIndex(sim.galaxy).nodes.get(id);
 export const currentNode = (sim: Sim): NodeData | undefined => nodeOf(sim, sim.galaxy.current);

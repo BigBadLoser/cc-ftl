@@ -32,7 +32,7 @@ Two buttons on the map are worth knowing:
 
 ### Borders move
 
-Territory is not fixed. Where two factions at war share a border, the stronger side presses on the weaker sector, and
+Territory is not fixed. Wars are not fixed either: factions that border each other can drift into war, more readily when their border is long, when they fought lately or when they are old rivals, and a war wears both sides down until peace comes (the navy against the pirates, the rogue AI against everyone, and the other long-standing feuds never end). Where two factions at war share a border, the stronger side presses on the weaker sector, and
 what happens near you counts: a fleet that wins a fight on a border adds to its side's push, and a defender that wins
 at home pushes back, and so do the fights you win or lose yourself: beating a faction in the sector it holds helps its
 enemies next door. Factions also settle empty sectors that border their own (pirates raid instead of settling). Change
@@ -40,7 +40,7 @@ is slow. A sector only changes hands after the pressure has held for several rou
 each other in the same round, and a sector that has just changed hands stays put for a while. The start sector, each province's hub and a faction's last few sectors never fall, and the sector you are in
 does not change while you are in it. When a sector falls, its stations go with it: the old owner's ships go home
 elsewhere, and the station builds the new owner's ships over time. The starmap colours follow, and the news list
-reports fighting on a border and sectors falling or holding.
+reports fighting on a border, sectors falling or holding, and wars starting and ending.
 
 ## Jumping
 

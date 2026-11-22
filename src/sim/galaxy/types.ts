@@ -1,8 +1,10 @@
 import type { ItemQty } from '../registry';
+import type { PairState, SectorControl } from './controlTypes';
 import type { FleetRole, ShipSize } from './defs';
 import type { Vec } from './geometry';
 import type { NewsItem } from './newsTypes';
 import type { SceneSpec, SceneWatch } from '../scene/types';
+export type { PairState, SectorControl };
 
 export type { FleetRole, ShipSize } from './defs';
 export type { NewsItem, NewsKind } from './newsTypes';
@@ -245,16 +247,6 @@ export interface MarketState {
   stock: Record<string, number>;
 }
 
-/**
- * A sector whose control differs from what was generated (control.ts). `owner` is its faction now (null = nobody) and `since` the turn it changed;
- * `pressure` is an enemy pushing on it (`by`), `value` building up over `ticks` coarse ticks in a row over the threshold (coarse.ts).
- */
-export interface SectorControl {
-  owner: string | null;
-  since: number;
-  pressure?: { by: string; value: number; ticks: number };
-}
-
 /** A port that lost ships: the replacements it owes (in build order) and the turn the first is done; one is built every `PortKindDef.rebuildTurns`. */
 export interface PortState {
   queue: { faction: string; role: FleetRole; size: ShipSize }[];
@@ -454,6 +446,8 @@ export interface GalaxyState {
   distress: Distress | null;
   /** Sectors whose control differs from their generated state, by sector id (control.ts). No entry = the generated owner, no pressure. */
   control: Record<string, SectorControl>;
+  /** Faction pairs whose stance differs from the relations table's baseline, or that carry war weariness or friction, by sorted pair key (relations.ts, war.ts). */
+  war: Record<string, PairState>;
   /** Bumped on every change the starmap view shows. */
   rev: number;
 }

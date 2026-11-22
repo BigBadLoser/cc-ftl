@@ -6,7 +6,7 @@ import { CRATE, crateOf, loadCrate, recoverCrate, unloadCrate } from './crate';
 import { addNotoriety, tallyLosses } from './heat';
 import { handoverOf, startHandover } from './handover';
 import { offersHere } from './jobOffers';
-import { atWarContent } from './relations';
+import { atWar } from './relations';
 import { portsAt } from './portIndex';
 import { stationClass } from './ports';
 import { repKey, tierOf } from './standing';
@@ -55,7 +55,7 @@ function rivalsPleased(sim: Sim, target: string, issuer: string): void {
   const content = sim.content.galaxy;
   if (!content) return;
   for (const id of Object.keys(content.factions).sort()) {
-    if (id !== target && id !== issuer && content.factions[id]?.kind === 'pirates' && atWarContent(content, id, target)) standing(sim, id, RIVAL_REPUTATION);
+    if (id !== target && id !== issuer && content.factions[id]?.kind === 'pirates' && atWar(sim, id, target)) standing(sim, id, RIVAL_REPUTATION);
   }
 }
 

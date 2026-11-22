@@ -1,7 +1,8 @@
 import type { Sim } from '../sim';
-import { COARSE_TURNS, FLIP_COOLDOWN } from './tuningCoarse';
+import { chunkOfId } from './generator';
+import { COARSE_TURNS, CONTACT_GAP, FLIP_COOLDOWN, SIM_RING } from './tuningCoarse';
 import { galaxyIndex, type GalaxyIndex } from './state';
-import type { NodeData, SectorControl, StructureRef } from './types';
+import type { NodeData, SectorControl, SectorData, StructureRef } from './types';
 
 /**
  * Who holds a place. Territory is generated from the seed, but a sector can change hands (coarse.ts), so nothing reads `genFaction` / `genOwner`
@@ -55,24 +56,73 @@ export function tidyControl(sim: Sim, sectorId: string): void {
   if (c.since === 0 || sim.galaxy.turn - c.since >= FLIP_COOLDOWN * COARSE_TURNS) delete sim.galaxy.control[sectorId];
 }
 
-const lanesCache = new WeakMap<GalaxyIndex, Map<string, string[]>>();
+const areaCache = new WeakMap<GalaxyIndex, Map<string, Set<string>>>();
 
-/** Sector -> the sectors a hyperlane joins it to, sorted (cached per galaxy index). */
-export function sectorLanes(index: GalaxyIndex): Map<string, string[]> {
-  let m = lanesCache.get(index);
+/**
+ * The sectors the coarse tick simulates: those in the chunks within SIM_RING of the chunk the player is in (cached per index and chunk). A pure function of where the
+ * player is, so the same wherever the player has been; the rest of the explored map stands as it was left.
+ */
+export function simulatedSectors(sim: Sim): Set<string> {
+  const index = galaxyIndex(sim.galaxy);
+  const here = chunkOfId(sim.galaxy.current) ?? '0,0';
+  let byChunk = areaCache.get(index);
+  if (!byChunk) areaCache.set(index, (byChunk = new Map()));
+  let area = byChunk.get(here);
+  if (area) return area;
+  const [cx, cy] = here.split(',').map(Number) as [number, number];
+  area = new Set();
+  for (const s of index.sectors.values()) {
+    const [x, y] = s.chunk.split(',').map(Number) as [number, number];
+    if (Math.max(Math.abs(x - cx), Math.abs(y - cy)) <= SIM_RING) area.add(s.id);
+  }
+  byChunk.set(here, area);
+  return area;
+}
+
+const neighboursCache = new WeakMap<GalaxyIndex, Map<string, string[]>>();
+
+/**
+ * Sector -> the sectors it borders, sorted (cached per galaxy index): joined by a hyperlane, or close enough that their space touches (within CONTACT_GAP of
+ * each other's edge). Territory is blobs of sectors with free space between them, and gates are few, so lanes alone would leave almost no fronts.
+ */
+export function sectorNeighbours(index: GalaxyIndex): Map<string, string[]> {
+  let m = neighboursCache.get(index);
   if (m) return m;
   m = new Map();
+  const link = (x: string, y: string): void => {
+    for (const [p, q] of [[x, y], [y, x]] as const) {
+      const list = m?.get(p) ?? [];
+      if (!list.includes(q)) list.push(q);
+      m?.set(p, list);
+    }
+  };
   for (const e of index.edges.values()) {
     const a = index.nodes.get(e.a)?.sector;
     const b = index.nodes.get(e.b)?.sector;
-    if (e.kind !== 'hyperlane' || !a || !b || a === b) continue;
-    for (const [x, y] of [[a, b], [b, a]] as const) {
-      const list = m.get(x) ?? [];
-      if (!list.includes(y)) list.push(y);
-      m.set(x, list);
+    if (e.kind === 'hyperlane' && a && b && a !== b) link(a, b);
+  }
+  // Bucketed by a grid as wide as the longest reach of a pair, so each sector only meets its own and the eight surrounding buckets.
+  const all = [...index.sectors.values()];
+  const cell = 2 * all.reduce((r, s) => Math.max(r, s.r), 0) + CONTACT_GAP;
+  const grid = new Map<string, SectorData[]>();
+  for (const s of all) {
+    const k = `${Math.floor(s.x / cell)},${Math.floor(s.y / cell)}`;
+    const list = grid.get(k);
+    if (list) list.push(s);
+    else grid.set(k, [s]);
+  }
+  for (const a of all) {
+    const gx = Math.floor(a.x / cell);
+    const gy = Math.floor(a.y / cell);
+    for (let dy = -1; dy <= 1; dy++) {
+      for (let dx = -1; dx <= 1; dx++) {
+        for (const b of grid.get(`${gx + dx},${gy + dy}`) ?? []) {
+          if (a.id < b.id && Math.hypot(a.x - b.x, a.y - b.y) <= a.r + b.r + CONTACT_GAP) link(a.id, b.id);
+        }
+      }
     }
   }
   for (const list of m.values()) list.sort();
-  lanesCache.set(index, m);
+  neighboursCache.set(index, m);
   return m;
 }

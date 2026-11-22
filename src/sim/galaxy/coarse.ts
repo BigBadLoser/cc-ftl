@@ -1,14 +1,15 @@
 import type { Sim } from '../sim';
-import { controlOf, sectorLanes, sectorOwners, tidyControl } from './control';
+import { controlOf, sectorNeighbours, sectorOwners, simulatedSectors, tidyControl } from './control';
 import { flipSector, reportFell } from './flip';
 import { nodesWithin } from './graph';
 import { strHash, unit } from './hash';
 import { report } from './news';
-import { atWarContent } from './relations';
-import { START_NODE, galaxyIndex, nodeOf, type GalaxyIndex } from './state';
+import { atWar } from './relations';
+import { START_NODE, ensureArea, galaxyIndex, nodeOf, type GalaxyIndex } from './state';
 import { FLEET_AREA_HOPS } from './tuning';
+import { stepWar } from './war';
 import {
-  COARSE_TURNS, CONSOLIDATE_BONUS, CONSOLIDATE_TICKS, DEFENDER_EDGE, FACTION_MIN_SECTORS, FALLOFF, FLIPS_PER_TICK, FLIP_COOLDOWN, FLIP_SPACING, FLIP_THRESHOLD, FLIP_TICKS, NEWS_PER_TICK, OWED_WEIGHT, PIRATE_FLIP_MULT, PIRATE_HOLD,
+  COARSE_TURNS, CONSOLIDATE_BONUS, SIM_RING, CONSOLIDATE_TICKS, DEFENDER_EDGE, FACTION_MIN_SECTORS, FALLOFF, FLIPS_PER_TICK, FLIP_COOLDOWN, FLIP_SPACING, FLIP_THRESHOLD, FLIP_TICKS, NEWS_PER_TICK, OWED_WEIGHT, PIRATE_FLIP_MULT, PIRATE_HOLD,
   PIRATE_RAID, PRESSURE_DECAY, PRESSURE_EPS, PRESSURE_KEEP, PRESSURE_MAX, PUSH_RATE, PUSH_SWING, SECTOR_BASE, SECTOR_HUB, SECTOR_PORT, STRENGTH_LANES, UNOWNED_DEFENCE, EXPAND_RATE,
 } from './tuningCoarse';
 
@@ -18,7 +19,7 @@ import {
  * 1. a faction's strength around a sector counts its own sectors within STRENGTH_LANES lanes (hubs and stations weigh more), less what its ports still owe;
  * 2. the stronger side adds pressure to the weaker sector, with a hashed swing; with no push, pressure decays;
  * 3. a sector flips after FLIP_TICKS ticks in a row over the threshold, at most FLIPS_PER_TICK per tick galaxy-wide and never two within FLIP_SPACING lanes
- *    of each other in one tick, strongest first (flip.ts);
+ *    of each other in one tick, strongest first (flip.ts); then stances move (war.ts: wars start and end between neighbours);
  * An unowned sector is claimed the same way (no defender but UNOWNED_DEFENCE, a slower push; pirates and the rogue AI do not settle): expansion.
  *    A sector just taken consolidates (extra defence fading over CONSOLIDATE_TICKS), so borders advance one way instead of trading sectors back and forth.
  * 4. never flipped: the start sector, a cluster's hub, a faction's last FACTION_MIN_SECTORS sectors, the sector the player is in, and one that flipped in the last FLIP_COOLDOWN ticks. Pirates raid
@@ -115,7 +116,7 @@ function bestPush(sim: Sim, f: Field, target: string, owner: string | null, turn
   const defence = owner ? f.strength(owner, target) * DEFENDER_EDGE * (isPirate(sim, owner) ? PIRATE_HOLD : 1) * consolidation(sim, target, turn) : UNOWNED_DEFENCE;
   for (const a of f.lanes.get(target) ?? []) {
     const by = f.owners.get(a);
-    if (!by || by === owner || (owner ? !atWarContent(content, by, owner) : !settles(sim, by))) continue;
+    if (!by || by === owner || (owner ? !atWar(sim, by, owner) : !settles(sim, by))) continue;
     const attack = f.strength(by, a) * (isPirate(sim, by) ? PIRATE_RAID : 1);
     const share = ((attack - defence) / (attack + defence)) * (owner ? 1 : EXPAND_RATE);
     if (share > 0 && (!best || share > best.share)) best = { by, share };
@@ -153,14 +154,19 @@ function near(f: Field, id: string, taken: readonly string[]): boolean {
   return false;
 }
 
-/** The coarse tick, on every COARSE_TURNS-th turn. Wherever the player is; only generated sectors take part. */
+/**
+ * The coarse tick, on every COARSE_TURNS-th turn (a negative turn is history: the new-game warm-up, warmup.ts). Wherever the player is; the sectors within
+ * SIM_RING chunks of the player's chunk take part (generated first when they are not there yet, so the area is a function of where the player has been).
+ */
 export function stepCoarse(sim: Sim, turn: number): void {
-  if (turn <= 0 || turn % COARSE_TURNS !== 0 || !sim.content.galaxy) return;
+  if (turn === 0 || turn % COARSE_TURNS !== 0 || !sim.content.galaxy) return;
   const g = sim.galaxy;
   const tick = turn / COARSE_TURNS;
+  ensureArea(sim, g.current, SIM_RING);
   const index = galaxyIndex(g);
-  const f = new Field(sim, index, sectorLanes(index));
-  const targets = [...f.owners.keys()].sort();
+  const f = new Field(sim, index, sectorNeighbours(index));
+  const simulated = simulatedSectors(sim);
+  const targets = [...f.owners.keys()].filter((id) => simulated.has(id)).sort();
   const area = nodesWithin(sim, g.current, FLEET_AREA_HOPS);
   const news: { value: number; kind: 'front' | 'held'; sector: string; faction: string; foe: string }[] = [];
   const ready: { id: string; value: number; by: string }[] = [];
@@ -191,13 +197,14 @@ export function stepCoarse(sim: Sim, turn: number): void {
     }
     tidyControl(sim, id);
   }
-  for (const id of Object.keys(g.control)) tidyControl(sim, id);
+  for (const id of Object.keys(g.control)) if (simulated.has(id)) tidyControl(sim, id);
   // Flips: the strongest pressure first, within the cap and the protections.
   const count = new Map<string, number>();
   for (const o of f.owners.values()) if (o) count.set(o, (count.get(o) ?? 0) + 1);
   ready.sort((a, b) => b.value - a.value || (a.id < b.id ? -1 : 1));
   let flips = 0;
   const taken: string[] = [];
+  const flipped: { by: string; from: string | null }[] = [];
   for (const r of ready) {
     if (flips >= FLIPS_PER_TICK) break;
     const owner = f.owners.get(r.id) ?? null;
@@ -207,8 +214,10 @@ export function stepCoarse(sim: Sim, turn: number): void {
     reportFell(sim, r.id, r.by, owner, turn);
     if (owner) count.set(owner, (count.get(owner) ?? 0) - 1);
     count.set(r.by, (count.get(r.by) ?? 0) + 1);
+    flipped.push({ by: r.by, from: owner });
     flips++;
   }
+  stepWar(sim, turn, tick, flipped);
   // Summary news for what the fine tier does not show (outside the fleet area), a few per tick.
   news.sort((a, b) => b.value - a.value || (a.sector < b.sector ? -1 : 1));
   let posted = 0;
