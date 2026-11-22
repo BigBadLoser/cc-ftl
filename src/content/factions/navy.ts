@@ -1,4 +1,5 @@
 import type { ChunkDef, FactionDef } from '../../sim';
+import { navyOutline } from './navyOutline';
 
 /**
  * Navy / corporate: standardised naval engineering. Mirrored hulls in several archetypes (escort spine, ring-corridor
@@ -64,6 +65,7 @@ export const navy = {
   // Hull families (assembly-driven): standard sections, family proportions.
   // Integrated transitions: regular stepped tapers (two tiles along per tile of height) where section widths change.
   transition: { slope: 2, max: 4, jitter: 0, label: 'taper' },
+  outline: navyOutline,
   hullFamilies: [
     {
       id: 'corvette', hullPerRoomTile: 4.6, weight: { base: 5, perDepth: -0.5, max: 5 }, bonus: { weapons: -1, crew: -3, crates: -3, shields: -1, engines: -1 },

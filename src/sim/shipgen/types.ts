@@ -1,3 +1,4 @@
+import type { OutlineRecipe } from './outlineRecipe';
 import type { Faction } from '../combat/components';
 import type { ItemQty, ShipTemplate } from '../registry';
 import type { Equipment } from './equipment';
@@ -213,6 +214,8 @@ export interface FactionDef {
   budget: ShipBudget;
   /** Highest engine and reactor tier this faction's ships carry (1 to 3, default 3): drones' sealed pods hold Mk I only. */
   maxCoreTier?: 1 | 2 | 3;
+  /** Outline ship recipes, keyed by type id (SHIPGEN_V4, "Ship recipes and layout parts"; PROTOTYPE, #581). */
+  outline?: Readonly<Record<string, OutlineRecipe>>;
 }
 
 /** Where a generated ship came from: stored on its ship entity. */

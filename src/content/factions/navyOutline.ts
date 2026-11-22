@@ -1,23 +1,25 @@
-import type { Part, Profile } from './silhouette';
+import type { HullPart, OutlineRecipe, Profile } from '../../sim';
 
 /**
- * Navy silhouettes, two or three per type, from the parts settled on the option sheets and the type identities (docs/SHIPGEN_V4.md,
- * "Hull shape decisions"). Mid-depth proportions: a ship's plan will size them. Half-widths are tiles beside the centre
- * row, so a hull is 2 * half + 1 wide. Gun mounts are sized for a gun bay (light guns 2x2, heavy 3x3, plus walls).
- * A part given as a list is a choice per seed: that is how a recipe moves its masses between seeds and keeps its identity.
+ * Navy outline recipes (SHIPGEN_V4, "Ship recipes and layout parts"), each type's silhouettes from the parts settled on
+ * the option sheets and the type identities ("Hull shape decisions"). Mid-depth proportions: a ship's plan sizes them.
+ * Half-widths are tiles beside the centre row, so a hull is 2 * half + 1 wide. Gun mounts are sized for a gun bay (light
+ * guns 2x2, heavy 3x3, plus walls). A part given as a list is a choice per seed: that is how a recipe moves its masses
+ * between seeds and keeps its identity.
  */
+
 /**
  * A carrier's body behind its bow: long and broad, met at a hard shoulder, then (half the time) the hulls either side of
  * the lane stepped in. The lane opens about half way along, after a stretch at full width (two bays); squared at its head.
  */
-const CARRIER_BODY: readonly Part[] = [
+const CARRIER_BODY: readonly HullPart[] = [
   [{ len: [76, 82], half: [15, 16], taper: 1 }, { len: [72, 78], half: [16, 17], taper: 1 }],
   { len: [22, 28], half: [13, 14], chance: 0.5 },
 ];
 const CARRIER_LANE: Profile['split'] = { at: [0.46, 0.5], lane: [4, 8], end: ['square'] };
 const CARRIER_STERN: Profile['stern'] = [{ kind: 'flare', len: [8, 10], out: [3, 4] }, { kind: 'bank', len: [0, 0], out: [0, 0] }];
 
-export const NAVY_PROFILES: Record<string, readonly Profile[]> = {
+const P: Record<string, readonly Profile[]> = {
   // Skirmisher: small and slim, drives large for its size.
   corvette: [
     { id: 'corvette.wedge', nose: { style: ['stepped', 'steep'], len: [8, 11], front: [1, 2] },
@@ -60,13 +62,6 @@ export const NAVY_PROFILES: Record<string, readonly Profile[]> = {
       sections: [{ len: [6, 10], half: [8, 9] }, { len: [26, 34], half: [14, 16], taper: 1 }, [{ len: [16, 20], half: [6, 7], taper: 1 }, { len: [20, 24], half: [6, 7], taper: 1 }]],
       mounts: [{ kind: 'embrasure', count: [3, 4], len: [4, 5], depth: [1, 2], tooth: 6, span: [0.1, 0.75] }], stern: { kind: 'flare', len: [8, 12], out: [4, 6] } },
   ],
-  // PROTOTYPE (#581): a civilian liner: a broad forward section (command and machinery), a slim passenger deck either
-  // side of a bulge amidships (its commons), a flared drive.
-  liner: [
-    { id: 'liner.deck', nose: { style: 'round', len: [8, 11], front: [3, 4] },
-      sections: [{ len: [36, 44], half: [10, 11], taper: 1 }, { len: [18, 24], half: [5, 5] }, { len: [16, 20], half: [8, 9], taper: 1 }, { len: [16, 22], half: [5, 5] }],
-      stern: { kind: 'flare', len: [7, 9], out: [3, 4] } },
-  ],
   // Launcher: longer than a cruiser, built round a launch lane open out of the stern (its floor about a cruiser's, the lane
   // taking the rest). The bow picked per seed: a neck with hard shoulders, two steps, or a bulb on a neck.
   carrier: [
@@ -77,3 +72,22 @@ export const NAVY_PROFILES: Record<string, readonly Profile[]> = {
       sections: [{ len: [8, 10], half: [9, 10] }, { len: [8, 12], half: [6, 7], taper: 1 }, ...CARRIER_BODY], split: CARRIER_LANE, stern: CARRIER_STERN },
   ],
 };
+
+const SHIP = ['medbay', 'brig', 'farm', 'pantry'] as const;
+
+export const navyOutline = {
+  corvette: { family: 'corvette', profiles: P.corvette as readonly Profile[], maxBeam: 27, crew: { sleep: 'bunks' }, bonus: { shields: 1 }, layout: { kind: 'blocks', guns: 'forward' } },
+  frigate: { family: 'frigate', profiles: P.frigate as readonly Profile[], maxBeam: 31, crew: { sleep: 'bunks' }, layout: { kind: 'blocks', guns: 'spread' } },
+  destroyer: {
+    family: 'frigate', evenSeeds: true, profiles: P.destroyer as readonly Profile[], maxBeam: 33, crew: { sleep: 'beds' },
+    bonus: { weapons: 4, reactors: 1, engines: 1, crew: -1, crates: -1 }, layout: { kind: 'blocks', guns: 'forward' },
+  },
+  cruiser: {
+    family: 'cruiser', profiles: P.cruiser as readonly Profile[], maxBeam: 41, engines: 4, bays: 1, crew: { sleep: 'cabins' }, rooms: SHIP,
+    bonus: { weapons: 3, reactors: 2 }, layout: { kind: 'bays', battery: true },
+  },
+  carrier: {
+    family: 'carrier', profiles: P.carrier as readonly Profile[], maxBeam: 51, minLength: 115, gunRooms: 4, crew: { sleep: 'cabins' }, rooms: SHIP,
+    bonus: { crew: 6, crates: 4 }, layout: { kind: 'bays', lane: true },
+  },
+} satisfies Record<string, OutlineRecipe>;

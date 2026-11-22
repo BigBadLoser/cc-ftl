@@ -1,6 +1,6 @@
 import type { ModuleDef } from '../../registry';
 import type { RoomSpec, ShipPlan } from '../plan';
-import { NAVY_TYPES, type NavyType } from './navyShip';
+import type { OutlineRecipe } from '../outlineRecipe';
 import { areaOf, capOf, full, gunsAndReactors, minLen, mirrorPairs, type Pair } from './pairs';
 import type { RegionGrid } from './regions';
 import { CABIN_TIER, cabinsFor } from './cabinBlock';
@@ -105,7 +105,8 @@ function split(band: Band, pairs: readonly Pair[], vary: readonly number[], spar
 }
 
 /** Rooms cut into the outline, or null when they do not fit at this scale. */
-export function layoutBlocks(plan: ShipPlan, m: Mask, type: NavyType, vary: readonly number[], defs: Record<string, ModuleDef>): { g: RegionGrid } | null {
+export function layoutBlocks(plan: ShipPlan, m: Mask, r: OutlineRecipe, vary: readonly number[], defs: Record<string, ModuleDef>): { g: RegionGrid } | null {
+  const guns = r.layout.kind === 'blocks' ? r.layout.guns : 'spread';
   const fr = outlineFrame(plan, m);
   if (!fr) return null;
   const { W, H, inside, depth, xS, sternMax, used, engine, xBand, CW, dockAt } = fr;
@@ -183,7 +184,7 @@ export function layoutBlocks(plan: ShipPlan, m: Mask, type: NavyType, vary: read
   // Outer slots go to the guns where a type spreads them (reactors stay on the spine: their row of reactors wants the
   // corridor side's full length, guns and plant the hull) (the side hull, the wings first; a forward battery stays in the
   // bow's rooms, which reach the hull), then the smallest rooms, as far as the outer floor goes.
-  const outerGuns = NAVY_TYPES[type].guns === 'spread' ? gunPairs : [];
+  const outerGuns = guns === 'spread' ? gunPairs : [];
   let outerArea = 0;
   for (const [a, b] of outer.segs) for (let x = a; x < b; x++) outerArea += Math.max(0, outer.hi(x) - outer.lo(x) + 1);
   const byArea = [...others].sort((a, b) => areaOf(a) - areaOf(b));
@@ -212,7 +213,7 @@ export function layoutBlocks(plan: ShipPlan, m: Mask, type: NavyType, vary: read
     while (outerPairs.length > 0 && !(cut = split(outer, [...outerPairs].sort((a, b) => zone(a) - zone(b)), vary, true, { left: [] }))) outerPairs = outerPairs.slice(0, -1);
     outerCut = cut ?? [];
     const innerPairs = [...gunPairs, ...others].filter((p) => !outerPairs.includes(p));
-    if (NAVY_TYPES[type].guns === 'spread') {
+    if (guns === 'spread') {
       // Spread guns: the first pair forward, the rest one between every few rooms.
       const gp = innerPairs.filter((p) => gunPairs.includes(p)), o = innerPairs.filter((p) => !gunPairs.includes(p));
       const every = Math.max(1, Math.floor(o.length / Math.max(1, gp.length - 1)));
@@ -220,7 +221,7 @@ export function layoutBlocks(plan: ShipPlan, m: Mask, type: NavyType, vary: read
     }
     // Fillers past the default holds: one of each a side, a farm only where the type carries one.
     const has = (k: RoomKind): boolean => [...innerPairs, ...outerPairs].some((p) => roomKind(p[0]) === k || roomKind(p[1]) === k);
-    const fills: Fills = { left: [...(has('workshop') ? [] : ['workshop' as const]), 'lounge', 'armoury', 'gym', ...((NAVY_TYPES[type].rooms ?? []).includes('farm') ? ['farm' as const] : [])] };
+    const fills: Fills = { left: [...(has('workshop') ? [] : ['workshop' as const]), 'lounge', 'armoury', 'gym', ...((r.rooms ?? []).includes('farm') ? ['farm' as const] : [])] };
     innerCut = split(inner, innerPairs, vary, false, fills);
     if (innerCut && claim) innerCut = [...innerCut, claim].sort((p, q) => p.x0 - q.x0);
     fillsLeft = fills.left;
