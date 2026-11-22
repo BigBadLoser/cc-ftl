@@ -28,28 +28,26 @@ const LINER: readonly Profile[] = [
 ];
 
 /**
- * A freighter: a pusher. A short hull, its bow near square (its cockpit's pod gives it its shape) (bridge forward, looking down the truss; crew, workshop, machinery, drive)
- * behind a long truss of sealed containers it pushes (`truss`): big ship, small floor.
+ * A freighter: a pusher. A short hull, its bow near square (its cockpit's pod gives it its shape), behind a long truss
+ * of sealed containers it pushes (`truss`): big ship, small floor. Its drive flared out, tapered in, on quarter flares
+ * or a flat bank.
  */
 const TUG: readonly Profile[] = [
   // A block: one straight section, its drive flared out, tapered in, or quarter flares.
   { id: 'tug.block', nose: { style: 'stepped', len: [2, 3], front: [8, 9] }, sections: [{ len: [20, 26], half: [9, 10] }],
-    stern: [{ kind: 'flare', len: [6, 8], out: [2, 3] }, { kind: 'tail', len: [5, 7], out: [2, 3], rate: 2 }, { kind: 'quarters', len: [8, 10], out: [2, 3], aft: [2, 3] }] },
+    stern: [{ kind: 'flare', len: [6, 8], out: [2, 3] }, { kind: 'tail', len: [8, 10], out: [4, 5], rate: 2 }, { kind: 'quarters', len: [8, 10], out: [2, 3], aft: [2, 3] }] },
   // Round-shouldered: a flat drive bank or a tail tapered in.
   { id: 'tug.round', nose: { style: 'round', len: [3, 3], front: [8, 9] }, sections: [{ len: [18, 24], half: [10, 11] }],
-    stern: [{ kind: 'bank', len: [0, 0], out: [0, 0] }, { kind: 'tail', len: [6, 8], out: [2, 3], rate: 2 }] },
+    stern: [{ kind: 'bank', len: [0, 0], out: [0, 0] }, { kind: 'tail', len: [8, 10], out: [4, 5], rate: 2 }] },
   // A waist: broad forward, narrower aft, the drive on quarter flares or pylons out to the broad section's line.
   { id: 'tug.waist', nose: { style: 'stepped', len: [2, 3], front: [8, 9] }, sections: [{ len: [12, 15], half: [10, 10] }, { len: [10, 13], half: [7, 8], taper: 1 }],
     stern: [{ kind: 'quarters', len: [8, 10], out: [2, 3], aft: [2, 3] }, { kind: 'flare', len: [6, 8], out: [3, 4] }] },
-  // Swept wings at the drive, a tapered tail between them.
-  { id: 'tug.swept', nose: { style: 'round', len: [3, 3], front: [8, 9] }, sections: [{ len: [20, 24], half: [9, 9] }],
-    rearWings: { len: [8, 10], reach: [3, 4], sweep: [1, 2] }, stern: { kind: 'tail', len: [5, 6], out: [1, 1], rate: 3 } },
 ];
 
 export const civilianOutline = {
   freighter: {
     family: 'freighter', profiles: TUG, maxBeam: 27, crew: { sleep: 'bunks', rooms: 1 }, layout: { kind: 'bays', cockpit: true, program: { pd: false, least: 64 } },
-    // (Its cargo the truss's containers: no holds aboard.)
+    // (Its cargo the truss's containers: no holds planned aboard, only spare floor's.)
     bonus: { crates: -8 }, truss: { banks: [4, 5], layers: 1 },
   },
   liner: {
