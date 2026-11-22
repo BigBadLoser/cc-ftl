@@ -3,7 +3,7 @@ import { newGalaxy } from './state';
 import { edgeBetween, planStarRoute } from './route';
 import type { EdgeData, GalaxyState, NodeData } from './types';
 
-const node = (id: string): NodeData => ({ id, sector: 's.0.0', x: 0, y: 0, name: id, danger: 0, faction: null, structures: [], resources: [], contacts: [] });
+const node = (id: string): NodeData => ({ id, sector: 's.0.0', x: 0, y: 0, name: id, danger: 0, genFaction: null, structures: [], resources: [], contacts: [] });
 const edge = (a: string, b: string, fuel: number, time: number): EdgeData => ({ id: `r:${a}|${b}`, a, b, kind: 'route', length: 1, fuel, charge: 10, time });
 
 function fixture(): GalaxyState {

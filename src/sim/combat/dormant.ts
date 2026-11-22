@@ -32,7 +32,7 @@ export function wake(sim: Sim, id: number, reason: WakeReason): void {
   delete s.dormant;
   discoverOutpost(sim, id, 'provoked');
   if (!sim.world.has(id, CombatC)) {
-    const layers = shieldCapacity(sim, id, false);
+    const layers = shieldCapacity(sim, id, true); // dishes stowed until combat deploys them
     const combat: Combat = {
       hold: false, volley: false, target: null, doctrine: 'random', ftl: 0,
       shield: { layers, max: layers, timer: 0 }, heat: newHeat(), evasion: 0, pilot: 0, cruisePilot: 0, cruiseEvasion: 0, aiTimer: 0,

@@ -4,6 +4,8 @@ import type { Faction } from '../combat/components';
 /** Which side a crew member fights for. Boarders keep theirs when they land on the enemy ship. */
 export interface Allegiance {
   faction: Faction;
+  /** The ship this crew member serves while away from it: set on a boarding party as it leaves (boarding/party.ts), so two crews of one side tell their ships apart (fight/relations.ts `crewShipOf`). */
+  ship?: number;
 }
 export const AllegianceC = defineComponent<Allegiance>('allegiance');
 

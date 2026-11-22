@@ -1,5 +1,5 @@
 import { CombatC, IonC, ProjectileC, ShipC, WeaponC, type Combat } from '../combat/components';
-import { factionsHostile, isAiFaction } from '../combat/factions';
+import { aiRuns, atBattle, battleAnywhere, shipsHostile } from '../combat/engage';
 import { hasAmmo } from '../combat/ammo';
 import { heatCeilingBlocks, overchargeError, ventError } from '../combat/heat';
 import { AI_OVERCHARGE_BELOW, AUTO_SHOT_SOON_CHARGE, AUTO_VENT_AT, AUTO_VENT_FORCE_AT, HEAT_MAX } from '../combat/heatTuning';
@@ -17,12 +17,12 @@ import { weaponDefOf } from '../upgrades/stats';
  * firing system. Commands apply next tick; this system only reads.
  */
 export function heatAiSystem(sim: Sim): void {
-  if (!sim.sector.inCombat) return;
+  if (!battleAnywhere(sim)) return;
   for (const id of sim.world.query(ShipC, CombatC)) {
     const ship = sim.world.get(id, ShipC);
     const c = sim.world.get(id, CombatC);
     if (!ship || !c || ship.state !== 'active') continue;
-    if (!isAiFaction(ship.faction)) continue; // the player's heat is the player's to manage
+    if (!aiRuns(sim, id) || !atBattle(sim, id)) continue; // the player's heat is the player's to manage
     if (ventError(c) === null && c.heat.value >= HEAT_MAX * AUTO_VENT_AT && (c.heat.value >= HEAT_MAX * AUTO_VENT_FORCE_AT || !shotAboutToLand(sim, id) || ceilingBlocksAll(sim, id, c))) {
       sim.enqueue({ type: 'combat.vent', ship: id });
       continue;
@@ -63,7 +63,7 @@ export function shotAboutToLand(sim: Sim, shipId: number): boolean {
     if (!w || !m || w.charge < AUTO_SHOT_SOON_CHARGE) continue;
     const owner = shipIdOf(sim, m);
     const from = owner !== shipId && shipById(sim, owner);
-    if (!from || from.state !== 'active' || !factionsHostile(from.faction, me.faction) || !m.powered || m.hp <= 0) continue;
+    if (!from || from.state !== 'active' || !shipsHostile(sim, owner, shipId) || !m.powered || m.hp <= 0) continue;
     const t = w.target ?? sim.world.get(owner, CombatC)?.target;
     if (t?.ship === shipId) return true;
   }

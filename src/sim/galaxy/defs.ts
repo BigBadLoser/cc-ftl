@@ -58,6 +58,11 @@ export interface FactionRelationDef {
   stance: Stance;
   /** [weight of b's reputation in a's standing, weight of a's reputation in b's standing]. */
   spill?: readonly [number, number];
+  /**
+   * The stance is fixed: the coarse tier (war.ts) never changes it. A row without this flag is the generated baseline of a pair that can drift into war
+   * or out of it (the navy and the corporations, the pirate factions among themselves); a pair with no row never changes.
+   */
+  fixed?: true;
 }
 
 /**
@@ -113,6 +118,11 @@ export interface GalaxyFactionDef {
    * hail like traders.
    */
   guardsRoutes?: true;
+  /**
+   * A beaten ship that yields to it in a fight between NPC ships (`Ship.yielded`) is taken as its prize, crew and all (the pirate habit); without it
+   * the beaten ship is let go and leaves (galaxy/engagementPrize.ts `answerYields`). The player answers for itself (capture/settle.ts).
+   */
+  takesPrizes?: true;
 }
 
 /**

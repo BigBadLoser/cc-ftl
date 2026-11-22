@@ -64,11 +64,10 @@ export function holding(sim: Sim, item: string): { kind: 'storage' | 'floor'; id
   return out;
 }
 
-/** A working docking airlock on the player's ship that `vehicle` could dock at (preferring the one it is at), or 0. */
-export function freeAirlock(sim: Sim, vehicle: number, prefer = 0): number {
-  const grid = playerShip(sim);
+/** A working docking airlock on `ship` (the player's by default) that `vehicle` could dock at (preferring the one it is at), or 0. */
+export function freeAirlock(sim: Sim, vehicle: number, prefer = 0, ship = playerShip(sim)): number {
   const ids = [...sim.world.query(AirlockC, ModuleC)]
-    .filter((id) => shipIdOf(sim, sim.world.get(id, ModuleC)) === grid && airlockWorking(sim, id))
+    .filter((id) => shipIdOf(sim, sim.world.get(id, ModuleC)) === ship && airlockWorking(sim, id))
     .sort((a, b) => (a === prefer ? -1 : b === prefer ? 1 : a - b));
   return ids.find((id) => dockError(sim, vehicle, id) === null) ?? 0;
 }

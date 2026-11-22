@@ -18,13 +18,19 @@ import { ShipC } from '../combat/components';
 
 /**
  * The crew of a ship: everyone with the ship's allegiance who stands on its grid or rides one of its shuttles, plus
- * its boarders away on a ship of another faction. (A second ship of the same faction does not count.)
+ * its boarders away on a ship of another faction. (A second ship of the same faction does not count.) A boarding party that names its ship
+ * (`Allegiance.ship`) counts for that ship alone, wherever it is.
  */
 export function shipCrew(sim: Sim, shipId: number): number[] {
   const ship = sim.world.get(shipId, ShipC) as Ship;
   const out: number[] = [];
   for (const id of sim.world.query(CrewC, AllegianceC)) {
-    if (sim.world.get(id, AllegianceC)?.faction !== ship.faction) continue;
+    const a = sim.world.get(id, AllegianceC);
+    if (a?.faction !== ship.faction) continue;
+    if (a.ship !== undefined) {
+      if (a.ship === shipId) out.push(id);
+      continue;
+    }
     const pos = sim.world.get(id, PositionC);
     if (pos) {
       const here = shipById(sim, shipIdOf(sim, pos));
@@ -73,18 +79,19 @@ function bridges(sim: Sim, shipId: number): { id: number; x: number; y: number; 
 }
 
 /**
- * Does `attacker` hold this ship's bridge now? True when a combat-ready crew member of that side is on the ship's grid
- * within a bridge's radius of its access tile (this includes the one operating it). Returns the ticks the hold takes,
- * or null. "Unopposed" is enforced by the caller: capture needs the whole crew subdued first.
+ * Does `attacker` hold this ship's bridge now? True when a combat-ready crew member of that side (a faction, or the crew `attacker` accepts: an NPC
+ * boarding party in a fight between NPC ships) is on the ship's grid within a bridge's radius of its access tile (this includes the one operating
+ * it). Returns the ticks the hold takes, and who holds it, or null. "Unopposed" is enforced by the caller: capture needs the whole crew subdued first.
  */
-export function bridgeHoldTicks(sim: Sim, shipId: number, attacker: Faction): number | null {
+export function bridgeHold(sim: Sim, shipId: number, attacker: Faction | ((crew: number) => boolean)): { ticks: number; by: number } | null {
   const list = bridges(sim, shipId);
   if (list.length === 0) return null;
+  const ours = typeof attacker === 'function' ? attacker : (c: number) => sim.world.get(c, AllegianceC)?.faction === attacker;
   for (const id of sim.world.query(CrewC, PositionC)) {
     const pos = sim.world.get(id, PositionC);
-    if (!pos || shipIdOf(sim, pos) !== shipId || sim.world.get(id, AllegianceC)?.faction !== attacker || !isCombatReady(sim, id)) continue;
+    if (!pos || shipIdOf(sim, pos) !== shipId || !ours(id) || !isCombatReady(sim, id)) continue;
     for (const b of list) {
-      if (Math.max(Math.abs(pos.x - b.x), Math.abs(pos.y - b.y)) <= b.radius) return Math.round(b.holdSec * TICK_HZ);
+      if (Math.max(Math.abs(pos.x - b.x), Math.abs(pos.y - b.y)) <= b.radius) return { ticks: Math.round(b.holdSec * TICK_HZ), by: id };
     }
   }
   return null;

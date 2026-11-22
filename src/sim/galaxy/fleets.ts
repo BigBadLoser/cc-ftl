@@ -2,6 +2,7 @@ import type { Sim } from '../sim';
 import { isLive } from '../trade/deals';
 import { inspectingFleets } from '../inspect/holds';
 import { catchUpFleets, stepAgenda } from './agenda';
+import { engagedFleets } from './engagements';
 import { liftFleet, materialiseFleet, strandIfCrippled } from './fleetShips';
 import { resolveMeetings } from './meetings';
 import { nodesWithin } from './graph';
@@ -45,8 +46,8 @@ export function syncFleets(sim: Sim, turn: number): void {
 /** A fight or a deal in the player's node keeps the fleets there in place. */
 const holdsFleets = (sim: Sim): boolean => sim.sector.inCombat || sim.trade.deals.some(isLive);
 
-/** Fleets held in place on their own account, wherever the player is: a patrol the player stopped for, until its inspection is over (inspect/patrol.ts). */
-const heldFleets = (sim: Sim): Set<number> => inspectingFleets(sim);
+/** Fleets held in place on their own account: a patrol the player stopped for, until its inspection is over (inspect/patrol.ts); fleets in a fight in the player's node (engagements.ts). */
+const heldFleets = (sim: Sim): Set<number> => new Set([...inspectingFleets(sim), ...engagedFleets(sim)]);
 
 /**
  * One turn of traffic: fleets that were frozen catch up to the previous turn, then every simulated fleet takes a step (unless held in the player's

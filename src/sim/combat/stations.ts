@@ -20,6 +20,18 @@ export function holdAll(sim: Sim, ship: number, hold: boolean): void {
   }
 }
 
+/** Drop a ship's aims (ship-wide, each weapon's own and its committed volley) at ships `drop` names: the one place aims are cleared by whom they point at. */
+export function dropAims(sim: Sim, ship: number, drop: (target: number) => boolean): void {
+  const combat = sim.world.get(ship, CombatC);
+  if (combat?.target?.ship && drop(combat.target.ship)) combat.target = null;
+  for (const id of sim.world.query(WeaponC, ModuleC)) {
+    const w = sim.world.get(id, WeaponC);
+    if (!w || shipIdOf(sim, sim.world.get(id, ModuleC) as { x: number; y: number }) !== ship) continue;
+    if (w.target?.ship && drop(w.target.ship)) w.target = null;
+    if (w.commit?.target.ship && drop(w.commit.target.ship)) w.commit = null;
+  }
+}
+
 const playerShips = (sim: Sim): number[] => sim.world.query(ShipC, CombatC).filter((id) => sim.world.get(id, ShipC)?.faction === 'player');
 const peaceful = (sim: Sim, ship: number): boolean => !factionsHostile(sim.world.get(ship, ShipC)?.faction, 'player');
 
@@ -34,13 +46,7 @@ export function battleStations(sim: Sim, on: boolean): void {
   else delete sim.sector.stations;
   for (const ship of playerShips(sim)) {
     holdAll(sim, ship, on);
-    if (on) continue;
-    const combat = sim.world.get(ship, CombatC);
-    if (combat?.target?.ship && peaceful(sim, combat.target.ship)) combat.target = null;
-    for (const id of sim.world.query(WeaponC, ModuleC)) {
-      const w = sim.world.get(id, WeaponC);
-      if (w?.target?.ship && peaceful(sim, w.target.ship) && shipIdOf(sim, sim.world.get(id, ModuleC) as { x: number; y: number }) === ship) w.target = null;
-    }
+    if (!on) dropAims(sim, ship, (t) => peaceful(sim, t));
   }
   sim.events.emit({ type: 'combat.stations', on });
 }
