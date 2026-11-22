@@ -4,7 +4,7 @@ import { shuffle } from '../civilKit';
 import { cargoSpec, dockSpec, pickWeighted, weaponSpec, type RoomSpec, type StationDept, LAMP_AREA, REACTOR_TIERS, reactorTier } from '../plan';
 import { docksOf, stationCrew } from '../stationCrew';
 import type { StationDef, StationSize } from '../stationTypes';
-import { messSize } from '../rooms/rules/parts';
+import { messFloor } from '../rooms/rules/mess';
 import { barracksOf, cabinOf, sleepersIn } from './quarters';
 
 /**
@@ -208,10 +208,9 @@ export function withCommons(rooms: readonly RoomSpec[], size: StationSize, pantr
     const mess = i < messes;
     r.mods.push(...(mess ? ['module.galley', ...Array<string>(tables).fill('module.mess_table'), ...(rec ? [] : ['module.gametable'])] : ['module.arcade', 'module.arcade', 'module.gametable']));
     r.dept = 'commons';
-    // Floor for what it holds: a counter and a row of tables with chairs either side and an aisle (the furnishing
-    // rules' tables in pairs: seven tiles a pair, three for the galleys), or a wall of cabinets and a table.
+    // Floor for what it holds (`messFloor`: the furnishing rules' own answer), or a wall of cabinets and a table.
     // Sized to what it holds, not grown with the station's spaciousness: a big mess with one table reads as empty.
-    const [long, short] = mess ? messSize(tables) : [6, 5];
+    const { w: long, h: short } = mess ? messFloor(tables) : { w: 6, h: 5 };
     [r.w, r.h] = r.w >= r.h ? [long, short] : [short, long];
     if (mess) r.annex = { role: 'cargo', dept: 'commons', mods: Array<string>(Math.max(2, tables)).fill('module.storage_rack'), w: 5, h: 3, ...(pantry?.length ? { stock: true, items: pantry } : {}) };
   }

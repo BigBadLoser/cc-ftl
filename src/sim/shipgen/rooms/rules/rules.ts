@@ -10,9 +10,9 @@ import type { Piece } from './check';
 import { db, pods2, pods2Fit, tr, traumaFits, ward, wardBeds } from './bays';
 import { HY, HYL, f1, f3, f3Fits } from './farm';
 import { rw } from './refinery';
-import { AC, B, seats, BT, OB, OBL, CD, DR, EX, FB, RF, G, GT, L, LS, MB, P, RK, RP, RS, SB, SP, SW, T, bunks, messSize, count, isCut, leftover, middle, off, range, rowsOf, sidePairs, tables, type Beds, type Run } from './parts';
+import { AC, B, seats, BT, OB, OBL, CD, DR, EX, FB, RF, G, GT, L, LS, MB, P, RK, RP, RS, SB, SP, SW, T, bunks, count, isCut, leftover, middle, off, range, rowsOf, sidePairs, tables, type Beds, type Run } from './parts';
 import { PB, VB, AI, CR, bank, core, crates, lifeWalls, lifeWallsFit, machines, machinesFit, podsFit, pods, shuttle, walkwayFits, walkwayHold } from './plant';
-import { laid, m4 } from './mess';
+import { laid, m4, messFloor } from './mess';
 import { co, cu, gy, hl, mk, pz } from './social';
 import { bg, ore, pa, qm, shelfSlots } from './stores';
 import { bk, lb, rf, rf2, rf2Fits, su, ws } from './works';
@@ -208,7 +208,7 @@ const has = (id: string) => (need: readonly string[]): boolean => need.includes(
  * A mess with a galley that is no hall: its floor within three times what its planned tables ask (a hub mess, long for
  * the branches off it, takes M4's line only: the corner and grid arrangements would cluster its few tables in a corner).
  */
-const mess = (need: readonly string[], r: { w: number; h: number }): boolean => { const [a, b] = messSize(count(need, T)); return need.includes(G) && r.w * r.h <= 3 * a * b; };
+const mess = (need: readonly string[], r: { w: number; h: number }): boolean => { const { w, h } = messFloor(count(need, T), count(need, G)); return need.includes(G) && r.w * r.h <= 3 * w * h; };
 
 /** Consoles a station's bridge holds besides the helm. */
 const OPS: readonly string[] = ['module.weaponsConsole', 'module.shieldConsole'];

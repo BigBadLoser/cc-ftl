@@ -14,12 +14,6 @@ export const RF = 'module.refinery', OB = 'module.storage_ore', OBL = 'module.st
 export const FB = 'module.fabricator', SP = 'module.scrapper', RS = 'module.research', EX = 'module.exercise', DR = 'module.droneBay', SW = 'module.stasis_wheel';
 
 export const count = (need: readonly string[], id: string): number => need.filter((m) => m === id).length;
-/**
- * A mess's floor for its tables, long side then short (the one answer: the programme sizes a mess by it, the mess rules
- * tell a hall from a mess by it): a counter and a row of tables in pairs with chairs either side and an aisle, seven
- * tiles a pair, three for the galleys.
- */
-export const messSize = (tables: number): [number, number] => [7 * Math.ceil(tables / 2) + 2, 6];
 /** Whether a frame tile is a cut corner (wall: nothing stands there). */
 export const isCut = (c: { cut?: readonly { x: number; y: number }[] }, x: number, y: number): boolean => (c.cut ?? []).some((q) => q.x === x && q.y === y);
 /** A tile in from a cut corner: `v` when the corner at (x, y) stands, else `v` moved a tile toward the room by `step`. */
