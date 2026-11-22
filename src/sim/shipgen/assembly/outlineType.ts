@@ -41,12 +41,14 @@ const paxOf = (r: OutlineRecipe, depth: number): number => (r.passengers ? r.pas
 /** A mess: a galley and tables down a long narrow room, the crew's commons. */
 export const MESS: RoomSpec = { role: 'support', dept: 'commons', mods: ['module.galley', 'module.mess_table'], w: 6, h: 3 };
 /**
- * The bigger ships' extra rooms: a med bay with its trauma room behind, a brig round a stasis wheel, a small farm, the
+ * The bigger ships' extra rooms: a med bay with its trauma room behind (a liner's ward with one beside it), a brig round a stasis wheel, a small farm, the
  * mess's pantry (cold stores always), a lounge (a liner's passengers').
  */
 export const SHIP_ROOMS: Record<ShipRoom, RoomSpec> = {
   medbay: { role: 'medbay', mods: ['module.med_bed', 'module.med_bed'], w: 5, h: 4, annex: { role: 'medbay', mods: ['module.recovery', 'module.recovery'], w: 5, h: 4 } },
   sickbay: { role: 'medbay', mods: ['module.med_bed', 'module.med_bed'], w: 5, h: 4 },
+  // (A liner's: a ward two bays long, its trauma room a slice off one end, as the pantry off the mess.)
+  ward: { role: 'medbay', mods: Array<string>(4).fill('module.med_bed'), w: 10, h: 5, annex: { role: 'medbay', mods: ['module.recovery', 'module.recovery'], w: 5, h: 4 } },
   brig: { role: 'armoury', mods: ['module.stasis_wheel'], w: 7, h: 6 },
   farm: { role: 'farm', mods: Array<string>(4).fill('module.hydroponics_large'), w: 14, h: 4 },
   pantry: { role: 'cargo', dept: 'commons', mods: ['module.storage_cold', 'module.storage_cold', 'module.storage_rack'], w: 4, h: 3 },

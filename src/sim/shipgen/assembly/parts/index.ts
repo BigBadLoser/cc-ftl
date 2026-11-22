@@ -10,7 +10,7 @@ const BATTERY: BayPart = {};
 const PARTS: Record<'battery' | 'lane' | 'decks' | 'drum', BayPart> = { battery: BATTERY, lane: LANE, decks: DECKS, drum: DRUM };
 
 /** The room program's rules where no part or recipe sets them. */
-const PROGRAM: Required<ProgramRules> = { pods: false, mirror: false, beside: false, holds: false, grow: 2.5, least: 0, pd: true, blocks: true };
+const PROGRAM: Required<ProgramRules> = { pods: false, mirror: false, beside: false, trauma: false, holds: false, grow: 2.5, least: 0, pd: true, blocks: true };
 
 /** A bay layout's parts as one: each hook its first part's that has it, the program rules merged, the layout's own last. */
 export function partOf(l: BaysLayout): BayPart & { program: Required<ProgramRules> } {

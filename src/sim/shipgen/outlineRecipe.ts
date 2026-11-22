@@ -11,7 +11,7 @@ import type { RoomRole } from './types';
  * Rooms a ship may have past its plan's: a med bay with its trauma room, a sick bay (one room), a brig, a farm, the mess's
  * pantry, a lounge.
  */
-export type ShipRoom = 'medbay' | 'sickbay' | 'brig' | 'farm' | 'pantry' | 'lounge';
+export type ShipRoom = 'medbay' | 'sickbay' | 'ward' | 'brig' | 'farm' | 'pantry' | 'lounge';
 
 /** How a ship's people sleep: barracks of bunks, barracks of single beds, or every bed a cabin. */
 export type Sleep = 'bunks' | 'beds' | 'cabins';
@@ -42,6 +42,8 @@ export interface ProgramRules {
   mirror?: boolean;
   /** An annex (the pantry) cut beside its host, not behind it (the med bay keeps its trauma room behind). */
   beside?: boolean;
+  /** With `beside`, the med bay's trauma room beside it too, a tile wider than a pantry (a ward two bays long). */
+  trauma?: boolean;
   /** A hold may take all its bays: spare floor is storage. */
   holds?: boolean;
   /** Floor a small room may take, as a multiple of its plan. */

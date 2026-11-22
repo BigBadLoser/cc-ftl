@@ -50,7 +50,7 @@ const racked = (r: RoomSpec): RoomSpec => {
 
 /** All the plan's reactors in one room and all its shield generators in another, a mirrored pair; the rest single. */
 function program(plan: ShipPlan, defs: Record<string, ModuleDef>, inBattery: number, rules: Required<ProgramRules>, blocks = true): Item[] {
-  const { mirror, beside } = rules, hangars = !rules.pods;
+  const { mirror, beside, trauma } = rules, hangars = !rules.pods;
   const { gunPairs, cabinPairs } = programPairs(plan, defs);
   const { lone } = gunsAndReactors(plan, defs);
   // (Prototype sizes, here until the plan takes them: a 5x4 brig; the core split into an AI core room and a drone room, 5x4 each.)
@@ -67,11 +67,12 @@ function program(plan: ShipPlan, defs: Record<string, ModuleDef>, inBattery: num
   const pods: RoomSpec[] = hangars ? [] : [{ ...fillerSpec('pods', 64), mods: Array<string>(4).fill('module.pod_bay'), w: 14, h: 4 }];
   // (Mirrored, the point defence is its pair of turrets only: the plan's own room goes.)
   // (Mirrored, on a lane hull's single-tier side hulls, or on passenger decks (`beside`): an annex (the pantry) is cut
-  // three wide from its host's end; the med bay keeps its trauma room behind it, in stores' forward bays.)
+  // three wide from its host's end; the med bay keeps its trauma room behind it, in stores' forward bays, unless the
+  // recipe has it beside too (`trauma`), four wide.)
   const own = (r: RoomSpec): RoomSpec => {
-    if (!beside || !r.annex || r.role === 'medbay') return r;
-    const { annex, ...host } = r;
-    return { ...host, beside: { ...annex, w: 3 }, w: r.w + 4 };
+    if (!beside || !r.annex || (r.role === 'medbay' && !trauma)) return r;
+    const { annex, ...host } = r, w = r.role === 'medbay' ? 4 : 3;
+    return { ...host, beside: { ...annex, w }, w: r.w + w + 1 };
   };
   const singles = [...lone.filter((r) => !(mirror && r.mods.every((m) => m === 'module.pointDefense'))), ...cores, ...plan.quarters.filter((q) => !q.block), ...plan.support.filter((r) => !(mirror && r.role === 'plant')).map(brig).map(mess).map(own), ...plan.cargo.map(brig).map(racked), ...(hangars ? plan.hangars : pods)];
   const items: Item[] = blocks ? cabinPairs.map((p) => ({ specs: [p[0], p[1]], both: true, cabins: true })) : [];
