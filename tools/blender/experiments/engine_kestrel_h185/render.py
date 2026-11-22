@@ -90,11 +90,13 @@ def sprite(out,rot,hot,part,stage,preview=False):
     rgb,_=core.render(w,h,"glow")
     if stage>=1 and hot:
         core._set_pass=original
-    g=np.pad(post.glow_down(rgb,core.SS,3,floor=8 if hot and part=="bell" else 40),((1,1),(1,1),(0,0)))
+    g=np.pad(post.glow_down(rgb,core.SS,3,floor=8 if part=="flame" else 40),((1,1),(1,1),(0,0)))
+    if part=="flame":
+        op=np.zeros_like(op)       # glow only: the bell is the bell sprite's; here it only hides the flame behind it
     x0,y0,x1,y1=post.crop_box(op|(g[...,3]>0))
     rgba=post.to_rgba(c,op)[y0:y1,x0:x1]
     g=g[y0:y1,x0:x1]
-    sid=f"{ASSET}.{part}.r{rot}"+(".active" if hot else "")
+    sid=f"{ASSET}.{part}.r{rot}"+(".active" if hot and part!="flame" else "")
     directory=out/"sprites"
     directory.mkdir(parents=True,exist_ok=True)
     post.write_png(directory/(sid+".png"),rgba)
@@ -248,7 +250,7 @@ def main():
         stage=stage_of(r,a.stage)
         if not a.no_sprites:
             parts=(("hull",False),)+((("block",False),("end",False)) if stage>=8 else ())+(("machine",False),("machine",True),
-                   ("machine.open",False),("machine.open",True),("bell",False),("bell",True))
+                   ("machine.open",False),("machine.open",True),("bell",False),("bell",True),("flame",True))
             for part,hot in parts:
                 if part not in ("hull","block","end") and a.sprite_state!="both" and hot!=(a.sprite_state=="active"):
                     continue

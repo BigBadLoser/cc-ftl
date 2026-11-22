@@ -22,7 +22,7 @@ describe('module layer depth', () => {
   });
   it('sorts the bell by the tile beyond the hull row, roofed or not, so it draws over the hull behind it', () => {
     const layers = moduleLayers(null as never, 1, m, engine, true, true);
-    expect(layers.map((l) => l.chain[0])).toEqual(['module.engine.hull.r1', 'module.engine.end.r1', 'module.engine.machine.open.r1.active', 'module.engine.block.r1', 'module.engine.bell.r1.active']);
+    expect(layers.map((l) => l.chain[0])).toEqual(['module.engine.hull.r1', 'module.engine.end.r1', 'module.engine.machine.open.r1.active', 'module.engine.block.r1', 'module.engine.bell.r1.active', 'module.engine.flame.r1']);
     expect(layerKey(engine, m, layers[4]!, 4, false, 31)).toBe(34.5);
     expect(layerKey(engine, m, layers[4]!, 4, true, 31)).toBe(34.5);
   });

@@ -367,19 +367,13 @@ def nozzle(f,stage):
         FT.nozzle(sys.modules[__name__],f,stage)
 
 
-FLAME=__import__("os").environ.get("KESTREL_FLAME","now")   # flame study (plasma.py reads it too)
-FLAMES={
-    "now":[(3.45,0.23),(3.95,0.49),(4.3,0.58),(4.78,0.3),(5.2,0.47),(5.65,0.22),(6.1,0.34),(6.65,0.12),(7.4,0.006)],
-    # D: a vacuum plume (the flame flares wide past the mouth, streaked, long). E: a long bright jet, feathered.
-    # F: E's jet inside D's faint plume. Envelopes only: the shader (plasma.study) draws the flame in tile units.
-    "D":[(3.45,0.85),(3.88,1.15),(4.6,1.9),(5.6,2.6),(7.5,3.2),(10.5,3.5),(15.5,3.6)],
-    "E":[(3.45,0.85),(3.88,1.15),(5.0,1.4),(8.0,1.9),(12.0,2.4),(17.5,2.8)],
-    "F":[(3.45,0.85),(3.88,1.15),(4.6,1.9),(5.6,2.6),(7.5,3.2),(10.5,3.5),(17.5,3.6)],
-}
+# The exhaust's envelope: a long jet, about 13.6 tiles past the bell mouth (u = 3.88). The shader (plasma.py) draws the
+# flame inside it in tile units; the envelope only bounds the volume. Rendered as its own sprite, `<asset>.flame.r{n}`.
+FLAME=[(3.45,0.85),(3.88,1.15),(5.0,1.4),(8.0,1.9),(12.0,2.4),(17.5,2.8)]
 
 
 def exhaust(f,stage):
-    profile=[(u,r,BZ) for u,r in FLAMES[FLAME]]
+    profile=[(u,r,BZ) for u,r in FLAME]
     sleeve(f,profile,"cyan",sides=32)
     for (u,r,z),reverse in ((profile[0],True),(profile[-1],False)):
         pts=[f.pt(u,r*math.cos(t*math.tau/32),z+r*math.sin(t*math.tau/32)) for t in range(32)]
@@ -393,7 +387,7 @@ def machine(rot,hot=False,stage=1,holdout=True,part="machine"):
     block and the hull row, fittings; the engine lower and the bell pushed out)."""
     with FT.lowered(sys.modules[__name__],stage):
         objects=_machine(rot,hot,stage,holdout,part)
-    if stage>=8 and part=="bell":
+    if stage>=8 and part in ("bell","flame"):
         f=Frame(core.Mesh("unused"),rot,centre=CENTRE[rot])
         (x0,y0),(x1,y1)=f.xy(0,0),f.xy(1,0)
         for ob in objects:
@@ -425,7 +419,7 @@ def _machine(rot,hot,stage,holdout,part):
         import tierkit
         squash=core.Mesh("KESTREL_tier_cast")
         meshes.append(("tier",lambda f,s:tierkit.build(f,Frame(squash,rot,centre=CENTRE[rot]),TIER,VARIANT)))
-    if hot:
+    if hot and part=="flame":
         meshes.append(("exhaust",exhaust))
     for name,fn in meshes:
         m=core.Mesh("KESTREL_"+name,selflit=name=="exhaust")
@@ -445,7 +439,7 @@ def _machine(rot,hot,stage,holdout,part):
         elif name=="tier":
             # Built in final coordinates; its round castings (KESTREL_tier_cast) squashed like the cassette.
             squash.v=[(x,y,THRUST_Z+(z-THRUST_Z)*CASSETTE_Z_FIT) for x,y,z in squash.v]
-            squash.f=[face for face in squash.f if (u_of_(squash,face,cx,cy,rot)>outer)==(part=="bell")]
+            squash.f=[face for face in squash.f if (u_of_(squash,face,cx,cy,rot)>outer)==(part in ("bell","flame"))]
             if squash.f:
                 objects.append(squash.build())
         if TIER>1 and name in ("bed","powerhead","services"):
@@ -459,7 +453,7 @@ def _machine(rot,hot,stage,holdout,part):
             gx=sum(p[0] for p in pts)/len(pts)-cx
             gy=-sum(p[1] for p in pts)/len(pts)-cy
             return (-gy,gx,gy,-gx)[rot]
-        m.f=[face for face in m.f if (u_of(face)>outer)==(part=="bell")]
+        m.f=[face for face in m.f if (u_of(face)>outer)==(part in ("bell","flame"))]
         if m.f:
             objects.append(m.build())
     return objects
