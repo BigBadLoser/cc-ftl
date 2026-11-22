@@ -23,6 +23,9 @@ export function sideIn(sim: Sim, e: Engagement, ship: number): 0 | 1 | -1 {
   return e.members[1].some((m) => m.ship === ship) ? 1 : -1;
 }
 
+/** Was the ship taken in a fight here (a prize on its captor's side)? Its beaten crew are captives, not a crew that gives the ship up again. */
+export const isPrize = (sim: Sim, ship: number): boolean => engagements(sim).some((e) => e.members.some((side) => side.some((m) => m.ship === ship && m.prize)));
+
 /** Is the ship in play on a side of some fight here? */
 export function inEngagement(sim: Sim, ship: number): boolean {
   const list = sim.sector.engagements;

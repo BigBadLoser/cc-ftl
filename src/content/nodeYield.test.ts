@@ -15,7 +15,11 @@ import { TICK_HZ } from '../sim/time';
 import { VehicleC } from '../sim/vehicles/components';
 import { eventsOf } from '../../test/support/sim';
 import { run } from '../../test/support/run';
-import { fight, shipOf } from '../../test/support/content';
+import { fight, fleetHere, shipOf } from '../../test/support/content';
+import { content } from './index';
+import { newGame } from '../sim/newGame';
+import { materialiseFleet } from '../sim/galaxy/fleetShips';
+import type { Fleet } from '../sim/galaxy/types';
 
 /**
  * A ship beaten in a fight between NPC ships gives up to its foe through the player's own systems (#603; one system for each thing, whoever acts):
@@ -80,6 +84,34 @@ describe('a beaten ship in a fight between NPC ships', () => {
       const c = sim.world.get(a, CombatC);
       expect([c?.target?.ship, c?.prey]).not.toContain(b);
     }
+  });
+
+  it('taken, it never yields again: the captor fights on against the rest of the beaten fleet (#609 review)', () => {
+    // Neutral raiders against two traders: after the first trader is taken, its beaten crew stay aboard as captives, and that must not read as a
+    // surrender by the raiders' fleet (which would send the raiders away and make the traders the winners).
+    const sim = newGame(21, content);
+    sim.story.goals.skipped = true;
+    sim.story.reputation['raiders'] = 10;
+    const fa = fleetHere(sim, 'raiders', 'raider', 9001);
+    const fb = fleetHere(sim, 'traders', 'trader', 9002);
+    const second = { ...(fb.ships[0] as Fleet['ships'][number]), id: sim.galaxy.nextFleet++, seed: 2 * 9002 };
+    fb.ships.push(second);
+    sim.galaxy.fleets = [fa, fb];
+    materialiseFleet(sim, fa);
+    materialiseFleet(sim, fb);
+    run(sim, 1);
+    const [first, other] = [shipOf(fb), second.ship as number];
+    expect(other).toBeDefined();
+    run(sim, 3 * TICK_HZ);
+    sim.sector.inCombat = true;
+    (sim.world.get(shipOf(fa), CombatC) as { prey?: number }).prey = first;
+    beat(sim, first);
+    const out = run(sim, 4 * TICK_HZ);
+    expect(fa.ships.map((c) => c.ship)).toContain(first);
+    expect(sim.world.get(first, ShipC)?.yielded).toBeUndefined();
+    expect(fa.node).toBe(sim.galaxy.current);
+    expect(eventsOf(out, 'engagement.ended').filter((e) => e.winner === 1)).toEqual([]);
+    expect(engagements(sim).some((e) => e.members.some((side) => side.some((m) => m.ship === other)))).toBe(true);
   });
 
   it('is let go by a foe that does not: its fleet jumps away and the foe wins, driven off', () => {
