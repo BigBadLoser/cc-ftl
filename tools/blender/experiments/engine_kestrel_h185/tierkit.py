@@ -26,7 +26,7 @@ from sprites.cmbkit import hazard_strip
 from geometry import annulus, curved_pipe, sleeve, torus
 
 CUT = -1.5              # the Mk I powerhead's faces inboard of this go (the injector plate, rear armour and clamps)
-CUTS = {"J": {"powerhead": -0.75, "services": -0.75}, **{k: {"bed": 99} for k in "QRS"}}
+CUTS = {"J": {"powerhead": -0.75, "services": -0.75}, **{k: {"bed": 99} for k in "QRSTUV"}}
 
 
 def cut(variant, name):
@@ -341,6 +341,8 @@ def build(f, fs, tier, variant):
     if variant not in VARIANTS:
         import tier_r5
         import tier_r6
+        import tier_r7
         VARIANTS.update({"M": tier_r5.bottle, "N": tier_r5.thermal, "P": tier_r5.turbo,
-                         "Q": tier_r6.nested, "R": tier_r6.rings, "S": tier_r6.turbo})
+                         "Q": tier_r6.nested, "R": tier_r6.rings, "S": tier_r6.turbo,
+                         "T": tier_r7.ring_drive, "U": tier_r7.pump_crown, "V": tier_r7.turbo_compound})
     VARIANTS[variant](f, fs, tier, _m().THRUST_Z)

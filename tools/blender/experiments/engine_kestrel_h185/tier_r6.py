@@ -23,15 +23,33 @@ STAVES = ((0.16, 1.1, "steel"), (1.1, 2.04, "blueGrey"), (2.04, 2.98, "steel"), 
 R = 0.89                # the casing's section where the Mk I is cut (cassette.body_radius(-1.48))
 
 
-def bed(f, u0, a, flank=None):
+SHAPE = [(0.56, 1.15), (-0.76, 1.12), (0.32, 0.84), (1.5, 0.55)]    # the side casting's top past its rear corner
+
+
+def _top(u, u0):
+    pts = [(u0, 0.79), (u0 + SHAPE[0][0], SHAPE[0][1])] + SHAPE[1:]
+    for (p, a), (q, b) in zip(pts, pts[1:]):
+        if p <= u <= q:
+            return a + (b - a) * (u - p) / (q - p)
+    return pts[-1][1]
+
+
+def bed(f, u0, a, flank=None, saddle=None, openings=()):
     """The Mk I's heavy_bed, from u0 to its front (1.5): sump, side castings with access castings, lugs and the rear
-    saddle. flank(v, side) replaces the access castings (a concept's own flank equipment)."""
+    saddle. flank(v, side) replaces the access castings (a concept's own flank equipment); saddle(u0) replaces the rear
+    saddle; openings [(u0, u1)] cut the side castings through between a low sill and a top rail."""
     m = T._m()
     f.box((u0 + 0.15 + 1.4) / 2, 0, 0.2, 1.4 - u0 - 0.15, 1.55, 0.5, "steelD", top="steel")
+    cuts = sorted({u0, u0 + 0.56, -0.76, 0.32, 1.5, *[x for o in openings for x in o]})
     for side in (-1, 1):
         v = side * 1.13
-        m.prism(f, [(u0, 0), (u0, 0.79), (u0 + 0.56, 1.15), (-0.76, 1.12), (0.32, 0.84), (1.5, 0.55), (1.5, 0)],
-                v - 0.26, v + 0.26, "navy", "blueGrey")
+        for p, q in zip(cuts, cuts[1:]):
+            tp, tq = _top(p, u0), _top(q, u0)
+            if any(o0 <= p and q <= o1 for o0, o1 in openings):
+                m.prism(f, [(p, 0), (p, 0.3), (q, 0.3), (q, 0)], v - 0.26, v + 0.26, "navy", "blueGrey")
+                m.prism(f, [(p, tp - 0.16), (p, tp), (q, tq), (q, tq - 0.16)], v - 0.26, v + 0.26, "navy", "blueGrey")
+            else:
+                m.prism(f, [(p, 0), (p, tp), (q, tq), (q, 0)], v - 0.26, v + 0.26, "navy", "blueGrey")
         if flank:
             flank(v, side)
         else:
@@ -45,8 +63,11 @@ def bed(f, u0, a, flank=None):
         for u in (u0 + 0.08, (u0 + 1.18) / 2, 1.18):
             f.box(u, side * 1.5, 0, 0.34, 0.52, 0.16, "steel", top="plate")
             G.disc(f, "z", u, side * 1.58, 0.16, 0.07, 0, 0.05, "steelD", sides=6)
-    m.prism(f, [(u0 + 0.1, 0), (u0 + 0.1, 0.84), (u0 + 0.5, 1.08), (u0 + 0.94, 0.97), (u0 + 0.94, 0)], -0.8, 0.8,
-            "steelD", "steel")
+    if saddle:
+        saddle(u0)
+    else:
+        m.prism(f, [(u0 + 0.1, 0), (u0 + 0.1, 0.84), (u0 + 0.5, 1.08), (u0 + 0.94, 0.97), (u0 + 0.94, 0)], -0.8, 0.8,
+                "steelD", "steel")
 
 
 def casing(fs, a, uc, crown=True):
