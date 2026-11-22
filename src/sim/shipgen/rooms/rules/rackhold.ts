@@ -1,8 +1,8 @@
 /**
- * RH rack hold (#581), the one arrangement of a hold of racks: single rows of racks along the room's long axis, each
- * facing a two-tile aisle (a rack and its aisle repeat every three tiles). In a room wider than deep in its door's
- * frame (a door on a long wall) the rows run across the frame, the first on the back wall; in a deeper room (a door on
- * a short end) the racks are turned a quarter so the rows run up the room, the first column on the west wall. The door's
+ * RH rack hold (#581), the one arrangement of a hold of racks: every rack end-on to a long wall, its short side on the
+ * wall, the racks along it every three tiles with a two-tile aisle between (none in the last column, its aisle past the wall) (a carrier's hold). In a room wider than deep
+ * in its door's frame (a door on a long wall) they stand on the back wall, and on the door wall where a walkway is left
+ * between; in a deeper room (a door on a short end) on the west and east walls. The door's
  * row is bare, and a rack is left out wherever it would cover a doorway (the main door's column, or the floor beside any
  * other door, on any wall), so those gaps carry the walkway to every aisle. The planned racks take the first places; the
  * hold fills every row (place.ts keeps those that fit and leave the room working).
@@ -25,11 +25,13 @@ export function rackHold(c: Ctx): Piece[] {
     for (let i = 0; i < tw; i++) for (let j = 0; j < th; j++) if (blocked.has(`${x + i},${y + j}`) || near(x + i, y + j)) return;
     out.push(P(RACK, x, y, rot));
   };
-  // Rows across a wide frame, facing south; up a deep one, turned to face east.
+  // Each rack end-on to a long wall (its short side on the wall), one beside the next every three tiles (a two-tile
+  // aisle between): in a wide frame turned to face east, on the back wall and (deep enough to keep a walkway between)
+  // the door wall; in a deep one facing south, on the west wall and the east.
   if (w >= h) {
-    for (let y = 0; y <= h - 2; y += 3) for (let x = 0; x + len <= w; x += len) put(x, y, 0, len, 1);
+    for (let x = 0; x + 1 < w; x += 3) { put(x, 0, 3, 1, len); if (h >= 2 * len + 1) put(x, h - len, 3, 1, len); }
   } else {
-    for (let x = 0; x + 1 <= w - 1; x += 3) for (let y = 0; y + len <= h - 1; y += len) put(x, y, 3, 1, len);
+    for (let y = 0; y + 1 <= h - 2; y += 3) { put(0, y, 0, len, 1); if (w >= 2 * len + 1) put(w - len, y, 0, len, 1); }
   }
   return out;
 }
