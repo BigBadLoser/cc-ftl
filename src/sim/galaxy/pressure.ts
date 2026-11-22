@@ -1,7 +1,7 @@
 import type { Sim } from '../sim';
 import { atWarContent } from './relations';
-import { controlOf, nodeOwnerAt, tidyControl } from './control';
-import { nodeOf } from './state';
+import { controlOf, nodeOwnerAt, sectorLanes, sectorOwner, tidyControl } from './control';
+import { galaxyIndex, nodeOf } from './state';
 import { PRESSURE_EPS, PRESSURE_MAX } from './tuningCoarse';
 
 /**
@@ -45,4 +45,16 @@ export function fightPressure(sim: Sim, node: string, winner: string, loser: str
   const owner = nodeOwnerAt(sim, node);
   if (owner !== winner && owner !== loser) return;
   addPressure(sim, node, winner, (FINE_BASE + FINE_PER_LOSS * lost) * (raid ? FINE_RAID : 1));
+}
+
+/**
+ * The player destroyed or captured a ship of `victim` at the node they are in (heat.ts `charge`). The sector's holder is the beaten faction: the player's
+ * fight pushes for the sorted-first faction at war with it that borders the sector, since whoever the player fights is the enemy of that faction's enemies.
+ */
+export function playerFightPressure(sim: Sim, victim: string | null): void {
+  const content = sim.content.galaxy;
+  const node = nodeOf(sim, sim.galaxy.current);
+  if (!content || !node || !victim || nodeOwnerAt(sim, node.id) !== victim) return;
+  const by = (sectorLanes(galaxyIndex(sim.galaxy)).get(node.sector) ?? []).map((a) => sectorOwner(sim, a)).find((o) => !!o && o !== victim && atWarContent(content, o, victim));
+  if (by) addPressure(sim, node.id, by, FINE_BASE + FINE_PER_LOSS);
 }

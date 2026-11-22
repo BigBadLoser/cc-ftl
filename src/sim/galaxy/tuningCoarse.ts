@@ -10,8 +10,12 @@ export const COARSE_TURNS = 8;
 export const FLIP_TICKS = 3;
 /** A sector that just changed hands cannot change again for this many coarse ticks (no flip-flopping). */
 export const FLIP_COOLDOWN = 4;
-/** At most this many sectors change hands per coarse tick, galaxy-wide (strongest pressure first). */
-export const FLIPS_PER_TICK = 1;
+/**
+ * At most this many sectors change hands per coarse tick, galaxy-wide (strongest pressure first), and never two within FLIP_SPACING lanes of each other
+ * (about the player's 9-hop region), so a player looking twice in a row never sees two changes nearby.
+ */
+export const FLIPS_PER_TICK = 6;
+export const FLIP_SPACING = 6;
 /** Pressure value a sector must hold to count towards a flip, and the most it can build up. */
 export const FLIP_THRESHOLD = 1;
 export const PRESSURE_MAX = 2.5;
@@ -25,13 +29,13 @@ export const OWED_WEIGHT = 0.4;
 export const STRENGTH_LANES = 2;
 export const FALLOFF: readonly number[] = [1, 0.6, 0.3];
 /** The defender's edge at home. Pirates raid rather than hold: they hit harder than they hold, and a pirate flip needs a higher threshold. */
-export const DEFENDER_EDGE = 1.15;
+export const DEFENDER_EDGE = 1.0;
 export const PIRATE_RAID = 1.25;
 export const PIRATE_HOLD = 0.6;
 export const PIRATE_FLIP_MULT = 1.5;
 
 /** Pressure added per tick at a full share of the front's strength (share = (attack - defence) / (attack + defence), above 0), and the hashed swing around it (+-). */
-export const PUSH_RATE = 0.55;
+export const PUSH_RATE = 1.2;
 export const PUSH_SWING = 0.5;
 /** A push that continues keeps this much of the old pressure; with no push it decays by DECAY and is dropped under PRESSURE_EPS. */
 export const PRESSURE_KEEP = 0.85;
@@ -48,3 +52,7 @@ export const REHOME_HOPS = 6;
 export const NEWS_PER_TICK = 1;
 /** Pressure (as a share of the threshold) a sector must have reached for its fading to read as "held". */
 export const HELD_SHARE = 0.6;
+
+/** Expansion: what an unowned sector counts as defence at a claim, and how much slower than a war push a claim builds. */
+export const UNOWNED_DEFENCE = 0.5;
+export const EXPAND_RATE = 1;

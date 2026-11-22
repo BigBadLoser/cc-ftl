@@ -106,3 +106,9 @@ Runs every `COARSE_TURNS` turns (proposed 8: about 24 minutes at 1x, or 8 jumps)
   `fightPressure`), tuning in `galaxy/tuningCoarse.ts`. It runs from `onTurn` after `stepFleets`.
 - Not in slice 1: a station already made real (its node visited) keeps its kind and look until slice 2 (livery, scars); the player's own fights do not feed
   pressure yet (only fleet meetings do).
+
+## Review round (user, 2026-11-22: "go ahead with sensible defaults")
+
+- Expansion into unowned space through the same pressure (no defender but `UNOWNED_DEFENCE`; pirates and the rogue AI do not settle).
+- The player's kills and captures push the sector's borders (`playerFightPressure`).
+- Pace retuned: `PUSH_RATE` 1.2, `EXPAND_RATE` 1, `DEFENDER_EDGE` 1.0, `FLIPS_PER_TICK` 6 with `FLIP_SPACING` 6 lanes (replaces the galaxy-wide cap of 1, which the sparse fronts never reached anyway). The asked pace of one change per 2 to 3 hours inside the 9-hop region would need about 300 flips per 100 ticks galaxy-wide (a region is about 5% of the map), a map replaced every 27 hours; the default is 1.5 to 4 per 100 ticks in a region (one per 10 to 25 hours), with no two changes in one region at once.

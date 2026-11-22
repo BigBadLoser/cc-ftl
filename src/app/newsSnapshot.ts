@@ -40,7 +40,7 @@ function precise(sim: Sim, n: NewsItem): string {
     case 'rebuilt': return `${n.who} was launched from ${placeOf(sim, n.node)}`;
     case 'hunt': return `${n.who} set out from ${placeOf(sim, n.node)} to hunt you down`;
     case 'front': return `${factionName(sim, n.faction)} presses ${factionName(sim, n.foeFaction)} on the border at ${n.who}`;
-    case 'fell': return `${n.who} fell to ${factionName(sim, n.faction)}`;
+    case 'fell': return n.foeFaction ? `${n.who} fell to ${factionName(sim, n.faction)}` : `${factionName(sim, n.faction)} claimed ${n.who}`;
     case 'held': return `${factionName(sim, n.faction)} held ${n.who} against ${factionName(sim, n.foeFaction)}`;
   }
 }
@@ -58,7 +58,7 @@ function rumour(sim: Sim, n: NewsItem): string {
     case 'rebuilt': return `${a} launched a ship near ${here}`;
     case 'hunt': return `${a} hunters are out looking for you near ${here}`;
     case 'front': return `${a} and ${b} are fighting along a border near ${here}`;
-    case 'fell': return `A sector near ${here} has fallen to ${a}`;
+    case 'fell': return n.foeFaction ? `A sector near ${here} has fallen to ${a}` : `${a} has claimed a sector near ${here}`;
     case 'held': return `${a} held a border sector near ${here} against ${b}`;
   }
 }

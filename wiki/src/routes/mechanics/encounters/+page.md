@@ -34,9 +34,10 @@ Two buttons on the map are worth knowing:
 
 Territory is not fixed. Where two factions at war share a border, the stronger side presses on the weaker sector, and
 what happens near you counts: a fleet that wins a fight on a border adds to its side's push, and a defender that wins
-at home pushes back. Change is slow. A sector only changes hands after the pressure has held for several rounds, only
-one sector changes hands each round across the whole galaxy, and a sector that has just changed hands stays put for a
-while. The start sector, each province's hub and a faction's last few sectors never fall, and the sector you are in
+at home pushes back, and so do the fights you win or lose yourself: beating a faction in the sector it holds helps its
+enemies next door. Factions also settle empty sectors that border their own (pirates raid instead of settling). Change
+is slow. A sector only changes hands after the pressure has held for several rounds, two changes never land close to
+each other in the same round, and a sector that has just changed hands stays put for a while. The start sector, each province's hub and a faction's last few sectors never fall, and the sector you are in
 does not change while you are in it. When a sector falls, its stations go with it: the old owner's ships go home
 elsewhere, and the station builds the new owner's ships over time. The starmap colours follow, and the news list
 reports fighting on a border and sectors falling or holding.

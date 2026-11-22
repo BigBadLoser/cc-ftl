@@ -1,14 +1,15 @@
 import { describe, expect, it } from 'vitest';
+import { coarseWorld, measurePace } from '../../test/support/fixtures/coarse';
 import { cachedWorld } from '../../test/support/world';
-import { sectorLanes, stepCoarse } from '../sim/galaxy/coarse';
-import { nodeOwner, sectorOwner, structureOwner } from '../sim/galaxy/control';
+import { stepCoarse } from '../sim/galaxy/coarse';
+import { nodeOwner, sectorLanes, sectorOwner, structureOwner } from '../sim/galaxy/control';
 import { flipSector } from '../sim/galaxy/flip';
 import { portsAt } from '../sim/galaxy/portIndex';
-import { addPressure, fightPressure } from '../sim/galaxy/pressure';
+import { addPressure, fightPressure, playerFightPressure } from '../sim/galaxy/pressure';
 import { atWarContent } from '../sim/galaxy/relations';
 import { ensureChunk, galaxyIndex, nodeOf, START_NODE } from '../sim/galaxy/state';
 import { onTurn } from '../sim/galaxy/turn';
-import { COARSE_TURNS, FACTION_MIN_SECTORS, FLIP_COOLDOWN, FLIP_TICKS, FLIPS_PER_TICK, PRESSURE_MAX } from '../sim/galaxy/tuningCoarse';
+import { COARSE_TURNS, FACTION_MIN_SECTORS, FLIP_COOLDOWN, FLIP_SPACING, FLIP_TICKS, FLIPS_PER_TICK, PRESSURE_MAX } from '../sim/galaxy/tuningCoarse';
 import type { StructureRef } from '../sim/galaxy/types';
 import { newGame } from '../sim/newGame';
 import { deserialize, serialize } from '../sim/save';
@@ -63,6 +64,14 @@ function arm(sim: Sim, target: string, ticks: number): string {
   for (const id of [...new Set([...ring1, ...ring2])].slice(0, 8)) sim.galaxy.control[id] = { owner: by, since: 1 };
   sim.galaxy.control[target] = { owner, since: 0, pressure: { by, value: PRESSURE_MAX, ticks } };
   return by;
+}
+
+/**
+ * Keep the rest of the galaxy from flipping during a short run (the real fronts of this world press hard and would take the per-tick cap and the spacing):
+ * every sector without an entry gets one that says it changed hands at turn 1, which holds it for the cooldown. Pressure still builds on it.
+ */
+function freezeOthers(sim: Sim, keep: readonly string[]): void {
+  for (const id of galaxyIndex(sim.galaxy).sectors.keys()) if (!keep.includes(id) && !sim.galaxy.control[id]) sim.galaxy.control[id] = { owner: sectorOwner(sim, id), since: 1 };
 }
 
 describe('who owns it', () => {
@@ -127,6 +136,7 @@ describe('the coarse tick', () => {
     const [t] = candidates(sim, 1) as [string];
     const owner = sectorOwner(sim, t);
     const by = arm(sim, t, 0);
+    freezeOthers(sim, [t]);
     for (let k = 1; k < FLIP_TICKS; k++) {
       stepCoarse(sim, tickAt(k));
       expect(sectorOwner(sim, t), `tick ${k}`).toBe(owner);
@@ -148,18 +158,29 @@ describe('the coarse tick', () => {
     expect(sim.galaxy.control[t]?.pressure?.ticks ?? 0).toBe(0);
   });
 
-  it('flips at most FLIPS_PER_TICK sectors, strongest pressure first, the rest on the next tick', () => {
+  it('flips at most FLIPS_PER_TICK sectors, and never two within FLIP_SPACING lanes, in one tick', () => {
     const sim = base();
-    const picks = candidates(sim, 3);
-    expect(picks.length).toBe(3);
+    const lanes = sectorLanes(galaxyIndex(sim.galaxy));
+    // Two ready sectors three or four lanes apart (inside the spacing) and one far away.
+    const [a] = candidates(sim, 1) as [string];
+    const dist = new Map([[a, 0]]);
+    for (let ring = [a]; ring.length; ) {
+      ring = ring.flatMap((x) => (lanes.get(x) ?? []).filter((o) => !dist.has(o) && (dist.set(o, (dist.get(x) as number) + 1), true)));
+    }
+    const nearby = [...dist].filter(([id, d]) => d >= 3 && d <= 4 && sectorOwner(sim, id) && countOf(sim, sectorOwner(sim, id) as string) > FACTION_MIN_SECTORS + 10 && !galaxyIndex(sim.galaxy).sectors.get(id)?.hub && id !== startSector(sim)).map(([id]) => id);
+    expect(nearby.length).toBeGreaterThan(0);
+    const far = candidates(sim, 60).find((id) => (dist.get(id) ?? 99) > FLIP_SPACING + 2) as string;
+    expect(far).toBeDefined();
+    const picks = [a, nearby[0] as string, far];
     const taker = picks.map((t) => arm(sim, t, FLIP_TICKS - 1));
+    freezeOthers(sim, picks);
     picks.forEach((t, i) => ((sim.galaxy.control[t] as NonNullable<(typeof sim.galaxy.control)[string]>).pressure!.value = PRESSURE_MAX - i * 0.2));
-    const flipped = (): number => picks.filter((t, i) => sectorOwner(sim, t) === taker[i]).length;
+    const flipped = (): string[] => picks.filter((t, i) => sectorOwner(sim, t) === taker[i]);
     stepCoarse(sim, tickAt(1));
-    expect(flipped()).toBe(FLIPS_PER_TICK);
-    expect(sectorOwner(sim, picks[0] as string)).toBe(taker[0]);
-    stepCoarse(sim, tickAt(2));
-    expect(flipped()).toBe(2 * FLIPS_PER_TICK);
+    expect(flipped().length).toBeLessThanOrEqual(FLIPS_PER_TICK);
+    expect(flipped()).toContain(a);
+    expect(flipped()).not.toContain(nearby[0]);
+    expect(flipped()).toContain(far);
   });
 
   it('never flips the start sector or a hub, nor a faction\'s last sectors, nor the player\'s own sector', () => {
@@ -300,5 +321,64 @@ describe('the fine tier feeds the coarse', () => {
     expect(sim.galaxy.control[t]?.pressure?.value).toBe(v);
     fightPressure(sim, node, owner, by, 3, false);
     expect(sim.galaxy.control[t]).toBeUndefined();
+  });
+});
+
+describe('expansion into unowned space', () => {
+  /** An unowned sector next to a sector of a faction that settles, with that faction's sectors around it. */
+  function claim(sim: Sim, ok: (f: string) => boolean): { t: string; by: string } {
+    const index = galaxyIndex(sim.galaxy);
+    const lanes = sectorLanes(index);
+    for (const id of [...index.sectors.keys()].sort()) {
+      if (sectorOwner(sim, id) || index.sectors.get(id)?.hub) continue;
+      const by = (lanes.get(id) ?? []).map((a) => sectorOwner(sim, a)).find((o): o is string => !!o && ok(o));
+      if (by && id !== startSector(sim)) return { t: id, by };
+    }
+    throw new Error('no unowned sector beside a matching faction');
+  }
+  const kind = (sim: Sim, f: string): string | undefined => galaxyOf(sim).factions[f]?.kind;
+
+  it('a settling faction claims an unowned sector once its pressure has held, and says so', () => {
+    const sim = base();
+    const { t, by } = claim(sim, (f) => kind(sim, f) !== 'pirates' && kind(sim, f) !== 'rogue' && !!galaxyOf(sim).factions[f]?.fleet);
+    sim.galaxy.control[t] = { owner: null, since: 0, pressure: { by, value: PRESSURE_MAX, ticks: FLIP_TICKS - 1 } };
+    freezeOthers(sim, [t]);
+    stepCoarse(sim, tickAt(1));
+    expect(sectorOwner(sim, t)).toBe(by);
+    expect(sim.galaxy.news.some((n) => n.kind === 'fell' && n.faction === by && !n.foeFaction)).toBe(true);
+  });
+
+  it('pirates raid rather than settle: a sector beside only a pirate one gets no push', () => {
+    const sim = base();
+    const { t } = claim(sim, (f) => kind(sim, f) === 'pirates');
+    const lanes = sectorLanes(galaxyIndex(sim.galaxy));
+    // Leave the unowned sector with pirate neighbours only.
+    for (const a of lanes.get(t) ?? []) if (sectorOwner(sim, a) && kind(sim, sectorOwner(sim, a) as string) !== 'pirates') sim.galaxy.control[a] = { owner: null, since: 1 };
+    stepCoarse(sim, tickAt(1));
+    expect(sim.galaxy.control[t]?.pressure).toBeUndefined();
+  });
+});
+
+describe('the player\'s fights', () => {
+  it('destroying or taking a ship of the faction holding the sector pushes for an enemy of it that borders the sector', () => {
+    const sim = base();
+    const [t] = candidates(sim, 1) as [string];
+    const owner = sectorOwner(sim, t) as string;
+    const by = arm(sim, t, 0);
+    delete (sim.galaxy.control[t] as NonNullable<(typeof sim.galaxy.control)[string]>).pressure;
+    sim.galaxy.current = firstNode(sim, t);
+    playerFightPressure(sim, 'nobody');
+    expect(sim.galaxy.control[t]?.pressure).toBeUndefined();
+    playerFightPressure(sim, owner);
+    expect(sim.galaxy.control[t]?.pressure?.by).toBe(by);
+    expect(sim.galaxy.control[t]?.pressure?.value ?? 0).toBeGreaterThan(0);
+  });
+});
+
+describe('the pace guard', () => {
+  it('flips now and then and never twice in one region at once (the long sweep is in galaxyCoarse.slow.test.ts)', () => {
+    const pace = measurePace(coarseWorld(3, 5), 150);
+    expect(pace.doubles).toBe(0);
+    expect(pace.galaxy).toBeGreaterThan(0);
   });
 });

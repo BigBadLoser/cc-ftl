@@ -1,6 +1,6 @@
 import type { Sim } from '../sim';
 import { COARSE_TURNS, FLIP_COOLDOWN } from './tuningCoarse';
-import { galaxyIndex } from './state';
+import { galaxyIndex, type GalaxyIndex } from './state';
 import type { NodeData, SectorControl, StructureRef } from './types';
 
 /**
@@ -53,4 +53,26 @@ export function tidyControl(sim: Sim, sectorId: string): void {
   const c = sim.galaxy.control[sectorId];
   if (!c || c.pressure || c.owner !== (galaxyIndex(sim.galaxy).sectors.get(sectorId)?.genFaction ?? null)) return;
   if (c.since === 0 || sim.galaxy.turn - c.since >= FLIP_COOLDOWN * COARSE_TURNS) delete sim.galaxy.control[sectorId];
+}
+
+const lanesCache = new WeakMap<GalaxyIndex, Map<string, string[]>>();
+
+/** Sector -> the sectors a hyperlane joins it to, sorted (cached per galaxy index). */
+export function sectorLanes(index: GalaxyIndex): Map<string, string[]> {
+  let m = lanesCache.get(index);
+  if (m) return m;
+  m = new Map();
+  for (const e of index.edges.values()) {
+    const a = index.nodes.get(e.a)?.sector;
+    const b = index.nodes.get(e.b)?.sector;
+    if (e.kind !== 'hyperlane' || !a || !b || a === b) continue;
+    for (const [x, y] of [[a, b], [b, a]] as const) {
+      const list = m.get(x) ?? [];
+      if (!list.includes(y)) list.push(y);
+      m.set(x, list);
+    }
+  }
+  for (const list of m.values()) list.sort();
+  lanesCache.set(index, m);
+  return m;
 }
