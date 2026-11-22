@@ -12,6 +12,7 @@ import { accepts } from '../items/storage';
 import { ENGINE_TIERS, REACTOR_TIERS, enginesIn, reactorsIn, type RoomSpec } from './plan';
 import { equipKind, type EquipKind } from './equipment';
 import type { FactionDef, RoomRole } from './types';
+import { furnishMirrored, mirrorOf } from './twin';
 
 /**
  * The fit-out: every room furnished by rule where one fits (rooms/rules), a room no rule fits given its planned modules
@@ -116,14 +117,28 @@ export function fitOut(
       }
     });
   }
+  // (An engine room the mirror of one placed already, across the ship's axis, takes its engines mirrored: the drive symmetric.)
+  const engineRooms = new Map<number, number[]>();
+  const twin = (room: number): boolean => {
+    const mine = engineRooms.get(room) ?? [];
+    for (const [r, got] of engineRooms) {
+      const sum = r === room ? null : mirrorOf(lay, r, room), k = got[mine.length];
+      if (sum === null || k === undefined) continue;
+      const put = furnishMirrored(lay, room, [k], sum, defs);
+      if (put) return true;
+    }
+    return false;
+  };
   for (const j of jobs) {
     wanted[j.def] = (wanted[j.def] ?? 0) + 1;
     if (furnished.has(j.room)) continue;
-    const pm = placeOne(lay, rng, j.def, [j.room], { rots: rots(j.def), spread: !!defs[j.def]?.weapon, ...(j.spec.sealed ? { sealed: true } : {}), ...(j.spec.gap ? { ok: apart(j.spec.gap) } : {}) })
+    const engine = roles[j.room] === 'engine';
+    const pm = (engine && twin(j.room) ? lay.modules[lay.modules.length - 1] : null) ?? placeOne(lay, rng, j.def, [j.room], { rots: rots(j.def), spread: !!defs[j.def]?.weapon, ...(j.spec.sealed ? { sealed: true } : {}), ...(j.spec.gap ? { ok: apart(j.spec.gap) } : {}) })
       ?? (j.spec.sealed ? null : placeOne(lay, rng, j.def, elsewhere(j.def, j.room), { rots: rots(j.def), spread: !!defs[j.def]?.weapon }));
     if (!pm) continue;
     placed[j.def] = (placed[j.def] ?? 0) + 1;
     const idx = lay.modules.length - 1;
+    if (engine) engineRooms.set(j.room, [...(engineRooms.get(j.room) ?? []), idx]);
     stockUp(idx, j.spec);
     // A room no rule fit: what the module feeds from goes flush against it all the same (a refinery's ore bin).
     {
