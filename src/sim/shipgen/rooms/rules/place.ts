@@ -134,7 +134,7 @@ export function furnishByRule(
         const t = f.map(x, y);
         if ((x !== f.d || y !== f.h - 1) && at.some((e) => e.x === t.x && e.y === t.y)) doors.push({ x, y });
       }
-      const pieces = arr.rule({ w: f.w, h: f.h, d: f.d, need: use, defs: lay.defs, doors, ...(f.cut.length > 0 ? { cut: f.cut } : {}) });
+      const pieces = arr.rule({ w: f.w, h: f.h, d: f.d, need: use, defs: lay.defs, doors, floor: (x, y) => { const t = f.map(x, y); return floor(t.x, t.y); }, ...(f.cut.length > 0 ? { cut: f.cut } : {}) });
       // A rule with nothing to place for a planned room does not fit this frame.
       if (pieces.length === 0 && use.length > 0) continue;
       const got = tally(pieces.map((p) => p.def));

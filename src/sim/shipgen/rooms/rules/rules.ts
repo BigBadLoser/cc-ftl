@@ -27,6 +27,8 @@ export interface Ctx {
   w: number; h: number; d: number; need: readonly string[]; defs: Record<string, ModuleDef>; doors?: readonly { x: number; y: number }[];
   /** The frame's corner tiles that are wall (a cut or round corner): nothing stands there. */
   cut?: readonly { x: number; y: number }[];
+  /** Whether a frame tile (also one past the frame's edge) is floor of the room: where it is not, a wall (or hull) stands. */
+  floor?: (x: number, y: number) => boolean;
 }
 
 export interface RuleArrangement {
@@ -252,9 +254,22 @@ function helmFront(c: Ctx): Piece[] {
     for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) if (isCut(c, x, y)) return false;
     return !boxes.some((b) => hit(r, b, m)) && !ways.some((b) => hit(r, b, m));
   };
+  // A console's back stands on a real wall of the room, whatever the frame's edge: the tiles behind it are not floor.
+  const backed = (r: Box, rot: number): boolean => {
+    const f = c.floor;
+    if (!f) return true;
+    const dx = rot === 3 ? -1 : rot === 1 ? 1 : 0, dy = rot === 0 ? -1 : rot === 2 ? 1 : 0;
+    const ex = rot === 3 ? r.x : rot === 1 ? r.x + r.w - 1 : undefined, ey = rot === 0 ? r.y : rot === 2 ? r.y + r.h - 1 : undefined;
+    for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) {
+      if ((ex !== undefined && x !== ex) || (ey !== undefined && y !== ey)) continue;
+      if (f(x + dx, y + dy)) return false;
+    }
+    return true;
+  };
   const put = (m: string, r: Box, rot: number): void => { out.push(P(m, r.x, r.y, rot)); boxes.push(r); };
+  const ops = c.need.filter((m) => OPS.includes(m));
   const sideCount: number[] = [0, 0], load = (s: number): number => sideCount[s] ?? 0;
-  c.need.filter((m) => OPS.includes(m)).forEach((m) => {
+  ops.forEach((m) => {
     const [len, d] = fp(m);
     // A side wall's spot: left turned east (rot 3), right turned west (rot 1), nearest the door wall first.
     const side = (s: number, at: number): [Box, number] => [{ x: s === 0 ? 0 : c.w - d, y: at, w: d, h: len }, s === 0 ? 3 : 1];
@@ -263,7 +278,7 @@ function helmFront(c: Ctx): Piece[] {
       for (let at = c.h - len; at >= 0; at--) {
         for (const s of order) {
           const [r, rot] = side(s, at);
-          if (!free(r, margin)) continue;
+          if (!free(r, margin) || !backed(r, rot)) continue;
           put(m, r, rot); sideCount[s] = load(s) + 1;
           return;
         }
@@ -272,12 +287,12 @@ function helmFront(c: Ctx): Piece[] {
       const spots: [Box, number][] = [];
       for (const x of [0, c.w - len]) spots.push([{ x, y: 0, w: len, h: d }, 0]);
       for (const x of [0, c.w - len]) spots.push([{ x, y: c.h - d, w: len, h: d }, 2]);
-      const spot = spots.find(([r]) => free(r, margin));
+      const spot = spots.find(([r, rot]) => free(r, margin) && backed(r, rot));
       if (spot) { put(m, spot[0], spot[1]); return; }
     }
   });
-  // A kind all there or none (the placer takes the rest of a kind).
-  return out.filter((p) => out.filter((q) => q.def === p.def).length === c.need.filter((m) => m === p.def).length);
+  // A console with no wall to stand against fails the frame (another frame may have one): none stands loose on the floor.
+  return out.length === 1 + ops.length ? out : [];
 }
 
 /** Consoles on the back wall from corner to corner, and the ops room's table between the outer two where it fits. */
