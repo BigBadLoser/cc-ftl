@@ -26,7 +26,7 @@ from sprites.cmbkit import hazard_strip
 from geometry import annulus, curved_pipe, sleeve, torus
 
 CUT = -1.5              # the Mk I powerhead's faces inboard of this go (the injector plate, rear armour and clamps)
-CUTS = {"J": {"powerhead": -0.75, "services": -0.75}, **{k: {"bed": 99} for k in ["Q", "R", "S", "T", "U", "V", "W", "X", "Y", "AA", "AB", "AC", "BA", "BB", "BC", "CA", "CB", "CD", "DA", "DB", "DC", "EA", "EB", "EC"]}, **{k: {"bed": 99, "services": -0.9} for k in ["FA", "FB", "FC", "GA", "GB", "GC"]}}
+CUTS = {"J": {"powerhead": -0.75, "services": -0.75}, **{k: {"bed": 99} for k in ["Q", "R", "S", "T", "U", "V", "W", "X", "Y", "AA", "AB", "AC", "BA", "BB", "BC", "CA", "CB", "CD", "DA", "DB", "DC", "EA", "EB", "EC"]}, **{k: {"bed": 99, "services": -0.9} for k in ["FA", "FB", "FC", "GA", "GB", "GC", "HA", "HB", "HC"]}}
 
 
 def cut(variant, name):
@@ -350,6 +350,7 @@ def build(f, fs, tier, variant):
         import tier_r13
         import tier_r14
         import tier_r15
+        import tier_r16
         VARIANTS.update({"M": tier_r5.bottle, "N": tier_r5.thermal, "P": tier_r5.turbo,
                          "Q": tier_r6.nested, "R": tier_r6.rings, "S": tier_r6.turbo,
                          "T": tier_r7.ring_drive, "U": tier_r7.pump_crown, "V": tier_r7.turbo_compound,
@@ -360,5 +361,6 @@ def build(f, fs, tier, variant):
                          "DA": tier_r12.sponsons_first, "DB": tier_r12.growing_bottle, "DC": tier_r12.flagship,
                          "EA": tier_r13.plenum, "EB": tier_r13.transverse, "EC": tier_r13.power_core,
                          "FA": tier_r14.plenum, "FB": tier_r14.transverse, "FC": tier_r14.power_core,
-                         "GA": tier_r15.feed_station, "GB": tier_r15.pump_bay, "GC": tier_r15.operator_step})
+                         "GA": tier_r15.feed_station, "GB": tier_r15.pump_bay, "GC": tier_r15.operator_step,
+                         "HA": tier_r16.yoke, "HB": tier_r16.terraces, "HC": tier_r16.prow})
     VARIANTS[variant](f, fs, tier, _m().THRUST_Z)
