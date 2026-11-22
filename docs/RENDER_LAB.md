@@ -72,7 +72,7 @@ move in a browser).
 - Also in the index (see each panel's own help line for its options): `drones` and `droneLaunch` (drone placeholders; launch and landing through the bay
   hatch), `upgrades` (weapon upgrade items and icons), `pods` (pod craft beside the mining pod), `bench`, `bar` and `bunk` (furniture, empty and
   occupied), `stasis`, `stasisload`, `stasisface`, `slabuv` and `stasisui` (the stasis wheel, its loading, the slab face and UV press, and its UI as a DOM
-  page), `cable` (ground power cable), `bayHandoff` (pod bay handoff, drone bay front overlay, deconstruct marks) and `build` (the build tools, a DOM page).
+  page), `cable` (ground power cable), `rig` (surgical rig beside a med bed, stepped through an operation: `frames=`, `sec=`, `rot=`), `bayHandoff` (pod bay handoff, drone bay front overlay, deconstruct marks) and `build` (the build tools, a DOM page).
 
 ## Add a panel
 

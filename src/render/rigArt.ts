@@ -5,11 +5,13 @@ import { ModuleC, type Module } from '../sim/modules/components';
 import { footprintTiles } from '../sim/modules/footprint';
 import { bedOfRig } from '../sim/modules/rig';
 import type { ModuleDef } from '../sim/registry';
-import { FRONT_DZ, type ModuleLayer } from './moduleArt';
+import { FRONT_DZ, HOLO_DZ, frameCount, type ModuleLayer, type ModuleLook } from './moduleArt';
+import { RIG_PHASES, frameId, rigFrame, rigTick, type RigCounts } from './rigFrame';
+import { TICK_HZ } from '../sim/time';
 
 /**
  * A surgical rig's layers (#311): the body `<asset>[.r{n}].{idle,active}` (a stand-in from render/assets/fallback.ts until its sheets land) and the front
- * overlay `<asset>.front[.r{n}].{idle,active}` (the arms and lamp that reach over the bed), drawn at the rig but sorted at the front-most tile of the bed it
+ * overlay `<asset>.front[.r{n}].{idle,active}` (the arms and lamp that reach over the bed; while operating, the phase's frame from the job's progress, render/rigFrame.ts, and the console hologram `<asset>.holo.r{n}`), drawn at the rig but sorted at the front-most tile of the bed it
  * faces, over the bed and its patient (`sortAt`). `.active` while an operation is in progress at that bed. A missing overlay draws nothing.
  */
 export interface RigView {
@@ -17,16 +19,28 @@ export interface RigView {
   bedFront: { x: number; y: number } | null;
   /** An operation is in progress at that bed. */
   active: boolean;
+  /** The surgery job's progress and work (sim ticks), 0 when none: the operation's frame follows them (render/rigFrame.ts). */
+  progress: number;
+  work: number;
 }
 
-export function rigLayers(m: Module, def: ModuleDef, rig: RigView | undefined): ModuleLayer[] {
+export function rigLayers(m: Module, def: ModuleDef, rig: RigView | undefined, look?: ModuleLook): ModuleLayer[] {
   const a = def.asset;
   const r = `.r${m.rot}`;
   const s = rig?.active ? '.active' : '.idle';
   const body: ModuleLayer = { chain: [`${a}${r}${s}`, `${a}${r}`, `${a}${s}`, a], key: a, tiles: 'all' };
   if (!rig?.bedFront) return [body];
   const front = [`${a}.front${r}${s}`, `${a}.front${r}`, `${a}.front${s}`, `${a}.front`];
-  return [body, { chain: front, key: `${a}.front`, tiles: 'all', dz: FRONT_DZ, sortAt: rig.bedFront, optional: true }];
+  const out: ModuleLayer[] = [body, { chain: front, key: `${a}.front`, tiles: 'all', dz: FRONT_DZ, sortAt: rig.bedFront, optional: true }];
+  // The operation's frame from the job's progress, over the static front; the console hologram loops on its own clock.
+  if (!rig.active || !look || !look.has(`${a}.front${r}.deploy`)) return out;
+  const frontBase = `${a}.front${r}`;
+  const counts = Object.fromEntries(RIG_PHASES.map((p) => [p, frameCount(look.has, `${frontBase}.${p}`)])) as unknown as RigCounts;
+  const f = rigFrame(rig.progress, rig.work, counts);
+  if (f.phase !== 'idle') out[1] = { ...(out[1] as ModuleLayer), chain: [frameId(`${frontBase}.${f.phase}`, f.frame), ...front] };
+  const holo = `${a}.holo${r}`, n = frameCount(look.has, holo);
+  out.push({ chain: [frameId(holo, rigTick(rig.progress) % n), holo], key: `${a}.holo`, tiles: 'all', dz: HOLO_DZ, optional: true, glowOver: true });
+  return out;
 }
 
 /** What rig `id`'s art reads from the world, with the bed's front tile region-local (minus the grid origin, as the module's own tile is). */
@@ -34,15 +48,16 @@ export function rigView(world: World, defs: Readonly<Record<string, ModuleDef>>,
   const bed = bedOfRig(world, defs, grid, id);
   const b = world.get(bed, ModuleC);
   const def = b && defs[b.def];
-  if (!b || !def) return { bedFront: null, active: false };
+  if (!b || !def) return { bedFront: null, active: false, progress: 0, work: 0 };
   const t = footprintTiles(def, b.x, b.y, b.rot).reduce((a, c) => (c.x + c.y > a.x + a.y ? c : a), { x: b.x, y: b.y });
-  let active = false;
+  let active = false, progress = 0, work = 0;
   for (const j of world.query(JobC)) {
     const job = world.get(j, JobC);
-    if (job?.kind === 'surgery' && job.bed === bed && job.progress > 0) active = true;
+    if (job?.kind === 'surgery' && job.bed === bed && job.progress > 0) { active = true; progress = job.progress; work = job.work; }
   }
-  return { bedFront: { x: t.x - grid.x0, y: t.y - grid.y0 }, active };
+  return { bedFront: { x: t.x - grid.x0, y: t.y - grid.y0 }, active, progress, work };
 }
 
 /** The rig's view as a memo input (render/moduleMemo.ts `sameInputs`). */
-export const rigInputs = (v: RigView | undefined): string => (v ? `|${v.bedFront ? `${v.bedFront.x},${v.bedFront.y}` : '-'}|${v.active ? 1 : 0}` : '');
+export const rigInputs = (v: RigView | undefined): string =>
+  (v ? `|${v.bedFront ? `${v.bedFront.x},${v.bedFront.y}` : '-'}|${v.active ? `${rigTick(v.progress)}/${Math.floor(v.work / TICK_HZ)}` : 0}` : '');

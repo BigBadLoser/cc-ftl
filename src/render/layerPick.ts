@@ -36,7 +36,7 @@ export function layersOf(world: World, id: number, m: Module, def: ModuleDef, s:
   if (def.airlock?.layout) return airlockLayers(world, id, m, def, s.airlock);
   if (def.stasisWheel) return stasisLayers(world, id, m, def, s.active, s.look);
   if (def.recovery) return recoveryLayers(world, id, m, def, s.active, s.look);
-  if (def.rig) return rigLayers(m, def, s.rig);
+  if (def.rig) return rigLayers(m, def, s.rig, s.look);
   return moduleLayers(world, id, m, def, s.active, true, s.livery, s.look);
 }
 
