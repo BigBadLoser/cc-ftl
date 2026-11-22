@@ -50,16 +50,17 @@ export function profileOf(sim: Sim, port: Port): string | null {
   return sim.content.trade?.traders[pick] ? pick : null;
 }
 
-/** Derived once per port and kept (pure of the seed and content, never saved). */
+/** Derived once per port and owner and kept (pure of the seed, content and who holds the port, never saved): a port that changes hands gets its new owner's economy. */
 const cache = new WeakMap<Sim, Map<string, Econ | null>>();
 
 /** The port's economy, or null when it has no market. */
 export function econOf(sim: Sim, port: Port): Econ | null {
   let byPort = cache.get(sim);
   if (!byPort) cache.set(sim, (byPort = new Map()));
-  if (byPort.has(port.id)) return byPort.get(port.id) as Econ | null;
+  const key = `${port.id}|${port.owner}|${port.kind}`;
+  if (byPort.has(key)) return byPort.get(key) as Econ | null;
   const made = build(sim, port);
-  byPort.set(port.id, made);
+  byPort.set(key, made);
   return made;
 }
 

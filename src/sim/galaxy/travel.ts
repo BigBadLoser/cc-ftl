@@ -7,6 +7,7 @@ import { chunkOfId } from './generator';
 import { syncFleets } from './fleets';
 import { repKey } from './standing';
 import { currentNode, ensureAround, ensureChunkOf, galaxyIndex } from './state';
+import { nodeOwner } from './control';
 import { ARRIVAL_EVERY_SEC, SENSOR_HOPS } from './tuning';
 import type { EdgeData, NodeData } from './types';
 
@@ -74,7 +75,7 @@ export function discover(sim: Sim): number {
 /** Point the story pool (danger tier, territory by its owner's reputation key, e.g. 'meridian') at a node. Enemy generation reads the node's danger directly. */
 function setContext(sim: Sim, node: NodeData): void {
   sim.story.context.danger = node.danger;
-  sim.story.context.faction = node.faction ? repKey(sim, node.faction) : null;
+  sim.story.context.faction = nodeOwner(sim, node) ? repKey(sim, nodeOwner(sim, node) as string) : null;
 }
 
 /** The galaxy side of arriving at `sim.galaxy.current`: frontier, visited, the sensor scan and the story context. */

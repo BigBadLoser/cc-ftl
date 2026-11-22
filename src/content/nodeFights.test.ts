@@ -8,7 +8,10 @@ import { hostileAct } from '../sim/combat/provoke';
 import { wreckShip } from '../sim/combat/wreck';
 import { playerShipInfo } from '../sim/galaxy/arrivals';
 import { canAid } from '../sim/galaxy/engagementAid';
+import { controlOf } from '../sim/galaxy/control';
 import { settleEngagements } from '../sim/galaxy/engagementFlow';
+import { takeShip } from '../sim/galaxy/engagementPrize';
+import { nodeOf } from '../sim/galaxy/state';
 import { engagedFleets, engagements } from '../sim/galaxy/engagements';
 import { materialiseFleet } from '../sim/galaxy/fleetShips';
 import { standing } from '../sim/galaxy/standing';
@@ -65,6 +68,35 @@ describe('fleets at war that meet in the player\'s node', () => {
     run(sim, TICK_HZ);
     expect(sim.galaxy.fleets.map((f) => f.id)).toEqual([fa.id]);
     expect(sim.galaxy.ports[fb.home]?.queue).toEqual([{ faction: 'helix', role: 'patrol', size: 'small' }]);
+  });
+
+  it.each(['wreck', 'take'] as const)('move the border they are fought on (#604): a ship %s adds pressure on the loser\'s sector for the winner', (how) => {
+    const { sim, fa, fb } = fight();
+    run(sim, 1);
+    const sector = nodeOf(sim, sim.galaxy.current)?.sector as string;
+    controlOf(sim, sector).owner = 'helix';
+    expect(sim.galaxy.control[sector]?.pressure).toBeUndefined();
+    if (how === 'wreck') wreckShip(sim, shipOf(fb));
+    else takeShip(sim, shipOf(fb), shipOf(fa));
+    run(sim, 2);
+    expect(engagements(sim)).toHaveLength(0);
+    expect(sim.galaxy.control[sector]?.pressure).toMatchObject({ by: 'meridian' });
+    expect(sim.galaxy.control[sector]?.pressure?.value ?? 0).toBeGreaterThan(0);
+  });
+
+  it('count a ship lost earlier in the fight even when fleet upkeep has already reaped it (#612 review)', () => {
+    const pressureAfter = (reaped: boolean): number => {
+      const { sim, fb } = fight();
+      run(sim, 1);
+      const sector = nodeOf(sim, sim.galaxy.current)?.sector as string;
+      controlOf(sim, sector).owner = 'helix';
+      wreckShip(sim, shipOf(fb));
+      if (reaped) fb.ships = [];
+      run(sim, 2);
+      expect(engagements(sim)).toHaveLength(0);
+      return sim.galaxy.control[sector]?.pressure?.value ?? 0;
+    };
+    expect(pressureAfter(true)).toBe(pressureAfter(false));
   });
 
   it('do not start where a black market truce holds (#609 review)', () => {

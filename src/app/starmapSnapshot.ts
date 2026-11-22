@@ -1,6 +1,6 @@
 import {
   DANGER_STEP, FTL_CHARGE_SEC, edgeBetween, ftlCharge, fuelStock, jumpFuel, galaxyIndex, isHostileFaction, planStarRoute, playerShipId, playerShipPackedOk,
-  fieldItems, fleetName, hullLoad, isAdrift, nodeOf, portNode, riskOf, routeBlocker, routeCharge, sensorNodes, standings, visibleFleets, type Fleet, type NodeData, type Sim,
+  fieldItems, fleetName, hullLoad, isAdrift, nodeOf, nodeOwner, portNode, sectorOwner, structureOwner, riskOf, routeBlocker, routeCharge, sensorNodes, standings, visibleFleets, type Fleet, type NodeData, type Sim,
 } from '../sim';
 import { featureName, passengerName } from './jobsSnapshot';
 import type { UiNodeJob, UiStarExit, UiStarIcon, UiStarFleet, UiTravel, UiStarmap, UiStarNode, UiStarRoute } from '../ui/starmapApi';
@@ -112,10 +112,10 @@ export function buildStarmap(sim: Sim): UiStarmap {
     const hostiles = contacts.filter((c) => isHostileFaction(sim, c.faction)).length;
     nodes.push({
       id: n.id, sector: n.sector, x: Math.round(n.x), y: Math.round(n.y), name: n.name, known: k,
-      visited: g.visited[n.id] !== undefined, current: n.id === g.current, danger: n.danger, faction: n.faction,
+      visited: g.visited[n.id] !== undefined, current: n.id === g.current, danger: n.danger, faction: nodeOwner(sim, n),
       badges: k ? n.structures.map((s) => content?.structures[s.def]?.badge ?? '?') : [],
       structures: k ? n.structures.map((s) => content?.structures[s.def]?.name ?? s.def) : [],
-      icons: k ? n.structures.map((s) => iconOf(sim, s.def, n.faction)) : [],
+      icons: k ? n.structures.map((s) => iconOf(sim, s.def, structureOwner(sim, n, s))) : [],
       resources: k ? resourcesOf(sim, n) : [],
       hostiles, others: contacts.length - hostiles, reachable: reachable.has(n.id), market: k && sensors.has(n.id) ? marketOf(sim, n.id) : null,
       jobs: k ? jobsAt.get(n.id) ?? [] : [],
@@ -124,10 +124,11 @@ export function buildStarmap(sim: Sim): UiStarmap {
   }
   const sectors = [...index.sectors.values()].map((s) => {
     const k = knownSectors.has(s.id);
+    const owner = sectorOwner(sim, s.id);
     return {
-      id: s.id, name: s.name, x: Math.round(s.x), y: Math.round(s.y), faction: k ? s.faction : null, danger: s.danger, known: k,
+      id: s.id, name: s.name, x: Math.round(s.x), y: Math.round(s.y), faction: k ? owner : null, danger: s.danger, known: k,
       top: Math.round(Math.min(...s.hull.map((p) => p.y))), r: Math.round(s.r),
-      tone: k && s.faction ? toneOf(content?.factions[s.faction]?.kind) : 'dim',
+      tone: k && owner ? toneOf(content?.factions[owner]?.kind) : 'dim',
       outline: sectorOutline(index, s), body: s.body ?? null, cluster: s.cluster ?? null, hub: !!s.hub, nodes: s.nodes.length,
     };
   });
@@ -141,7 +142,7 @@ export function buildStarmap(sim: Sim): UiStarmap {
     tier: s.tier, standing: s.value,
   }));
   const here = index.sectors.get(index.nodes.get(g.current)?.sector ?? '');
-  const outer = buildClusters(index, content, (id) => knownSectors.has(id), here);
+  const outer = buildClusters(index, content, (id) => knownSectors.has(id), here, (id) => sectorOwner(sim, id));
   // Exits: every hyperlane from a node of the player's sector to another sector.
   const exits: UiStarExit[] = [];
   for (const id of here?.nodes ?? []) {
@@ -152,9 +153,10 @@ export function buildStarmap(sim: Sim): UiStarmap {
       const to = b && index.sectors.get(b.sector);
       if (!b || !to || to.id === here?.id) continue;
       const k = knownSectors.has(to.id);
+      const toOwner = sectorOwner(sim, to.id);
       exits.push({
         id: e.id, ax: Math.round(a.x), ay: Math.round(a.y), bx: Math.round(b.x), by: Math.round(b.y), to: to.id,
-        name: k ? to.name : null, tone: k && to.faction ? toneOf(content?.factions[to.faction]?.kind) : 'dim', danger: to.danger,
+        name: k ? to.name : null, tone: k && toOwner ? toneOf(content?.factions[toOwner]?.kind) : 'dim', danger: to.danger,
         kind: e.rift ? 'rift' : e.gate ? 'gate' : 'lane', fuel: jumpFuel(sim, e.fuel),
       });
     }

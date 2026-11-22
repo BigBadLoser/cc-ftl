@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { GalaxyContent } from '../sim/galaxy/defs';
 import { portOf } from '../sim/galaxy/portIndex';
-import { galaxyIndex } from '../sim/galaxy/state';
+import { ensureArea, galaxyIndex } from '../sim/galaxy/state';
+import { SIM_RING } from '../sim/galaxy/tuningCoarse';
 import { newGame } from '../sim/newGame';
 import { previewHull } from '../sim/shipgen/generate';
 import type { Sim } from '../sim/sim';
@@ -67,13 +68,18 @@ describe('the population over many seeds', () => {
 
   it('a long run: no ship disappears, and every fleet stays at valid nodes with a home', () => {
     const sim = world(35, 1);
-    const ships = new Set(sim.galaxy.fleets.flatMap((f) => f.ships.map((c) => c.id)));
+    ensureArea(sim, sim.galaxy.current, SIM_RING); // the coarse tick generates the simulated area on its first tick, adding ships: have it all there first
+    // Where each ship's fleet is homed: the one way a ship may leave is its home sector changing hands (the old owner's frozen fleets are disbanded, flip.ts).
+    const homeSector = new Map<number, string>();
+    for (const f of sim.galaxy.fleets) for (const c of f.ships) homeSector.set(c.id, galaxyIndex(sim.galaxy).nodes.get(portNode(f.home))?.sector ?? '');
     for (let t = 1; t <= 600; t++) {
       onTurn(sim, ++sim.galaxy.turn);
       if (t % 100 === 0) {
         const index = galaxyIndex(sim.galaxy);
         const now = new Set(sim.galaxy.fleets.flatMap((f) => f.ships.map((c) => c.id)));
-        expect(now).toEqual(ships);
+        const gone = [...homeSector].filter(([id]) => !now.has(id));
+        for (const [id, sector] of gone) expect(sim.galaxy.control[sector], `ship ${id} left without its home sector ${sector} changing hands`).toBeDefined();
+        for (const [id] of gone) homeSector.delete(id);
         for (const f of sim.galaxy.fleets) {
           expect(index.nodes.has(f.node)).toBe(true);
           expect(index.nodes.has(portNode(f.home))).toBe(true);

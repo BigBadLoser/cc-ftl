@@ -11,7 +11,7 @@ import { AllegianceC } from '../sim/fight/components';
 import { isHostile } from '../sim/fight/relations';
 import type { GalaxyContent } from '../sim/galaxy/defs';
 import { encounterKind } from '../sim/galaxy/encounters';
-import { spillSources, stanceBetween } from '../sim/galaxy/relations';
+import { spillSources, baselineStance } from '../sim/galaxy/relations';
 import { standing, tierOf } from '../sim/galaxy/standing';
 import { nodeOf } from '../sim/galaxy/state';
 import { TerritoryField } from '../sim/galaxy/territory';
@@ -41,29 +41,29 @@ describe('pirate factions: relations', () => {
       if (a >= b) continue;
       expect(galaxy.relations.some((r) => (r.a === a && r.b === b) || (r.a === b && r.b === a)), `${a} ${b} has a row`).toBe(true);
     }
-    const war = (a: string, b: string): boolean => stanceBetween(galaxy, a, b) === 'war';
+    const war = (a: string, b: string): boolean => baselineStance(galaxy, a, b) === 'war';
     expect(war('raiders', 'pirates') && war('raiders', 'zealots') && war('pirates', 'zealots') && war('cartel', 'zealots')).toBe(true);
     expect(war('cartel', 'raiders')).toBe(true);
-    expect(stanceBetween(galaxy, 'cartel', 'pirates')).toBe('neutral');
+    expect(baselineStance(galaxy, 'cartel', 'pirates')).toBe('neutral');
   });
 
   it('keeps the mercenaries neutral to everyone and the zealots allied with the Rogue AI, which still fights everyone else', () => {
     for (const id of Object.keys(galaxy.factions)) {
       if (id === 'mercenaries' || id === 'rogue') continue; // the machines fight everyone (alwaysHostile)
-      expect(stanceBetween(galaxy, 'mercenaries', id), id).not.toBe('war');
+      expect(baselineStance(galaxy, 'mercenaries', id), id).not.toBe('war');
     }
-    expect(stanceBetween(galaxy, 'zealots', 'rogue')).toBe('allied');
-    expect(stanceBetween(galaxy, 'rogue', 'zealots')).toBe('allied');
-    expect(stanceBetween(galaxy, 'rogue', 'raiders')).toBe('war');
-    expect(stanceBetween(galaxy, 'rogue', 'navy')).toBe('war');
+    expect(baselineStance(galaxy, 'zealots', 'rogue')).toBe('allied');
+    expect(baselineStance(galaxy, 'rogue', 'zealots')).toBe('allied');
+    expect(baselineStance(galaxy, 'rogue', 'raiders')).toBe('war');
+    expect(baselineStance(galaxy, 'rogue', 'navy')).toBe('war');
     // They fly on the machines' side in a fight, so drones and zealots never shoot at each other.
     expect(galaxy.factions['zealots']?.combatFaction).toBe(galaxy.factions['rogue']?.combatFaction);
   });
 
   it('puts the navy and the free traders at war with every pirate faction but the mercenaries', () => {
     for (const p of PIRATES.filter((x) => x !== 'mercenaries')) {
-      expect(stanceBetween(galaxy, 'navy', p), `navy ${p}`).toBe('war');
-      expect(stanceBetween(galaxy, 'traders', p), `traders ${p}`).toBe('war');
+      expect(baselineStance(galaxy, 'navy', p), `navy ${p}`).toBe('war');
+      expect(baselineStance(galaxy, 'traders', p), `traders ${p}`).toBe('war');
     }
   });
 
@@ -162,7 +162,7 @@ describe('pirate factions: territory and fleets', () => {
 
 describe('the cartel guards its routes', () => {
   it('interdicts in its own space and only hails elsewhere, unless it was sent to hunt the player', () => {
-    const owned = (faction: string): Sim => newGame(1, contentEdited(1, `owner:${faction}`, (c) => { for (const n of c.nodes) n.faction = faction; }));
+    const owned = (faction: string): Sim => newGame(1, contentEdited(1, `owner:${faction}`, (c) => { for (const n of c.nodes) n.genFaction = faction; for (const s of c.sectors) s.genFaction = faction; }));
     const sim = owned('cartel');
     const navy = owned('navy');
     const fleet = { id: 1, faction: 'cartel', role: 'pirate', node: nodeOf(sim, sim.galaxy.current)!.id, ships: [], hunt: undefined } as unknown as Fleet;
