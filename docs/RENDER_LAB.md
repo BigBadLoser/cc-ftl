@@ -69,6 +69,11 @@ move in a browser).
   Cells: valid size 2/3/4 on both interior axes and on the hull, invalid (on floor, T-junction, hull corner, over a built window, a job pending),
   and built windows walls up and roofed. `zoom=4` sets the renderer camera zoom (its own steps; the default is its widest, 2), not the page scale. Slow (about a minute): each cell settles for a second.
 
+- Also in the index (see each panel's own help line for its options): `drones` and `droneLaunch` (drone placeholders; launch and landing through the bay
+  hatch), `upgrades` (weapon upgrade items and icons), `pods` (pod craft beside the mining pod), `bench`, `bar` and `bunk` (furniture, empty and
+  occupied), `stasis`, `stasisload`, `stasisface`, `slabuv` and `stasisui` (the stasis wheel, its loading, the slab face and UV press, and its UI as a DOM
+  page), `cable` (ground power cable), `bayHandoff` (pod bay handoff, drone bay front overlay, deconstruct marks) and `build` (the build tools, a DOM page).
+
 ## Add a panel
 
 A panel (`tools/lab/panel.ts`) is `{ id, title, help, zoom?, bg?, cells(ctx) }`. `cells` returns `LabCell`s: a label, a

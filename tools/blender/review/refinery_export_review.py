@@ -9,6 +9,7 @@ from PIL import Image,ImageDraw,ImageFont
 
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from validate_refinery import validate
+from sprites import manifest_io
 
 BG=(27,34,43,255)
 FONT='/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf'
@@ -16,7 +17,7 @@ FONT='/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf'
 
 class Atlas:
     def __init__(self,root,manifest):
-        self.root=root;self.manifest=json.loads((root/manifest).read_text());self.cache={}
+        self.root=root;self.manifest=manifest_io.read_manifest(root/manifest);self.cache={}
 
     def sheet(self,key,glow=False):
         path=self.root/self.manifest['sheets'][key]['glow' if glow else 'image']

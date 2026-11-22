@@ -12,6 +12,7 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from sprites import compose, core, post  # noqa: E402
+from sprites import manifest_io  # noqa: E402
 from sprites.scale import assets_dir  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -241,7 +242,7 @@ def main():
     assets = Path(argv[0]) if argv else assets_dir()
     out = Path(argv[1] if len(argv) > 1 else DEFAULT_OUT)
     out.mkdir(parents=True, exist_ok=True)
-    man = json.loads((assets / "manifest.json").read_text())
+    man = manifest_io.read_manifest(assets)
     r = room(assets, man)
     r.save(out / "contact-1x.png", 1)
     r.save(out / "contact-2x.png", 2)

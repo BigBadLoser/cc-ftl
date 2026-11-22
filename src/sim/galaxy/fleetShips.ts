@@ -76,6 +76,12 @@ export function reap(sim: Sim, f: Fleet): { lost: Contact[]; fled: Contact[] } {
   return { lost, fled };
 }
 
+/** The fleet jumps away from the player's node: its ships are lifted out and it runs for home (`retreat`). */
+export function sendOff(sim: Sim, f: Fleet): void {
+  liftFleet(sim, f);
+  retreat(sim, f, sim.galaxy.turn);
+}
+
 /** A ship in play that is disabled or barely holding together leaves its fleet stranded (real damage: the fleet calls for help until repaired). */
 export function strandIfCrippled(sim: Sim, f: Fleet, turn: number): void {
   if (f.damaged) return;
@@ -129,8 +135,7 @@ export function tendFleet(sim: Sim, f: Fleet, node: string = f.node, escaped?: C
   if (fled.length && escaped) escaped.push(...fled);
   else if (fled.length) {
     f.ships.push(...fled);
-    liftFleet(sim, f);
-    retreat(sim, f, sim.galaxy.turn);
+    sendOff(sim, f);
     return true;
   }
   materialiseFleet(sim, f, node);

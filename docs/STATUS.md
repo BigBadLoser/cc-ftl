@@ -1,7 +1,7 @@
 # Project status and handoff
 
 Living document: update it whenever a milestone lands, a decision is made, or a session ends.
-Last updated: 2026-11-18.
+Last updated: 2026-11-21.
 
 **History:** completed-work logs, past PR notes and superseded decisions are in [STATUS_ARCHIVE.md](STATUS_ARCHIVE.md). Standing decisions that live there:
 - Sector grid (user, 2026-10-19). Each node uses one chunked grid. Ships keep their positions within a node, while
@@ -24,8 +24,7 @@ upgrades) plugs into `UpgradeMods.weapon` (a patch over the fitted weapon's def)
 Flak is an ordinary ammo weapon (starts on HOLD); HOLD, or hold all, stops all fire. Its art (#357): turret `turret_flak.py`,
 bay `turret_bay_flak.py`, no `artTint` (turrets never take it). Drones are covered by point defence and defence drones, not flak.
 Combat: a left click on a foe weapon (not aiming) opens a read-only inspector (`app/foeModule.ts` is the place for a future
-scanner gate). Debug starts are presets in `content/scenario/` (see ARCHITECTURE "Scenario builder"). Save version 97.
-Rules from its review: read a weapon module's def through `weaponDefOf` (or a shot's through `firedWeapon`), never `sim.content.weapons`
+scanner gate). Debug starts are presets in `content/scenario/` (see ARCHITECTURE "Scenario builder"). Rules from its review: read a weapon module's def through `weaponDefOf` (or a shot's through `firedWeapon`), never `sim.content.weapons`
 directly; every job aimed at a placed module posts `moduleSite` (`modules/footprint.ts`, the rotated footprint) so crew work it from any side.
 Slice 2 (merged in #351): the seven behaviour upgrades in `content/upgradesBehaviour.ts`, all data over general fields: `WeaponDef.ammoPerShot`
 (nuke: 2 missiles; `hasAmmo`/`consumeAmmo(n)` in `combat/ammo.ts`), effect `arc` (chain coil: lightning from the hit module into the nearest crew, `ifNoDrain`; event
@@ -39,13 +38,13 @@ Hydroponics beds with a crop picker (greens, protein beans, medicinal herbs, gra
 by the cook's new `cooking` skill (bland, good, fine; `recipe.meal_greens`, `recipe.meal_beans`), meals eaten before rations with their own mood factor, herbs speeding a medical
 bed (`module.med_bed` is now a patients-only bed), grain as a trade item. The three shipped starters carry a planted bed, 16 good meals and 6 greens (food indicator green).
 Debug start `?scenario=farm`. Placeholder art (list in the PR): greens, grain, beans, herbs and the three meals borrow other items' sprites (`ItemDef.art`); no new sprites.
-Save version 105. Bed and crop sprites landed from the art session (`art/hydroponics`, lab `?panel=hydroponics`). Two bed sizes: `module.hydroponics` (small, draws 2 only while a crop is in) and `module.hydroponics_large` (3x2, worked from the middle of its long side; 3x the yield for 2x the water and power (4 power)).
+Bed and crop sprites landed from the art session (`art/hydroponics`, lab `?panel=hydroponics`). Two bed sizes: `module.hydroponics` (small, draws 2 only while a crop is in) and `module.hydroponics_large` (3x2, worked from the middle of its long side; 3x the yield for 2x the water and power (4 power)).
 Any module can now draw power by a state rule (`ModuleDef.drawsWhen`, `sim/modules/draw.ts`); an idle bed shows "Idle", not "No power". The renderer picks the art ids of
-`docs/art-prompts/hydroponics.md` (`<asset>.r<n>.on|off`, crop layer `<asset>.crop.<crop>.<stage>.r<n>`, damage art ahead of both); `render/cropOverlay.ts` draws a code stand-in for a missing crop sprite.
+`docs/art-prompts/archive/hydroponics.md` (`<asset>.r<n>.on|off`, crop layer `<asset>.crop.<crop>.<stage>.r<n>`, damage art ahead of both); `render/cropOverlay.ts` draws a code stand-in for a missing crop sprite.
 **For the shipgen session:** the beds, meals and greens in the shipped starters (`src/content/ships/{wayfarer,prospector,lancer}.ts`) are hand-edited, and the python generators
 under `tools/shipgen/starters` are stale against them (they were already behind the shipped stock lists). Regenerating with `ship.py` would erase them: port the edits first.
 
-## On `main` now (merged PRs through #499)
+## On `main` now (merged PRs through #499; later ones under "Done since #499" below)
 
 - **Progression:** blueprints, tiers, research stations (#97); per-faction standing and relations (#128); pirate factions (#137); contraband, scans, fence and
   black-market services (#141); hull planner, shipyard and engine capacity (#134); hull width rule and hull plan brushes (#145).
@@ -71,16 +70,15 @@ under `tools/shipgen/starters` are stale against them (they were already behind 
 
 ## In progress
 
-- **Station hull for ground bases (#524, branch `feat/station-hull-524`).** A base on asteroid ground draws the `station_hull`
-  look (roofed run set, designs, generic pieces, berm; walls-up cap and foot) instead of the ship's hull. Render lab panel
-  `station-hull`. Open: diagonal far walls (#561), six eight-front keys fall back to the ship's art.
+- **No feature branch is listed as in flight.** The station hull for ground bases (#524) merged in #563 (render lab panel `station-hull`); open from it:
+  diagonal far walls (#561), six eight-front keys fall back to the ship's art.
 
 **Priority (user, 2026-11-15): the core loop.** "Make it playable first" (2026-11-08) is met: the playtest batch #384-#390 shipped
-in #392. Next is more to find per node (#171; danger bands #382 folded in: no visible bands, physical finds, plan in the #171 comment of 2026-11-15). #380 research,
-#383 story arcs and #172/#52 goals queue behind them. The test overhaul (#371) landed in #555 (harness, scenario builder, near-test
+in #392. Next is more to find per node (#171, started: the node content table, asteroid field kinds and lost cargo #517 are in; probes, beacons and anomalies are not; danger bands #382 folded in: no visible bands, physical finds, plan in the #171 comment of 2026-11-15). #380 research,
+#383 story arcs and #52 goals (emergent; the #172 captain's log is dropped) queue behind them. The test overhaul (#371) landed in #555 (harness, scenario builder, near-test
 `check:fast`, import-cycle ratchet). Follow-ups: #553 done (no import cycles in `src`, #560); cheaper ticks (#65) partly done: temperature and
 gas solve every 4 ticks per ship with life support inside the gas solve, mood by ship, grid read cache (#565, #570), shared station/outpost test builds
-(#574); next idea if air gets costly again is pairwise in-place mixing (the #65 thread). Test-worker heap growth (#556) fixed in #581: the galaxy generator cache keeps two seeds, so a shared worker levels off near 300 MB.
+(#574), and pairwise in-place gas mixing with a sparse write-back (#589: air system time −24% to −48%; breathing retuned to 0.1 O₂ in / 0.03 CO₂ out). Test-worker heap growth (#556) fixed in #581: the galaxy generator cache keeps two seeds, so a shared worker levels off near 300 MB.
 
 - **Station generation: reviewed 2026-11-17** (stack #501, #527, #528, #529; design and file map in
   [STATION_ASSEMBLY.md](STATION_ASSEMBLY.md)).
@@ -90,11 +88,12 @@ gas solve every 4 ticks per ship with life support inside the gas solve, mood by
   - Checked: #445 is fixed (farm stations have hydroponics). #444 stands: nothing attaches `bm.cartel`, `bm.zealot`,
     `bm.mercenary`; needs a decision on where each spawns.
   - Open from the review, not started:
-    - Build time: 0.2 to 3.7 s per station, paid synchronously on spawn, no cache. A node with several stations stalls.
+    - Build time (done in #540): stations and outposts are built on a worker during the hyperspace hop, and the neighbours' and the plotted route's
+      are prewarmed (`app/prewarm.ts`, `app/genRunner.ts`); the ring shape tests are cached.
     - Special cases to turn into recipe data: `prefab.ts` branches on plan names, `station.ts` reads `root.kind ===
       'prefab'` as "asteroid base", the candidate count (8 for `core`) is hardcoded in `assemble.ts`, `program.ts`
       names `module.vehicle_bay`/`module.pod_bay`.
-    - Over the soft limit: `regions.ts` 469, `groundTurrets.ts` 443, `generate.ts` 439, `prefab.ts` 402.
+    - Over the soft limit: `regions.ts` 500, `groundTurrets.ts` 443, `generate.ts` 435, `prefab.ts` 403 (all in `src/sim/shipgen`).
     - No direct tests of the assembler (hard checks, spacing, braces, retries), of `walkOpts`, or of a destroyed ground
       turret. Ground turrets have no stow/deploy art. #520 floor lip, #103 hull glitches.
   - User (2026-11-17): outposts share one skeleton; a layout per kind would be ideal but station layout matters little
@@ -103,7 +102,7 @@ gas solve every 4 ticks per ship with life support inside the gas solve, mood by
     Look at layouts in the layout lab (`/tools/layout/?station=station.<kind>&size=<size>&seed=N`), not in game.
 - **Open bugs:** #444 (only one of four black markets spawns), #103 (hull glitches).
 - **Open:** recruiting prisoners (#492); #300 in-node events; #303 augments as stat modifiers; #305 shuttle landing in a bay that breaks on approach.
-- **Designed, not started:** new modules (DESIGN.md "New modules"); crew implants (#311) needs its design pass. Addictions are parked.
+- **Designed, not started:** the workbench (#320, sprite only; the rest of DESIGN.md "New modules" is built); crew implants (#311) needs its design pass; construction pods. Addictions are parked.
 - **Waiting on the user:** shield art; a feature-completeness review of #205, #238 and #203.
 
 ## Done since #308 (one-liners; detail in the PRs, older notes in STATUS_ARCHIVE.md)
@@ -120,6 +119,15 @@ gas solve every 4 ticks per ship with life support inside the gas solve, mood by
 - **UI:** alerts (#458, #459); window frame (#470, completes #336); story comms (#471); window buttons (#473); docked inspector (#477); door vents (#469, #393); jobs window (#454); schedule gap fix (#455).
 - **Hulls and stations:** #431, #432, #435, #437, #465, #466, #496, #497.
 - **Tools:** layout lab (#433, #439, #468); state integrity (#467, #160); shipyard save replay (#463); agent play API (#418); wiki (#450, #456).
+
+## Done since #499
+
+- **Stations and bases (#501, #527-#529, #532, #563):** assembler, prefab kinds, ground turrets, landing pads, glass tubes, station hull look; station builds off the main thread (#540).
+- **Test and tooling overhaul (#371):** harness, scenario builder, near-test `check:fast`, import-cycle ratchet (#555, #560, #558, #572, #583); test worker heap (#581).
+- **Perf (#65):** temperature cadence, gas solve and pairwise air mixing (#565, #570, #589); shipgen speed (#576).
+- **Ships and world:** NPC engine capacity (#568), ship shape pass (#564), lost cargo (#517), one deal flow (#552), arrival hostility (#550), playtest batch (#549).
+- **Air:** door vents start open (#592); breathing retuned.
+- **Layout lab refinements (#586).**
 
 ## Decisions (user)
 
@@ -148,17 +156,10 @@ Other open issues: #65 sim performance, #54, #53, #52, #50, #49, #48, #47, #158,
 
 ## Where things are
 
-**Core systems art (`art/core-systems`):** final Blender art for the reactor (2x2) and life support (1x2): 4 rotations x healthy,
-`.unpowered`, `.damaged`, `.damaged.flicker` (dark) and `.destroyed` (60 manifest entries with aliases; sheets `reactor`, `life_support`).
-Footprints unchanged. `stateArt` (render) now also picks them generically by hp: destroyed at 0, damaged under half hp (flickering
-340 ms lit / 170 ms dark while powered, dark variant while unpowered), then unpowered. Pipeline in `tools/blender/export_core_systems.py`
-(see ARCHITECTURE "Core systems"). Awaiting visual approval of the live states before the PR.
-
-**Crew portraits (branch `feat/crew-portraits`, PR open):** the crew bar cards show a face: a front-facing Blender render of the
-crew member's real layers (head and shoulders, 58x62 px at 1x), palette-swapped like the world figure. New `portraits` sprite
-family (`portrait_render.py`), `render/portrait.ts`, `UiApi.portrait`. The isometric crop was tried first and rejected (a tilted,
-tiny head); a 2x render and tall cards were mocked and not taken. Bar cards are about 142x88 px, so `--hdr` grew to 100 / 180 px.
-Not done: the legacy `tools/blender/build.py` (old `npm run assets` crew pipeline) has no portraits.
+**Core systems art and crew portraits (both merged in #513):** reactor (2x2) and life support (1x2) have final Blender art for healthy, `.unpowered`, `.damaged`,
+`.damaged.flicker` and `.destroyed`, picked by `stateArt` (render) generically by hp (pipeline `tools/blender/export_core_systems.py`, see ARCHITECTURE "Core systems").
+The crew bar cards show a face: a front-facing Blender render of the crew member's real layers, palette-swapped like the world figure (`portraits` sprite family,
+`render/portrait.ts`, `UiApi.portrait`). Not done: the legacy `tools/blender/build.py` crew pipeline has no portraits.
 
 **Art sets:** the 2x set (`public/assets/2x/`), the `?art=` choice and the 2x fallback are gone. `public/assets/1x/` (64x32 art
 drawn as hard 2x2 blocks) is the only art set; see "One art set" in [ARCHITECTURE.md](ARCHITECTURE.md). Older notes below that

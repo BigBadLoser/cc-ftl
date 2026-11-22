@@ -13,6 +13,7 @@ from PIL import Image, ImageDraw
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from sprites import compose, crew_trim  # noqa: E402
+from sprites import manifest_io  # noqa: E402
 from sprites.scale import ART_SCALE as S, TILE_H, TILE_W, assets_dir  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -102,7 +103,7 @@ def cell(man, assets, char, d, clip, frame, floor):
 def main():
     assets = Path(sys.argv[1]) if len(sys.argv) > 1 else assets_dir()
     out = Path(sys.argv[2]) if len(sys.argv) > 2 else Path("crew-4x.png")
-    man = json.loads((assets / "manifest.json").read_text())
+    man = manifest_io.read_manifest(assets)
     floor = tile(man, assets)
     blocks = []
     for char in ("eng", "crew"):

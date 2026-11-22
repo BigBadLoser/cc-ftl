@@ -66,7 +66,7 @@ A machine-run ship (rogue AI) has no crew to beat; its AI cores are its will, so
 and then holding a bridge. Some ships never surrender.
 
 A taken ship becomes your **prize**. Its weapons are dead, its AI off, and some loot is left in its hold. The **Prize**
-panel shows its value, how many of your crew are aboard, and its prisoners. You can **Scuttle** it into a wreck (not with
+panel shows how many of your crew are aboard and its prisoners. You can **Scuttle** it into a wreck (not with
 your crew aboard) or strip it; see [Salvage](../salvage/).
 
 If its crew all give up and you can't reach the ship (no one of yours aboard, no shuttle docked or flying to dock), the

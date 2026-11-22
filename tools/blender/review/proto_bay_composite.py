@@ -11,12 +11,13 @@ from PIL import Image, ImageDraw
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from sprites import compose, crew_trim  # noqa: E402
+from sprites import manifest_io  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[3]
 AS = ROOT / "public/assets/1x"
 D, WD, OUTD = Path(sys.argv[1]), Path(sys.argv[2]), Path(sys.argv[3])
 REF = Path(sys.argv[4]) if len(sys.argv) > 4 else None
-MAN = json.loads((AS / "manifest.json").read_text())
+MAN = manifest_io.read_manifest(AS)
 WA = json.loads((WD / "assets.json").read_text())
 WATLAS = np.array(Image.open(WD / "sprites/env.png").convert("RGBA"))
 WGLOW = np.array(Image.open(WD / "sprites/env.glow.png").convert("RGBA"))

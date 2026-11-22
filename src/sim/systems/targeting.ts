@@ -15,7 +15,7 @@ export function targetingSystem(sim: Sim): void {
     const faction = sim.world.get(id, ShipC)?.faction;
     if (!combat || !faction) continue;
     combat.target = fix(sim, combat.target);
-    if (combat.vehicleTarget && !hostileVehicle(sim, combat.vehicleTarget, faction)) delete combat.vehicleTarget;
+    if (combat.vehicleTarget && !hostileVehicle(sim, combat.vehicleTarget, id)) delete combat.vehicleTarget;
   }
   for (const id of sim.world.query(WeaponC, ModuleC)) {
     const w = sim.world.get(id, WeaponC);

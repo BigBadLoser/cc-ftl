@@ -26,8 +26,7 @@ blender -b -t 6 --factory-startup --python-exit-code 1 --python tools/blender/ex
 
 The current review folder retains copies of the unchanged BASTION, roof frames
 and context sprites from the previous pack so its manifest is self-contained.
-For a complete fresh pack, use this renderer for the same parts listed in
-`../height_185/render_preview.sh`, then run this directory's `present.py`.
+For a complete fresh pack, render every part with this renderer, then run this directory's `present.py`.
 No production assets or gameplay files are changed. Only r0 is rendered for
 review; the renderer also accepts `--rot 0 1 2 3 --quality final` for the complete
 module set, including the swapped [3,2] BASTION footprint at r1/r3. Roof parts

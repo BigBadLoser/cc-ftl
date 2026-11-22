@@ -10,6 +10,7 @@ import { accessTile } from '../modules/footprint';
 import type { Sim } from '../sim';
 import { shipIdOf } from '../regions';
 import { shipById } from '../combat/shipQuery';
+import { atBattle, battleAnywhere } from '../combat/engage';
 import { freeOperatorFor, jobTakeable } from '../crew/jobFit';
 import { consoleSkill, skillOf } from '../combat/operators';
 import { chargeOrdered, seatHelms } from '../ftl/order';
@@ -46,7 +47,7 @@ export function operateJobsSystem(sim: Sim): void {
     sim.world.destroyEntity(jobId);
   }
   // Nothing to open outside combat unless a charge order or battle stations stand.
-  if (!sim.sector.inCombat && !sim.sector.stations && !sim.world.query(CombatC).some((id) => sim.world.get(id, CombatC)?.ftlOrder)) return;
+  if (!battleAnywhere(sim) && !sim.sector.stations && !sim.world.query(CombatC).some((id) => sim.world.get(id, CombatC)?.ftlOrder)) return;
   const fresh = new Set<number>();
   for (const id of sim.world.query(ModuleC)) {
     if (open.has(id) || !consoleNeeded(sim, id)) continue;
@@ -65,7 +66,7 @@ export function operateJobsSystem(sim: Sim): void {
 }
 
 /** Consoles are manned as in a fight: a fight, or the player's battle stations. */
-const manning = (sim: Sim): boolean => sim.sector.inCombat || !!sim.sector.stations;
+const manning = (sim: Sim): boolean => battleAnywhere(sim) || !!sim.sector.stations;
 
 /** A console that exists, is intact and is on a ship still in play. */
 function stationUsable(sim: Sim, id: number): boolean {
@@ -78,7 +79,7 @@ function consoleNeeded(sim: Sim, id: number): boolean {
   const console = m && sim.content.modules[m.def]?.console;
   if (!m || !console) return false;
   // Outside combat only an ordered drive charge (`ftl.charge`) needs a console (the helm), or battle stations (the player's own consoles).
-  if (!sim.sector.inCombat && !(console === 'helm' && chargeOrdered(sim, shipIdOf(sim, m))) && !(sim.sector.stations && shipById(sim, shipIdOf(sim, m))?.faction === 'player')) return false;
+  if (!atBattle(sim, shipIdOf(sim, m)) && !(console === 'helm' && chargeOrdered(sim, shipIdOf(sim, m))) && !(sim.sector.stations && shipById(sim, shipIdOf(sim, m))?.faction === 'player')) return false;
   if (!m.powered || m.hp <= 0 || sim.world.has(id, IonC)) return false;
   return shipById(sim, shipIdOf(sim, m))?.state === 'active';
 }

@@ -8,7 +8,7 @@ import { mannedConsole, operatorSkill } from '../combat/operators';
 import { resolveTarget } from '../combat/targets';
 import { addHeat, fireBlocked, heatCeilingBlocks } from '../combat/heat';
 import { updateCommit } from '../combat/commit';
-import { isAiFaction } from '../combat/factions';
+import { aiRuns } from '../combat/engage';
 import { ModuleC } from '../modules/components';
 import { VehicleC } from '../vehicles/components';
 import type { WeaponDef } from '../registry';
@@ -36,6 +36,7 @@ export function firingSystem(sim: Sim): void {
     const ship = shipById(sim, shipId);
     const combat = ship && sim.world.get(shipId, CombatC);
     if (!m || !w || !def || !ship || !combat) continue;
+    const ai = aiRuns(sim, shipId);
     const ready = shipCanAct(ship) && !fireBlocked(combat) && m.powered && m.hp > 0 && !sim.world.has(id, IonC) && isDeployed(sim, id);
     if (w.shotsLeft > 0) {
       w.commit = null;
@@ -47,16 +48,16 @@ export function firingSystem(sim: Sim): void {
     // ammo weapon stays automatic. AI ships only know `Combat.hold`.
     // Hold means hold: a held weapon (its own mode, or hold all) fires nothing.
     const shuttleShot = !!def.ammo && (!!w.target?.vehicle || (!!def.antiVehicle && !!combat.vehicleTarget && !w.target));
-    const modeHold = !isAiFaction(ship.faction) && w.mode === 'hold' && !w.once && !shuttleShot;
+    const modeHold = !ai && w.mode === 'hold' && !w.once && !shuttleShot;
     const held = (combat.hold || modeHold) && !combat.volley;
     // Enemy weapons telegraph: in the last window of the charge they commit to a target and aim area (the module it will hit), which the shot then keeps.
     const live = ready && !held && (w.charge >= 1 || (!!mannedConsole(sim, shipId, 'weapons') && hasAmmo(sim, shipId, def)));
-    const commit = isAiFaction(ship.faction) ? updateCommit(sim, id, def.chargeSec, live, () => resolveTarget(sim, id, combat)) : null;
+    const commit = ai ? updateCommit(sim, id, def.chargeSec, live, () => resolveTarget(sim, id, combat)) : null;
     if (!ready || w.charge < 1 || held) continue;
     const target = commit?.target ?? resolveTarget(sim, id, combat);
     if (!target) continue;
     // Enemy ships manage their own heat: a volley that would overheat them waits for a vent. The player's ship fires into an overheat if told to.
-    if (isAiFaction(ship.faction) && heatCeilingBlocks(combat, def.heat)) continue;
+    if (ai && heatCeilingBlocks(combat, def.heat)) continue;
     if (def.ammo && def.ammoPerVolley && !consumeAmmo(sim, shipId, def.ammo, ammoNeed(def))) continue;
     addHeat(sim, shipId, def.heat);
     w.charge = 0;

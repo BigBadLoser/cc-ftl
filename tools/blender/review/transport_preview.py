@@ -14,6 +14,7 @@ import numpy as np
 ROOT=Path(__file__).resolve().parents[3]
 sys.path.insert(0,str(ROOT/"tools/blender"))
 from sprites import crew_trim
+from sprites import manifest_io  # noqa: E402
 BG=(13,19,28,255)
 FACTION={"primary":(82,117,147),"secondary":(199,161,94)}
 
@@ -209,7 +210,7 @@ def compose(out):
     cv=np.full((520,640,4),BG,np.uint8)
     paste(cv,"parked-room-r0",320,270)
     assets=ROOT/"public/assets/1x"
-    shipped=json.loads((assets/"manifest.json").read_text())
+    shipped=manifest_io.read_manifest(assets)
     stack=None
     names=["body","eyes.organic","legs.cargo_pants","torso.work_shirt","arm.R.flesh","arm.L.flesh","hair.short"]
     items=sorted((shipped["assets"]["crew.human."+n] for n in names),key=lambda a:a["order"])

@@ -1,0 +1,16 @@
+{
+"sheets":{
+"bench_module":{"image":"sprites/bench_module.png"}
+},
+"assets":{
+"module.bench":{"kind":"static","sheet":"bench_module","frame":{"x":1,"y":1,"w":83,"h":66},"anchor":{"x":56,"y":54},"footprint":[2,1]},
+"module.bench.front.r0":{"kind":"static","sheet":"bench_module","frame":{"x":596,"y":1,"w":8,"h":8},"anchor":{"x":-6,"y":16},"footprint":[2,1]},
+"module.bench.front.r1":{"kind":"static","sheet":"bench_module","frame":{"x":421,"y":1,"w":67,"h":46},"anchor":{"x":20,"y":43},"footprint":[1,2]},
+"module.bench.front.r2":{"kind":"static","sheet":"bench_module","frame":{"x":489,"y":1,"w":64,"h":46},"anchor":{"x":46,"y":43},"footprint":[2,1]},
+"module.bench.front.r3":{"kind":"static","sheet":"bench_module","frame":{"x":554,"y":1,"w":41,"h":28},"anchor":{"x":14,"y":35},"footprint":[1,2]},
+"module.bench.r0":{"kind":"static","sheet":"bench_module","frame":{"x":85,"y":1,"w":83,"h":66},"anchor":{"x":56,"y":54},"footprint":[2,1]},
+"module.bench.r1":{"kind":"static","sheet":"bench_module","frame":{"x":253,"y":1,"w":83,"h":61},"anchor":{"x":24,"y":47},"footprint":[1,2]},
+"module.bench.r2":{"kind":"static","sheet":"bench_module","frame":{"x":337,"y":1,"w":83,"h":61},"anchor":{"x":59,"y":47},"footprint":[2,1]},
+"module.bench.r3":{"kind":"static","sheet":"bench_module","frame":{"x":169,"y":1,"w":83,"h":66},"anchor":{"x":27,"y":54},"footprint":[1,2]}
+}
+}

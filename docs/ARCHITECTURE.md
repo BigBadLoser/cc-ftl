@@ -26,19 +26,24 @@ One line per section; read the index, then only the sections your task touches.
 - [Saves](#saves): A save is the serialized sim: ECS component stores, grid arrays (base64 typed arrays), RNG state,
 - [Enforced rules](#enforced-rules): which CLAUDE.md rules fail a check, and where (lint, ratchet tests, `pr-meta`).
 - [Quality rules](#quality-rules): Sim systems get unit tests, plus scenario tests, for example "a 1-tile breach vents a 4×4 room
-- [Milestones](#milestones): Each milestone ends with something playable or watchable in the browser.
-- [Working with Claude](#working-with-claude): Implementation uses Sonnet and Haiku subagents for well-scoped tasks: one system, one generator, one
+- [Milestones](#milestones): Pointer to the status archive (M0 to M8 history) and ROADMAP.md.
+- [Working with Claude](#working-with-claude): Pointer to CLAUDE.md.
 - [Derelict salvage, `src/sim/salvage/`](#derelict-salvage-srcsimsalvage): `salvage.order` puts a SalvageOrderC on a wreck; salvageSystem keeps stripping jobs (scrap-marked deconstructs) open and removes the stripped wreck; the order keeps an away site open on the wreck (its shuttle run brings the crew and takes the loot home).
-- [Away sites and the air drive (#286)](#away-sites-and-the-air-drive-286): Slices 0 to 3 built (#286): travel-time estimator, air sources and stores, the Phase 3 air and return drives, `src/sim/away/` (AwaySiteC, SiteRunC, AwayC, passages, departure check, batched round trips, pickups, lost shuttles), salvage on top, throughput bench, slices.
+- [Away sites and the air drive (#286)](#away-sites-and-the-air-drive-286): Air sources and stores, the air and return drives, `src/sim/away/` (AwaySiteC, SiteRunC, AwayC, passages, batched round trips, pickups, lost shuttles), the air ledger, the ownership table, staging; salvage on top. Build logs and plans are in the status archive.
+  - [Travel time and air](#travel-time-and-air): `ai/travel.ts`, `eva/sources.ts`, air stores, the refill machine, admission, the pickup request.
+  - [Home cover and the departure check, `src/sim/away/`](#home-cover-and-the-departure-check-srcsimaway): Passages rank below home needs; rules (a) to (c) before a shuttle leaves a member out.
+  - [Boarding (#287), `src/sim/boarding/`](#boarding-287-srcsimboarding): Launch, site fields the owner chooses, recall, the boarding site owner.
+  - [Sides (#287)](#sides-287): The shuttle's side instead of the player's.
+  - [Throughput bench](#throughput-bench): `salvageBench` and its acceptance rule.
 - [Drones, `src/sim/drones/`](#drones-srcsimdrones): Own entities (DroneC on a BodyC), one drone system, a job table per kind; core cap, bays, fly pathing, ion, placeholders.
 - [Vehicles (shuttles), `src/sim/vehicles/`](#vehicles-shuttles-srcsimvehicles): A shuttle is an entity (VehicleC), never a grid. States: stowed (in its home bay), flying (sector x, y),...
 - [Events (story), `src/sim/story/`](#events-story-srcsimstory): Events are data (EventDef, src/sim/story/defs.ts; content in src/content/events.ts, satisfies EventDef,...
 - [Food and farming, `src/sim/farm/`](#food-and-farming-srcsimfarm): `PlotC` on hydroponics beds, `farmSystem`, plant and harvest jobs, meal quality from the cook's skill, herbs in medical beds.
 - [Trade, `src/sim/trade/`](#trade-srcsimtrade): Terminology (user decision, 2026-10-19): a node is one playable grid or location (what older text and code...
-- [Asteroids (slices 1-3 on branch `asteroids`), `src/sim/asteroids/`, `mining/`, `rock/`, `outposts/`](#asteroids-slices-1-3-on-branch-asteroids-srcsimasteroids-mining-rock-outposts): Region model: its own AsteroidC entity plus the owner layer (not a ShipC kind). An asteroid (one big body,...
+- [Asteroids, `src/sim/asteroids/`, `mining/`, `rock/`, `outposts/`](#asteroids-srcsimasteroids-mining-rock-outposts): Region model: its own AsteroidC entity plus the owner layer (not a ShipC kind). An asteroid (one big body,...
 - [Starmap (galaxy), `src/sim/galaxy/`](#starmap-galaxy-srcsimgalaxy): Galaxy state, the app snapshot, and the Svelte and Pixi starmap.
 - [Sector grid](#sector-grid): Sparse tiles, ship views, and placement in the current node.
-- [Historical sector-grid migration](#historical-sector-grid-migration): The October refactor plan and implementation notes.
+- [Historical sector-grid migration](#historical-sector-grid-migration): Pointer to the October refactor notes in the status archive.
 - [Crew AI: one system for every ship (user principle, 2026-10-21)](#crew-ai-one-system-for-every-ship-user-principle-2026-10-21): NPCs use almost exactly the same crew AI as the player's crew. There is no parallel "NPC behaviour" stack:
 - [Stations](#stations): Built by the station assembly, shipgen/stationBuild.ts (kinds and sizes in content/stations.ts; docs/STATION_ASSEMBLY.md) and stamped by
 - [Crew for hire](#crew-for-hire): Trade stations post candidates derived from hashes (galaxy/recruit.ts, tuningRecruit.ts). While the player...
@@ -193,6 +198,12 @@ they are stamped into the [sector grid](#sector-grid).
   system finds some, the UI warns about power the sim considers fine), which shows up as idle crew, ping-ponging
   shuttles and false alerts.
 - No game-wide audit (user decision, 2026-11-09): when a fix runs into a duplicate, fold it into the owner in that PR.
+- One system for each thing, whoever acts (user decision, 2026-11-21). The player's crew and ships and NPC crew and ships go through the same
+  mechanic: NPCs fight, board, capture and defend against each other as they do against the player. There are no player-only or NPC-only
+  copies of a mechanic. When a path turns out to be player-only, generalise the existing system by its subject (which ship or crew acts,
+  which it targets) instead of adding an NPC variant beside it. For example, `boarding/party.ts` `boardTargets` picks the ship a party goes
+  for, `fight/relations.ts` `crewShipOf` says which ship a crew member serves, `captureSystem` lets either side's boarders take a ship, and a beaten ship yields to whoever fights it (`crewedFoe`, `hopeless`,
+  `boardersReach`), answered by the player's deal or by an NPC foe's habit (`answerYields`).
 
 **Galaxy.**
 - Chunked and seeded, generated on demand (see "Starmap" below).
@@ -218,7 +229,7 @@ they are stamped into the [sector grid](#sector-grid).
 - Each art pixel maps to a whole number of device pixels.
 
 **Assets come from the pipeline (see Asset pipeline).** By default the renderer draws game content from
-sprite sheets listed in `public/assets/manifest.json`. Shaders and effects may work on that art (tints,
+sprite sheets listed in `public/assets/1x/manifest.json`. Shaders and effects may work on that art (tints,
 masks, blends, lighting, such as damage revealing a tile's stripped sprite). Content may be drawn in code
 where that is clearly the better tool, but sprites come first. Debug and overlay visuals (selection
 frames, overlays, blueprints) and temporary placeholders while art is pending are drawn in code freely.
@@ -261,8 +272,7 @@ Pixi `RenderLayer` and render group. Keep sprites in each band batchable:
   (palette and light tint per cell from a palette texture), and the world draws each figure as one sprite from it.
 - No meshes with their own shader in the world either: a mesh is a draw call and cuts the batch the same way. Recolour shaders whose
   output depends only on their inputs (roof livery masks, container overlays) bake each distinct paint once into the shared paint
-  atlas (`render/paintAtlas.ts`, keyed by every input) and the world shows it as a sprite; tint and alpha still apply. A roofed
-  ship drew a mesh per livery mask, hundreds of draws per pass (#389, `?scenario=fight` inset 589 -> 60).
+  atlas (`render/paintAtlas.ts`, keyed by every input) and the world shows it as a sprite; tint and alpha still apply.
 - Render groups (`render/renderGroups.ts`): the world layers (`under`, `floor`, `decal`, `fx`, `ui`, `marks`, the backdrop) are each
   a pixi render group, so a camera move is one group transform and hiding layers for a pass (minified art, combat inset)
   rebuilds a short list of groups, not their sprites. A group root does not pass its blend mode down (`fxAdd` is not one).
@@ -273,8 +283,7 @@ Pixi `RenderLayer` and render group. Keep sprites in each band batchable:
   model of that layer). Sprites keep their region's `DepthParent` as scene parent (transforms) but belong to their band's
   group. Wider bands mean fewer draws and bigger rebuilds.
 - Culling: a region (ship scene) out of view of the main and the inset camera is hidden whole (`regionInView`); inside a shown
-  region nothing is culled, since pixi 8 costs nothing per frame for a static sprite off screen (hand-culling 10k of them moved
-  `render/gl` by nothing, #389). What costs is CPU work on scenes not drawn: a scene out of view updates every
+  region nothing is culled, since pixi 8 costs nothing per frame for a static sprite off screen. What costs is CPU work on scenes not drawn: a scene out of view updates every
   `HIDDEN_EVERY` (4th) frame and in full the frame it comes into view, before it is drawn; the crew atlas composites only the
   figures the world draws (`CrewAtlas.skipHidden`).
 - Scene builds are spread over frames (`render/buildBudget.ts`): views ask a gate before each tile or roof chunk
@@ -282,13 +291,9 @@ Pixi `RenderLayer` and render group. Keep sprites in each band batchable:
   and stays hidden until an update builds nothing more (`ShipScene.ready`). A drawn scene stays drawn while its replacement
   builds (art arrived); a scene that art arrived for while it was building finishes, then is built again, so stand-ins never
   show. The camera ship with nothing drawn yet builds at once, and so does everything while `whenArtReady` waits (a loading
-  screen). A roof that is not shown is plated in the background (`budget.idle()`, idle frames only). A whole-node rebuild
-  (`?scenario=busy`, `__cc.liveryAtlas(true)`): one 210-270 ms frame became 9-13 frames of at most ~40 ms (headless).
+  screen). A roof that is not shown is plated in the background (`budget.idle()`, idle frames only).
   `__cc.buildBudget(false)` switches the budget, the throttle and the crew skip off for A/B runs.
-- Measure with the draw counter (`render/drawCalls`) at `?scenario=busy` zoomed out, and see which instruction broke each batch
-  with the scratch tracer approach in #389 (walk `renderGroup.instructionSet`). `__cc.additiveMerge(false)` and
-  `__cc.crewAtlas(false)`, `__cc.renderGroups(false)`, `__cc.depthBands(false)` and `__cc.liveryAtlas(false)` (rebuilds the scenes) (with `?hook`) switch back to the old paths
-  for same-frame render diffs (`depthBands(n)` tries a band width).
+- Measuring draw calls and A/B switches (`__cc.depthBands(false)` and the like): see "Render batching history (#389)" in [PROFILING.md](PROFILING.md).
 
 **Crew.**
 - Composited at runtime from **sprite layers**: a species body plus slot layers (hair, eyes, arms,
@@ -469,7 +474,7 @@ The rules the #371 migration followed; new tests follow them too.
   `contentEdited` / `contentAtDanger`. A new module-level cache in a test or fixture is a `fileCache()`.
 - **Shared setup** goes in `test/support/fixtures/<name>.ts`, a run loop is the shared `run` (a local copy only when it returns or stops
   differently, and then as a thin wrapper), a scene a preset is likely to want is a scenario preset.
-- **Isolation:** a test that mocks or spies, or changes shared or cached data, goes on `ISOLATED` in `vite.config.ts`. So does one that
+- **Isolation:** a test that mocks or spies, or changes shared or cached data, goes on `ISOLATED` in `tools/isolatedTests.ts`. So does one that
   needs a lot of heap by itself (`researchReach`, about 1.4 GB).
 - **New or reshaped heavy files** get an estimate in `tools/testWeights.ts` (about 2.5 × the local time) until the next
   `npm run test:weights:ci`.
@@ -487,7 +492,7 @@ file (Vite resolves it in the browser build, Vitest and the profiler, which all 
   plots, production orders), `ships` (enemy, generated, derelict, raider), `hooks`, `ui` (speed, selection, tool, camera: data the app applies; tests ignore it).
   A part changes the sim through commands (the `debug.*` ones, or a new one where none exists); a direct write is allowed only for pre-start setup tests already did
   (skip goals, a story flag, the queued event) and only inside the owning part.
-- A preset is `presets/<name>.ts` (`presets/inspect/station.ts` is `inspect.station`), default export `definePreset({ doc, params?, starter?, spec(params) })`. `params`
+- A preset is `presets/<name>.ts` (a nested `presets/<dir>/<name>.ts` is `<dir>.<name>`), default export `definePreset({ doc, params?, starter?, spec(params) })`. `params`
   are its URL knobs by kind (`flag`, `num`, `str`, `oneOf`). `buildScenario(name | spec, { seed, params, overrides, sim?, extraHooks? })` returns `Built`:
   the finished scene (the build steps the sim itself), `requests` (UI), `rejected` (command rejections by `command:reason`) and the hooks. `overrides` is a partial spec
   merged over the preset's (objects merge, arrays replace, `null` deletes); a key no part owns is an error.
@@ -552,7 +557,7 @@ palette.json    the single palette, read by Blender scripts and the game
     `?crewmb=N` and `?envmb=N` override the budgets in MiB.
   - Not done: GPU texture compression (KTX2/Basis), and splitting the big static env sheets (vehicle_bay, weapons, containers)
     by family, which would shave the ~245 MiB the starting ship's env sheets take.
-- **One art set (`public/assets/1x/`):** `manifest.json` and `sprites/`. It is 64x32 pixel art that the game draws at half
+- **One art set (`public/assets/1x/`):** the split manifest (`manifest.json` index plus `manifest/<family>.json` parts, see the pipeline notes below) and `sprites/`. It is 64x32 pixel art that the game draws at half
   resolution, so each art pixel is a hard 2x2 block. The game's geometry (`iso.ts` `TILE_W`/`TILE_H` = 128x64, `Z_PX`) is in
   world px, and `ART_SCALE` (2) is the world px per art px that hand-tuned pixel literals are multiplied by.
   - `src/render/assets/compose.ts` turns the manifest into the one the renderer sees, in world px: frames, anchors, clip
@@ -581,6 +586,12 @@ palette.json    the single palette, read by Blender scripts and the game
     Check with `npm test -- src/render/assets`.
 - **Run with `npm run sprites`** (Blender headless, writes `public/assets/1x/`). Generated sheets, JSON and the manifest are
   **committed**, because Cloudflare's build doesn't run Blender.
+- **The manifest is split on disk (#596):** `manifest.json` is a small index (version, tile, keyColors, heights, `parts`) and
+  `manifest/<part>.json` holds one family's sheets and assets, one entry per line, so a family rebuild rewrites only its own file
+  and a diff shows only the sprites that changed. A part is the sheet name without its `.N` page suffix; every crew layer is in
+  `crew`. `tools/blender/sprites/manifest_io.py` reads and writes it (`read_manifest` gives the whole manifest; `pack.save_manifest`
+  writes only the parts that changed); `src/render/assets/manifestParts.ts` assembles it in the game (index first, then every part
+  in parallel). Tests read it whole with `shippedManifest()` from `test/support/manifest.ts`.
 - **Families:** the art is split into families that each render into their own sheets and are merged
   into the manifest (their old sheets and ids are replaced, everything else is kept), so one family can
   be rebuilt alone: `npm run sprites -- public/assets walls,consoles`. Families: `crew`, `portraits` (crew portrait renders, see "Crew"), `robots` (robot
@@ -604,13 +615,13 @@ palette.json    the single palette, read by Blender scripts and the game
   ```
 
   Then copy `$OUT/1x/sprites/refinery{,.glow}.png` into `public/assets/1x/sprites/` and merge `manifest.fragment.json` (sheets and
-  assets) into `public/assets/1x/manifest.json`, never replacing it. The pack was made at pipeline revision e8c50906;
+  assets) into the manifest (`pack.load_manifest`, `pack.merge`, `pack.save_manifest` on `public/assets/1x/manifest.json`), never replacing it. The pack was made at pipeline revision e8c50906;
   `refinery_pipeline.provenance` hashes the renderer files, so a renderer change invalidates its frame cache and the art should be
   re-exported. The `.blend` and review images are not kept in the repo.
 - **Module state art (`moduleArt.ts` `stateArt`, `moduleView.ts`):** any module whose art has `<asset>.rN.unpowered` shows it while
   unpowered or disabled, and one with `<asset>.rN.active.f1` and up cycles `.active`, `.f1`... while it shows its active state
   (a crafting refinery), at `ANIM_FPS` = 4 from the render clock. The manifest carries no animation data, so the rate is a
-  render-side constant (the pack's `animations.json` also says 4 fps). A frame change swaps the sprite's texture
+  render-side constant. A frame change swaps the sprite's texture
   (`swapFrame`); the part is not rebuilt. Damage extends it: at 0 hp `<asset>.rN.destroyed`; under half hp (`DAMAGED_BELOW`) `.damaged`, which while powered alternates with the dark `.damaged.flicker` (`FLICKER_LIT_MS` 340 / `FLICKER_DARK_MS` 170, render clock, by texture swap; a frame without glow hides the glow part) and while unpowered stays on `.damaged.flicker`. Precedence: destroyed, damaged, unpowered, `.active` animation. Each applies only if the art has the id.
 - **Core systems (reactor 2x2, life support 1x2; sheets `reactor`, `life_support`, not `families.py` families):** 4 rotations x healthy,
   `.unpowered`, `.damaged`, `.damaged.flicker` (dark, no glow) and `.destroyed`; ids `module.reactor.rN[.state]`,
@@ -625,7 +636,7 @@ palette.json    the single palette, read by Blender scripts and the game
   ```
 
   Then copy `$OUT/1x/sprites/{reactor,life_support}{,.glow}.png` into `public/assets/1x/sprites/` and merge `manifest.fragment.json`
-  (sheets and assets) into `public/assets/1x/manifest.json`, replacing only those ids. Geometry, material or reference changes need a
+  (sheets and assets) into the manifest (`pack.merge`, then `pack.save_manifest`), replacing only those ids. Geometry, material or reference changes need a
   new approval lock. The `.blend` files and review images are not kept in the repo.
 - **Wall corner fills (`walls`, the 47-tile blob set):** wall and hull pieces are picked by the 4-neighbour mask
   (N1 E2 S4 W8) plus corner bits (`tiles.ts` `wallCorners`: NE 1, SE 2, SW 4, NW 8, set when both arms beside the
@@ -815,7 +826,7 @@ palette.json    the single palette, read by Blender scripts and the game
     (split at the waist).
   - `team.cloth` is the faction shell and `team.accent` the seam; the eye and charge cells glow.
   - Look previews: `ROBOT_QUICK`, `ROBOT_REST` and `ROBOT_ANIM` builds, composited by `review/robots_preview.py`.
-- **Aliens** (`sprites/alien.py`, `alien_render.py`, family `aliens`; wired on branch `aliens`): the derelict infestation, built
+- **Aliens** (`sprites/alien.py`, `alien_render.py`, family `aliens`; wired): the derelict infestation, built
   on the robot rig kit. There is one sheet per creature in the crew layer format, with species `alien` and no gear:
   - `crew.alien.body.hunter`: the swarm melee unit, about 1 tile.
   - `crew.alien.body.brute`: the tank, about 1.5 tiles.
@@ -1097,14 +1108,15 @@ renderer draws from the look alone (`api.lookPortrait`); no speaker keeps the pl
   Lessons keep their own prefs.
 - **Esc menu** (`src/ui/menu/`): Esc closes the top panel, else `api.cancel()` (order menu, tool or aim, selection), else opens the
   menu (Esc is the only way in). Settings and Controls are kit `SideTabs`, one group at a time. While it is open it holds the one modal gate (`holdModal` / `modalOpen` in `ui/keys.ts`, also held by the jump confirmation), and every game key handler stands aside; the App pauses the game and restores the speed.
-- **Saves** (`app/saveStore.ts`): a `SaveStore` interface (list, read, write, remove, with name, date, turn and node) over localStorage,
-  ready for IndexedDB (#204). The autosave keeps the `cc.save` key; three named slots. Loading a slot reloads the page into it.
+- **Saves** (`app/saveStore.ts`): a `SaveStore` interface (list, read, write, remove, with name, date, turn and node) over IndexedDB (a save is over a megabyte;
+  localStorage's quota held about four), with labels kept in memory after `ready()`; saves an older build left in localStorage are moved in on first run. The autosaves (a chain, newest first),
+  a pre-combat snapshot and three named slots (`SLOT_IDS`). Loading a slot reloads the page into it.
 
 ## Saves
 
 - A save is the serialized sim: ECS component stores, grid arrays (base64 typed arrays), RNG state,
   galaxy seed, explored chunks, flags and a **format version**.
-- Migrations are written per version bump.
+- No migrations (prototype, decision 2026-10-19): `SAVE_VERSION` (`sim/save.ts`) is bumped whenever the shape changes, and a save of another version is refused (the game starts fresh).
 - Content stays out of saves except as IDs.
 
 ## Enforced rules
@@ -1129,37 +1141,17 @@ so does shrinking without lowering the baseline in the same change.
 - Sim systems get unit tests, plus **scenario tests**, for example "a 1-tile breach vents a 4×4 room
   below 5% O2 within N ticks".
 - Soft limit of about 400 lines per file. Splitting is preferred to growing.
-- No test or demo code in `src/`. Spikes live in `spikes/` and never get imported.
+- No test or demo code in `src/`.
 - **Polish follows gameplay:** no VFX or juice work on a system until its loop is playable.
 - One way to do each thing: one pathfinder, one event channel, one ECS.
 
 ## Milestones
 
-Each milestone ends with something playable or watchable in the browser.
-
-| # | Milestone | Done when |
-|---|-----------|-----------|
-| M0 | **Skeleton** | Vite, TS, Svelte and a renderer are set up, with lint boundaries, Vitest, the ECS, the tick loop, the command queue, the seeded RNG and a save round-trip test. An empty scene renders. |
-| M1 | **Grid & view** | A hard-coded test ship renders (originally voxels in Three.js; replaced in R1), an isometric camera, cutaway walls, pan and zoom, the tile inspector and a debug overlay. |
-| M2 | **Crew & jobs** | Crew pathfind (doors included), take jobs with reservations, follow role priorities and the grid, can be drafted and have minimal needs. Placeholder low-poly crew. |
-| R1 | **Pixel renderer** | `src/render` is rebuilt on PixiJS with the sprite pipeline: tiles, walls with cutaway, doors, crew layers with 8-direction clips, depth sorting, glow, pixel-perfect zoom, selection, blueprints and overlays. Three.js and the voxel kit are removed. Gameplay is unchanged. |
-| A1 | **Readability session** (timeboxed art) | The pipeline renders a variant sheet (proportions, silhouette, outline, shading bands, rim light, colour contrast, face simplification, crew height) at real game zoom. The user picks the winners, which become pipeline defaults, and crew sprites are regenerated. |
-| M3 | **Ship systems** | Power network, atmosphere, breaches, fire, smoke and lighting fields with overlays. Modules come from content, there is build mode with construction jobs, and the light economy works (items, storage, hauling). |
-| M4 | **Combat** | An enemy ship grid, weapons (charge and volley), shields, evasion, module targeting, tile effects, enemy AI doctrine, readability feedback, and destroy, flee and wreck endings. |
-| M5 | **Boarding & derelicts** | Portal graph across grids, airlocks and teleporters, EVA, crew-vs-crew combat, capture, and exploring wrecks. |
-| M6 | **Galaxy & events** | Chunked endless starmap, danger tiers, jumps, the event system (requirements, effects, flags, odds), stores and trade, and basic factions. |
-| M7 | **Depth pass** | Species, implants, more weapons and modules, recipes, and hardened saves. |
-| M8 | **Character art** | More species (rock, robot, slime), more slot items, and portraits. |
-| Later | | Full production chains, mood and relationships drama, recoverable failure, fleets. |
+Milestone history (M0 to M8) is in the [status archive](STATUS_ARCHIVE.md); the plan is [ROADMAP.md](ROADMAP.md).
 
 ## Working with Claude
 
-- Implementation uses Sonnet and Haiku subagents for well-scoped tasks: one system, one generator, one
-  set of tests. Each gets a precise brief.
-- The main session handles design, integration and review.
-- Throwaway visual tests are published as private claude.ai pages so the user can check them on any
-  device.
-- Spikes so far: voxel deck (environment, lighting, power-off) and crew lineup (style B chosen).
+See `CLAUDE.md` ("Workflow", "Agents").
 
 ## Derelict salvage, `src/sim/salvage/`
 
@@ -1203,16 +1195,7 @@ Slices 2 and 4 of #268 (the order and the stripping; the salvage teams). Slice 3
 
 ## Away sites and the air drive (#286)
 
-Slices 0 to 3 are built (below). Gameplay side: DESIGN.md "Air, away sites and salvage (#286; built)".
-
-**Slice 0 is built** (branch `feat/air-sources-286`): `ai/travel.ts` (`travelTicks`, `flightTicks`; `floatTicks` re-exported), `eva/sources.ts`
-(`airSources`, `sourceCandidates`), `eva/air.ts` (stores, `refillFromAirlock` / `refillFromVehicle`), `systems/airStores.ts` (once a second),
-`ai/machines/refill.ts` (the `refill` errand job: `ToAirlock`, then `Fill`, a `finish` state), `eva/refillOrder.ts` (`eva.refill`), `ai/admitAir.ts`
-(`AirAdmission`, asked from the scheduler's `accept`), and the bench (`content/ships/salvageBench.ts`, scenarios `salvageBench*`, baseline in
-`salvageBench.baseline.ts`). Where the code differed from the plan: a plain door costs `DOOR_PASS_SEC` = 0 (doors open as the walker steps in, so
-there is no opening time to price); the refill is an errand job like a suit errand, not a Phase 3 machine; `Fill` at a hovering shuttle is the
-moment at the hull tile, the tank swap itself happens on an `EvaFloat {mode: 'refill'}` at the turn; salvage teams and yard crews were exempt from
-admission until slice 3, which dropped the exemption (salvage moved onto sites; the shipyard's contractors are asked like anyone).
+Slices 0 to 3 are built (below). Gameplay side: DESIGN.md "Air, away sites and salvage (#286; built)". Plans, build logs and removed-code lists moved to the [status archive](STATUS_ARCHIVE.md).
 
 **Slice 1 is built** (branch `air/drive-286`):
 - **The drive.** `air` in `content/policies.ts` is first in the colonist, station and npc policies (robots have none). Its inputs live in `ai/airNeed.ts`:
@@ -1277,14 +1260,9 @@ admission until slice 3, which dropped the exemption (salvage moved onto sites; 
   The table in `owned.ts` lists each: `AwayC` (the run, else the site's claim), `Drafted.away` (the float), `Suit.vehicle` and
   `Away.landing` (the drift out), `Away.lastCall` and a member out's `ride` (the 'depart' phase), `Away.pickup`, `downAt`, `home` of a
   member out, `SiteRun.returnBy` and `AirHoldsC` (the trip away from the site), `boardedAt`/`held` (the stop at home), `passage` jobs
-  (the run serving the site), `StagingC` (the site). `awayLeaks` is the same rules as a pure audit; the away tests' `play` (`awayFixture.ts`) throws when a
+  (the run serving the site), `StagingC` (the site). `awayLeaks` is the same rules as a pure audit; the away tests' `play` (`test/support/fixtures/away.ts`) throws when a
   leak survives a tick. New away state goes in that table.
 **Slice 3 is built** (branch `away/salvage-sites-286`): salvage on sites (see "Derelict salvage", "On an away site").
-- **Deleted:** `salvage/trip.ts`, `team.ts`, `teamCrew.ts`, `cargoRun.ts`, `SalvageTripC`, `SalvageCrewC`, `CargoRun`, `SalvageOrder.teamAt`,
-  `SALVAGE_TEAM*` and `SALVAGE_*_FRAC` (but `SALVAGE_FRAC`), events `salvage.teamSent|teamHome|cargoRun`, the salvage-team checks in
-  `ferryFree`, the courier and the boarding launch (a site's `SiteRunC` is the one busy mark), the salvage and yard exemptions in `airDraining`
-  and admission, and the salvage skip in `stowSuit`. `looseOn`, `planCarry`, `runDue` and `liveBox` moved to `away/haul.ts` (`haulsTo` went with
-  the hauls into the hold: see "Staging").
 - **Seats by kind.** `postPassages` splits the suited seats by demand first and the airless ones after, so every category in demand gets a
   suited seat before any gets a second (before, the suited seats went to the first categories in column order and a lone hauling seat could
   end up airless, which no breather can take).
@@ -1320,38 +1298,7 @@ admission until slice 3, which dropped the exemption (salvage moved onto sites; 
   - `looseOn` is all loot lying on the site; `lootOnSite` adds loot in hand on its way into the zone (the order keeps the site open on it,
     Codex 4451348811); `unstagedOn` is what is still to be hauled (the site's hauling demand). `haulsTo` and the hauls straight into the hold are gone.
 
-### Dependency on crew AI Phase 3
-
-The air and return drives are Phase 3 drives (`content/policies.ts`, `satisfies PolicyDef`), not additions to
-`policy.legacy` or `scheduleSystem`'s inline turns. Phase 3's scope should include:
-
-1. **Drive inputs.** `air` (tank per mille; absent while unsuited, airless or in breathable air), `airMargin` (air left minus
-   the travel time to the nearest source, tenths of a second), `away` (has `AwayC`), `health`. `airMargin` needs a search:
-   it is read only for suited crew in thin air, once per `EVAL_TICKS` window. The source found stays on the refill task's
-   blackboard.
-2. **Urgent override in data.** A drive may declare `urgent: {below}`: under it, reconcile treats every class as `any`,
-   **`finish` included**, using that machine's `onAbort` (rescue `ToBed`/`Lay`: set the patient down on the nearest safe tile
-   within `SETDOWN_STEPS`, else in place; the patient keeps `Downed.bed`). This generalises operator exhaustion; air
-   critical is its second user. A test checks that nothing else overrides `finish`.
-3. **Nested need tasks.** A drive may declare `nest: true`: reconcile pushes its machine as a child frame on the job's
-   Task (as suit errands do) instead of aborting the job, so the hold and the progress stay and the job resumes when the
-   child pops. The hold has a timeout (`NEST_HOLD_SEC`, 120 s), after which it is released as a normal abort. `air` nests
-   below critical. At critical it still nests unless the class override above had to abort (carrying).
-4. **`requires` failure.** When `requires: ['airSource']` fails, utility does not damp the drive to 0 as it does for food.
-   It sets `Intent.blocked = 'air'` and keeps the score, so the alert, the pickup request and the inspector can read it.
-5. **Hazard interrupt.** The thin-air predicate is `needsAir && !hasSuitAir && thin`. The `escape` goal set is "breathable
-   tile or air source" (the same `airSources`), so on a site with no breathable tile, escape means refill.
-6. **abortTask's EVA rule** (escape to the nearest airlock interior) is skipped for `AwayC` crew on their site, and otherwise
-   aims at an air source or breathable tile.
-7. **Suited-exterior `safe` class** doesn't apply to `AwayC` crew on their site (a wreck is nearly all exterior). A source
-   tile is also a safe point.
-8. **Needs off the home grid.** Sleep and eat never fall back to "sleep where standing" for `AwayC` crew; the return drive's
-   thresholds sit above theirs (a policy test checks the order).
-9. **Policies.** `policy.colonist`: `air` and `return`. `policy.robot`: `return` (charge, health), no `air`.
-   `policy.station`/`npc`: `air`, not `return`.
-10. **Saves.** `Intent.scores` grows with the drive list (Phase 3 already bumps `SAVE_VERSION`).
-
-### Travel time and air (slices 0 and 1)
+### Travel time and air
 
 - **`ai/travel.ts` (new).**
   - `travelTicks(sim, walker, steps)` turns a path into ticks: per tile `1 / stat(moveSpeed)` (suit and trait
@@ -1365,7 +1312,7 @@ The air and return drives are Phase 3 drives (`content/policies.ts`, `satisfies 
   over the suited view. A reverse per-pass map `toSource[jobTile]` (one search out of all source tiles) serves admission.
   (Since #295 part of the air module with `eva/airLedger.ts`; see "The air module" above.)
 - **Air stores.**
-  - `AirlockC.air` (seconds; default `AirlockDef.airStore`, 1800). It refills at `AIRLOCK_AIR_REFILL` on a ship with working
+  - `AirlockC.air` (seconds; default `AirlockDef.airStore`, 1800). It refills at `AIRLOCK_AIR_REFILL_SEC` (one tank) on a ship with working
     life support.
   - `Vehicle.air` (default `VehicleDef.eva.airStore`, 3600). It is refilled to full while stowed in its bay or docked at a
     player airlock, drawn from that airlock's store.
@@ -1375,7 +1322,7 @@ The air and return drives are Phase 3 drives (`content/policies.ts`, `satisfies 
   `any`, `Fill`/`Float` are `finish` (only hard reasons end them).
 - **Admission** (`jobRank`, thin or suited pairs):
   `travel(walk) + min(STINT_SEC, remaining / workSpeed) + toSource[job] + AIR_RESERVE_SEC <= airLeft`. A full tank counts
-  for a suit-up walk. `explainJob` gets the rejection `noAir`.
+  for a suit-up walk. the job explain (`ai/explain.ts`) gets the rejection `noAir` (`AirRejection`, `ai/admitAir.ts`).
 - **Pickup request.** `AwayC.pickup` or, on the home ship, `PickupC {since}` on the crew member: set by the utility reader
   when `Intent.blocked === 'air'`, cleared when a source is reachable again.
   - The site's run (or a free EVA shuttle, by the pickup run) re-aims its hover box at the requester (`VehicleDest.hover.box`
@@ -1384,24 +1331,8 @@ The air and return drives are Phase 3 drives (`content/policies.ts`, `satisfies 
 - `SuitC` loses `vehicle` and `airlock`. `outsideCrew(vehicle)` becomes "`AwayC.vehicle === vehicle` and not aboard, or
   floating to or from it". Until slice 2 lands, `SuitC.vehicle` stays for that guard only.
 
-### Away sites (slice 2), `src/sim/away/`
+### Home cover and the departure check, `src/sim/away/`
 
-- **Components.**
-  - `AwaySiteC` on the site's ShipC: `owner: 'salvage' | 'debug'`, `status: 'open' | 'closing' | 'paused'`, `vehicle`,
-    `demand?: Partial<Record<WorkCategory, number>>` (absent: count the open jobs on the grid), `since`, `closeAt?`,
-    `block?: 'noShuttle' | 'noCrew' | 'noRoom'`.
-  - `SiteRunC` on the vehicle (a vehicle order like `FerryC`): `site`,
-    `phase: 'board' | 'out' | 'stay' | 'depart' | 'home' | 'turnaround' | 'back' | 'pickup'`, `timer`, `returnBy?`
-    (tick it must be back at the site), `lastTrip`.
-  - `AwayC` on crew: `site`, `vehicle`, `ride?: true` (riding out a round trip), `pickup?: true`. The party is a query, never a
-    stored list.
-- **Passages.**
-  - `JobKind` `passage` with `site` and `airless?`, posted by `awaySystem` during `board`/`turnaround` at the bay's
-    `boardingTile`.
-  - Seats: `capacity + 1 - aboard - riders`. Categories by `allocateSeats(demand, seats)`: deterministic largest remainder,
-    ties by `WORK_CATEGORIES` order.
-  - The `passage` machine is `Walk`, then `Embark` (`EmbarkOrderC`). Boarding ends the Task and adds `AwayC`.
-  - `jobFits` checks the go thresholds and suits. `pairCost` adds the flight estimate.
 - **Home cover (dynamic).** No content data and no fixed headcount; the scheduler enforces it inside `assignJobs`.
   - *Home needs* are the open, unheld jobs on the home ship that are emergencies (`isEmergency`: extinguish, breach seal,
     rescue; wounded crew's medical jobs when they exist) plus `operate` jobs whose console needs an operator now (what
@@ -1410,7 +1341,7 @@ The air and return drives are Phase 3 drives (`content/policies.ts`, `satisfies 
     decides between a home job and a site.
   - Passages rank below home needs. Per pass, `homeNeedFor(crew)` is true if some home need is open, unheld and admissible
     for them (`admitLevel` at any level, reachable by the component labelling, no search). For such crew a passage is
-    refused (`explainJob` rejection `homeNeed`), whatever its level. Pairs matched to a home need earlier in the pass are
+    refused (rejection `homeNeed`, in `ai/scheduler.ts`), whatever its level. Pairs matched to a home need earlier in the pass are
     taken off, so the check is redone per level as needs fill.
   - With no home need open there is no reserve.
   - Passengers aboard a shuttle still in its bay (`board` or `turnaround`) are unboarded when a home need opens that they
@@ -1431,39 +1362,13 @@ The air and return drives are Phase 3 drives (`content/policies.ts`, `satisfies 
   - Downed or carried members are never safe; they are rescued aboard first.
   - In `depart`:
     1. Members not safe under (a)–(c) and able get a last-call refill (their air drive is set urgent).
-    2. If still not safe after `LAST_CALL_SEC` (60 s), they get `AwayC.ride` (return drive full) and board.
+    2. If still not safe after `AWAY_LAST_CALL_SEC` (60 s), they get `AwayC.ride` (return drive full) and board.
     3. Launch when every member out is safe.
-    4. Never launch otherwise; after `DEPART_GIVEUP_SEC` the trip is called off and the run goes back to `stay`.
+    4. Never launch otherwise; after `AWAY_DEPART_GIVEUP_SEC` the trip is called off and the run goes back to `stay`.
   - On launch, `returnBy` is the earliest tick any (b)- or (c)-safe member would run short, minus `flightTicks(home→site)`. The home
     stop ends at `returnBy` whatever is left (unload, passages).
   - Watch: if `now + remaining > returnBy`, or a member left out turns unsafe (downed, pickup request), the run skips to
     `back` at once.
-- **Run machine.** `board → out → stay ⇄ (depart → home → turnaround → back) → stay`; `pickup`; closing ends at `home`.
-  - Flight reuses ferry's arrive (dock at `regionAirlock`, else hover), moved to `ferry/arrive.ts`. Home is the bay, else
-    `regionAirlock` on the home ship, else a hover there.
-  - Departure triggers are those of DESIGN.md "Air, away sites and salvage": urgent (`AwayC` passenger with an urgent return reason, a downed patient aboard,
-    or a pickup that needs a trip) at once; otherwise hold full with loot waiting, rotation due (non-urgent passengers
-    `>= ceil(seats / 2)`, or free seats and a passage-eligible crew member free at home), `TRIP_WAIT_SEC` (300) since the
-    last trip with anyone aboard, or `Vehicle.air` under one tank. A waiting passenger turns urgent below rest 20 / hunger
-    10 (needs keep running aboard). Every trigger goes through the departure check.
-  - `turnaround`: unboard the non-riders (they leave `AwayC`), cargo hauls unload, refill `Vehicle.air`,
-    passages for free seats (each with a suit, #416), then back at the earliest of: seats taken and aboard, unload done, 60 s, or `returnBy`.
-  - `keepClose`/`liveBox` move here unchanged (the hover point follows the shrinking hull, and the pickup re-aims it).
-  - Loose stacks on a served site become hauls into the hold (from `cargoRun.planCarry` and `looseOn`); `logistics/salvage.ts`
-    `crewOn` also accepts a site with `AwaySiteC`, so a second shuttle ferries the overflow. It queues nothing while no shuttle
-    but the site's own is free (with no site open yet, a second free one), since a transfer would wait for, or take, the site's shuttle (#404);
-    and `siteShuttleOk` refuses a shuttle a transfer holds while its pilot walks to it.
-- **Crew side.** No site code moves crew except the closing lift.
-  - The return drive (`return` machine: `Walk` to the hatch spot or docked airlock, then `eva.board` or `Embark`) takes them
-    aboard; riders step out again on `back` arrival via `eva.out`.
-  - Idle away crew run `idle/WaitBySite`.
-  - Rescue on a grid with no bed reserved targets the run's hatch spot, and `Lay` boards the patient (a departure trigger).
-- **Guards and commands.**
-  - `ferryFree`, `playerCourier` and `orderLaunch` refuse a vehicle with `SiteRunC`. The `vehicle.*` `crewOutside` check reads
-    the new `outsideCrew`.
-  - Commands: `away.open {ship}` (debug only) and `away.recall {ship}`. Combat sets `paused` and evacuates.
-  - Events: `away.opened|closed|departed|returned|stranded|pickup`. The salvage `teamSent|teamHome|cargoRun` events go.
-
 ### Boarding (#287), `src/sim/boarding/`
 
 A boarding is an away site on the enemy ship; boarding code keeps only what is boarding's own (targets, sabotage, capture, the
@@ -1496,8 +1401,6 @@ stranded rules). Enemy boarders (`systems/boardingAi.ts`) stay NPC doctrine.
   the ship's site if one is open, else one opened for the lowest free shuttle of their side docked there (its run starts in 'fly' and
   finds itself at the site; those still sitting in it are of the party, `Away.home`). With no such shuttle they are `notAboard`.
 - **Owner** (`site.ts`, `boardingSiteSystem`): a boarding site closes once `invited` is consumed and nobody of its party is left.
-- **Gone:** `RecallC`, `BoardLaunchC`, `BoardHoldC`, `launchSystem`, `recallSystem`, `RECALL_BOARD_TICKS` (SAVE 86). `boardingReserved` only
-  marks a shuttle docked at a hostile ship (landed by hand).
 - **The shuttle flies itself** (autopilot, user decision 2026-11-03): the first pick is a passenger like the rest (BoardPicker shows no pilot).
 
 ### Sides (#287)
@@ -1508,92 +1411,12 @@ pickup shuttles (`freeShuttle`) and the "nobody left at home" line; `siteShuttle
 store (`drawAir`, `sourceSupply`; `side` for the departure check's per-store supply). `airStoresSystem` tops a docked shuttle up only from an airlock of
 its own side's ship. `stowSuit` leaves any away party member's suit on (it is the shuttle's).
 
-### Salvage (slice 3)
+### Throughput bench
 
-Built (see "Derelict salvage", "On an away site"). Where the code differs from this plan: `handlers.ts` does not touch the site; the
-salvage system opens, tends and closes it (`salvage/site.ts`), so one place decides. The panel keeps the order's own blocks and shows the
-site's `noRoom` / `stranded` beside them.
-
-- **Keep:** `components.ts` (`SalvageOrderC` without `teamAt`; `SalvageBlock` filled from the site's block), `handlers.ts`
-  (also opens and closes `AwaySiteC`), `system.ts` (`teamAt` becomes "party on or beside the wreck"; it writes
-  `AwaySiteC.demand`), `plan.ts`, `reach.ts`, `yield.ts`, `remove.ts`, `counts.ts`, `guard.ts`.
-- **Delete:** `trip.ts`, `team.ts` (`liveBox` moves to `away/`), `teamCrew.ts`, `cargoRun.ts` (`looseOn` and `planCarry` move
-  to `away/haul.ts`), `SalvageTripC`, `SalvageCrewC`, `CargoRun`, `SALVAGE_TEAM*` and `SALVAGE_*_FRAC` (except
-  `SALVAGE_FRAC`). Also the `SalvageCrewC` skips in `ai/machines/eva.ts` and the salvage branch of `app/shuttleSnapshot.ts`.
-- **Tests:** the special-case table is the checklist, one scenario per row (`salvageEva*.test.ts` rewritten against the site).
-
-### Throughput check
-
-- **Scenario** `content/ships/salvageBench.ts`:
-  - the `salvageEvaFixture` wreck (no airlock and one-airlock variants) and the starter home ship with 6 crew. Three of them
-    have construction and hauling at 1, the rest at 3. One shuttle (4 seats + pilot, a suit for each). No other work at home.
-    Rations and beds enough.
-  - Order all scrap types and run 2 game hours (144,000 ticks) on seeds 1, 2 and 3.
-- **Measure:**
-  - scrap units in the home ship's storage and on its floor at the end minus at the start, per game hour, averaged over the
-    seeds;
-  - also stripping jobs done (`SalvageOrder.done`) and, for diagnosis, crew-seconds on the wreck.
-- **Baseline:** measured on today's trip code in slice 0, before anything changes it. It is committed as constants in
-  `salvageBench.slow.test.ts` with the commit it came from.
-- **Acceptance** (slices 2 and 3): the mean is at least the baseline (no worse), and each seed is at least 90% of its own
-  baseline (noise). The same numbers are printed by `npm run profile:sim -- --scenario salvageBench`, so they can be read
-  without the test.
-- **Baseline recorded (slice 0, commit 6108953).** Scrap units home after 2 game hours, seeds 1, 2, 3 (the wreck is the 60x40 lattice of
-  `salvageBench.ts`, ambient arrivals switched off): 6 crew 720, 702, 805; 4 crew 841, 926, 766 (about 370 and 420 per game hour). With an
-  airlock on the wreck all six runs bring home 0: today's trip code lands the crew at the wreck's airlock and they path through it, but a
-  derelict's airlock never cycles (unpowered), so they wait at its door for the whole shift. Slices 2 and 3 should fix that, not preserve it; the
-  lock baselines are 0 so "no worse" holds trivially there. The full run is `SALVAGE_BENCH=1 npx vitest run salvageBench` (about 4 minutes a run);
-  `SALVAGE_BENCH_ONLY=6:2` runs one, `SALVAGE_BENCH_OUT=file` appends the numbers to a file.
-- **New baseline (slice 3, staging; user decision 2026-11-03).** The old numbers above no longer apply. The bench now also stocks a
-  ration locker on the home ship (`stockRations`, 200 rations: "rations enough"; before, six crew ate the starter stock in about 80
-  game minutes and the site stopped for want of anyone fed enough for a passage, which is what made 6 crew slower than 4). Scrap home in
-  2 game hours, seeds 1, 2, 3: 6 crew 779, 699, 822 (about 383 per game hour); 4 crew 600, 624, 552 (296); with an airlock on the wreck
-  6 crew 779, 698, 716 (366) and 4 crew 673, 645, 611 (322). For comparison the salvage teams' 6-crew runs were 720, 702, 805, and this
-  slice before staging 162, 191, 159 (crew carrying 1 to 5 units at a time to the hatch). More crew is never slower on any seed (both wrecks).
-- **Re-based for the rest retune (#278).** Crew now stay awake about 20 minutes (rest drain 0.06/s, sleep recovery 2x), so there are far
-  fewer sleep trips. Scrap home in 2 game hours, seeds 1, 2, 3: 6 crew 946, 1002, 1009 (about 493 per game hour); 4 crew 818, 755, 754 (388);
-  with an airlock on the wreck 6 crew 954, 965, 1022 (490) and 4 crew 775, 730, 732 (373). The slice 3 numbers above are what it replaced.
-  More crew is never slower on any seed (both wrecks).
-- A 4-crew variant (all four with construction and hauling at 1) is asserted too. With no home emergencies in the bench,
-  cover holds nobody back.
-
-### Save shape (bump `SAVE_VERSION` in each slice)
-
-- Slice 0: `AirlockC.air`, `Vehicle.air`; `EvaFloat.mode` `'refill'`; `SuitC.airlock` removed.
-- Slice 1: `PickupC`; `Intent.air` (the kept source search); `SAVE_VERSION` 82. (`Intent.blocked` came with Phase 3; nested refill frames are the errand's `resume`, derived, nothing new saved.)
-- Slice 2 (2a and 2b, `SAVE_VERSION` 83): `AwaySiteC`, `SiteRunC` (2b: phases `depart`/`pickup`, `returnBy`, `pickup`, `held`), `AwayC` (2b: `lastCall`, `ride`, `pickup`, `downAt`); `Job.kind` `passage`, `Job.site`, `Job.airless`, `Job.heldSince`; the `pickup` store. `SuitC.vehicle` stays until slice 3 (salvage still uses it).
-- Slice 3 (`SAVE_VERSION` 84): `SalvageTripC`, `SalvageCrewC`, `SalvageOrder.teamAt` removed. Staging (`SAVE_VERSION` 85): `StagingC`,
-  haul refs of kind `zone`, `HaulData.gathered`.
-
-### Slices
-
-| # | Slice | Depends on | Size |
-|---|---|---|---|
-| 0 | Travel-time estimator; `airSources`; airlock and shuttle air stores; refill machine behind a player order (`eva.refill`); partial-work admission (`noAir`); the throughput bench and its baseline on today's code. | Phase 2 scheduler (built); **can go before Phase 3** | M, about 450 lines plus tests |
-| 1 | Air drive: policy data, nested refill, critical override including `finish`, early pickup request and alert, hazard escape to sources. (Deleting salvage's refill branch moved to slice 3, user decision 2026-11-02: under the drive a team would draw on the shuttle's finite store, whose answer, heading home and batched trips, is slice 2b.) | Phase 3, slice 0 | M, about 350 lines plus tests |
-| 2a | Away sites: components, passages with seat allocation and dynamic home cover (`homeNeed`), run out and home, return drive, idle and rescue on a site, haul to the hold, `outsideCrew` by party, bay-gone docking, robots, closing lift. | Phase 3, slice 1 | L, about 750 lines plus tests |
-| 2b | Rotation: batched round trips (urgent and batch triggers, waiting aboard, trip timeout, departure check, last call, riders, `returnBy`, watch), cargo and crew on the same trips, pickup runs, shuttle loss. Throughput bench run against a debug site. | Slice 2a | L, about 500 lines plus tests |
-| 3 | Salvage on sites: the order opens and closes the site, demand, panel blocks from the site, delete the trip code and salvage's refill branch (teams and yard crews move onto the air drive: drop their exemption in `ai/airNeed.ts` `airDraining` and in `ai/admitAir.ts`); the throughput acceptance asserted. | Slice 2b | M, net about -700 lines |
-
-Slice 0 can be built while Phase 3 is under way. Parts of 2a that don't touch drives (components, passages, allocation,
-cover, the run machine, shared `arrive`) could be built before Phase 3, but 2a can't ship without the return drive.
-2a and 2b went into one PR (#295, user decision); salvage keeps its own trip until slice 3, and `ferryFree` refuses both.
-
-### Risks
-
-- **Throughput against today.** Passages follow priorities, and cover only holds crew for open emergencies and unmanned
-  consoles. So small crews are not penalised when nothing is wrong at home: a crew of 4 can send everyone eligible (today's
-  cap is 2 for 4 crew), and the bench asserts on 6 and 4 crew. Throughput can still drop while home emergencies run, by
-  design. Batched trips help throughput (fewer flights) but delay a tired worker's trip home by up to the 5 min timeout.
-- **Everyone away.** With no reserve, a crew that sends everyone eligible has nobody aboard when a fire starts at home. The
-  first emergency stops further passages, but those already away come back only on the next trip (or a recall). Combat
-  evacuates. Accepted per the user's decision; the ship's log should say when the home ship is left with no able crew.
-- **Round trips with one shuttle and no airlock on the wreck.** Workers then depend on the shuttle, so (c) needs a fresh-ish
-  tank: with two 60–90 s flights and a 60 s turnaround, the bar is about 330 s of a 600 s tank. Most workers ride or get a
-  last call before every trip, which adds float time. The bench's no-airlock variant measures it.
-- **Nested holds** keep a job reserved during a refill; the 120 s timeout bounds it.
-- **Pickup hover at the home ship** needs `ferryMode` to allow a shuttle to hover beside its own ship (refused today).
-
+`content/ships/salvageBench.ts` (scenarios `salvageBench*`, baselines in `salvageBench.baseline.ts`, the slow test `salvageBench.slow.test.ts`) measures
+scrap home per game hour on the `salvageEvaFixture` wreck with 6 and 4 crew; `npm run profile:sim -- --scenario salvageBench` prints the same numbers.
+The acceptance: the mean is at least the baseline and each seed at least 90% of its own. The slice plans, baseline history, save-shape log and risks
+moved to the [status archive](STATUS_ARCHIVE.md).
 
 ## Drones, `src/sim/drones/`
 
@@ -1857,8 +1680,8 @@ returns to its bay. Failures (`trade.failed {reason}`: `cancelled`, `lost` shutt
 refund the escrow and put unsent goods back in the trader's stock; goods already flown on a destroyed shuttle are lost.
 
 **UI.** `app/tradeSnapshot.ts` builds `UiTrade` (credits, hailable ships/stations with their lines, prices and delivery probe, deals);
-`TradeList.svelte` (ships in range, Hail) and `TradeWindow.svelte` (two columns, quantities, totals, barter box, offer/accept; a bottom
-sheet with You/Them tabs on phones), a Hail button in `CombatPanel`, a credits chip in `StatsChips`, trade status in `ShuttlePanel`, trade
+`TradeWindow.svelte` (two columns, quantities, totals, barter box, offer/accept; a bottom
+sheet with You/Them tabs on phones), a Hail window (`HailWindow.svelte`), the combat HUD (`ui/combat/`), trade status in `ShuttlePanel`, trade
 alerts in `alerts.ts`.
 
 **Adding a trader:** add a `TraderDef` to `trade.traders` in `src/content/trade.ts` with a `match` (a `faction` and `role` to catch a
@@ -1867,7 +1690,7 @@ the `ItemDef` (the content test fails for an unpriced item); tilt it per trader 
 **A new faction:** add a `TradeFactionDef` keyed by its faction id. When the real faction system arrives, replace `tradeFactionOf`,
 `profileFor` and the `relation + reputation` rule in `trade/traders.ts`; everything else reads those.
 
-## Asteroids (slices 1-3 on branch `asteroids`), `src/sim/asteroids/`, `mining/`, `rock/`, `outposts/`
+## Asteroids, `src/sim/asteroids/`, `mining/`, `rock/`, `outposts/`
 
 **Region model: its own `AsteroidC` entity plus the owner layer (not a `ShipC` kind).** An asteroid (one big body, or a whole
 field of small rocks) is an entity with `AsteroidC { kind, seed, coverage, x, y, width, height, parts }` (sector tiles).
@@ -2135,7 +1958,8 @@ and a Traffic list in the node drawer (ship name, faction and role, what it is d
 **Off-screen life** (stage 4 of the living world; `clash.ts`, `meetings.ts`, `wrecks.ts`, `news.ts`, `tuningWar.ts`, `agenda.ts` `hunt` / `headHome` / `chase`). NPC fleets fight each other outside the player's node.
 - **Settling a meeting** (`clash(sim, a, b, turn)`, pure): power per ship = `SHIP_POWER[size] x ROLE_POWER[role] x (1 + DEPTH_POWER x depth)`, a fleet's the sum (x 0.5 while stranded). With `ra`, `rb` the powers scaled by `1 +- CLASH_NOISE` (hashes of seed, both fleet ids, turn) and `p = ra / (ra + rb)`, `s = max(p, 1 - p)`: `s >= WIN_ALL` destroys the weaker fleet, `s >= WIN_DRIVE` drives it off (each ship lost with `LOSS_DRIVEN x (s - WIN_DRIVE) / (WIN_ALL - WIN_DRIVE)`, survivors flee), below that both are hurt and each ship is lost with `LOSS_DRAW`. The stronger side is hurt with chance `HURT_WINNER x (1 - s)`. A pirate fleet under `AVOID_RATIO` of a patrol's power avoids it with `AVOID_CHANCE` (kind `avoided`, it flees, nothing else happens). Result: `Clash { kind, winner, share, a, b }`, each side `{ lost: Contact[], fate }`.
 - **Finding meetings** (`findMeetings`): of the fleets that stepped this turn, those not in the player's node and not just out of it; opposite directions on one lane (`from`/`node` swapped, settled at a hashed end), then the same node (`wouldFight`: `atWar` and an armed role). One fight per fleet per turn. `resolveMeetings(sim, turn, stepped)` runs from `stepFleets` and, per replayed turn, from `catchUpFleets(..., after)`.
-- **Applying** (`apply`): lost ships leave the fleet, `owe` the home port a replacement, and `leaveWreck` writes a `WreckSeed` (generator key, name, faction, turn) into `NodeState.wrecks`; `retreat` for the fled, `strand` for the hurt, `chase` for a patrol that drove a pirate off, `loot` + `headHome` for a pirate that won against a fleet with cargo (`dock.ts` `onDock` unloads it into the den market at home); empty fleets leave `GalaxyState.fleets`. The player's node is left to real combat.
+- **Applying** (`apply`): lost ships leave the fleet, `owe` the home port a replacement, and `leaveWreck` writes a `WreckSeed` (generator key, name, faction, turn) into `NodeState.wrecks`; `retreat` for the fled, `strand` for the hurt, `chase` for a patrol that drove a pirate off, `loot` + `headHome` for a pirate that won against a fleet with cargo (`dock.ts` `onDock` unloads it into the den market at home); empty fleets leave `GalaxyState.fleets`. `apply` is `settleSide` for both sides, then `aftermath` (news, loot, chase), which the fights in the player's node share.
+- **Fights in the player's node** (#603; `galaxy/engagements.ts` reads, `engagementFlow.ts` flow, `engagementAid.ts`, `systems/engagement.ts`, `combat/engage.ts`). Once a second the engagement system takes `liveMeetings` (fleets in the live node that `wouldFight`, not fighting and not already fought this turn: `Sector.met`) and starts an `Engagement` on `Sector.engagements` (saved; settled by stats in `settleEngagements` before every jump, so it never outlives the grid). Each ship is aimed at its nearest foe through `Combat.prey`. The combat rules read three owners in `combat/engage.ts`: `shipsHostile` (sides at war, or opposite sides of an engagement), `atBattle` (`sector.inCombat`, or in an engagement: consoles, deploy, heat, commits) and `aiRuns` (hostile and rogue sides, or any NPC ship in an engagement: the enemy AI, firing modes, heat AI). `sector.inCombat` keeps meaning the player's own fight. The fight ends when a side has no ship in play (`finish`: strand the hurt, `aftermath`), or by the stats fight (`byStats`) when a side has not turned up after `ENGAGE_WAIT_SEC`. There is no time limit: a badly hurt ship flees by the enemy AI's `FLEE_BELOW` rule and `tendFleet` lifts its fleet and `retreat`s it, and a stalemate (`ENGAGE_STALE_SEC` without damage, `Engagement.calm`) sends the weaker side away the same way (`leave`: `combat.flee` for charged drives, else lift and `retreat`). Boarding and capture are the same systems as the player's: a boarding party goes for its foe (`boardTargets`), its crew name their ship (`Allegiance.ship`, read by `crewShipOf`, `isHostile`, `isInvader`, `shipCrew`), and a party holding a subdued ship's bridge takes it for its fleet (`captureSystem` then `engagementPrize.ts` `takeShip`: the descriptor moves to the captor's fleet, the old port is owed, news `taken`). `reap` stays the one remover of ships. Engaged fleets are held in place (`fleets.ts` `heldFleets`). Joining: `hostileAct` calls `noteJoin`, and the end pays `JOIN_STANDING` (+`JOIN_WIN_STANDING` on a win) through `standingShift` when only the other side was struck. Aid: `callAid` (once a second) opens an `aid` engagement when a ship hostile to the player has fired on it (`playerAttacker`) and armed ships or stations here pass `canAid` (standing at least `AID_STANDING`, not the attacker's faction or its ally). Events `engagement.started` (an urgent `fight.nearby` alert for a meeting) and `engagement.ended`.
 - **Wrecks** (`wrecks.ts`): `drop` calls `placeWrecks(sim, node)` after population: each waiting seed becomes a `spawnDerelict` of that generator key (cause combat, intensity 0.6, `infest: 'none'`, the ship's own name) at `slot(...)` east of everything, then the list is cleared. The archive owns them afterwards.
 - **Hunting** (`agenda.ts`): `pickTarget` first tries `hunt`: with `HUNT_CHANCE` a patrol picks a node (within its range of home, any territory) holding a hostile pirate or raider it is at least `HUNT_EDGE` times as strong as, a pirate a node with a trader or miner. Reads the other fleets' current positions (fleets step in id order).
 - **News** (`news.ts`): `report(sim, item, turn)` appends a `NewsItem` (facts only: kind, node, who, faction, foe, foeFaction, item, count) to `GalaxyState.news` (bounded `NEWS_MAX`, ids from `nextNews`), emits `galaxy.news` and bumps `rev`; `newsFeed(sim)` is the newest-first query with `precise` = within `SENSOR_HOPS`. Reporters: `meetings.ts` (destroyed, raid, driven, clash, cut, loot), `dock.ts` (shortage, once per port and item per `NEWS_SHORTAGE_TURNS`), `rebuild.ts` (rebuilt). `app/newsSnapshot.ts` words them for the starmap (`UiStarmap.news`, precise or rumour) and `ui/StarmapNews.svelte` shows them.
@@ -2189,8 +2013,8 @@ picks the level by zoom (sector below 2200 units across the short side, cluster 
 nodes one jump away. While the map is open the world is not rendered.
 
 **Fuel economy and stranding** (user decisions 2026-10-26; `galaxy/stranded.ts`, `content/galaxyMarket.ts`, `content/trade.ts`). `item.fuel` is a market good: trade stations make 1/turn x size, mining outposts 0.6, farms 0.3, and every
-civilian station, outpost, farm and depot profile stocks it at a price near 8 credits. A purchase through the normal deal flow bumps `fuelBought` (goal `goal.buy_fuel`). The station panel's Trade tab has a **Refuel** button
-(`TradePane`: fill up to 24 units, one `trade.offer` then an automatic `trade.accept`) when the structure lists the `fuel` service. **Distress tug:** `isStranded` (active at a node, fuel below the cheapest adjacent jump) and no
+civilian station, outpost, farm and depot profile stocks it at a price near 8 credits. A purchase through the normal deal flow bumps `fuelBought` (goal `goal.buy_fuel`). The trade window has a **Refuel** button
+(`TradeSlip.svelte`: fill up to 24 units, one `trade.offer` then an automatic `trade.accept`) when the structure lists the `fuel` service. **Distress tug:** `isStranded` (active at a node, fuel below the cheapest adjacent jump) and no
 affordable fuel on sale in the node (`fuelOnSale`) allow `galaxy.distress`; it saves `GalaxyState.distress { node, sent, due }` and the tug arrives `DISTRESS_TURNS` (2) turns later (`stepDistress`, from `onTurn`): fuel for two
 of the cheapest jumps (at least 6) at 3x the item price. It always delivers: the player pays what they can, the unpaid part costs `DISTRESS_UNPAID_REP` reputation with the traders (no debt to track, never a dead end). UI: `StrandedBanner`
 (`api.stranded`, `app/strandedSnapshot.ts`). Save v52.
@@ -2219,494 +2043,14 @@ through the [main and inset cameras](#camera-passes-and-layer-ownership).
 
 ## Historical sector-grid migration
 
-> October 2026 refactor notes. The plan, work branches and performance estimates below describe the migration
-> from separate ship grids. See [Sector grid](#sector-grid) for the live model and [Profiling](PROFILING.md)
-> for measuring the current desktop build.
-
-### 1. Inventory: what assumes many grids
-
-Size = lines likely touched: S < 30, M 30–150, L > 150. About 780 `gridId` / `sim.grids` references in `src/` (non-test)
-and about 270 in 30 test files.
-
-**Sim core**
-
-| Where | Many-grid assumption | Size |
-|---|---|---|
-| `sim/grid.ts` | Dense `Grid` with one array per field, `raw()` exposes it whole | L (new `SectorGrid`, `GridWindow`) |
-| `sim/sim.ts` | `grids: Map<number, Grid>` | S |
-| `sim/structure.ts` | `SHIP_FIELDS` has no empty defaults and no `ship` layer; `isEvaWalkable` stops at the grid edge | S |
-| `sim/diffusion.ts`, `systems/atmosphere.ts`, `temperature.ts`, `smoke.ts`, `fire.ts`, `lighting.ts`, `doors.ts`, `rooms.ts`, `alerts.ts`, `autojobs.ts` | `for (const grid of sim.grids.values())` plus `raw()` over the whole grid | M (about 12 systems) |
-| `sim/roomIndex.ts`, `systems/rooms.ts` | `WeakMap<Grid, …>` caches, room ids unique per grid (u16) | S |
-| `sim/ship.ts` | `gridFromTemplate` makes a new `Grid`; `spawnTemplateModules(gridId)` | M |
-| `sim/combat/ships.ts` | `shipEntityOf(gridId)` scan, `nextGridId`, `spawnShip`, `spawnCrew` floor scan, shield helpers by grid | M |
-| `sim/combat/components.ts` | `Ship.gridId`, `Target.gridId`, `Projectile.fromGridId`, `Sector {width, height}` | M |
-| `sim/save.ts`, `sim/newGame.ts` | `grids: GridData[]`, player is grid 1 | M |
-| `sim/commands.ts` (23), `sim/events.ts` (36) | `gridId` / `shipGridId` / `targetGridId` fields | M, mechanical |
-| `sim/crew/*` (components `Position`, `Job`, `Drafted`; `pathfind.ts`, `handlers.ts`, `helpers.ts`, `jobWork.ts`, `spawn.ts`, `beds.ts`) | Position is `(gridId, x, y)`; A* runs on one grid's `raw()` | L in aggregate |
-| `sim/modules/*`, `sim/items/*` (stacks, stock, haul, craft, plan, handlers), `sim/robots/*` (`RobotC.gridId`, bay, core, jobs), `sim/fight/*` (fighter, equip, los, relations) | `gridId` on components, same-grid checks | L in aggregate, mechanical |
-| Per-entity grid lookups: `systems/movement.ts`, `decide.ts`, `drafted.ts`, `crewCombat.ts`, `suits.ts`, `vitals.ts`, `power.ts`, `modules.ts`, `fabricators.ts`, `itemFire.ts`, `airlock.ts`, `shipState.ts` (`hullSum` every tick) | `sim.grids.get(x.gridId)` | S each |
-
-**Portals, vehicles, docking, EVA, capture**
-
-| Where | Assumption | Size |
-|---|---|---|
-| `sim/portals/graph.ts`, `route.ts`, `pathCache.ts`, `handlers.ts`, `systems/portals.ts`, `Path.then` | Cross-grid links and multi-leg journeys | M, mostly deleted (~400 lines) |
-| `sim/portals/components.ts`, `portals/airlock.ts` | Home of `SuitC`, `AirlockC`, `airlockTiles`, `airlockWorking` (kept, moved to `eva/` and `modules/airlock.ts`) | S |
-| `sim/vehicles/components.ts` | `homeGrid`, `dest {hover, gridId}`, `hover: gridId` | S |
-| `sim/vehicles/geometry.ts` | `dockPoint`, `bayCenter`, `hoverPoint` add `ship.x + local` | S |
-| `sim/vehicles/lifecycle.ts`, `handlers.ts`, `queries.ts`, `cargo.ts`, `systems/vehicles.ts`, `systems/cargoJobs.ts` | Disembark onto `{gridId, x, y}`, cargo tile by grid | M |
-| `sim/eva/route.ts`, `shuttle.ts`, `handlers.ts`, `errands.ts`, `suit.ts`, `systems/evaFloat.ts` | Float lands on "the hovered grid"; suit errands require the same grid | M |
-| `sim/capture/control.ts`, `prize.ts`, `handlers.ts`, `systems/capture.ts` | Bridge holders found by `Position.gridId === ship.gridId` | S–M |
-
-**Combat**
-
-| Where | Assumption | Size |
-|---|---|---|
-| `combat/targets.ts`, `combat/handlers.ts` (`setTarget`, `spawnEnemy` overlap, `scuttle`), `combat/operators.ts`, `combat/wreck.ts`, `combat/hull.ts` (`raw`) | Target and ship by grid id | M |
-| `combat/geometry.ts`, `systems/firing.ts`, `systems/impacts.ts`, `systems/pointDefence.ts` | Convert local to sector with `ship.x + m.x`, impacts subtract it back | S (projectiles already fly in sector tiles by real distance) |
-| `combat/effects.ts` (5 `sim.grids`), `systems/enemyAi.ts`, `boardingAi.ts`, `targeting.ts`, `shields.ts`, `helm.ts`, `weaponCharge.ts`, `turrets.ts` | Per-grid lookups | S–M |
-| `combat/handlers.ts` `debug.spawnEnemy`, shipgen `debug.spawnGenerated` (branch) | Sector bounds `200 x 200` (the node floor), bbox overlap test, top-left placement | S |
-| Shipgen (`origin/shipgen`, `src/sim/shipgen/*`) | Emits a `ShipTemplate` (ASCII rows plus modules) in local coordinates: **unaffected**; only its spawn command changes | S |
-
-**Render, app, UI**
-
-| Where | Assumption | Size |
-|---|---|---|
-| `render/scene.ts` (484) | `scenes: Map<gridId, ShipScene>`, `refId` camera ship, `miniScene` (second sprite set for the combat panel), `frame(grid)`, `frameShips(gridIds)` | L |
-| `render/shipScene.ts` (151) | One layer stack per ship: cross-ship depth sorting impossible | M |
-| `render/gridView.ts` (231) | Rebuilds a whole grid's tile sprites on any `struct` revision (5b: per chunk) | M–L |
-| `render/scenePick.ts` (59) | Front-to-back loop over scenes with per-ship offsets | S (shrinks) |
-| `render/camera.ts` | One camera | S |
-| `render/sectorFx.ts`, `fightFx.ts`, `crewMarks.ts`, `targetMarks.ts`, `shuttleView.ts` (dock vs sector layer), `airlockArt.ts`, `vehicleBayArt.ts` | Draw in "the camera ship's frame" with per-ship offsets | M |
-| `render/overlay.ts`, `damageView.ts`, `fx/atmosphere.ts`, `fxView.ts`, `roofView.ts`, `roofPlating.ts`, `itemView.ts`, `moduleView.ts`, `turretView.ts`, `crewView.ts`, `jobView.ts` | `raw()` of a whole grid, filter entities by `gridId` | M in aggregate |
-| `app/controller.ts`, `bridge.ts`, `input.ts`, `main.ts`, `debugHook.ts` (`screenOf(gridId, …)`), snapshots (`crewSnapshot` 21 refs, `combatSnapshot`, `shuttleSnapshot`, `moduleSnapshot`, `prizeSnapshot`, `alerts.ts`) | "Current grid", `setGrids`/`setGrid`, gridId in snapshots | M |
-| `ui/api.ts` (snapshot types), `CombatPanel`, `CombatPlayer`, `CrewBar`, `PrizePanel`, `ShuttlePanel`, `TileInspector`, `ModuleInspector`, `DebugPanel` | gridId in props and commands | S–M |
-
-### 2. Data model
-
-**Storage: `SectorGrid` (`sim/sectorGrid.ts`, new).**
-- Chunks of `CHUNK_SIZE` = 16 (the existing revision chunk). A chunk holds every field for its 256 tiles as its own small typed
-  arrays, plus one revision counter per field and a count of non-Space tiles.
-- Directory: `Map<number, Chunk>` keyed by `(cy + 32768) * 65536 + (cx + 32768)`, so coordinates may be negative and a sector
-  can reach ±500k tiles with no fixed size. Empty space has no chunk at all.
-- Each field gets an **empty value** in the spec (`struct` Space, `o2`/`co2` 0, `temp` SPACE_TEMP, others 0).
-  `get` on a missing chunk returns it. `set` of the empty value on a missing chunk is a no-op; any other `set` allocates the
-  chunk filled with empty values. A chunk whose non-Space count drops to 0 after a lift is released.
-- Memory: 13 fields plus `ship` come to about 32 B a tile, so 8 KB a chunk. A 30x20 ship touches 6–9 chunks (about 70 KB).
-  A busy sector (10 ships of 60x40) is about 150 chunks, or 1.2 MB. Empty space costs nothing.
-- Deterministic order: `chunks()` iterates sorted by key. Serialization writes chunks sorted, so a load gives the same order.
-
-**Grid API mapping.** An `interface GridLike` is extracted from today's `Grid` and both implement it:
-
-| Today (`Grid`) | `SectorGrid` | `GridWindow` (adapter, a rectangle of the sector in local coordinates) |
-|---|---|---|
-| `get/set(field, x, y)` | Sector coordinates; chunk lookup plus `y%16*16 + x%16` | Adds `(ox, oy)` and forwards |
-| `inBounds` | Always true for integers (unbounded) | Inside the rectangle |
-| `width/height` | Extent of the allocated chunks (informational) | Rectangle size |
-| `revision(field)` | Sector-wide counter | Sum of the overlapped chunks' revisions |
-| `chunkRevision(field, cx, cy)` | Per chunk, 0 if missing | Not used |
-| `raw(field)` | **Removed.** Replaced by `chunkData(field, cx, cy)` (render, overlays) and `load(field, rect) → Float64Array` scratch (systems) | Temporary: a dense copy cached on the window revision, so unported callers keep working. Deleted in step 7 |
-| `serialize()` | `{ spec, chunks: [{ cx, cy, fields: base64 }] }` | n/a |
-
-**Ownership layer.** New field `ship: 'u32'` holds the `ShipC` entity id of each non-Space tile (0 = none). It is written by
-stamping, by build jobs (a new tile takes the owner of its neighbours) and cleared by lifting. `shipAt(sim, x, y)` reads it.
-Space tiles keep owner 0; the EVA ring and hover space belong to the region whose padded frame contains them.
-
-**`ShipC` references its region.**
-- `gridId` is dropped: the ShipC **entity id is the ship id** (entities are referenced by id).
-- `x, y, width, height` stay, meaning the region's bounding box in sector tiles (already the case).
-- New: `frame` pad (`REGION_PAD` = 2 tiles beyond the bbox: the EVA ring plus one tile of vacuum for venting).
-  The padded frame is what field systems, pathfinding and rendering iterate.
-- Unchanged: `gen` (shipgen origin), state, faction, `hullMax`, integrity, and livery from faction and name.
-- Placement rule: padded frames of two ships never overlap and keep at least `MIN_SHIP_GAP` (about 12 tiles). Ships are never
-  close (user rule), so a frame never holds another ship's tiles.
-
-**Rooms and air skip vacuum cheaply.**
-- Empty chunks are never stored or visited. Field systems loop `for (const ship of regions(sim))` over padded frames only, so
-  the cost per tick is today's cost (the sum of ship areas), whatever the sector size.
-- Per region, an **active tile list** (non-Space tiles plus their Space neighbours), rebuilt when the frame's `struct` revision
-  changes, drives diffusion, fire and temperature, so sparse shipgen truss ships with a lot of daylight inside their bbox pay
-  only for real tiles.
-- Room ids stay unique **per ship** (u16 field, labelled by the rooms system per region). `roomTiles(sim, ship)` caches by
-  `(ship, struct revision)`.
-- Settled regions sleep: when a region's largest gas or heat change in a tick falls under epsilon, and its struct, door and
-  module-output revisions are unchanged, atmosphere and temperature skip it until one of them changes. Wrecks, prizes and
-  derelicts mostly sleep.
-
-**Coordinates.**
-- Runtime: sector tiles everywhere (`Position {x, y, toX, toY, progress, facing}` with no `gridId`; the same for `ModuleC`,
-  `Job`, `ItemStack`, `RobotC.home` (now a ship id) and `Drafted.target`).
-- Templates (`ShipTemplate.rows/modules`) and shipgen output stay **ship-local** (top-left 0, 0). Stamping translates them once.
-- Nothing keeps local coordinates at runtime: crew walk off one ship and float onto another, so a mixed system would breed bugs.
-  Ship-local views exist only as helpers (`toLocal(ship, x, y)`) for UI readouts and tests.
-
-### 3. Vehicles as free entities
-
-- **Position and heading.** New `BodyC { x, y, heading, alt }`: continuous sector tiles, radians, and altitude in tiles
-  (0 on the deck, `ROOF_H` and above in flight). It is shared by shuttles now and pods, cargo carriers, drones and debris later.
-  `VehicleC` keeps the state machine (`stowed | flying | docked`), `homeShip` (replaces `homeGrid`), `home` bay,
-  `dock` airlock, pilot, passengers, cargo, suits and `hover: ship id`.
-- **Flight.** Straight line at `speed × (1 + SKILL_STEP × piloting)`, as now. `alt` rises out of the bay (bay art timing),
-  holds at cruise and drops for docking. Vehicles never collide with tiles; they fly over space.
-- **Attach and detach.**
-  - Docked means `dock = airlock module`; the body is pinned each tick to `dockPoint(airlock)` (pure geometry in sector
-    coordinates now, no `ship.x +` sums). Undock frees the body at the dock point.
-  - Stowed means `home` bay; the body is pinned to `bayCenter`, `alt` 0. Launch, return and assign keep today's commands.
-- **Hover.** `vehicle.hover { vehicle, ship }`: hold `hoverGap` tiles off the region bbox (`hoverPoint` unchanged in meaning).
-  `eva.out` puts suited crew on the nearest EVA-walkable sector tile within `floatRange`; they drift there under `EvaFloatC`.
-  The drift is a straight interpolation in sector space, with no grid change.
-- **Crew aboard.** Unchanged: `AboardC { vehicle }`, no `Position`, hidden, listed in pilot and passengers. Disembark gives them
-  a sector `Position` at the boarding tile.
-- **Rendering and depth.**
-  - Bodies with `alt` above `ROOF_H` draw in an **air layer** above every tile and roof, sorted by `x + y`.
-  - Bodies at hull height or lower (docked, hovering low, lifting from the bay) sort in the shared world layer by the depth of
-    their front-most footprint point, plus 0.5 like the engine bell. This is today's docked rule, generalised.
-  - `shuttleView`, `dockSequence` and `vehicleBayArt` keep their art and timing; only the parent layer and offsets change.
-
-### 4. Placement and jumping
-
-- **Packets** (built in 9a, `sim/sector/packet.ts`). `ShipPacket` is the single format for a ship in transit:
-  `{ ship, w, h, tiles: Record<field, number[]> (local, row-major), entities: { id, c }[] (local coordinates), template? }`.
-  - `packetFromTemplate(template)` covers templates and shipgen.
-  - `liftShip(sim, ship)` makes a packet from a live region.
-  - `stampShip(sim, template | packet, { x, y, faction?, state? }) → shipId` writes the tiles (`set`, owner = ship id) and creates
-    (template) or restores (lifted packet, `World.restore`) the entities, translated by `at`.
-  - `spawnShip` is `stampShip(template)` plus combat, boarding and the crew roll.
-  - `liftShip(sim, ship, { withDocked })`: `withDocked` is `false` (default: non-player vehicles docked at its airlocks are cut
-    loose and undock where they are), `true`, or the list of those vehicle ids to take (the jump confirm's choice). The player's own
-    stowed and docked vehicles always come; clamped containers are modules on its tiles and come too.
-- **Entity ids survive.** World ids are never reused, so lifted entities keep their ids and references between them (vehicle
-  home, job target, suit airlock) stay valid. References that leave (a weapon target on a ship left behind) dangle harmlessly,
-  because `world.get` returns undefined and is checked today. The jump also clears them explicitly (`sector/refs.ts`: ship and
-  weapon targets, attack orders, job and bed reservations, assignments), on both sides of the cut. A stranded shuttle keeps its
-  `homeShip`, which is valid again once the player returns. Packets and archives therefore need no id remapping.
-- **Translation table** (`sim/sector/translate.ts`): one entry per component, the coordinate shift or `null` (Position, Path,
-  Module, Job, ItemStack, Drafted, Body, EvaFloat, Ship, Projectile, Eat, Fighter goal, EggSac, Nest, Alien home, Marker). A test
-  fails when a declared component (`componentNames()`) has no entry.
-- **Deploy modal** (sim side built in 9a; the modal is 9b). On arrival the player's packet waits (`sector.state = 'deploying'`,
-  `sector.packet`; the sim is paused by the modal). The UI
-  shows ShipC bboxes and the chosen spot; the command `sector.deploy { x, y }` checks the gap rule and stamps. The debug spawns
-  (`debug.spawnEnemy`, `debug.spawnGenerated`) use the same check.
-- **Jumping.** `galaxy.jump { ship, route, withDocked? }` (it replaced `sector.jump`; edge, FTL charge and fuel paid, refused while deploying or while a trade deal
-  is live; hails and offers are dropped; `jumpWarnings(sim, ship)` lists crew and shuttles away and hostile docked vehicles for
-  the confirm):
-  1. Collect: the player region's tiles (owner = ship), every entity on them, crew aboard vehicles whose `dock` is one of its
-     airlocks or whose `home` bay is stowed in it, and those vehicles.
-  2. Lift into a packet; release the chunks that are now empty.
-  3. Freeze the rest of the sector into a `SectorArchive`.
-  4. Restore the next node's archive if it has one (else it is empty) and enter the deploy modal. At `sector.deploy`, a node entered for the first time
-     gets its generated contacts as ships (`galaxy/deploy.ts`).
-- **Left behind.**
-  - Prizes, wrecks, derelicts, enemies, and **own crew or shuttles not aboard or docked** stay in the archive:
-    `{ nodeId, tick, chunks, world subset }`, frozen and not simulated.
-  - Returning to the galaxy node restores the archive.
-  - Retention (user decision, 2026-10-21): **keep every archive**; no pruning rule for now. Shots in flight are dropped when a
-    sector is archived.
-  - Jumping with own crew or vehicles away is allowed after the player confirms; they stay in the archive (user, 2026-10-21).
-- **Save format.** `sector: { node, state, packet?, width, height, inCombat, lost?, grid: SectorGridData }` and
-  `archives: SectorArchive[]` (save v25); `grids[]` is gone. **No migrations (user decision, 2026-10-19):** this is a prototype, so each step that changes the save format just
-  bumps `SAVE_VERSION` and old saves are discarded.
-
-### 5. Combat on one map
-
-- **Projectiles.** Already sector-space with `dt = speed / distance`, so travel time is real distance. They launch from
-  `turretPosition` (sector coordinates now) toward the aim point. `impacts` resolves the tile at the landing point:
-  - The owner of that tile takes the hit: its shields, its integrity.
-  - Space means a miss.
-  - Today the target grid is assumed (open question 5).
-- **Targets.** `Target { ship, moduleId, vehicle? }` replaces `gridId`. The commands `combat.setTarget { ship, weapon, target }`,
-  `combat.setHold { ship }`, `combat.fireVolley { ship }`, `combat.flee { ship }` and `ship.scuttle { ship }` follow.
-- **AI and spawning.** `enemyAi` and `boardingAi` pick ships by faction from `ShipC`. Spawns place packets with the gap rule.
-- **Combat panel as a second camera.**
-  - `createCamera` is instanced twice. The scene renders the world container twice per frame:
-    - pass A is the main camera, full canvas;
-    - pass B is the panel camera, centred and fitted on the target region and scissored to `CombatViewRect`.
-  - A per-pass flag shows the target marks layer only in pass B. Culling is per camera (step 6).
-  - `miniScene` and its duplicate sprites go away. On phones, pass B may refresh at half rate (open question 7).
-- **Roofing and visibility.** Rules are per region, read from ShipC and owner:
-  - A hostile region is roofed unless player crew stand in its frame (today's `boarded`), or it is a wreck.
-  - Crew are drawn unless they stand on an **interior** tile (Floor, Door or module) of a roofed region. So suited crew on a
-    hull, floating, or on the EVA ring are always drawn, as are crew of any faction outside a hull.
-  - Roof livery, roof parts and cutaway mode stay per region.
-
-### 6. Historical mobile performance estimates
-
-| Item | Today | Sector grid | Bound |
-|---|---|---|---|
-| Tiles simulated per tick | Sum of grid areas (starter 30x20, raider 24x16) | Sum of padded frames (about 2,000–20,000 for 3–10 ships) | Frames only; active lists skip vacuum; settled regions sleep; prizes and wrecks run field systems every 4th tick |
-| Atmosphere (`GAS_SUBSTEPS` × links) | Whole grid, every tick | Active tiles of awake regions | Under 2 ms per tick at 20k active tiles (to be measured in a bench test) |
-| Rooms, `roomTiles`, `hullSum` | Whole grid on revision; `hullSum` every tick | Per frame, on the frame's struct or hp revision | `hullSum` gated on hp revision |
-| Pathfinding A* | One grid | Bounded to the start region's padded frame (ships are never close, so there is no walk path between them) | Frame-bounded open set |
-| Lighting, power | Per grid | Per region, on power, door and struct revisions | Revision-gated |
-| Memory | Dense grids | About 8 KB per touched chunk; 1–2 MB per busy sector; archives base64 in the save | Archive retention rule |
-| Render | All ships' sprites, plus a duplicate set for the panel | Chunk containers (16x16) culled per camera; tile views rebuilt per chunk on `chunkRevision` | Under 4,000 drawn sprites at default zoom on a phone; pass B culled to the target frame |
-| Save size | Dense base64 per grid | Allocated chunks only | Under 1 MB typical |
-
-### 7. Migration order
-
-**Amended (user, 2026-10-19).** The single shared tile store is confirmed: mining is planned, and building in open space,
-welding structures together and ships breaking apart may follow, which all need tiles of different structures on one grid.
-Saves are not migrated (see Save format). **Visible work goes first** so the one-map feel lands early:
-1. Step 0 (merges, including `shipgen` plus `trusses-int` via `genint`).
-2. Then, in parallel: step 1 (`SectorGrid` core, new code only) and the render steps that don't need chunks: 5a (one world
-   layer stack with `sectorPos` offsets), 5c (combat panel as camera pass B), 5d (picking in sector tiles), plus step 8
-   (`BodyC` vehicles; vehicles already fly in sector space) and the visibility rule (crew outside a hull always drawn).
-3. Then steps 2–4, 5b (chunk tile views), 6, 7, 9 and 10 as below.
-
-
-Each step keeps `npm run check` green and the game playable, and each is its own PR. Steps 1–4 change no behaviour or visuals
-and need no screenshots. Steps 5 and 9 are visual and need user screenshot approval.
-
-| # | Step | Adapter that keeps the rest working | Size |
-|---|---|---|---|
-| 0 | Integrate pending branches (below) into the base | n/a | merge |
-| 1 | `GridLike` interface; `SectorGrid` (chunks, empty values, serialize) and `GridWindow`, with unit tests | Systems still get `Grid`-shaped objects | M |
-| 2 | Ships are stamped into one `SectorGrid`; `sim.grids` becomes a map of windows (exact template bbox, so local coordinates are unchanged); save v13 stores chunks | `GridWindow.raw()` dense copy | M |
-| 3 | Field systems (`atmosphere`, `fire`, `temperature`, `smoke`, `lighting`, `doors`, `rooms`, `alerts`, `autojobs`, `shipState`) loop over regions through `load()` and `set()`, not `raw()`; active lists | Windows | M |
-| 4 | `ship` owner layer, `shipAt`, `ShipC` padded frame, `regions(sim)`, gap rule in spawns | n/a | S |
-| 5 | Render: one world layer stack; ShipScenes become region decorators adding sprites into shared sorted layers at sector offsets; chunk tile views; picking in sector tiles; the panel as camera pass B (`miniScene` deleted) | A render-side `sectorPos(gridId, x, y)` adds the ship origin until step 6 | L (split 5a layers, 5b chunks, 5c second camera, 5d picking) |
-| 6 | **Coordinate flip:** stamping writes sector coordinates into every component, and every window becomes the identity (the whole sector), so `sim.grids.get(anyId)` still works. Test fixtures place their ship at (0, 0), so single-ship tests pass unchanged; multi-ship tests (eva, vehicles, capture, combat, portals) are updated | `gridId` remains as a dead tag | M (about 40 source sites: geometry `ship.x +` sums, spawn, impacts, render `sectorPos`) |
-| 7 | Remove `gridId` component by component (Position, Module, Job, Item, Robot, Drafted, Projectile, Target, commands, events, snapshots); delete `sim.grids`, `GridWindow.raw`, cross-grid portals and `Path.then`; move `SuitC` and `AirlockC`; save v14 | none (cleanup) | L, mechanical; several PRs |
-| 8 | `BodyC` for vehicles; `homeShip`, `hover: ship`; EVA float in sector space; air layer depth rule | n/a | M |
-| 9 | Packets: `liftShip`, `stampShip`, translation table, `SectorArchive`; `sector.deploy` and the deploy modal; jump with docked vehicles | n/a | L (M6 work; **9a** sim done on `sector-9`, save v25; **9b** UI: jump confirm, deploy modal, starmap hook) |
-| 10 | Performance: settled-region sleep, reduced cadence for wrecks, a bench test with a 10-ship sector | n/a | M |
-
-**Progress.** Step 1 done (branch `sector-1`, new code only): `GridLike` in `grid.ts` (`Grid` implements it);
-`SectorGrid` (`sectorGrid.ts`) and `GridWindow` (`gridWindow.ts`) with tests; `SHIP_FIELDS.ship` and `SHIP_EMPTY` in
-`structure.ts`. Chunk revisions persist after a chunk is released, so a window's revision sum never goes backwards.
-`SectorGrid.raw()` throws (use `chunkData`/`load`); `GridWindow.chunkRevision` sums the sector chunks under a local chunk.
-Step 2 done (branch `sector-2`): `sim.sector.grid` is the one `SectorGrid`; `sim.grids` is a `GridMap` (`gridMap.ts`) of
-`GridWindow`s. `GridMap.stamp(id, dense, x, y)` copies a dense grid in (spawnShip stamps at the ShipC position, overlap is
-refused); `sim.grids.set(id, dense)` stamps at the next free spot on row y = 0, so fixtures that build a grid and set it keep
-working. As a type `Grid` now means `GridLike` (the dense class is `DenseGrid`, `Grid` stays its value alias), so render and
-app compile unchanged. Save v13: `sector.grid` (chunks) plus `grids: {id, x, y, w, h}[]`; `migrate` refuses any other
-version. Chunks are not released yet (occupancy off): a chunk with no structure left can still hold module or item ids,
-and nothing lifts ships until step 9. `content/ships/sectorEquiv.test.ts` pins state hashes recorded on the pre-refactor
-code (combat run, fire plus breach run) and checks a save round trip midway gives the identical state.
-Step 3 done (branch `sector-2`): `GridLike.load(field, rect?)` (dense grid, sector and window; a window rect may reach past
-the window). `regions(sim)` (`regions.ts`) lists the grids in ascending id, the fixed order every field system loops in.
-`atmosphere`, `temperature`, `smoke`, `fire`, `rooms`, `lighting`, `doors`, `alerts`, `autojobs`, `modules` (life support),
-`roomTiles` and `hullSum` read through `load()`/`get()` and write with `set()`; none of them calls `raw()`. `fieldFrame(grid)`
-(`diffusion.ts`) caches the struct snapshot and the **active tile list** (non-Space tiles plus their 4-adjacent Space) on the
-struct revision; diffusion links and the delta pass run over it in ascending order, so results are bit-identical to the full
-sweep (`diffusion.test.ts` checks this against a copy of the old sweep). Flat passes that must see every tile (zeroing gas
-on Space, write-back, fire and door scans) still read the whole loaded rectangle: a vacuum tile costs one array read there,
-never a link. `hullSum` is cached on the hp and struct revisions. Still on `raw()`: `crew/pathfind.ts`, `eva/route.ts` and
-the renderer (step 5b / 7).
-Step 4 done (branch `sector-2`): `spawnShip` writes the new ShipC id into the `ship` layer of every non-Space tile it
-stamped (`stampOwner`). `writeStruct` and `damageStruct` call `syncOwner`: a tile turned to Space loses its owner, a new
-structure tile with none takes its first owned 4-neighbour's (E, W, S, N), so build jobs extend their ship. In `regions.ts`:
-`shipAt(sim, x, y)` (sector tiles), `shipFrame(ship)` (bbox plus `REGION_PAD` = 2), `regions(sim)` now gives each grid's
-ship id, sector bbox and padded frame, and `placementGapError(sim, bbox)` ('overlap' / 'tooClose' under `MIN_SHIP_GAP` = 12
-between padded frames). `debug.spawnEnemy` rejects with that reason and `spawnShip` throws on it, so `newGame` and every
-spawn obey the rule. The frame is derived, not stored on ShipC (the pad is a constant), so components and saves are
-unchanged. Field systems still run over the exact bbox: widening them to the padded frame changes results (vacuum tiles
-join the sweep) and belongs with step 6. Fixture grids set straight into `sim.grids` have no ShipC and owner 0.
-Step 6 fixture prep (branch `sector-8`): the multi-ship fixtures that build their own grids (`eva.test.ts`,
-`shuttleEva.test.ts`) stamp each grid at its ShipC position with `sim.grids.stamp`; the content fixtures (vehicles, capture,
-combat, sector) already go through `spawnShip`. `windowShipMismatches(sim)` (`regions.ts`) lists every ship whose window
-origin or size disagrees with its ShipC; those fixtures and the `sectorEquiv` combat run assert it is empty. A temporary
-check in `Sim.step` over the whole suite found only the two EVA fixtures. The portals fixtures keep the row-0 auto placement:
-they have no ShipC, so nothing can disagree, and they go in step 7. No recorded hash changed.
-Step 8 done (branch `sector-8`):
-- `BodyC { x, y, heading, alt }` (`sim/body.ts`) holds vehicle position, heading and altitude. `VehicleC` lost `x`, `y`,
-  `heading` and `homeGrid`; it has `homeShip` (the ShipC entity id), `dest: { type: 'hover', ship }` and `hover` (ship id).
-- `vehicle.hover { vehicle, ship }` takes a ship id. The UI's hover targets carry both the grid (key and test id) and the ship.
-- The vehicle system pins a stowed body to `bayCenter` at `ALT.stowed` and a docked one to `dockPoint` at `ALT.docked` every
-  tick. Undock frees the body where it is. Flying bodies sit at `ALT.cruise`, above `ALT.roof`.
-- Altitude switches with the state and does not ramp. The lift out of the bay and the dock slide are render timing, and a sim
-  ramp would move the layer switch off the art's frames.
-- `spawnVehicle` runs before its ship's ShipC exists (template modules spawn first). `spawnShip` then fills in `homeShip`.
-- `EvaFloatC.sx/sy` is the hatch point in sector tiles. `eva.out` and `eva.board` compute the drift in sector space from the
-  body, and the crew's `Position` stays on the hull tile with no grid change. `crewView` converts the hatch point to the
-  grid's frame (a render-side offset until step 6).
-- Render: `shuttleView` reads `BodyC`. Its host gets a `ShuttleRef { state, dock, homeGrid }`, so `scene.ts` is unchanged.
-  The layer is now chosen by altitude: an airborne body (`isAirborne`) goes in the air layer (the sector layer, above every
-  ship), and a low one in its dock airlock's ship layer by depth. Undocking keeps the ship layer through the retract and slide.
-  TODO (step 5): a low body that is not docked still falls back to the air layer, because the host knows only dock slots.
-  The pixel lift still comes from `CRUISE_Z`, `DOCK_Z` and `PIT_Z`, not from `alt`.
-- `dockSequence.ts` and `vehicleBayArt.ts` read no positions (timing, and the bay's stowed state), so they needed no change.
-- `gridId` fields kept for unflipped code:
-  - `VehicleView.homeGrid` / `hoveringGrid` (`shuttleSnapshot` keys on the player grid).
-  - `ShuttleRef.homeGrid` (`scene.ts` keeps one scene per grid).
-  - `DockPoint.gridId`, and `boardingTile` / `cargoTile` results (crew `Position` is still grid-local).
-  - Every vehicle event (`vehicle.launched/docked/undocked`, `crew.disembarked`).
-  - `UiShuttles.targets[].gridId`.
-- Save v14. `sectorEquiv` folds `BodyC` back into the old `vehicle` shape before hashing, and both pre-refactor hashes still
-  match, so sim behaviour is unchanged.
-Step 5a, 5c, 5d, the §5 visibility rule and the step 8 depth TODO done (branch `sector-5`; 5b still to do):
-- **One world stack** (`render/worldLayers.ts`): `createWorldStack()` holds shared layers (under, floor, decal, a depth
-  layer, fx, fxAdd, halo, ui, marks); `stack.region(halos)` gives each ShipScene a `Layers` whose containers sit inside them
-  at the region's sector offset (`setOrigin(ax, ay, depth)`). The depth layer is a Pixi `RenderLayer` sorted by
-  `zIndex + depth base of the child's parent` (a stable sort, ties keep add order), so the sorted sprites of every region and
-  of the sector-frame `low` container (low bodies) interleave. Views are unchanged: they still write region-local positions
-  and depth keys.
-- **Sector frame.** The art origin is sector tile (0, 0). `render/sectorPos.ts` (`regionOrigin`, `sectorPos`, `sectorArt`)
-  adds the ShipC origin until step 6, when it becomes the identity. Camera framing, focus, `fightFx`, `crewMarks`,
-  `sectorFx` and shuttles use it; the "camera ship's frame" (`ref`) is gone from the fx hosts.
-- **Pass B** (`render/insetPass.ts, which replaced the old combatPass`): a second `createCamera` (new `setExactScale` for the quarter steps under 1), centred
-  and fitted on the target region, renders the stage into a `RenderTexture` the size of `CombatViewRect` (the texture is the
-  scissor: a GL scissor would also clip filter passes). The main pass draws that texture in place. `place(cam, target)`
-  positions the stack per pass, culls regions by their padded art box, and shows target marks only in pass B and UI layers
-  only in pass A. `miniScene` is deleted; the panel now shows the region's real livery, cutaway mode and the projectiles and
-  shuttles over it.
-- **Picking** (`scenePick.ts`): one sector tile under the point, answered by the region that owns it (regions never share
-  tiles); crew by the feet nearest the viewer across regions; the panel through camera B. Renderer API unchanged.
-- **Visibility** (`render/regionRules.ts`): `wantsRoof` (hostile, not a wreck, no player crew on the grid) and
-  `crewHidden(grid, roofed, x, y)`: crew are drawn unless on a Floor, Door or module tile of a roofed region. Status marks
-  follow the same rule.
-- **Vehicle depth** (`shuttleView.ts`): airborne bodies in the air layer; low bodies (docked, undocking, lifting out of the
-  bay until cruise, settling in) in the shared world layer. Docked keeps today's centre depth: with a front-corner key a body
-  along a far (west, north) hull passes the hull walls in front of it. In a pit the key is the footprint's front-most point
-  (`frontDepth`, half extents 2.4 x 1.0) + 0.5. The pixel lift still comes from `CRUISE_Z` / `DOCK_Z` / `PIT_Z`: `alt` switches
-  with the state and does not ramp.
-- Culling is per camera at region level (cheap). Per-chunk culling is not built (see 5b).
-
-Step 5b done (branch `sector-5b`): chunk tile views.
-- `render/regionTiles.ts`: `regionTiles(grid)` reads a region's tiles straight from the `SectorGrid` chunks (`chunkData`,
-  `chunkRevision`) under its window rectangle, in local coordinates (`kindAt`, `get`, a row-major `scan` over allocated
-  chunks, `chunks(pad)`, `chunkRect`, `rev(field, chunk, ring)` = sum of chunk revisions over the (2 ring + 1)² block;
-  chunk revisions only grow, so the sum is a change detector), and `key(field, chunk, margin)`: the chunk's own revision
-  plus a hash of the `margin`-tile strip around it, so an edit deep inside a chunk rebuilds that chunk alone and one near
-  an edge also rebuilds the neighbours it reaches. A plain dense grid (fixtures) is wrapped at (0, 0). `createChunkViews`
-  keeps one view per sector chunk, rebuilding a chunk only when its key changes. Each view first gates on the region's
-  window revisions, so a frame with no change does no per-chunk work.
-- Per-chunk views: `gridView` (floors, walls, hull, doors, beams, ghost verts; key = cutaway mode, ghosts, beam look,
-  `struct` with a 2-tile margin, and the engine / airlock hull tiles within 2 tiles; one chunk ring past the region for
-  the ghost verts at its -x / -y edges; doors per chunk on `door`, tints per chunk on `light` (1-tile margin), `o2`, `hp`),
-  `roofView` (plating; key = `struct` with a 2-tile margin, the chunk's `module`, and its share of the region-wide livery
-  plan, which is recomputed on the region's struct revision; fire tint per chunk) and `damageView` (one crack `Graphics`
-  per chunk, `struct` with a 1-tile margin).
-  Each chunk's floor plates live in their own container in the floor layer, so plate order is stable across rebuilds;
-  walls, roofs and the rest stay direct children of the region's sorted container (they sort against crew and other
-  regions in the depth layer). `ghostVertsIn` gives a chunk its exact share of the ghost verts.
-- No more `raw()` in the per-tile layers: `overlay`, `fxView` (flames) and `fx/atmosphere` scan chunks; `itemView` and
-  `turretView` read light with `get`. Still on `raw('light')` (point reads, left to avoid clashing with the halo work):
-  `moduleView` and the crew light host in `shipScene`; `app/moduleSnapshot` reads `room` / `o2` by `raw`.
-- Not built: per-chunk culling (regions are culled per camera; chunk floor containers would allow it for the floor, but
-  sorted sprites cannot sit in chunk containers without leaving the shared depth layer).
-- Measured (headless Chromium, swiftshader; JS time of the frame after a one-tile struct write, median): starter 11.4–12 ms
-  on main, 5.8–6.4 ms on 5b; with 4x CPU throttle at phone size 49–52 ms vs 23–25 ms. Steady frames unchanged (2.1–2.3 vs
-  2.3–2.4 ms desktop, 8.8–10 vs 9.2–10.1 ms phone). What remains of a rebuild is mostly Pixi (render-layer detach on
-  destroy, the depth sort, collecting renderables).
-- Fixed on the way: a roof rebuild no longer deletes the roof parts (on main, any struct change on a ship removed its
-  AI-core / shield-generator roof part until a power state changed).
-
-Step 6 done (branch `sector-6`): the coordinate flip.
-- Every component position is a sector tile: `Position` (and `toX/toY`), `Path` steps, `ModuleC`, `JobC`, `ItemStackC`, job
-  and drafted targets, and the events that carry tiles (`fire.started`, `projectile.hit/miss`). `spawnTemplateModules`
-  translates the ship-local template by the grid's top-left, so spawning stamps sector coordinates.
-- Windows are the identity: `GridWindow.get/set(x, y)` read sector tile (x, y); the window keeps only its rectangle as
-  bounds (`inBounds`, the edge checks of `isEvaWalkable`, `bordersSpace`, `network`), so behaviour at a ship's edge is
-  unchanged. `sim.grids.get(id)` still works for any id. `GridLike` gained `x0, y0` (the bounds' top-left; 0 for a dense
-  grid). Decided here rather than the plan's "whole sector" window: an unbounded window would change edge behaviour.
-- `load()` defaults to the window rectangle and returns it row-major from (x0, y0); field systems keep their index math and
-  add (x0, y0) where they turn an index into a tile (`writeBack`, fire, rooms, lighting, doors, alerts, autojobs, life
-  support). `roomTiles` indices count from (x0, y0). A* runs on window indices, so tie-breaking is unchanged.
-- Geometry sums are gone: `moduleCenter`, `dockPoint`, `bayCenter`, impacts, `tileFrame` / `tileCentre`, the crew floor scan
-  and `nearestExterior`. Lint (`no-restricted-syntax` in `src/sim`, outside `gridWindow`, `gridMap` and shipgen) rejects
-  `ship.x + m.x`-style sums and `ox` / `oy` sums. Bbox centres (`ship.x + ship.width / 2`) are sector sums and stay.
-- Render: `sectorPos` is deleted (sector tiles are plain `iso(x, y)`); `fightFx`, `crewMarks`, `sectorFx`, focus,
-  `screenOf` and tile picking work in sector tiles. One offset stays on purpose: a region's tile art (floors, walls, roof
-  livery and plan, chunk views) is built in ship-local tiles, because floor variants and the livery gradient depend on the
-  tile position and must not change when step 9 restamps a ship elsewhere. The region's containers sit at its top-left
-  (`regionOrigin(grid)`), and entity views (crew, modules, items, jobs, turrets, target marks, particles, markers)
-  subtract it when they place sprites. Depth keys are therefore unchanged.
-- The inspector readouts show ship-local tiles (`UiInspect.local`); commands take sector tiles.
-- 5b leftovers: `moduleView` light, the crew light reader in `shipScene` and `app/moduleSnapshot` (room, o2) use `get`.
-  `raw()` is left only in `crew/pathfind.ts` and `eva/route.ts` (window-indexed, step 7).
-- Save v15 (same shape, new meaning). `sectorEquiv` maps positions back to grid-local tiles before hashing (ShipC was
-  sector already); both pre-refactor hashes still match. Tests: single-ship fixtures sit at (0, 0) (`fight`, `eva`);
-  newGame tests add `PLAYER_START`; `portals` adds its grids' row-0 offsets; window, map, region and chunk tests use
-  sector tiles.
-- `gridId` stays as a dead tag (step 7).
-
-### Step 7 split (planned 2026-10-20)
-
-Step 7 is split into four slices. Each keeps `npm run check` green, changes no behaviour (the `sectorEquiv` and state
-hashes must still match) and bumps `SAVE_VERSION` only if the save shape changes.
-
-| Slice | Content | Why this order |
-|---|---|---|
-| **7a** (done on `sector-7a`, save v16) | `ItemStack.gridId` removed (membership from the `ship` layer through `gridIdAt`, falling back to the window rectangle for ship-less fixture grids); the last two `raw()` users (`crew/pathfind.ts`, `eva/route.ts`) read `load()` instead. Local-tile readouts for module, job and airlock labels | Items need no per-ship bounds and no portal; `raw()` goes first so 7d can delete it |
-| **7b** (done: `sector-7b`, save v17: Module, Job, Drafted; **7b2** on `sector-7b2`, save v18: `Position.gridId`) | `ModuleC.gridId`, `JobC.gridId` (+ `Drafted.target/planned.gridId`), `Position.gridId`: the "which ship is this entity on" answers become `shipAt` / `gridIdAt` at the entity's tile. Largest slice; split by component if it passes about 600 lines | Position is read by nearly every system, so it goes after the small components have set the pattern |
-| **7c** (done on `sector-7c`, save v19) | Ship-keyed ids: `Target.gridId`, `Projectile.fromGridId`, `CoreLink.gridId`, `Ship.gridId` -> the `ShipC` entity id; commands, events and UI snapshots switch from grid ids to ship ids (`gridId` fields in `commands.ts`, `events.ts`, `ui/api.ts`, `app/*Snapshot`) | One mechanical rename across the API surface, after the components no longer need the grid id |
-| **7d** (done on `sector-7d`, save v20) | Deleted `sim.grids`, `GridMap`, `GridWindow` (+ `raw`), the cross-grid portals (`portals/graph`, `route`, `pathCache`, `systems/portals`, the `portal.*` commands and events) and `Path.then`; `SuitC` moved to `eva/components.ts`, `AirlockC` and the airlock geometry to `modules/airlock.ts`. `Ship.gridId` is gone: a ship is its `ShipC` entity id everywhere. Per-ship bounds (EVA ring, `bordersSpace`, `networkOf`, power out-of-bounds, A*) are the `ShipC` rectangle (`shipRect`, `shipFrame`, `inShip`) through `ShipGrid`. Lint guard against `.gridId` and `.grids` in `src/sim` | Last, because the window rectangle is what kept edge behaviour identical until then |
-
-**7b notes.** `gridIdOf(sim, at)` (`sim/regions.ts`) is `gridIdAt` at `at.x, at.y` (0 for none). `gridIdAt` now has three steps: the
-`ship` owner layer; else the lowest-id grid whose rectangle holds the tile (Space inside a bbox, ship-less fixture grids); else the
-grid whose padded frame (EVA ring) holds it. The ring step keeps jobs on a downed EVA crew member (rescue) and drafted targets
-in the ring on the grid they had before. Frames never overlap, so the answer is unique. Drafted targets: `gridId` was set only
-for cross-grid orders; it is now `gridIdAt(target) || pos.gridId` (open Space stays on the crew member's own grid). The render
-side asks the grid object (`grid.inBounds(m.x, m.y)`; `onShip(ship, at)` in `render/regionRules.ts`) because it holds no `sim`.
-`sectorEquiv.test.ts` re-adds `gridId` to module rows (after `def`) in `legacyWorld`, as it does for vehicles. Job/module `gridId` parameters of helpers (`stackAt`, `makeHaul`, ...) stay until 7d.
-
-**7b2 notes (save v18).** `Position` is `{ x, y, toX, toY, progress, facing }` (sector tiles). "Which ship is this crew member on" is
-`gridIdOf(sim, pos)`, so an EVA crew member in the ring and a downed one outside the hull resolve by the ring rule of `gridIdAt`;
-crossing a portal just moves the tile. Crew aboard a shuttle already had **no `Position`** (`boardCrew` removes it, with `Path`,
-job and drafted state) and carry `AboardC { vehicle }`, which with the vehicle's `pilot` / `passengers` is the aboard link; nothing
-new was added. Their location is the vehicle's `BodyC`; `unboardCrew` adds a tile `Position` at the bay or airlock. Render has no
-`Sim`, so `gridIdAtTile(world, x, y)` (`render/regionRules.ts`) is the twin of `gridIdAt` over the `ShipC` rectangles and padded
-frames. Commands, events and snapshots keep their `gridId` fields (filled from the lookups) until 7c. `sectorEquiv.test.ts`
-re-adds `gridId` as the first key of `position` rows in `legacyWorld`; both hashes are unchanged.
-
-**7c notes (save v19).** `Target.ship`, `Projectile.fromShip` and `CoreLink.ship` hold `ShipC` entity ids. Commands and events name a
-ship by `ship` (`gridId` is gone from `commands.ts` and `events.ts` except `portal.link`, whose endpoints are grids until 7d).
-`Ship.gridId` stays as the ship-to-window link; handlers turn `cmd.ship` into a grid with `gridOfShip(sim, ship)` and emitters turn a
-grid into a ship with `shipOfGrid(sim, gridId)` or, from a tile, `shipIdOf(sim, at)` (same rule as `gridIdOf`, so EVA ring cases
-agree). Helpers that take a `gridId` (`stackAt`, `randomModule`, `targetableShip`, ...) are unchanged and go in 7d. The UI is keyed by
-ship id everywhere (`selectShip`, `UiCrew.ship`, `node-{ship}`); a station, which has no `ShipC`, uses its trader entity id from the
-same id space. The tile inspector still prints "grid N" through a readout-only `UiInspect.grid`. Render keeps its grid-keyed
-interfaces and the app layer converts. `sectorEquiv.test.ts` maps `ship` back to `gridId` / `fromGridId` in `legacyWorld`. Tests that
-queue a command naming a ship that a queued spawn command creates must step first (the id does not exist at enqueue time).
-
-**7d notes (save v20).** Step 7 is done.
-- **Ids.** There are no grid ids. `Ship` has no `gridId`; every former grid-id parameter (`stackAt`, `findPath`, `placementError`, `shieldCapacity`, ...) takes the ship id (the `ShipC` entity). `shipIdAt(sim, x, y)` is the old `gridIdAt`: owner layer, else the lowest-id ship whose rectangle holds the tile, else the lowest-id ship whose padded frame (the EVA ring) does, else 0; `shipIdOf(sim, at)` reads a thing's tile. The renderer twin is `shipIdAtTile(world, x, y)`. `shipIds(sim)` lists ships in creation order; `homeShip(sim)` is the lowest-id player-faction ship (the starting ship; it replaces the `GRID = 1` / `PLAYER = 1` constants of the app layer and the `refId = 1` of the renderer).
-- **Bounds.** The bound of a ship is its `ShipC` rectangle (`shipRect(ship)`, padded by `REGION_PAD` for `shipFrame`). `inShip(sim, ship, x, y)` and `inRect(rect, x, y)` are the point tests. The code that used to ask the window (`grid.inBounds`, `x0 / y0 / width / height`, `load()` over the window rectangle, `revision()` over its chunks) now asks a **`ShipGrid`** (`sim/shipGrid.ts`): a bounded view of `sim.sector.grid` for one ship, derived from the `ShipC` rectangle by `shipGrid(sim, ship)` (or `shipGridOf(sector, world, ship)` in the renderer, which has no `Sim`). It is not registered, not saved and has no id of its own (`id` is the ship id), it has no `raw()`, and the same object comes back while the rectangle is unchanged, so the `WeakMap` caches (`hullSum`, `fieldFrame`, `roomTiles`, `regionTiles`) still key on it. Edge behaviour is therefore the old windows' behaviour exactly; `regions.test.ts` pins it (`inShip`, `shipIdAt` ring rule, `isEvaWalkable`, `bordersSpace`, `networkOf`, out-of-rectangle `get` throws). `regions(sim)` returns `{ ship, grid: ShipGrid, bbox, frame }` per `ShipC`, ascending id.
-- **Ship-less fixtures.** A fixture grid now needs a `ShipC`: `stampShip(sim, template, { faction, x, y, state? })` stamps the template into the sector, places its modules and creates the `ShipC` (no `CombatC`, crew or event); `spawnShip` is `stampShip` plus combat, boarding, crew and the event. Fixtures stamp a prize (`state: 'prize'`, skipped by every ship system) at the origin as their first entity, so its ship id is 1. `spawnModule(sim, def, x, y, rot)` no longer takes a grid (it writes the sector grid); `spawnTemplateModules(sim, ship, template)` reads the ship's origin from its `ShipC`, `placeTemplateModules(sim, template, ox, oy)` is the form `stampShip` uses before the `ShipC` exists (entity ids stay in the old order: modules, then the ship).
-- **Portals.** Nothing in the sim ever created a portal (only the `portal.link` command did), so crew paths were always single-ship. Removed with `Path.then`, `CrossingC`, `PortalC`, the `portal.link` / `portal.unlink` commands and the `crew.crossed` / `portal.*` events. A drafted order whose target is on another ship or unreachable now lapses straight away (it did through `planRoute` returning null).
-- **Save.** `grids` (the window rectangles) and `ShipC.gridId` are gone from the save. Fixed-shape otherwise.
-- **Hashes.** Both `sectorEquiv` hashes are unchanged. `legacyWorld` writes `gridId` back (first key of `ship` rows), where a grid id is the ship's 1-based place in ship-id order, and maps `homeGrid`, `gridId` / `fromGridId` keys, positions and the per-grid tile hash through it.
-- **Tests that named ships by number.** `newGame` tests used grid ids 1 and 2; they use a local `nth(sim, n)` (the n-th ship in creation order) because the starter's entity id is not 1.
-
-Leftovers that 7a deliberately keeps: every `gridId` parameter of the helpers (`stackAt`, `nearestStorageFor`, `makeHaul`,
-...) and `sim.grids.get(...)` lookups; they go with 7b-7d.
-
-**Merges before the refactor (answer to the user's hold).**
-- Recommended: **merge `eva` to main once its look is approved, and integrate `shipgen` plus `trusses-int` before step 5.**
-  Reasons:
-  - `eva` is main plus 60 commits, and the refactor branches from it anyway. While `eva` is held, every refactor step lands
-    on a branch that main cannot take without `eva`. Holding therefore recreates the flag day the plan avoids, as one giant
-    merge of `eva`, the refactor and shipgen.
-  - `shipgen` and `trusses-int` were cut from an old base: they lack the rogue faction and the M5 render (they show as
-    deleting `shuttleView`, `airlockArt`, `scenePick` and more against `eva`). Their sim side is self-contained
-    (`src/sim/shipgen/*`, `Struct.Beam`, `ShipC.gen`, `debug.spawnGenerated`) and its output (`ShipTemplate`) does not
-    change. But their render changes (`gridView.ts`, `tiles.ts`, `scene.ts`, `shipScene.ts`, `roofPlating.ts`, `beamArt.ts`)
-    hit exactly the files step 5 rewrites. Merging them after step 5 means redoing beam rendering on a new scene; merging
-    them before costs one ordinary conflict pass now.
-  - `weapons-int` is art only (sheets and Blender scripts; `main` is its ancestor). Merge it whenever approved. Its only
-    conflict risk is `public/assets/manifest.json`, so merge it before anything else rebuilds sprites.
-- If the user keeps the hold on `main`: make one long-lived `sector` integration branch = `eva` + `trusses-int` + `shipgen`
-  + `weapons-int` at step 0, run the steps on it, and merge everything to main at the end. It is workable, but the final main
-  merge is large and nothing reaches the phone build until then.
-- Ask agents to stop feature pushes to `eva` once step 1 starts (fixes only), or rebase the refactor weekly.
-
-### 8. Risks (open questions for the user are in `docs/STATUS.md`, "Sector grid decision")
-
-- Step 6 (the coordinate flip) is the one wide change. It is safe only if step 5 has removed every render-side offset and the
-  fixtures sit at the origin. Mitigation: a grep lint for `ship.x +` and `.gridId` in `sim/` after step 7.
-- `raw()` callers in the renderer assume dense arrays. Chunk views must land (5b) before windows become the identity (6).
-- Pixi sorting in one shared layer with many sprites costs more. Mitigation: chunk containers, plus `zIndex` only on dynamic
-  objects (crew, bodies). Static tiles keep their insertion order per chunk.
-- Determinism: chunk Map order is insertion-dependent, so systems must iterate regions (ShipC query order) or sorted chunks,
-  never `Map` order. A test runs the same seed with and without a save round-trip.
-- Long ranges make shuttle trips slow (now 8 tiles/s, user decision 2026-10-21). Tuning, not architecture.
+The October 2026 refactor notes (inventory, data model, migration steps, split plan, risks) moved to the
+[status archive](STATUS_ARCHIVE.md#historical-sector-grid-migration). The live model is [Sector grid](#sector-grid).
 
 ## Crew AI: one system for every ship (user principle, 2026-10-21)
 
 NPCs use almost exactly the same crew AI as the player's crew. There is no parallel "NPC behaviour" stack:
 - Station, enemy and player crew all run through the same needs (`systems/needs.ts`), job generation (the `*Jobs` systems),
-  reservation, decide (`pickJob` by role priorities and `WORK_CATEGORIES`), work (`performJob`) and fight (`fight/`) code. Jobs are
+  reservation, the scheduler (`assignJobs` in `ai/scheduler.ts`, by role priorities and `WORK_CATEGORIES`), work (`performJob`) and fight (`fight/`) code. Jobs are
   per ship and picked by crew aboard that ship, for every faction.
 - The only differences are the **command source** and a **policy layer**. The player issues commands (priorities, drafts, orders);
   an NPC ship has a small per-ship **director**, data and config that sets the same things: it posts jobs and later drafts and
@@ -2739,8 +2083,8 @@ see docs/STATION_ASSEMBLY.md), and stamped by
   plazas, gardens and rest rooms; patrol stops at the armoury, docks, plazas, gardens, drill hall and bridge), `StationAlarmC` and
   `StationCrewC {station}` on its crew. Crew with a role loadout start carrying its first item the station's storage holds
   (taken out of the armoury lockers): a station has been running long before anyone arrives. Station crew live on the shared crew AI: they eat (hunger floors at 25, as the station is
-  resupplied off-screen), sleep, work their station's jobs, and idle crew sometimes stroll to a court (`stations/life.ts`, a
-  fallback inside decide before `wander`).
+  resupplied off-screen), sleep, work their station's jobs, and idle crew sometimes stroll to a court (`ai/machines/idle.ts`, a
+  fallback before `wander`).
 - **Director** (`systems/stationDirector.ts`, every 10 ticks): while calm it keeps one `patrol` job (category `patrol`, kind
   `patrol`, an on-tile job worked for 3 s) per able guard at rotating walkable posts. Roles opt in with `priorities.patrol`
   (security and security bots at 2; the player's grid hides the column, as no player director posts patrols yet). On alarm it
@@ -2765,7 +2109,7 @@ and `StationCrewC`, so they live the station's life) and removes unhired ones wh
 shuttle docks at a station airlock (no hover fallback: `noDock`), the recruit walks aboard (`trade/recruitLand.ts`), the shuttle flies home,
 and on docking the recruit steps out as player crew (allegiance switch, `crew.hired`, key into `recruitLog`) and the escrow is paid. Any failure
 (no shuttle, no dock, recruit dead, board timeout, cancel) refunds and puts the recruit back to station life. One live deal per station.
-UI: selecting a station opens `StationPanel` (tabs Trade, Jobs, Crew; `TradePane`, `JobCards`, `RecruitList`); recruits ride in `UiTradePartner`.
+UI: selecting a station opens `ChannelPanel` (`ui/ChannelPanel.svelte`, the comms channel: `JobCards`, `RecruitList`, `PrisonerDeals`; its Trade button opens `TradeWindow`); recruits ride in `UiTradePartner`.
 
 
 ## Engine capacity and the shipyard (progression phase 5)

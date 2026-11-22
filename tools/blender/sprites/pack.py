@@ -4,13 +4,14 @@ A family renders a list of items {id, fp, rgba, g, ax, ay} (cropped sprite, glow
 shelf-packs them into pages of at most PAGE x PAGE px (scale.MAX_SHEET = 4096; a family that does not fit one page is split): sheet `<family>` (page 0), `<family>.1`, ... with images
 `sprites/<sheet>.png` and `.glow.png`. `merge` folds a family's fragment into an existing manifest: every asset of the
 family's sheets and every id the family produces is replaced, everything else is kept, so families rebuild one at a
-time and the committed manifest is the cache."""
+time and the committed manifest is the cache. The live manifest is stored split (manifest_io.py): `manifest.json` index plus
+one `manifest/<family>.json` per family, so a family rebuild rewrites only its own file."""
 import json
 import re
 
 import numpy as np
 
-from . import pod_muzzle
+from . import manifest_io, pod_muzzle
 from .post import write_png
 from .scale import MAX_SHEET
 
@@ -97,9 +98,7 @@ def owned(sheet, family):
     return sheet == family or re.fullmatch(re.escape(family) + r"\.\d+", sheet) is not None
 
 
-def sheets_of(a):
-    """The sheets an asset draws from: its one sheet, or (crew layers, one sheet per clip) every clip's."""
-    return {a["sheet"]} if "sheet" in a else {c["sheet"] for c in a.get("clips", {}).values()}
+sheets_of = manifest_io.sheets_of
 
 
 def merge(manifest, family, sheets, assets, crew=False):
@@ -121,14 +120,20 @@ def merge(manifest, family, sheets, assets, crew=False):
 
 
 def load_manifest(path, base):
+    """The manifest at `path` (the split live manifest, or a single-file one) with `base`'s header keys laid over it."""
     if path.exists():
-        m = json.loads(path.read_text())
+        m = manifest_io.read_manifest(path)
         m.update({k: v for k, v in base.items() if k not in ("sheets", "assets")})
         return m
     return {**base, "sheets": {}, "assets": {}}
 
 
 def save_manifest(path, m):
+    """Sorted, like every manifest write (#140). `manifest.json` is written split (manifest_io: only the part files that
+    changed are touched); any other name (a `manifest.fragment.json` package) as one file."""
     m["assets"] = dict(sorted(m["assets"].items()))
     m["sheets"] = dict(sorted(m["sheets"].items()))
-    path.write_text(json.dumps(m, indent=1))
+    if path.name == "manifest.json":
+        manifest_io.write_manifest(path, m)
+    else:
+        path.write_text(json.dumps(m, indent=1))

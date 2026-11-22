@@ -2,8 +2,9 @@
 
 | Asset | Author | Licence | Source | Used in |
 |-------|--------|---------|--------|---------|
-| Universal Base Characters [Standard] (free), `Superhero_Male_FullBody` | Quaternius | CC0 1.0 (public domain dedication) | https://quaternius.itch.io/universal-base-characters (also https://quaternius.com/packs/universalbasecharacters.html) | `public/assets/crew/human/base_cc0.glb` (restyled mesh and rig, by `tools/blender/crew/base_import.py`) |
+| Universal Base Characters [Standard] (free), `Superhero_Male_FullBody` | Quaternius | CC0 1.0 (public domain dedication) | https://quaternius.itch.io/universal-base-characters (also https://quaternius.com/packs/universalbasecharacters.html) | `tools/blender/source/base_cc0.glb` (restyled mesh and rig, by `tools/blender/crew/base_import.py`) |
 | Universal Animation Library [Standard] (free), `UAL1_Standard.glb` | Quaternius | CC0 1.0 (public domain dedication) | https://quaternius.itch.io/universal-animation-library (also https://quaternius.com/packs/universalanimationlibrary.html) | idle, walk, work, sit and sleep clips in `base_cc0.glb` |
+| Silkscreen (Regular, Bold) | The Silkscreen Project Authors (Jason Kottke) | SIL Open Font License 1.1 (`public/fonts/Silkscreen-OFL.txt`) | https://kottke.org/plus/type/silkscreen/ | pixel headings in `src/ui/theme.css` (the starmap) |
 | Tabler Icons (outline set), v3.49.0 | Paweł Kuna and contributors | MIT | https://tabler.io/icons (https://github.com/tabler/tabler-icons) | the UI line icons in `src/ui/Icon.svelte` (only the files listed in `src/ui/tablerIcons.ts` are bundled) |
 
 Licence text: https://creativecommons.org/publicdomain/zero/1.0/ . Both packs ship a `License*.txt` that states

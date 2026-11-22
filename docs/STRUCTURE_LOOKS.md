@@ -25,7 +25,7 @@ Some pieces are left out of the look sets and stay default-only: doors, hull gho
 
 ## Renderer: one look per tile
 
-`src/render/tiles.ts` (around line 212) builds its chains from `pre = tile.${fam}.${PRE[level]}`. The change is to put
+`src/render/tiles.ts` (the wall chains, around line 340) builds its chains from `pre = tile.${fam}.${PRE[level]}`. The change is to put
 the look in front of the default:
 
 ```ts
@@ -38,7 +38,7 @@ Corner fills come first in today's chain. Put them after the look's plain `m<mas
 show the default look in the middle of a faction wall. Do this until the look sets include corners
 (`structure.CORNER`). Floors work the same way (`tile.floor.<look>.*`).
 
-Pick the look the way `beamLookFor(s.gen?.faction)` does (`src/render/beamArt.ts`, `scene.ts:225`):
+Pick the look the way `beamLookFor(s.gen?.faction)` does (`src/render/beamArt.ts`, used in `scene.ts`):
 
 ```ts
 const STRUCT_LOOK_OF = { 'faction.navy': 'navy', 'faction.drones': 'drone', 'faction.civilian': civilV(seed) };
@@ -52,11 +52,11 @@ const STRUCT_LOOK_OF = { 'faction.navy': 'navy', 'faction.drones': 'drone', 'fac
 
 Scrapper ships are welded from donor sections. Each section already records where it came from:
 
-- `Block.donor` is carried into `AsmRecord.donor` in `arranger.ts:374`.
+- `Block.donor` is carried into `AsmRecord.donor` in `src/sim/shipgen/arranger.ts`.
 - The values today are:
   - `'navy'`: bow, drive, battery and hulk, from `scrapDonors.ts`;
   - `'drone'`;
-  - `'civil'`: civilKit, freighter, habitat, liner, station, barge, podString and tug, through `civil(origin, …)` in `scrapDonors.ts:175`;
+  - `'civil'`: civilKit, freighter, habitat, liner, station, barge, podString and tug, through `civil(origin, …)` in `scrapDonors.ts`;
   - `'scrap'`: improvised tubes, strapped engines, crates, airlocks and the patched reactor.
 
 The donor-to-look mapping:

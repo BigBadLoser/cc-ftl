@@ -179,6 +179,11 @@ export function createAlerts(sim: Sim): Alerts {
         return { kind: 'core.lost', key: `core${e.ship}`, text, subject: core ? tileAt(core.x, core.y) : shipSubject(sim, e.ship), resolved: () => hasLiveCore(sim, e.ship) };
       }
       case 'combat.started': return { kind: e.type, key: 'cs', text: combatText(), subject: enemyShip(sim, home()), resolved: () => !underAttack(sim) };
+      // A fight between NPC ships here (#603): urgent while it lasts, so the player can pick a side or keep out of it.
+      case 'engagement.started': return e.kind !== 'meeting' ? null : {
+        kind: 'fight.nearby', key: `en${e.engagement}`, text: `Join the fight? ${e.who} attacks ${e.foe}`,
+        subject: e.ship ? shipSubject(sim, e.ship) : { kind: 'node', id: e.node }, resolved: () => !(sim.sector.engagements ?? []).some((x) => x.id === e.engagement),
+      };
       default: return null;
     }
   }

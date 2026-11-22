@@ -5,11 +5,11 @@ import { AirlockC } from '../sim/modules/airlock';
 import type { Module } from '../sim/modules/components';
 import type { ModuleDef } from '../sim/registry';
 import { TICK_HZ } from '../sim/time';
-import raw from '../../public/assets/1x/manifest.json?raw';
+import { shippedManifest } from '../../test/support/manifest';
 import { PREVIEW_LEVEL, layersOf } from './layerPick';
 import { steady } from './vehicleBayArt';
 
-const ids = new Set(Object.keys((JSON.parse(raw) as { assets: Record<string, unknown> }).assets));
+const ids = new Set(Object.keys(shippedManifest().assets));
 
 /** Planned modules whose sheets are not in the manifest yet (the card shows a placeholder icon). Remove an id when its art lands. */
 const ART_PENDING = new Set<string>([]);

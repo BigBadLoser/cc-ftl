@@ -1,10 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { shippedFile, shippedManifest } from '../../../test/support/manifest';
 import { composeManifest } from './compose';
 import { loadComposed } from './loader';
+import { resetManifestCache } from './manifestParts';
 import type { LayerAsset, Manifest, StaticAsset } from './manifest';
 
-const raws = import.meta.glob('../../../public/assets/*/manifest.json', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
-const load = (dir: string): Manifest => JSON.parse(raws[`../../../public/assets/${dir}/manifest.json`] as string) as Manifest;
 
 const stat = (sheet: string, o: Partial<StaticAsset> = {}): StaticAsset => ({ kind: 'static', sheet, frame: { x: 10, y: 20, w: 30, h: 40 }, anchor: { x: 15, y: 35 }, footprint: [1, 1], ...o });
 const layer = (sheet: string): LayerAsset => ({
@@ -36,7 +36,7 @@ describe('composeManifest', () => {
 });
 
 describe('the shipped art composed', () => {
-  const one = load('1x');
+  const one = shippedManifest('1x');
   const c = composeManifest(one, '1x');
 
   it('keeps every id and puts the tile at 128x64', () => {
@@ -56,15 +56,23 @@ describe('the shipped art composed', () => {
 });
 
 describe('loadComposed', () => {
-  afterEach(() => vi.unstubAllGlobals());
-  it('loads the one manifest and composes it', async () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    resetManifestCache();
+  });
+  it('loads the index and its part files and composes them into the manifest', async () => {
     const f = vi.fn(async (url: string) => {
-      const body = raws[`../../../public/assets/${url.replace('/base/', '')}`];
-      return body === undefined ? { ok: false, status: 404, json: async () => ({}) } : { ok: true, status: 200, json: async () => JSON.parse(body) as unknown };
+      const body = shippedFile(url.replace('/base/', ''));
+      return body === undefined ? { ok: false, status: 404, json: async () => ({}) } : { ok: true, status: 200, json: async () => body };
     });
     vi.stubGlobal('fetch', f);
     const manifest = await loadComposed('/base/');
-    expect(f.mock.calls.map((c) => c[0])).toEqual(['/base/1x/manifest.json']);
+    const urls = f.mock.calls.map((c) => c[0]);
+    const parts = shippedManifest('1x');
+    expect(urls[0]).toBe('/base/1x/manifest.json');
+    expect(urls.slice(1).every((u) => /^\/base\/1x\/manifest\/[\w.-]+\.json$/.test(u))).toBe(true);
+    expect(urls.length).toBeGreaterThan(10);
+    expect(Object.keys(manifest.assets)).toEqual(Object.keys(parts.assets));
     const floor = manifest.assets['tile.floor.a'] as StaticAsset;
     expect(manifest.sheets[floor.sheet]?.resolution).toBe(0.5);
     expect(manifest.tile).toEqual({ w: 128, h: 64 });

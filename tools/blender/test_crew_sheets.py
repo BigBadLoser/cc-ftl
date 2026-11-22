@@ -4,10 +4,13 @@ import json
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[0]))
+from sprites import manifest_io  # noqa: E402
+
 from PIL import Image
 
 assets = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(__file__).resolve().parents[2] / "public" / "assets"
-m = json.loads((assets / "manifest.json").read_text())
+m = manifest_io.read_manifest(assets)
 n = 0
 for lid, a in m["assets"].items():
     if a["kind"] != "crew.layer":
