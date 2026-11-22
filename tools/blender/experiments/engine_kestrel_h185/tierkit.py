@@ -26,7 +26,7 @@ from sprites.cmbkit import hazard_strip
 from geometry import annulus, curved_pipe, sleeve, torus
 
 CUT = -1.5              # the Mk I powerhead's faces inboard of this go (the injector plate, rear armour and clamps)
-CUTS = {"J": {"powerhead": -0.75, "services": -0.75}}
+CUTS = {"J": {"powerhead": -0.75, "services": -0.75}, **{k: {"bed": 99} for k in "QRS"}}
 
 
 def cut(variant, name):
@@ -340,5 +340,7 @@ def build(f, fs, tier, variant):
     the thrust axis by model.CASSETTE_Z_FIT, as the cassette is, for castings that continue its round section."""
     if variant not in VARIANTS:
         import tier_r5
-        VARIANTS.update({"M": tier_r5.bottle, "N": tier_r5.thermal, "P": tier_r5.turbo})
+        import tier_r6
+        VARIANTS.update({"M": tier_r5.bottle, "N": tier_r5.thermal, "P": tier_r5.turbo,
+                         "Q": tier_r6.nested, "R": tier_r6.rings, "S": tier_r6.turbo})
     VARIANTS[variant](f, fs, tier, _m().THRUST_Z)
