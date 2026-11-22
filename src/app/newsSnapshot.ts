@@ -23,7 +23,8 @@ function regionOf(sim: Sim, node: string): string {
 const LOOK: Record<NewsItem['kind'], Pick<UiNews, 'icon' | 'tone'>> = {
   destroyed: { icon: 'skull', tone: 'red' }, raid: { icon: 'skull', tone: 'red' }, driven: { icon: 'evasion', tone: 'amber' }, clash: { icon: 'combat', tone: 'amber' },
   cut: { icon: 'trade', tone: 'amber' }, loot: { icon: 'stock', tone: 'amber' }, shortage: { icon: 'stock', tone: 'dim' }, rebuilt: { icon: 'ship', tone: 'green' }, hunt: { icon: 'combat', tone: 'red' },
-  joined: { icon: 'combat', tone: 'green' }, taken: { icon: 'ship', tone: 'red' },
+  front: { icon: 'combat', tone: 'amber' }, fell: { icon: 'skull', tone: 'red' }, held: { icon: 'evasion', tone: 'green' }, war: { icon: 'combat', tone: 'red' }, peace: { icon: 'trade', tone: 'green' },
+  joined: { icon: 'combat', tone: 'green' }, taken: { icon: 'ship', tone: 'red' }, seized: { icon: 'stock', tone: 'amber' },
 };
 
 /** What happened, with names: for news the player's sensors cover. */
@@ -39,8 +40,14 @@ function precise(sim: Sim, n: NewsItem): string {
     case 'shortage': return `${placeOf(sim, n.node)} is short of ${itemName(sim, n.item)}`;
     case 'rebuilt': return `${n.who} was launched from ${placeOf(sim, n.node)}`;
     case 'hunt': return `${n.who} set out from ${placeOf(sim, n.node)} to hunt you down`;
+    case 'front': return `${factionName(sim, n.faction)} presses ${factionName(sim, n.foeFaction)} on the border at ${n.who}`;
+    case 'fell': return n.foeFaction ? `${n.who} fell to ${factionName(sim, n.faction)}` : `${factionName(sim, n.faction)} claimed ${n.who}`;
+    case 'held': return `${factionName(sim, n.faction)} held ${n.who} against ${factionName(sim, n.foeFaction)}`;
+    case 'war': return `${factionName(sim, n.faction)} declared war on ${factionName(sim, n.foeFaction)}`;
+    case 'peace': return `${factionName(sim, n.faction)} and ${factionName(sim, n.foeFaction)} made peace`;
     case 'joined': return `You fought beside ${n.who} against ${foe}`;
     case 'taken': return `${n.who} took ${foe}`;
+    case 'seized': return `${n.who} inspected ${foe} and seized cargo`;
   }
 }
 
@@ -56,8 +63,14 @@ function rumour(sim: Sim, n: NewsItem): string {
     case 'shortage': return `${itemName(sim, n.item)} is short somewhere near ${here}`;
     case 'rebuilt': return `${a} launched a ship near ${here}`;
     case 'hunt': return `${a} hunters are out looking for you near ${here}`;
+    case 'front': return `${a} and ${b} are fighting along a border near ${here}`;
+    case 'fell': return n.foeFaction ? `A sector near ${here} has fallen to ${a}` : `${a} has claimed a sector near ${here}`;
+    case 'held': return `${a} held a border sector near ${here} against ${b}`;
+    case 'war': return `${a} and ${b} have gone to war (word from near ${here})`;
+    case 'peace': return `${a} and ${b} have made peace (word from near ${here})`;
     case 'joined': return `You fought beside ${a} ships near ${here}`;
     case 'taken': return `${a} boarders took a ${b} ship near ${here}`;
+    case 'seized': return `${a} inspectors seized cargo from a ${b} ship near ${here}`;
   }
 }
 

@@ -14,8 +14,8 @@ describe('packed guard (#350)', () => {
     sim.sector.state = 'hyperspace';
     sim.sector.packet = { ship: 0, w: 1, h: 1, tiles: {}, entities: [] };
     expect(() => playerShips(sim)).toThrow(/withPlayerAboard/);
-    expect(() => playerCrew(sim)).toThrow(/playerCrew/);
-    expect(() => playerShip(sim)).toThrow(/playerShip/);
+    expect(() => playerCrew(sim)).toThrow(/crewOf/);
+    expect(() => playerShip(sim)).toThrow(/mainShipOf/);
     expect(playerShipsPackedOk(sim).size).toBe(0);
     expect(playerCrewPackedOk(sim)).toEqual([]);
     expect(withPlayerAboard(sim, () => playerShips(sim).size)).toBe(0);
@@ -31,7 +31,7 @@ describe('packed guard, ticks only (the dev build)', () => {
       sim.sector.packet = { ship: 0, w: 1, h: 1, tiles: {}, entities: [] };
       expect(playerShip(sim)).toBe(0); // view code between ticks: the ship is away
       stepping.add(sim);
-      expect(() => playerShip(sim)).toThrow(/playerShip/);
+      expect(() => playerShip(sim)).toThrow(/mainShipOf/);
       stepping.delete(sim);
     } finally {
       setPackedGuard('throw');

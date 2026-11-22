@@ -1,4 +1,3 @@
-import { ShipC } from '../combat/components';
 import { JobC } from '../crew/components';
 import { ModuleC } from '../modules/components';
 import { isKnown, learn } from '../modules/blueprints';
@@ -9,6 +8,7 @@ import { shipIdOf } from '../regions';
 import type { ResearchDef } from '../registry';
 import type { Sim } from '../sim';
 import { ResearchC, type Research } from './components';
+import { isPlayers } from '../side';
 
 /**
  * Research. Each player ship keeps a queue of projects (ResearchC); the head is the active one. When the head is first in line and the
@@ -43,7 +43,7 @@ export function queueValid(sim: Sim, queue: readonly string[]): boolean {
 export function queueBlocker(sim: Sim, ship: number, project: string): string | null {
   const def = projectOf(sim, project);
   if (!def) return 'badProject';
-  if (sim.world.get(ship, ShipC)?.faction !== 'player') return 'badShip';
+  if (!isPlayers(sim, ship)) return 'badShip';
   if (sim.world.get(ship, ResearchC)?.queue.includes(project)) return 'queued';
   if (isDone(sim, def)) return 'alreadyKnown';
   if (!requiresMet(sim, def, sim.world.get(ship, ResearchC)?.queue ?? [])) return 'locked';

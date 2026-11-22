@@ -56,7 +56,7 @@ export interface Prisoner {
   seal?: true;
   /** The galaxy faction whose ship they were taken from (`factionOfShip` when imprisoned): the standing a release earns goes to it wherever they are held. */
   from?: string;
-  /** The galaxy faction holding them when it is not the player (an NPC captor, #615); absent for the player's prisoners (`isPlayersPrisoner`). */
+  /** The side holding them (`side.ts` `sideOf`); absent means the player. */
   holder?: string;
 }
 export const PrisonerC = defineComponent<Prisoner>('prisoner');

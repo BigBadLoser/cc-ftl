@@ -19,6 +19,7 @@ import { pickWeighted } from './sector';
 import type { Port } from './ports';
 import { isHostileFaction } from './standing';
 import { nodeOf } from './state';
+import { nodeOwner } from './control';
 import type { NodeData } from './types';
 
 /**
@@ -105,7 +106,8 @@ export function populateField(sim: Sim, seed: number, at: Place, structure?: str
 /** The generator faction (`faction.*`) a derelict was built by: the node's own faction's ships, else any non-rogue faction's, picked by hash. */
 export function derelictShipgen(sim: Sim, node: NodeData, seed: number): string | null {
   const factions = sim.content.galaxy?.factions ?? {};
-  const own = node.faction ? factions[node.faction]?.ships : undefined;
+  const here = nodeOwner(sim, node);
+  const own = here ? factions[here]?.ships : undefined;
   const pool = own?.length
     ? own
     : Object.keys(factions).sort().filter((id) => factions[id]?.kind !== 'rogue').flatMap((id) => factions[id]?.ships ?? []);

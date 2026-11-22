@@ -1,39 +1,24 @@
-import { ShipC } from '../combat/components';
-import { ItemStackC, StorageC } from '../items/components';
+import { ItemStackC } from '../items/components';
 import { storageCount } from '../items/storage';
 import { ModuleC } from '../modules/components';
 import { airlockWorking } from '../modules/airlock';
 import { AirlockC } from '../modules/airlock';
-import { guardPacked } from '../packedGuard';
+import { mainShipIdOf, mainShipOf, PLAYER, storagesOf } from '../side';
 import type { Sim } from '../sim';
 import { dockError } from '../vehicles/handlers';
 import { shipIdAt, shipIdOf } from '../regions';
 
 /** The player's ship (ShipC entity): the lowest-id live ship of the player faction, or 0. */
-export function playerShip(sim: Sim): number {
-  guardPacked(sim, 'playerShip');
-  return playerShipPackedOk(sim);
-}
+export const playerShip = (sim: Sim): number => mainShipOf(sim, PLAYER);
 
 /** `playerShip` for a caller that wants 0 while the ship is packed. */
-export function playerShipPackedOk(sim: Sim): number {
-  for (const id of [...sim.world.query(ShipC)].sort((a, b) => a - b)) {
-    const s = sim.world.get(id, ShipC);
-    if (s?.faction === 'player' && (s.state === 'active' || s.state === 'disabled')) return id;
-  }
-  return 0;
-}
+export const playerShipPackedOk = (sim: Sim): number => mainShipOf(sim, PLAYER, { packedOk: true });
 
 /** The player's ship id wherever it is: its ShipC entity in a node, or the hyperspace packet's ship while the ship is packed (0 when there is none). */
-export function playerShipId(sim: Sim): number {
-  return playerShipPackedOk(sim) || (sim.sector.state === 'hyperspace' ? sim.sector.packet?.ship ?? 0 : 0);
-}
+export const playerShipId = (sim: Sim): number => mainShipIdOf(sim, PLAYER);
 
-/** Storage modules on the player's ship, ascending id. */
-function playerStorages(sim: Sim): number[] {
-  const grid = playerShip(sim);
-  return [...sim.world.query(StorageC, ModuleC)].filter((id) => shipIdOf(sim, sim.world.get(id, ModuleC)) === grid).sort((a, b) => a - b);
-}
+/** Storage modules on the player's ship (the main ship only), ascending id. */
+const playerStorages = (sim: Sim): number[] => storagesOf(sim, PLAYER, { ship: playerShip(sim) });
 
 /** Loose stacks of an item on the player's ship's floor (mined ore at the pod bay, spilled cargo), ascending id. */
 function playerFloorStacks(sim: Sim, item: string): number[] {
@@ -64,11 +49,10 @@ export function holding(sim: Sim, item: string): { kind: 'storage' | 'floor'; id
   return out;
 }
 
-/** A working docking airlock on the player's ship that `vehicle` could dock at (preferring the one it is at), or 0. */
-export function freeAirlock(sim: Sim, vehicle: number, prefer = 0): number {
-  const grid = playerShip(sim);
+/** A working docking airlock on `ship` (the player's by default) that `vehicle` could dock at (preferring the one it is at), or 0. */
+export function freeAirlock(sim: Sim, vehicle: number, prefer = 0, ship = playerShip(sim)): number {
   const ids = [...sim.world.query(AirlockC, ModuleC)]
-    .filter((id) => shipIdOf(sim, sim.world.get(id, ModuleC)) === grid && airlockWorking(sim, id))
+    .filter((id) => shipIdOf(sim, sim.world.get(id, ModuleC)) === ship && airlockWorking(sim, id))
     .sort((a, b) => (a === prefer ? -1 : b === prefer ? 1 : a - b));
   return ids.find((id) => dockError(sim, vehicle, id) === null) ?? 0;
 }

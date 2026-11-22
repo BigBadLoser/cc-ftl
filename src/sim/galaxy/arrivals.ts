@@ -2,6 +2,7 @@ import { guardPacked } from '../packedGuard';
 import { CombatC, ShipC, type Faction, type Ship } from '../combat/components';
 import { factionsHostile } from '../combat/factions';
 import { spawnShip } from '../combat/ships';
+import type { Rect } from '../grid';
 import { placementGapError } from '../regions';
 import { generateShip } from '../shipgen/generate';
 import { Rng } from '../rng';
@@ -12,6 +13,7 @@ import { graceHolds } from './grace';
 import { pickWeighted, trafficPool } from './sector';
 import { isHostileFaction, tierOf } from './standing';
 import { currentNode, nodeState, withGalaxyRng } from './state';
+import { nodeOwner } from './control';
 import {
   ARRIVAL_EVERY_SEC, ARRIVAL_FRIENDLY_TERRITORY, ARRIVAL_HOSTILE_TERRITORY, ARRIVAL_MAX_CHANCE, ARRIVAL_PER_DANGER,
   MAX_HOSTILE_CONTACTS,
@@ -19,6 +21,7 @@ import {
 import { SCAVENGER_CHANCE, SCAVENGER_FACTION, SCAVENGER_MAX_DANGER } from './tuningHeat';
 import type { Contact } from './types';
 import { isProvoked } from './groups';
+import { PLAYER } from '../side';
 
 /**
  * Generated ships by contact key (faction shipgen, seed, depth), per content registry. Generation is a pure function of the key, so
@@ -129,7 +132,7 @@ export function playerShipInfo(sim: Sim): { id: number; ship: Ship } | null {
   guardPacked(sim, 'playerShipInfo');
   for (const id of sim.world.query(ShipC, CombatC)) {
     const ship = sim.world.get(id, ShipC) as Ship;
-    if (ship.faction === 'player' && ship.state === 'active') return { id, ship };
+    if (ship.faction === PLAYER && ship.state === 'active') return { id, ship };
   }
   return null;
 }
@@ -138,15 +141,31 @@ export function playerShipInfo(sim: Sim): { id: number; ship: Ship } | null {
 const SPOT_RINGS = [70, 95, 125, 160];
 const SPOT_DIRS = 12;
 
+/** Rings close around an anchor (`freeSpot`): from just clear of it outwards, ANCHOR_STEP tiles apart. */
+const ANCHOR_RINGS = 6;
+const ANCHOR_STEP = 10;
+
 /**
  * Where a ship of w x h tiles appears: the first spot on rings around the player's ship that passes the same checks as
  * `sector.deploy` (inside the sector bounds, then the gap rule `placementGapError`). Null when nothing fits. Deterministic.
+ * With an `anchor` (a rectangle in sector tiles: the station a trader calls at, the field a miner works), the rings go round that first, close
+ * in, and the player's rings are the fallback.
  */
-export function freeSpot(sim: Sim, w: number, h: number): { x: number; y: number } | null {
+export function freeSpot(sim: Sim, w: number, h: number, anchor?: Rect): { x: number; y: number } | null {
+  if (anchor) {
+    const near = Math.max(anchor.w, anchor.h) / 2 + Math.max(w, h) / 2;
+    const rings = Array.from({ length: ANCHOR_RINGS }, (_, i) => near + (i + 1) * ANCHOR_STEP);
+    const spot = ringSpot(sim, w, h, anchor.x + anchor.w / 2, anchor.y + anchor.h / 2, rings);
+    if (spot) return spot;
+  }
   const me = playerShipInfo(sim)?.ship;
   const cx = me ? me.x + me.width / 2 : sim.sector.width / 2;
   const cy = me ? me.y + me.height / 2 : sim.sector.height / 2;
-  for (const r of SPOT_RINGS) {
+  return ringSpot(sim, w, h, cx, cy, SPOT_RINGS);
+}
+
+function ringSpot(sim: Sim, w: number, h: number, cx: number, cy: number, rings: readonly number[]): { x: number; y: number } | null {
+  for (const r of rings) {
     for (let k = 0; k < SPOT_DIRS; k++) {
       const a = (k * 2 * Math.PI) / SPOT_DIRS;
       const x = Math.round(cx + r * Math.cos(a) - w / 2);
@@ -163,14 +182,14 @@ export function freeSpot(sim: Sim, w: number, h: number): { x: number; y: number
  * faction's combat side, the rest neutral (a scene may set the side, and cap the crew); one the player provoked always comes back hostile. Returns false (the contact stays, unspawned) when its
  * generator faction is missing, no layout comes out or nothing fits. Reports `ship.arrived` (with `opts.reason`, default 'spawn'), so every way a ship turns up here is covered.
  */
-export function spawnContact(sim: Sim, node: string, c: Contact, opts: { side?: Faction; crew?: number; reason?: ArriveReason } = {}): boolean {
+export function spawnContact(sim: Sim, node: string, c: Contact, opts: { side?: Faction; crew?: number; reason?: ArriveReason; anchor?: Rect } = {}): boolean {
   if (sim.galaxy.current !== node || c.ship !== undefined) return false;
   const def = sim.content.factions?.[c.shipgen];
   if (!def) return false;
   const key = contactKey(c);
   const gen = shipFor(sim, c, def);
   if (!gen) return false;
-  const spot = freeSpot(sim, gen.width, gen.height);
+  const spot = freeSpot(sim, gen.width, gen.height, opts.anchor);
   if (!spot) return false;
   generated(sim).delete(key);
   // A hired escort fights for whoever pays it.
@@ -210,8 +229,9 @@ function arrivalChance(sim: Sim): number {
   const node = currentNode(sim);
   if (!node) return 0;
   let p = Math.min(ARRIVAL_MAX_CHANCE, ARRIVAL_PER_DANGER * node.danger);
-  if (node.faction) {
-    const tier = tierOf(sim, node.faction);
+  const owner = nodeOwner(sim, node);
+  if (owner) {
+    const tier = tierOf(sim, owner);
     if (tier === 'hostile') p *= ARRIVAL_HOSTILE_TERRITORY;
     if (tier === 'friendly') p *= ARRIVAL_FRIENDLY_TERRITORY;
   }
@@ -226,7 +246,7 @@ function hostileShipsHere(sim: Sim, contacts: readonly Contact[]): number {
   let n = contacts.filter((c) => c.ship === undefined && isHostileFaction(sim, c.faction)).length;
   for (const id of sim.world.query(ShipC)) {
     const s = sim.world.get(id, ShipC);
-    if (s && (s.state === 'active' || s.state === 'disabled') && factionsHostile(s.faction, 'player')) n++;
+    if (s && (s.state === 'active' || s.state === 'disabled') && factionsHostile(s.faction, PLAYER)) n++;
   }
   return n;
 }
@@ -257,7 +277,7 @@ export function rollArrival(sim: Sim): void {
 function arrivalPool(sim: Sim, node: NonNullable<ReturnType<typeof currentNode>>): { p: number; pool: { value: string; weight: number }[] } {
   let p = arrivalChance(sim);
   const content = sim.content.galaxy;
-  let pool = trafficPool(content, node.faction, node.danger).filter((w) => isHostileFaction(sim, w.value));
+  let pool = trafficPool(content, nodeOwner(sim, node), node.danger).filter((w) => isHostileFaction(sim, w.value));
   if (!pool.length && node.danger <= SCAVENGER_MAX_DANGER && content?.factions[SCAVENGER_FACTION] && isHostileFaction(sim, SCAVENGER_FACTION)) {
     pool = [{ value: SCAVENGER_FACTION, weight: 1 }];
     p = Math.max(p, SCAVENGER_CHANCE);

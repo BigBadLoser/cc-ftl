@@ -71,7 +71,7 @@ export const galaxyHandlers: { [T in GalaxyCommandType]: Handler<T> } = {
     if (!debugPatrol(sim, cmd.node, cmd.faction ?? 'navy')) sim.events.emit({ type: 'command.rejected', command: cmd.type, reason: 'noPatrol' });
   },
   'debug.pirates': (sim, cmd) => {
-    if (!debugPirates(sim, cmd.node, cmd.faction ?? 'pirates', !!cmd.hunt)) sim.events.emit({ type: 'command.rejected', command: cmd.type, reason: 'noFleet' });
+    if (!debugPirates(sim, cmd.node, cmd.faction ?? 'pirates', !!cmd.hunt, cmd.role)) sim.events.emit({ type: 'command.rejected', command: cmd.type, reason: 'noFleet' });
   },
   'debug.chargeFtl': (sim) => {
     const me = playerShipInfo(sim);

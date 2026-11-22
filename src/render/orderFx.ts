@@ -10,6 +10,7 @@ import { AllegianceC } from '../sim/fight/components';
 import { DRAFT_COLOR } from './draftColor';
 import { ART_SCALE as S, iso } from './iso';
 import { arrowHeadPx, blockPx, dashedPath, ellipsePx, type Px } from './pixelShapes';
+import { PLAYER } from '../sim/side';
 
 export type OrderKind = 'move' | 'attack' | 'station' | 'board';
 
@@ -78,7 +79,7 @@ export function createOrderFx(world: World, parent: Container, spritePos: (id: n
         const d = world.get(id, DraftedC);
         const walk = world.get(id, PathC);
         const pos = world.get(id, PositionC);
-        if (!d?.target || !walk || !pos || walk.steps.length === 0 || world.has(id, DeadC) || world.get(id, AllegianceC)?.faction !== 'player') continue;
+        if (!d?.target || !walk || !pos || walk.steps.length === 0 || world.has(id, DeadC) || world.get(id, AllegianceC)?.faction !== PLAYER) continue;
         // One dash pattern for the whole line, counted from the target end so the dashes hold still while the walker moves.
         const feet = spritePos(id);
         const corners = [art(feet ?? iso(pos.x + (pos.toX - pos.x) * pos.progress, pos.y + (pos.toY - pos.y) * pos.progress)), ...walk.steps.map((st) => art(iso(st.x, st.y)))];

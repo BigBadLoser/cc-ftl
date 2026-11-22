@@ -1,8 +1,5 @@
 import { shipById, shipCanAct } from '../sim/combat/shipQuery';
-import {
-  CombatC, CrewC, IonC, ModuleC, JobC, ProjectileC, ShipC, WeaponC, commitEtaSec, projectileEtaSec, shotSlot, shotColor, ammoCount, isDormant, operatorOf, shieldRechargeSec, weaponsIdleReason, FTL_CHARGE_SEC,
-  type Combat, type Sim, type Target,
-} from '../sim';
+import { CombatC, CrewC, IonC, ModuleC, JobC, ProjectileC, ShipC, WeaponC, commitEtaSec, projectileEtaSec, shotSlot, shotColor, ammoCount, isDormant, operatorOf, shieldRechargeSec, weaponsIdleReason, FTL_CHARGE_SEC, type Combat, type Sim, type Target, PLAYER } from '../sim';
 import type { UiIncoming, UiEnemyWeapon, UiCombat, UiConsole, UiShipCombat, UiShipModule, UiWeapon, UiUpgradeInfo } from '../ui/api';
 import { upgradeEffects } from './upgradeText';
 import { emptyConsoleReason } from './consoleWhy';
@@ -156,11 +153,11 @@ export function buildCombat(sim: Sim, playerGrid = homeShip(sim)): UiCombat {
       }
       const holdAll = [...sim.world.query(WeaponC, ModuleC)].some((id) => sim.world.get(id, WeaponC)?.restore !== undefined && shipIdOf(sim, sim.world.get(id, ModuleC)) === playerGrid);
       player = { ...base, weapons, consoles, holdAll, idle: weaponsIdleReason(sim, playerGrid), incoming: incomingShots(sim, playerGrid) };
-    } else if (factionsHostile(s.faction, 'player') && s.state !== 'fled') {
+    } else if (factionsHostile(s.faction, PLAYER) && s.state !== 'fled') {
       // The same test as the sim's combat state (combatStateSystem): every faction at war with the player (hostile, and the
       // rogue AI and aliens, at war with everyone). Listing only 'hostile' left the panel empty in a fight with a rogue ship.
       enemies.push(isDormant(s) ? { ...base, dormant: true } : { ...base, charges: enemyWeapons(sim, id) });
-    } else if (sim.sector.stations && s.faction !== 'player' && (s.state === 'active' || s.state === 'disabled')) {
+    } else if (sim.sector.stations && s.faction !== PLAYER && (s.state === 'active' || s.state === 'disabled')) {
       enemies.push({ ...base, neutral: true, charges: enemyWeapons(sim, id) });
     }
   }

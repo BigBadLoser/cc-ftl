@@ -197,7 +197,7 @@ export type SimEvent =
   /** A shuttle home from a prize set its full slabs down by its bay, for the crew to cart to a wheel. */
   | { type: 'stasis.unloaded'; vehicle: number; ship: number; crew: number[] }
   /** A full slab went with its shuttle (destroyed): the prisoner is gone. */
-  | { type: 'stasis.lost'; crew: number; name: string; vehicle: number }
+  | { type: 'stasis.lost'; crew: number; name: string; vehicle: number; holder: string | null }
   /** A prisoner's slab reached the station and was paid for (capture/delivery.ts): ransomed, sold for a bounty, or to a black market. */
   /** A station's offer for a prisoner was accepted (capture/offers.ts): a shuttle comes for the slab, the station's ('station') or the player's ('own'). */
   | { type: 'prisoner.collecting'; crew: number; name: string; station: number; via: 'station' | 'own' }

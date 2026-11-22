@@ -37,8 +37,6 @@ export interface Engagement {
 export interface EngagementMember {
   ship: number;
   contact?: number;
-  /** Taken in this fight (galaxy/engagementPrize.ts `takeShip`): the beaten crew aboard are the captor's captives now, so the ship never yields again. */
-  prize?: true;
 }
 
 /** What the sim reports about these fights (part of `SimEvent`). `who` is side 0 (the attacker, or the aiders), `foe` side 1. */

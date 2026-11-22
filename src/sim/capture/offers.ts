@@ -1,7 +1,7 @@
 import { ShipC } from '../combat/components';
 import { CrewC, PositionC } from '../crew/components';
 import { PrisonerC } from '../fight/components';
-import { isPlayersPrisoner } from '../fight/relations';
+import { holderOf, PLAYER } from '../side';
 import { setsOf } from '../blackmarket/services';
 import type { SkillName } from '../registry';
 import { shipIdOf } from '../regions';
@@ -76,7 +76,7 @@ function heldFor(sim: Sim, prisoner: number): 'ok' | 'notSealed' | 'inTransit' |
 
 /** What `station` offers for `prisoner` now: the deal (credits, the faction whose standing it moves, by how much), or why there is none. */
 export function prisonerOffer(sim: Sim, station: number, prisoner: number): PrisonerOffer {
-  if (!isPlayersPrisoner(sim, prisoner) || !sim.world.has(prisoner, CrewC)) return { ok: false, reason: 'notPrisoner' };
+  if (holderOf(sim, prisoner) !== PLAYER || !sim.world.has(prisoner, CrewC)) return { ok: false, reason: 'notPrisoner' };
   const run = prisonerRun(sim, prisoner);
   if (run?.handover?.prisoner) {
     const out = run.phase === 'out' || run.phase === 'exchange';
@@ -108,7 +108,7 @@ export function stationWants(sim: Sim, station: number, prisoner: number): boole
 export function heldPrisoners(sim: Sim): number[] {
   const ships = playerShips(sim);
   return [...sim.world.query(PrisonerC, CrewC)].filter((id) => {
-    if (!isPlayersPrisoner(sim, id)) return false;
+    if (holderOf(sim, id) !== PLAYER) return false;
     const place = slabPlace(sim, id);
     const pos = sim.world.get(id, PositionC);
     return place ? place.kind === 'shuttle' || ships.has(place.ship) : !!pos && ships.has(shipIdOf(sim, pos));

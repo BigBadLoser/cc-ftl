@@ -1,5 +1,4 @@
-import { CrewC, PositionC } from '../../../../sim';
-import { AllegianceC } from '../../../../sim/fight/components';
+import { CrewC, PositionC, isPlayers } from '../../../../sim';
 import { InspectionC } from '../../../../sim/inspect/types';
 import { shipIdOf } from '../../../../sim/regions';
 import { defineHook } from '../../types';
@@ -16,7 +15,7 @@ export default defineHook({
       const insp = sim.world.get(searching()!, InspectionC)!;
       const me = sim.world.query(CrewC).find((c) => {
         const p = sim.world.get(c, PositionC);
-        return sim.world.get(c, AllegianceC)?.faction === 'player' && !!p && shipIdOf(sim, p) === insp.ship;
+        return isPlayers(sim, c) && !!p && shipIdOf(sim, p) === insp.ship;
       });
       if (me === undefined || insp.crew[0] === undefined) return;
       ctx.dispatch({ type: 'crew.draft', id: me, drafted: true });

@@ -1,7 +1,7 @@
 import { content } from '../content';
 import { debugShipId } from '../content/ships/debugShip';
 import { starterShips } from '../content/ships/starterShips';
-import { deserialize, homeShip, newGame, nodeOf, SAVE_VERSION, serialize, ShipC, startingRoles, type CrewPick, type Sim } from '../sim';
+import { deserialize, homeShip, newGame, nodeOf, SAVE_VERSION, serialize, ShipC, startingRoles, warmGalaxy, type CrewPick, type Sim } from '../sim';
 import { AUTO_ID, AUTO_IDS, BROKEN_ID, PRECOMBAT_ID, isAutoId, saveStore, type SaveMeta } from './saveStore';
 import { playerCrew } from '../sim/story/world';
 
@@ -69,7 +69,11 @@ export async function startGame(seedParam: string | null, starterParam: string |
   const starter = starterOf(starterParam);
   // A new game sails the ship the new-game flow picked, else `?starter=`, else the Spine Hauler (`ship.wayfarer`);
   // `newGame`'s own default stays the old `ship.starter`, which the sim tests are built on.
-  const fresh = (seed: number, ship?: string, crew?: CrewPick[]) => newGame(seed >>> 0, content, ship ?? starter?.id ?? DEFAULT_STARTER, true, crew ?? 'rolled');
+  const fresh = (seed: number, ship?: string, crew?: CrewPick[]) => {
+    const sim = newGame(seed >>> 0, content, ship ?? starter?.id ?? DEFAULT_STARTER, true, crew ?? 'rolled');
+    warmGalaxy(sim); // lived-in borders from the first minute (#604)
+    return sim;
+  };
   const random = () => (Math.random() * 0x100000000) >>> 0;
   await saveStore.ready(); // every session opens the store (Load and named slots work in a debug game); `persist: false` keeps it off the autosave
   if (seedParam !== null && Number.isFinite(Number(seedParam))) return { sim: fresh(Number(seedParam)), notice: null, persist: false };

@@ -1,3 +1,4 @@
+import { holderOf, PLAYER } from '../side';
 import { CrewC, JobC, PositionC } from '../crew/components';
 import { origin } from '../crew/helpers';
 import { PrisonerC } from '../fight/components';
@@ -74,8 +75,8 @@ function hasStasisJob(sim: Sim, prisoner: number): boolean {
  * themselves and so seal every prisoner they can find a wheel slot for.
  */
 export const sealMarked = (sim: Sim, crew: number): boolean => {
-  const p = sim.world.get(crew, PrisonerC);
-  return !!p && (!!p.seal || p.holder !== undefined);
+  const holder = holderOf(sim, crew);
+  return holder !== null && (holder !== PLAYER || !!sim.world.get(crew, PrisonerC)?.seal);
 };
 
 /**
@@ -83,8 +84,8 @@ export const sealMarked = (sim: Sim, crew: number): boolean => {
  * prisoners, else the ships flying for the NPC captor (`Prisoner.holder`, a galaxy faction).
  */
 export function holdsHere(sim: Sim, prisoner: number, ship: number): boolean {
-  const holder = sim.world.get(prisoner, PrisonerC)?.holder;
-  if (holder === undefined) return playerShips(sim).has(ship);
+  const holder = holderOf(sim, prisoner);
+  if (holder === PLAYER) return playerShips(sim).has(ship);
   const s = sim.world.get(ship, ShipC);
   return !!s && s.state !== 'wreck' && factionOfShip(sim, ship, s, s.faction) === holder;
 }

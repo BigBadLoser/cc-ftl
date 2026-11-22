@@ -4,7 +4,7 @@ import { ShipC } from '../sim/combat/components';
 import { CrewC, PositionC } from '../sim/crew/components';
 import { surrender } from '../sim/fight/surrender';
 import { AllegianceC, PrisonerC } from '../sim/fight/components';
-import { isPlayersPrisoner } from '../sim/fight/relations';
+import { holderOf } from '../sim/side';
 import { engagements } from '../sim/galaxy/engagements';
 import { ModuleC } from '../sim/modules/components';
 import { accessTile, footprintTiles } from '../sim/modules/footprint';
@@ -129,7 +129,7 @@ describe('NPC captors and their prisoners', () => {
   it('are not the player\'s prisoners: no deals, no release, no seal mark, and a save round trip keeps who holds them', () => {
     const { sim, crew } = taken(true);
     const [c] = crew as [number];
-    expect(isPlayersPrisoner(sim, c)).toBe(false);
+    expect(holderOf(sim, c)).toBe('raiders');
     expect(heldPrisoners(sim)).toEqual([]); // the player's list
     expect(prisonerOffer(sim, 0, c)).toMatchObject({ ok: false, reason: 'notPrisoner' });
     sim.enqueue({ type: 'prisoner.release', crew: c });

@@ -67,7 +67,7 @@ export * from './vehicles/components';
 export * from './fight/components';
 export { prizeValue } from './capture/prize';
 export { cargoCount, cargoSpace, cargoOf, cargoAdd } from './vehicles/cargo';
-export { isHostile, isPlayerFoe, playerFoes, isSubdued, isCombatReady, isInvader, isOnOurSide, isPlayersPrisoner } from './fight/relations';
+export { isHostile, isPlayerFoe, playerFoes, isFoeOf, foesOf, isSubdued, isCombatReady, isInvader, isOnOurSide } from './fight/relations';
 export { sightLine, rayCells, type Cover } from './fight/los';
 export { wielded, hitChance, handDefOf } from './fight/weapons';
 export { shipIdAt, shipIdOf, shipGrid, shipIds, regions, shipAt, shipFrame, shipRect, inRect, inShip, padded, type Region } from './regions';
@@ -155,7 +155,8 @@ export { isHiddenOutpost, discoverOutpost } from './outposts/state';
 export { isDormant, wake, type WakeReason } from './combat/dormant';
 export { DISCOVER_RANGE } from './systems/outposts';
 export * from './galaxy/types';
-export { stanceBetween, spillSources } from './galaxy/relations';
+export { warmGalaxy } from './galaxy/warmup';
+export { baselineStance, stanceOf, atWar, spillSources } from './galaxy/relations';
 export type {
   FactionRelationDef, FactionSpecialityDef, Stance, GalaxyFactionDef, StructureDef, NodeContentTable, NodeContentDef, TierCurve, GalaxyContent, StandingTier, DangerRange, FactionFleetDef, FleetContent, FleetGroupDef, MarketContent, MarketRates, PortKind, PortKindDef, ShipClassDef,
 } from './galaxy/defs';
@@ -178,6 +179,7 @@ export { visibleFleets, sensorNodes } from './galaxy/fleets';
 export { fleetName } from './galaxy/names';
 export { portsAt, portOf } from './galaxy/portIndex';
 export { portNode, type Port } from './galaxy/ports';
+export { sectorOwner, nodeOwner, nodeOwnerAt, structureOwner } from './galaxy/control';
 export { econOf, stockAt, factorAt, quoteAt, moveStock, advance, capOf, type Econ } from './galaxy/market';
 export { bindMarkets, bindStation, unbindMarkets } from './galaxy/marketLive';
 export { populateNode } from './galaxy/populate';
@@ -185,7 +187,7 @@ export { populateCargo } from './galaxy/populateCargo';
 export { containerAt, openRefusal } from './containers/open';
 export { ContainerC } from './containers/components';
 export { newsFeed, report as reportNews } from './galaxy/news';
-export { clash, fleetPower, shipPower, atWar, wouldFight, type Clash } from './galaxy/clash';
+export { clash, fleetPower, shipPower, wouldFight, type Clash } from './galaxy/clash';
 export { resolveMeetings, findMeetings } from './galaxy/meetings';
 export { placeWrecks, leaveWreck } from './galaxy/wrecks';
 export { cargoCap, cargoLoad, dockPort } from './galaxy/dock';
@@ -196,6 +198,9 @@ export { incomingFleets, type IncomingFleet } from './galaxy/incoming';
 export { evadeOdds, bribeCost, fleetStrength, playerHelm, evadeOddsFor } from './galaxy/encounterOdds';
 export { eventNodeId, isEventNode, inEvent, leaveBlocker, hostilesPresent } from './galaxy/eventGrid';
 export { playerStock } from './items/held';
+export {
+  PLAYER, sideOf, holderOf, isPlayers, shipsOf, mainShipOf, mainShipIdOf, crewOf, modulesOf, storagesOf, stockOf, type Side,
+} from './side';
 export { siteStatus, siteIds, type SiteStatus, type SiteBlock, type SiteMaterial } from './crew/site';
 export { quoteYard, viewPlan, plannedTiles, type YardQuote, type HullView, type YardError } from './yard/plan';
 export { brushPlan, cutPlan, touchesShip, type BrushResult } from './yard/brush';

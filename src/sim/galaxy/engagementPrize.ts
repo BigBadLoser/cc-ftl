@@ -46,12 +46,13 @@ export function takeShip(sim: Sim, ship: number, captor: number): void {
   if (to && contact) {
     const prize = { ...contact, id: sim.galaxy.nextFleet++, faction: to.faction, ship };
     to.ships.push(prize);
-    e.members[win].push({ ship, contact: prize.id, prize: true });
+    e.members[win].push({ ship, contact: prize.id });
     headHome(sim, to);
   } else {
-    e.members[win].push({ ship, prize: true });
+    e.members[win].push({ ship });
   }
-  delete s.yielded; // settled: it was taken (its beaten crew are the captor's prisoners, held aboard or sealed into a wheel (stasis/system.ts), and it never yields again: `isPrize`)
+  delete s.yielded; // settled: it was taken, and its beaten crew stay aboard as captives who never give it up again (`Ship.taken`)
+  s.taken = true;
   // The ship is on the captor's side now: neither aims at the other any more (#609 review), even while the node is otherwise in combat.
   const side = new Set(e.members[win].map((m) => m.ship));
   for (const id of side) {

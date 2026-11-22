@@ -5,7 +5,7 @@ import { CarriedC, CrewC, DeadC, PositionC } from '../crew/components';
 import { origin } from '../crew/helpers';
 import { removeCrew } from '../crew/depart';
 import { PrisonerC } from '../fight/components';
-import { isPlayersPrisoner } from '../fight/relations';
+import { holderOf, PLAYER } from '../side';
 import { CarryingC, ItemStackC, StorageC } from '../items/components';
 import { spillItems } from '../items/stacks';
 import { storageCount } from '../items/storage';
@@ -32,7 +32,7 @@ import { RACK_LOAD_SEC, RACK_SLOTS, SLAB_ITEM } from './tuning';
 
 /** A prisoner the crew will seal: marked, in the world, alive, not carried. */
 const toSeal = (sim: Sim, id: number): boolean =>
-  isPlayersPrisoner(sim, id) && sealMarked(sim, id) && sim.world.has(id, PositionC) && !sim.world.has(id, DeadC) && !sim.world.has(id, CarriedC) && !sim.world.has(id, StasisC);
+  holderOf(sim, id) === PLAYER && sealMarked(sim, id) && sim.world.has(id, PositionC) && !sim.world.has(id, DeadC) && !sim.world.has(id, CarriedC) && !sim.world.has(id, StasisC);
 
 /** Marked prisoners on a prize whose slabs no wheel there can take (they go by shuttle), ascending ids. */
 export function shuttleSeals(sim: Sim, ship: number): number[] {
@@ -163,9 +163,10 @@ function lostSlabs(sim: Sim): void {
     const s = sim.world.get(id, StasisC)!;
     if (s.at !== 'vehicle' || sim.world.has(s.carrier, VehicleC)) continue;
     const name = sim.world.get(id, CrewC)?.name ?? 'A prisoner';
+    const holder = holderOf(sim, id); // read before the prisoner is removed
     sim.world.remove(id, StasisC);
     removeCrew(sim, id);
-    sim.events.emit({ type: 'stasis.lost', crew: id, name, vehicle: s.carrier });
+    sim.events.emit({ type: 'stasis.lost', crew: id, name, vehicle: s.carrier, holder });
   }
 }
 

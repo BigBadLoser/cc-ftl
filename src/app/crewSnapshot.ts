@@ -1,4 +1,4 @@
-import { AirlockC, SuitC, airlockUsable, needsAir, suitAir, suitDef, suitTile, AboardC, AllegianceC, AssignmentC, CarriedC, CarryingC, CrewC, DeadC, DownedC, DraftedC, FighterC, HealthC, InertC, JobC, ModuleC, MoodC, MOOD_LABELS, NeedsC, PositionC, PrioritiesC, isPlayersPrisoner, ShipC, StorageC, SurrenderedC, TICK_HZ, VehicleC, WORK_CATEGORIES, sightLine, storageCount, Struct, wielded, EVA_AIR_LOW_FRAC, MOOD_LOW, MOOD_VERY_LOW, MOOD_LOW_WORK_MULT, MOOD_VERY_LOW_WORK_MULT, type Job, type Sim, type WorkCategory, SKILLS, TraitsC, stat, titleOf, BackgroundC, WONT_DO_WHY, priorityDefaults, workBlocked } from '../sim';
+import { AirlockC, SuitC, airlockUsable, needsAir, suitAir, suitDef, suitTile, AboardC, AssignmentC, CarriedC, CarryingC, CrewC, DeadC, DownedC, DraftedC, FighterC, HealthC, InertC, JobC, ModuleC, MoodC, MOOD_LABELS, NeedsC, PositionC, PrioritiesC, ShipC, StorageC, SurrenderedC, TICK_HZ, VehicleC, WORK_CATEGORIES, sightLine, storageCount, Struct, wielded, EVA_AIR_LOW_FRAC, MOOD_LOW, MOOD_VERY_LOW, MOOD_LOW_WORK_MULT, MOOD_VERY_LOW_WORK_MULT, type Job, type Sim, type WorkCategory, SKILLS, TraitsC, stat, titleOf, BackgroundC, WONT_DO_WHY, priorityDefaults, workBlocked, isPlayers, holderOf, PLAYER } from '../sim';
 import type { UiCrew, UiFight, UiSkill, UiTrait } from '../ui/api';
 import { breakWord, strainOf } from './breakText';
 import { BreakdownC } from '../sim';
@@ -214,7 +214,7 @@ function card(sim: Sim, ctx: Ctx, id: number, side: UiCrew['side']): UiCrew | nu
     weapon: w.item === 'unarmed' ? null : { item: w.item, name: sim.content.items[w.item]?.name ?? w.item, ranged: w.def.kind === 'ranged', damage: w.def.damage, range: w.def.range },
     arms: loc.shipId ? armsOn(sim, ctx, loc.shipId) : [],
     surrendered: sim.world.has(id, SurrenderedC),
-    prisoner: isPlayersPrisoner(sim, id),
+    prisoner: holderOf(sim, id) === PLAYER,
     seal: sealOf(sim, id),
     stasis: stasisOf(sim, id),
     inert: sim.world.has(id, InertC),
@@ -224,7 +224,7 @@ function card(sim: Sim, ctx: Ctx, id: number, side: UiCrew['side']): UiCrew | nu
     suit: suitOf(sim, id),
     suitAt: suitAtOf(sim, id),
     traits: traitsOf(sim, id),
-    skills: side === 'player' && !sim.content.species[crew.species]?.mechanical ? skillsOf(sim, id, role?.skills) : [],
+    skills: side === 'own' && !sim.content.species[crew.species]?.mechanical ? skillsOf(sim, id, role?.skills) : [],
   };
 }
 
@@ -243,9 +243,9 @@ export function buildCrewLists(sim: Sim, watch: number | null = null): { crew: U
   const occupied = new Set<number>();
   const enemies: number[] = [];
   for (const id of sim.world.query(CrewC)) {
-    const side = sim.world.get(id, AllegianceC)?.faction === 'player' ? 'player' : 'enemy';
-    if (side === 'player') {
-      const c = card(sim, ctx, id, 'player');
+    const mine = isPlayers(sim, id);
+    if (mine) {
+      const c = card(sim, ctx, id, 'own');
       if (!c) continue;
       crew.push(c);
       if (c.ship) occupied.add(c.ship);

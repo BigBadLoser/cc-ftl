@@ -3,7 +3,8 @@ import { portsAt } from '../sim/galaxy/portIndex';
 import { galaxyIndex } from '../sim/galaxy/state';
 import { newGame } from '../sim/newGame';
 import type { Sim } from '../sim/sim';
-import { ensureChunk } from '../sim/galaxy/state';
+import { ensureArea, ensureChunk } from '../sim/galaxy/state';
+import { SIM_RING } from '../sim/galaxy/tuningCoarse';
 import { arrive } from '../sim/galaxy/travel';
 import { FLEET_AREA_HOPS } from '../sim/galaxy/tuning';
 import { nodesWithin } from '../sim/galaxy/fleets';
@@ -64,6 +65,7 @@ function world(seed: number, den: boolean): Sim {
   const node = dens.map((n) => ({ n, c: crowd(n.id) })).sort((a, b) => b.c - a.c || (a.n.id < b.n.id ? -1 : 1))[0]!.n;
   sim.galaxy.current = node.id;
   arrive(sim);
+  ensureArea(sim, node.id, SIM_RING); // the whole simulated area, as the coarse tick would make it
   return sim;
 }
 

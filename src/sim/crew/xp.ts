@@ -1,10 +1,10 @@
 import { SkillXpC } from '../story/components';
 import type { SkillName } from '../registry';
 import type { Sim } from '../sim';
-import { AllegianceC } from '../fight/components';
 import { CrewC } from './components';
 import { xpGainMult } from './traits';
 import { noteWork } from './mood';
+import { isPlayers } from '../side';
 
 export { levelsFor, xpForLevels, xpProgress } from './xpCurve';
 
@@ -18,7 +18,7 @@ export function grantXp(sim: Sim, id: number, skill: SkillName, xp: number, work
   if (xp === 0 || !Number.isFinite(xp)) return;
   const crew = sim.world.get(id, CrewC);
   if (!crew || !sim.content.species[crew.species]) return;
-  if (sim.world.get(id, AllegianceC)?.faction !== 'player') return; // hostile and NPC crew keep the skills their generator gave them
+  if (!isPlayers(sim, id)) return; // hostile and NPC crew keep the skills their generator gave them
   let c = sim.world.get(id, SkillXpC);
   if (!c) sim.world.add(id, SkillXpC, (c = { xp: {} }));
   const next = (c.xp[skill] ?? 0) + (xp > 0 ? xp * xpGainMult(sim, id, skill) : xp);

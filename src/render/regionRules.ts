@@ -9,6 +9,7 @@ import { ModuleC } from '../sim/modules/components';
 import { Struct } from '../sim/structure';
 import { REGION_PAD } from '../sim/tuning';
 import { isTube } from '../sim/tube';
+import { PLAYER } from '../sim/side';
 
 /**
  * Roofing and visibility per region (ARCHITECTURE "Sector grid" §5), read from ShipC and the tiles. Renderer only.
@@ -23,7 +24,7 @@ export function boarded(world: World, shipId: number): boolean {
   if (!ship) return false;
   for (const id of world.query(CrewC, PositionC)) {
     const p = world.get(id, PositionC);
-    if (p && onShip(ship, p) && shipIdAtTile(world, p.x, p.y) === shipId && world.get(id, AllegianceC)?.faction === 'player') return true;
+    if (p && onShip(ship, p) && shipIdAtTile(world, p.x, p.y) === shipId && world.get(id, AllegianceC)?.faction === PLAYER) return true;
   }
   return false;
 }
@@ -35,8 +36,8 @@ export function boarded(world: World, shipId: number): boolean {
  * ship is roofed only when the player asks to see it from outside (`roofPlayer`).
  */
 export const wantsRoof = (world: World, shipId: number, s: Ship, roofOthers: boolean, roofPlayer = false): boolean =>
-  (roofPlayer && s.faction === 'player' && s.state !== 'wreck')
-  || (roofOthers && s.faction !== 'player' && s.state !== 'wreck' && (!s.immobile || factionsHostile(s.faction, 'player')) && !boarded(world, shipId));
+  (roofPlayer && s.faction === PLAYER && s.state !== 'wreck')
+  || (roofOthers && s.faction !== PLAYER && s.state !== 'wreck' && (!s.immobile || factionsHostile(s.faction, PLAYER)) && !boarded(world, shipId));
 
 /**
  * An interior tile: floor, door, or under a module. Crew on one of a roofed region are hidden under its roof. A prefab base's tube

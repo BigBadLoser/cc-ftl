@@ -9,6 +9,7 @@ import { Struct } from '../structure';
 import { TICK_HZ } from '../time';
 import { guestOn } from '../consent/guests';
 import { onStationRoll, roleOf } from '../consent/roles';
+import { isPlayers } from '../side';
 
 /** Seconds with no intruder, attack, fire or breach before an alarm calms down. */
 const CALM_AFTER_SEC = 30;
@@ -54,7 +55,7 @@ export function stationAlarmSystem(sim: Sim): void {
     }
     if (ship.integrity < alarm.integrity - 1e-4) {
       reasons.push('attacked');
-      for (const c of outsiders) if (sim.world.get(c, AllegianceC)?.faction === 'player' && !sim.world.has(c, WantedC)) sim.world.add(c, WantedC, { station: st });
+      for (const c of outsiders) if (isPlayers(sim, c) && !sim.world.has(c, WantedC)) sim.world.add(c, WantedC, { station: st });
     }
     alarm.integrity = ship.integrity;
     if ((sim.tick + st) % HAZARD_EVERY === 0) {

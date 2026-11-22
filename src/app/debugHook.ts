@@ -1,4 +1,4 @@
-import { galaxyIndex, StorageC, storageTake, totalStock, siteIds, siteStatus, CombatC, WeaponC, FTL_CHARGE_SEC, playerShip, AllegianceC, NeedsC, MoodC, AssignmentC, CrewC, JobC, SuitC, suitAir, DownedC, ModuleC, SurrenderedC, PositionC, ShipC, Struct, accessTile, removeModule, spawnModule, spawnVehicle, placementError, vehicleViews, cargoAdd, spawnShip, VehicleC, BodyC, type Faction, type Sim } from '../sim';
+import { galaxyIndex, StorageC, storageTake, totalStock, siteIds, siteStatus, CombatC, WeaponC, FTL_CHARGE_SEC, playerShip, NeedsC, MoodC, AssignmentC, CrewC, JobC, SuitC, suitAir, DownedC, ModuleC, SurrenderedC, PositionC, ShipC, Struct, accessTile, removeModule, spawnModule, spawnVehicle, placementError, vehicleViews, cargoAdd, spawnShip, VehicleC, BodyC, type Faction, type Sim, isPlayers } from '../sim';
 import { setAdditiveMerge } from '../render/batch';
 import { setRenderGroups } from '../render/renderGroups';
 import { DEPTH_BAND_WIDTH, setDepthBandWidth } from '../render/depthBands';
@@ -52,6 +52,8 @@ export function installDebugHook(sim: Sim, r: Renderer, loop?: Loop): { onEvents
     moduleMemo: (on: boolean) => setModuleMemo(on),
     /** Roof every ship but wrecks, the player's and stations included (render checks of roof art). */
     roofAll: (on: boolean) => r.setRoofAll(on),
+    /** Roof other ships (true, the default) or show them cut away like the player's (the debug panel's roof toggle; screenshots of NPC interiors). */
+    roofEnemies: (on: boolean) => r.setRoofEnemies(on),
     /** Advance a frozen sim by `n` ticks (one by one, so events and commands behave as in play). */
     stepTicks: (n: number) => { for (let i = 0; i < n; i++) sim.step(); },
     screenOf: (shipId: number, x: number, y: number) => r.screenOf(shipId, x, y),
@@ -154,7 +156,7 @@ export function installDebugHook(sim: Sim, r: Renderer, loop?: Loop): { onEvents
     crew: () =>
       [...sim.world.query(CrewC, PositionC)].map((id) => {
         const p = sim.world.get(id, PositionC);
-        return p && { id, enemy: sim.world.get(id, AllegianceC)?.faction !== 'player', down: sim.world.has(id, DownedC) || sim.world.has(id, SurrenderedC), shipId: shipIdOf(sim, p), ship: shipIdOf(sim, p), ...r.screenOf(shipIdOf(sim, p), p.x, p.y) };
+        return p && { id, enemy: !isPlayers(sim, id), down: sim.world.has(id, DownedC) || sim.world.has(id, SurrenderedC), shipId: shipIdOf(sim, p), ship: shipIdOf(sim, p), ...r.screenOf(shipIdOf(sim, p), p.x, p.y) };
       }),
     /** Name, role and suit tank of a crew member (the component keys are not reachable from a page script). */
     crewInfo(id: number) {
@@ -201,7 +203,7 @@ export function installDebugHook(sim: Sim, r: Renderer, loop?: Loop): { onEvents
       /** Spawn a whole ship from a content template at sector (x, y) (staging a neutral target for shuttle EVA shots); returns its grid id. */
       ship: (template: string, faction: Faction, x: number, y: number) => spawnShip(sim, sim.content.ships[template] as never, { faction, x, y }),
       /** Make every crew member aboard a ship (the player's own excluded) surrender: the "enemy given up" shot. */
-      surrenderCrew: (shipId: number) => { for (const id of sim.world.query(CrewC, PositionC)) if (shipIdOf(sim, sim.world.get(id, PositionC) as never) === shipId && sim.world.get(id, AllegianceC)?.faction !== 'player' && !sim.world.has(id, SurrenderedC)) sim.world.add(id, SurrenderedC, { tick: sim.tick }); },
+      surrenderCrew: (shipId: number) => { for (const id of sim.world.query(CrewC, PositionC)) if (shipIdOf(sim, sim.world.get(id, PositionC) as never) === shipId && !isPlayers(sim, id) && !sim.world.has(id, SurrenderedC)) sim.world.add(id, SurrenderedC, { tick: sim.tick }); },
       /** Put a vehicle (e.g. 'vehicle.mining_pod') in an empty bay module; returns its id (the mining shots). */
       vehicle: (def: string, bay: number) => spawnVehicle(sim, def, bay),
       /** Hold a stowed vehicle in flight `d` tiles out from its bay's middle, bound for the bay (the landing-gear shots; pause the sim first). */

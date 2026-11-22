@@ -2,7 +2,6 @@ import { CrewC, DeadC, HealthC, NeedsC, PositionC, PrioritiesC } from '../crew/c
 import { AboardC, VehicleC } from '../vehicles/components';
 import { boardingTile } from '../vehicles/geometry';
 import { hatchSpot } from '../eva/shuttle';
-import { AllegianceC } from '../fight/components';
 import { shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { isIncapacitated } from '../crew/helpers';
@@ -10,6 +9,7 @@ import { blockNow } from '../crew/onCall';
 import {
   AWAY_GO_STAY_SEC, AWAY_HOME_CHARGE, AWAY_HOME_HEALTH, AWAY_HOME_HUNGER, AWAY_HOME_REST, AWAY_URGENT_CHARGE, AWAY_URGENT_HUNGER, AWAY_URGENT_REST,
 } from '../tuning';
+import { crewOf, PLAYER } from '../side';
 import { AwayC, AwaySiteC, SiteRunC } from './components';
 import { fightCalls } from './phase';
 import { siteDemand } from './seats';
@@ -21,9 +21,7 @@ import { needSecs, ofSide, tripWorthIt } from './tripFit';
  */
 
 /** The living crew of the player's side standing on the ship, ascending id. */
-export function playerCrewOnShip(sim: Sim, ship: number): number[] {
-  return [...sim.world.query(CrewC, PositionC)].filter((id) => !sim.world.has(id, DeadC) && sim.world.get(id, AllegianceC)?.faction === 'player' && shipIdOf(sim, sim.world.get(id, PositionC)!) === ship).sort((a, b) => a - b);
-}
+export const playerCrewOnShip = (sim: Sim, ship: number): number[] => crewOf(sim, PLAYER, { on: ship, packedOk: true });
 
 /** True while a living crew member of the player's side stands on the ship (a site's wreck must not go while anyone is on it). */
 export function playerCrewOn(sim: Sim, ship: number): boolean {

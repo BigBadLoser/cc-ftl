@@ -1,12 +1,12 @@
 import { BodyC } from '../body';
 import { ShipC } from '../combat/components';
 import { PositionC } from '../crew/components';
-import { AllegianceC } from '../fight/components';
 import { isDormant, wake } from '../combat/dormant';
 import { discoverOutpost } from '../outposts/state';
 import type { Sim } from '../sim';
 import { Struct } from '../structure';
 import { VehicleC } from '../vehicles/components';
+import { isPlayers, PLAYER } from '../side';
 
 /** A player crew member, pod or shuttle within this many tiles (Chebyshev) of a hidden base's tiles discovers it. */
 export const DISCOVER_RANGE = 6;
@@ -49,7 +49,7 @@ export function outpostSystem(sim: Sim): void {
     const near = (x: number, y: number) => x >= x0 - DISCOVER_RANGE && x <= x1 + DISCOVER_RANGE && y >= y0 - DISCOVER_RANGE && y <= y1 + DISCOVER_RANGE;
     let seen = false;
     for (const c of [...sim.world.query(PositionC)].sort((a, b) => a - b)) {
-      if (sim.world.get(c, AllegianceC)?.faction !== 'player') continue;
+      if (!isPlayers(sim, c)) continue;
       const p = sim.world.get(c, PositionC);
       if (!p) continue;
       const tx = Math.round(p.x), ty = Math.round(p.y);
@@ -58,7 +58,7 @@ export function outpostSystem(sim: Sim): void {
     for (const v of [...sim.world.query(VehicleC, BodyC)].sort((a, b) => a - b)) {
       const home = sim.world.get(sim.world.get(v, VehicleC)?.homeShip ?? 0, ShipC);
       const b = sim.world.get(v, BodyC);
-      if (home?.faction === 'player' && b && sim.world.get(v, VehicleC)?.state !== 'stowed' && near(Math.floor(b.x), Math.floor(b.y))) seen = true;
+      if (home?.faction === PLAYER && b && sim.world.get(v, VehicleC)?.state !== 'stowed' && near(Math.floor(b.x), Math.floor(b.y))) seen = true;
     }
     if (seen) discoverOutpost(sim, id, 'proximity');
   }
