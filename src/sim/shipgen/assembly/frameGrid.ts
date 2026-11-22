@@ -27,7 +27,18 @@ export function frameGrid(fr: Frame, plan: ShipPlan): FrameGrid {
   let xNose = 0;
   while (xNose < xBr - MIN_DEPTH && top(xNose) < 2) xNose++;
   // Through the plating column before the band, so its aft wall is one wall with the spine's end on it.
-  paint(g.room(plan.command.role, { spec: plan.command }), xNose, xBr + 1, () => true);
+  const bridge = g.room(plan.command.role, { spec: plan.command });
+  paint(bridge, xNose, xBr + 1, () => true);
+  // No one-tile pockets: from each outer edge in, a row where the bridge is one column wide (a step of the bow's hull
+  // against the aft wall) is plating, so the side walls run straight to the back wall.
+  for (const sign of [-1, 1]) {
+    for (let ty = sign * H; ty * sign >= 0; ty -= sign) {
+      const run = []; for (let tx = xNose; tx < xBr + 1; tx++) if (g.at(ox + tx, ty) === bridge) run.push(tx);
+      if (run.length === 0) continue;
+      if (run.length > 1) break;
+      g.set(ox + (run[0] as number), ty, SPACE);
+    }
+  }
   return { g, hall, docks, paint };
 }
 
