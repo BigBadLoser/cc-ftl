@@ -116,6 +116,7 @@ def hinge(R, c, tan, r, w, col="steel", cap="rgChrome"):
 
 
 LINK = 0.12                                                       # the shoulder link: short, up and out
+BEAM = 0.24                                                       # the laser's stand-off over the patient
 HEAD = {"laser": 0.125, "cutter": 0.1, "clamp": 0.17, "camera": 0.095, "suture": 0.15}   # tool lengths along their aim
 WR, WZ = 0.66, -0.06                                                # the wrist (instrument carriage): out from the hub, up from the ring
 
@@ -153,7 +154,8 @@ def arm(R, sh, out, tan, kind, wrist, aim, working, curl=False):
     d, n = unit(wrist, aim)
     ce = tuple(wrist[i] + d[i] * 0.06 for i in range(3))
     R.tube(wrist, ce, r * 1.05, "gm")                                                  # instrument carriage
-    hs = tuple(aim[i] - d[i] * HEAD[kind] for i in range(3)) if working else ce
+    stand = HEAD[kind] + (BEAM if kind == "laser" else 0.0)                          # the laser stands off, its beam
+    hs = tuple(aim[i] - d[i] * stand for i in range(3)) if working else ce            # spanning the gap
     if working and n > HEAD[kind] + 0.07:
         R.tube(ce, hs, 0.014, "rgChrome", sides=6)                                   # instrument shaft
     head(R, hs, d, kind, working, aim)
@@ -168,8 +170,8 @@ def head(R, tp, d, kind, working, aim):
         R.tube(at(0.06), at(0.09), 0.036, "medWhite", r1=0.024)
         R.tube(at(0.09), at(0.1), 0.018, "red" if working else "gmD")
         if working:
-            R.tube(at(0.1), aim, 0.008, "red", sides=6)
-            R.ball(aim, 0.02, "red", seg=6)
+            R.tube(at(0.1), aim, 0.0045, "red", sides=5)
+            R.ball(aim, 0.022, "red", seg=6)
     elif kind == "cutter":
         R.tube(at(0.0), at(0.03), 0.024, "steel")
         R.tube(at(0.03), at(0.1), 0.014, "rgChrome", r1=0.002, sides=6)
@@ -233,7 +235,7 @@ def rig(state, rot, *_):
     R.tube(tail(0.4), tail(0.42), 0.09, "rgChromeD", sides=12)
     R.tube((hu, hv, bz - 0.06), (hu, hv, bz - 0.06 - SLEEVE), 0.05, "medWhite")         # piston: the sleeve, and the
     if hz + 0.04 < bz - 0.06 - SLEEVE:                                                 # rod run out of it
-        R.tube((hu, hv, bz - 0.06 - SLEEVE), (hu, hv, hz + 0.04), 0.032, "rgChrome")
+        R.tube((hu, hv, bz - 0.06 - SLEEVE), (hu, hv, hz + 0.04), 0.032, "rgChromeD")    # (darker than the sleeve)
     # the halo
     R.torus((hu, hv), hz, RING_R, TUBE_R, "medWhite")
     R.torus((hu, hv), hz - 0.06, RING_R, 0.016, "cyan" if on else "steelD", m=6)        # underglow
@@ -249,7 +251,7 @@ def rig(state, rot, *_):
         sh, tan = mount(R, hu, hv, hz, ca, sa)
         wrist = (hu + WR * ca, hv + WR * sa, hz + WZ)
         if kind in use:                                                                # the tools converge on the incision
-            up = 0.16 if kind == "camera" else 0.07 if kind == "laser" else 0.0
+            up = 0.16 if kind == "camera" else 0.0
             aim = (site[0] + SPREAD[0] * ca, site[1] + SPREAD[1] * sa, site[2] + up)       # each its own spot
             arm(R, sh, (ca, sa), tan, kind, wrist, aim, True)
         else:                                                                          # folded: curled in over the ring,
