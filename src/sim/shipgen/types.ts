@@ -247,6 +247,8 @@ export interface GenResult {
   height: number;
   /** Ship role and archetype picked, and a one-line description of the topology built. */
   role: string;
+  /** The hull family built, where the role is not one (a navy destroyer is a frigate hull: assembly/outlineShip.ts). Read it through `builtFamily`. */
+  family?: string;
   archetype: ArchetypeId;
   topology: string;
   /** Attempts used (1 = first seed worked). */

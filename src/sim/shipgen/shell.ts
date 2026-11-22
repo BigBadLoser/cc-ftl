@@ -27,6 +27,9 @@ export const seedHull = (f: FactionDef, seed: number, depth: number): HullFamily
 /** The hull family (or ship role) id a seed builds, without building anything: every attempt builds the same one (`hullOf`). */
 export const previewHull = (f: FactionDef, seed: number, depth: number): string => seedHull(f, seed, depth).id;
 
+/** The hull family a generated ship was built as (what `previewHull` foretold): its role, unless it names its family apart. */
+export const builtFamily = (g: Pick<GenResult, 'role' | 'family'>): string => g.family ?? g.role;
+
 /** What a hull's problem begins with when its engines cannot carry it. */
 export const CAPACITY_PROBLEM = 'engines carry';
 

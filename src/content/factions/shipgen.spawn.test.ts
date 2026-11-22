@@ -19,10 +19,13 @@ import type { FactionDef } from '../../sim/shipgen/types';
 const defs = content.modules as Record<string, ModuleDef>;
 const ids = Object.keys(factions) as (keyof typeof factions)[];
 
-/** Spawn a generated ship in a real sim and return the sim and its grid id. */
+/**
+ * Spawn a generated ship in a real sim and return the sim and its grid id. Centred below the home ship (top left, rows 50 to 70), so the
+ * largest hulls (navy carriers up to about 140 by 51) clear it by the gap rule.
+ */
 function spawned(faction: string, seed: number, depth: number): { sim: Sim; shipId: number } {
   const sim = newGame(1, content);
-  sim.enqueue({ type: 'debug.spawnGenerated', faction, seed, depth, cx: 130, cy: 70 });
+  sim.enqueue({ type: 'debug.spawnGenerated', faction, seed, depth, cx: 130, cy: 150 });
   sim.step();
   return { sim, shipId: shipIds(sim).find((i) => i !== homeShip(sim)) ?? 0 };
 }

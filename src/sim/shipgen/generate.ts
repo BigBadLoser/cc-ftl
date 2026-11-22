@@ -19,7 +19,7 @@ import { erodeHull } from './erodeHull';
 import { regrid } from './assembly/regrid';
 import { generateOutline } from './assembly/outlineShip';
 import { CAPACITY_PROBLEM, enginesShort, fitShell, seedHull, seedOf } from './shell';
-export { enginesShort, fitShell, previewHull, seedOf, type Shell } from './shell';
+export { builtFamily, enginesShort, fitShell, previewHull, seedOf, type Shell } from './shell';
 import type { ArchetypeId, FactionDef, GenResult, HullFamilyDef, RoomRole, ShipRoleDef } from './types';
 
 /** Attempts before giving up on a seed (each reseeds deterministically). */

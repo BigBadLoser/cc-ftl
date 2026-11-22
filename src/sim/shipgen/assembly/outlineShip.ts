@@ -291,7 +291,7 @@ export function assembleOutline(
   const planned = plannedEquipment(defs, plan);
   const short = equipmentShort(defs, planned, r.template);
   if (short) r.problems.push(short);
-  return { ...r, planned };
+  return { ...r, planned, family: NAVY_TYPES[type].family };
 }
 
 /** An outline navy ship by attempts (as `generateNavy`). `type` defaults to the seed's (`navyTypeOf`): the game's navy ships (`generateShip`). */
