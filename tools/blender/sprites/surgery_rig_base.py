@@ -57,9 +57,9 @@ def _q(R, pts, col):
 
 
 def holo(R):
-    """The console hologram (in surgery): a tall pane, light lines from the lens to its back (top) corners, and a body
-    scan on it: the patient's outline standing, the incision marked across the belly, and the tool rack beside it (the
-    bed's own monitor already shows the trace). Few, bold strokes: it is a few dozen pixels across in game."""
+    """The console hologram (in surgery): a tall pane, light lines from the lens to its corners, and a body
+    scan on it: the patient's outline standing, the incision marked across the belly, the tool rack beside it and the halo
+    with its arms in use lit (the bed's own monitor already shows the trace). Few, bold strokes: it is a few dozen pixels across in game."""
     u0, v0, z0, w, h, ln, yaw = (PANE[k] for k in ("u", "v", "z", "w", "h", "lean", "yaw"))
     nu, nv = -math.cos(yaw), math.sin(yaw)                        # the pane's facing (toward the surgeon)
     au, av = math.sin(yaw), math.cos(yaw)                         # across it
@@ -71,7 +71,7 @@ def holo(R):
     edge = [P(-0.5, 0, 0.004), P(0.5, 0, 0.004), P(0.5, 1, 0.004), P(-0.5, 1, 0.004)]
     for a, b in zip(edge, edge[1:] + edge[:1]):
         R.tube(a, b, 0.006, LINE, sides=5)
-    for c in (P(-0.5, 1), P(0.5, 1)):                                                  # projection lines
+    for c in (P(-0.5, 0), P(0.5, 0), P(-0.5, 1), P(0.5, 1)):                           # projection lines
         R.tube(LENS, c, 0.005, LINE, sides=4)
 
     def line(pts, r=0.006, col=LINE):
@@ -86,3 +86,8 @@ def holo(R):
     line([(cx - 0.06, 0.53), (cx + 0.06, 0.53)], r=0.008, col="red")                    # the incision
     for j, t in enumerate((0.74, 0.62, 0.5)):                                          # the tool rack
         line([(0.26, t), (0.42, t)], r=0.009 if j == 0 else 0.006)
+    rx, rt = 0.05 / w, 0.05 / h                                                        # the halo: its arms in use lit
+    line([(0.33 + rx * math.cos(a), 0.2 + rt * math.sin(a)) for a in (i * math.tau / 12 for i in range(13))], r=0.005)
+    for i in range(5):
+        a = math.pi / 2 + i * math.tau / 5
+        R.ball(P(0.33 + rx * math.cos(a), 0.2 + rt * math.sin(a), 0.008), 0.014 if i < 3 else 0.008, LINE, seg=6)
