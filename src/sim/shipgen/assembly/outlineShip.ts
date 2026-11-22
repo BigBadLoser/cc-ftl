@@ -3,7 +3,8 @@ import { Rng } from '../../rng';
 import { drawSilhouette, type Drive, type Silhouette } from '../hull/silhouette';
 import { NAVY_PROFILES } from '../hull/navyProfiles';
 import { fitShell, seedOf } from '../generate';
-import { ENGINE_TIERS, REACTOR_TIERS, engineSpec, planShip, reactorsFor, type ShipPlan } from '../plan';
+import { ENGINE_TIERS, REACTOR_TIERS, engineSpec, planShip, reactorsFor, type RoomSpec, type ShipPlan } from '../plan';
+import { barracksSize } from './quarters';
 import type { FactionDef, GenResult } from '../types';
 import { layoutBlocks, type Mask } from './blockLayout';
 import { bayRooms } from './bayRooms';
@@ -11,7 +12,7 @@ import { outlineFrame } from './frame';
 import { paintPlaced } from './placePaint';
 import type { Placed } from './placeLayout';
 import { gunsAndReactors } from './pairs';
-import { NAVY_TYPES, navyAttempts, navyRole, shipCommons, shipQuarters, type BayLayout, type NavyType } from './navyShip';
+import { NAVY_TYPES, cabinBeds, navyAttempts, navyRole, shipCommons, shipQuarters, type BayLayout, type NavyType } from './navyShip';
 import { SPACE, type RegionGrid } from './regions';
 
 /**
@@ -163,7 +164,10 @@ export function outlineInputs(
   const kit = { ...planned.kit, ...(planned.kit.reactor === REACTOR_TIERS[0] && defs[up] ? { reactor: up } : {}), ...(tierUp ? { engine: engineUp } : {}) };
   // The type's commons and quarters (a few spare beds past the crew's) join the plan, their power counted.
   const pax = NAVY_TYPES[type].passengers;
-  const quarters = shipQuarters(type, planned.quarters, planned.crew.length, rng.int(2, 4) + (pax ? rng.int(pax[0], pax[1]) : 0));
+  // (A liner's passengers: single cabins of their own; its crew in one bunk room forward, the plan's barracks together.)
+  const crewQ = shipQuarters(type, planned.quarters, planned.crew.length, rng.int(2, 4));
+  const bunks = crewQ.flatMap((q) => q.mods), oneRoom: RoomSpec[] = crewQ[0] ? [{ ...crewQ[0], mods: bunks, ...barracksSize(bunks.length) }] : [];
+  const quarters = pax ? [...oneRoom, ...cabinBeds(pax.base + Math.round(pax.perDepth * depth))] : crewQ;
   const plan: ShipPlan = { ...planned, kit, quarters, support: [...planned.support, ...shipCommons(type, planned.crew.length)] };
   const fixed = NAVY_TYPES[type].engines;
   if (fixed) plan.engines = fixed + (tierUp ? extra - 1 : extra);
@@ -245,7 +249,7 @@ function bayGrid(plans: ShipPlan[], lanes: Silhouette[][], maxBeam: number, defs
         const m = j === 0 && k === 0 ? m0 : scaled(sil, sx, sy);
         if (2 * m.H + 3 > maxBeam) continue;
         for (const plan of plans) {
-          const fr = outlineFrame(plan, m, defs[plan.kit.engine]?.engine?.hullCapacity ?? 0, ENGINE_GAP, lane);
+          const fr = outlineFrame(plan, m, defs[plan.kit.engine]?.engine?.hullCapacity ?? 0, ENGINE_GAP, lane, NAVY_TYPES[type].layout?.decks);
           if (!fr) continue;
           // (A lane hull's floor is far past its rooms' plan: its reactors light the hull's.)
           const lit = fr.lane ? { ...plan, reactors: reactorsFor(plan, defs, Math.round(LIT * fr.area)) } : plan;

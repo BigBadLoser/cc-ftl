@@ -50,7 +50,7 @@ const racked = (r: RoomSpec): RoomSpec => {
 };
 
 /** All the plan's reactors in one room and all its shield generators in another, a mirrored pair; the rest single. */
-function program(plan: ShipPlan, defs: Record<string, ModuleDef>, inBattery: number, hangars = true, blocks = true, mirror = false): Item[] {
+function program(plan: ShipPlan, defs: Record<string, ModuleDef>, inBattery: number, hangars = true, blocks = true, mirror = false, beside = mirror): Item[] {
   const { gunPairs, cabinPairs } = programPairs(plan, defs);
   const { lone } = gunsAndReactors(plan, defs);
   // (Prototype sizes, here until the plan takes them: a 5x4 brig; the core split into an AI core room and a drone room, 5x4 each.)
@@ -66,10 +66,10 @@ function program(plan: ShipPlan, defs: Record<string, ModuleDef>, inBattery: num
   // (A lane hull's escape pods: one room of four, two bays long.)
   const pods: RoomSpec[] = hangars ? [] : [{ ...fillerSpec('pods', 64), mods: Array<string>(4).fill('module.pod_bay'), w: 14, h: 4 }];
   // (Mirrored, the point defence is its pair of turrets only: the plan's own room goes.)
-  // (Mirrored, on a lane hull's single-tier side hulls: an annex (the pantry) is cut three wide from its host's end; the
-  // med bay keeps its trauma room behind it, in stores' forward bays.)
+  // (Mirrored, on a lane hull's single-tier side hulls, or on passenger decks (`beside`): an annex (the pantry) is cut
+  // three wide from its host's end; the med bay keeps its trauma room behind it, in stores' forward bays.)
   const own = (r: RoomSpec): RoomSpec => {
-    if (!mirror || !r.annex || r.role === 'medbay') return r;
+    if (!beside || !r.annex || r.role === 'medbay') return r;
     const { annex, ...host } = r;
     return { ...host, beside: { ...annex, w: 3 }, w: r.w + 4 };
   };
@@ -103,7 +103,7 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
   const bays = bayLayout(fr), n = bays.length;
   const { gunPairs } = gunsAndReactors(plan, defs);
   // (A lane hull's hangar is its frame's, at the lane's head.)
-  const order = program(plan, defs, fr.maint ? gunPairs.length : 0, !fr.lane, true, !!fr.lane);
+  const order = program(plan, defs, fr.maint ? gunPairs.length : 0, !fr.lane, true, !!fr.lane, !!fr.lane || !!fr.decks);
   const bay = (k: number): Bay => bays[k] as Bay;
   const rowsAt = (b: Bay, x: number, tier: Tier, split?: number): number => {
     const d = (b.row?.depth ?? fr.depth)(x), [f, k] = b.tiers;
@@ -185,7 +185,7 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
   let alone = new Set<Dept>();
   const inZone = (i: number, j: number, rs: RoomSpec[]): boolean => {
     if (zone.length === 0) return true;
-    for (let k = i; k < j; k++) if (!rs.every((h) => deptOf(h) === zone[k])) return false;
+    for (let k = i; k < j; k++) if (!rs.every((h) => deptOf(h, !!fr.decks) === zone[k])) return false;
     return true;
   };
   /** Every column of the bays at that tier the same depth: a rectangle. */
@@ -238,7 +238,7 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
         // (A bay tier is coarse: a small room may take up to about two and a half times its plan, at a cost.)
         // (A lane hull's bays run bigger: a small room there may take up to four times its plan.)
         // (A department's one room a side may take all its bays; on a lane hull, so may a hold: spare floor is storage.)
-        const sole = rs.every((h) => alone.has(deptOf(h)) || (fr.lane && roomKind(h) === 'cargo'));
+        const sole = rs.every((h) => alone.has(deptOf(h, !!fr.decks)) || ((fr.lane || fr.decks) && roomKind(h) === 'cargo'));
         if (a < want || (a > Math.max(cap * 1.3, want * (fr.lane ? 4 : 2.5)) && !sole) || !rs.every((h) => fits(h, ln, rw))) continue;
         let via: Part['via'] | undefined;
         if (tier === 'back') { const v = backVia(o, side, i, j, specs); if (!v) continue; via = v; } else if (!hallOk) continue;
@@ -355,8 +355,9 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
 
   // A lane hull's cabins: single cabins along the lane, inboard of the side corridors from the hangar aft, the beds
   // shared between the sides, one bed to a cabin; where the strip is too short for them, cabin blocks as anywhere.
+  // (Passenger decks: single cabins both sides of the spine, in the deck's shallow bays aft of the airlocks.)
   const strip: Put[] = [];
-  if (fr.lane) {
+  if (fr.lane || fr.decks) {
     const beds = plan.quarters.filter((q) => q.block).reduce((t, q) => t + q.mods.length, 0);
     // (Inboard only, a cabin to four columns, the cabins run on across joined bays; the two aftmost bays left to hab's
     // rooms (the mess beside the cabins) where the rest hold the beds.)
@@ -374,13 +375,15 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
       return got;
     };
     const fits = (ks: number[], need: number): boolean => cut(ks, need).reduce((t, g) => t + g.c, 0) >= need;
-    const all = bays.flatMap((b, k) => (b.row && b.row.dir < 0 ? [k] : [])), most = Math.ceil(beds / 2);
+    const all = bays.flatMap((b, k) => (fr.decks ? (!b.row && b.x0 > fr.dockAt ? [k] : []) : b.row && b.row.dir < 0 ? [k] : [])), most = Math.ceil(beds / 2);
     const held = all.slice(0, -2), room = (ks: number[]): number => cut(ks, 999).reduce((t, g) => t + g.c, 0);
     // (Too many for the inboard strip (a liner's passengers): the outboard bays from the stern take the rest.)
     const out = bays.flatMap((b, k) => (b.row && b.row.dir > 0 ? [k] : [])), short = most - room(all);
     let aft: number[] = [];
     for (let t = 1; short > 0 && t <= out.length && room(aft) < short; t++) aft = out.slice(-t);
-    const ks = short > 0 ? [...all, ...aft] : all.length > 2 && fits(held, most) ? held : all;
+    // (Passenger decks: the deck's two deepest bays (its bulge) left to the commons.)
+    const deepest = fr.decks ? [...all].sort((u, v) => minDepth(v, v + 1) - minDepth(u, u + 1)).slice(0, 2) : [];
+    const ks = fr.decks ? all.filter((k) => !deepest.includes(k)) : short > 0 ? [...all, ...aft] : all.length > 2 && fits(held, most) ? held : all;
     for (const s of [0, 1] as const) {
       let need = s === 0 ? Math.ceil(beds / 2) : Math.floor(beds / 2);
       for (const { i, j, c } of cut(ks, need)) {
@@ -429,12 +432,12 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
     }) : [];
     const pre = [...strip, ...guns0], occ0 = pre.reduce<Occ>((o, p) => take(o, p.spot, p), [emptySide(), emptySide()]);
     const inBattery = fr.maint || guns0.length > 0 ? gunPairs.length : 0;
-    const rest = pre.length > 0 ? program(plan, defs, inBattery, !fr.lane, strip.length === 0, !!fr.lane) : order;
+    const rest = pre.length > 0 ? program(plan, defs, inBattery, !fr.lane, strip.length === 0, !!fr.lane, !!fr.lane || !!fr.decks) : order;
     // (Each department's rooms' floor and slots a side: half each room's, a mirrored pair's both; an annex its own slot.)
     const need: Partial<Record<Dept, Need>> = {};
     for (const r of rest.flatMap((it) => real(it.specs))) {
-      const n = need[deptOf(r)] ?? { area: 0, rooms: 0 };
-      need[deptOf(r)] = { area: n.area + 0.5 * (r.w * r.h + (r.annex ? r.annex.w * r.annex.h : 0)), rooms: n.rooms + (r.annex ? 1 : 0.5), ...(n.deep || r.annex ? { deep: true } : {}) };
+      const n = need[deptOf(r, !!fr.decks)] ?? { area: 0, rooms: 0 };
+      need[deptOf(r, !!fr.decks)] = { area: n.area + 0.5 * (r.w * r.h + (r.annex ? r.annex.w * r.annex.h : 0)), rooms: n.rooms + (r.annex ? 1 : 0.5), ...(n.deep || r.annex ? { deep: true } : {}) };
     }
     alone = new Set((Object.keys(need) as Dept[]).filter((d) => (need[d]?.rooms ?? 0) <= 1));
     zone = zonesOf(fr, bays, new Set(guns0.map((p) => p.spot.i)), flight, need, (k) => area(k, k + 1, 'full'));

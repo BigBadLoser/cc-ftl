@@ -16,10 +16,10 @@ export type Need = { area: number; rooms: number; deep?: boolean };
 
 const FWD: readonly Dept[] = ['command', 'stores', 'systems'];
 
-/** A room's department. */
-export function deptOf(r: RoomSpec): Dept {
-  if (r.role === 'weapons') return 'weapons';
-  if (r.role === 'hangar') return 'flight';
+/** A room's department (on passenger decks, `decks`: guns with the systems, a hangar with the stores). */
+export function deptOf(r: RoomSpec, decks = false): Dept {
+  if (r.role === 'weapons') return decks ? 'systems' : 'weapons';
+  if (r.role === 'hangar') return decks ? 'stores' : 'flight';
   if (r.role === 'reactor' || r.role === 'shields' || r.role === 'plant' || r.role === 'core') return 'systems';
   if (r.role === 'armoury' || r.role === 'bridge') return 'command';
   if (r.role === 'cargo' && r.dept !== 'commons') return 'stores';
@@ -35,10 +35,11 @@ export function deptOf(r: RoomSpec): Dept {
 export function zonesOf(
   fr: Frame, bays: readonly Bay[], weapons: ReadonlySet<number>, flight: number, need: Partial<Record<Dept, Need>>, area: (k: number) => number,
 ): Dept[] {
-  if (!fr.lane) return [];
+  if (!fr.lane && !fr.decks) return [];
   // The forward section: command at the bow, then stores and systems (either way round), each a run of bays. Of every
   // cut, one where each has a slot a room (a department with an annex a two-tier bay), the floor nearest its share.
-  const ks = bays.flatMap((b, k) => (b.row ? [] : [k])), tiers = (k: number): number => (bays[k] as Bay).tiers.length;
+  // (Passenger decks: the bays ahead of the airlocks; those aft are hab's.)
+  const ks = bays.flatMap((b, k) => (b.row || (fr.decks && b.x0 > fr.dockAt) ? [] : [k])), tiers = (k: number): number => (bays[k] as Bay).tiers.length;
   const total = FWD.reduce((t, d) => t + (need[d]?.area ?? 0), 0), floor = ks.reduce((t, k) => t + area(k), 0);
   let best: { cost: number; of: Dept[] } | null = null;
   for (const order of [['command', 'stores', 'systems'], ['command', 'systems', 'stores']] as const) {
@@ -57,7 +58,7 @@ export function zonesOf(
   const of = new Map<number, Dept>(ks.map((k, n) => [k, best?.of[n] ?? 'systems']));
   let out = 0;
   return bays.map((b, k) => {
-    if (!b.row) return of.get(k) ?? 'systems';
+    if (!b.row) return of.get(k) ?? (fr.decks ? 'hab' : 'systems');
     if (b.row.dir < 0) return 'hab';
     if (weapons.has(k)) return 'weapons';
     return out++ < flight ? 'flight' : 'hab';

@@ -39,8 +39,8 @@ interface Shape {
   engines?: number;
   /** The hull's least length in tiles (a carrier: longer than a cruiser, its lane taking floor). */
   minLength?: number;
-  /** PROTOTYPE (#581): passenger beds beyond the crew's, at least and at most (single cabins like the crew's). */
-  passengers?: readonly [number, number];
+  /** PROTOTYPE (#581): passenger beds beyond the crew's: a base and more a depth (single cabins like the crew's). */
+  passengers?: { base: number; perDepth: number };
   /** Guns every ship of the type carries, one to a room, in pairs (`ShipRoleDef.guns`; mirrored on a lane hull). */
   gunRooms?: number;
   /** Its rooms laid on bays (bayRooms.ts), and the parts it takes there: a gun battery along a maintenance corridor. */
@@ -57,6 +57,11 @@ export interface BayLayout {
    * corridor ahead of it, a corridor down each side hull. The lane narrows where a side hull is too shallow for its rooms.
    */
   lane?: boolean;
+  /**
+   * PROTOTYPE (#581): passenger decks: aft of the airlocks, single cabins both sides of the spine (its shallow bays), the
+   * commons in its deep ones; command, stores and systems forward.
+   */
+  decks?: boolean;
 }
 
 export type ShipRoom = 'medbay' | 'brig' | 'farm' | 'pantry';
@@ -82,11 +87,21 @@ export const NAVY_TYPES: Record<NavyType, Shape> = {
   frigate: { maxBeam: 31, centre: 'none', bow: 'bridge', guns: 'spread', family: 'frigate', sleep: 'bunks' },
   destroyer: { maxBeam: 33, centre: 'none', bow: 'battery', guns: 'forward', family: 'frigate', sleep: 'beds', bonus: { weapons: 4, reactors: 1, engines: 1, crew: -1, crates: -1 } },
   cruiser: { maxBeam: 41, engines: 4, layout: { battery: true }, centre: 'citadel', bow: 'bridge', guns: 'spread', family: 'cruiser', sleep: 'cabins', bays: 1, rooms: ['medbay', 'brig', 'farm', 'pantry'], bonus: { weapons: 3, reactors: 2 } },
-  // PROTOTYPE (#581): a civilian liner on the outline (the civilian faction's liner family): passenger decks of single
-  // cabins down both side hulls of a lane, the commons forward.
-  liner: { maxBeam: 51, minLength: 90, gunRooms: 2, layout: { battery: false, lane: true }, centre: 'deck', bow: 'bridge', guns: 'spread', family: 'liner', sleep: 'cabins', rooms: ['medbay', 'farm', 'pantry'], passengers: [16, 24] },
+  // PROTOTYPE (#581): a civilian liner on the outline (the civilian faction's liner family): passenger decks aft.
+  liner: { maxBeam: 33, layout: { battery: false, decks: true }, centre: 'none', bow: 'bridge', guns: 'spread', family: 'liner', sleep: 'bunks', rooms: ['medbay', 'pantry'], passengers: { base: 6, perDepth: 1 } },
   carrier: { maxBeam: 51, minLength: 115, gunRooms: 4, layout: { battery: false, lane: true }, centre: 'deck', bow: 'bridge', guns: 'spread', family: 'carrier', sleep: 'cabins', rooms: ['medbay', 'brig', 'farm', 'pantry'], bonus: { crew: 6, crates: 4 } },
 };
+
+/**
+ * Single cabins for `n` sleepers: the beds made even, in blocks of four (two cabins each side of the corridor, two rows
+ * deep), the last of two where that is all that is left: the layout claims deep floor for them as one block a side
+ * (blockLayout.ts), or lays these as rows of cabins where no floor is deep enough (a lane's or a deck's strip).
+ */
+export function cabinBeds(n: number): RoomSpec[] {
+  const beds = 2 * Math.ceil(n / 2);
+  return Array.from({ length: Math.ceil(beds / 4) }, (_, i) => Math.min(4, beds - 4 * i))
+    .map((k) => ({ role: 'quarters', mods: Array<string>(k).fill('module.bed'), w: 4 * k - 5, h: 7, block: true, cabins: false }));
+}
 
 /** Floor depth of an ordinary strip room. */
 const STRIP = 3;
@@ -334,14 +349,7 @@ export function generateNavy(f: FactionDef, factionId: string, seed: number, dep
  */
 export function shipQuarters(type: NavyType, planned: readonly RoomSpec[], crew: number, spare: number): RoomSpec[] {
   const sleep = NAVY_TYPES[type].sleep;
-  if (sleep === 'cabins') {
-    // The beds made even, in blocks of four (two cabins each side of the corridor, two rows deep), the last of two where
-    // that is all that is left: the layout claims deep floor for them as one block a side (blockLayout.ts), or lays
-    // these as rows of cabins where no floor is deep enough.
-    const beds = 2 * Math.ceil((crew + spare) / 2);
-    return Array.from({ length: Math.ceil(beds / 4) }, (_, i) => Math.min(4, beds - 4 * i))
-      .map((n) => ({ role: 'quarters', mods: Array<string>(n).fill('module.bed'), w: 4 * n - 5, h: 7, block: true, cabins: false }));
-  }
+  if (sleep === 'cabins') return cabinBeds(crew + spare);
   // Barracks: the spare beds shared out, a bunk sleeping two (single beds where the type has them, a piece each).
   const per = sleep === 'beds' ? 1 : SLEEPER.sleepers;
   return planned.map((r, i) => {

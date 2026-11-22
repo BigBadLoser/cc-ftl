@@ -56,6 +56,8 @@ export interface Frame {
   /** PROTOTYPE (#581): the battery's maintenance corridor, its row out from the axis per column (rooms stop short of it). */
   maint?: { a: number; b: number; guns: [number, number][]; rows: number; inner: number[]; hallY: (x: number) => number };
   lane?: Lane;
+  /** PROTOTYPE (#581): passenger decks aft of the airlocks (`BayLayout.decks`). */
+  decks?: boolean;
   /** The mask's tiles (counted where the drive is sized by the hull). */
   area: number;
 }
@@ -67,7 +69,7 @@ const HULL_OF_MASK = 0.93;
  * With `carry` (the hull tiles one engine carries), the drive holds the engines the hull's own size needs, not only the
  * plan's. With `gap`, its engines stand that many rows apart.
  */
-export function outlineFrame(plan: ShipPlan, m: Mask, carry = 0, gap = 0, lane?: { both: boolean }): Frame | null {
+export function outlineFrame(plan: ShipPlan, m: Mask, carry = 0, gap = 0, lane?: { both: boolean }, decks = false): Frame | null {
   const { W, H, inside } = m;
   if (2 * H + 4 > 120 || W + 4 > 240) return null;
   const top = (x: number): number => { let y = 0; while (inside(x, y + 1)) y++; return inside(x, 0) ? y : -1; };
@@ -144,9 +146,17 @@ export function outlineFrame(plan: ShipPlan, m: Mask, carry = 0, gap = 0, lane?:
   let dockAt = bt ? bt.air : -1;
   // A lane hull's cross corridor stands a hangar's length ahead of the lane's head.
   if (ln) for (const h of HANGAR) { const x = ln.head - h - CW; if (x > xBand + MIN_DEPTH && flat(x)) { dockAt = x; break; } }
-  else if (!bt) for (let x = xBand + MIN_DEPTH + 1; x <= Math.min(xS - MIN_DEPTH - CW - 1, xBand + 0.75 * (xS - xBand)); x++) if (flat(x) && (dockAt < 0 || depth(x) > depth(dockAt))) dockAt = x;
+  // (Passenger decks: the forward section's aftmost flat stretch, by its shoulder down to the deck.)
+  else if (decks) {
+    let peak = 0;
+    for (let x = xBand + MIN_DEPTH + 1; x <= xS - MIN_DEPTH - CW - 1; x++) {
+      peak = Math.max(peak, depth(x));
+      if (depth(x + CW) < peak - 1) { if (flat(x)) dockAt = x; break; }
+      if (flat(x)) dockAt = x;
+    }
+  } else if (!bt) for (let x = xBand + MIN_DEPTH + 1; x <= Math.min(xS - MIN_DEPTH - CW - 1, xBand + 0.75 * (xS - xBand)); x++) if (flat(x) && (dockAt < 0 || depth(x) > depth(dockAt))) dockAt = x;
   if (dockAt < 0) return null;
-  return { W, H, inside, top, outer, depth, area: tiles, xS, xEnd, sternMax, perSide, used, engine, xBr, xBand, CW, dockAt, ...(bt ? { maint: { a: g0, b: g1, guns: bt.guns, rows: bt.rows, inner: bt.inner, hallY } } : {}), ...(ln ? { lane: ln } : {}) };
+  return { W, H, inside, top, outer, depth, area: tiles, xS, xEnd, sternMax, perSide, used, engine, xBr, xBand, CW, dockAt, ...(bt ? { maint: { a: g0, b: g1, guns: bt.guns, rows: bt.rows, inner: bt.inner, hallY } } : {}), ...(ln ? { lane: ln } : {}), ...(decks ? { decks } : {}) };
 }
 
 /**
