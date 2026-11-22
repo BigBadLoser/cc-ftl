@@ -10,9 +10,9 @@ import type { Piece } from './check';
 import { db, pods2, pods2Fit, tr, traumaFits, ward, wardBeds } from './bays';
 import { HY, HYL, f1, f3, f3Fits } from './farm';
 import { rw } from './refinery';
-import { AC, B, seats, BT, OB, OBL, CD, DR, EX, FB, RF, G, GT, L, LS, MB, P, RK, RP, RS, SB, SP, SW, T, bunks, messSize, count, leftover, middle, range, rowsOf, sidePairs, tables, type Beds, type Run } from './parts';
+import { AC, B, seats, BT, OB, OBL, CD, DR, EX, FB, RF, G, GT, L, LS, MB, P, RK, RP, RS, SB, SP, SW, T, bunks, messSize, count, isCut, leftover, middle, off, range, rowsOf, sidePairs, tables, type Beds, type Run } from './parts';
 import { PB, VB, AI, CR, bank, core, crates, lifeWalls, lifeWallsFit, machines, machinesFit, podsFit, pods, shuttle, walkwayFits, walkwayHold } from './plant';
-import { laid, messTables, tablesClear } from './mess';
+import { laid, m4 } from './mess';
 import { co, cu, gy, hl, mk, pz } from './social';
 import { bg, ore, pa, qm, shelfSlots } from './stores';
 import { bk, lb, rf, rf2, rf2Fits, su, ws } from './works';
@@ -47,11 +47,6 @@ const pieces = (need: readonly string[], defs: Record<string, ModuleDef>): numbe
 const size = (c: Ctx, id: string): number => c.defs[id]?.footprint[0] ?? 2;
 const isGun = (c: Ctx, id: string): boolean => !!(c.defs[id]?.weapon || c.defs[id]?.pointDefense);
 const guns = (c: Ctx): string[] => c.need.filter((m) => isGun(c, m));
-/** Whether a frame tile is a cut corner (wall: nothing stands there). */
-const isCut = (c: Ctx, x: number, y: number): boolean => (c.cut ?? []).some((t) => t.x === x && t.y === y);
-/** A tile in from a cut corner: `v` when the corner at (x, y) stands, else `v` moved a tile toward the room by `step`. */
-const off = (c: Ctx, x: number, y: number, v: number, step: number): number => (isCut(c, x, y) ? v + step : v);
-
 /** Whether the room is walked through: a door in its back wall too, none in its sides. */
 const through = (c: Ctx): boolean => (c.doors ?? []).some((t) => t.y === 0) && !(c.doors ?? []).some((t) => t.x === 0 || t.x === c.w - 1);
 
@@ -135,27 +130,6 @@ function d3(c: Ctx): Piece[] {
   const last = c.h - (Math.abs(c.d - (x + 0.5)) <= 1.5 ? 3 : 2);
   const beds = range(pod ? 3 : 0, last, 2).slice(0, count(c.need, MB)).map((y) => P(MB, x, y, 1));
   return [...(pod ? [P(RP, x, 0, 0)] : []), ...beds];
-}
-
-/**
- * M4: a long mess: the galleys on a short wall, tables with their chairs down the long axis in a line (two where the
- * room is wide enough across, either side of the middle), its tables (`messTables`) shared between the lines, each line's
- * evenly spaced and centred (`middle`), clear of the doorways (`tablesClear`).
- */
-function m4(c: Ctx): Piece[] {
-  const tall = c.h > c.w, across = tall ? c.w : c.h, lines = across >= 9 ? 2 : 1, n = messTables(c), planned = Math.max(1, count(c.need, T));
-  // Each line's band across the room: the whole of it, or the halves either side of its middle, a tile in from the
-  // walls where the room is wide (an aisle down each wall two wide, clear of the doorways in it).
-  const inset = across >= 11 ? 1 : 0;
-  const bands = lines === 1 ? [[0, across - 1]] : [[inset, (across >> 1) - 1], [(across + 1) >> 1, across - 1 - inset]];
-  // In the corners of the short wall, a tile in where a corner is cut.
-  const galleys = tall
-    ? [P(G, off(c, 0, 0, 0, 1), 0, 0), ...(c.w >= 5 ? [P(G, off(c, c.w - 1, 0, c.w - 2, -1), 0, 0)] : [])]
-    : [P(G, 0, off(c, 0, 0, 0, 1), 3), ...(c.h >= 5 ? [P(G, 0, off(c, 0, c.h - 1, c.h - 2, -1), 3)] : [])];
-  return [...galleys, ...bands.flatMap(([a, b], k) => {
-    const most = Math.floor(n / lines) + (k < n % lines ? 1 : 0), least = Math.floor(planned / lines) + (k < planned % lines ? 1 : 0);
-    return tablesClear(c, most, least, (m) => (tall ? middle(a as number, 2, b as number, c.h - 1, false, true, m) : middle(2, a as number, c.w - 1, b as number, true, true, m)), tall);
-  })];
 }
 
 /** Units (gens, reactors) spread across the back wall, batteries in each gap side by side against it: two, or three (`along`). */

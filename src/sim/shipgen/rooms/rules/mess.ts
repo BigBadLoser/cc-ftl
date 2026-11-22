@@ -7,7 +7,7 @@
 import { accessTiles, footprintTiles } from '../../../modules/footprint';
 import { stretchOf } from '../../assembly/sizing';
 import type { Piece } from './check';
-import { C, G, GT, LS, P, T, count, messSize } from './parts';
+import { C, G, GT, LS, P, T, count, messSize, middle, off } from './parts';
 import type { Ctx } from './rules';
 
 /**
@@ -105,6 +105,34 @@ export function tablesClear(c: Ctx, most: number, least: number, lay: (m: number
     if (n(got) > n(best)) best = got;
   }
   return best;
+}
+
+/**
+ * M4: a long mess: the galleys on a short wall, tables with their chairs down the long axis in a line (two where the
+ * room is wide enough across, either side of the middle), its tables (`messTables`) shared between the lines, each line's
+ * evenly spaced and centred (`middle`), clear of the doorways (`tablesClear`). Where that holds fewer than the planned
+ * tables and the room is seven across or more: two lines with their chairs against the walls (`flush`).
+ */
+export function m4(c: Ctx): Piece[] {
+  const tall = c.h > c.w, across = tall ? c.w : c.h, n = messTables(c), planned = Math.max(1, count(c.need, T));
+  // In the corners of the short wall, a tile in where a corner is cut.
+  const galleys = tall
+    ? [P(G, off(c, 0, 0, 0, 1), 0, 0), ...(c.w >= 5 ? [P(G, off(c, c.w - 1, 0, c.w - 2, -1), 0, 0)] : [])]
+    : [P(G, 0, off(c, 0, 0, 0, 1), 3), ...(c.h >= 5 ? [P(G, 0, off(c, 0, c.h - 1, c.h - 2, -1), 3)] : [])];
+  const build = (lines: number, flush: boolean): Piece[] => {
+    // Each line's band across the room: the whole of it, or the halves either side of its middle, a tile in from the
+    // walls where the room is wide (an aisle down each wall two wide, clear of the doorways in it).
+    const inset = across >= 11 ? 1 : 0;
+    const bands = lines === 1 ? [[0, across - 1]] : [[inset, (across >> 1) - 1], [(across + 1) >> 1, across - 1 - inset]];
+    return bands.flatMap(([a, b], k) => {
+      const most = Math.floor(n / lines) + (k < n % lines ? 1 : 0), least = Math.floor(planned / lines) + (k < planned % lines ? 1 : 0);
+      return tablesClear(c, most, least, (m) => (tall ? middle(a as number, 2, b as number, c.h - 1, false, true, m, flush) : middle(2, a as number, c.w - 1, b as number, true, true, m, flush)), tall);
+    });
+  };
+  const tables = (ps: Piece[]): number => ps.filter((p) => p.def === T).length;
+  let line = build(across >= 9 ? 2 : 1, false);
+  if (tables(line) < planned && across >= 7) { const alt = build(2, true); if (tables(alt) > tables(line)) line = alt; }
+  return [...galleys, ...line];
 }
 
 /** A mess arrangement as laid: see the file comment. */
