@@ -5,7 +5,7 @@ An armoured column with a hazard foot; a riser and a high boom carry a stem down
 arms. Each arm's look carries its job (white shells; one accent each): laser (red band, heavy emitter, a red beam
 when cutting), cutter (bare steel forearm, blade), clamp (thickest, gunmetal forearm, jaws), camera (slim, cyan band,
 sensor pod), suture (slim, green band, spool and needle). Arms are two equal segments placed by IK, so the elbow sets
-the reach. Idle the halo hangs by the column with every arm folded like a jackknife, elbow up; in surgery it hangs over the patient's
+the reach; each hangs from a clamp on the ring by a shoulder drum, and bends at an elbow drum on the same axis. Idle the halo hangs by the column with every arm folded into a raised Z, elbow out and tool up; in surgery it hangs over the patient's
 torso and the arms of the stage's tools reach down, the rest stay folded.
 
 Shapes are smooth (tubes, spheres, a torus), never stacked cubes; no two faces share a plane."""
@@ -21,13 +21,11 @@ TOP = 0.22                                                       # the med bed's
 STAGES = {"cut": ("laser", "cutter", "clamp", "camera"), "open": ("cutter", "clamp", "camera"),
           "close": ("clamp", "suture", "camera")}
 ARMS = ("laser", "cutter", "camera", "clamp", "suture")          # round the ring
-SPEC = {"laser": dict(r=0.04, fore="medWhite", band="medRed", L=0.5),
-        "cutter": dict(r=0.034, fore="steelL", band=None, L=0.5),
-        "clamp": dict(r=0.05, fore="gm", band=None, L=0.48),
-        "camera": dict(r=0.028, fore="medWhite", band="cyan", L=0.52),
-        "suture": dict(r=0.028, fore="medWhite", band="green", L=0.5)}
-REACH = {"laser": (0.36, TOP + 0.36), "cutter": (0.2, TOP + 0.14), "clamp": (0.27, TOP + 0.1),
-         "camera": (0.3, TOP + 0.48), "suture": (0.22, TOP + 0.14)}
+SPEC = {"laser": dict(r=0.04, fore="medWhite", band="medRed", L=0.36),
+        "cutter": dict(r=0.034, fore="steelL", band=None, L=0.36),
+        "clamp": dict(r=0.05, fore="gm", band=None, L=0.34),
+        "camera": dict(r=0.028, fore="medWhite", band="cyan", L=0.37),
+        "suture": dict(r=0.028, fore="medWhite", band="green", L=0.36)}
 RING_R, TUBE_R = 0.3, 0.05
 
 
@@ -106,57 +104,108 @@ def lerp(a, b, t):
     return tuple(a[i] + (b[i] - a[i]) * t for i in range(3))
 
 
-def head(R, tp, d, kind, working, site):
-    """The tool at the wrist tp, pointing along unit d (along the forearm)."""
+def hinge(R, c, tan, r, w, col="steel", cap="steelL"):
+    """A hinge drum at c: a short cylinder along the unit tangent tan (the joint's axis), end caps lighter."""
+    a = tuple(c[i] - tan[i] * w / 2 for i in range(3))
+    b = tuple(c[i] + tan[i] * w / 2 for i in range(3))
+    R.tube(a, b, r, col)
+    for e, s_ in ((a, -1), (b, 1)):
+        R.tube(e, tuple(e[i] + tan[i] * s_ * 0.012 for i in range(3)), r * 0.6, cap)
+
+
+LINK = 0.12                                                       # the shoulder link: short, up and out
+HEAD = {"laser": 0.125, "cutter": 0.1, "clamp": 0.17, "camera": 0.095, "suture": 0.15}   # tool lengths along their aim
+WR, WZ = 0.66, -0.06                                                # the wrist (instrument carriage): out from the hub, up from the ring
+
+
+def unit(a, b):
+    d = [b[i] - a[i] for i in range(3)]
+    n = math.sqrt(sum(x * x for x in d)) or 1e-6
+    return tuple(x / n for x in d), n
+
+
+def arm(R, sh, out, tan, kind, wrist, aim, working):
+    """Shoulder drum sh, a short link up and out to the first drum, two equal segments (IK) up to a high knee and down
+    to the wrist, an instrument carriage there, then (working) a thin shaft down to the tool, which ends at aim; folded,
+    the tool sits on the carriage, pointing at aim. out: the arm's outward unit (u, v)."""
+    sp = SPEC[kind]
+    r = sp["r"]
+    j1 = (sh[0] + out[0] * LINK * 0.4, sh[1] + out[1] * LINK * 0.4, sh[2] + LINK)
+    R.tube(sh, j1, r * 1.2, "medWhite", r1=r * 1.1)
+    hinge(R, j1, tan, r * 1.35, r * 2.7)
+    el, wrist = ik(j1, wrist, sp["L"], (out[0], out[1], 1.3))
+    R.tube(j1, el, r * 1.05, "medWhite", r1=r)
+    hinge(R, el, tan, r * 1.25, r * 2.5)
+    if sp["band"]:
+        p1, p2 = lerp(el, wrist, 0.45), lerp(el, wrist, 0.7)
+        R.tube(el, p1, r * 0.95, sp["fore"], ends=False)
+        R.tube(p1, p2, r * 1.0, sp["band"], ends=False)
+        R.tube(p2, wrist, r * 0.95, sp["fore"])
+    else:
+        R.tube(el, wrist, r * 0.95, sp["fore"])
+    R.ball(wrist, r * 0.95, "steel", seg=8)
+    if working:
+        R.ball((el[0], el[1], el[2] + r * 1.5), r * 0.45, "cyan", seg=8)
+    d, n = unit(wrist, aim)
+    ce = tuple(wrist[i] + d[i] * 0.06 for i in range(3))
+    R.tube(wrist, ce, r * 1.05, "gm")                                                  # instrument carriage
+    hs = tuple(aim[i] - d[i] * HEAD[kind] for i in range(3)) if working else ce
+    if working and n > HEAD[kind] + 0.07:
+        R.tube(ce, hs, 0.014, "steelL", sides=6)                                     # instrument shaft
+    head(R, hs, d, kind, working, aim)
+
+
+def head(R, tp, d, kind, working, aim):
+    """The tool from tp pointing along unit d; the laser's beam is a short glow to aim."""
     at = lambda s: tuple(tp[i] + d[i] * s for i in range(3))  # noqa: E731
     if kind == "laser":
-        R.tube(at(0.0), at(0.05), 0.05, "medWhite")
-        R.tube(at(0.05), at(0.075), 0.052, "medRed")
-        R.tube(at(0.075), at(0.11), 0.044, "medWhite", r1=0.03)
-        R.tube(at(0.11), at(0.125), 0.022, "red" if working else "gmD")
+        R.tube(at(0.0), at(0.04), 0.04, "medWhite")
+        R.tube(at(0.04), at(0.06), 0.042, "medRed")
+        R.tube(at(0.06), at(0.09), 0.036, "medWhite", r1=0.024)
+        R.tube(at(0.09), at(0.1), 0.018, "red" if working else "gmD")
         if working:
-            R.tube(at(0.125), (site[0], site[1], TOP + 0.03), 0.013, "red", sides=6)
+            R.tube(at(0.1), aim, 0.008, "red", sides=6)
+            R.ball(aim, 0.02, "red", seg=6)
     elif kind == "cutter":
-        R.tube(at(0.0), at(0.04), 0.03, "steel")
-        R.tube(at(0.04), at(0.16), 0.016, "steelL", r1=0.002, sides=6)
+        R.tube(at(0.0), at(0.03), 0.024, "steel")
+        R.tube(at(0.03), at(0.1), 0.014, "steelL", r1=0.002, sides=6)
     elif kind == "clamp":
-        R.tube(at(0.0), at(0.05), 0.05, "gmD")
+        R.tube(at(0.0), at(0.05), 0.04, "gmD")
+        side = (-d[1], d[0], 0.0)
+        sn = math.hypot(side[0], side[1]) or 1
+        side = (side[0] / sn, side[1] / sn, 0.0)
         for o in (-1, 1):
-            base = at(0.05)
-            tipp = (base[0] + d[0] * 0.12 + o * 0.045, base[1] + d[1] * 0.12, base[2] + d[2] * 0.12)
-            R.tube((base[0] + o * 0.025, base[1], base[2]), tipp, 0.014, "gm", sides=6)
+            b = at(0.05)
+            R.tube(tuple(b[i] + side[i] * o * 0.02 for i in range(3)),
+                   tuple(b[i] + d[i] * 0.12 + side[i] * o * 0.035 for i in range(3)), 0.012, "gm", sides=6)
     elif kind == "camera":
-        R.tube(at(0.0), at(0.08), 0.042, "gmD")
-        R.tube(at(0.08), at(0.095), 0.03, "cyan" if working else "steelD")
+        R.tube(at(0.0), at(0.08), 0.036, "gmD")
+        R.tube(at(0.08), at(0.095), 0.026, "cyan" if working else "steelD")
     else:
-        R.tube(at(0.0), at(0.02), 0.04, "medWhite")
-        R.tube(at(0.02), at(0.045), 0.042, "green")
-        R.tube(at(0.045), at(0.065), 0.04, "medWhite")
+        R.tube(at(0.0), at(0.02), 0.034, "medWhite")
+        R.tube(at(0.02), at(0.045), 0.036, "green")
+        R.tube(at(0.045), at(0.065), 0.034, "medWhite")
         R.tube(at(0.065), at(0.15), 0.006, "steelL", r1=0.002, sides=5)
 
 
-def arm(R, sh, tp, pole, kind, working, site):
-    sp = SPEC[kind]
-    el, tp = ik(sh, tp, sp["L"], pole)
-    r = sp["r"]
-    R.ball(sh, r * 1.5, "steel")
-    R.tube(sh, el, r * 1.1, "medWhite", r1=r)
-    R.ball(el, r * 1.35, "steel")
-    if sp["band"]:
-        p1, p2 = lerp(el, tp, 0.55), lerp(el, tp, 0.8)
-        R.tube(el, p1, r * 0.95, sp["fore"], ends=False)
-        R.tube(p1, p2, r * 1.0, sp["band"], ends=False)
-        R.tube(p2, tp, r * 0.95, sp["fore"])
-    else:
-        R.tube(el, tp, r * 0.95, sp["fore"])
-    if working:
-        R.ball((el[0], el[1], el[2] + r * 1.4), r * 0.45, "cyan", seg=8)
-    d = [tp[i] - el[i] for i in range(3)]
-    n = math.sqrt(sum(x * x for x in d)) or 1
-    head(R, tp, tuple(x / n for x in d), kind, working, site)
+def mount(R, hu, hv, hz, ca, sa):
+    """An arm's socket on the ring: a rounded pod grown out of the ring's outer face, a dark seam and a cyan dot, the
+    shoulder drum at its tip; returns the drum's centre and axis (tangent to the ring)."""
+    tan = (-sa, ca, 0.0)
+    po = (hu + (RING_R + 0.03) * ca, hv + (RING_R + 0.03) * sa, hz)
+    R.ball(po, 0.085, "medWhite")
+    R.tube((hu + (RING_R + 0.07) * ca, hv + (RING_R + 0.07) * sa, hz), (hu + (RING_R + 0.085) * ca, hv + (RING_R + 0.085) * sa, hz), 0.06, "gmD")
+    R.ball((po[0], po[1], hz + 0.08), 0.018, "cyan", seg=6)
+    sh = (hu + (RING_R + 0.11) * ca, hv + (RING_R + 0.11) * sa, hz)
+    hinge(R, sh, tan, 0.055, 0.12)
+    return sh, tan
 
 
-def rig(state, rot):
+SITE = 0.12                                                       # the incision, this far over the mattress
+HUB_ON, HUB_IDLE = (0.42, 0.98, 0.92), (0.0, 0.6, 1.5)
+
+
+def rig(state, rot, *_):
     """state: 'idle' or a stage of STAGES."""
     on = state != "idle"
     use = STAGES.get(state, ())
@@ -170,29 +219,33 @@ def rig(state, rot):
     k.box(0, 0.127, 0.32, 0.03, 0.03, 0.36, "cyan" if on else "steelD")                 # status strip
     k.cyl(0, -0.04, 1.44, 0.2, 0.12, "steel", top="steelL", sides=10)                  # shoulder housing
     k.cyl(0, -0.04, 1.56, 0.09, 0.32, "medWhite", top="plate", sides=8)               # riser
-    hu, hv, hz = (0.42, 0.98, 1.3) if on else (0.0, 0.4, 1.56)
+    hu, hv, hz = HUB_ON if on else HUB_IDLE
     bz = 1.96
     R.ball((0, -0.04, bz), 0.12, "steel")
     R.tube((0, -0.04, bz), (hu, hv, bz), 0.085, "medWhite")                             # boom
     R.ball((hu, hv, bz), 0.095, "steel")
     k.box(-0.02, -0.34, bz - 0.11, 0.24, 0.2, 0.22, "gm", top="gmD", bevel=0.05)        # counterweight
-    R.tube((hu, hv, bz - 0.06), (hu, hv, hz + 0.04), 0.035, "steel")                   # stem
+    R.tube((hu, hv, bz - 0.06), (hu, hv, max(hz + 0.5, bz - 0.4)), 0.05, "medWhite")    # stem: a sleeve and the rod
+    R.tube((hu, hv, max(hz + 0.5, bz - 0.4)), (hu, hv, hz + 0.04), 0.032, "steel")
     # the halo
     R.torus((hu, hv), hz, RING_R, TUBE_R, "medWhite")
     R.torus((hu, hv), hz - 0.06, RING_R, 0.016, "cyan" if on else "steelD", m=6)        # underglow
     k.cyl(hu, hv, hz - 0.1, 0.15, 0.14, "medWhite", top="plate", sides=10, rtop=0.12)   # core disc
     k.cyl(hu, hv, hz - 0.118, 0.09, 0.018, "red" if on else "gmD", sides=10)            # sensor
-    for i in range(5):                                                                 # spokes
-        a = (i + 0.5) * math.tau / 5 + 0.3 + math.pi / 5
-        R.tube((hu + 0.14 * math.cos(a), hv + 0.14 * math.sin(a), hz - 0.02),
-               (hu + (RING_R - 0.04) * math.cos(a), hv + (RING_R - 0.04) * math.sin(a), hz - 0.01), 0.022, "steel", sides=8)
+    site = (hu, hv, TOP + SITE)
     for i, kind in enumerate(ARMS):
-        a = (i + 0.5) * math.tau / 5 + 0.3
+        a = math.pi / 2 + i * math.tau / 5                                             # a gap faces the column (-v)
         ca, sa = math.cos(a), math.sin(a)
-        sh = (hu + RING_R * ca, hv + RING_R * sa, hz - 0.05)
-        if kind in use:
-            r, tz = REACH[kind]
-            arm(R, sh, (hu + r * ca, hv + r * sa * 0.62, tz), (ca, sa, 0.7), kind, True, (hu, hv))
-        else:
-            arm(R, sh, (sh[0] + 0.16 * ca, sh[1] + 0.16 * sa, sh[2] + 0.04), (ca * 0.35, sa * 0.35, 1.0), kind, False, None)
+        sp = a + math.pi / 5                                                           # spokes between the arms
+        R.tube((hu + 0.14 * math.cos(sp), hv + 0.14 * math.sin(sp), hz - 0.02),
+               (hu + (RING_R - 0.04) * math.cos(sp), hv + (RING_R - 0.04) * math.sin(sp), hz - 0.01), 0.022, "steel", sides=8)
+        sh, tan = mount(R, hu, hv, hz, ca, sa)
+        wrist = (hu + WR * ca, hv + WR * sa, hz + WZ)
+        if kind in use:                                                                # the tools converge on the incision
+            up = 0.16 if kind == "camera" else 0.07 if kind == "laser" else 0.0
+            aim = (site[0] + 0.035 * ca, site[1] + 0.035 * sa, site[2] + up)
+            arm(R, sh, (ca, sa), tan, kind, wrist, aim, True)
+        else:                                                                          # folded: tool tucked, pointing in
+            arm(R, sh, (ca, sa), tan, kind, (hu + (WR - 0.04) * ca, hv + (WR - 0.04) * sa, hz + 0.02),
+                (hu + 0.25 * ca, hv + 0.25 * sa, hz - 0.3), False)
     return k.build()
