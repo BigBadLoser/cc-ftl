@@ -1,8 +1,8 @@
 """The surgical rig's upright body and its operator console (surgery_rig.py builds the rest): a floor flange bolted
 down, a flared collar, two white armour shells over a gunmetal core with a lit waist band and a front panel, the
 shoulder housing and the riser. A projector set flush into the body's left side (-u) throws the surgeon's console: a
-translucent pane facing -u (turned a little toward the viewer), where the operating surgeon stands, showing the patient
-lying down with the incision marked, and a vitals trace.
+translucent pane facing -u (turned a little toward the viewer), where the operating surgeon stands, showing a body scan of
+the patient with the incision marked, and the tool rack.
 
 The hologram is its own layer (`holo`): rendered alone with the rig as holdout and baked to partial alpha, as the
 research bench's (research_kit.holo_item)."""
@@ -14,7 +14,7 @@ C = (0.0, -0.04)                                                  # the body's a
 LINE, FILM = "rgHolo", "rgHoloF"
 LENS_A, LENS_Z = math.pi - 0.35, 0.92                             # the projector: its heading round the body, height
 LENS = (C[0] + 0.182 * math.cos(LENS_A), C[1] + 0.182 * math.sin(LENS_A), LENS_Z)   # its lens
-PANE = dict(u=-0.6, v=0.12, z=0.9, w=0.5, h=0.34, lean=0.3, yaw=0.5)   # the console pane: foot centre, width (along v), height
+PANE = dict(u=-0.6, v=0.06, z=0.86, w=0.42, h=0.5, lean=0.25, yaw=0.2)   # the console pane: foot centre, width (along v), height
 
 
 def at(r, a, z=0.0):
@@ -57,9 +57,9 @@ def _q(R, pts, col):
 
 
 def holo(R):
-    """The console hologram (in surgery): the pane, turned a little toward the viewer, its light cone from the lens, the
-    patient's outline lying on it with the incision marked, and a vitals trace. Few, bold strokes: it is a few dozen
-    pixels across in game."""
+    """The console hologram (in surgery): a tall pane, light lines from the lens to its back (top) corners, and a body
+    scan on it: the patient's outline standing, the incision marked across the belly, and the tool rack beside it (the
+    bed's own monitor already shows the trace). Few, bold strokes: it is a few dozen pixels across in game."""
     u0, v0, z0, w, h, ln, yaw = (PANE[k] for k in ("u", "v", "z", "w", "h", "lean", "yaw"))
     nu, nv = -math.cos(yaw), math.sin(yaw)                        # the pane's facing (toward the surgeon)
     au, av = math.sin(yaw), math.cos(yaw)                         # across it
@@ -70,15 +70,19 @@ def holo(R):
     _q(R, [P(-0.5, 0), P(0.5, 0), P(0.5, 1), P(-0.5, 1)], FILM)
     edge = [P(-0.5, 0, 0.004), P(0.5, 0, 0.004), P(0.5, 1, 0.004), P(-0.5, 1, 0.004)]
     for a, b in zip(edge, edge[1:] + edge[:1]):
-        R.tube(a, b, 0.007, LINE, sides=5)
-    for c in (P(-0.5, 0), P(0.5, 0)):                                                  # the light cone
-        R.tube(LENS, c, 0.008, FILM, sides=4)
+        R.tube(a, b, 0.006, LINE, sides=5)
+    for c in (P(-0.5, 1), P(0.5, 1)):                                                  # projection lines
+        R.tube(LENS, c, 0.005, LINE, sides=4)
 
-    def line(pts, r=0.009):
+    def line(pts, r=0.006, col=LINE):
         for a, b in zip(pts, pts[1:]):
-            R.tube(P(*a, 0.006), P(*b, 0.006), r, LINE, sides=5)
-    line([(-0.2, 0.6), (0.34, 0.6), (0.34, 0.84), (-0.2, 0.84), (-0.2, 0.6)])          # the patient: body,
-    hc = [(-0.3 + 0.07 * math.cos(a), 0.72 + 0.13 * math.sin(a)) for a in (i * math.tau / 8 for i in range(9))]
-    line(hc)                                                                           # head
-    R.ball(P(0.0, 0.72, 0.01), 0.026, "red", seg=6)                                    # the incision
-    line([(-0.4, 0.26), (-0.18, 0.26), (-0.1, 0.44), (0.0, 0.1), (0.08, 0.26), (0.4, 0.26)])   # vitals trace
+            R.tube(P(*a, 0.006), P(*b, 0.006), r, col, sides=5)
+    cx = -0.1                                                                          # the body scan
+    half = [(0.03, 0.77), (0.17, 0.72), (0.22, 0.44), (0.18, 0.42), (0.13, 0.62), (0.11, 0.46), (0.13, 0.36),
+            (0.1, 0.07), (0.03, 0.07), (0.0, 0.32)]
+    line([(cx + x, t) for x, t in half] + [(cx - x, t) for x, t in half[::-1]])
+    rx, rt = 0.036 / w, 0.036 / h
+    line([(cx + rx * math.cos(a), 0.845 + rt * math.sin(a)) for a in (i * math.tau / 10 for i in range(11))])
+    line([(cx - 0.06, 0.53), (cx + 0.06, 0.53)], r=0.008, col="red")                    # the incision
+    for j, t in enumerate((0.74, 0.62, 0.5)):                                          # the tool rack
+        line([(0.26, t), (0.42, t)], r=0.009 if j == 0 else 0.006)
