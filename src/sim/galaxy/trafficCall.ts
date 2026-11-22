@@ -7,7 +7,6 @@ import { freeShuttle, sendHome } from '../trade/courier';
 import { isLive } from '../trade/deals';
 import { freeAirlock } from '../trade/player';
 import { VehicleC } from '../vehicles/components';
-import { bayWorking } from '../vehicles/geometry';
 import { dockError } from '../vehicles/handlers';
 import { TRADE_HOP_EVERY_SEC, TRADE_HOP_SEC } from './tuningWar';
 
@@ -18,7 +17,7 @@ import { TRADE_HOP_EVERY_SEC, TRADE_HOP_SEC } from './tuningWar';
  * - 'out': on its way to the trader's airlock;
  * - 'docked': at the airlock;
  * - 'back': flying home;
- * - 'rest': home again, waiting out the pause (the shuttle is free for the player's deals meanwhile).
+ * - 'rest': home again, waiting out the pause (the shuttle is free for the player's deals meanwhile: one that takes it ends the call).
  */
 export interface ShuttleCall {
   /** The trader it calls at, and the airlock it docks at there. */
@@ -85,7 +84,8 @@ export function stepCall(sim: Sim, id: number, c: ShuttleCall): void {
       if (sendHome(sim, id)) go(c, 'rest');
       return;
     case 'rest':
-      if (v.state !== 'stowed' && bayWorking(sim, v.home)) return go(c, 'back'); // the dock order sent as it gave way launched it after all
+      // Another job took the shuttle while it rested (a player's deal: `freeShuttle` offers it): the call lets it go.
+      if (v.state !== 'stowed') return void sim.world.remove(id, ShuttleCallC);
       if (c.timer > TRADE_HOP_EVERY_SEC * TICK_HZ) sim.world.remove(id, ShuttleCallC);
   }
 }

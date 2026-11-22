@@ -12,6 +12,7 @@ import { ModuleC } from '../sim/modules/components';
 import { shipIdOf } from '../sim/regions';
 import type { Sim } from '../sim/sim';
 import type { Deal } from '../sim/trade/types';
+import { freeAirlock } from '../sim/trade/player';
 import { VehicleC } from '../sim/vehicles/components';
 import { vehicleDefOf } from '../sim/vehicles/lifecycle';
 import { run, runLog } from '../../test/support/run';
@@ -53,6 +54,14 @@ describe('NPC traffic in the player\'s node', () => {
     expect(v.state).toBe('stowed');
     expect(v.homeShip).toBe(home);
     expect(over).toBe(0);
+    // Resting, it is free for the player's trade (#613 review): a job that flies it to the player's ship ends the call, and it is not called home.
+    const airlock = freeAirlock(sim, id);
+    expect(airlock).not.toBe(0);
+    v.autopilot = true; // as a deal takes its courier (trade/deals.ts `takeCourier`)
+    sim.enqueue({ type: 'vehicle.dock', vehicle: id, airlock });
+    run(sim, 3);
+    expect(sim.world.has(id, ShuttleCallC)).toBe(false);
+    expect(v.dest).toEqual({ type: 'dock', airlock });
   });
 
   it('a call gives way to the player\'s trade: none starts, and one under way turns home', () => {
