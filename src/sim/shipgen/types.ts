@@ -187,6 +187,11 @@ export interface FactionDef {
   architecture: ArchitectureDef;
   /** Assembly-driven generation (v3): hull families. When present, the faction uses the composer instead of v2. */
   hullFamilies?: readonly HullFamilyDef[];
+  /**
+   * Its ships' hulls are drawn outline first (SHIPGEN_V4, assembly/outlineShip.ts), each seed the navy type its hull family
+   * builds (`navyTypeOf`); its `hullFamilies` still weigh the families and give salvaged navy sections. Navy only.
+   */
+  outline?: true;
   /** Prototype (SHIPGEN_V4 step 2): the drawn hull's walls and doors are settled on the region grid (assembly/regrid.ts), not thinned. */
   regrid?: boolean;
   /** Tapered transitions where sections of different widths meet (none: exposed joins, e.g. drone beams). */

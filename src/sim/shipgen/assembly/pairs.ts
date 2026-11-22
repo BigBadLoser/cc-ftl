@@ -62,6 +62,12 @@ export function gunsAndReactors(plan: ShipPlan, defs: Record<string, ModuleDef>)
   return { gunPairs: gn.map((r, i) => [r, gs[i] as RoomSpec] as const), lone, reactors };
 }
 
+/** A plan's gun rooms cut to its first `pairs` gun pairs and the odd one out (`gunsAndReactors`): all of them where it has no more. */
+export function batteryWeapons(plan: ShipPlan, defs: Record<string, ModuleDef>, pairs: number): RoomSpec[] {
+  const { gunPairs, lone } = gunsAndReactors(plan, defs);
+  return gunPairs.length <= pairs ? plan.weapons : [...gunPairs.slice(0, pairs).flatMap(([a, b]) => [a, b]), ...lone];
+}
+
 /**
  * A plan's rooms as the layouts place them: the gun pairs, the cabin block's pair (its beds split across the axis), and
  * the rest as mirror pairs, rooms with an annex paired together (both two tiers deep, or both with the annex beside).

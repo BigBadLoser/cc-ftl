@@ -1,6 +1,6 @@
 import type { ModuleDef } from '../../registry';
 import { Rng } from '../../rng';
-import { enginesShort, fitShell, previewHull, seedOf } from '../generate';
+import { CAPACITY_PROBLEM, enginesShort, fitShell, previewHull, seedOf } from '../shell';
 import { dockSpec, engineSpec, planShip, reactorSpec, type RoomSpec, type ShipPlan } from '../plan';
 import { pairUp } from '../topoNavy';
 import type { FactionDef, GenResult, HullFamilyDef, ShipRoleDef } from '../types';
@@ -304,7 +304,7 @@ export function navyAttempts(defs: Record<string, ModuleDef>, assemble: (n: numb
   for (let n = 0; n < 24; n++) {
     let r = tryAssemble(n, 0);
     if (!r) continue;
-    for (let k = 0, extra = 0; k < 3 && r.problems[0]?.startsWith('engines carry'); k++) {
+    for (let k = 0, extra = 0; k < 3 && r.problems[0]?.startsWith(CAPACITY_PROBLEM); k++) {
       extra += Math.max(1, enginesShort(defs, r.template));
       const more = tryAssemble(n, extra);
       if (!more) break;

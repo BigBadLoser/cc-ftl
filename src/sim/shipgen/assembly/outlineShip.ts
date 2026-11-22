@@ -2,16 +2,17 @@ import type { ModuleDef } from '../../registry';
 import { Rng } from '../../rng';
 import { drawSilhouette, type Drive, type Silhouette } from '../hull/silhouette';
 import { NAVY_PROFILES } from '../hull/navyProfiles';
-import { fitShell, seedOf } from '../generate';
+import { fitShell, seedOf } from '../shell';
 import { ENGINE_TIERS, REACTOR_TIERS, engineSpec, planShip, reactorsFor, type ShipPlan } from '../plan';
+import { equipmentShort, plannedEquipment } from '../equipment';
 import type { FactionDef, GenResult } from '../types';
 import { layoutBlocks, type Mask } from './blockLayout';
 import { bayRooms } from './bayRooms';
 import { outlineFrame } from './frame';
 import { paintPlaced } from './placePaint';
 import type { Placed } from './placeLayout';
-import { gunsAndReactors } from './pairs';
-import { NAVY_TYPES, navyAttempts, navyRole, shipCommons, shipQuarters, type BayLayout, type NavyType } from './navyShip';
+import { batteryWeapons, gunsAndReactors } from './pairs';
+import { NAVY_TYPES, navyAttempts, navyRole, navyTypeOf, shipCommons, shipQuarters, type BayLayout, type NavyType } from './navyShip';
 import { SPACE, type RegionGrid } from './regions';
 
 /**
@@ -25,6 +26,9 @@ import { SPACE, type RegionGrid } from './regions';
  * axis. Only the body scales across; what stands beyond it (a stern flare, wings, pods) keeps its size in tiles, out from
  * the scaled body's edge.
  */
+
+/** Gun sites a battery stands its blisters on (a gun room each side); the aft site's column holds one more pair inboard. */
+const BATTERY_SITES = 2;
 
 function scaled(sil: Silhouette, sx: number, sy: number): Mask {
   const W0 = Math.round(sil.length * sx);
@@ -40,7 +44,7 @@ function scaled(sil: Silhouette, sx: number, sy: number): Mask {
   // PROTOTYPE (#581): the gun battery on the widest straight stretch, lengthened (its middle column repeated) until it
   // holds it: two blisters a tile proud (a gun room's floor and a wall either side), the airlock between, maintenance
   // corridor between them. A third gun stands inboard of the aft one, the column doubled.
-  const bat = sil.battery, guns = bat?.guns ?? 0, k = Math.min(guns, 2), run = bat?.runs[0], GW = (bat?.w ?? 4) + 2, GAP = 7, AIR = 3;
+  const bat = sil.battery, guns = bat?.guns ?? 0, k = Math.min(guns, BATTERY_SITES), run = bat?.runs[0], GW = (bat?.w ?? 4) + 2, GAP = 7, AIR = 3;
   const sites: [number, number][] = [];
   let E = 0, mid = W0, air = -1, a0 = 0, b0 = 0;
   if (k > 0 && run) {
@@ -164,6 +168,9 @@ export function outlineInputs(
   // The type's commons and quarters (a few spare beds past the crew's) join the plan, their power counted.
   const quarters = shipQuarters(type, planned.quarters, planned.crew.length, rng.int(2, 4));
   const plan: ShipPlan = { ...planned, kit, quarters, support: [...planned.support, ...shipCommons(type, planned.crew.length)] };
+  // A battery holds its sites' gun pairs and its inner pair (the odd gun out stands with the other rooms): the plan's guns
+  // past them have no room, so it carries only these, its power counted without the rest.
+  if (bay?.battery) plan.weapons = batteryWeapons(plan, defs, BATTERY_SITES + 1);
   const fixed = NAVY_TYPES[type].engines;
   if (fixed) plan.engines = fixed + (tierUp ? extra - 1 : extra);
   plan.reactors = reactorsFor(plan, defs);
@@ -274,14 +281,21 @@ export function assembleOutline(
   const cell = g.compile(), snap = g.snapshot(cell);
   const at = (cx: number, cy: number): string => snap.rows[cy]?.[cx] ?? '.';
   const rows = snap.rows.map((r, y) => [...r].map((c, cx) => (c === 'D' && [at(cx + 1, y), at(cx - 1, y), at(cx, y + 1), at(cx, y - 1)].includes('.') ? '#' : c)).join(''));
-  return fitShell(
+  const r = fitShell(
     rng, f, factionId, seed, role, 'sections', { crew: plan.crew } as Pick<ShipPlan, 'crew'>,
-    { rows, roomOf: snap.roomOf, width: snap.width, height: snap.height, roles: g.regions.map((r) => r.role), specs: g.regions.map((r) => r.spec) },
+    { rows, roomOf: snap.roomOf, width: snap.width, height: snap.height, roles: g.regions.map((q) => q.role), specs: g.regions.map((q) => q.spec) },
     `outline ${profile}`, defs, n, { bareHalls: true },
   );
+  // The guns, shields, point defence and bays the plan asked for are required, as on every generated ship (#577).
+  const planned = plannedEquipment(defs, plan);
+  const short = equipmentShort(defs, planned, r.template);
+  if (short) r.problems.push(short);
+  return { ...r, planned };
 }
 
-/** An outline navy ship by attempts (as `generateNavy`). */
-export function generateOutline(f: FactionDef, factionId: string, seed: number, depth: number, defs: Record<string, ModuleDef>, type: NavyType): GenResult {
+/** An outline navy ship by attempts (as `generateNavy`). `type` defaults to the seed's (`navyTypeOf`): the game's navy ships (`generateShip`). */
+export function generateOutline(
+  f: FactionDef, factionId: string, seed: number, depth: number, defs: Record<string, ModuleDef>, type = navyTypeOf(f, seed, depth),
+): GenResult {
   return navyAttempts(defs, (n, extra) => assembleOutline(f, factionId, seed, depth, defs, type, n, extra));
 }
