@@ -3,7 +3,8 @@ import { ShipC } from '../combat/components';
 import { liftShip } from '../sector/packet';
 import type { Sim } from '../sim';
 import { retreat, strand } from './agenda';
-import { isWarmedElsewhere, spawnContact, warmContact } from './arrivals';
+import { isWarmedElsewhere, playerShipInfo, spawnContact, warmContact } from './arrivals';
+import { minersField } from './traffic';
 import { graceHolds } from './grace';
 import { inspectingFleets } from '../inspect/holds';
 import { nodesWithin } from './graph';
@@ -59,17 +60,20 @@ export function materialiseFleet(sim: Sim, f: Fleet, node: string = f.node): voi
 }
 
 /**
- * Where a fleet's business is in the node (#603): a miner by the asteroid field it works, a trader by the station it calls at (`dockPort`), so its
+ * Where a fleet's business is in the node (#603): a miner by the nearest rock of the field it works (`minersField`), a trader by the station it calls at (`dockPort`), so its
  * ships turn up there (`freeSpot`'s anchor); anyone else, or a node without that place in play, by the player.
  */
 export function businessAnchor(sim: Sim, f: Fleet, node: string): Rect | undefined {
   if (f.role === 'miner') {
-    const field = [...sim.world.query(AsteroidC)].sort((a, b) => a - b)[0];
+    const field = minersField(sim);
     const parts = field === undefined ? [] : sim.world.get(field, AsteroidC)?.parts ?? [];
     if (!parts.length) return undefined;
-    const x = Math.min(...parts.map((p) => p.x));
-    const y = Math.min(...parts.map((p) => p.y));
-    return { x, y, w: Math.max(...parts.map((p) => p.x + p.w)) - x, h: Math.max(...parts.map((p) => p.y + p.h)) - y };
+    // Beside the field's nearest rock (to the player, where ships otherwise turn up), not round the field's bounds: on a wide field those are far from any rock.
+    const me = playerShipInfo(sim)?.ship;
+    const cx = me ? me.x + me.width / 2 : sim.sector.width / 2;
+    const cy = me ? me.y + me.height / 2 : sim.sector.height / 2;
+    const gap = (p: Rect) => Math.hypot(p.x + p.w / 2 - cx, p.y + p.h / 2 - cy);
+    return parts.reduce((best, p) => (gap(p) < gap(best) ? p : best));
   }
   if (f.role !== 'trader') return undefined;
   const port = dockPort(portsAt(sim, node), f.role);

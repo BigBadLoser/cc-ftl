@@ -14,7 +14,7 @@ import { vehicleDefOf } from '../vehicles/lifecycle';
  */
 export function tendTraffic(sim: Sim): void {
   if (sim.tick % TICK_HZ !== 0) return;
-  const field = [...sim.world.query(AsteroidC)].sort((a, b) => a - b)[0];
+  const field = minersField(sim);
   if (field === undefined) return;
   for (const f of sim.galaxy.fleets) {
     if (f.node !== sim.galaxy.current || f.role !== 'miner') continue;
@@ -29,4 +29,9 @@ export function tendTraffic(sim: Sim): void {
       }
     }
   }
+}
+
+/** The asteroid field NPC miners in the player's node work (#603): the node's first. Placement (`businessAnchor`) and the pods' orders share it. */
+export function minersField(sim: Sim): number | undefined {
+  return [...sim.world.query(AsteroidC)].sort((a, b) => a - b)[0];
 }
