@@ -173,7 +173,7 @@ export { clearBlocker, clearCost, grudgeOf, huntPressure, isWanted, notorietyOf 
 export { WANTED_AT } from './galaxy/tuningHeat';
 export { galaxyGen, chunkOfId } from './galaxy/generator';
 export { SENSOR_HOPS, DANGER_STEP } from './galaxy/tuning';
-export { visibleFleets, sensorNodes } from './galaxy/fleets';
+export { visibleFleets, sensorNodes, fleetHold } from './galaxy/fleets';
 export { fleetName } from './galaxy/names';
 export { portsAt, portOf } from './galaxy/portIndex';
 export { portNode, type Port } from './galaxy/ports';

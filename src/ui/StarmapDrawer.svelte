@@ -110,7 +110,7 @@
                 <i style={`background: ${toneColor(f.tone)}`}></i>
                 <span><b>{f.name}</b> <small>{f.faction} {f.role.toLowerCase()}</small></span>
                 <small class="sub">{f.heading.endsWith(f.home) ? f.heading : `${f.heading} · home ${f.home}`}</small>
-                {#if f.hops}<small class="sub eta" data-testid="starmap-eta">Next node in {fmtEta(Math.ceil((1 - map.turnFrac) * map.turnSec))}{f.hops > 1 ? ` · ${f.hops} jumps to go` : ''}</small>{/if}
+                {#if f.hops}<small class="sub eta" data-testid="starmap-eta">{map.turnSec ? `Next node in ${fmtEta(Math.ceil((1 - map.turnFrac) * map.turnSec))}` : 'Next node on the next turn'}{f.hops > 1 ? ` · ${f.hops} jumps to go` : ''}</small>{/if}
                 {#if f.cargo}<small class="sub cargo" data-testid="starmap-cargo">Carrying {f.cargo}</small>{/if}
               </li>
             {/each}

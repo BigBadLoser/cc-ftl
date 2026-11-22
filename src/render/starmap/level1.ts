@@ -121,8 +121,10 @@ export function createLevel1(ctx: Ctx, sc0: Scene, cam0: Cam): Level {
   /** "Next node in 1:23" for a fleet on the move. */
   const etaOf = (f: UiStarFleet): string => {
     if (!f.hops) return '';
-    const s = Math.ceil((1 - (sc.map.turnFrac ?? 0)) * (sc.map.turnSec ?? 0));
-    return ` Next node in ${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}${f.hops > 1 ? `, ${f.hops} jumps to go` : ''}.`;
+    const sec = sc.map.turnSec ?? 0; // 0 while a hop or a deploy sets the turns: no clock to read
+    const s = Math.ceil((1 - (sc.map.turnFrac ?? 0)) * sec);
+    const when = sec ? `Next node in ${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}` : 'Next node on the next turn';
+    return ` ${when}${f.hops > 1 ? `, ${f.hops} jumps to go` : ''}.`;
   };
 
   /** Everything drawn at the current grid that is not a piece: reach lines, route, fleets, exit icons, rings, the ship, labels. */
