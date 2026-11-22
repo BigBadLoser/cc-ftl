@@ -58,7 +58,7 @@ Territory, standing (reputation), fleets, traffic, speciality stock and which st
 | Carrier | `navy.carrier` | Navy hull with 3 hangar bays and point defence | In game | src/content/factions/navy.ts |
 | Freighter | `civilian.freighter` | Truss/hold hull, many crates | In game | src/content/factions/civilian.ts:30 |
 | Liner | `civilian.liner` | Crew-heavy passenger hull | In game | src/content/factions/civilian.ts |
-| Mining ship | `civilian.mining` | Ore barge hull | In game | src/content/factions/civilian.ts |
+| Mining ship | `civilian.mining` | Ore barge hull with a pod bay and mining pod (#603) | In game | src/content/factions/civilian.ts |
 | Station hull | `civilian.station` | Civilian station ring/hub (a ship hull; stations proper are built by the station assembly) | In game | src/content/factions/civilian.ts |
 | Scrapper raider | `scrapper.raider` | Gun hull from navy hulks and drone guns | In game | src/content/factions/scrapper.ts:31 |
 | Scrapper hauler | `scrapper.hauler` | Barge and pod-string hold hull | In game | src/content/factions/scrapper.ts |

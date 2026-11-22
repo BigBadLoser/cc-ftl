@@ -56,7 +56,7 @@ function midRig(c: Ctx, host: number): boolean {
 /** Mining (v20 struts, a minority): a cockpit, ore barges in line, the rig fore of the bow or mid-ship. */
 export function struts(c: Ctx): boolean {
   const j = jobs(c.plan);
-  const bow = civil(cockpit(c.rng, c.plan.command, [...j.core, ...j.crew]), 'command', 'cockpit');
+  const bow = civil(cockpit(c.rng, c.plan.command, [...j.core, ...j.crew, ...c.plan.hangars]), 'command', 'cockpit');
   if (!bow) return no(c, 'cockpit');
   const root = c.A.placeRoot(bow);
   const where = c.rng.pick(['bow', 'bow', 'mid', 'both'] as const);
@@ -94,7 +94,7 @@ export type CrewForm = 'block' | 'tower' | 'wide' | 'slim';
 function crewBody(c: Ctx): { root: number; aft: number } | null {
   const j = jobs(c.plan);
   const docks = j.crew.filter((r) => r.role === 'dock');
-  const crew = j.crew.filter((r) => r.role !== 'dock');
+  const crew = [...j.crew.filter((r) => r.role !== 'dock'), ...c.plan.hangars];
   const form: CrewForm = crew.length === 0 ? 'slim' : salted(c, 7, [['block', 2], ['tower', 2], ['wide', 2], ['slim', 1]]);
   c.parts.push(`crew ${form}`);
   const inWide = form === 'wide' ? crew.slice(0, 3) : [];

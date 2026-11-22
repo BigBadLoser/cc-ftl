@@ -2,6 +2,7 @@ import { launchVehicle } from '../vehicles/transitions';
 import { ALT, BodyC, type Body } from '../body';
 import { cargoAdd, cargoCount, cargoSpace } from '../vehicles/cargo';
 import { bumpStat } from '../story/goals';
+import { shipById } from '../combat/shipQuery';
 import { VehicleC, type Vehicle } from '../vehicles/components';
 import { bayCenter, bayWorking } from '../vehicles/geometry';
 import { vehicleDefOf, vehicleSpeedPerTick } from '../vehicles/lifecycle';
@@ -100,8 +101,8 @@ export function miningSystem(sim: Sim): void {
     if (v.state === 'docked') continue;
     if (v.state === 'stowed') {
       if (cargoCount(v) > 0) {
-        // A pod home with ore: the goal chain counts the trip once, as it starts unloading.
-        if (order.phase !== 'unloading') bumpStat(sim, 'gathered');
+        // A pod home with ore: the goal chain counts the player's trip once, as it starts unloading.
+        if (order.phase !== 'unloading' && shipById(sim, v.homeShip)?.faction === 'player') bumpStat(sim, 'gathered');
         order.phase = 'unloading';
         continue;
       }

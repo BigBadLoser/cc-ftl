@@ -2,7 +2,7 @@
 import { shipCanAct } from '../combat/shipQuery';
 import { pickAirlock, startParty } from '../boarding/party';
 import { ShipC } from '../combat/components';
-import { isAiFaction } from '../combat/factions';
+import { aiRuns, atBattle } from '../combat/engage';
 import { ModuleC } from '../modules/components';
 import type { Sim } from '../sim';
 import { BOARDING_LOAD_TICKS } from '../tuning';
@@ -15,7 +15,8 @@ import { hasLeaveFrom } from '../consent/guests';
  * idle until `afterTicks` of combat pass or the ship is losing (fewer than half its weapons work, or integrity under
  * `losingBelow`). Then the highest-id crew (up to `party`, always leaving BOARDING_MIN_HOME aboard) are ordered into the
  * stowed shuttle; when they are aboard (or BOARDING_LOAD_TICKS pass) the shuttle is sent to dock at the first free,
- * working airlock of the first live player ship; once docked everyone disembarks into that ship, pilot last.
+ * working airlock of the first ship it boards (`boardTargets`: a live player ship, or in a fight between NPC ships here its foe there); once
+ * docked everyone disembarks into that ship, pilot last.
  * A shuttle that is shot down ends the attempt ('done'); one whose dock failed tries another airlock.
  * A neutral ship's party that was let in (a 'visit' consent grant from it on the player's ship, scene/visit.ts) is started by that and runs the same way
  * outside combat.
@@ -24,10 +25,10 @@ export function boardingAiSystem(sim: Sim): void {
   for (const id of sim.world.query(BoarderC, ShipC)) {
     const b = sim.world.get(id, BoarderC) as Boarder;
     const ship = sim.world.get(id, ShipC)!;
-    if (b.state === 'done' || (!isAiFaction(ship.faction) && !hasLeaveFrom(sim, id)) || !shipCanAct(ship)) continue;
+    if (b.state === 'done' || (!aiRuns(sim, id) && !hasLeaveFrom(sim, id)) || !shipCanAct(ship)) continue;
     const v = b.vehicle ? sim.world.get(b.vehicle, VehicleC) : undefined;
     if (b.state === 'idle') {
-      if (!sim.sector.inCombat) continue;
+      if (!atBattle(sim, id)) continue;
       b.timer++;
       if (b.timer >= b.afterTicks || losing(sim, id, ship.integrity, b.losingBelow)) startParty(sim, id, b);
     } else if (!v) {

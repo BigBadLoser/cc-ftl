@@ -5,6 +5,7 @@ import type { EventEffect, RemoteAction } from './story/defs';
 import type { StationJobKind } from './galaxy/types';
 import type { DealPhase } from './trade/types';
 import type { ItemQty, ShotLook } from './registry';
+import type { EngagementEvent } from './combat/engagementTypes';
 
 /** Why a ship turned up in the current grid (`ship.arrived`). */
 export type ArriveReason = 'spawn' | 'scene' | 'fleet' | 'jump-in';
@@ -13,6 +14,7 @@ export type DepartReason = 'jump-away' | 'fled' | 'fleet' | 'scene' | 'wrecked';
 
 /** Outbound notifications for UI and audio. */
 export type SimEvent =
+  | EngagementEvent
   | { type: 'debug.markerSpawned'; entity: number; x: number; y: number }
   | { type: 'crew.jobDone'; crew: number; kind: JobKind; ship: number; x: number; y: number }
   /** A room caught fire (first burning tile in a room with no fire). */
@@ -393,33 +395,3 @@ export type SimEvent =
   | { type: 'galaxy.discovered'; count: number }
   /** A command failed validation and was ignored. `reason` is a short machine-readable code. */
   | { type: 'command.rejected'; command: string; reason: string };
-
-/**
- * The single outbound channel. Systems emit during a tick; the app drains after the tick.
- * Events are NEVER read by sim logic. Anything the sim needs later belongs in components or grids.
- */
-export class EventBuffer {
-  private buffer: SimEvent[] = [];
-  private stamps = new WeakMap<SimEvent, number>();
-
-  /** `clock` reads the tick an event is emitted in (see `tickOf`). */
-  constructor(private readonly clock: () => number = () => 0) {}
-
-  /** Record an event. */
-  emit(e: SimEvent): void {
-    this.stamps.set(e, this.clock());
-    this.buffer.push(e);
-  }
-
-  /** The tick an event was emitted in (a drained event keeps its stamp), or `fallback` for an event this buffer never saw. */
-  tickOf(e: SimEvent, fallback: number): number {
-    return this.stamps.get(e) ?? fallback;
-  }
-
-  /** Return all buffered events and clear the buffer. */
-  drain(): SimEvent[] {
-    const out = this.buffer;
-    this.buffer = [];
-    return out;
-  }
-}
