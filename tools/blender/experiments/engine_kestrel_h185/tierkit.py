@@ -1,4 +1,4 @@
-"""Kestrel Mk II / Mk III: the inboard fit-out of the deeper engine tiers (4x6, 4x7). Study stage (round 3).
+"""Kestrel Mk II / Mk III: the inboard fit-out of the deeper engine tiers (4x6, 4x7). Study stage (round 4).
 
 The hull row, bulkhead and bell are the Mk I's. A tier cuts the cassette's inboard end off (`cut`: the Mk I faces
 inboard of a u are dropped, the injector plate and pump crown armour with them) and grows its own machinery out of the
@@ -7,13 +7,16 @@ model.THRUST_Z (read while the model is lowered for stage 8), the deck at z = 0,
 castings that continue the cassette go on `fs`, squashed about the axis like the cassette. Same family as Mk I: navy
 and blue-grey castings, steel trim, brass gaskets and unions, the same fasteners. Tiers read by shape and equipment.
 
-Concepts (round 3: each its own equipment vocabulary; the Mk I front is the family link):
-  G  cryogenic feed: white insulated tanks with frost ribs, hi-vis bands, corrugated transfer hoses and a boil-off
-     vent mast. Mk III: two upright dewars and a header, a heat-exchanger coil round the neck.
-  H  magnetic injector: the casing's rear half gives way to a core in toroidal copper field rings on ceramic clamps,
-     fed by a capacitor bank over catenary cables. Mk III: three rings, two banks, a plasma source box behind.
-  I  electric drive: olive-drab drive motors with cooling fins, an exposed gear train behind a guard on a girder skid
-     with hazard edges, a maintenance trolley beam. Mk III: twin motors, a flywheel and a longer skid.
+Concepts (round 4: between round 2's Mk I vocabulary and round 3's new equipment; new systems are built in the house
+castings (navy, blue-grey, steel, brass) with sparing new materials; each tier adds one clear step):
+  J  magnetic injector: the rear half of the casing gives way to a core in copper-wound field rings in navy clamp
+     shells, fed from capacitor cabinets over armoured cables. Mk II: two rings, one cabinet. Mk III: three rings,
+     a cabinet each side, a plasma source housing behind.
+  K  electric turbopumps: the casing necks into a pre-burner drum, two motor-driven turbopumps on cradles either side
+     discharging into it. Mk III: bigger pumps and motors, a two-stage drum, a control cabinet and a hoist gantry.
+  L  inline pump, cryogenic feed: a coaxial turbopump on the axis, a regenerative coil round its inducer, the turbine
+     exhaust ducted along the deck to a dump. Mk III: a booster stage, an insulated saddle tank across the back and a
+     boil-off vent.
 """
 import math
 import sys
@@ -23,7 +26,7 @@ from sprites.cmbkit import hazard_strip
 from geometry import annulus, curved_pipe, sleeve, torus
 
 CUT = -1.5              # the Mk I powerhead's faces inboard of this go (the injector plate, rear armour and clamps)
-CUTS = {"H": {"powerhead": -0.75, "services": -0.75}}
+CUTS = {"J": {"powerhead": -0.75, "services": -0.75}}
 
 
 def cut(variant, name):
@@ -136,206 +139,200 @@ def gear(f, u0, u1, v, z, r, mat="steelL", teeth=16):
               base=False)
 
 
-# ---- G: cryogenic feed -----------------------------------------------------------------------------------------------
-
-def _cryo_tank(f, u0, u1, z, r):
-    capsule(f, u0, u1, 0, z, r, "medWhite")
-    k = u0 + 0.15
-    while k < u1 - 0.1:
-        f.hcyl(k - 0.02, k + 0.02, 0, z, r + 0.02, "iceB", sides=24, cap="iceB", capstart="iceB")   # frost ribs
-        k += 0.17
-    for u in (u0 + 0.06, u1 - 0.06):
-        f.hcyl(u - 0.05, u + 0.05, 0, z, r + 0.03, "hivis", sides=24, cap="hivis", capstart="hivis")
-    for u in (u0 + 0.3, u1 - 0.3):                                                                # saddles
-        f.box(u, 0, 0, 0.2, 1.0, z - r * 0.55, "steelD", top="steel")
-        f.box(u, 0, z - r * 0.55, 0.22, r * 1.4, 0.08, "pocket", top="pocket")
-        for side in (-1, 1):
-            lug(f, u, side * 0.62)
 
 
-def _hose(f, pts, r=0.075):
-    curved_pipe(f, pts, r, "pocket", steps=6, sides=10)
+def hose(f, pts, r=0.075, mat="gm", end="brass"):
+    curved_pipe(f, pts, r, mat, steps=6, sides=10)
     for p in (pts[0], pts[-1]):
-        f.box(p[0], p[1], p[2], 0.12, 0.12, 0.12, "hivis", base=False)
+        f.box(p[0], p[1], p[2], 0.13, 0.13, 0.13, end, base=False)
 
 
-def _vent(f, u, v, top, src):
-    f.vcyl(u, v, 0, 0.12, 0.12, "steelD", top="steel", sides=10)
-    f.vcyl(u, v, 0.12, 0.055, top - 0.12, "steelL", top="steelL", sides=8)
-    f.box(u, v, 1.0, 0.16, 0.16, 0.2, "hivis", top="hivis")                          # relief valve
-    D.seg(f, (u, v - 0.16, top), (u, v + 0.16, top), 0.05, "steelL", 8, cap="hivis", capstart="hivis")
-    curved_pipe(f, [src, (src[0], src[1] + (v - src[1]) * 0.5, src[2] + 0.12), (u, v, top - 0.25)], 0.04, "steelL")
+def gantry(f, u0, u1):
+    """A maintenance hoist beam over the machine: navy posts with hazard-banded feet, a trolley and its block."""
+    for u in (u0, u1):
+        for v in (-1.75, 1.75):
+            f.box(u, v, 0, 0.12, 0.12, 1.92, "navy", top="blueGrey")
+            f.box(u, v, 0, 0.16, 0.16, 0.18, "hazY", top="hazK")
+        f.box(u, 0, 1.84, 0.12, 3.6, 0.1, "navy", top="blueGrey")
+    f.box((u0 + u1) / 2, 0, 1.93, u1 - u0 + 0.12, 0.14, 0.1, "steelD", top="steel")
+    f.box(u0 + 0.3, 0, 1.74, 0.2, 0.2, 0.19, "steel", top="hazY")
+    D.seg(f, (u0 + 0.3, 0, 1.74), (u0 + 0.3, 0, 1.48), 0.015, "steelL", 4)
 
 
-def cryo(f, fs, tier, a):
-    neck(fs, a, -1.95, 0.45)
-    fs.hcyl(-2.15, -1.95, 0, a, 0.45, "lvWS", sides=24, capstart="steelD")                      # insulated feed collar
-    tz, tr = 1.02, 0.5
-    _cryo_tank(f, -3.25 if tier == 2 else -3.1, -2.45, tz, tr)
-    for side in (-1, 1):
-        _hose(f, [(-2.6, side * 0.42, tz - 0.1), (-2.4, side * 0.66, 0.55), (-2.15, side * 0.7, 0.75),
-                  (-2.05, side * 0.42, a - 0.12)])
-    G.junction_box(f, "+v", -2.85, 0.45, 0.55, w=0.36, h=0.3, mat="lvW", lid="lens")
-    if tier == 2:
-        _vent(f, -3.3, 1.5, 1.92, (-2.9, 0.2, tz + tr))
-        return
-    helix(f, -2.75, -2.5, 0, tz, tr + 0.07, 2.5, mat="steelL")                                   # heat exchanger coil
-    for side in (-1, 1):
-        v = side * 0.95
-        f.vcyl(-4.05, v, 0, 0.42, 1.2, "medWhite", top="medWhite", sides=20)                     # dewar
-        f.vcyl(-4.05, v, 1.2, 0.42, 0.22, "medWhite", top="lvWL", rtop=0.2, sides=20)
-        for z in (0.3, 0.55, 0.8):
-            f.vcyl(-4.05, v, z, 0.44, 0.04, "iceB", top="iceB", sides=20)
-        f.vcyl(-4.05, v, 1.02, 0.45, 0.08, "hivis", top="hivis", sides=20)
-        f.vcyl(-4.05, v, 1.42, 0.08, 0.1, "steelD", top="steel", sides=8)
-        f.box(-4.05, v, 0, 0.62, 0.62, 0.06, "steelD", top="steel")
-    D.seg(f, (-4.05, -0.95, 1.6), (-4.05, 0.95, 1.6), 0.07, "steelL", 10, cap="steelL", capstart="steelL")   # header
-    for vv in (-0.95, 0.95):
-        D.seg(f, (-4.05, vv, 1.5), (-4.05, vv, 1.6), 0.07, "steelL", 10)
-    _hose(f, [(-4.05, 0, 1.6), (-3.75, 0, 1.6), (-3.45, 0, tz + 0.2), (-3.25, 0, tz + 0.1)])
-    _vent(f, -4.35, 0, 1.92, (-4.05, 0.3, 1.6))
+# ---- J: magnetic injector --------------------------------------------------------------------------------------------
 
-
-# ---- H: magnetic injector --------------------------------------------------------------------------------------------
-
-def _ring(f, u, a):
-    torus(f, u, 0, a, 0.52, 0.17, "oM", n=32, sides=10)
+def field_ring(f, u, a):
+    """Copper winding in eight navy clamp shells on a cast saddle, a small ceramic insulator under it."""
+    torus(f, u, 0, a, 0.52, 0.16, "oM", n=32, sides=10)
+    torus(f, u, 0, a, 0.52, 0.165, "oD", n=32, sides=4)          # (the winding's dark lay lines, through the copper)
     for k in range(8):
         t = k * math.tau / 8 + math.pi / 8
-        f.box(u, 0.52 * math.cos(t), a + 0.52 * math.sin(t), 0.42, 0.13, 0.13, "lvW", top="lvWL", base=False)
-    for side in (-1, 1):                                                                           # ceramic insulator legs
-        v = side * 0.38
-        for i in range(5):
-            f.vcyl(u, v, 0.12 * i, 0.1 if i % 2 else 0.13, 0.12, "lvW" if i % 2 else "lvWS", top="lvWL", sides=10)
-        f.box(u, v, 0.6, 0.22, 0.18, a - 0.6 - 0.36, "lvWS", top="lvW")
+        f.box(u, 0.52 * math.cos(t), a + 0.52 * math.sin(t), 0.3, 0.17, 0.17, "navy", top="blueGrey", base=False)
+        G.disc(f, "-u", 0.52 * math.cos(t), a + 0.52 * math.sin(t), u - 0.15, 0.035, 0, 0.03, "brass", sides=6)
+    _m().prism(f, [(u - 0.2, 0), (u - 0.2, 0.35), (u - 0.12, 0.45), (u + 0.12, 0.45), (u + 0.2, 0.35), (u + 0.2, 0)],
+               -0.55, 0.55, "navy", "blueGrey")
+    f.vcyl(u, 0, 0.45, 0.12, 0.08, "lvW", top="lvWL", sides=10)
+    f.vcyl(u, 0, 0.53, 0.09, a - 0.68 - 0.53, "steelD", top="steel", sides=10)
 
 
-def _bank(f, v, u0, u1, rings):
+def cabinet(f, v, u0, u1, rings, a):
+    """A navy capacitor cabinet on the deck: louvred front, charge lamps, brass terminals, armoured cables to the rings."""
     side = 1 if v > 0 else -1
-    f.box((u0 + u1) / 2, v, 0, u1 - u0, 0.52, 0.16, "steelD", top="steel")
-    hazard_strip(f, u0, u1, v + side * 0.23, 0.16)
-    n = int((u1 - u0) / 0.38)
-    for i in range(n):
-        u = u0 + (u1 - u0) * (i + 0.5) / n
-        f.vcyl(u, v, 0.16, 0.16, 0.7, "lvW", top="medRed", sides=12)
-        f.vcyl(u, v, 0.4, 0.17, 0.05, "steelL", top="steelL", sides=12)
-        f.vcyl(u, v, 0.86, 0.04, 0.06, "blueN", top="blueN", sides=6)                               # charge lamp
+    um = (u0 + u1) / 2
+    f.box(um, v, 0, u1 - u0, 0.5, 0.95, "navy", top="blueGrey")
+    D.slats(f, u0 + 0.12, u1 - 0.12, v + side * 0.25, 0.2, 0.6, 4, side)
+    for i in range(3):
+        u = u0 + 0.2 + i * 0.16
+        f.box(u, v + side * 0.255, 0.8, 0.06, 0.02, 0.06, "blueN", base=False)
     for u in rings:
-        curved_pipe(f, [(u, v, 0.92), (u, v - side * 0.28, 0.85), (u, side * 0.85, 0.9), (u, side * 0.6, a_hv(u))],
-                    0.045, "hazK", steps=5, sides=8)
-
-
-def a_hv(u):
-    return _m().THRUST_Z - 0.1
+        f.vcyl(u, v - side * 0.12, 0.95, 0.06, 0.1, "brass", top="steelL", sides=8)
+        hose(f, [(u, v - side * 0.12, 1.05), (u, v - side * 0.45, 1.1), (u, side * 0.75, a - 0.2), (u, side * 0.62, a - 0.08)],
+             0.05, "gm", "brass")
 
 
 def magnetic(f, fs, tier, a):
-    j = CUTS["H"]["powerhead"]
+    j = CUTS["J"]["powerhead"]
     sleeve(fs, [(j + 0.02, 0.92, a), (j - 0.15, 0.82, a), (j - 0.3, 0.5, a), (j - 0.36, 0.34, a)], "steelD", sides=32)
     annulus(fs, j - 0.1, j + 0.05, 0.8, 1.0, a, "steelD", "steelL", sides=16)
-    annulus(fs, j - 0.14, j - 0.1, 0.82, 0.95, a, "oL", "oD", sides=24)
-    rings = [-1.45, -2.35] if tier == 2 else [-1.4, -2.2, -3.0]
-    end = -2.85 if tier == 2 else -3.6
-    f.hcyl(end, j - 0.3, 0, a, 0.3, "dark", sides=20)                                              # the core
-    k = end + 0.2
+    annulus(fs, j - 0.14, j - 0.1, 0.82, 0.95, a, "brass", "gm", sides=24)
+    for k in range(4):
+        t = k * math.pi / 2 + math.pi / 4
+        _m().petal(fs, [(j - 0.1, 0.99, a), (j + 0.2, 1.02, a)], t - 0.09, t + 0.09, "steelL", thick=0.13)
+    rings = [-1.4, -2.35] if tier == 2 else [-1.35, -2.1, -2.85]
+    end = -2.85 if tier == 2 else -3.3
+    f.hcyl(end, j - 0.3, 0, a, 0.3, "steelD", sides=20, capstart="steel")                         # the core
+    k = end + 0.15
     while k < j - 0.35:
-        f.hcyl(k - 0.015, k + 0.015, 0, a, 0.32, "steelL", sides=20, cap="steelL", capstart="steelL")
+        f.hcyl(k - 0.015, k + 0.015, 0, a, 0.32, "blueGrey", sides=20, cap="blueGrey", capstart="blueGrey")
         k += 0.12
     for u in rings:
-        _ring(f, u, a)
-    # Plasma source behind the core: a ceramic housing with a sight window.
-    su = end - 0.3
-    f.box(su, 0, 0, 0.55, 1.0, 0.3, "steelD", top="steel")
-    f.box(su, 0, 0.3, 0.5, 0.86, a + 0.35 - 0.3, "lvW", top="lvWL")
-    f.box(su - 0.26, 0, a - 0.1, 0.03, 0.4, 0.22, "lens", base=False)
-    f.vcyl(su, 0, a + 0.35, 0.18, 0.08, "oM", top="oL", sides=12)
-    banks = [1.5] if tier == 2 else [-1.5, 1.5]
-    for v in banks:
-        _bank(f, v, (-3.3 if tier == 2 else -4.3), -1.25, rings)
-    if tier == 3:
-        f.box(-4.05, 0, a + 0.45, 0.9, 1.0, 0.06, "steelD", top="steel")                          # cable tray
-        for v in (-0.4, 0.4):
-            f.box(-4.05, v, 0, 0.08, 0.08, a + 0.45, "steelD", top="steel")
-
-
-# ---- I: electric drive -----------------------------------------------------------------------------------------------
-
-def _motor(f, u0, u1, v, z, r):
-    f.hcyl(u0, u1, v, z, r, "jacket", sides=20, cap="jacketD", capstart="jacketD")
-    D.ribs(f, u0 + 0.08, u1 - 0.12, v, z, r, r, int((u1 - u0) / 0.09), thick=0.035, grow=0.045, mat="jacketD", sides=20)
-    f.hcyl(u0 - 0.16, u0, v, z, r * 1.04, "jacketD", sides=20, capstart="dark")                     # fan cowl
-    for k in range(3):
-        f.hcyl(u0 - 0.17, u0 - 0.16, v, z, r * (0.3 + 0.25 * k), "steel", sides=20, capstart="steel")
-    f.box((u0 + u1) / 2, v, z + r, 0.3, 0.26, 0.14, "jacketD", top="hazY")                          # terminal box
-    for u in (u0 + 0.1, u1 - 0.1):
-        f.box(u, v, 0, 0.16, r * 1.5, z - r * 0.6, "jacketD", top="jacket")
-
-
-def _skid(f, u0, u1):
-    for v in (-1.05, 1.05):
-        f.box((u0 + u1) / 2, v, 0, u1 - u0, 0.2, 0.06, "jacketD", top="jacket")
-        f.box((u0 + u1) / 2, v, 0.06, u1 - u0, 0.06, 0.16, "jacketD", top="jacketD")
-        f.box((u0 + u1) / 2, v, 0.22, u1 - u0, 0.2, 0.05, "jacketD", top="jacket")
-        hazard_strip(f, u0, u1, v + math.copysign(0.08, v), 0.27)
-    n = max(2, int((u1 - u0) / 0.6))
-    for i in range(n + 1):
-        f.box(u0 + (u1 - u0) * i / n, 0, 0.06, 0.12, 2.0, 0.16, "jacketD", top="jacket")
-    for u in (u0 + 0.1, u1 - 0.1):
-        for v in (-1.32, 1.32):
-            lug(f, u, v)
-
-
-def _guard(f, u0, u1, z0, z1, w):
-    for v in (-w, w):
-        for z in (z0, z1):
-            D.seg(f, (u0, v, z), (u1, v, z), 0.025, "hazY", 6)
-        for u in (u0, u1, (u0 + u1) / 2):
-            D.seg(f, (u, v, z0), (u, v, z1), 0.025, "hazY", 6)
-    for u in (u0, u1):
-        D.seg(f, (u, -w, z1), (u, w, z1), 0.025, "hazY", 6)
-
-
-def _trolley(f, u0, u1):
-    for u in (u0, u1):
-        for v in (-1.7, 1.7):
-            f.box(u, v, 0, 0.1, 0.1, 1.92, "hazY", top="hazY")
-        f.box(u, 0, 1.86, 0.1, 3.5, 0.08, "jacketD", top="jacket")
-    f.box((u0 + u1) / 2, 0, 1.92, u1 - u0 + 0.1, 0.12, 0.1, "jacketD", top="jacket")
-    f.box(u0 + 0.35, 0, 1.72, 0.18, 0.18, 0.2, "hivis", top="hivis")                               # hoist block
-    D.seg(f, (u0 + 0.35, 0, 1.72), (u0 + 0.35, 0, 1.45), 0.015, "steelL", 4)
-
-
-def electric(f, fs, tier, a):
-    neck(fs, a, -1.95, 0.42)
-    f.hcyl(-2.1, -1.95, 0, a, 0.46, "steel", sides=20, capstart="steelD")                          # drive flange
-    bolts(f, -2.1, a, 0.36, n=8)
+        field_ring(f, u, a)
     if tier == 2:
-        _skid(f, -3.4, -1.9)
-        _motor(f, -3.2, -2.55, 0, a, 0.46)
-        f.hcyl(-2.55, -2.1, 0, a, 0.09, "steelL", sides=12)                                         # exposed shaft
-        for u in (-2.45, -2.2):
-            f.hcyl(u - 0.06, u + 0.06, 0, a, 0.2, "steel", sides=16, cap="steelD", capstart="steelD")
-        _guard(f, -2.52, -2.12, a - 0.3, a + 0.3, 0.3)
-        _trolley(f, -3.3, -2.3)
+        bolts(f, end, a, 0.2)
+        cabinet(f, 1.45, -3.3, -1.25, rings, a)
         return
-    _skid(f, -4.4, -1.9)
-    for side in (-1, 1):
-        _motor(f, -4.3, -3.55, side * 0.62, 0.95, 0.38)
-        f.hcyl(-3.55, -3.3, side * 0.62, 0.95, 0.07, "steelL", sides=10)
-    # Gearbox: a cast case, open on top, two input pinions meshing with the output wheel on the axis.
-    f.box(-3.0, 0, 0.3, 0.6, 2.05, 0.65, "jacket", top="jacketD")
-    for side in (-1, 1):
-        gear(f, -3.08, -2.92, side * 0.62, 0.95, 0.3)
-    gear(f, -3.1, -2.9, 0, a, 0.4, mat="steelL", teeth=22)
-    f.hcyl(-2.9, -2.1, 0, a, 0.09, "steelL", sides=12)
-    # Flywheel on the output shaft, behind a guard.
-    f.hcyl(-2.6, -2.45, 0, a, 0.66, "torn", sides=32, cap="steelD", capstart="steelD")
-    f.hcyl(-2.62, -2.43, 0, a, 0.2, "steel", sides=16, cap="steelL", capstart="steelL")
-    _guard(f, -2.75, -2.3, a - 0.72, a + 0.7, 0.75)
-    _trolley(f, -4.2, -3.0)
+    for v in (-1.45, 1.45):
+        cabinet(f, v, -3.55, -1.25, rings, a)
+    # Plasma source: a cast housing on the core's end, a sight window and a brass coupling.
+    f.hcyl(end - 0.12, end, 0, a, 0.42, "brass", sides=20, capstart="steel")
+    f.box(-3.85, 0, 0, 0.75, 1.05, 0.25, "steelD", top="steel")
+    f.box(-3.85, 0, 0.25, 0.7, 0.95, 1.4, "navy", top="blueGrey")
+    D.panel(f, -3.85, 0, 1.65, 0.5, 0.6, "blueGrey", t=0.02, ring=0.04, bolts=True)
+    f.box(-4.2, 0, a - 0.1, 0.03, 0.42, 0.24, "lens", base=False)
+    for v in (-0.3, 0.3):
+        lug(f, -3.85, v * 2.2)
 
 
-VARIANTS = {"G": cryo, "H": magnetic, "I": electric}
+# ---- K: electric turbopumps ------------------------------------------------------------------------------------------
+
+def motor(f, u0, u1, v, z, r, face):
+    """A navy drive motor: ribbed frame, fan cowl and grille, terminal box, cast feet; brass coupling guard ahead."""
+    f.hcyl(u0, u1, v, z, r, "navy", sides=20, cap="steelD")
+    D.ribs(f, u0 + 0.06, u1 - 0.08, v, z, r, r, max(3, int((u1 - u0) / 0.09)), thick=0.035, grow=0.04, mat="blueGrey",
+           sides=20)
+    f.hcyl(u0 - 0.14, u0, v, z, r * 1.03, "steelD", sides=20, capstart="dark")
+    for k in range(3):
+        f.hcyl(u0 - 0.15, u0 - 0.14, v, z, r * (0.3 + 0.25 * k), "steel", sides=20, capstart="steel")
+    G.junction_box(f, face, (u0 + u1) / 2, z + 0.05, v + math.copysign(r, v), w=0.26, h=0.22, mat="blueGrey", lid="steelL")
+    for u in (u0 + 0.1, u1 - 0.1):
+        f.box(u, v, 0, 0.14, r * 1.4, z - r * 0.6, "steelD", top="steel")
+    f.hcyl(u1, u1 + 0.14, v, z, r * 0.55, "brass", sides=16, cap="brass")
+
+
+def turbopumps(f, fs, tier, a):
+    r = 0.66 if tier == 2 else 0.72
+    neck(fs, a, -1.98, r)
+    d0 = -2.9 if tier == 2 else -3.3
+    drum(fs, a, d0, -1.98, r, rings=2 if tier == 2 else 3)
+    if tier == 3:
+        annulus(fs, -2.68, -2.6, r - 0.05, r + 0.12, a, "steelD", "steel", sides=32)
+        annulus(fs, -2.6, -2.56, r - 0.02, r + 0.06, a, "brass", "gm", sides=32)
+    pr, mr = (0.32, 0.28) if tier == 2 else (0.4, 0.36)
+    pu0, pu1 = (-2.75, -2.05) if tier == 2 else (-2.95, -2.05)
+    mu0 = -3.35 if tier == 2 else -4.0
+    pz = 0.2 + pr + 0.06
+    for side in (-1, 1):
+        v = side * 1.3
+        face = "+v" if side > 0 else "-v"
+        cradle(f, mu0 + 0.05, pu1 - 0.1, v, pz - pr + 0.04)
+        pump(f, pu0, pu1, v, pz, pr, face)
+        motor(f, mu0, pu0 - 0.32, v, pz, mr, face)
+        f.hcyl(pu0 - 0.18, pu0 - 0.14, v, pz, 0.08, "steelL", sides=10)
+        curved_pipe(f, [(pu1 - 0.16, v, pz + pr + 0.1), (pu1 - 0.22, v, pz + pr + 0.42),
+                        (pu1 - 0.45, side * (r + 0.42), a + 0.18), (pu1 - 0.55, side * (r - 0.05), a + 0.08)],
+                    0.11, "steelL", steps=5, sides=12)
+        D.flange(f, (pu1 - 0.53, side * (r + 0.08), a + 0.09), "v", 0.17, "brass", t=0.09)
+    if tier == 3:
+        # Control cabinet across the back, the motor feeds up into it, and a hoist gantry over the drive.
+        f.box(-4.25, 0, 0, 0.4, 1.3, 1.25, "navy", top="blueGrey")
+        D.panel(f, -4.45, 0, 0.75, 0.6, 0.9, "blueGrey", face="-u", t=0.02, ring=0.04, bolts=True)
+        for v, z in ((-0.25, 1.0), (0.05, 1.0), (0.3, 0.9)):
+            G.disc(f, "-u", v, z, -4.46, 0.06, 0, 0.03, "steelL", sides=10)
+            G.disc(f, "-u", v, z, -4.49, 0.045, 0, 0.01, "lens", sides=10)
+        for side in (-1, 1):
+            hose(f, [(-4.05, side * 0.66, 0.9), (-4.0, side * 1.0, 0.95), (-3.7, side * 1.3, pz + mr + 0.06)], 0.045)
+        gantry(f, -3.9, -2.4)
+
+
+# ---- L: inline pump, cryogenic feed ----------------------------------------------------------------------------------
+
+def inline(f, fs, tier, a):
+    neck(fs, a, -1.95, 0.5)
+    fs.hcyl(-2.25, -1.95, 0, a, 0.45, "steel", r1=0.5, sides=32)                                  # inducer housing
+    helix(fs, -2.24, -1.97, 0, a, 0.56, 3, rad=0.05, mat="brass")                                  # regenerative coil
+    torus(fs, -2.45, 0, a, 0.56, 0.26, "navy", n=28, sides=10)                                     # main volute
+    fs.hcyl(-2.7, -2.25, 0, a, 0.5, "steelD", sides=32)
+    stages, t0 = [(-2.45, 0.56)], -2.7
+    if tier == 3:
+        fs.hcyl(-3.15, -2.7, 0, a, 0.46, "steelD", sides=32)
+        torus(fs, -2.95, 0, a, 0.5, 0.22, "navy", n=28, sides=10)                                  # booster volute
+        annulus(fs, -2.76, -2.66, 0.44, 0.62, a, "steelD", "steelL", sides=16)
+        stages.append((-2.95, 0.5))
+        t0 = -3.15
+    tu = t0 - 0.45
+    fs.hcyl(tu, t0, 0, a, 0.6, "steelD", sides=32, capstart="steel")                               # turbine housing
+    D.ribs(fs, tu + 0.08, t0 - 0.08, 0, a, 0.6, 0.6, 3, thick=0.05, grow=0.04, mat="blueGrey", sides=32)
+    annulus(fs, t0 - 0.06, t0 + 0.04, 0.42, 0.68, a, "brass", "gm", sides=24)
+    bolts(fs, tu, a, 0.42, n=8)
+    for u, rr in stages:
+        for side in (-1, 1):
+            curved_pipe(f, [(u, side * (rr + 0.22), a + 0.05), (u + 0.25, side * (rr + 0.32), a + 0.25),
+                            (CUT - 0.05, side * 0.8, a + 0.3)], 0.09, "steelL", steps=4, sides=10)
+    ex = 1.62
+    curved_pipe(f, [(tu + 0.25, 0.5, a - 0.1), (tu + 0.3, 1.15, a - 0.2), (tu + 0.45, ex, 0.7), (tu + 0.75, ex, 0.4)],
+                0.17, "steel", steps=5, sides=12)
+    f.hcyl(tu + 0.75, 0.85, ex, 0.4, 0.18, "steel", sides=12)
+    for u in (tu + 0.95, -1.0, 0.2):
+        D.flange(f, (u, ex, 0.4), "u", 0.24, "steelD", t=0.08)
+        f.box(u, ex, 0, 0.14, 0.32, 0.22, "navy", top="blueGrey")
+    f.box(1.05, ex, 0, 0.4, 0.5, 0.75, "navy", top="blueGrey")
+    G.valve_wheel(f, "+v", 1.05, 0.5, ex + 0.25, r=0.11)
+    cradle(f, tu + 0.05, -1.75, 0, a - 0.48, w=0.9)
+    if tier == 2:
+        for side in (-1, 1):
+            hose(f, [(tu - 0.3, side * 0.55, 0.0), (tu - 0.3, side * 0.55, 0.5), (tu - 0.2, side * 0.3, a - 0.2),
+                     (tu - 0.02, side * 0.2, a - 0.1)], 0.09, "gm", "steel")
+        return
+    # Insulated saddle tank across the back: navy jacket, frost ribs, a hi-vis relief valve on its boil-off vent.
+    u, z, r = -4.05, 0.82, 0.46
+    D.seg(f, (u, -1.25, z), (u, 1.25, z), r, "navy", 20)
+    for side in (-1, 1):
+        sphere(f, u, side * 1.25, z, r, "navy", n=8, sides=16)
+        f.box(u, side * 0.85, 0, 0.6, 0.2, z - 0.2, "steelD", top="steel")
+        lug(f, u + 0.4, side * 0.85)
+    for vv in (-1.0, -0.55, -0.1, 0.35, 0.8):
+        D.flange(f, (u, vv, z), "v", r + 0.03, "iceB", t=0.04)
+    for vv in (-0.32, 0.58):
+        D.flange(f, (u, vv, z), "v", r + 0.04, "blueGrey", t=0.08)
+    for side in (-1, 1):
+        hose(f, [(u + 0.38, side * 0.4, z - 0.1), (u + 0.5, side * 0.4, 0.45), (tu - 0.3, side * 0.3, a - 0.25),
+                 (tu - 0.02, side * 0.2, a - 0.1)], 0.08, "gm", "brass")
+    f.vcyl(u, 1.2, z + r - 0.05, 0.05, 1.9 - z - r + 0.05, "steelL", top="steelL", sides=8)       # boil-off vent
+    f.box(u, 1.2, 1.55, 0.14, 0.14, 0.16, "hivis", top="hivis")
+    D.seg(f, (u, 1.06, 1.9), (u, 1.34, 1.9), 0.045, "steelL", 8, cap="hivis", capstart="hivis")
+
+
+VARIANTS = {"J": magnetic, "K": turbopumps, "L": inline}
 
 
 def build(f, fs, tier, variant):
