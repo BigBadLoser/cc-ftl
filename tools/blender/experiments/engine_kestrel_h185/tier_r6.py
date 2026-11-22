@@ -34,15 +34,18 @@ def _top(u, u0):
     return pts[-1][1]
 
 
-def bed(f, u0, a, flank=None, saddle=None, openings=(), gaps=(), slots=()):
+def bed(f, u0, a, flank=None, saddle=None, openings=(), gaps=(), slots=(), sump=None):
     """The Mk I's heavy_bed, from u0 to its front (1.5): sump, side castings with access castings, lugs and the rear
     saddle. flank(v, side) replaces the access castings (a concept's own flank equipment); saddle(u0) replaces the rear
     saddle; openings [(u0, u1)] cut the side castings through between a low sill and a top rail; gaps [(u0, u1)] cut
     the sump down to a low sill (where a ring passes under the casing)."""
     m = T._m()
     marks = sorted({u0 + 0.15, 1.4, *[x for g in gaps for x in g]})
-    for p, q in zip(marks, marks[1:]):
-        if not any(g0 <= p and q <= g1 for g0, g1 in gaps):
+    segs = [(p, q) for p, q in zip(marks, marks[1:]) if not any(g0 <= p and q <= g1 for g0, g1 in gaps)]
+    if sump:
+        sump(segs)
+    else:
+        for p, q in segs:
             f.box((p + q) / 2, 0, 0.2, q - p, 1.55, 0.5, "steelD", top="steel")
     cuts = sorted({u0, u0 + 0.56, -0.76, 0.32, 1.5, *[x for o in (*openings, *slots) for x in o]})
     for side in (-1, 1):

@@ -58,10 +58,10 @@ def duct_caps(fs, a):
         D.flange(fs, (T.CUT + 0.03, side * 0.79, a + 0.73), "u", 0.2, "brass", t=0.08)
 
 
-def ring_bed(f, u0, a, tier, flank=None, saddle=None, openings=()):
+def ring_bed(f, u0, a, tier, flank=None, saddle=None, openings=(), sump=None):
     at = rings_at(tier)
     spans = [(u - 0.24, u + 0.24) for u in at]
-    bed(f, u0, a, flank or (lambda v, s: None), saddle, openings, gaps=spans, slots=spans)
+    bed(f, u0, a, flank or (lambda v, s: None), saddle, openings, gaps=spans, slots=spans, sump=sump)
 
 
 def sponson(f, side, s0, s1, windows=(), doors=()):
