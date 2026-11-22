@@ -230,33 +230,48 @@ const helmFits = (need: readonly string[], r: { w: number; h: number; defs: Reco
 };
 
 /**
- * HF: the helm the frontmost module, on the back wall (the bow, on a ship) and centred on the door. Each console beside it
- * on the back wall where the corner has room, else on a side wall facing in, stacked back from the helm's row (only
- * where the back wall is closed off beside the helm, so no corner is walled in). A console with no spot is left to the
- * plain placer, which keeps the room walkable.
+ * HF: the helm the frontmost module, on the back wall (the bow, on a ship) and centred on the door. Consoles spread over
+ * the room: each beside the helm in a back corner with a tile of floor between (where the gap holds it), else on a side
+ * wall facing in, behind the helm's row, shared between the two walls and spaced down the wall by the room's slack
+ * (a tile or more apart where it has the room, up to three). A side wall the helm does not stand against keeps a tile of floor before each
+ * console, so no corner is walled in. Consoles flush against the helm only when nothing else holds them. A
+ * console with no spot is left to the plain placer, which keeps the room walkable.
  */
 function helmFront(c: Ctx): Piece[] {
   const fp = (m: string): readonly [number, number] => c.defs[m]?.footprint ?? [2, 2];
   const [hw, hd] = fp(HELM), hx = Math.max(0, Math.min(c.w - hw, c.d - Math.floor(hw / 2)));
   const out: Piece[] = [P(HELM, hx, 0, 0)];
   const ops = c.need.filter((m) => OPS.includes(m)), deep = Math.max(0, ...ops.map((m) => fp(m)[1]));
-  // Room on the back wall each side of the helm; side walls in use behind it (both only where a walk is left between).
-  const gap = [hx, c.w - hx - hw], closed = [hx === 0, c.w - hx - hw === 0], y = [hd, hd];
-  const sides = 2 * deep + 1 <= c.w ? [0, 1] : [0];
-  ops.forEach((m) => {
+  // Room on the back wall each side of the helm; the rows behind the helm each side wall has to give.
+  const gap = [hx, c.w - hx - hw], closed = [hx === 0, c.w - hx - hw === 0], y = [hd, hd], backed = [false, false];
+  const sides = 2 * deep + 1 <= c.w ? [0, 1] : [0], onSide: string[][] = [[], []];
+  const room = (s: number): number => c.h - 1 - (y[s] as number);
+  const used = (s: number): number => (onSide[s] as string[]).reduce((n, m) => n + fp(m)[0], 0);
+  const corner = (m: string, s: number): void => {
     const [len, d] = fp(m);
-    const back = [0, 1].find((s) => (gap[s] as number) >= len && !(s === 0 ? out.some((p) => p.x === 0 && p.y === 0 && p.def !== HELM) : out.some((p) => p.y === 0 && p.x + fp(p.def)[0] === c.w && p.def !== HELM)));
-    if (back !== undefined) {
-      out.push(P(m, back === 0 ? 0 : c.w - len, 0, 0));
-      closed[back] = true;
-      y[back] = Math.max(y[back] as number, d);
-      return;
-    }
-    // Clear of the door's row.
-    const s = sides.filter((k) => closed[k] && (y[k] as number) + len <= c.h - 1).sort((a, b) => (y[a] as number) - (y[b] as number))[0];
-    if (s === undefined) return;
-    out.push(s === 0 ? P(m, 0, y[s] as number, 3) : P(m, c.w - d, y[s] as number, 1));
-    y[s] = (y[s] as number) + len;
+    out.push(P(m, s === 0 ? 0 : c.w - len, 0, 0));
+    backed[s] = true; closed[s] = true; y[s] = Math.max(y[s] as number, d);
+  };
+  ops.forEach((m) => {
+    const len = fp(m)[0];
+    // A back corner with a tile between it and the helm.
+    const apart = [0, 1].find((s) => !backed[s] && (gap[s] as number) >= len + 1);
+    if (apart !== undefined) { corner(m, apart); return; }
+    // The side wall with the most room left, clear of the door's row.
+    const s = sides.filter((k) => used(k) + len + (closed[k] ? 0 : (onSide[k] as string[]).length + 2) <= room(k)).sort((a, b) => room(b) - used(b) - (room(a) - used(a)))[0];
+    if (s !== undefined) { (onSide[s] as string[]).push(m); return; }
+    const flush = [0, 1].find((k) => !backed[k] && (gap[k] as number) >= len);
+    if (flush !== undefined) corner(m, flush);
+  });
+  [0, 1].forEach((s) => {
+    const list = onSide[s] as string[], free = room(s) - used(s), pad = Math.min(3, Math.floor(free / (list.length + 1)));
+    let at = y[s] as number;
+    list.forEach((m) => {
+      const [len, d] = fp(m);
+      at += pad;
+      out.push(s === 0 ? P(m, 0, at, 3) : P(m, c.w - d, at, 1));
+      at += len;
+    });
   });
   // A kind all there or none (the placer takes the rest of a kind).
   return out.filter((p) => out.filter((q) => q.def === p.def).length === c.need.filter((m) => m === p.def).length);
