@@ -26,7 +26,7 @@ from sprites.cmbkit import hazard_strip
 from geometry import annulus, curved_pipe, sleeve, torus
 
 CUT = -1.5              # the Mk I powerhead's faces inboard of this go (the injector plate, rear armour and clamps)
-CUTS = {"J": {"powerhead": -0.75, "services": -0.75}, **{k: {"bed": 99} for k in ["Q", "R", "S", "T", "U", "V", "W", "X", "Y", "AA", "AB", "AC", "BA", "BB", "BC", "CA", "CB", "CD", "DA", "DB", "DC", "EA", "EB", "EC"]}, **{k: {"bed": 99, "services": -0.9} for k in ["FA", "FB", "FC", "GA", "GB", "GC", "HA", "HB", "HC", "IA", "IB", "IC", "JA", "JB", "JC", "KA"]}}
+CUTS = {"J": {"powerhead": -0.75, "services": -0.75}, **{k: {"bed": 99} for k in ["Q", "R", "S", "T", "U", "V", "W", "X", "Y", "AA", "AB", "AC", "BA", "BB", "BC", "CA", "CB", "CD", "DA", "DB", "DC", "EA", "EB", "EC"]}, **{k: {"bed": 99, "services": -0.9} for k in ["FA", "FB", "FC", "GA", "GB", "GC", "HA", "HB", "HC", "IA", "IB", "IC", "JA", "JB", "JC", "KA", "KB"]}}
 
 
 def cut(variant, name):
@@ -368,5 +368,5 @@ def build(f, fs, tier, variant):
                          "HA": tier_r16.yoke, "HB": tier_r16.terraces, "HC": tier_r16.prow,
                          "IA": tier_r17.keel, "IB": tier_r17.tank, "IC": tier_r17.vault,
                          "JA": tier_r18.sphere, "JB": tier_r18.bottle, "JC": tier_r18.standing,
-                         "KA": tier_r19.bottle_plumbed})
+                         "KA": tier_r19.bottle_plumbed, "KB": tier_r19.bottle_trunk})
     VARIANTS[variant](f, fs, tier, _m().THRUST_Z)
