@@ -1,6 +1,6 @@
 import type { Sim } from '../sim';
 import { chunkOfId } from './generator';
-import { COARSE_TURNS, CONTACT_GAP, FLIP_COOLDOWN, SIM_RING } from './tuningCoarse';
+import { COARSE_TURNS, CONSOLIDATE_TICKS, CONTACT_GAP, FLIP_COOLDOWN, SIM_RING } from './tuningCoarse';
 import { galaxyIndex, type GalaxyIndex } from './state';
 import type { NodeData, SectorControl, SectorData, StructureRef } from './types';
 
@@ -48,12 +48,12 @@ export function controlOf(sim: Sim, sectorId: string): SectorControl {
 
 /**
  * Drop the sector's entry when it says nothing the generated state does not (its generated owner, no pressure): `control` holds only what differs.
- * An entry that records a flip stays while the sector cools down (coarse.ts), so a sector cannot flip back at once.
+ * An entry that records a flip stays while the sector cools down and consolidates (coarse.ts: the longer of FLIP_COOLDOWN and CONSOLIDATE_TICKS), so a sector cannot flip back at once and a retaken one keeps its defence.
  */
 export function tidyControl(sim: Sim, sectorId: string): void {
   const c = sim.galaxy.control[sectorId];
   if (!c || c.pressure || c.owner !== (galaxyIndex(sim.galaxy).sectors.get(sectorId)?.genFaction ?? null)) return;
-  if (c.since === 0 || sim.galaxy.turn - c.since >= FLIP_COOLDOWN * COARSE_TURNS) delete sim.galaxy.control[sectorId];
+  if (c.since === 0 || sim.galaxy.turn - c.since >= Math.max(FLIP_COOLDOWN, CONSOLIDATE_TICKS) * COARSE_TURNS) delete sim.galaxy.control[sectorId];
 }
 
 const areaCache = new WeakMap<GalaxyIndex, Map<string, Set<string>>>();

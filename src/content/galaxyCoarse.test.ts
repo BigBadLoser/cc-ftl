@@ -2,14 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { exploredWorld, measurePace } from '../../test/support/fixtures/coarse';
 import { cachedWorld } from '../../test/support/world';
 import { stepCoarse } from '../sim/galaxy/coarse';
-import { nodeOwner, sectorNeighbours, sectorOwner, structureOwner } from '../sim/galaxy/control';
+import { nodeOwner, sectorNeighbours, sectorOwner, structureOwner, tidyControl } from '../sim/galaxy/control';
 import { flipSector } from '../sim/galaxy/flip';
-import { portsAt } from '../sim/galaxy/portIndex';
+import { owe, portsAt } from '../sim/galaxy/portIndex';
 import { addPressure, fightPressure, playerFightPressure } from '../sim/galaxy/pressure';
 import { atWar } from '../sim/galaxy/relations';
 import { ensureChunk, galaxyIndex, nodeOf, START_NODE } from '../sim/galaxy/state';
 import { onTurn } from '../sim/galaxy/turn';
-import { COARSE_TURNS, FACTION_MIN_SECTORS, FLIP_COOLDOWN, FLIP_SPACING, FLIP_TICKS, FLIPS_PER_TICK, PRESSURE_MAX } from '../sim/galaxy/tuningCoarse';
+import { COARSE_TURNS, CONSOLIDATE_TICKS, FACTION_MIN_SECTORS, FLIP_COOLDOWN, FLIP_SPACING, FLIP_TICKS, FLIPS_PER_TICK, PRESSURE_MAX } from '../sim/galaxy/tuningCoarse';
 import type { StructureRef } from '../sim/galaxy/types';
 import { newGame } from '../sim/newGame';
 import { deserialize, serialize } from '../sim/save';
@@ -109,9 +109,9 @@ describe('who owns it', () => {
     flipSector(sim, t, by, 8);
     expect(sim.galaxy.control[t]?.owner).toBe(by);
     flipSector(sim, t, owner, 16);
-    // Back in its generated hands, the entry only lingers while the sector cools down.
+    // Back in its generated hands, the entry only lingers while the sector cools down and consolidates.
     expect(sim.galaxy.control[t]?.owner).toBe(owner);
-    sim.galaxy.turn = 16 + COARSE_TURNS * FLIP_COOLDOWN;
+    sim.galaxy.turn = 16 + COARSE_TURNS * Math.max(FLIP_COOLDOWN, CONSOLIDATE_TICKS);
     stepCoarse(sim, sim.galaxy.turn);
     expect(sim.galaxy.control[t]).toBeUndefined();
     addPressure(sim, firstNode(sim, t), by, 0.3);
@@ -372,6 +372,33 @@ describe('the player\'s fights', () => {
     playerFightPressure(sim, owner);
     expect(sim.galaxy.control[t]?.pressure?.by).toBe(by);
     expect(sim.galaxy.control[t]?.pressure?.value ?? 0).toBeGreaterThan(0);
+  });
+});
+
+describe('review fixes', () => {
+  it('a port does not owe a ship of a faction at war with its owner (a fleet left homed at a captured port)', () => {
+    const sim = base();
+    const port = [...galaxyIndex(sim.galaxy).nodes.keys()].flatMap((id) => portsAt(sim, id)).find((p) => p.owner === 'navy');
+    expect(port).toBeDefined();
+    owe(sim, port!.id, 'pirates', 'pirate', 'small', 5);
+    expect(sim.galaxy.ports[port!.id]).toBeUndefined();
+    owe(sim, port!.id, 'navy', 'patrol', 'small', 5);
+    expect(sim.galaxy.ports[port!.id]?.queue).toEqual([{ faction: 'navy', role: 'patrol', size: 'small' }]);
+  });
+
+  it('a retaken sector keeps its control entry (and so its consolidation) until the longer of the cooldown and the consolidation has run out', () => {
+    const sim = base();
+    const [id] = candidates(sim, 1);
+    const owner = sectorOwner(sim, id as string);
+    const by = enemyOf(sim, owner as string);
+    flipSector(sim, id as string, by, tickAt(1));
+    flipSector(sim, id as string, owner as string, tickAt(2));
+    sim.galaxy.turn = tickAt(2 + FLIP_COOLDOWN + 1);
+    tidyControl(sim, id as string);
+    expect(sim.galaxy.control[id as string]).toBeDefined();
+    sim.galaxy.turn = tickAt(2 + CONSOLIDATE_TICKS);
+    tidyControl(sim, id as string);
+    expect(sim.galaxy.control[id as string]).toBeUndefined();
   });
 });
 
