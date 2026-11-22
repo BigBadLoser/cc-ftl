@@ -64,6 +64,9 @@ describe('a beaten ship in a fight between NPC ships', () => {
     run(sim, 1);
     const trader = shipOf(fb);
     const crew = shipCrew(sim, trader);
+    run(sim, 3 * TICK_HZ);
+    expect(sim.world.get(shipOf(fa), CombatC)?.target?.ship).toBe(trader);
+    sim.sector.inCombat = true;
     beat(sim, trader);
     const out = run(sim, 2 * TICK_HZ, { until: (s) => engagements(s).length === 0 });
     expect(eventsOf(out, 'engagement.ended')).toMatchObject([{ winner: 0, stats: false, taken: true }]);
@@ -72,6 +75,11 @@ describe('a beaten ship in a fight between NPC ships', () => {
     expect(sim.galaxy.news.filter((n) => n.kind === 'taken')).toMatchObject([{ who: fa.ships[0]?.name, faction: 'raiders' }]);
     expect(crew.every((c) => shipIdOf(sim, sim.world.get(c, PositionC)) === trader)).toBe(true); // no NPC prisoners: the beaten crew stay aboard
     expect(sim.world.get(trader, ShipC)?.yielded).toBeUndefined();
+    // Neither aims at the other any more, though the node is in combat (#609 review).
+    for (const [a, b] of [[shipOf(fa), trader], [trader, shipOf(fa)]] as const) {
+      const c = sim.world.get(a, CombatC);
+      expect([c?.target?.ship, c?.prey]).not.toContain(b);
+    }
   });
 
   it('is let go by a foe that does not: its fleet jumps away and the foe wins, driven off', () => {

@@ -1,4 +1,5 @@
-import { ShipC } from '../combat/components';
+import { CombatC, ShipC } from '../combat/components';
+import { dropAims } from '../combat/stations';
 import type { Sim } from '../sim';
 import { headHome } from './agenda';
 import type { Engagement } from '../combat/engagementTypes';
@@ -46,6 +47,17 @@ export function takeShip(sim: Sim, ship: number, captor: number): void {
   } else {
     e.members[win].push({ ship });
   }
+  // The ship is on the captor's side now: neither aims at the other any more (#609 review), even while the node is otherwise in combat.
+  const side = new Set(e.members[win].map((m) => m.ship));
+  for (const id of side) {
+    if (id === ship) continue;
+    dropAims(sim, id, (t) => t === ship);
+    const c = sim.world.get(id, CombatC);
+    if (c?.prey === ship) delete c.prey;
+  }
+  dropAims(sim, ship, (t) => side.has(t));
+  const own = sim.world.get(ship, CombatC);
+  if (own?.prey !== undefined && side.has(own.prey)) delete own.prey;
   report(sim, { node: e.node, kind: 'taken', who: e.names[win], faction: e.factions[win], foe: name, foeFaction: e.factions[lose] }, sim.galaxy.turn);
   sim.galaxy.rev++;
 }
