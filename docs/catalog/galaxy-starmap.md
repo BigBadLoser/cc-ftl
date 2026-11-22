@@ -31,6 +31,7 @@ Fleets of every faction persist, follow agendas, fight each other off-screen and
 | Opening grace period | `-` | No fights until act one is done or a timer passes | In game | sim/galaxy/grace.ts |
 | Event grids | `event:<id>` | Temporary deep-space pocket nodes | In game | sim/galaxy/eventGrid.ts |
 | Sector archive and jump | `-` | Nodes persist as packets; the sector is swapped on arrival | In game | sim/sector/* |
+| Moving borders (coarse tier) | `-` | Every 8 turns, sectors at fronts between factions at war take pressure; after 3 ticks over the threshold one flips (1 per tick galaxy-wide); stations follow, ports rebuild the new owner's roster; the start sector, hubs and a faction's last sectors are safe. The starmap colours follow; news `front` / `fell` / `held` outside the fleet area. Slice 1 of #604: no contested-border look, hail lines or station livery yet | In game | sim/galaxy/control.ts, coarse.ts, flip.ts, pressure.ts, tuningCoarse.ts; docs/plans/far-galaxy-604.md |
 | Faction relations | `-` | Pairwise war table and shared standing | In game | content/galaxyRelations.ts; sim/galaxy/relations.ts |
 | Node population | `-` | Structures become real ships and stations on first visit | In game | sim/galaxy/populate.ts, populateSpawn.ts |
 | Starmap UI | `-` | SVG/GPU map, nebula, clusters, POIs, route preview, drawer, news, stats, sell panel | In game | ui/Starmap*.svelte, ui/starmapGpu.ts; render/starmap/*; app/starmap*.ts |

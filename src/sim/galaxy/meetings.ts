@@ -6,6 +6,7 @@ import { unit } from './hash';
 import { fleetName } from './names';
 import { report } from './news';
 import { portOf, owe } from './portIndex';
+import { fightPressure } from './pressure';
 import { portNode } from './ports';
 import { leaveWreck } from './wrecks';
 import type { Fleet, NewsItem } from './types';
@@ -122,6 +123,7 @@ export function apply(sim: Sim, m: Meeting, c: Clash, turn: number): void {
     if (raid) news({ kind: 'raid', ...base });
     else if (lost.length) news({ kind: 'destroyed', ...base });
     else news({ kind: 'driven', ...base });
+    fightPressure(sim, node, w.faction, l.faction, lost.length, raid);
     let looted = false;
     // A pirate that won takes what the loser carried: everything if it was destroyed, half if it ran.
     if ((w.role === 'pirate' || w.role === 'raider') && w.ships.length && (l.cargo?.length ?? 0) > 0) {

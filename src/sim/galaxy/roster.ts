@@ -169,6 +169,25 @@ export function makeHunters(
   };
 }
 
+/**
+ * What a port that changed hands (flip.ts) owes its new owner: the ships it would field as a fresh roster (its groups, drawn as `populate` draws them),
+ * as replacement orders for the port's build queue. `salt` keeps the draw apart from the original roster.
+ */
+export function rosterOrders(sim: Sim, port: Port, depth: number, salt: number): { faction: string; role: FleetRole; size: ShipSize }[] {
+  const content = sim.content.galaxy;
+  const out: { faction: string; role: FleetRole; size: ShipSize }[] = [];
+  if (!content) return out;
+  for (let slot = 0; slot < (content.fleet.ports[port.kind].groups[port.size - 1] as number); slot++) {
+    const h = (k: number): number => unit(sim.seed, strHash(port.id), slot, salt, k);
+    const pick = whoFor(sim, port, h(1));
+    const owner = pick ? content.factions[pick.faction] : undefined;
+    const group = pick ? owner?.fleet?.groups[pick.role] : undefined;
+    if (!pick || !owner || !group) continue;
+    for (const size of groupSizes(sim, group, tableFor(sim, owner, pick.role, depth), (k) => h(10 + k))) out.push({ faction: pick.faction, role: pick.role, size });
+  }
+  return out;
+}
+
 /** A node of the same chunk next to `node` (for a fleet that should arrive rather than already be there). */
 function neighbour(chunk: ChunkData, node: string): string | null {
   const ids = new Set(chunk.nodes.map((n) => n.id));

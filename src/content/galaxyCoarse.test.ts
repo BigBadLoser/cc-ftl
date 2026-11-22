@@ -1,0 +1,304 @@
+import { describe, expect, it } from 'vitest';
+import { cachedWorld } from '../../test/support/world';
+import { sectorLanes, stepCoarse } from '../sim/galaxy/coarse';
+import { nodeOwner, sectorOwner, structureOwner } from '../sim/galaxy/control';
+import { flipSector } from '../sim/galaxy/flip';
+import { portsAt } from '../sim/galaxy/portIndex';
+import { addPressure, fightPressure } from '../sim/galaxy/pressure';
+import { atWarContent } from '../sim/galaxy/relations';
+import { ensureChunk, galaxyIndex, nodeOf, START_NODE } from '../sim/galaxy/state';
+import { onTurn } from '../sim/galaxy/turn';
+import { COARSE_TURNS, FACTION_MIN_SECTORS, FLIP_COOLDOWN, FLIP_TICKS, FLIPS_PER_TICK, PRESSURE_MAX } from '../sim/galaxy/tuningCoarse';
+import type { StructureRef } from '../sim/galaxy/types';
+import { newGame } from '../sim/newGame';
+import { deserialize, serialize } from '../sim/save';
+import type { Sim } from '../sim/sim';
+import { content } from '.';
+
+/** A world with the chunks around the start generated: 11 x 11 chunks, about 160 sectors, a handful of fronts. */
+function world(): Sim {
+  const sim = newGame(3, content);
+  for (let cy = -5; cy <= 5; cy++) for (let cx = -5; cx <= 5; cx++) ensureChunk(sim, cx, cy);
+  return sim;
+}
+const base = (): Sim => cachedWorld('coarse.world', world);
+const tickAt = (n: number): number => n * COARSE_TURNS;
+const galaxyOf = (sim: Sim): NonNullable<Sim['content']['galaxy']> => sim.content.galaxy as NonNullable<Sim['content']['galaxy']>;
+const startSector = (sim: Sim): string => nodeOf(sim, START_NODE)?.sector as string;
+const countOf = (sim: Sim, faction: string): number => [...galaxyIndex(sim.galaxy).sectors.keys()].filter((id) => sectorOwner(sim, id) === faction).length;
+const firstNode = (sim: Sim, sector: string): string => galaxyIndex(sim.galaxy).sectors.get(sector)?.nodes[0] as string;
+const nodeData = (sim: Sim, sector: string): NonNullable<ReturnType<typeof nodeOf>> => nodeOf(sim, firstNode(sim, sector)) as NonNullable<ReturnType<typeof nodeOf>>;
+
+/** A faction at war with `owner` that fields ships, a law-abiding one if there is one (pirates need more pressure to take a sector). */
+function enemyOf(sim: Sim, owner: string): string {
+  const foes = Object.keys(galaxyOf(sim).factions).sort().filter((f) => f !== owner && atWarContent(galaxyOf(sim), f, owner) && Object.keys(galaxyOf(sim).factions[f]?.fleet?.groups ?? {}).length > 0);
+  return (foes.find((f) => galaxyOf(sim).factions[f]?.kind !== 'pirates') ?? foes[0]) as string;
+}
+
+/**
+ * Sectors that may flip (not the start, not a hub, held by a faction with sectors to spare) and are not lane-adjacent to each other, in id order. The natural
+ * fronts of a galaxy are few, so tests make their own: `arm` gives one of these an enemy neighbour and full pressure.
+ */
+function candidates(sim: Sim, n: number): string[] {
+  const index = galaxyIndex(sim.galaxy);
+  const lanes = sectorLanes(index);
+  const out: string[] = [];
+  for (const id of [...index.sectors.keys()].sort()) {
+    const owner = sectorOwner(sim, id);
+    if (!owner || index.sectors.get(id)?.hub || id === startSector(sim) || countOf(sim, owner) <= FACTION_MIN_SECTORS + 10 || !(lanes.get(id) ?? []).length) continue;
+    if (out.some((o) => o === id || (lanes.get(o) ?? []).includes(id) || (lanes.get(o) ?? []).some((x) => (lanes.get(id) ?? []).includes(x)))) continue;
+    out.push(id);
+    if (out.length === n) break;
+  }
+  return out;
+}
+
+/** Give `target` an enemy of its owner for a neighbour, with its sectors around it (so its push beats the defence), and put the target under full pressure `ticks` ticks in. Returns the taker. */
+function arm(sim: Sim, target: string, ticks: number): string {
+  const owner = sectorOwner(sim, target) as string;
+  const by = enemyOf(sim, owner);
+  const lanes = sectorLanes(galaxyIndex(sim.galaxy));
+  const ring1 = lanes.get(target) ?? [];
+  const ring2 = ring1.flatMap((a) => lanes.get(a) ?? []).filter((a) => a !== target && !ring1.includes(a));
+  for (const id of [...new Set([...ring1, ...ring2])].slice(0, 8)) sim.galaxy.control[id] = { owner: by, since: 1 };
+  sim.galaxy.control[target] = { owner, since: 0, pressure: { by, value: PRESSURE_MAX, ticks } };
+  return by;
+}
+
+describe('who owns it', () => {
+  it('is the generated owner until a control entry says otherwise, for sectors, nodes and stations', () => {
+    const sim = base();
+    const [t] = candidates(sim, 1) as [string];
+    const owner = sectorOwner(sim, t) as string;
+    const by = enemyOf(sim, owner);
+    const node = nodeData(sim, t);
+    const station: StructureRef = { def: 'structure.station_trade', genOwner: node.genFaction };
+    expect(owner).toBe(node.genFaction);
+    expect(nodeOwner(sim, node)).toBe(owner);
+    expect(structureOwner(sim, node, station)).toBe(owner);
+    sim.galaxy.control[t] = { owner: by, since: 5 };
+    expect(sectorOwner(sim, t)).toBe(by);
+    expect(nodeOwner(sim, node)).toBe(by);
+    expect(structureOwner(sim, node, station)).toBe(by);
+  });
+
+  it('leaves what is not the sector faction\'s alone: a derelict, a free trader, another faction\'s station', () => {
+    const sim = base();
+    const [t] = candidates(sim, 1) as [string];
+    sim.galaxy.control[t] = { owner: enemyOf(sim, sectorOwner(sim, t) as string), since: 5 };
+    const node = nodeData(sim, t);
+    expect(structureOwner(sim, node, { def: 'structure.derelict', genOwner: null })).toBeNull();
+    expect(structureOwner(sim, node, { def: 'structure.station_trade', genOwner: 'traders' })).toBe('traders');
+    expect(structureOwner(sim, node, { def: 'structure.station_pirate', genOwner: 'pirates' })).toBe('pirates');
+  });
+
+  it('keeps control only where it differs from the generated state', () => {
+    const sim = base();
+    const [t] = candidates(sim, 1) as [string];
+    const owner = sectorOwner(sim, t) as string;
+    const by = enemyOf(sim, owner);
+    flipSector(sim, t, by, 8);
+    expect(sim.galaxy.control[t]?.owner).toBe(by);
+    flipSector(sim, t, owner, 16);
+    // Back in its generated hands, the entry only lingers while the sector cools down.
+    expect(sim.galaxy.control[t]?.owner).toBe(owner);
+    sim.galaxy.turn = 16 + COARSE_TURNS * FLIP_COOLDOWN;
+    stepCoarse(sim, sim.galaxy.turn);
+    expect(sim.galaxy.control[t]).toBeUndefined();
+    addPressure(sim, firstNode(sim, t), by, 0.3);
+    expect(sim.galaxy.control[t]?.pressure?.value).toBeCloseTo(0.3);
+    addPressure(sim, firstNode(sim, t), owner, 0.5);
+    expect(sim.galaxy.control[t]).toBeUndefined();
+  });
+});
+
+describe('the coarse tick', () => {
+  it('does nothing off its turns', () => {
+    const sim = base();
+    const [t] = candidates(sim, 1) as [string];
+    arm(sim, t, FLIP_TICKS - 1);
+    const before = JSON.stringify(sim.galaxy.control);
+    for (const turn of [1, 3, COARSE_TURNS + 1, 2 * COARSE_TURNS - 1]) stepCoarse(sim, turn);
+    expect(JSON.stringify(sim.galaxy.control)).toBe(before);
+  });
+
+  it('changes no owner before FLIP_TICKS ticks in a row, then flips the sector once and says so', () => {
+    const sim = base();
+    const [t] = candidates(sim, 1) as [string];
+    const owner = sectorOwner(sim, t);
+    const by = arm(sim, t, 0);
+    for (let k = 1; k < FLIP_TICKS; k++) {
+      stepCoarse(sim, tickAt(k));
+      expect(sectorOwner(sim, t), `tick ${k}`).toBe(owner);
+    }
+    stepCoarse(sim, tickAt(FLIP_TICKS));
+    expect(sectorOwner(sim, t)).toBe(by);
+    expect(sim.galaxy.control[t]?.pressure).toBeUndefined();
+    expect(sim.galaxy.news.some((n) => n.kind === 'fell' && n.faction === by && n.foeFaction === owner && n.who === galaxyIndex(sim.galaxy).sectors.get(t)?.name)).toBe(true);
+  });
+
+  it('resets the count when the pressure falls below the threshold', () => {
+    const sim = base();
+    const [t] = candidates(sim, 1) as [string];
+    const owner = sectorOwner(sim, t);
+    arm(sim, t, FLIP_TICKS - 1);
+    (sim.galaxy.control[t] as NonNullable<(typeof sim.galaxy.control)[string]>).pressure!.value = 0.2;
+    stepCoarse(sim, tickAt(1));
+    expect(sectorOwner(sim, t)).toBe(owner);
+    expect(sim.galaxy.control[t]?.pressure?.ticks ?? 0).toBe(0);
+  });
+
+  it('flips at most FLIPS_PER_TICK sectors, strongest pressure first, the rest on the next tick', () => {
+    const sim = base();
+    const picks = candidates(sim, 3);
+    expect(picks.length).toBe(3);
+    const taker = picks.map((t) => arm(sim, t, FLIP_TICKS - 1));
+    picks.forEach((t, i) => ((sim.galaxy.control[t] as NonNullable<(typeof sim.galaxy.control)[string]>).pressure!.value = PRESSURE_MAX - i * 0.2));
+    const flipped = (): number => picks.filter((t, i) => sectorOwner(sim, t) === taker[i]).length;
+    stepCoarse(sim, tickAt(1));
+    expect(flipped()).toBe(FLIPS_PER_TICK);
+    expect(sectorOwner(sim, picks[0] as string)).toBe(taker[0]);
+    stepCoarse(sim, tickAt(2));
+    expect(flipped()).toBe(2 * FLIPS_PER_TICK);
+  });
+
+  it('never flips the start sector or a hub, nor a faction\'s last sectors, nor the player\'s own sector', () => {
+    const sim = base();
+    const index = galaxyIndex(sim.galaxy);
+    const hub = [...index.sectors.values()].find((s) => s.hub && s.id !== startSector(sim) && sectorOwner(sim, s.id) && (sectorLanes(index).get(s.id) ?? []).length) as NonNullable<ReturnType<typeof index.sectors.get>>;
+    for (const id of [hub.id, startSector(sim)]) {
+      arm(sim, id, FLIP_TICKS - 1);
+      stepCoarse(sim, tickAt(1));
+      expect(sectorOwner(sim, id), id).toBe(index.sectors.get(id)?.genFaction);
+    }
+    // A faction down to its last sectors keeps them.
+    const [t, own] = candidates(sim, 2) as [string, string];
+    const owner = sectorOwner(sim, t) as string;
+    const mine = [...index.sectors.keys()].filter((id) => sectorOwner(sim, id) === owner && id !== t).sort();
+    for (const id of mine.slice(FACTION_MIN_SECTORS - 1)) sim.galaxy.control[id] = { owner: enemyOf(sim, owner), since: 1 };
+    expect(countOf(sim, owner)).toBe(FACTION_MIN_SECTORS);
+    arm(sim, t, FLIP_TICKS - 1);
+    stepCoarse(sim, tickAt(2));
+    expect(sectorOwner(sim, t)).toBe(owner);
+    // The sector the player is in.
+    sim.galaxy.current = firstNode(sim, own);
+    const ownOwner = sectorOwner(sim, own);
+    arm(sim, own, FLIP_TICKS - 1);
+    stepCoarse(sim, tickAt(3));
+    expect(sectorOwner(sim, own)).toBe(ownOwner);
+  });
+
+  it('builds pressure on its own at a front, and wears it off when the push stops', () => {
+    const sim = base();
+    const index = galaxyIndex(sim.galaxy);
+    const lanes = sectorLanes(index);
+    const [t] = candidates(sim, 1) as [string];
+    const owner = sectorOwner(sim, t) as string;
+    const by = enemyOf(sim, owner);
+    // A strong enemy at the gate: its sectors around the target outweigh the target's defence. No pressure yet.
+    arm(sim, t, 0);
+    delete (sim.galaxy.control[t] as NonNullable<(typeof sim.galaxy.control)[string]>).pressure;
+    stepCoarse(sim, tickAt(1));
+    const p = sim.galaxy.control[t]?.pressure;
+    expect(p?.by).toBe(by);
+    expect(p?.value ?? 0).toBeGreaterThan(0);
+    // The push stops: no sector of the enemy borders it any more.
+    for (const a of lanes.get(t) ?? []) if (sectorOwner(sim, a) === by) sim.galaxy.control[a] = { owner, since: 2 };
+    const v = sim.galaxy.control[t]?.pressure?.value ?? 0;
+    stepCoarse(sim, tickAt(2));
+    expect(sim.galaxy.control[t]?.pressure?.value ?? 0).toBeLessThan(v);
+  });
+
+  it('does not flip a sector back until it has cooled down', () => {
+    const sim = base();
+    // Both sides need sectors to spare, or the protection of a faction's last ones would hold the flip back instead.
+    const big = (f: string): boolean => countOf(sim, f) > FACTION_MIN_SECTORS + 2;
+    const foes = (o: string): string[] => Object.keys(galaxyOf(sim).factions).filter((f) => big(f) && atWarContent(galaxyOf(sim), f, o));
+    const t = candidates(sim, 40).find((id) => foes(sectorOwner(sim, id) as string).length > 0) as string;
+    const owner = sectorOwner(sim, t) as string;
+    const by = foes(owner)[0] as string;
+    const lanes = sectorLanes(galaxyIndex(sim.galaxy));
+    const back = (): void => {
+      sim.galaxy.control[t] = { ...(sim.galaxy.control[t] as NonNullable<(typeof sim.galaxy.control)[string]>), pressure: { by: owner, value: PRESSURE_MAX, ticks: FLIP_TICKS - 1 } };
+    };
+    for (const a of lanes.get(t) ?? []) sim.galaxy.control[a] = { owner, since: 0 };
+    sim.galaxy.turn = tickAt(1);
+    flipSector(sim, t, by, tickAt(1));
+    back();
+    sim.galaxy.turn = tickAt(2);
+    stepCoarse(sim, tickAt(2));
+    expect(sectorOwner(sim, t)).toBe(by);
+    back();
+    sim.galaxy.turn = tickAt(1 + FLIP_COOLDOWN);
+    stepCoarse(sim, tickAt(1 + FLIP_COOLDOWN));
+    expect(sectorOwner(sim, t)).toBe(owner);
+  });
+
+  it('is deterministic and survives a save', () => {
+    // Not `expectReplayable`: a coarse tick is eight turns of three minutes, so this drives `onTurn` itself and compares the control it leaves.
+    const run = (sim: Sim, from: number, to: number): void => {
+      for (let n = from; n <= to; n++) onTurn(sim, ++sim.galaxy.turn);
+    };
+    const build = (): Sim => {
+      const sim = base();
+      for (const t of candidates(sim, 3)) arm(sim, t, 0);
+      return sim;
+    };
+    const a = build();
+    run(a, 1, 60);
+    const b = build();
+    run(b, 1, 60);
+    expect(JSON.stringify(a.galaxy.control)).toBe(JSON.stringify(b.galaxy.control));
+    expect(Object.values(a.galaxy.control).some((c) => c.owner !== galaxyIndex(a.galaxy).sectors.get(Object.keys(a.galaxy.control)[0] as string)?.genFaction)).toBe(true);
+    // Saved and reloaded partway: the rest of the run matches the straight run.
+    const c = build();
+    run(c, 1, 29);
+    const d = deserialize(serialize(c), content);
+    run(d, 30, 60);
+    expect(JSON.stringify(d.galaxy.control)).toBe(JSON.stringify(a.galaxy.control));
+  });
+});
+
+describe('the handover to the fine tier', () => {
+  it('queues the new owner\'s fleets at a flipped port, builds them, and rehomes the old ones', () => {
+    const sim = base();
+    const index = galaxyIndex(sim.galaxy);
+    const t = candidates(sim, 40).find((id) => index.sectors.get(id)?.nodes.some((n) => portsAt(sim, n).some((p) => p.kind === 'station' && p.owner === sectorOwner(sim, id)))) as string;
+    const owner = sectorOwner(sim, t) as string;
+    const by = enemyOf(sim, owner);
+    const sectorPorts = (): ReturnType<typeof portsAt> => (index.sectors.get(t)?.nodes ?? []).flatMap((n) => portsAt(sim, n));
+    const ports = sectorPorts().filter((p) => p.owner === owner);
+    const homed = (f: string): number => sim.galaxy.fleets.filter((x) => ports.some((p) => p.id === x.home) && x.faction === f).length;
+    expect(homed(owner)).toBeGreaterThan(0);
+    const turn = sim.galaxy.turn;
+    sim.galaxy.fleets.forEach((f) => (f.synced = turn));
+    flipSector(sim, t, by, turn);
+    // Nothing of the old owner is left homed there; the ports owe their new owner's ships.
+    expect(homed(owner)).toBe(0);
+    const owed = sectorPorts().filter((p) => p.owner === by && (sim.galaxy.ports[p.id]?.queue.length ?? 0) > 0);
+    expect(owed.length).toBeGreaterThan(0);
+    for (const p of owed) expect((sim.galaxy.ports[p.id]?.queue ?? []).every((q) => q.faction === by)).toBe(true);
+    // With the player near, the port builds them, one per rebuild period (a den takes a long while).
+    sim.galaxy.current = (owed[0] as (typeof owed)[number]).node;
+    for (let i = 0; i < 400 && homed(by) === 0; i++) onTurn(sim, ++sim.galaxy.turn);
+    expect(homed(by)).toBeGreaterThan(0);
+    expect(homed(owner)).toBe(0);
+  });
+});
+
+describe('the fine tier feeds the coarse', () => {
+  it('a win over the sector owner builds pressure, a win at home relieves it, and a stranger\'s fight counts for nothing', () => {
+    const sim = base();
+    const [t] = candidates(sim, 1) as [string];
+    const owner = sectorOwner(sim, t) as string;
+    const by = enemyOf(sim, owner);
+    const node = firstNode(sim, t);
+    fightPressure(sim, node, by, owner, 1, false);
+    const v = sim.galaxy.control[t]?.pressure?.value ?? 0;
+    expect(v).toBeGreaterThan(0);
+    fightPressure(sim, node, by, 'nobody', 2, false);
+    expect(sim.galaxy.control[t]?.pressure?.value).toBe(v);
+    fightPressure(sim, node, owner, by, 3, false);
+    expect(sim.galaxy.control[t]).toBeUndefined();
+  });
+});
