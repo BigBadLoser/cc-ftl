@@ -1,4 +1,4 @@
-import { PrisonerC, type Sim } from '../sim';
+import { holderOf, PLAYER, type Sim } from '../sim';
 import { sealMarked, sealRefusal, sealWait } from '../sim/stasis/order';
 
 const REASONS: Record<string, string> = {
@@ -24,7 +24,7 @@ const WAITS: Record<string, string> = {
  * (null while crew are on it). Null for anyone who is not a prisoner.
  */
 export function sealOf(sim: Sim, id: number): { marked: boolean; refusal: string | null; wait: string | null } | null {
-  if (!sim.world.has(id, PrisonerC)) return null;
+  if (holderOf(sim, id) !== PLAYER) return null;
   const why = sealRefusal(sim, id);
   const wait = sealWait(sim, id);
   return { marked: sealMarked(sim, id), refusal: why ? (REASONS[why] ?? why) : null, wait: wait ? WAITS[wait] ?? null : null };

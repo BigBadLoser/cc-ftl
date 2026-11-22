@@ -13,7 +13,7 @@ import type { Sim } from '../sim';
 import { capturePrize } from './prize';
 import { openSlab } from '../stasis/freeze';
 import { slabPlace } from '../stasis/query';
-import { isPlayers } from '../side';
+import { holderOf, isPlayers, PLAYER } from '../side';
 
 /**
  * The player's answer to a beaten ship (`Ship.yielded`, set by systems/shipState.ts once every crew member is subdued and none of the player's can reach it);
@@ -51,7 +51,7 @@ export function releasePrisoner(sim: Sim, crew: number): string | null {
   const p = sim.world.get(crew, PrisonerC);
   const frozen = slabPlace(sim, crew);
   const pos = sim.world.get(crew, PositionC);
-  if (!p || (!pos && !frozen)) return 'notPrisoner';
+  if (!p || holderOf(sim, crew) !== PLAYER || (!pos && !frozen)) return 'notPrisoner'; // an NPC captor's prisoners are not the player's to release
   if (frozen && (frozen.kind === 'carried' || frozen.kind === 'shuttle')) return 'inTransit';
   const shipId = frozen ? frozen.ship : shipIdOf(sim, pos);
   const ship = sim.world.get(shipId, ShipC);

@@ -3,6 +3,10 @@ title: Fights between other ships
 order: 8
 ---
 
+<script lang="ts">
+  import ComingLater from '../../../lib/ComingLater.svelte'
+</script>
+
 Other ships have their own wars. Navy patrols hunt pirates, pirates go after traders, and rival corporations shoot at each
 other. Most of this happens out of sight: the starmap's **News and rumours** reports who won. When it happens in the node
 you are in, you watch it happen.
@@ -25,6 +29,13 @@ In a war zone or pirate country, where many hostile fleets pass through, you wil
   can hurt the other for about a minute, the weaker side gives up and jumps away. The ship's log and the news say how it
   ended.
 - If you leave the node before the fight ends, it is settled without you.
+
+<ComingLater>
+
+Pirates sealing the crew of a ship they take into stasis slabs and keeping them in a stasis wheel of their own, as you do
+with your prisoners. Their ships carry no stasis wheels yet, so for now the beaten crew simply stay aboard the prize.
+
+</ComingLater>
 
 You don't have to do anything. Staying out of it costs nothing.
 
