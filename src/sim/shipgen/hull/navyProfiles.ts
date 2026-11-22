@@ -60,6 +60,13 @@ export const NAVY_PROFILES: Record<string, readonly Profile[]> = {
       sections: [{ len: [6, 10], half: [8, 9] }, { len: [26, 34], half: [14, 16], taper: 1 }, [{ len: [16, 20], half: [6, 7], taper: 1 }, { len: [20, 24], half: [6, 7], taper: 1 }]],
       mounts: [{ kind: 'embrasure', count: [3, 4], len: [4, 5], depth: [1, 2], tooth: 6, span: [0.1, 0.75] }], stern: { kind: 'flare', len: [8, 12], out: [4, 6] } },
   ],
+  // PROTOTYPE (#581): a civilian liner: a long smooth hull, a round bow, a lane open out of the stern from about a third
+  // along between its passenger decks.
+  liner: [
+    { id: 'liner.lane', nose: { style: 'round', len: [10, 14], front: [3, 4] },
+      sections: [{ len: [16, 22], half: [10, 12], taper: 1 }, { len: [70, 80], half: [16, 17], taper: 1 }],
+      split: { at: [0.34, 0.4], lane: [4, 6], end: ['square'] }, stern: { kind: 'flare', len: [6, 8], out: [2, 3] } },
+  ],
   // Launcher: longer than a cruiser, built round a launch lane open out of the stern (its floor about a cruiser's, the lane
   // taking the rest). The bow picked per seed: a neck with hard shoulders, two steps, or a bulb on a neck.
   carrier: [

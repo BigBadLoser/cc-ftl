@@ -14,7 +14,7 @@ export function roomKind(r: Pick<RoomSpec, 'role' | 'mods' | 'dept' | 'cabin' | 
   switch (r.role) {
     case 'medbay': return has('module.recovery') ? 'trauma' : 'medbay';
     case 'quarters': return r.cabin ? 'cabin' : 'barracks';
-    case 'support': return r.use === 'lounge' || r.use === 'gym' ? r.use : (has('module.galley') ? 'mess' : has('module.fabricator') ? 'workshop' : 'other');
+    case 'support': return r.use === 'lounge' || r.use === 'gym' ? r.use : has('module.galley') ? 'mess' : has('module.fabricator') ? 'workshop' : 'other';
     case 'plant': return has('module.fabricator') ? 'workshop' : 'plant';
     case 'cargo': return r.dept === 'commons' ? 'pantry' : 'cargo';
     case 'weapons': return 'guns';
