@@ -202,7 +202,7 @@ export type SimEvent =
   /** A station's offer for a prisoner was accepted (capture/offers.ts): a shuttle comes for the slab, the station's ('station') or the player's ('own'). */
   | { type: 'prisoner.collecting'; crew: number; name: string; station: number; via: 'station' | 'own' }
   | { type: 'prisoner.handedOver'; crew: number; name: string; station: number; kind: 'ransom' | 'bounty' | 'market'; credits: number; faction: string }
-  | { type: 'stasis.thawed'; crew: number; ship: number; x: number; y: number }
+  | { type: 'stasis.thawed'; crew: number; ship: number; x: number; y: number; holder: string | null }
   /** The player let a beaten crew go: `crew` of them left, and the ship is a derelict (capture/settle.ts). */
   /** A prisoner was released and left (capture/settle.ts); `faction` is the galaxy faction whose standing it raised ('' for none). */
   | { type: 'crew.released'; crew: number; name: string; ship: number; faction: string }

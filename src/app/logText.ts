@@ -221,7 +221,7 @@ export function createDescriber(sim: Sim) {
       case 'prisoner.collecting': return { kind: 'trade', tone: 'info', text: e.via === 'own' ? `Your shuttle takes ${e.name} over to ${trader(e.station)}, sealed in stasis` : `${trader(e.station)} sends a shuttle for ${e.name}'s stasis slab`, ...onShip(e.station) };
       case 'prisoner.handedOver': return { kind: 'crew', tone: 'good', text: `${e.name} ${e.kind === 'ransom' ? 'ransomed to' : e.kind === 'bounty' ? 'handed over for the bounty to' : 'sold on the black market to'} ${trader(e.station)}: +${e.credits} credits` };
       case 'stasis.lost': return e.holder === PLAYER ? { kind: 'crew', tone: 'bad', text: `${e.name} was lost with the shuttle, sealed in stasis` } : null;
-      case 'stasis.thawed': return mine(e.crew) ? { kind: 'crew', tone: 'bad', text: `${crewName(e.crew)} thawed out of stasis and is loose aboard`, subject: tileAt(e.x, e.y) } : null;
+      case 'stasis.thawed': return e.holder === PLAYER ? { kind: 'crew', tone: 'bad', text: `${crewName(e.crew)} thawed out of stasis and is loose aboard`, subject: tileAt(e.x, e.y) } : null;
       case 'ship.letGo': return { kind: 'ship.captured', tone: 'warn', text: `${shipName(e.ship)}: ${e.crew} crew let go, the ship is left a derelict`, ...onShip(e.ship) };
       case 'crew.released': return { kind: 'crew', tone: 'good', text: `${e.name} released${e.faction ? `: ${factionName(e.faction)} thinks better of you` : ''}` };
       default: return describeBoarding(sim, e);

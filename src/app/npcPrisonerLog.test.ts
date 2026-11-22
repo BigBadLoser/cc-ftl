@@ -28,10 +28,14 @@ describe('prisoner log lines by holder', () => {
         { type: 'crew.imprisoned', crew, ship },
         { type: 'stasis.sealed', crew, by: crew, ship },
         { type: 'stasis.stowed', crew, wheel: 0, ship },
-        { type: 'stasis.thawed', crew, ship, x: 1, y: 1 },
       ];
       log.onEvents(events);
       alerts.onEvents(events);
+      // A thaw comes after the prisoner is gone (thawPrisoner removes PrisonerC first), so it names its holder.
+      sim.world.remove(crew, PrisonerC);
+      const thaw: SimEvent[] = [{ type: 'stasis.thawed', crew, ship, x: 1, y: 1, holder: crew === mine ? 'player' : 'raiders' }];
+      log.onEvents(thaw);
+      alerts.onEvents(thaw);
     };
     feed(theirs);
     expect(lines).toEqual([]);
