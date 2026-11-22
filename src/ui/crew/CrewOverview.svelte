@@ -85,6 +85,7 @@
   {:else if c.side === 'visitor' && c.visit === 'Inspector'}
     <!-- Attacking an inspector is a choice with a price: their faction turns hostile and the ship that sent them fights (#138 step 3). -->
     <div class="btns one"><button class="warn" data-testid="attack-inspector" disabled={!!blocked} use:tip={{ text: blocked ?? 'Order the selected drafted crew to attack. Their faction turns hostile (a big standing loss), and the ship that sent them fights back.' }} onclick={() => api.attack(c.id)}>Attack</button></div>
+  <!-- eslint-disable-next-line no-restricted-syntax -- UiCrew.side is a view tag, not a faction id -->
   {:else if c.side === 'player'}
     <!-- (A passenger takes no orders: no draft, no priorities, no trips.) -->
     <div class="orders">

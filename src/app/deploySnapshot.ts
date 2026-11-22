@@ -1,4 +1,4 @@
-import { CrewC, ShipC, VehicleC, isEventNode, jumpWarnings, nodeOf, type Sim } from '../sim';
+import { CrewC, ShipC, VehicleC, isEventNode, jumpWarnings, nodeOf, type Sim, PLAYER } from '../sim';
 import { asteroidParts, placementGapError, regions } from '../sim/regions';
 import { PLAYER_START } from '../sim/tuning';
 import type { UiDeploy, UiJumpWarnings } from '../ui/starmapApi';
@@ -54,7 +54,7 @@ export function buildDeploy(sim: Sim): UiDeploy | null {
       const s = sim.world.get(r.ship, ShipC);
       return {
         x: r.bbox.x, y: r.bbox.y, w: r.bbox.w, h: r.bbox.h, frame: { x: r.frame.x, y: r.frame.y, w: r.frame.w, h: r.frame.h },
-        name: s?.name ?? 'Ship', hostile: !!s && s.faction !== 'player' && s.faction !== 'neutral',
+        name: s?.name ?? 'Ship', hostile: !!s && s.faction !== PLAYER && s.faction !== 'neutral',
       };
     }),
   };

@@ -1,4 +1,4 @@
-import { AllegianceC, CrewC, DeadC, MoodC, opinionOf, personOf, type BondReason, type Opinion, type Sim } from '../sim';
+import { CrewC, DeadC, MoodC, opinionOf, personOf, type BondReason, type Opinion, type Sim, isPlayers } from '../sim';
 import { near } from '../sim/crew/bondMood';
 import { BOND_FRIEND_MOOD, BOND_FRIEND_WORK_MULT, BOND_MAX_FRIENDS, BOND_MAX_RIVALS, BOND_RIVAL_MOOD } from '../sim/tuning';
 import { TICK_HZ } from '../sim/time';
@@ -73,7 +73,7 @@ function rowOf(sim: Sim, me: number, other: number, place: PlaceName): UiSocialR
 
 /** The Social tab's data for one player crew member: everyone else aboard in three sections, the caps, and the live mood from people. */
 export function buildSocial(sim: Sim, me: number, place: PlaceName = placeNamer(sim)): UiSocial {
-  const rows = sim.world.query(CrewC).filter((o) => o !== me && !sim.world.has(o, DeadC) && sim.world.get(o, AllegianceC)?.faction === 'player'
+  const rows = sim.world.query(CrewC).filter((o) => o !== me && !sim.world.has(o, DeadC) && isPlayers(sim, o, { held: false })
     && !sim.content.species[sim.world.get(o, CrewC)!.species]?.mechanical).map((o) => rowOf(sim, me, o, place));
   const strength = (r: UiSocialRow): number => Math.abs(r.mine);
   const pick = (s: UiSocialRow['section']): UiSocialRow[] => rows.filter((r) => r.section === s).sort((x, y) => strength(y) - strength(x) || x.id - y.id);

@@ -1,6 +1,6 @@
-import { factionsHostile, homeShip, isOnOurSide } from '../sim/index';
+import { factionsHostile, homeShip, isOnOurSide, isPlayers, PLAYER } from '../sim/index';
 import { shipIdOf } from '../sim/regions';
-import { AllegianceC, CrewC, ModuleC, PositionC, ShipC, TraderC, nodeOf, type Sim, type SimEvent } from '../sim';
+import { CrewC, ModuleC, PositionC, ShipC, TraderC, nodeOf, type Sim, type SimEvent } from '../sim';
 import { moduleNameOf } from '../sim/upgrades/stats';
 import { StasisC } from '../sim/stasis/components';
 import type { UiLogEntry, UiSubject } from '../ui/api';
@@ -21,11 +21,11 @@ const BLOCKED = { noShuttle: 'no free shuttle', noPilot: 'no free pilot', noAirl
 export function createDescriber(sim: Sim) {
   const home = () => homeShip(sim);
   const crewName = (id: number) => sim.world.get(id, CrewC)?.name ?? 'Crew';
-  const player = (crew: number) => sim.world.get(crew, AllegianceC)?.faction === 'player';
+  const player = (crew: number) => isPlayers(sim, crew, { held: false });
   const ours = (crew: number) => player(crew) || shipIdOf(sim, sim.world.get(crew, PositionC)) === home();
   const side = (crew: number): 'good' | 'bad' => (isOnOurSide(sim, crew) ? 'bad' : 'good'); // a loss on our side, a win on theirs
   const ship = (id: number) => sim.world.get(id, ShipC);
-  const mine = (id: number) => ship(id)?.faction === 'player';
+  const mine = (id: number) => ship(id)?.faction === PLAYER;
   const shipName = (id: number) => ship(id)?.name ?? 'Ship';
   const hireOf = (deal: number) => sim.trade.deals.find((d) => d.id === deal)?.crew?.[0];
   const trader = (id: number) => sim.world.get(id, TraderC)?.name ?? 'trader';
@@ -83,12 +83,12 @@ export function createDescriber(sim: Sim) {
       case 'ship.disabled': return { kind: e.type, tone: mine(e.ship) ? 'bad' : 'good', text: `${shipName(e.ship)} disabled`, ...onShip(e.ship) };
       case 'vehicle.destroyed': {
         const lost = e.aboard.length + e.away.length;
-        return e.faction === 'player'
+        return e.faction === PLAYER
           ? { kind: 'warning', tone: 'bad', text: `Shuttle destroyed${lost ? `: ${lost} crew aboard or away` : ''}`, subject: tileAt(e.x, e.y) }
           : { kind: 'kill', tone: 'good', text: 'Enemy shuttle destroyed' };
       }
       case 'core.torn': return { kind: 'warning', tone: mine(e.ship) ? 'bad' : 'good', text: mine(e.ship) ? 'Your AI core was torn out: robots shut down' : `${shipName(e.ship)} lost its AI core`, ...onShip(e.ship) };
-      case 'core.hacked': return { kind: 'warning', tone: mine(e.ship) ? (e.by === 'player' ? 'good' : 'bad') : 'good', text: mine(e.ship) ? (e.by === 'player' ? 'AI core hacked' : 'Your AI core was hacked: robots shut down') : `${shipName(e.ship)}'s AI core hacked`, ...onShip(e.ship) };
+      case 'core.hacked': return { kind: 'warning', tone: mine(e.ship) ? (e.by === PLAYER ? 'good' : 'bad') : 'good', text: mine(e.ship) ? (e.by === PLAYER ? 'AI core hacked' : 'Your AI core was hacked: robots shut down') : `${shipName(e.ship)}'s AI core hacked`, ...onShip(e.ship) };
       case 'research.done': return { kind: 'production', tone: 'good', text: `Research finished: ${sim.content.research?.[e.project]?.name ?? 'a project'}` };
       case 'goal.done': return { kind: 'story', tone: 'good', text: `Goal done: ${e.title}` };
       case 'goal.actDone': return { kind: 'story', tone: 'good', text: `Chapter done: ${e.title}` };
@@ -125,7 +125,7 @@ export function createDescriber(sim: Sim) {
       case 'station.alarm': return { kind: 'combat', tone: 'bad', text: `Alarm on ${shipName(e.ship)}: ${e.reason}`, ...onShip(e.ship) };
       case 'station.calm': return { kind: 'combat', tone: 'info', text: `${shipName(e.ship)} stands down its alarm`, ...onShip(e.ship) };
       case 'ship.provoked': return { kind: 'combat', tone: 'bad', text: e.reason === 'fired' ? `${shipName(e.ship)} was fired on: it turns hostile` : e.reason === 'boarded' ? `${shipName(e.ship)} was boarded: it turns hostile` : e.reason === 'ambush' ? `${shipName(e.ship)} drops the act: its boarders turn on you` : `${shipName(e.ship)} is roused: its guns turn on you`, ...onShip(e.ship) };
-      case 'ship.captured': return { kind: e.type, tone: e.by === 'player' ? 'good' : 'bad', text: e.by === 'player' ? `${shipName(e.ship)} captured` : `${shipName(e.ship)} was captured`, ...onShip(e.ship) };
+      case 'ship.captured': return { kind: e.type, tone: e.by === PLAYER ? 'good' : 'bad', text: e.by === PLAYER ? `${shipName(e.ship)} captured` : `${shipName(e.ship)} was captured`, ...onShip(e.ship) };
       case 'eggsac.hatched': return { kind: 'creatures', tone: 'bad', text: `Hostile creatures aboard ${shipName(e.ship)}`, subject: tileAt(e.x, e.y) };
       case 'container.detached': return { kind: 'container', tone: 'info', text: 'A cargo container broke loose', subject: tileAt(e.x, e.y) };
       case 'production.done': return { kind: 'production', tone: 'good', text: `${sim.content.recipes[e.recipe]?.name ?? 'Batch'} finished`, subject: tileAt(e.x, e.y) };
@@ -138,7 +138,7 @@ export function createDescriber(sim: Sim) {
       case 'transfer.blocked': return { kind: 'transfer', tone: 'warn', text: `Transfer blocked: ${BLOCKED[e.reason]}` };
       case 'outpost.discovered': return { kind: 'outpost', tone: 'warn', text: 'Hidden base discovered', ...onShip(e.ship) };
       case 'ship.arrived': // a hostile ship turning up is worth a line (an alert only comes when it attacks: combat.started)
-        return e.ship !== null && sim.sector.state === 'active' && factionsHostile('player', e.faction)
+        return e.ship !== null && sim.sector.state === 'active' && factionsHostile(PLAYER, e.faction)
           ? { kind: 'combat', tone: 'warn', text: `${e.name} ${e.reason === 'jump-in' ? 'jumped in' : 'arrived'}: hostile`, ...onShip(e.ship) }
           : null;
       case 'trade.hailAnswered': return { kind: 'hail', tone: 'info', text: `${e.name} answered the hail`, ...onShip(e.ship) };
@@ -150,7 +150,7 @@ export function createDescriber(sim: Sim) {
       case 'crew.asksToJoin': return { kind: 'trade', tone: 'info', text: `${e.name || crewName(e.crew)} asks to join the crew`, ...sub(crewSubject(sim, e.crew)) };
       case 'crew.joined': return { kind: 'trade', tone: 'good', text: `${e.name || crewName(e.crew)} joins the crew`, ...sub(crewSubject(sim, e.crew)) };
       case 'crew.hired': return { kind: 'trade', tone: 'good', text: `${crewName(e.crew)} joins the crew`, ...sub(crewSubject(sim, e.crew)) };
-      case 'trade.delivered': return { kind: 'trade', tone: 'good', text: e.to === 'player' ? `Cargo from ${trader(e.ship)} arrived` : `Cargo delivered to ${trader(e.ship)}` };
+      case 'trade.delivered': return { kind: 'trade', tone: 'good', text: e.to === PLAYER ? `Cargo from ${trader(e.ship)} arrived` : `Cargo delivered to ${trader(e.ship)}` };
       // A payment to the player is the credit-gain entry (see eventLog.ts); one the player made is logged here.
       case 'trade.settled': return e.credits > 0 ? { kind: 'trade', tone: 'info', text: `Paid ${e.credits} ₵ to ${trader(e.ship)}` } : e.credits === 0 ? { kind: 'trade', tone: 'good', text: `Trade with ${trader(e.ship)} completed` } : null;
       case 'trade.rerouted': return { kind: 'trade', tone: 'warn', text: `${trader(e.ship)}'s dock crew never loaded your shuttle: it trades from alongside instead` };

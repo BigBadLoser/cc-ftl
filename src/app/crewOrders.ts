@@ -1,4 +1,4 @@
-import { AllegianceC, CrewC, DeadC, DraftedC, ModuleC, PositionC, Struct, VehicleC, boardingTile, isCombatReady, isHostile, rotatedSize, type Sim } from '../sim';
+import { CrewC, DeadC, DraftedC, ModuleC, PositionC, Struct, VehicleC, boardingTile, isCombatReady, isHostile, rotatedSize, type Sim, isPlayers } from '../sim';
 import { EggSacC } from '../sim/aliens/components';
 import { sacAlive } from '../sim/aliens/target';
 import { factionsHostile } from '../sim/combat/factions';
@@ -32,13 +32,13 @@ export function moduleUnder(sim: Sim, r: Renderer, sx: number, sy: number, tile:
 
 /** The drafted, living crew of the player among `ids`. */
 export function draftedOf(sim: Sim, ids: readonly number[]): number[] {
-  return ids.filter((id) => sim.world.has(id, CrewC) && sim.world.has(id, DraftedC) && sim.world.has(id, PositionC) && !sim.world.has(id, DeadC) && sim.world.get(id, AllegianceC)?.faction === 'player');
+  return ids.filter((id) => sim.world.has(id, CrewC) && sim.world.has(id, DraftedC) && sim.world.has(id, PositionC) && !sim.world.has(id, DeadC) && isPlayers(sim, id, { held: false }));
 }
 
 /** True for a vehicle of the player's that crew can climb into or out of right now. */
 function boardable(sim: Sim, vehicle: number): boolean {
   const v = sim.world.get(vehicle, VehicleC);
-  return !!v && shipById(sim, v.homeShip)?.faction === 'player' && boardingTile(sim, vehicle) !== null;
+  return !!v && isPlayers(sim, v.homeShip) && boardingTile(sim, vehicle) !== null;
 }
 
 /** The player's shuttle a click on this module means: one docked at this airlock, or the one stowed in this bay. */
@@ -85,7 +85,7 @@ export function planOrders(sim: Sim, r: Renderer, sx: number, sy: number, select
   const module = tile ? moduleUnder(sim, r, sx, sy, tile, tile.shipId) : 0;
   const mod = module ? sim.world.get(module, ModuleC) : undefined;
   const def = mod && sim.content.modules[mod.def];
-  if (mod && def?.console && mod.hp > 0 && on(shipIdOf(sim, mod)).length && shipById(sim, shipIdOf(sim, mod))?.faction === 'player') {
+  if (mod && def?.console && mod.hp > 0 && on(shipIdOf(sim, mod)).length && isPlayers(sim, shipIdOf(sim, mod))) {
     const at = accessTile(def, mod.x, mod.y, mod.rot);
     probe.station = { module, name: def.name.toLowerCase() };
     act.man = () => {

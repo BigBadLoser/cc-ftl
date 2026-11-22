@@ -1,7 +1,7 @@
-import { homeShip, isOnOurSide } from '../sim/index';
+import { homeShip, isOnOurSide, isPlayers, PLAYER } from '../sim/index';
 import { hasLiveCore } from '../sim/robots/core';
 import { shipIdOf, shipGrid } from '../sim/regions';
-import { BreakdownC, CrewC, DeadC, DownedC, ModuleC, PickupC, NeedsC, PositionC, AllegianceC, ShipC, incomingFleets, isSuited, roomTiles, type Sim, type SimEvent } from '../sim';
+import { BreakdownC, CrewC, DeadC, DownedC, ModuleC, PickupC, NeedsC, PositionC, ShipC, incomingFleets, isSuited, roomTiles, type Sim, type SimEvent } from '../sim';
 import { Struct } from '../sim/structure';
 import { O2_ALERT_CLEAR_ABOVE, ALERT_INTERVAL_TICKS } from '../sim/tuning';
 import { AwayC, AwaySiteC } from '../sim/away/components';
@@ -61,7 +61,7 @@ export function createAlerts(sim: Sim): Alerts {
 
   const crewName = (id: number) => sim.world.get(id, CrewC)?.name ?? 'Crew';
   const home = () => homeShip(sim);
-  const playerSuit = (id: number) => sim.world.get(id, AllegianceC)?.faction === 'player';
+  const playerSuit = (id: number) => isPlayers(sim, id, { held: false });
   const alive = (id: number) => sim.world.has(id, CrewC) && !sim.world.has(id, DeadC);
   /** Hostile ships and their crew raise no alerts of their own: hazards count on any ship the player owns, "down" only for the player's side. */
   const foreign = (e: SimEvent): boolean => {
@@ -166,14 +166,14 @@ export function createAlerts(sim: Sim): Alerts {
       case 'vehicle.destroyed': {
         // The shuttle's people: those inside went down or died with it, the rest of its party are out with no ride home.
         const people = [...e.aboard, ...e.away];
-        if (e.faction !== 'player' || !people.length) return null;
+        if (e.faction !== PLAYER || !people.length) return null;
         const trouble = (c: number) => alive(c) && ((!!sim.world.get(c, DownedC) && !sim.world.get(c, DownedC)?.stabilized) || sim.world.get(c, AwayC)?.vehicle === e.vehicle);
         const first = people.find(trouble) ?? people[0] as number;
         const text = `Shuttle lost: ${e.aboard.length ? `${e.aboard.length} aboard` : ''}${e.aboard.length && e.away.length ? ', ' : ''}${e.away.length ? `${e.away.length} away` : ''}`;
         return { kind: 'vehicle.lost', key: `vl${e.vehicle}`, text, subject: crewSubject(sim, first) ?? tileAt(e.x, e.y), resolved: () => !people.some(trouble) };
       }
       case 'core.torn': case 'core.hacked': {
-        if (e.ship !== home() || (e.type === 'core.hacked' && e.by === 'player')) return null;
+        if (e.ship !== home() || (e.type === 'core.hacked' && e.by === PLAYER)) return null;
         const text = e.type === 'core.torn' ? 'AI core torn out: robots shut down' : 'AI core hacked: robots shut down';
         const core = e.type === 'core.hacked' ? sim.world.get(e.moduleId, ModuleC) : undefined;
         return { kind: 'core.lost', key: `core${e.ship}`, text, subject: core ? tileAt(core.x, core.y) : shipSubject(sim, e.ship), resolved: () => hasLiveCore(sim, e.ship) };

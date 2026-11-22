@@ -1,7 +1,7 @@
 import { asteroidAt, shipIdOf, shipGrid } from '../sim/regions';
-import { containerAt, ContainerC, rotatedSize } from '../sim';
+import { containerAt, ContainerC, rotatedSize, isPlayers, PLAYER } from '../sim';
 import { AsteroidC } from '../sim/asteroids/components';
-import { AboardC, AllegianceC, BodyC, DraftedC, ModuleC, PositionC, ShipC, Struct, VehicleC, footprintTiles, playerFoes, type Sim, type SimEvent } from '../sim';
+import { AboardC, BodyC, DraftedC, ModuleC, PositionC, ShipC, Struct, VehicleC, footprintTiles, playerFoes, type Sim, type SimEvent } from '../sim';
 import type { Renderer } from '../render/scene';
 import type { UiFightReport, UiSubject, UiToolState } from '../ui/api';
 import type { Bridge } from './bridge';
@@ -18,7 +18,6 @@ import { EggSacC } from '../sim/aliens/components';
 import { draftedOf, moduleUnder, planOrders, type OrderPlan } from './crewOrders';
 import { boxSelection, clickSelection, idsInRect, normRect, type Rect } from './selection';
 import { needsMenu, type OrderChoice, type OrderId } from './orders';
-import { shipById } from '../sim/combat/shipQuery';
 import { buildFoeModule } from './foeModule';
 import { createAiming, type Aiming } from './aiming';
 
@@ -153,7 +152,7 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     const b = sim.world.get(sim.world.get(id, AboardC)?.vehicle ?? 0, BodyC);
     if (b) r?.focusSector(b.x, b.y);
   };
-  const isPlayerCrew = (id: number) => sim.world.get(id, AllegianceC)?.faction === 'player';
+  const isPlayerCrew = (id: number) => isPlayers(sim, id, { held: false });
   /** Select crew: own crew join the group (alone, or as the whole box), an enemy is only inspected and the group keeps its place. */
   const selectCrews = (ids: readonly number[], focus = false) => {
     const first = ids[0];
@@ -355,7 +354,7 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     onEvents(events) {
       for (const e of events) {
         if (e.type === 'command.rejected') showToast(rejectionMessage(e.reason));
-        else if (e.type === 'ship.captured') showToast(e.by === 'player' ? 'Ship captured! It is now a prize.' : 'Your ship was captured!', 8000);
+        else if (e.type === 'ship.captured') showToast(e.by === PLAYER ? 'Ship captured! It is now a prize.' : 'Your ship was captured!', 8000);
       }
       // Arriving at a node: the old node's tile, ship and crew selection means nothing there.
       if (events.some((e) => e.type === 'sector.deployed')) selectTile(null);
@@ -400,7 +399,7 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
           }
           const shuttle = renderer.pickShuttle(sx, sy);
           const sv = shuttle === null ? undefined : sim.world.get(shuttle, VehicleC);
-          if (shuttle !== null && sv && shipById(sim, sv.homeShip)?.faction === 'player') return selectShuttle(shuttle);
+          if (shuttle !== null && sv && isPlayers(sim, sv.homeShip)) return selectShuttle(shuttle);
           // Combat, not aiming (aiming took the tap above): a foe's weapon opens the read-only inspector (app/foeModule.ts).
           const foeAt = sim.sector.inCombat ? renderer.pickTileAny(sx, sy) : null;
           const foeGun = foeAt && foeAt.shipId !== homeShipId() ? shipGrid(sim, foeAt.shipId)?.get('module', foeAt.x, foeAt.y) ?? 0 : 0;

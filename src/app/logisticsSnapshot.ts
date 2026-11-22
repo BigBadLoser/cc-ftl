@@ -1,6 +1,4 @@
-import {
-  AllegianceC, CarryingC, ItemStackC, JobC, ModuleC, ProductionC, ShipC, StorageC, needsMaterials, type ItemQty, type Sim,
-} from '../sim';
+import { CarryingC, ItemStackC, JobC, ModuleC, ProductionC, StorageC, needsMaterials, type ItemQty, type Sim, isPlayers } from '../sim';
 import { TICK_HZ } from '../sim';
 import { recipeKnown } from '../sim/modules/blueprints';
 import { shipIdAt, shipIdOf } from '../sim/regions';
@@ -26,7 +24,7 @@ export function buildStructCosts(sim: Sim): Record<string, UiCost[]> {
 }
 
 /** True for a region the player owns (the home ship, claimed bases and prizes): stock elsewhere is not "ours". */
-const isPlayerShip = (sim: Sim, shipId: number): boolean => sim.world.get(shipId, ShipC)?.faction === 'player';
+const isPlayerShip = (sim: Sim, shipId: number): boolean => isPlayers(sim, shipId);
 
 /** Totals per item on the player's ships: on the floor, in storage and in crew hands. Items with nothing anywhere are left out. */
 export function buildStock(sim: Sim): UiStock[] {
@@ -47,7 +45,7 @@ export function buildStock(sim: Sim): UiStock[] {
   }
   for (const id of sim.world.query(CarryingC)) {
     const c = sim.world.get(id, CarryingC);
-    if (c && sim.world.get(id, AllegianceC)?.faction === 'player') row(c.item).carried += c.count;
+    if (c && isPlayers(sim, id, { held: false })) row(c.item).carried += c.count;
   }
   const order = Object.keys(sim.content.items);
   return [...by.values()].filter((r) => r.floor + r.stored + r.carried > 0).sort((a, b) => order.indexOf(a.item) - order.indexOf(b.item));

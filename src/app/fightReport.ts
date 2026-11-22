@@ -1,4 +1,4 @@
-import { homeShip } from '../sim/index';
+import { homeShip, isPlayers, PLAYER } from '../sim/index';
 import { shipIdOf } from '../sim/regions';
 import { AllegianceC, CrewC, ModuleC, ShipC, factionsHostile, type Sim, type SimEvent } from '../sim';
 import { moduleNameOf } from '../sim/upgrades/stats';
@@ -71,10 +71,10 @@ export function fightLine(r: UiFightReport): LogEntry | null {
 export function createFightReporter(sim: Sim): FightReporter {
   let t: Tracker | null = null;
   const home = () => homeShip(sim);
-  const ours = (c: Tracker, crew: number) => c.crew.has(crew) || sim.world.get(crew, AllegianceC)?.faction === 'player';
+  const ours = (c: Tracker, crew: number) => c.crew.has(crew) || isPlayers(sim, crew, { held: false });
   const crewName = (c: Tracker, crew: number) => sim.world.get(crew, CrewC)?.name ?? c.crew.get(crew) ?? 'Crew';
   const seeCrew = (c: Tracker) => {
-    for (const id of sim.world.query(CrewC, AllegianceC)) if (sim.world.get(id, AllegianceC)?.faction === 'player') c.crew.set(id, sim.world.get(id, CrewC)?.name ?? 'Crew');
+    for (const id of sim.world.query(CrewC, AllegianceC)) if (isPlayers(sim, id, { held: false })) c.crew.set(id, sim.world.get(id, CrewC)?.name ?? 'Crew');
   };
   const modName = (def: string) => sim.content.modules[def]?.name ?? 'Module';
   /** A module's name as the player sees it (a weapon renamed by its upgrade), else its def's. */
@@ -84,7 +84,7 @@ export function createFightReporter(sim: Sim): FightReporter {
   const enemyOf = (): number => {
     for (const id of sim.world.query(ShipC)) {
       const s = sim.world.get(id, ShipC);
-      if (s && (s.state === 'active' || s.state === 'disabled') && !isDormant(s) && factionsHostile(s.faction, 'player')) return id;
+      if (s && (s.state === 'active' || s.state === 'disabled') && !isDormant(s) && factionsHostile(s.faction, PLAYER)) return id;
     }
     return 0;
   };
@@ -97,7 +97,7 @@ export function createFightReporter(sim: Sim): FightReporter {
   const fresh = (): Tracker => {
     const c: Tracker = {
       start: sim.tick, hullBefore: hull(), hullNow: hull(), enemyHull: null, enemyCrew: 0, enemy: enemyOf(), enemyName: '', outcome: 'ended', lost: [], damaged: new Map(), down: new Map(), dead: [], enemyLost: [],
-      ammo: new Map(), prize: false, ours: new Set(sim.world.query(ShipC).filter((id) => sim.world.get(id, ShipC)?.faction === 'player')), crew: new Map(), home: home(),
+      ammo: new Map(), prize: false, ours: new Set(sim.world.query(ShipC).filter((id) => isPlayers(sim, id))), crew: new Map(), home: home(),
     };
     seeCrew(c);
     return c;
@@ -148,7 +148,7 @@ export function createFightReporter(sim: Sim): FightReporter {
         break;
       case 'ship.destroyed': if (c.ours.has(e.ship)) c.outcome = 'lost'; else { c.enemy = e.ship; c.outcome = 'destroyed'; } break;
       case 'ship.fled': if (!c.ours.has(e.ship)) c.enemy = e.ship; c.outcome = c.ours.has(e.ship) ? 'youFled' : 'fled'; break;
-      case 'ship.captured': if (e.by === 'player') { c.enemy = e.ship; c.outcome = 'captured'; c.prize = true; } break;
+      case 'ship.captured': if (e.by === PLAYER) { c.enemy = e.ship; c.outcome = 'captured'; c.prize = true; } break;
       case 'ship.recovered': if (e.ship === c.enemy && c.outcome === 'disabled') c.outcome = 'ended'; break;
       case 'ship.disabled': if (!c.ours.has(e.ship) && c.outcome === 'ended') { c.enemy = e.ship; c.outcome = 'disabled'; } break;
       default: break;
