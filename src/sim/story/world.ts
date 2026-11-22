@@ -1,13 +1,8 @@
-import { shipIdOf } from '../regions';
-import { CrewC, DeadC } from '../crew/components';
-import { ShipC } from '../combat/components';
-import { AllegianceC, SurrenderedC } from '../fight/components';
-import { StorageC } from '../items/components';
-import { ModuleC } from '../modules/components';
 import type { SkillName } from '../registry';
 import type { Sim } from '../sim';
 import { stat } from '../stats';
 import { aboard, guardPacked } from '../packedGuard';
+import { crewOf, modulesOf, PLAYER, shipsOf, storagesOf } from '../side';
 import { ImplantsC } from './components';
 import { VehicleC } from '../vehicles/components';
 import { vehicleDefOf, vehicleFaction } from '../vehicles/lifecycle';
@@ -46,42 +41,19 @@ export function withPlayerAboard<T>(sim: Sim, fn: () => T): T {
 }
 
 /** Living, free crew on the player's side (anywhere: ships, shuttles). Ascending id. */
-export function playerCrew(sim: Sim): number[] {
-  guardPacked(sim, 'playerCrew');
-  return playerCrewPackedOk(sim);
-}
+export const playerCrew = (sim: Sim): number[] => crewOf(sim, PLAYER, { free: true });
 
 /** `playerCrew` for a caller that wants "nobody" while the ship is packed. */
-export function playerCrewPackedOk(sim: Sim): number[] {
-  return sim.world.query(CrewC, AllegianceC).filter(
-    (id) => sim.world.get(id, AllegianceC)?.faction === 'player' && !sim.world.has(id, DeadC) && !sim.world.has(id, SurrenderedC),
-  );
-}
+export const playerCrewPackedOk = (sim: Sim): number[] => crewOf(sim, PLAYER, { free: true, packedOk: true });
 
 /** Ship ids of ships the player owns (active, disabled or prize; not wrecks). */
-export function playerShips(sim: Sim): Set<number> {
-  guardPacked(sim, 'playerShips');
-  return playerShipsPackedOk(sim);
-}
+export const playerShips = (sim: Sim): Set<number> => shipsOf(sim, PLAYER);
 
 /** `playerShips` for a caller that wants "none" while the ship is packed. */
-export function playerShipsPackedOk(sim: Sim): Set<number> {
-  const out = new Set<number>();
-  for (const id of sim.world.query(ShipC)) {
-    const s = sim.world.get(id, ShipC);
-    if (s?.faction === 'player' && s.state !== 'wreck') out.add(id);
-  }
-  return out;
-}
+export const playerShipsPackedOk = (sim: Sim): Set<number> => shipsOf(sim, PLAYER, { packedOk: true });
 
 /** Module entity ids of a def on player ships. */
-export function playerModules(sim: Sim, def?: string): number[] {
-  const grids = playerShips(sim);
-  return sim.world.query(ModuleC).filter((id) => {
-    const m = sim.world.get(id, ModuleC);
-    return !!m && grids.has(shipIdOf(sim, m)) && (def === undefined || m.def === def);
-  });
-}
+export const playerModules = (sim: Sim, def?: string): number[] => modulesOf(sim, PLAYER, def);
 
 /** Player shuttles stowed in a bay (`eva`: only those fit for EVA work). */
 export function stowedShuttles(sim: Sim, eva: boolean): number {
@@ -93,10 +65,7 @@ export function stowedShuttles(sim: Sim, eva: boolean): number {
 }
 
 /** Storage modules on player ships, ascending id. */
-export function playerStorages(sim: Sim): number[] {
-  const grids = playerShips(sim);
-  return sim.world.query(StorageC, ModuleC).filter((id) => grids.has(shipIdOf(sim, sim.world.get(id, ModuleC)) ?? -1));
-}
+export const playerStorages = (sim: Sim): number[] => storagesOf(sim, PLAYER);
 
 export function skillOf(sim: Sim, crew: number, skill: SkillName): number {
   try {

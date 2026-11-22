@@ -5,6 +5,7 @@ import { factionsHostile, rogueAlly } from '../combat/factions';
 
 import { InertC } from '../robots/components';
 import { isBreaking, isIncapacitated } from '../crew/helpers';
+import { crewOf, PLAYER, type Side } from '../side';
 import type { Sim } from '../sim';
 import { AllegianceC, EquipOrderC, FighterC, SurrenderedC } from './components';
 import { shipById } from '../combat/shipQuery';
@@ -45,25 +46,29 @@ export function isHostile(sim: Sim, a: number, b: number): boolean {
 }
 
 /** The player's living crew (the player faction's side of every `isHostile` question about "us"). */
-export function playerCrew(sim: Sim): number[] {
-  return sim.world.query(CrewC, AllegianceC).filter((id) => sim.world.get(id, AllegianceC)?.faction === 'player' && !sim.world.has(id, DeadC));
-}
+export const playerCrew = (sim: Sim): number[] => crewOf(sim, PLAYER, { packedOk: true });
 
 /**
- * True if this crew member is an active foe of the player right now: hostile to some player crew member (`isHostile`: opposing
- * factions, creatures, rogues, station crew once the player's crew is wanted there) and still in the fight (`isCombatReady`: not
- * surrendered, downed, dead, inert or stunned). Neutral crew (station crew, traders, guests) are not. Pass `players` (`playerCrew`)
+ * True if this crew member is an active foe of the side right now: hostile to some crew member of the side (`isHostile`: opposing
+ * factions, creatures, rogues, station crew once the side's crew is wanted there) and still in the fight (`isCombatReady`: not
+ * surrendered, downed, dead, inert or stunned). Neutral crew (station crew, traders, guests) are not. Pass `members` (`crewOf`)
  * when asking about many crew.
  */
-export function isPlayerFoe(sim: Sim, crew: number, players: readonly number[] = playerCrew(sim)): boolean {
-  return isCombatReady(sim, crew) && players.some((p) => p !== crew && isHostile(sim, p, crew));
+export function isFoeOf(sim: Sim, side: Side, crew: number, members: readonly number[] = crewOf(sim, side, { packedOk: true })): boolean {
+  return isCombatReady(sim, crew) && members.some((p) => p !== crew && isHostile(sim, p, crew));
 }
 
-/** Every active foe of the player (`isPlayerFoe`). */
-export function playerFoes(sim: Sim): number[] {
-  const players = playerCrew(sim);
-  return players.length ? sim.world.query(CrewC, PositionC).filter((id) => isPlayerFoe(sim, id, players)) : [];
+/** Every active foe of the side (`isFoeOf`). */
+export function foesOf(sim: Sim, side: Side): number[] {
+  const members = crewOf(sim, side, { packedOk: true });
+  return members.length ? sim.world.query(CrewC, PositionC).filter((id) => isFoeOf(sim, side, id, members)) : [];
 }
+
+/** `isFoeOf` for the player. */
+export const isPlayerFoe = (sim: Sim, crew: number, players: readonly number[] = playerCrew(sim)): boolean => isFoeOf(sim, PLAYER, crew, players);
+
+/** Every active foe of the player (`isPlayerFoe`). */
+export const playerFoes = (sim: Sim): number[] => foesOf(sim, PLAYER);
 
 /**
  * True if `isHostile` could hold for some ordered pair of these crew: two of them on factions that are hostile to each other,

@@ -67,7 +67,7 @@ export * from './vehicles/components';
 export * from './fight/components';
 export { prizeValue } from './capture/prize';
 export { cargoCount, cargoSpace, cargoOf, cargoAdd } from './vehicles/cargo';
-export { isHostile, isPlayerFoe, playerFoes, isSubdued, isCombatReady, isInvader, isOnOurSide } from './fight/relations';
+export { isHostile, isPlayerFoe, playerFoes, isFoeOf, foesOf, isSubdued, isCombatReady, isInvader, isOnOurSide } from './fight/relations';
 export { sightLine, rayCells, type Cover } from './fight/los';
 export { wielded, hitChance, handDefOf } from './fight/weapons';
 export { shipIdAt, shipIdOf, shipGrid, shipIds, regions, shipAt, shipFrame, shipRect, inRect, inShip, padded, type Region } from './regions';
@@ -196,6 +196,9 @@ export { incomingFleets, type IncomingFleet } from './galaxy/incoming';
 export { evadeOdds, bribeCost, fleetStrength, playerHelm, evadeOddsFor } from './galaxy/encounterOdds';
 export { eventNodeId, isEventNode, inEvent, leaveBlocker, hostilesPresent } from './galaxy/eventGrid';
 export { playerStock } from './items/held';
+export {
+  PLAYER, sideOf, isPlayers, shipsOf, mainShipOf, mainShipIdOf, crewOf, modulesOf, storagesOf, stockOf, type Side,
+} from './side';
 export { siteStatus, siteIds, type SiteStatus, type SiteBlock, type SiteMaterial } from './crew/site';
 export { quoteYard, viewPlan, plannedTiles, type YardQuote, type HullView, type YardError } from './yard/plan';
 export { brushPlan, cutPlan, touchesShip, type BrushResult } from './yard/brush';
