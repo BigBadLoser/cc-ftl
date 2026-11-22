@@ -1,6 +1,6 @@
 import { CrewC, DeadC, PositionC } from '../crew/components';
 import { isInvader, isSubdued } from '../fight/relations';
-import { inEngagement, isPrize } from '../galaxy/engagements';
+import { inEngagement } from '../galaxy/engagements';
 import { boardersReach } from '../boarding/reach';
 import { shipIdOf } from '../regions';
 import type { Sim } from '../sim';
@@ -9,11 +9,11 @@ import type { Ship } from './components';
 
 /**
  * A crewed ship someone fights, so it can be beaten: a hostile one (not a machine-crewed rogue AI one, whose fabricators replace lost robots; the living
- * zealots count), or any ship in a fight between NPC ships here (#603: its foe answers as the player would) but a prize taken in it (`isPrize`: its
- * beaten crew are the captor's captives, #609 review). The one answer for `crewSubdued` and `hopeless`.
+ * zealots count), or any ship in a fight between NPC ships here (#603: its foe answers as the player would) but one taken in such a fight (`Ship.taken`:
+ * its beaten crew are the captor's captives, in this fight or any later one; #609 and #613 review). The one answer for `crewSubdued` and `hopeless`.
  */
 export function crewedFoe(sim: Sim, shipId: number, ship: Ship): boolean {
-  return ship.faction === 'hostile' || (ship.faction === 'rogue' && !!ship.gen && !!sim.content.factions?.[ship.gen.faction]?.living) || (inEngagement(sim, shipId) && !isPrize(sim, shipId));
+  return ship.faction === 'hostile' || (ship.faction === 'rogue' && !!ship.gen && !!sim.content.factions?.[ship.gen.faction]?.living) || (inEngagement(sim, shipId) && !ship.taken);
 }
 
 /**

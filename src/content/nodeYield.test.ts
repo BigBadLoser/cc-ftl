@@ -79,6 +79,7 @@ describe('a beaten ship in a fight between NPC ships', () => {
     expect(sim.galaxy.news.filter((n) => n.kind === 'taken')).toMatchObject([{ who: fa.ships[0]?.name, faction: 'raiders' }]);
     expect(crew.every((c) => shipIdOf(sim, sim.world.get(c, PositionC)) === trader)).toBe(true); // no NPC prisoners: the beaten crew stay aboard
     expect(sim.world.get(trader, ShipC)?.yielded).toBeUndefined();
+    expect(sim.world.get(trader, ShipC)?.taken).toBe(true);
     // Neither aims at the other any more, though the node is in combat (#609 review).
     for (const [a, b] of [[shipOf(fa), trader], [trader, shipOf(fa)]] as const) {
       const c = sim.world.get(a, CombatC);
@@ -112,6 +113,30 @@ describe('a beaten ship in a fight between NPC ships', () => {
     expect(fa.node).toBe(sim.galaxy.current);
     expect(eventsOf(out, 'engagement.ended').filter((e) => e.winner === 1)).toEqual([]);
     expect(engagements(sim).some((e) => e.members.some((side) => side.some((m) => m.ship === other)))).toBe(true);
+  });
+
+  it('taken, it stays the captor\'s in a later fight too: its captives never surrender the captor\'s fleet (#613 review)', () => {
+    const { sim, fa, fb } = fight(['raiders', 'raider'], ['traders', 'trader'], { raiders: 10 });
+    const proto = fb.ships[0] as Fleet['ships'][number];
+    const fc: Fleet = { ...fb, id: 9003, ships: [{ ...proto, id: sim.galaxy.nextFleet++, seed: 9003, ship: undefined }] };
+    run(sim, 1);
+    const trader = shipOf(fb);
+    run(sim, 3 * TICK_HZ);
+    sim.sector.inCombat = true;
+    beat(sim, trader);
+    run(sim, 2 * TICK_HZ, { until: (s) => engagements(s).length === 0 });
+    expect(fa.ships.map((c) => c.ship)).toContain(trader);
+    // Another trader fleet turns up and the raiders meet it in a new fight (a new turn's meeting), the prize on their side.
+    sim.galaxy.fleets.push(fc);
+    materialiseFleet(sim, fc);
+    fa.dwell = 99999;
+    delete sim.sector.met;
+    run(sim, 2 * TICK_HZ, { until: (s) => engagements(s).some((e) => e.members.some((side) => side.some((m) => m.ship === trader))) });
+    expect(engagements(sim).some((e) => e.members.some((side) => side.some((m) => m.ship === trader)))).toBe(true);
+    const out = run(sim, 4 * TICK_HZ);
+    expect(sim.world.get(trader, ShipC)?.yielded).toBeUndefined();
+    expect(fa.node).toBe(sim.galaxy.current);
+    expect(eventsOf(out, 'engagement.ended').filter((e) => e.winner === 1)).toEqual([]);
   });
 
   it('is let go by a foe that does not: its fleet jumps away and the foe wins, driven off', () => {
