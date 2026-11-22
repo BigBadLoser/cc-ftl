@@ -27,7 +27,23 @@ const LINER: readonly Profile[] = [
     rearWings: { len: [10, 12], reach: [3, 4], sweep: [1, 2] }, stern: { kind: 'tail', len: [5, 6], out: [1, 1], rate: 3 } },
 ];
 
+/**
+ * A freighter: a pusher. A short, blunt hull (bridge forward, looking down the truss; crew, workshop, machinery, drive)
+ * behind a long truss of sealed containers it pushes (`truss`): big ship, small floor.
+ */
+const TUG: readonly Profile[] = [
+  { id: 'tug.block', nose: { style: 'stepped', len: [4, 6], front: [5, 6] }, sections: [{ len: [20, 26], half: [9, 10] }],
+    stern: { kind: 'flare', len: [6, 8], out: [2, 3] } },
+  { id: 'tug.round', nose: { style: 'round', len: [5, 7], front: [5, 6] }, sections: [{ len: [18, 24], half: [10, 11] }],
+    stern: { kind: 'bank', len: [0, 0], out: [0, 0] } },
+];
+
 export const civilianOutline = {
+  freighter: {
+    family: 'freighter', profiles: TUG, maxBeam: 27, crew: { sleep: 'bunks', rooms: 1 }, layout: { kind: 'bays', program: { pd: false, least: 64 } },
+    // (Its cargo the truss's containers: no holds aboard.)
+    bonus: { crates: -8 }, truss: { banks: [5, 7], layers: 2 },
+  },
   liner: {
     // (Two gun rooms, one a side, aft with the machinery.)
     family: 'liner', profiles: LINER, maxBeam: 33, gunRooms: 2, crew: { sleep: 'bunks', rooms: 1 }, passengers: { base: 6, perDepth: 1 },

@@ -15,6 +15,7 @@ import type { Placed } from './placeLayout';
 import { gunsAndReactors } from './pairs';
 import { outlineAttempts, outlineRole, recipeOf, shipCommons, shipQuarters } from './outlineType';
 import { SPACE, type RegionGrid } from './regions';
+import { addTruss } from './truss';
 
 /**
  * Navy hulls outline first (SHIPGEN_V4): the type's silhouette is drawn, scaled until the plan's rooms fit, and the
@@ -288,9 +289,11 @@ export function assembleOutline(
   const cell = g.compile(), snap = g.snapshot(cell);
   const at = (cx: number, cy: number): string => snap.rows[cy]?.[cx] ?? '.';
   const rows = snap.rows.map((r, y) => [...r].map((c, cx) => (c === 'D' && [at(cx + 1, y), at(cx - 1, y), at(cx, y + 1), at(cx, y - 1)].includes('.') ? '#' : c)).join(''));
+  // A pusher's truss ahead of its hull (its centre row the grid's row 0).
+  const shell = r.truss ? addTruss(rng, r.truss, { rows, roomOf: snap.roomOf, width: snap.width, height: snap.height }, -snap.y0) : { rows, roomOf: snap.roomOf, width: snap.width, height: snap.height };
   return fitShell(
     rng, f, factionId, seed, role, 'sections', { crew: plan.crew } as Pick<ShipPlan, 'crew'>,
-    { rows, roomOf: snap.roomOf, width: snap.width, height: snap.height, roles: g.regions.map((r) => r.role), specs: g.regions.map((r) => r.spec) },
+    { ...shell, roles: g.regions.map((r) => r.role), specs: g.regions.map((r) => r.spec) },
     `outline ${profile}`, defs, n, { bareHalls: true },
   );
 }
