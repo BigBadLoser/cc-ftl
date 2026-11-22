@@ -1,5 +1,6 @@
 """Additive volume with pressure cells, hot axial cores and a cooling sheath."""
 import os
+import sys
 import bpy
 from sprites import core
 
@@ -37,7 +38,7 @@ def apply(rot,stage=2):
         z=op("MULTIPLY",op("SUBTRACT",xyz.outputs["Z"],0.5),2)
         r=op("SQRT",op("ADD",op("MULTIPLY",y,y),op("MULTIPLY",z,z)))
         if flame!="now":
-            strength,temperature=study(op,x,r,flame,y,z)
+            strength,temperature=study(op,x,r,flame,y,z,nt)
             return finish(nt,op,strength,temperature,ob,mat)
         wave=op("ADD",0.5,op("MULTIPLY",0.5,op("COSINE",op("SUBTRACT",op("MULTIPLY",x,21),0.8))))
         width=op("MULTIPLY",op("SUBTRACT",0.84 if stage>=3 else 0.68,op("MULTIPLY",x,0.5 if stage>=3 else 0.45)),
@@ -74,44 +75,61 @@ def apply(rot,stage=2):
     ob.data.materials[0]=mat
 
 
-def study(op,x,r,flame,y,z):
-    """Flame study variants (arc core, cyan sheath): returns (emission strength, ramp temperature)."""
+def study(op,x,r,flame,y,z,nt):
+    """Flame study variants (arc core, cyan sheath) in tile units: d along the axis from the bell mouth, rho off it.
+    Returns (emission strength, ramp temperature)."""
+    prof=sys.modules["model"].FLAMES[flame]
+    u0,u1=prof[0][0],prof[-1][0]
+    rmax=max(p[1] for p in prof)
+    d=op("SUBTRACT",op("MULTIPLY",x,u1-u0),3.88-u0)
+    dp=op("MAXIMUM",d,0)
+    rho=op("MULTIPLY",r,rmax)
     gauss=lambda q,k:op("EXPONENT",op("MULTIPLY",op("MULTIPLY",q,q),-k))
+    decay=lambda k:op("EXPONENT",op("MULTIPLY",dp,-1/k))
     clamp=lambda v:op("MINIMUM",op("MAXIMUM",v,0),1)
-    if flame=="A":
-        env=op("MAXIMUM",op("SUBTRACT",1,op("MULTIPLY",x,0.68)),0.05)
-        tri=op("PINGPONG",op("ADD",op("MULTIPLY",x,7.0),0.35),1)
-        cw=op("MULTIPLY",env,op("ADD",0.14,op("MULTIPLY",tri,0.34)))
-        hot=op("MULTIPLY",gauss(op("DIVIDE",r,cw),2.2),op("ADD",0.35,op("MULTIPLY",op("POWER",tri,0.6),0.65)))
-        core_=op("MULTIPLY",hot,op("MULTIPLY",3.6,op("SUBTRACT",1.15,x)))
-        sheath=op("MULTIPLY",gauss(op("DIVIDE",r,op("MULTIPLY",env,op("ADD",0.62,op("MULTIPLY",tri,0.38)))),5.0),1.0)
-        mouth=op("MULTIPLY",op("EXPONENT",op("MULTIPLY",x,-12)),op("MULTIPLY",gauss(op("DIVIDE",r,env),2.5),1.4))
-        fade=op("POWER",op("MAXIMUM",op("SUBTRACT",1,x),0),0.9)
-        strength=op("MULTIPLY",op("ADD",op("ADD",core_,sheath),mouth),fade)
-        temp=clamp(op("SUBTRACT",op("ADD",op("MULTIPLY",op("DIVIDE",r,env),0.75),op("MULTIPLY",x,0.3)),op("MULTIPLY",hot,0.7)))
-    elif flame=="B":
-        env=op("MAXIMUM",op("SUBTRACT",0.62,op("MULTIPLY",x,0.42)),0.04)
-        tri=op("POWER",op("PINGPONG",op("MULTIPLY",x,9.0),1),1.6)
-        cw=op("MULTIPLY",env,op("ADD",0.1,op("MULTIPLY",tri,0.36)))
-        hot=gauss(op("DIVIDE",r,cw),4.0)
-        core_=op("MULTIPLY",hot,op("MULTIPLY",op("ADD",0.4,tri),5.0))
-        halo=op("MULTIPLY",gauss(op("DIVIDE",r,op("MULTIPLY",env,op("ADD",0.55,op("MULTIPLY",tri,0.45)))),4.0),0.5)
-        mouth=op("MULTIPLY",op("EXPONENT",op("MULTIPLY",x,-22)),op("MULTIPLY",gauss(r,3.0),2.2))
-        fade=op("POWER",op("MAXIMUM",op("SUBTRACT",1,x),0),0.7)
-        strength=op("MULTIPLY",op("ADD",op("ADD",core_,halo),mouth),fade)
-        temp=clamp(op("SUBTRACT",op("ADD",op("MULTIPLY",op("DIVIDE",r,env),0.6),op("MULTIPLY",x,0.25)),op("MULTIPLY",hot,0.8)))
+    def noise(sx,sr,scale,detail=4):
+        vec=nt.nodes.new("ShaderNodeCombineXYZ")
+        nt.links.new(op("MULTIPLY",d,sx),vec.inputs[0])
+        nt.links.new(op("MULTIPLY",op("MULTIPLY",y,rmax),sr),vec.inputs[1])
+        nt.links.new(op("MULTIPLY",op("MULTIPLY",z,rmax),sr),vec.inputs[2])
+        tx=nt.nodes.new("ShaderNodeTexNoise")
+        tx.inputs["Scale"].default_value=scale
+        tx.inputs["Detail"].default_value=detail
+        nt.links.new(vec.outputs[0],tx.inputs["Vector"])
+        return tx.outputs["Fac"]
+    end=op("POWER",clamp(op("MULTIPLY",op("SUBTRACT",u1-3.88,d),0.22)),1.5)          # fade out before the envelope's end
+    def plume(k):
+        # Flares from the mouth radius to ~3.2 tiles; streaks along the axis; slow fade.
+        R=op("ADD",1.05,op("MULTIPLY",2.2,op("SUBTRACT",1,decay(2.2))))
+        streak=op("POWER",op("MULTIPLY",noise(0.1,1.3,1.6),1.8),3.5)
+        edge=op("ADD",0.75,op("MULTIPLY",noise(0.35,0.6,2.2),0.5))
+        body=gauss(op("DIVIDE",rho,op("MULTIPLY",R,edge)),2.4)
+        hotmouth=op("MULTIPLY",decay(0.9),op("MULTIPLY",gauss(op("DIVIDE",rho,1.0),1.5),2.5))
+        s=op("ADD",op("MULTIPLY",op("MULTIPLY",body,op("ADD",0.15,streak)),op("MULTIPLY",decay(3.2),op("MULTIPLY",k,0.3))),hotmouth)
+        t=clamp(op("SUBTRACT",op("ADD",op("MULTIPLY",op("DIVIDE",rho,R),0.45),op("MULTIPLY",dp,0.04)),
+                              op("MULTIPLY",decay(0.9),0.6)))
+        return s,t
+    def jet(k):
+        # A long white-hot core, widening slowly, with feathered, puffing edges.
+        cw=op("ADD",0.5,op("MULTIPLY",dp,0.05))
+        hot=gauss(op("DIVIDE",rho,cw),2.0)
+        feather=op("ADD",0.5,op("MULTIPLY",noise(0.25,0.9,1.8),1.0))
+        sheath=gauss(op("DIVIDE",rho,op("MULTIPLY",op("ADD",0.85,op("MULTIPLY",dp,0.11)),feather)),2.2)
+        s=op("MULTIPLY",op("ADD",op("MULTIPLY",hot,op("MULTIPLY",2.2,feather)),op("MULTIPLY",sheath,0.3)),op("MULTIPLY",decay(4.5),k))
+        t=clamp(op("SUBTRACT",op("ADD",op("MULTIPLY",op("DIVIDE",rho,op("MULTIPLY",cw,2.2)),0.5),op("MULTIPLY",dp,0.07)),
+                              op("MULTIPLY",op("MULTIPLY",hot,decay(5.0)),0.6)))
+        return s,t
+    if flame=="D":
+        s,t=plume(1.6)
+    elif flame=="E":
+        s,t=jet(1.0)
     else:
-        env=op("MAXIMUM",op("SUBTRACT",1,op("MULTIPLY",x,0.95)),0.03)
-        ang=op("ARCTAN2",z,y)
-        fil=op("POWER",op("ADD",0.5,op("MULTIPLY",0.5,op("COSINE",op("ADD",op("MULTIPLY",ang,9),op("MULTIPLY",x,5))))),3)
-        body=op("MULTIPLY",gauss(op("DIVIDE",r,op("MULTIPLY",env,op("ADD",0.6,op("MULTIPLY",fil,0.4)))),4.0),0.7)
-        streak=op("MULTIPLY",op("MULTIPLY",fil,clamp(op("MULTIPLY",op("DIVIDE",r,env),1.6))),2.0)
-        hot=gauss(op("DIVIDE",r,op("MULTIPLY",env,0.3)),2.0)
-        core_=op("MULTIPLY",hot,op("MULTIPLY",3.5,op("POWER",op("MAXIMUM",op("SUBTRACT",1,x),0),1.5)))
-        fade=op("POWER",op("MAXIMUM",op("SUBTRACT",1,x),0),0.6)
-        strength=op("MULTIPLY",op("ADD",op("MULTIPLY",body,op("ADD",0.9,streak)),core_),fade)
-        temp=clamp(op("SUBTRACT",op("ADD",op("MULTIPLY",op("DIVIDE",r,env),0.55),op("MULTIPLY",x,0.4)),op("MULTIPLY",hot,0.8)))
-    return strength,temp
+        s1,t1=jet(1.0)
+        s2,t2=plume(0.7)
+        s=op("ADD",s1,s2)
+        t=op("MINIMUM",t1,t2)
+    s=op("MULTIPLY",s,end)
+    return s,t
 
 
 def finish(nt,op,strength,temperature,ob,mat):

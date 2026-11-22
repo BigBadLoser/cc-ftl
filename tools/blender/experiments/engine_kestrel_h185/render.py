@@ -90,7 +90,7 @@ def sprite(out,rot,hot,part,stage,preview=False):
     rgb,_=core.render(w,h,"glow")
     if stage>=1 and hot:
         core._set_pass=original
-    g=np.pad(post.glow_down(rgb,core.SS,3),((1,1),(1,1),(0,0)))
+    g=np.pad(post.glow_down(rgb,core.SS,3,floor=8 if hot and part=="bell" else 40),((1,1),(1,1),(0,0)))
     x0,y0,x1,y1=post.crop_box(op|(g[...,3]>0))
     rgba=post.to_rgba(c,op)[y0:y1,x0:x1]
     g=g[y0:y1,x0:x1]
