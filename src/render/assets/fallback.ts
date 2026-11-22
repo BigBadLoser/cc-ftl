@@ -46,8 +46,6 @@ export const FALLBACK: Record<string, Fallback> = {
   'module.ai_core': { ids: CONSOLE, tint: 0xd9a8ff, perTile: true },
   // Galley / food printer: the fabricator tinted mint green until it has its own model (art list in docs/STATUS.md).
   'module.galley': { ids: ['module.fabricator'], tint: 0x8affc0 },
-  // Surgical rig (#311): the medical console, tinted pale cyan, until its own sheets land (its `.front` overlay is optional: none draws nothing).
-  'module.surgery_rig': { ids: ['module.med_console'], tint: 0xc8ecff },
   // Ore refinery (3x4): a crate per footprint tile, tinted orange, until it has art.
   'module.refinery': { ids: CRATE, tint: 0xffa060, perTile: true },
   // Cargo containers have no entry: the real sheets exist; drawn boxes only if art is missing (render/containerBox.ts).

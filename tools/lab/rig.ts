@@ -1,4 +1,4 @@
-import { Container, Sprite } from 'pixi.js';
+import { Container, Graphics, Sprite } from 'pixi.js';
 import type { ClipDef } from '../../src/render/assets/manifest';
 import { artZoom, createCrewFilter, crewFilters, crewPalette, setFilterTint, setFilterZoom } from '../../src/render/assets/palette';
 import { bedPose, berthLift } from '../../src/render/bedPose';
@@ -6,7 +6,7 @@ import { drawLayers } from '../../src/render/crewSprites';
 import { ART_SCALE, iso } from '../../src/render/iso';
 import { lightTint } from '../../src/render/lightTint';
 import { crewLoadout, preloadLayers } from '../../src/render/loadout';
-import { rigLayers } from '../../src/render/rigArt';
+import { rigLayers, rigMirror } from '../../src/render/rigArt';
 import { RIG_FPS, rigFrame, type RigCounts, RIG_PHASES } from '../../src/render/rigFrame';
 import { frameCount } from '../../src/render/moduleArt';
 import { content } from '../../src/content';
@@ -60,6 +60,9 @@ export const rigPanel: LabPanel = {
         w: 300, h: 300, at: s.t, loop: s.active ? sec : undefined, newRow: i % 5 === 0,
         mount(root) {
           const ox = 150, oy = 200;
+          const clip = new Graphics().rect(0, 0, 300, 300).fill(0xffffff); // the floor reaches past the cell: keep the next cell's off this one
+          root.addChild(clip);
+          root.mask = clip;
           const place = (tx: number, ty: number): { x: number; y: number } => { const p = iso(tx - bedFront.x, ty - bedFront.y); return { x: ox + p.x, y: oy + p.y }; };
           const floor = ctx.atlas.stat('tile.floor.a');
           for (let gy = -2; gy <= 2; gy++) for (let gx = -2; gx <= 2; gx++) {
@@ -73,7 +76,8 @@ export const rigPanel: LabPanel = {
             root.addChild(Object.assign(new Sprite(st.tex), { x: Math.round(x - st.ax), y: Math.round(y - st.ay) }));
             if (st.glow) root.addChild(Object.assign(new Sprite(st.glow), { x: Math.round(x - st.ax), y: Math.round(y - st.ay), blendMode: 'add' as const }));
           };
-          draw([`${BED}.r${rot}`, BED], ox, oy);
+          const st = s.active ? 'active' : 'idle';
+          draw([`${BED}${rot ? `.r${rot}` : ''}.${st}`, `${BED}.${st}`, BED], ox, oy);
           const pose = bedPose(bedDef, 0, 0, rot, true), p = iso(pose.x - bedFront.x, pose.y - bedFront.y);
           const body = new Container(), filter = createCrewFilter(ctx.atlas.manifest.keyColors, crewPalette(11)), z = artZoom(Number(ctx.params.get('zoom') ?? 1) * devicePixelRatio);
           body.filters = crewFilters(filter, z);
@@ -82,14 +86,14 @@ export const rigPanel: LabPanel = {
           const parts = look0.map((layer) => { const sp = new Sprite(); body.addChild(sp); return { layer, sprite: sp }; });
           body.position.set(Math.round(ox + p.x), Math.round(oy + p.y - berthLift(0) * ART_SCALE));
           root.addChild(body);
-          draw([`${BED}.front.b0.r${rot}`], ox, oy);
+          draw([...(s.active ? [`${BED}.front.b0.r${rot}.active`] : []), `${BED}.front.b0.r${rot}`], ox, oy);
           const host = new Container();
           root.addChild(host);
           const rp = place(rigM.x, rigM.y);
           return (t) => {
             drawLayers({ parts, glows: [] }, 'sleep', pose.dir, t);
             host.removeChildren();
-            const rig = { bedFront, active: s.active, progress: s.active ? t * TICK_HZ : 0, work };
+            const rig = { bedFront, active: s.active, progress: s.active ? t * TICK_HZ : 0, work, mirror: rigMirror(rigM.rot, bedDef, { x: 0, y: 0, rot }) };
             const look = { off: false, now: t * 1000, hp: 100, maxHp: 100, has };
             
             for (const l of rigLayers(rigM, rigDef, rig, look)) {

@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import type { Module } from '../sim/modules/components';
 import type { ModuleDef } from '../sim/registry';
 import { FRONT_DZ } from './moduleArt';
-import { rigInputs, rigLayers } from './rigArt';
+import { rigFitsBed } from '../sim/modules/rig';
+import { rigInputs, rigLayers, rigMirror } from './rigArt';
 import type { ModuleLook } from './moduleArt';
 
 const def = { asset: 'module.surgery_rig', footprint: [1, 1], rig: { bed: 'module.med_bed' } } as unknown as ModuleDef;
@@ -38,5 +39,19 @@ describe('surgical rig art (#311)', () => {
     expect(holo).toMatchObject({ key: 'module.surgery_rig.holo', glowOver: true, optional: true });
     expect(rigInputs(view(20))).not.toBe(rigInputs(view(40)));
     expect(rigLayers(m, def, { ...view(0), active: false }, look)).toHaveLength(2);
+  });
+
+  it('mirrors the art on one long side of the bed so the halo reaches its head, at every bed rotation', () => {
+    const bed = { footprint: [1, 2] } as unknown as ModuleDef;
+    for (let brot = 0; brot < 4; brot++) {
+      const fits = [-1, 0, 1, 2].flatMap((y) => [-1, 0, 1, 2].flatMap((x) => [0, 1, 2, 3].map((r) => ({ x, y, r }))))
+        .filter((s) => rigFitsBed(def, s.x, s.y, s.r, bed, 0, 0, brot));
+      expect(fits).toHaveLength(2);
+      expect(fits.map((s) => rigMirror(s.r, bed, { x: 0, y: 0, rot: brot })).sort()).toEqual([false, true]);
+    }
+    const [body, front] = rigLayers(m, def, { bedFront: { x: 2, y: 5 }, active: false, progress: 0, work: 0, mirror: true });
+    expect(body?.chain).toEqual(['module.surgery_rig.m.r1.idle', 'module.surgery_rig.m.r1', 'module.surgery_rig.m.idle', 'module.surgery_rig.m', 'module.surgery_rig']);
+    expect(front?.chain[0]).toBe('module.surgery_rig.m.front.r1.idle');
+    expect(rigInputs({ bedFront: { x: 2, y: 5 }, active: false, progress: 0, work: 0, mirror: true })).not.toBe(rigInputs({ bedFront: { x: 2, y: 5 }, active: false, progress: 0, work: 0 }));
   });
 });

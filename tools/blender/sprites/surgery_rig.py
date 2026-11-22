@@ -29,11 +29,24 @@ SPEC = {"laser": dict(r=0.04, fore="medWhite", band="medRed", L=0.36),
 RING_R, TUBE_R = 0.3, 0.05
 
 
-class Rig:
-    """Smooth primitives in the module's local frame (u, v, z), mapped to the grid through K."""
+class MK(K):
+    """K with its local u mirrored (hand -1): the rig built for the bed's other long side, its halo reaching the other way
+    along the bed (toward the head either way). Only axis-aligned boxes go through it (a turned box's rz would need
+    negating)."""
 
-    def __init__(self, name, rot):
-        self.k = K(name, (1, 1), rot)
+    def __init__(self, name, fp, rot=0, hand=1):
+        super().__init__(name, fp, rot)
+        self.hand = hand
+
+    def p(self, u, v):
+        return super().p(self.hand * u, v)
+
+
+class Rig:
+    """Smooth primitives in the module's local frame (u, v, z), mapped to the grid through K; hand -1 mirrors u (MK)."""
+
+    def __init__(self, name, rot, hand=1):
+        self.k = MK(name, (1, 1), rot, hand)
         self.m = self.k.m
 
     def g(self, p):
@@ -252,19 +265,19 @@ HUB_ON = (0.75, 0.78, 0.92)                                      # over the pati
 HUB_IDLE = (1.0, 0.0, BZ - 0.06 - SLEEVE - 0.05)                  # swung over the tile beside the bed's head, piston in
 
 
-def rig(state, rot, *_):
+def rig(state, rot, hand=1):
     """state: 'idle' or a stage (surgery_rig_anim.STAGES: three tools at a time), at rest (the first frame of its loop)."""
     from .surgery_rig_anim import still
-    return build(still(state), rot, f"surgery_rig_{state}_{rot}")
+    return build(still(state), rot, f"surgery_rig_{state}_{rot}", hand=hand)
 
 
-def build(P, rot, name, split=False):
+def build(P, rot, name, split=False, hand=1):
     """The rig in pose P (surgery_rig_anim.Pose): the hub where it hangs, each arm's fold and its aim's offset, the clamp's
     jaw, the laser firing, the lights on. split: (the body: the column; the front: boom, piston, halo and arms, what
-    reaches over the bed and is drawn over it in game) as two object lists."""
-    B = Rig(name + "_body", rot)
+    reaches over the bed and is drawn over it in game) as two object lists. hand -1: mirrored (Rig)."""
+    B = Rig(name + "_body", rot, hand)
     body(B, P.on)
-    R = Rig(name, rot) if split else B
+    R = Rig(name, rot, hand) if split else B
     k = R.k
     hu, hv, hz = P.hub
     bz = BZ
@@ -305,19 +318,19 @@ def build(P, rot, name, split=False):
     return (B.k.build(), k.build()) if split else k.build()
 
 
-def rig_holo(state, rot):
+def rig_holo(state, rot, hand=1):
     """The console hologram layer: (the rig as holdout, the hologram); empty when idle."""
     if state == "idle":
         return None
     from .surgery_rig_anim import still
-    return holo_layer(still(state), rot, f"{state}_{rot}")
+    return holo_layer(still(state), rot, f"{state}_{rot}", hand)
 
 
-def holo_layer(P, rot, name):
-    """The hologram of pose P with the rig in that pose as its holdout; None while it is off."""
+def holo_layer(P, rot, name, hand=1):
+    """The hologram of pose P with the rig in that pose as its holdout; None while it is off. hand -1: mirrored (Rig)."""
     if P.holo is None:
         return None
-    mask = build(P, rot, f"surgery_rig_{name}")
-    R = Rig(f"surgery_rig_holo_{name}", rot)
+    mask = build(P, rot, f"surgery_rig_{name}", hand=hand)
+    R = Rig(f"surgery_rig_holo_{name}", rot, hand)
     holo(R, P.holo)
     return mask, R.k.build()
