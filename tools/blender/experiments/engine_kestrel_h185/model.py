@@ -367,10 +367,20 @@ def nozzle(f,stage):
         FT.nozzle(sys.modules[__name__],f,stage)
 
 
+FLAME=__import__("os").environ.get("KESTREL_FLAME","now")   # flame study (plasma.py reads it too)
+FLAMES={
+    "now":[(3.45,0.23),(3.95,0.49),(4.3,0.58),(4.78,0.3),(5.2,0.47),(5.65,0.22),(6.1,0.34),(6.65,0.12),(7.4,0.006)],
+    # A: a full plume that fills the bell mouth and necks down through shock diamonds.
+    "A":[(3.45,0.85),(3.88,1.0),(4.35,1.02),(4.95,0.8),(5.55,0.66),(6.15,0.5),(6.8,0.3),(7.5,0.01)],
+    # B: a tight, long jet, a lit mouth and a faint halo.
+    "B":[(3.45,1.02),(3.62,0.78),(3.95,0.6),(4.6,0.52),(5.3,0.45),(6.0,0.36),(6.8,0.2),(7.6,0.01)],
+    # C: a wide, short bloom with filament streaks.
+    "C":[(3.45,0.85),(3.88,1.08),(4.3,1.3),(4.9,1.02),(5.5,0.72),(6.05,0.4),(6.6,0.01)],
+}
+
+
 def exhaust(f,stage):
-    profile=[(3.45,0.23,BZ),(3.95,0.49,BZ),(4.3,0.58,BZ),
-             (4.78,0.3,BZ),(5.2,0.47,BZ),(5.65,0.22,BZ),
-             (6.1,0.34,BZ),(6.65,0.12,BZ),(7.4,0.006,BZ)]
+    profile=[(u,r,BZ) for u,r in FLAMES[FLAME]]
     sleeve(f,profile,"cyan",sides=32)
     for (u,r,z),reverse in ((profile[0],True),(profile[-1],False)):
         pts=[f.pt(u,r*math.cos(t*math.tau/32),z+r*math.sin(t*math.tau/32)) for t in range(32)]
