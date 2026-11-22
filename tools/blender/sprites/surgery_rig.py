@@ -16,6 +16,7 @@ from mathutils import Vector
 
 from . import core
 from .modkit import K
+from .surgery_rig_base import body, holo
 
 TOP = 0.22                                                       # the med bed's mattress top (medbay.MATTRESS)
 STAGES = {"cut": ("laser", "cutter", "camera"), "open": ("cutter", "clamp", "camera"),
@@ -131,7 +132,8 @@ def arm(R, sh, out, tan, kind, wrist, aim, working, curl=False):
     the tool sits on the carriage, pointing at aim. out: the arm's outward unit (u, v)."""
     sp = SPEC[kind]
     r = sp["r"]
-    j1 = (sh[0] + out[0] * LINK * 0.4, sh[1] + out[1] * LINK * 0.4, sh[2] + LINK)
+    lo, lz = (0.85, 0.55) if curl else (0.4, 1.0)                                    # folded, the link pivots back
+    j1 = (sh[0] + out[0] * LINK * lo, sh[1] + out[1] * LINK * lo, sh[2] + LINK * lz)
     R.tube(sh, j1, r * 1.2, "medWhite", r1=r * 1.1)
     hinge(R, j1, tan, r * 1.35, r * 2.7)
     pole = (-out[0], -out[1], 1.0) if curl else (out[0], out[1], 1.3)               # curled: knee leans over the ring
@@ -216,14 +218,7 @@ def rig(state, rot, *_):
     use = STAGES.get(state, ())
     R = Rig(f"surgery_rig_{state}_{rot}", rot)
     k = R.k
-    k.box(0, 0, 0.0, 0.64, 0.64, 0.06, "gmD", top="hazY", bevel=0.02)                  # hazard foot
-    k.cyl(0, -0.04, 0.06, 0.24, 0.1, "gm", top="gmD", sides=10)
-    k.cyl(0, -0.04, 0.16, 0.13, 1.28, "gm", sides=8)                                   # core
-    for z0 in (0.24, 0.82):
-        k.cyl(0, -0.04, z0, 0.175, 0.5, "medWhite", top="plate", sides=10, rtop=0.165)  # armour shells
-    k.box(0, 0.127, 0.32, 0.03, 0.03, 0.36, "cyan" if on else "steelD")                 # status strip
-    k.cyl(0, -0.04, 1.44, 0.2, 0.12, "steel", top="steelL", sides=10)                  # shoulder housing
-    k.cyl(0, -0.04, 1.56, 0.09, 0.32, "medWhite", top="plate", sides=8)               # riser
+    body(R, on)
     hu, hv, hz = HUB_ON if on else HUB_IDLE
     bz = BZ
     R.ball((0, -0.04, bz), 0.12, "steel")
@@ -231,8 +226,11 @@ def rig(state, rot, *_):
     R.ball((hu, hv, bz), 0.095, "steel")
     bu, bv = hu, hv + 0.04
     bn = math.hypot(bu, bv)
-    k.box(-0.3 * bu / bn, -0.04 - 0.3 * bv / bn, bz - 0.11, 0.22, 0.22, 0.22, "gm", top="gmD", bevel=0.05,
-          rz=math.atan2(bv, bu))                                                       # counterweight, opposite the boom
+    tail = lambda d: (-d * bu / bn, -0.04 - d * bv / bn, bz)  # noqa: E731                # the boom's tail past the pivot
+    R.tube((0, -0.04, bz), tail(0.2), 0.06, "gm", sides=10)
+    R.tube(tail(0.18), tail(0.21), 0.1, "gmD", sides=12)                                # counterweight on the tail:
+    R.tube(tail(0.21), tail(0.4), 0.13, "gm", sides=12)                                 # a collar, the weight, a cap
+    R.tube(tail(0.4), tail(0.42), 0.09, "rgChromeD", sides=12)
     R.tube((hu, hv, bz - 0.06), (hu, hv, bz - 0.06 - SLEEVE), 0.05, "medWhite")         # piston: the sleeve, and the
     if hz + 0.04 < bz - 0.06 - SLEEVE:                                                 # rod run out of it
         R.tube((hu, hv, bz - 0.06 - SLEEVE), (hu, hv, hz + 0.04), 0.032, "rgChrome")
@@ -258,3 +256,13 @@ def rig(state, rot, *_):
             arm(R, sh, (ca, sa), tan, kind, (hu + 0.22 * ca, hv + 0.22 * sa, hz + 0.16),    # knee leaning back a little,
                 (hu + 0.15 * ca, hv + 0.15 * sa, hz - 0.1), False, curl=True)                # the tool down into its middle
     return k.build()
+
+
+def rig_holo(state, rot):
+    """The console hologram layer: (the rig as holdout, the hologram); empty when idle."""
+    if state == "idle":
+        return None
+    mask = rig(state, rot)
+    R = Rig(f"surgery_rig_holo_{state}_{rot}", rot)
+    holo(R)
+    return mask, R.k.build()
