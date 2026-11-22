@@ -7,7 +7,11 @@ import { isWarmedElsewhere, spawnContact, warmContact } from './arrivals';
 import { graceHolds } from './grace';
 import { inspectingFleets } from '../inspect/holds';
 import { nodesWithin } from './graph';
-import { owe } from './portIndex';
+import { owe, portsAt } from './portIndex';
+import { dockPort } from './dock';
+import type { Rect } from '../grid';
+import { AsteroidC } from '../asteroids/components';
+import { TraderC } from '../trade/types';
 import { FLEET_NODE_SHIPS, STRANDED_INTEGRITY, WARM_HOPS } from './tuning';
 import type { Contact, Fleet } from './types';
 
@@ -48,7 +52,30 @@ export function materialiseFleet(sim: Sim, f: Fleet, node: string = f.node): voi
   if (!f.ships.some((c) => c.ship === undefined)) return; // every ship already real (the common case, every tendFleets pass)
   const visit = inspectingFleets(sim).has(f.id);
   if (!visit && node === f.node && !sim.galaxy.event && graceHolds(sim, node, f.faction)) return; // opening grace: it stays a descriptor
-  for (const c of f.ships) if (c.ship === undefined && shipsInPlay(sim) < FLEET_NODE_SHIPS) spawnContact(sim, node, c, { reason: 'fleet', ...(visit ? { side: 'neutral' as const } : {}) });
+  const anchor = businessAnchor(sim, f, node);
+  for (const c of f.ships) {
+    if (c.ship === undefined && shipsInPlay(sim) < FLEET_NODE_SHIPS) spawnContact(sim, node, c, { reason: 'fleet', ...(visit ? { side: 'neutral' as const } : {}), ...(anchor ? { anchor } : {}) });
+  }
+}
+
+/**
+ * Where a fleet's business is in the node (#603): a miner by the asteroid field it works, a trader by the station it calls at (`dockPort`), so its
+ * ships turn up there (`freeSpot`'s anchor); anyone else, or a node without that place in play, by the player.
+ */
+export function businessAnchor(sim: Sim, f: Fleet, node: string): Rect | undefined {
+  if (f.role === 'miner') {
+    const field = [...sim.world.query(AsteroidC)].sort((a, b) => a - b)[0];
+    const parts = field === undefined ? [] : sim.world.get(field, AsteroidC)?.parts ?? [];
+    if (!parts.length) return undefined;
+    const x = Math.min(...parts.map((p) => p.x));
+    const y = Math.min(...parts.map((p) => p.y));
+    return { x, y, w: Math.max(...parts.map((p) => p.x + p.w)) - x, h: Math.max(...parts.map((p) => p.y + p.h)) - y };
+  }
+  if (f.role !== 'trader') return undefined;
+  const port = dockPort(portsAt(sim, node), f.role);
+  const station = port && sim.world.query(TraderC, ShipC).find((id) => sim.world.get(id, TraderC)?.port === port.id);
+  const s = station ? sim.world.get(station, ShipC) : undefined;
+  return s ? { x: s.x, y: s.y, w: s.width, h: s.height } : undefined;
 }
 
 /**
