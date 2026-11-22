@@ -12,6 +12,7 @@ import { BOARDING_MIN_HOME } from '../tuning';
 import { VehicleC, type Boarder } from '../vehicles/components';
 import { dockError } from '../vehicles/handlers';
 import { vehicleDefOf } from '../vehicles/lifecycle';
+import { isPlayers } from '../side';
 
 /**
  * The ships a ship's boarding party goes for, in order: in a fight between NPC ships here, its foes there (the one it is fighting first: NPCs board
@@ -22,7 +23,7 @@ export function boardTargets(sim: Sim, shipId: number): number[] {
     const s = sim.world.get(id, ShipC);
     return !!s && (s.state === 'active' || s.state === 'disabled');
   };
-  if (!inEngagement(sim, shipId)) return sim.world.query(ShipC).filter((id) => live(id) && sim.world.get(id, ShipC)?.faction === 'player');
+  if (!inEngagement(sim, shipId)) return sim.world.query(ShipC).filter((id) => live(id) && isPlayers(sim, id));
   const prey = sim.world.get(shipId, CombatC)?.prey;
   const foes = sim.world.query(ShipC).filter((id) => live(id) && opposed(sim, shipId, id));
   return prey !== undefined && foes.includes(prey) ? [prey, ...foes.filter((id) => id !== prey)] : foes;

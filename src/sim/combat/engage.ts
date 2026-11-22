@@ -2,6 +2,7 @@ import { inEngagement, opposed } from '../galaxy/engagements';
 import type { Sim } from '../sim';
 import { ShipC } from './components';
 import { factionsHostile, isAiFaction, rogueAlly } from './factions';
+import { PLAYER } from '../side';
 
 /**
  * Who fights whom, ship by ship (#603). The grid sides (`Ship.faction`) say how a ship stands to the player; two NPC ships fight each other
@@ -34,5 +35,5 @@ export const battleAnywhere = (sim: Sim): boolean => sim.sector.inCombat || !!si
 /** Does the combat AI run this ship: a hostile or rogue side, or an NPC ship of any side in a fight here (a neutral trader runs, a neutral patrol shoots back)? Never the player's. */
 export function aiRuns(sim: Sim, ship: number): boolean {
   const s = sim.world.get(ship, ShipC);
-  return !!s && s.faction !== 'player' && (isAiFaction(s.faction) || inEngagement(sim, ship));
+  return !!s && s.faction !== PLAYER && (isAiFaction(s.faction) || inEngagement(sim, ship));
 }

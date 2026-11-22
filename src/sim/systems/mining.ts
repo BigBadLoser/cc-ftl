@@ -2,7 +2,6 @@ import { launchVehicle } from '../vehicles/transitions';
 import { ALT, BodyC, type Body } from '../body';
 import { cargoAdd, cargoCount, cargoSpace } from '../vehicles/cargo';
 import { bumpStat } from '../story/goals';
-import { shipById } from '../combat/shipQuery';
 import { VehicleC, type Vehicle } from '../vehicles/components';
 import { bayCenter, bayWorking } from '../vehicles/geometry';
 import { vehicleDefOf, vehicleSpeedPerTick } from '../vehicles/lifecycle';
@@ -14,6 +13,7 @@ import { Struct, writeStruct } from '../structure';
 import { TICK_HZ } from '../time';
 import { XP_PER_WORK_SEC } from '../tuning';
 import { grantXp } from '../crew/xp';
+import { isPlayers } from '../side';
 
 /** The item an ore code yields, or undefined. */
 function oreItem(sim: Sim, code: number): string | undefined {
@@ -102,7 +102,7 @@ export function miningSystem(sim: Sim): void {
     if (v.state === 'stowed') {
       if (cargoCount(v) > 0) {
         // A pod home with ore: the goal chain counts the player's trip once, as it starts unloading.
-        if (order.phase !== 'unloading' && shipById(sim, v.homeShip)?.faction === 'player') bumpStat(sim, 'gathered');
+        if (order.phase !== 'unloading' && isPlayers(sim, v.homeShip)) bumpStat(sim, 'gathered');
         order.phase = 'unloading';
         continue;
       }

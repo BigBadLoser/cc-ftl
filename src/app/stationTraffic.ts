@@ -1,4 +1,4 @@
-import { AirlockC, BodyC, ModuleC, ShipC, VehicleC, airlockWorking, shipIdOf, type Sim } from '../sim';
+import { AirlockC, BodyC, ModuleC, ShipC, VehicleC, airlockWorking, shipIdOf, type Sim, PLAYER } from '../sim';
 import type { UiStationTraffic } from '../ui/api';
 
 /** Ships farther than this many tiles from the station are not on its sensors. */
@@ -6,7 +6,7 @@ export const RANGE = 300;
 
 /** The starmap fleet sprite family for a ship, by its side and role. */
 function fleetOf(side: string, role: string | undefined): string {
-  if (side === 'player') return 'player';
+  if (side === PLAYER) return 'player';
   if (side === 'hostile') return 'raider';
   return /min/.test(role ?? '') ? 'miner' : /patrol|navy|mil/.test(role ?? '') ? 'patrol' : 'trader';
 }
@@ -47,7 +47,7 @@ export function contactsOf(sim: Sim, station: number): UiStationTraffic['contact
     const dx = s.x + s.width / 2 - cx;
     const dy = s.y + s.height / 2 - cy;
     if (Math.hypot(dx, dy) > RANGE) continue;
-    contacts.push({ id, kind: s.faction === 'player' ? 'you' : 'ship', dx, dy, label: s.faction === 'player' ? 'YOU' : s.name.toUpperCase(), fleet: fleetOf(s.faction, s.gen?.role), dir: dirOf(-dx, -dy) });
+    contacts.push({ id, kind: s.faction === PLAYER ? 'you' : 'ship', dx, dy, label: s.faction === PLAYER ? 'YOU' : s.name.toUpperCase(), fleet: fleetOf(s.faction, s.gen?.role), dir: dirOf(-dx, -dy) });
   }
   for (const d of sim.trade.deals) {
     if (d.ship !== station || d.handover) continue;

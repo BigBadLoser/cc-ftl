@@ -5,6 +5,7 @@ import type { Sim } from '../sim';
 import { shipsHostile } from '../combat/engage';
 import { VehicleC, type Vehicle } from '../vehicles/components';
 import { occupants, vehicleFaction } from '../vehicles/lifecycle';
+import { PLAYER } from '../side';
 
 /** The ship a shuttle is tied to right now: where it is docked or heading to dock, or what it hovers at or flies to hover at; 0 if none. */
 function shuttleTarget(sim: Sim, v: Vehicle): number {
@@ -24,7 +25,7 @@ export function boardersReach(sim: Sim, shipId: number): boolean {
   for (const id of sim.world.query(VehicleC)) {
     const v = sim.world.get(id, VehicleC) as Vehicle;
     if (occupants(v).length === 0 || shuttleTarget(sim, v) !== shipId) continue;
-    if (vehicleFaction(sim, v) === 'player' || shipsHostile(sim, v.homeShip, shipId)) return true;
+    if (vehicleFaction(sim, v) === PLAYER || shipsHostile(sim, v.homeShip, shipId)) return true;
   }
   return false;
 }

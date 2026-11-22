@@ -6,6 +6,7 @@ import { ShipC } from './components';
 import { wake } from './dormant';
 import { factionsHostile } from './factions';
 import { turnShip } from './turn';
+import { PLAYER } from '../side';
 
 /**
  * Hostile acts (#173; user ruling 2026-11-03). One rule, and this the one entry point: only a shot that leaves a player weapon (firing.ts) or the
@@ -21,7 +22,7 @@ import { turnShip } from './turn';
 /** True for a ship the player's fire or boarding would provoke: in play, not the player's, not already at war with the player. */
 export function provokable(sim: Sim, ship: number): boolean {
   const s = sim.world.get(ship, ShipC);
-  return !!s && s.faction !== 'player' && !factionsHostile(s.faction, 'player') && (s.state === 'active' || s.state === 'disabled');
+  return !!s && s.faction !== PLAYER && !factionsHostile(s.faction, PLAYER) && (s.state === 'active' || s.state === 'disabled');
 }
 
 /**
@@ -31,7 +32,7 @@ export function provokable(sim: Sim, ship: number): boolean {
  */
 export function hostileAct(sim: Sim, ship: number, why: 'fired' | 'boarded' | 'ambush' | 'inspection'): void {
   const s = sim.world.get(ship, ShipC);
-  if (!s || s.faction === 'player' || (s.state !== 'active' && s.state !== 'disabled')) return;
+  if (!s || s.faction === PLAYER || (s.state !== 'active' && s.state !== 'disabled')) return;
   noteJoin(sim, ship); // a fight between NPC ships here: the player takes a side (galaxy/engagements.ts)
   if (truceHolds(sim)) return breachTruce(sim);
   if (banned(sim)) return; // the ban has every ship there for its length, and gives them back after

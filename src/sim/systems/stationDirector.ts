@@ -8,6 +8,7 @@ import { ShipC } from '../combat/components';
 import { TICK_HZ } from '../time';
 import { STATION_FUEL_DAYS, stockFuel } from '../modules/energy';
 import { FOOD_EVERY, stockStationFood } from '../stations/food';
+import { isPlayers } from '../side';
 
 /** Seconds a guard stands watch at each patrol stop. */
 const WATCH_SEC = 3;
@@ -35,7 +36,7 @@ export function stationDirectorSystem(sim: Sim): void {
   }
   for (const st of stations) {
     // Supply runs: a station's larder is topped up to its crew every couple of minutes (stations the player holds feed themselves).
-    if (sim.tick % FOOD_EVERY === 0 && sim.world.get(st, ShipC)?.faction !== 'player') {
+    if (sim.tick % FOOD_EVERY === 0 && !isPlayers(sim, st)) {
       stockStationFood(sim, st);
       stockFuel(sim, st, STATION_FUEL_DAYS); // the same supply run brings crystals for the reactors (#425)
     }

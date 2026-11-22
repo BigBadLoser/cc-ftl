@@ -4,6 +4,7 @@ import { ModuleC } from '../modules/components';
 import { shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { VehicleC } from '../vehicles/components';
+import { PLAYER } from '../side';
 
 /**
  * True if a player shuttle is docked at a hostile ship (a party may be aboard it, landed by hand). Cargo runs and trade leave such a shuttle
@@ -13,5 +14,5 @@ export function boardingReserved(sim: Sim, vehicle: number): boolean {
   const v = sim.world.get(vehicle, VehicleC);
   if (!v || v.state !== 'docked' || !v.dock) return false;
   const host = shipById(sim, shipIdOf(sim, sim.world.get(v.dock, ModuleC)));
-  return !!host && factionsHostile('player', host.faction);
+  return !!host && factionsHostile(PLAYER, host.faction);
 }

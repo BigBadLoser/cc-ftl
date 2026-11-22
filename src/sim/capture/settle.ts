@@ -2,7 +2,7 @@ import { PrizeC, ShipC } from '../combat/components';
 import { wreckShip } from '../combat/wreck';
 import { CrewC, PositionC } from '../crew/components';
 import { removeCrew } from '../crew/depart';
-import { AllegianceC, PrisonerC } from '../fight/components';
+import { PrisonerC } from '../fight/components';
 import { factionOfShip } from '../galaxy/heat';
 import { RELEASE_REPUTATION } from '../galaxy/tuning';
 import { repKey } from '../galaxy/standing';
@@ -13,6 +13,7 @@ import type { Sim } from '../sim';
 import { capturePrize } from './prize';
 import { openSlab } from '../stasis/freeze';
 import { slabPlace } from '../stasis/query';
+import { isPlayers } from '../side';
 
 /**
  * The player's answer to a beaten ship (`Ship.yielded`, set by systems/shipState.ts once every crew member is subdued and none of the player's can reach it);
@@ -31,7 +32,7 @@ export function settleYielded(sim: Sim, shipId: number, choice: 'letGo' | 'takeP
   }
   let gone = 0;
   for (const id of [...sim.world.query(CrewC, PositionC)]) {
-    if (shipIdOf(sim, sim.world.get(id, PositionC)) !== shipId || sim.world.get(id, AllegianceC)?.faction === 'player' || guestOn(sim, id, shipId)) continue;
+    if (shipIdOf(sim, sim.world.get(id, PositionC)) !== shipId || isPlayers(sim, id) || guestOn(sim, id, shipId)) continue;
     removeCrew(sim, id);
     gone++;
   }

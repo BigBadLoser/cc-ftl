@@ -4,6 +4,7 @@ import { AllegianceC } from '../fight/components';
 import type { Sim } from '../sim';
 import { ConsentC } from './components';
 import { grant } from './guests';
+import { PLAYER } from '../side';
 
 /**
  * Passengers (DESIGN.md "Physical encounters": passengers; #173 step 6). A passenger is a person aboard the player's ship who is not crew: a lodging guest
@@ -24,7 +25,7 @@ function chores(): Priorities {
 /** Take the person aboard `ship` as a passenger: a lodging, working 'passage' grant naming them, and the passenger's chores as their priorities. */
 export function takePassenger(sim: Sim, ship: number, crew: number): void {
   const faction = sim.world.get(crew, AllegianceC)?.faction;
-  if (!faction || faction === 'player') return;
+  if (!faction || faction === PLAYER) return;
   if (sim.world.has(crew, DraftedC)) {
     sim.world.remove(crew, DraftedC);
     abortTask(sim, crew, 'drafted');

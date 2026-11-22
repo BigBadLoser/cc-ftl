@@ -15,6 +15,7 @@ import { freeOperatorFor, jobTakeable } from '../crew/jobFit';
 import { consoleSkill, skillOf } from '../combat/operators';
 import { chargeOrdered, seatHelms } from '../ftl/order';
 import { OPERATE_MAX_LEVEL } from '../tuning';
+import { isPlayers } from '../side';
 
 /**
  * Opens one 'operate' job (category operating) per console while it is needed and drops it when it is not.
@@ -79,7 +80,7 @@ function consoleNeeded(sim: Sim, id: number): boolean {
   const console = m && sim.content.modules[m.def]?.console;
   if (!m || !console) return false;
   // Outside combat only an ordered drive charge (`ftl.charge`) needs a console (the helm), or battle stations (the player's own consoles).
-  if (!atBattle(sim, shipIdOf(sim, m)) && !(console === 'helm' && chargeOrdered(sim, shipIdOf(sim, m))) && !(sim.sector.stations && shipById(sim, shipIdOf(sim, m))?.faction === 'player')) return false;
+  if (!atBattle(sim, shipIdOf(sim, m)) && !(console === 'helm' && chargeOrdered(sim, shipIdOf(sim, m))) && !(sim.sector.stations && isPlayers(sim, shipIdOf(sim, m)))) return false;
   if (!m.powered || m.hp <= 0 || sim.world.has(id, IonC)) return false;
   return shipById(sim, shipIdOf(sim, m))?.state === 'active';
 }

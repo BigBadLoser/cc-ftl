@@ -11,6 +11,7 @@ import { VehicleC } from '../vehicles/components';
 import { boardingTile, cargoTile } from '../vehicles/geometry';
 import { vehicleDefOf } from '../vehicles/lifecycle';
 import { shipById } from '../combat/shipQuery';
+import { PLAYER } from '../side';
 
 /** Units already promised to a vehicle's hold by pending hauls. */
 function promised(res: Reservations, vehicle: number): number {
@@ -44,7 +45,7 @@ export function cargoJobsSystem(sim: Sim): void {
         const src = { ref: { kind: 'floor' as const, id: sid }, x: s.x, y: s.y, avail };
         makeHaul(sim, res, 'hauling', at.shipId, src, { kind: 'vehicle', id }, s.item, Math.min(avail, room, DEFAULT_CARRY_CAPACITY));
       }
-    } else if ((ship.faction === 'player' || (v.homeShip === at.shipId && !!vehicleDefOf(sim, v)?.mining)) && (ship.state === 'active' || ship.state === 'disabled') && !v.outbound) {
+    } else if ((ship.faction === PLAYER || (v.homeShip === at.shipId && !!vehicleDefOf(sim, v)?.mining)) && (ship.state === 'active' || ship.state === 'disabled') && !v.outbound) {
       for (const q of v.cargo) {
         const avail = q.count - (res.out.get(refKey('vehicle', id, q.item)) ?? 0);
         if (avail <= 0) continue;

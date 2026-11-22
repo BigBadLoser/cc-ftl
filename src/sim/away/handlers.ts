@@ -7,6 +7,7 @@ import { VehicleC } from '../vehicles/components';
 import { boardingTile } from '../vehicles/geometry';
 import { vehicleDefOf } from '../vehicles/lifecycle';
 import { AwaySiteC, SiteRunC, type AwaySite } from './components';
+import { PLAYER } from '../side';
 
 type AwayCommandType = Extract<Command['type'], `away.${string}`>;
 type Handler<T extends AwayCommandType> = (sim: Sim, cmd: Extract<Command, { type: T }>) => void;
@@ -59,7 +60,7 @@ export function openSite(sim: Sim, ship: number, owner: AwaySite['owner'], vehic
 export const awayHandlers: { [T in AwayCommandType]: Handler<T> } = {
   'away.open': (sim, cmd) => {
     const ship = shipById(sim, cmd.ship);
-    if (!ship || cmd.ship === homeShip(sim) || ship.faction === 'player') return reject(sim, cmd.type, 'badTarget');
+    if (!ship || cmd.ship === homeShip(sim) || ship.faction === PLAYER) return reject(sim, cmd.type, 'badTarget');
     if (sim.world.has(cmd.ship, AwaySiteC)) return reject(sim, cmd.type, 'open');
     if ((cmd.vehicle && !siteShuttleOk(sim, cmd.vehicle)) || openSite(sim, cmd.ship, 'debug', cmd.vehicle) === 'noShuttle') reject(sim, cmd.type, 'noShuttle');
   },

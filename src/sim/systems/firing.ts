@@ -19,6 +19,7 @@ import { MIN_SPREAD_FACTOR, SPREAD_PER_GUNNERY } from '../tuning';
 import { shipIdOf } from '../regions';
 import { shipById, shipCanAct } from '../combat/shipQuery';
 import { weaponDefOf } from '../upgrades/stats';
+import { isPlayers } from '../side';
 
 /**
  * Launches shots. A charged weapon fires a volley at its resolved target when the ship is not on hold (or on
@@ -100,7 +101,7 @@ function launchNext(
   });
   // The shot leaving a player weapon is the hostile act (aiming alone is nothing); a shot at a shuttle is one on the ship it belongs to.
   const victim = target.ship || (target.vehicle ? sim.world.get(target.vehicle, VehicleC)?.homeShip ?? 0 : 0);
-  if (victim && shipById(sim, shipId)?.faction === 'player') hostileAct(sim, victim, 'fired');
+  if (victim && isPlayers(sim, shipId)) hostileAct(sim, victim, 'fired');
   const hit = victim ? sim.world.get(victim, CombatC) : undefined;
   if (hit && victim !== shipId) hit.threat = { ship: shipId, at: sim.tick }; // who is shooting at it (the AI's target choice reads it)
   sim.events.emit({

@@ -14,6 +14,7 @@ import {
 } from './tuningHeat';
 import type { FleetRole } from './defs';
 import { playerFightPressure } from './pressure';
+import { PLAYER } from '../side';
 
 /**
  * The player's notoriety (see tuningHeat.ts). One number on `GalaxyState.heat`, written only here: kills and captures the player made
@@ -98,7 +99,7 @@ function charge(sim: Sim, id: number, ship: Ship, captured: boolean): boolean {
   const side = (captured ? sim.world.get(id, PrizeC)?.from : undefined) ?? ship.faction;
   const faction = factionOfShip(sim, id, ship, side);
   const def = faction ? sim.content.galaxy?.factions[faction] : undefined;
-  const tier = faction ? tierOf(sim, faction) : factionsHostile(side, 'player') ? 'hostile' : 'neutral';
+  const tier = faction ? tierOf(sim, faction) : factionsHostile(side, PLAYER) ? 'hostile' : 'neutral';
   // Outlaws (pirates, the rogue AI) are fair game: the law does not mind, though they remember it (the reputation below).
   const outlaw = def?.alwaysHostile || OUTLAW_KINDS.includes(def?.kind ?? '');
   let n = outlaw ? 0 : ship.immobile ? STATION_NOTORIETY : KILL_NOTORIETY[tier];
@@ -120,8 +121,8 @@ export function tallyLosses(sim: Sim): number[] {
     const ship = sim.world.get(id, ShipC) as Ship;
     const captured = ship.state === 'prize';
     // A prize flies for the player now (capturePrize): it still counts, as the side it was taken from.
-    if (ship.tallied || (ship.faction === 'player' && !captured)) continue;
-    if (!captured && !(ship.state === 'wreck' && ship.killedBy === 'player')) continue;
+    if (ship.tallied || (ship.faction === PLAYER && !captured)) continue;
+    if (!captured && !(ship.state === 'wreck' && ship.killedBy === PLAYER)) continue;
     ship.tallied = true;
     if (charge(sim, id, ship, captured)) hostile++;
     out.push(id);
