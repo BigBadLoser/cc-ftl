@@ -148,7 +148,7 @@ def bottle_plumbed(f, fs, tier, a, trunk=False):
                 cap="steelL",
                 capstart="steelL",
             )
-            pipe_to(f, (cu - 0.1, side * 1.65, hz2), vv, cu, zz, side)
+            pipe_to(f, (d1, side * 1.65, 0.88), vv, cu, zz, side)
     for u in rings_at(tier):
         field_ring(fs, u + S, a)
 
