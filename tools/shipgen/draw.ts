@@ -124,9 +124,9 @@ export const factionIds = (): string[] => Object.keys(content.factions);
 /** `faction.drones:picket` keeps only that hull family (one family's sheet). */
 export function gen(factionSpec: string, seed: number, depth: number): GenResult {
   if (factionSpec.startsWith('station.')) return genStation(factionSpec, seed);
-  if (factionSpec.startsWith('faction.navy@v5')) {
-    const type = (factionSpec.split(':')[1] ?? 'corvette') as NavyType;
-    return generateOutline(content.factions['faction.navy' as keyof typeof content.factions] as never, 'faction.navy', seed, depth, defs, type);
+  if (factionSpec.includes('@v5')) {
+    const type = (factionSpec.split(':')[1] ?? 'corvette') as NavyType, id = factionSpec.split('@')[0] as string;
+    return generateOutline(content.factions[id as keyof typeof content.factions] as never, id, seed, depth, defs, type);
   }
   if (factionSpec.startsWith('faction.navy@v4')) {
     const type = factionSpec.split(':')[1] as NavyType | undefined;

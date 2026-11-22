@@ -162,7 +162,8 @@ export function outlineInputs(
   const up = REACTOR_TIERS[Math.min(REACTOR_TIERS.length - 1, REACTOR_TIERS.indexOf(planned.kit.reactor as (typeof REACTOR_TIERS)[number]) + 1)] as string;
   const kit = { ...planned.kit, ...(planned.kit.reactor === REACTOR_TIERS[0] && defs[up] ? { reactor: up } : {}), ...(tierUp ? { engine: engineUp } : {}) };
   // The type's commons and quarters (a few spare beds past the crew's) join the plan, their power counted.
-  const quarters = shipQuarters(type, planned.quarters, planned.crew.length, rng.int(2, 4));
+  const pax = NAVY_TYPES[type].passengers;
+  const quarters = shipQuarters(type, planned.quarters, planned.crew.length, rng.int(2, 4) + (pax ? rng.int(pax[0], pax[1]) : 0));
   const plan: ShipPlan = { ...planned, kit, quarters, support: [...planned.support, ...shipCommons(type, planned.crew.length)] };
   const fixed = NAVY_TYPES[type].engines;
   if (fixed) plan.engines = fixed + (tierUp ? extra - 1 : extra);

@@ -375,7 +375,12 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
     };
     const fits = (ks: number[], need: number): boolean => cut(ks, need).reduce((t, g) => t + g.c, 0) >= need;
     const all = bays.flatMap((b, k) => (b.row && b.row.dir < 0 ? [k] : [])), most = Math.ceil(beds / 2);
-    const held = all.slice(0, -2), ks = all.length > 2 && fits(held, most) ? held : all;
+    const held = all.slice(0, -2), room = (ks: number[]): number => cut(ks, 999).reduce((t, g) => t + g.c, 0);
+    // (Too many for the inboard strip (a liner's passengers): the outboard bays from the stern take the rest.)
+    const out = bays.flatMap((b, k) => (b.row && b.row.dir > 0 ? [k] : [])), short = most - room(all);
+    let aft: number[] = [];
+    for (let t = 1; short > 0 && t <= out.length && room(aft) < short; t++) aft = out.slice(-t);
+    const ks = short > 0 ? [...all, ...aft] : all.length > 2 && fits(held, most) ? held : all;
     for (const s of [0, 1] as const) {
       let need = s === 0 ? Math.ceil(beds / 2) : Math.floor(beds / 2);
       for (const { i, j, c } of cut(ks, need)) {
