@@ -56,3 +56,10 @@ export function bedPose(def: ModuleDef, x: number, y: number, rot: number, rotat
   const [hx, hy] = HEAD_STEP[dir] ?? [0, 0];
   return { x: cx - hx * SLEEP_SHIFT, y: cy - hy * SLEEP_SHIFT, dir };
 }
+
+/**
+ * Has the bed (any module) art of its own at rotation `rot` (`<asset>.r<n>`, or its idle or active state), so the art and the pillow turn with
+ * it rather than the plain asset being drawn mirrored (bedPose's `rotated`)? `has`: the atlas's id lookup. Rotation 0 is the plain asset's own.
+ */
+export const turnedArt = (has: (id: string) => boolean, asset: string, rot: number): boolean =>
+  rot % 4 === 0 || [`${asset}.r${rot % 4}`, `${asset}.r${rot % 4}.idle`, `${asset}.r${rot % 4}.active`].some(has);

@@ -102,6 +102,19 @@ def med_console(state, rot):
     return k.build()
 
 
+def bed_job(rot, state):
+    """`module.med_bed[.r<r>].<state>` (and the plain `module.med_bed`, r0 active, as modkit.sprites names it) with its
+    front overlay `module.med_bed.front.b0.r<r>[.active]`: the rails and footboard drawn over the patient (bed_front.py,
+    as the bunk and the single bed)."""
+    def run(rot=rot, state=state):
+        from .leisure import bed_items
+        sid = f"module.med_bed{'' if rot == 0 else f'.r{rot}'}.{state}"
+        ids = [sid] + (["module.med_bed"] if rot == 0 and state == "active" else [])
+        return bed_items(sid, (1, 2), lambda: med_bed(state, 0), rot, 1, True, ids, "module.med_bed",
+                         "" if state == "idle" else ".active")
+    return run
+
+
 def jobs(rots=range(4)):
-    return (sprites("module.med_bed", (1, 2), ("idle", "active"), med_bed, rots)
+    return ([bed_job(r, s) for r in rots for s in ("idle", "active")]
             + sprites("module.med_console", (1, 1), ("idle", "active"), med_console, rots))

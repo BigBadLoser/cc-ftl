@@ -4,6 +4,7 @@ import type { Module } from '../sim/modules/components';
 import { content } from '../content';
 import { mergeRuinChain, ANIM_FPS, DAMAGED_BELOW, FLICKER_DARK_MS, FLICKER_LIT_MS, stateArt, animFrame, diagonalFront, frameCount, layerKey, engineBlock, moduleAssets, moduleLayers, glowKey, SEAT_DZ, FRONT_DZ, HOLO_DZ, schemeEmblem } from './moduleArt';
 import { depthKey } from './iso';
+import { turnedArt } from './bedPose';
 
 const engine = content.modules['module.engine'];
 const m = { def: 'module.engine', x: 24, y: 2, rot: 1 } as unknown as Module;
@@ -245,5 +246,28 @@ describe('glowKey', () => {
     expect(glowKey({ ...base, dz: FRONT_DZ }, 10 + FRONT_DZ)).toBeLessThan(10 + SEAT_DZ);
     expect(glowKey({ ...base, dz: HOLO_DZ, glowOver: true }, 10 + HOLO_DZ)).toBeGreaterThan(10 + SEAT_DZ);
     expect(glowKey(base, 10)).toBe(10.01);
+  });
+});
+
+describe('idle and active art (#614)', () => {
+  const bed = content.modules['module.med_bed'];
+  const at = (rot: number) => ({ def: 'module.med_bed', x: 0, y: 0, rot }) as unknown as Module;
+  const art = new Set(['module.med_bed', 'module.med_bed.idle', 'module.med_bed.active', 'module.med_bed.r2.idle', 'module.med_bed.r2.active']);
+  const has = (id: string) => art.has(id);
+  it('finds the idle art at each rotation before the plain asset (the r0 active art)', () => {
+    expect(moduleAssets(null as never, 1, at(2), bed, false).find(has)).toBe('module.med_bed.r2.idle');
+    expect(moduleAssets(null as never, 1, at(0), bed, false).find(has)).toBe('module.med_bed.idle');
+    expect(moduleAssets(null as never, 1, at(2), bed, true).find(has)).toBe('module.med_bed.r2.active');
+    expect(moduleAssets(null as never, 1, at(2), bed, true)).not.toContain('module.med_bed.r2.idle');
+  });
+  it('knows a module turns with its art when it has only state variants at a rotation', () => {
+    expect(turnedArt(has, 'module.med_bed', 2)).toBe(true);
+    expect(turnedArt(has, 'module.med_bed', 1)).toBe(false);
+    expect(turnedArt(has, 'module.med_bed', 0)).toBe(true);
+  });
+  it("draws a bed's active front overlay while the bed is active", () => {
+    const front = (active: boolean) => moduleLayers(null as never, 1, at(1), bed, active).find((l) => l.key === 'module.med_bed.front.b0')!.chain;
+    expect(front(true)).toEqual(['module.med_bed.front.b0.r1.active', 'module.med_bed.front.b0.r1']);
+    expect(front(false)).toEqual(['module.med_bed.front.b0.r1']);
   });
 });

@@ -155,13 +155,13 @@ export const mergeRuinChain = (chain: string[], headLen: number, art: string[], 
 /**
  * Asset ids to try for a module, most specific first: the rotation variant (`.r0`..`.r3`) with the state variant
  * (`.active`, or storage `.empty/.partial/.full`), the rotation variant, then the plain state variant and the plain
- * asset. A non-square module drawn from the plain asset at an odd rotation is mirrored (moduleView). With a `look`, the
- * `.unpowered` art or the current `.active` animation frame comes first (see `stateArt`).
+ * asset, idle the `.idle` variants before it (modkit `sprites` art, whose plain asset is r0 active). A non-square module drawn from the plain
+ * asset at an odd rotation is mirrored (moduleView). With a `look`, the `.unpowered` art or the current `.active` animation frame comes first.
  */
 export function moduleAssets(world: World, id: number, m: Module, def: ModuleDef, active: boolean, look?: ModuleLook): string[] {
   const state = def.storage ? `.${storageState(world, id, def)}` : active ? '.active' : '';
   const rot = `.r${m.rot}`;
-  return [...stateArt(def, m.rot, active, look).head, `${def.asset}${rot}${state}`, `${def.asset}${rot}`, `${def.asset}${state}`, def.asset];
+  return [...stateArt(def, m.rot, active, look).head, `${def.asset}${rot}${state}`, `${def.asset}${rot}`, ...(state ? [] : [`${def.asset}${rot}.idle`, `${def.asset}.idle`]), `${def.asset}${state}`, def.asset];
 }
 
 /**
@@ -351,7 +351,7 @@ export function moduleLayers(world: World, id: number, m: Module, def: ModuleDef
     return [main, { chain: [`${a}${r}.lv.${em}`], key: `${a}.lv.${em}`, tiles: 'all', overlay: 'lv', optional: true, dz: 0.002 }];
   }
   if (def.leisure) return leisureLayers(main, a, r, active, look);
-  if (def.bed) return [main, ...bedFronts(a, r, def.berths ?? 1)];
+  if (def.bed) return [main, ...bedFronts(a, r, def.berths ?? 1, active)];
   if (!def.console && !def.seated) return [main];
   const front = active ? [`${a}.front${r}.active`, `${a}.front${r}`] : [`${a}.front${r}`];
   return [main, { chain: front, key: `${a}.front`, tiles: 'all', dz: FRONT_DZ }];
@@ -361,11 +361,11 @@ export function moduleLayers(world: World, id: number, m: Module, def: ModuleDef
 export const berthDz = (berth: number): number => SEAT_DZ + berth * 0.004;
 
 /**
- * A bed's front overlays (tools/blender/sprites/bed_front.py): `<asset>.front.b<b>.r{n}`, the frame, rails and upper deck that hide berth b's sleeper,
- * drawn just over that sleeper and under the next berth's. Optional: a bed without them draws its body alone.
+ * A bed's front overlays (tools/blender/sprites/bed_front.py): `<asset>.front.b<b>.r{n}[.active]` (the active art while the bed is), the frame, rails and
+ * upper deck that hide berth b's sleeper, drawn just over that sleeper and under the next berth's. Optional: a bed without them draws its body alone.
  */
-function bedFronts(a: string, r: string, berths: number): ModuleLayer[] {
-  return Array.from({ length: berths }, (_, b) => ({ chain: [`${a}.front.b${b}${r}`], key: `${a}.front.b${b}`, tiles: 'all' as const, dz: berthDz(b) + 0.002, optional: true }));
+function bedFronts(a: string, r: string, berths: number, active: boolean): ModuleLayer[] {
+  return Array.from({ length: berths }, (_, b) => ({ chain: [...(active ? [`${a}.front.b${b}${r}.active`] : []), `${a}.front.b${b}${r}`], key: `${a}.front.b${b}`, tiles: 'all' as const, dz: berthDz(b) + 0.002, optional: true }));
 }
 
 /** Depth offset of a game table's hologram over its players (the front overlay is at FRONT_DZ). */
