@@ -161,7 +161,7 @@ def jobs(name):
     if name == "medbay":
         import os
         from . import medbay
-        return medbay.jobs(range(int(os.environ.get("MODPACK_ROTS", 4)))), True
+        return medbay.jobs(range(int(os.environ.get("MODPACK_ROTS", 4)))), "surgery"     # (the rig's chrome: palette_extra "set": "surgery")
     if name == "battery":
         import os
         from . import battery
