@@ -7,7 +7,7 @@ import { gunsAndReactors, programPairs, type Pair } from './pairs';
 import { fillers, type Layout, type Part, type Piece, type Placed } from './placeLayout';
 import { onHall, opensThrough, roomKind } from './roomAccess';
 import { fillerSpec, maxArea, type Filler } from './roomSize';
-import { DEPT_FILL, deptOf, zonesOf, type Dept, type Need } from './zones';
+import { deptsOf, zonesOf, type Dept, type Depts, type Need } from './zones';
 
 /**
  * PROTOTYPE (#581): the plan's rooms on the bays (`bayLayout`). A room takes a run of neighbouring bays at one tier on
@@ -33,8 +33,6 @@ const FILL_KINDS = (['hold', 'workshop', 'lounge', 'gym', 'farm', 'armoury', 'ba
 
 /** A lane hull's outboard bays by the hangar that are flight ops (`zones.ts`). */
 const FLIGHT = 2;
-/** Spare-floor rooms a ship has one of at most (#581). */
-const ONCE: readonly Filler[] = ['lounge', 'gym', 'workshop', 'farm'];
 
 /** Floor a room may take past its plan before a leftover bay goes to a filler instead. */
 const GROW = 2.5;
@@ -99,7 +97,7 @@ function program(plan: ShipPlan, defs: Record<string, ModuleDef>, inBattery: num
   return [...items, ...singles.sort((a, b) => size(b) - size(a)).map((r): Item => ({ specs: [r, null], both: false }))];
 }
 
-export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleDef>, budget = 3000): Placed & { puts: number; zone: (Dept | undefined)[] } {
+export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleDef>, budget = 3000, depts: Depts = deptsOf()): Placed & { puts: number; zone: (Dept | undefined)[] } {
   const bays = bayLayout(fr), n = bays.length;
   const { gunPairs } = gunsAndReactors(plan, defs);
   // (A lane hull's hangar is its frame's, at the lane's head.)
@@ -185,7 +183,7 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
   let alone = new Set<Dept>();
   const inZone = (i: number, j: number, rs: RoomSpec[]): boolean => {
     if (zone.length === 0) return true;
-    for (let k = i; k < j; k++) if (!rs.every((h) => deptOf(h, !!fr.decks) === zone[k])) return false;
+    for (let k = i; k < j; k++) if (!rs.every((h) => depts.of(h) === zone[k])) return false;
     return true;
   };
   /** Every column of the bays at that tier the same depth: a rectangle. */
@@ -238,7 +236,7 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
         // (A bay tier is coarse: a small room may take up to about two and a half times its plan, at a cost.)
         // (A lane hull's bays run bigger: a small room there may take up to four times its plan.)
         // (A department's one room a side may take all its bays; on a lane hull, so may a hold: spare floor is storage.)
-        const sole = rs.every((h) => alone.has(deptOf(h, !!fr.decks)) || ((fr.lane || fr.decks) && roomKind(h) === 'cargo'));
+        const sole = rs.every((h) => alone.has(depts.of(h)) || ((fr.lane || fr.decks) && roomKind(h) === 'cargo'));
         if (a < want || (a > Math.max(cap * 1.3, want * (fr.lane ? 4 : 2.5)) && !sole) || !rs.every((h) => fits(h, ln, rw))) continue;
         let via: Part['via'] | undefined;
         if (tier === 'back') { const v = backVia(o, side, i, j, specs); if (!v) continue; via = v; } else if (!hallOk) continue;
@@ -293,7 +291,7 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
     };
     let score = 0, nFill = 0;
     // (Prototype: a big ship's spare-floor rooms first, then the fillers.)
-    const left: Filler[] = ['armoury', 'battery', 'shop', 'lab', 'provisions', 'workshop', 'lounge', 'gym', 'farm'];
+    const left: Filler[] = [...depts.spare];
     // (By department: its own kinds in turn, the same turn on both sides.)
     const turn = new Map<string, number>();
     const once = new Set<Filler>(puts0.some((p) => real(p.specs).some((r) => r.role === 'farm')) ? ['farm'] : []);
@@ -316,12 +314,12 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
       if (a < 9) { score += 5; continue; }
       // The next filler kind left; behind a room, the first kind that may open through it.
       let f: RoomSpec | null = null, via: Part['via'] | undefined;
-      const z = zone[k], own = z ? DEPT_FILL[z] : [], t = turn.get(`${z}${s}`) ?? 0;
+      const z = zone[k], own = z ? depts.fill[z] : [], t = turn.get(`${z}${s}`) ?? 0;
       if (z) turn.set(`${z}${s}`, t + 1);
       const all: Filler[] = z ? [...own.slice(t % own.length), ...own.slice(0, t % own.length)] : a >= 12 ? left : [];
       // (A rec room, gym, workshop or farm once a ship: where the next would be another, the spare room beside (or the
       // one of that kind) grows over the bay instead.)
-      const kinds = all.filter((kd) => !(ONCE.includes(kd) && once.has(kd)));
+      const kinds = all.filter((kd) => !(depts.once.includes(kd) && once.has(kd)));
       const spare = [k - 1, k + 1].filter((m) => m >= 0 && m < n && joined(Math.min(m, k))).map((m) => (tier === 'back' ? o[s][m]?.back : o[s][m]?.front))
         .find((p): p is Put => !!p && (!!p.fill || (!p.item.cabins && !p.annex && !p.item.both && real(p.specs).some((r) => all[0] !== undefined && r.role === fillerSpec(all[0], a).role))) && p.spot.tier === tier && p.spot.j - p.spot.i < 2 && zone[p.spot.i] === zone[k]);
       if (kinds.length < all.length && kinds[0] !== all[0] && spare && tier !== 'back' && (tier === 'full' || sameSplit(Math.min(spare.spot.i, k), Math.max(spare.spot.j, k + 1)))) {
@@ -333,7 +331,7 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
         if (tier === 'back' && !v) continue;
         f = c; via = v ?? undefined;
         if (left.includes(kd)) left.splice(left.indexOf(kd), 1);
-        if (ONCE.includes(kd)) once.add(kd);
+        if (depts.once.includes(kd)) once.add(kd);
         break;
       }
       if (!f) {
@@ -436,8 +434,8 @@ export function bayRooms(plan: ShipPlan, fr: Frame, defs: Record<string, ModuleD
     // (Each department's rooms' floor and slots a side: half each room's, a mirrored pair's both; an annex its own slot.)
     const need: Partial<Record<Dept, Need>> = {};
     for (const r of rest.flatMap((it) => real(it.specs))) {
-      const n = need[deptOf(r, !!fr.decks)] ?? { area: 0, rooms: 0 };
-      need[deptOf(r, !!fr.decks)] = { area: n.area + 0.5 * (r.w * r.h + (r.annex ? r.annex.w * r.annex.h : 0)), rooms: n.rooms + (r.annex ? 1 : 0.5), ...(n.deep || r.annex ? { deep: true } : {}) };
+      const n = need[depts.of(r)] ?? { area: 0, rooms: 0 };
+      need[depts.of(r)] = { area: n.area + 0.5 * (r.w * r.h + (r.annex ? r.annex.w * r.annex.h : 0)), rooms: n.rooms + (r.annex ? 1 : 0.5), ...(n.deep || r.annex ? { deep: true } : {}) };
     }
     alone = new Set((Object.keys(need) as Dept[]).filter((d) => (need[d]?.rooms ?? 0) <= 1));
     zone = zonesOf(fr, bays, new Set(guns0.map((p) => p.spot.i)), flight, need, (k) => area(k, k + 1, 'full'));

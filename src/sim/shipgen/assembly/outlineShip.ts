@@ -7,6 +7,7 @@ import { ENGINE_TIERS, REACTOR_TIERS, engineSpec, planShip, reactorsFor, type Sh
 import type { FactionDef, GenResult } from '../types';
 import { layoutBlocks, type Mask } from './blockLayout';
 import { bayRooms } from './bayRooms';
+import { deptsOf } from './zones';
 import { outlineFrame } from './frame';
 import { paintPlaced } from './placePaint';
 import type { Placed } from './placeLayout';
@@ -230,7 +231,7 @@ function blockGrid(plan: ShipPlan, sil: Silhouette, maxBeam: number, defs: Recor
  * then each wider drive section the same way. The rest of the hull is the same in each.
  */
 function bayGrid(plans: ShipPlan[], lanes: Silhouette[][], maxBeam: number, defs: Record<string, ModuleDef>, r: OutlineRecipe, bay: BaysLayout, both?: boolean): RegionGrid {
-  const cands: { W: number; l: Placed; plan: ShipPlan }[] = [];
+  const cands: { W: number; l: Placed; plan: ShipPlan }[] = [], depts = deptsOf(r.depts);
   // A lane hull's corridor style: rooms both sides of its side corridors where any size holds them, else outboard only.
   for (const style of both === undefined ? [undefined] : both ? [true, false] : [false]) {
     const lane = style === undefined ? undefined : { both: style };
@@ -249,7 +250,7 @@ function bayGrid(plans: ShipPlan[], lanes: Silhouette[][], maxBeam: number, defs
           if (!fr) continue;
           // (A lane hull's floor is far past its rooms' plan: its reactors light the hull's.)
           const lit = fr.lane ? { ...plan, reactors: reactorsFor(plan, defs, Math.round(LIT * fr.area)) } : plan;
-          const q = bayRooms(lit, fr, defs, 400);
+          const q = bayRooms(lit, fr, defs, 400, depts);
           if (q.viable > 0) { cands.push({ W: m.W, l: q, plan: lit }); break lanes; }
           continue lanes;
         }
@@ -260,7 +261,7 @@ function bayGrid(plans: ShipPlan[], lanes: Silhouette[][], maxBeam: number, defs
   }
   const best = cands.sort((a, b) => a.l.score + a.W / 20 - (b.l.score + b.W / 20))[0];
   if (!best) throw new Error(`outline ${r.family}: rooms do not fit`);
-  return paintPlaced(best.plan, bayRooms(best.plan, best.l.fr, defs, 3000));
+  return paintPlaced(best.plan, bayRooms(best.plan, best.l.fr, defs, 3000, depts));
 }
 
 export function assembleOutline(

@@ -1,4 +1,6 @@
+import type { Filler } from './assembly/roomSize';
 import type { Profile } from './hull/silhouette';
+import type { RoomRole } from './types';
 
 /**
  * Outline ship recipes (SHIPGEN_V4, "Ship recipes and layout parts"): what a ship type is, as data on its faction
@@ -25,6 +27,24 @@ export interface BlocksLayout { kind: 'blocks'; guns: 'forward' | 'spread' }
  */
 export interface BaysLayout { kind: 'bays'; battery?: boolean; lane?: boolean; decks?: boolean }
 
+/**
+ * A bay ship's departments (zones.ts), each its own run of bays: command, systems and stores forward, hab, and on a lane
+ * hull flight ops and the guns outboard.
+ */
+export type ShipDept = 'command' | 'systems' | 'hab' | 'stores' | 'flight' | 'weapons';
+
+/** What goes where on a bay ship, past the defaults (`deptsOf`): each part a recipe may set. */
+export interface DeptRules {
+  /** A room role's department, where not its default (on passenger decks the guns go with the systems). */
+  of?: Partial<Record<RoomRole, ShipDept>>;
+  /** A department's own rooms for spare floor, taken in turn. */
+  fill?: Partial<Record<ShipDept, readonly Filler[]>>;
+  /** Spare-floor rooms the ship has one of at most. */
+  once?: readonly Filler[];
+  /** Spare-floor rooms where bays have no department (a cruiser), in order. */
+  spare?: readonly Filler[];
+}
+
 export interface OutlineRecipe {
   /** The hull family whose budget it plans with. */
   family: string;
@@ -50,4 +70,5 @@ export interface OutlineRecipe {
   /** Rooms past the plan's (a pantry comes off the mess). */
   rooms?: readonly ShipRoom[];
   layout: BlocksLayout | BaysLayout;
+  depts?: DeptRules;
 }

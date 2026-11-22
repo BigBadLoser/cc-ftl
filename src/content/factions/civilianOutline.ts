@@ -13,5 +13,7 @@ export const civilianOutline = {
   liner: {
     family: 'liner', profiles: LINER, maxBeam: 33, crew: { sleep: 'bunks', together: true }, passengers: { base: 6, perDepth: 1 },
     rooms: ['medbay', 'pantry'], layout: { kind: 'bays', decks: true },
+    // (Its guns with the systems, a hangar with the stores: it has no flight deck or battery to put them in.)
+    depts: { of: { weapons: 'systems', hangar: 'stores' } },
   },
 } satisfies Record<string, OutlineRecipe>;
