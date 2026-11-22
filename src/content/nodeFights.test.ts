@@ -84,6 +84,21 @@ describe('fleets at war that meet in the player\'s node', () => {
     expect(sim.galaxy.control[sector]?.pressure?.value ?? 0).toBeGreaterThan(0);
   });
 
+  it('count a ship lost earlier in the fight even when fleet upkeep has already reaped it (#612 review)', () => {
+    const pressureAfter = (reaped: boolean): number => {
+      const { sim, fb } = fight();
+      run(sim, 1);
+      const sector = nodeOf(sim, sim.galaxy.current)?.sector as string;
+      controlOf(sim, sector).owner = 'helix';
+      wreckShip(sim, shipOf(fb));
+      if (reaped) fb.ships = [];
+      run(sim, 2);
+      expect(engagements(sim)).toHaveLength(0);
+      return sim.galaxy.control[sector]?.pressure?.value ?? 0;
+    };
+    expect(pressureAfter(true)).toBe(pressureAfter(false));
+  });
+
   it('do not start where a black market truce holds (#609 review)', () => {
     const { sim } = fight();
     setTruce(sim, sim.galaxy.current);
