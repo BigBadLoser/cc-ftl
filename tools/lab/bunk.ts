@@ -1,4 +1,4 @@
-import { Container, Sprite } from 'pixi.js';
+import { Container, Graphics, Sprite } from 'pixi.js';
 import type { ClipDef } from '../../src/render/assets/manifest';
 import { artZoom, createCrewFilter, crewFilters, crewPalette, setFilterTint, setFilterZoom } from '../../src/render/assets/palette';
 import { berthLift, bedPose, turnedArt } from '../../src/render/bedPose';
@@ -54,6 +54,9 @@ export const bunkPanel: LabPanel = {
           newRow: i === 0,
           mount(root) {
             const ox = 150, oy = 210;
+            const clip = new Graphics().rect(0, 0, 300, 300).fill(0xffffff); // the floor reaches past the cell: keep the next cell's off this one's bed
+            root.addChild(clip);
+            root.mask = clip;
             const floor = ctx.atlas.stat('tile.floor.a');
             for (let gy = -2; gy <= 1; gy++) for (let gx = -2; gx <= 1; gx++) {
               if (!floor) continue;
