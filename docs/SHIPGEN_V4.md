@@ -352,3 +352,50 @@ The greedy layout stays on the branch behind a flag until the new one beats it o
 
 - How many candidates a scale (start at a few hundred, measure the time per ship).
 - Weights: tuned on the eight-seed sheets per type, then fixed in the table.
+
+## Ship recipes and layout parts (outline ships, #581)
+
+The bay layout was built for the navy and the navy's choices sit in the shared code: the type table speaks navy
+(`centre`, `bow`, `guns`, `gunRooms`), the room program always adds a point-defence pair and splits the core, the
+departments, their order, the role-to-department map and the spare-floor kinds are fixed, and each layout part (gun
+battery, launch lane, passenger decks) is an `if` in the frame, the bays, the zones and the room search. A new type
+inherits all of it, and every type adds branches. The first liner came out a carrier for that reason.
+
+The split: **recipes** (data, per ship type) say what a ship is; **parts** (code, one module each) say how a piece of
+layout works; the pipeline runs a recipe's parts and asks nothing about its type.
+
+### Recipe
+
+Content data on the faction (`FactionDef.outline`, keyed by type id, `satisfies OutlineRecipe`), as station recipes are:
+
+| Field | Meaning |
+| --- | --- |
+| `family` | the hull family whose budget it plans with |
+| `profiles` | its silhouettes (`Profile`, hull/silhouette.ts) |
+| `maxBeam`, `minLength`, `engines`, `bonus`, `bays`, `gunRooms` | sizing and planning, as before |
+| `crew`, `passengers` | how the crew sleeps (bunks, beds, cabins; one room or the plan's), passenger beds by depth |
+| `rooms` | extra rooms past the plan (medbay, brig, farm, pantry) |
+| `layout` | `blocks` (the small hulls' splitter, with its `centre`, `bow`, `guns`) or `bays` (below) |
+
+A `bays` layout names its parts and its rules:
+
+| Field | Meaning |
+| --- | --- |
+| `parts` | battery, lane, decks: each with its own options |
+| `departments` | the forward cut's orders, each role's department (a default map with the recipe's overrides), each department's spare-floor kinds, the kinds a ship has once |
+| `program` | room rules: a point-defence pair, the core split, the mess's least size, an annex beside its host, racks in holds, holds uncapped |
+
+### Parts
+
+A part is a module with hooks the pipeline calls in order; a recipe without the part never reaches its code:
+
+1. `draws`: extra silhouettes to try (the lane's widths).
+2. `frame`: what it adds to the frame (the battery's maintenance corridor, the lane, the deck's airlock at its shoulder).
+3. `bays`: the bay runs it adds or replaces (the lane's side hulls in and out of the corridor; the battery's cuts).
+4. `zones`: each of its bays' department.
+5. `fixed`: rooms placed before the search (the lane's cabin strip and guns, the deck's cabin strip).
+6. `paint`: what it paints (the lane's alcoves, the battery's corridor).
+
+The navy moves first with no change: every navy sheet the same tile for tile before and after (a golden dump of
+`generateOutline` over the types, depths 1, 3 and 6, seeds 1 to 6). Then the civilians are new recipes, and new parts
+where they need them (a freighter's outside container rack).
