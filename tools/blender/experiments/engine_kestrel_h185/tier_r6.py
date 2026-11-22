@@ -76,20 +76,25 @@ def bed(f, u0, a, flank=None, saddle=None, openings=(), gaps=(), slots=()):
                 "steelD", "steel")
 
 
-def casing(fs, a, uc, crown=True, ducts=True, lid=True):
+def casing(fs, a, uc, crown=True, ducts=True, lid=True, short=False):
     """The armoured casing continued from the cut back to a rear cap at uc (the Mk I's -2.15 moved): its section,
-    staves, rear clamp ring and petals, injector plate and the crown ducts' rear ends."""
+    staves, rear clamp ring and petals, injector plate and the crown ducts' rear ends. short: the cap's taper, ring
+    and petals pressed into 0.3 tiles instead of 0.67 (more full-radius length for the same cap position)."""
     m = T._m()
     du = uc + 2.15
-    sleeve(fs, [(uc, 0.59, a), (-1.92 + du, 0.82, a), (-1.48 + du, R, a), (T.CUT + 0.03, R, a)], "steelD", sides=32)
+    k = 0.45 if short else 1.0
+
+    def at(x):                          # a Mk I rear-cap station (its u) on this casing
+        return uc + (x + 2.15) * k
+    sleeve(fs, [(uc, 0.59, a), (at(-1.92), 0.82, a), (at(-1.48), R, a), (T.CUT + 0.03, R, a)], "steelD", sides=32)
     fs.hcyl(uc - 0.05, uc, 0, a, 0.59, "steel", sides=16, capstart="blueGrey")
     for t0, t1, mat in STAVES:
-        m.sculpted_stave(fs, [(u, R + 0.075, a) for u in (-1.75 + du, (-1.75 + du + T.CUT) / 2, T.CUT + 0.03)], t0, t1, mat)
-    annulus(fs, -1.94 + du, -1.82 + du, 0.69, 0.94, a, "steelD", "steelL", sides=16)
-    annulus(fs, -1.82 + du, -1.78 + du, 0.74, 0.9, a, "brass", "gm", sides=24)
-    for k in range(4):
-        t = k * math.pi / 2 + math.pi / 4
-        m.petal(fs, [(-2.02 + du, 0.9, a), (-1.72 + du, 0.99, a), (-1.45 + du, 0.96, a)], t - 0.09, t + 0.09, "steelL",
+        m.sculpted_stave(fs, [(u, R + 0.075, a) for u in (at(-1.75), (at(-1.75) + T.CUT) / 2, T.CUT + 0.03)], t0, t1, mat)
+    annulus(fs, at(-1.94), at(-1.94) + 0.12, 0.69, 0.94, a, "steelD", "steelL", sides=16)
+    annulus(fs, at(-1.94) + 0.12, at(-1.94) + 0.16, 0.74, 0.9, a, "brass", "gm", sides=24)
+    for j in range(4):
+        t = j * math.pi / 2 + math.pi / 4
+        m.petal(fs, [(at(-2.02), 0.9, a), (at(-1.72), 0.99, a), (at(-1.45), 0.96, a)], t - 0.09, t + 0.09, "steelL",
                 thick=0.13)
     if crown:
         annulus(fs, uc - 0.12, uc - 0.05, 0.26, 0.58, a, "steelD", "steel", sides=16)
