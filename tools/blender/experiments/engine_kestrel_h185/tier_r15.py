@@ -32,21 +32,21 @@ def bell(f, u, v, z, r=0.24):
     f.box(u - 0.17, v, z, 0.03, 2 * r - 0.04, 0.05, "steelL", base=False)
 
 
-def fa_base(f, fs, tier, a, end, sump=None):
+def fa_base(f, fs, tier, a, end, sump=None, s=0.0):
     """FA's machine with a short cap; end(u0, ue, stem_u) builds section A from u0 to ue, the crown's stem end at
     stem_u (a trunk may land there on the axis at height a)."""
     u0 = _u0()
     big = tier == 3
-    uc = -2.45 if not big else -2.9
+    uc = (-2.45 if not big else -2.9) + s
     casing(fs, a, uc, crown=False, ducts=False, lid=False, short=True)
     duct_caps(fs, a)
     cu, cr = uc - 0.15, 0.62
     _crown(fs, cu, a, cr)
     stem_u = uc - 0.45
     fs.hcyl(stem_u, uc - 0.3, 0, a, 0.28, "steel", sides=16, capstart="steelD")
-    pumps = [(u0 + 0.35, -2.25)] if not big else [(u0 + 0.35, -3.35), (-3.15, -2.25)]
+    pumps = [(u0 + 0.35, -2.25 + s)] if not big else [(u0 + 0.35, -3.35 + s), (-3.15 + s, -2.25 + s)]
     ue = stem_u - 0.05
-    ring_bed(f, u0, a, tier, saddle=lambda u: end(u, ue, stem_u), sump=sump)
+    ring_bed(f, u0, a, tier, saddle=lambda u: end(u, ue, stem_u), sump=sump, shift=s)
     for side in (-1, 1):
         sponson(f, side, u0 + 0.05, pumps[-1][1] + 0.1, windows=[(p0 - 0.04, p1 + 0.04) for p0, p1 in pumps])
         bell(f, u0 + 0.05, side * 1.65, 0.55)
@@ -58,7 +58,7 @@ def fa_base(f, fs, tier, a, end, sump=None):
             pipe_to(f, (p1 - 0.28, side * 1.65, 0.88), vv, cu, zz, side)
             D.flange(f, (p1 - 0.28, side * 1.65, ST + 0.02), "z", 0.14, "brass", t=0.06)
     for u in rings_at(tier):
-        field_ring(fs, u, a)
+        field_ring(fs, u + s, a)
     return big
 
 
