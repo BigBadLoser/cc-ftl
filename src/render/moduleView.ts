@@ -10,7 +10,6 @@ import type { ModuleDef } from '../sim/registry';
 import type { Atlas, StaticSprite } from './assets/loader';
 import type { SlabFaces } from './slabFace';
 import { cut, STRIP_W, stripFrame, type StripCrop } from './moduleStrips';
-import type { Art } from './assets/fallback';
 import { pickParts } from './partPick';
 import { iso, depthKey } from './iso';
 import { HullSprite } from './hullPaint';
@@ -19,7 +18,7 @@ import type { Layers } from './layers';
 import { dim, EXTERIOR_TINT, lightTint, mulColor, pulsePhase } from './lightTint';
 import { isGroundMount } from '../sim/modules/groundMount';
 import { isLandingPad } from '../sim/modules/landingPad';
-import { resolveArt } from './assets/fallback';
+import { resolveArt, type Art } from './assets/fallback';
 import { boxState, containerBox } from './containerBox';
 import { ContainerC } from '../sim/containers/components';
 import { createContainerOverlay, type ContainerOverlay } from './containerPaint';
@@ -35,6 +34,7 @@ import type { WallLevel } from './tiles';
 import { createBayAnimator, shuttleHome, steady } from './vehicleBayArt';
 import { cropOverlay } from './cropOverlay';
 import { bedBox } from './bedBox';
+import { rigInputs, rigView } from './rigArt';
 import { craftProgress, diagonalFront, moduleAssets, mergeRuinChain, stateArt, glowKey, layerKey, mannedConsoles, playedModules, workedLabs, showsActive, type ModuleLayer } from './moduleArt';
 
 export type ModuleDefs = Readonly<Record<string, ModuleDef>>;
@@ -263,7 +263,7 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
         }
         return;
       }
-      const k = key(m.x + w - 1, m.y + h - 1);
+      const k = layer.sortAt ? key(layer.sortAt.x, layer.sortAt.y) : key(m.x + w - 1, m.y + h - 1);
       out.push(makePart(s, m.x + w - 1, m.y + h - 1, flip, k, art.tint, glowKey(layer, k), layer.overlay));
       for (let j = from; j < out.length; j++) out[j]!.li = i;
     });
@@ -369,7 +369,7 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
         if (!m || !def || !grid.inBounds(m.x, m.y)) continue;
         const on = m.powered && m.enabled && m.hp > 0;
         const active = showsActive(def, on, !!def.crafting && crafting(progress, id, now), manned.has(id) || worked.has(id) || played.has(id));
-        const extra = worldInputs(world, id, def, now);
+        const rig = def.rig ? rigView(world, defs, grid, id) : undefined, extra = worldInputs(world, id, def, now) + rigInputs(rig);
         const memo = memos.get(id);
         let e = mods.get(id);
         if (e && memo && sameInputs(memo, m, def, active, extra, gen, clock)) {
@@ -386,7 +386,7 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
         const ad = tb?.def ?? def;
         const look = { off: !on && m.hp > 0, now, hp: m.hp, maxHp: def.maxHp, has: hasArt(def.asset) };
         const raw = layersOf(world, id, am, ad, {
-          active, now, livery: host.livery?.(), look,
+          active, now, livery: host.livery?.(), look, rig,
           airlock: { level, roofed, collar: def.airlock?.layout ? collarAnim.stepOf(id, dockedAt(world, id) !== 0, now) : null },
           bay: def.vehicleBay ? bayAnim.stepOf(id, shuttleHome(world, id), now) : steady(true),
         });

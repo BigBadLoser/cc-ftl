@@ -62,7 +62,7 @@ export interface Operation {
   item?: string;
   /** Saves a life (a lost heart or lungs): ahead of everything, and the surgery job ranks as a rescue does. */
   urgent?: true;
-  /** The tick the patient gave up waiting on the table for a surgeon (they do not seek it again for `STRANDED_RETRY_SEC`). */
+  /** The tick the patient gave up waiting in the bed for a surgeon (they do not seek it again for `STRANDED_RETRY_SEC`). */
   untended?: number;
 }
 
@@ -77,7 +77,7 @@ export const OperationsC = defineComponent<Operations>('operations');
 export type SurgeryCommand =
   /**
    * Queue an operation on crew member `id` (crew/surgery.ts): fit the implant `item` to `part`, remove the fitted `item`, repair an organ, amputate a lost limb.
-   * A surgeon does it at a surgery table or a medical bed (systems/surgery.ts). Rejected with `crew/surgery.ts operationError`'s reason, or `queued`.
+   * A surgeon does it at a medical bed, safer with a surgical rig beside it (systems/surgery.ts). Rejected with `crew/surgery.ts operationError`'s reason, or `queued`.
    */
   | { type: 'crew.queueOperation'; id: number; kind: OperationKind; part: string; item?: string }
   /** Take operation `op` off crew member `id`'s queue (a surgeon at work on it stops). */

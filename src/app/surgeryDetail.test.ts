@@ -20,7 +20,7 @@ describe('the Health tab surgery section (#311)', () => {
     expect(arm.find((o) => o.kind === 'fit')!.disabled).toBe('amputate the lost left arm first');
     expect(arm.find((o) => o.kind === 'amputate')!.disabled).toBeUndefined();
     const leftEye = ops.picker.ops['part.eye_left']!.find((o) => o.kind === 'fit')!;
-    expect(leftEye.implants!.find((i) => i.id === 'item.cyber_eye_2')).toMatchObject({ stock: 1, odds: expect.stringMatching(/^success \d+% at a table, \d+% at a bed$/) });
+    expect(leftEye.implants!.find((i) => i.id === 'item.cyber_eye_2')).toMatchObject({ stock: 1, odds: expect.stringMatching(/^success \d+% with a rig, \d+% without$/) });
     expect(ops.picker.ops['part.dermal']!.find((o) => o.kind === 'remove')!.implants).toEqual([expect.objectContaining({ id: 'item.dermal_armor_1', note: 'fitted' })]);
     expect(ops.picker.surgeon).toMatch(/^Best free surgeon: .+ \(Medicine \d+\)$/);
     const h = buildHealth(sim, patient, ops)!;

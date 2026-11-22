@@ -47,7 +47,7 @@ export function careAvailable(sim: Sim, crew: number): boolean {
   for (const id of sim.world.query(ModuleC)) {
     const m = sim.world.get(id, ModuleC) as Module;
     const def = sim.content.modules[m.def];
-    if (def?.medical && bedServes(def, use) && (bedUsable(def, m) || (berthOf(def, m, crew) >= 0 && m.hp > 0 && (!(def.recovery || def.surgery) || m.powered))) && shipIdOf(sim, m) === ship) return true;
+    if (def?.medical && bedServes(sim, id, def, use) && (bedUsable(def, m) || (berthOf(def, m, crew) >= 0 && m.hp > 0 && (!def.recovery || m.powered))) && shipIdOf(sim, m) === ship) return true;
   }
   return false;
 }

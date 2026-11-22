@@ -12,7 +12,7 @@ import { steady } from './vehicleBayArt';
 const ids = new Set(Object.keys(shippedManifest().assets));
 
 /** Planned modules whose sheets are not in the manifest yet (the card shows a placeholder icon). Remove an id when its art lands. */
-const ART_PENDING = new Set<string>([]);
+const ART_PENDING = new Set<string>(['module.surgery_rig']); // #311: drawn by its FALLBACK stand-in (the med console, tinted) until its sheets land
 
 describe('build catalog thumbnails', () => {
   // The catalog, popover preview and placement ghost all draw a def through `layersOf` in its preview state: every buildable

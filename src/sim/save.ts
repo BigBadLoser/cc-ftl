@@ -162,7 +162,7 @@ import { newYard, type YardState } from './yard/types';
  * v130 (crew injuries, #601): `InjuriesC` on crew (body-part injuries, crew/injuryTypes.ts), job kind 'aid' (first aid), `debug.setCrew.injuries`.
  * v131 (surgery and implants, #311): `ImplantsC` holds `{ part, item }` fitted implants (was item ids), `OperationsC` (the surgery queue), job kind 'surgery' with `Job.surgery`.
  */
-export const SAVE_VERSION = 131;
+export const SAVE_VERSION = 132;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {

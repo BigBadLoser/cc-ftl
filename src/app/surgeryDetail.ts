@@ -57,12 +57,12 @@ function bestSurgeon(sim: Sim, patient: number): number {
   return best;
 }
 
-/** "82% at a table, 62% at a bed" for the best surgeon (a bed only for what it may do). */
+/** "success 82% with a rig, 62% without" for the best surgeon (with a rig only, for brain and spine). */
 function oddsOf(sim: Sim, patient: number, surgeon: number, op: Pick<Operation, 'kind' | 'part' | 'item'>): string {
   if (!surgeon) return '';
-  const pct = (w: 'table' | 'bed') => `${Math.round(surgeryChance(sim, surgeon, patient, op, w) * 100)}%`;
+  const pct = (w: 'rig' | 'bed') => `${Math.round(surgeryChance(sim, surgeon, patient, op, w) * 100)}%`;
   const slot = sim.content.injuries?.parts[op.part]?.slot;
-  return slot === 'brain' || slot === 'spine' ? `success ${pct('table')} at a table` : `success ${pct('table')} at a table, ${pct('bed')} at a bed`;
+  return slot === 'brain' || slot === 'spine' ? `success ${pct('rig')} with a rig` : `success ${pct('rig')} with a rig, ${pct('bed')} without`;
 }
 
 function statusOf(sim: Sim, id: number, op: Operation, n: number): string {
@@ -71,7 +71,7 @@ function statusOf(sim: Sim, id: number, op: Operation, n: number): string {
   if (!readyOperation(sim, id)) return 'gave up waiting';
   const job = surgeryJobOf(sim, id)?.[1];
   if (job) return job.progress > 0 ? `in surgery, ${Math.round((job.progress / job.work) * 100)}%` : job.reservedBy ? 'surgeon on the way' : 'waiting for a surgeon';
-  return theatreFits(sim, lyingIn(sim, id), op) ? 'waiting for a surgeon' : 'on the way to the table';
+  return theatreFits(sim, lyingIn(sim, id), op) ? 'waiting for a surgeon' : 'on the way to a bed';
 }
 
 /** The operations open on one part of this patient, in order: fit, repair, amputate, remove. */
@@ -111,16 +111,16 @@ function optionsFor(sim: Sim, id: number, part: { id: string; name: string }, su
 /** Where operations can be done on the patient's ship, in words. */
 function whereOf(sim: Sim, id: number): string[] {
   const ship = shipIdOf(sim, sim.world.get(id, PositionC));
-  let tables = 0, beds = 0;
+  let rigs = 0, beds = 0;
   for (const m of sim.world.query(ModuleC)) {
     const mod = sim.world.get(m, ModuleC);
     if (!mod || shipIdOf(sim, mod) !== ship) continue;
     const t = theatreOf(sim, m);
-    if (t === 'table') tables++;
+    if (t === 'rig') rigs++;
     else if (t === 'bed') beds++;
   }
   return [
-    tables ? `Surgery table: lower risk (${tables} aboard)` : 'Surgery table: none aboard (needed for brain and spine)',
+    rigs ? `Medical bed with a surgical rig: lower risk (${rigs} aboard)` : 'Medical bed with a surgical rig: none aboard (needed for brain and spine)',
     beds ? 'Medical bed: higher risk' : 'Medical bed: none aboard',
   ];
 }

@@ -12,10 +12,13 @@ Some harm a medical bed cannot mend: a lost eye, a ruined arm, a scarred heart. 
 organs, takes off lost limbs, and fits **implants**: cyberware that replaces a lost part or improves a healthy one.
 See [Injuries and healing](/mechanics/injuries/) for the body parts and capacities surgery works on.
 
-## The surgery table
+## The surgical rig
 
-Build a **surgery table** (Life) to operate safely. It needs power. A surgeon can also operate at a **medical bed**,
-at higher risk, except on the brain and the spine: those need a table.
+The patient always lies in a **medical bed**. A surgeon can operate there at higher risk, except on the brain and the
+spine. To operate safely, build a **surgical rig** (Life) beside the bed: it stands at the foot end, on either long
+side, facing the bed (not at the head, where the monitor stands). It needs power. A medical bed with a powered rig
+lowers the risk and allows brain and spine work. One rig serves the one bed it faces; if the bed goes, the rig serves
+nothing.
 
 ## Queueing an operation
 
@@ -29,11 +32,11 @@ Open the crew member's **Health** tab and press **Queue operation**. Pick a part
 - **Remove implant:** takes an implant out and puts it back in storage. A replacement taken out leaves the part lost,
   so a cyber heart or lungs can never be removed.
 
-A greyed operation says why it does not apply. The picker also names the best free surgeon and their odds at a table
-and at a bed.
+A greyed operation says why it does not apply. The picker also names the best free surgeon and their odds with a rig
+and without one.
 
 Operations are done in order. When the next one can start (its implant is in stock), the patient walks to a free
-surgery table (or a medical bed, when the operation allows one) and lies down. Crew with the **Medical** priority take
+medical bed with a rig (or a plain medical bed, when the operation allows one) and lies down. Crew with the **Medical** priority take
 the job, the best Medicine skill first. If no surgeon starts within <Stat kind="tuning" id="STRANDED_SEC" unit="s" />,
 the patient gets up and tries again later. Press ✕ on a queued operation to drop it.
 
@@ -44,19 +47,19 @@ longer for higher tiers), training Medicine. Then it succeeds or fails:
 
 - The chance starts at <Stat kind="tuning" id="SURGERY_BASE_CHANCE" percent /> and each level of the surgeon's
   Medicine adds <Stat kind="tuning" id="SURGERY_CHANCE_PER_LEVEL" percent />.
-- A medical bed takes <Stat kind="tuning" id="SURGERY_BED_PENALTY" percent /> off. Each implant tier above Mk I takes
+- A medical bed without a rig takes <Stat kind="tuning" id="SURGERY_BED_PENALTY" percent /> off. Each implant tier above Mk I takes
   <Stat kind="tuning" id="SURGERY_TIER_DIFFICULTY" percent /> off.
 - A **failure** leaves a bleeding surgical wound on the part; the implant stays in storage.
 - A **botched** operation destroys the part (the brain is only badly hurt), and an implant being fitted is ruined.
-  Botches are more common at a medical bed.
+  Botches are more common without a rig.
 
-Surgery never kills outright, but losing a heart or lungs on the table downs the patient.
+Surgery never kills outright, but losing a heart or lungs on the operating bed downs the patient.
 
 ## Saving a life
 
 A crew member whose heart or lungs are destroyed goes down and bleeds out, even in a bed. If a **cyber heart** or
-**cyber lungs** is in stock, an urgent replacement is queued at once: the patient is carried to a surgery table (or a
-medical bed), and a surgeon drops everything else to fit it. It is a race against the bleeding.
+**cyber lungs** is in stock, an urgent replacement is queued at once: the patient is carried to a medical bed (one with a
+rig first), and a surgeon drops everything else to fit it. It is a race against the bleeding.
 
 ## Implants
 

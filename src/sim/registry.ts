@@ -557,7 +557,7 @@ export interface ModuleDef {
    * full with no medic, out of action meanwhile; a downed patient carried there is stabilised and heals too. The critical (downed) take it before a medical bed, walking patients only when no medical bed is free (crew/beds.ts `BedUse`).
    */
   recovery?: true;
-  /** A surgery table (crew/surgery.ts; also `bed` and `medical`, powered): patients lie on it only for an operation, safer than a medical bed; brain and spine work needs one. */ surgery?: true;
+  /** A surgical rig (modules/rig.ts): 1x1, faces the foot of a bed of def `bed` from its side; powered, it makes that bed surgery-grade (crew/surgery.ts `surgeryGrade`). */ rig?: { bed: string };
   /** A hydroponics bed: carries a crop (farm/). `scale`: how many times a small bed's yield and planting water it takes (the large bed's 3). */
   plot?: { scale: number; waterScale?: number };
   /**

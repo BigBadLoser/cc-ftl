@@ -144,7 +144,7 @@ export interface Job {
   size?: [number, number];
   /** Entity the job acts on: module (moduleDecon, repair) or downed crew (rescue). */
   target?: number;
-  /** For 'rescue': the bed module reserved for the patient, or 0. For 'surgery': the bed or table the patient lies in. */
+  /** For 'rescue': the bed module reserved for the patient, or 0. For 'surgery': the medical bed the patient lies in. */
   bed?: number;
   /** Materials still to be delivered before work may start (build, module, craft). Absent = none needed. */
   needs?: ItemQty[];
@@ -156,7 +156,7 @@ export interface Job {
   haul?: HaulData;
   /** For 'fit' jobs: the upgrade item to install (null = take the fitted one out). */
   fit?: { item: string | null };
-  /** For 'surgery' jobs: the operation (`Operation.id`) on the patient `target`, done in the bed or table `bed` (crew/surgery.ts). */
+  /** For 'surgery' jobs: the operation (`Operation.id`) on the patient `target`, done in the medical bed `bed` (crew/surgery.ts). */
   surgery?: { op: number };
   /** For 'assemble' jobs: the robot role being built (in a robot bay), or the vehicle (in a vehicle bay). */
   assemble?: { role?: string; vehicle?: string };
@@ -199,7 +199,7 @@ export type JobKind =
   | 'tend'
   /** aid: first aid on the bleeding crew member `target` where they are (follows them); done, the bleeding stops (crew/injure.ts `stopBleeding`). */
   | 'aid' | 'haul' | 'craft' | 'research' | 'operate'
-  /** surgery: operate on the patient `target` lying in the surgery table or medical bed `bed`, worked from beside it (crew/surgery.ts, crew/surgeryOutcome.ts). */
+  /** surgery: operate on the patient `target` lying in the medical bed `bed`, worked from beside it (crew/surgery.ts, crew/surgeryOutcome.ts). */
   | 'surgery'
   /** plant / harvest: sow or cut the crop of the hydroponics bed `target` (farm/work.ts). */
   | 'plant' | 'harvest'

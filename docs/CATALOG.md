@@ -58,7 +58,7 @@ Things people believe exist and do not (or only partly), and the reverse.
 - **Lessons:** the engine is general, but only two lessons exist (combat, hail).
 - **Research module:** no ship template or ship generator places one, so research on a ship needs the player to build one first (research stations and breaker shops on stations do carry the research module and scrapper). Same for the radiator, large hydroponics bed, bunk, scrap bin and armory/tank storage ("buildable only").
 - **Zealot "augmented" crews:** a stand-in body; implants exist now (#311 slice 2a), zealots spawning with them is slice 2b.
-- **Recovery pod:** built as a first pass (#319): buildable, heals HP to full and speeds the healing of treated injuries (#601), but does not treat them; no ship starts with one; surgery is at a surgery table or medical bed.
+- **Recovery pod:** built as a first pass (#319): buildable, heals HP to full and speeds the healing of treated injuries (#601), but does not treat them; no ship starts with one; surgery is at a medical bed, safer with a surgical rig.
 - **Water purifier:** in game (`module.waterPurifier`, #321): buildable, `recipe.purify_ice` turns ice into water; art from `purifier_g1` (family `purifier_module`, four rotations).
 - **Construction pods and drones, logistics robot:** planned only, even though `module.pod_bay` text mentions construction pods.
 - **Leisure furniture** (art in `tools/blender/sprites/leisure.py`, four rotations each; #441). Buildable from the Life tab, in game:

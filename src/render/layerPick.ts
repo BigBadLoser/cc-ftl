@@ -4,6 +4,7 @@ import type { ModuleDef } from '../sim/registry';
 import { airlockLayers, type AirlockView } from './airlockArt';
 import { moduleLayers, type ModuleLayer, type ModuleLook } from './moduleArt';
 import { recoveryLayers } from './recoveryArt';
+import { rigLayers, type RigView } from './rigArt';
 import { droneBayLayers } from './droneBayArt';
 import { robotBayLayers } from './robotBayArt';
 import { stasisLayers } from './stasisArt';
@@ -20,6 +21,8 @@ export interface LayerState {
   airlock: AirlockView;
   /** Vehicle bays: the shuttle / pod state (`steady(true)` = parked in its claws, `steady(false)` = empty pit). */
   bay: BayStep;
+  /** Surgical rigs: the bed they face and whether it is operating on (render/rigArt.ts). */
+  rig?: RigView;
 }
 
 /**
@@ -33,6 +36,7 @@ export function layersOf(world: World, id: number, m: Module, def: ModuleDef, s:
   if (def.airlock?.layout) return airlockLayers(world, id, m, def, s.airlock);
   if (def.stasisWheel) return stasisLayers(world, id, m, def, s.active, s.look);
   if (def.recovery) return recoveryLayers(world, id, m, def, s.active, s.look);
+  if (def.rig) return rigLayers(m, def, s.rig);
   return moduleLayers(world, id, m, def, s.active, true, s.livery, s.look);
 }
 

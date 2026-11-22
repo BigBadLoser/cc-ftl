@@ -5,11 +5,13 @@ import { addInjury } from '../sim/crew/injure';
 import { implantLoad, implantOn, implantsOf } from '../sim/crew/implants';
 import { finishSurgery, fitImplant } from '../sim/crew/surgeryOutcome';
 import { bedUseOf } from '../sim/crew/beds';
-import { operationError, operationsOf, surgeryChance, theatreFits } from '../sim/crew/surgery';
+import { operationError, operationsOf, surgeryChance, surgeryGrade, theatreFits } from '../sim/crew/surgery';
 import { augmentedCrew } from '../sim/trade/augmentation';
 import { shipStoreCount } from '../sim/items/stock';
 import { ModuleC } from '../sim/modules/components';
-import { shipIdOf } from '../sim/regions';
+import { bedOfRig, rigFitsBed } from '../sim/modules/rig';
+import { placementError } from '../sim/modules/spawn';
+import { shipGrid, shipIdOf } from '../sim/regions';
 import { stat } from '../sim/stats';
 import { playerCrew } from '../sim/story/world';
 import type { Sim } from '../sim/sim';
@@ -22,12 +24,12 @@ import { expectReplayable } from '../../test/support/world';
 import { pickCrew } from './scenario/lib/crewPick';
 
 const human = (sim: Sim, n = 0): number => playerCrew(sim).filter((id) => sim.world.get(id, CrewC)?.species === 'species.human')[n] as number;
-/** The player's first module of `def` (the scenario adds a surgery table and a medical bed). */
+/** The player's first module of `def` (the scenario adds a medical bed and a surgical rig facing its foot). */
 const moduleOf = (sim: Sim, def: string): number => {
   const home = shipIdOf(sim, sim.world.get(playerCrew(sim)[0] as number, PositionC));
   return sim.world.query(ModuleC).find((id) => sim.world.get(id, ModuleC)?.def === def && shipIdOf(sim, sim.world.get(id, ModuleC)) === home) as number;
 };
-const ship = (sim: Sim): number => shipIdOf(sim, sim.world.get(moduleOf(sim, 'module.surgery_table'), ModuleC));
+const ship = (sim: Sim): number => shipIdOf(sim, sim.world.get(moduleOf(sim, 'module.med_bed'), ModuleC));
 
 describe('surgery and implants (#311)', () => {
   it('fitting an implant changes the capacity and the stats, under the implant origin', () => {
@@ -63,27 +65,48 @@ describe('surgery and implants (#311)', () => {
     expect(operationError(sim, id, { kind: 'remove', part: 'part.heart', item: 'item.cyber_heart_1' })).toBe('noImplant');
   });
 
-  it('a surgery table beats a medical bed, and brain and spine work refuses a bed', () => {
+  it('a medical bed with a rig beats one without, and brain and spine work needs the rig', () => {
     const built = cachedScenario('surgery');
     const sim = built.sim;
     const patient = pickCrew(sim, 0)!;
     const medic = pickCrew(sim, 1)!;
     const op = { kind: 'fit' as const, part: 'part.eye_right', item: 'item.cyber_eye_2' };
-    expect(surgeryChance(sim, medic, patient, op, 'table')).toBeGreaterThan(surgeryChance(sim, medic, patient, op, 'bed'));
-    const table = moduleOf(sim, 'module.surgery_table');
+    expect(surgeryChance(sim, medic, patient, op, 'rig')).toBeGreaterThan(surgeryChance(sim, medic, patient, op, 'bed'));
+    const rig = moduleOf(sim, 'module.surgery_rig');
     const bed = moduleOf(sim, 'module.med_bed');
     expect(built.rejected).toEqual({});
-    expect(theatreFits(sim, table, { part: 'part.brain' })).toBe(true);
-    expect(theatreFits(sim, table, { part: 'part.eye_right' })).toBe(true);
+    expect(bedOfRig(sim.world, sim.content.modules, shipGrid(sim, ship(sim))!, rig)).toBe(bed);
+    expect(surgeryGrade(sim, bed)).toBe(true);
+    expect(theatreFits(sim, bed, { part: 'part.brain' })).toBe(true);
+    // Switched off, the rig serves nothing: the bed is a plain medical bed again.
+    sim.enqueue({ type: 'module.setEnabled', id: rig, enabled: false });
+    play(built, 1);
+    expect(surgeryGrade(sim, bed)).toBe(false);
     expect(theatreFits(sim, bed, { part: 'part.eye_right' })).toBe(true);
     expect(theatreFits(sim, bed, { part: 'part.brain' })).toBe(false);
     expect(theatreFits(sim, bed, { part: 'part.spine' })).toBe(false);
+    sim.enqueue({ type: 'module.setEnabled', id: rig, enabled: true });
     sim.enqueue({ type: 'crew.queueOperation', id: patient, kind: 'fit', part: 'part.brain', item: 'item.chip_gunnery_1' });
     play(built, 1);
-    expect(bedUseOf(sim, patient)).toBe('surgeryTable'); // the walk goes to a table, never a bed
+    expect(bedUseOf(sim, patient)).toBe('surgeryRig'); // the walk goes to a rigged bed, never a plain one
   });
 
-  it('a queued replacement: the patient walks to the table, the medic operates, and the outcome replays from the seed and a save', () => {
+  it('a rig stands only beside the foot of a medical bed, facing it from a long side', () => {
+    const sim = cachedScenario('surgery').sim;
+    const home = ship(sim);
+    const b = sim.world.get(moduleOf(sim, 'module.med_bed'), ModuleC)!;
+    const [rigDef, bedDef] = [sim.content.modules['module.surgery_rig']!, sim.content.modules['module.med_bed']!];
+    const errors: (string | null)[] = [];
+    for (let y = b.y - 2; y <= b.y + 3; y++) for (let x = b.x - 2; x <= b.x + 3; x++) for (let rot = 0; rot < 4; rot++) {
+      const err = placementError(sim, home, 'module.surgery_rig', x, y, rot);
+      errors.push(err);
+      if (!rigFitsBed(rigDef, x, y, rot, bedDef, b.x, b.y, b.rot)) expect(err, `${x},${y} r${rot}`).not.toBeNull();
+      else expect(err).not.toBe('rigNeedsBedFoot');
+    }
+    expect(errors).toContain('rigNeedsBedFoot');
+  });
+
+  it('a queued replacement: the patient walks to the rigged bed, the medic operates, and the outcome replays from the seed and a save', () => {
     const built = cachedScenario('surgery', { params: { queue: true } });
     const sim = built.sim;
     const patient = pickCrew(sim, 0)!;

@@ -1,6 +1,7 @@
 import { skillOf } from '../combat/operators';
 import { shipStoreCount } from '../items/stock';
 import { ModuleC } from '../modules/components';
+import { rigFacing } from '../modules/rig';
 import { shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
@@ -20,15 +21,15 @@ import { workBlocked } from './workBlock';
 /**
  * Surgery (DESIGN.md "Injuries and cyberware", #311): the one answer to "may this operation be done on this patient" (`operationError`), "where"
  * (`theatreOf`, `theatreFits`), "how likely is it to go well" (`surgeryChance`) and "is the patient waiting to be operated on" (`seeksSurgery`). The patient
- * walks to a surgery table (or a medical bed) through the recover drive (crew/beds.ts `bedUseOf`), or a downed one is carried there; the surgery jobs
+ * walks to a medical bed (one with a surgical rig first) through the recover drive (crew/beds.ts `bedUseOf`), or a downed one is carried there; the surgery jobs
  * are posted by systems/surgery.ts and finished in crew/surgeryOutcome.ts. Pure reads.
  */
 
 /** What a part is for surgery: in the body map (or the skin, for implants only). */
 const partDef = (sim: Sim, part: string) => sim.content.injuries?.parts[part];
 
-/** Brain and spine work needs a surgery table. */
-export function needsTable(sim: Sim, part: string): boolean {
+/** Brain and spine work needs a surgery-grade bed (a surgical rig beside it). */
+export function needsRig(sim: Sim, part: string): boolean {
   const slot = partDef(sim, part)?.slot;
   return slot === 'brain' || slot === 'spine';
 }
@@ -95,25 +96,33 @@ export function readyOperation(sim: Sim, id: number): Operation | undefined {
 /** Does the patient go and lie down for surgery (a walking one), or need carrying to it (a downed one)? */
 export const seeksSurgery = (sim: Sim, id: number): boolean => !!readyOperation(sim, id);
 
-/** Must their next operation be at a surgery table (brain or spine)? */
-export const surgeryNeedsTable = (sim: Sim, id: number): boolean => {
+/** Must their next operation be at a surgery-grade bed (brain or spine)? */
+export const surgeryNeedsRig = (sim: Sim, id: number): boolean => {
   const op = readyOperation(sim, id);
-  return !!op && needsTable(sim, op.part);
+  return !!op && needsRig(sim, op.part);
 };
 
-/** Where a module operates: a surgery table (intact and powered), a medical bed (intact; not a recovery pod), or neither. */
-export function theatreOf(sim: Sim, bed: number): 'table' | 'bed' | undefined {
+/**
+ * Is the bed surgery-grade: a powered, intact surgical rig faces its foot (modules/rig.ts `rigFacing`). The one answer for the operation's place, the odds,
+ * the planner, the bed choice and the Health tab.
+ */
+export function surgeryGrade(sim: Sim, bed: number): boolean {
+  const rig = sim.world.get(rigFacing(sim.world, sim.content.modules, bed), ModuleC);
+  return !!rig && rig.hp > 0 && rig.powered && rig.enabled;
+}
+
+/** Where a module operates: a surgery-grade medical bed (`rig`), a plain one (`bed`; intact, not a recovery pod), or neither. */
+export function theatreOf(sim: Sim, bed: number): 'rig' | 'bed' | undefined {
   const m = sim.world.get(bed, ModuleC);
   const def = m && sim.content.modules[m.def];
   if (!m || !def || m.hp <= 0 || !def.medical || def.recovery) return undefined;
-  if (def.surgery) return m.powered ? 'table' : undefined;
-  return 'bed';
+  return surgeryGrade(sim, bed) ? 'rig' : 'bed';
 }
 
-/** May the operation be done in `bed`: a table, or a medical bed when it is not brain or spine work. */
+/** May the operation be done in `bed`: a surgery-grade bed, or a plain medical bed when it is not brain or spine work. */
 export function theatreFits(sim: Sim, bed: number, op: Pick<Operation, 'part'>): boolean {
   const t = theatreOf(sim, bed);
-  return t === 'table' || (t === 'bed' && !needsTable(sim, op.part));
+  return t === 'rig' || (t === 'bed' && !needsRig(sim, op.part));
 }
 
 /** The bed the crew member lies in (walking patient, or stabilised downed one), or 0. */
@@ -142,7 +151,7 @@ export function surgeryJobOf(sim: Sim, patient: number): [number, Job] | undefin
 /** Is a surgeon at work on the patient right now? */
 export const surgeryUnderway = (sim: Sim, patient: number): boolean => (surgeryJobOf(sim, patient)?.[1].progress ?? 0) > 0;
 
-/** Give up waiting on the table: the next operation is marked `untended` now. */
+/** Give up waiting in the bed: the next operation is marked `untended` now. */
 export function giveUpSurgery(sim: Sim, id: number): void {
   const op = sim.world.get(id, OperationsC)?.list[0];
   if (op) op.untended = sim.tick;
@@ -155,14 +164,14 @@ function difficulty(sim: Sim, id: number, op: Pick<Operation, 'kind' | 'part' | 
   return base + (isUrgent(sim, id, op) ? SURGERY_URGENT_DIFFICULTY : 0);
 }
 
-/** The chance the operation goes well with this surgeon at a table or a bed: their Medicine, the place and the difficulty. */
-export function surgeryChance(sim: Sim, surgeon: number, patient: number, op: Pick<Operation, 'kind' | 'part' | 'item'>, where: 'table' | 'bed'): number {
+/** The chance the operation goes well with this surgeon at a surgery-grade bed or a plain one: their Medicine, the place and the difficulty. */
+export function surgeryChance(sim: Sim, surgeon: number, patient: number, op: Pick<Operation, 'kind' | 'part' | 'item'>, where: 'rig' | 'bed'): number {
   const p = SURGERY_BASE_CHANCE + SURGERY_CHANCE_PER_LEVEL * Math.max(0, skillOf(sim, surgeon, 'medicine')) - difficulty(sim, patient, op) - (where === 'bed' ? SURGERY_BED_PENALTY : 0);
   return Math.min(SURGERY_CHANCE_MAX, Math.max(SURGERY_CHANCE_MIN, p));
 }
 
-/** The share of failures that are botched at a table or a bed. */
-export const botchShare = (where: 'table' | 'bed'): number => (where === 'bed' ? SURGERY_BED_BOTCH_SHARE : SURGERY_BOTCH_SHARE);
+/** The share of failures that are botched at a surgery-grade bed or a plain one. */
+export const botchShare = (where: 'rig' | 'bed'): number => (where === 'bed' ? SURGERY_BED_BOTCH_SHARE : SURGERY_BOTCH_SHARE);
 
 /** Seconds of a surgeon's work the operation takes at work speed 1. */
 export function operationSec(sim: Sim, id: number, op: Pick<Operation, 'kind' | 'part' | 'item'>): number {

@@ -12,7 +12,7 @@ One line per section; read the index, then only the sections your task touches.
   - [Schedules (#412, user decisions 2026-11-09)](#schedules-412-user-decisions-2026-11-09): A 24-hour ship clock (a game hour is 40 s), 24 hour blocks per crew member (Any, Work, Sleep, Free) with presets, emergency overrides, away trips go on duty and come home for Sleep (Free on a site: work on, home at the first chance).
   - [EVA and spacesuits](#eva-and-spacesuits): Suits live at the airlock, no locker or suit item, and no suit limit (#416): any airlock or shuttle has one for whoever needs it...
   - [Robots and the rogue AI](#robots-and-the-rogue-ai): Robots are not crew, androids will be. A robot is a moving module run by its ship's AI core: not an...
-  - [Injuries and cyberware (user decisions, 2026-11-21; #311)](#injuries-and-cyberware-user-decisions-2026-11-21-311): Ten body parts feeding capacities as stat modifiers, injuries by source, first aid, treatment and surgery (med bed or surgery table), implants as items per part with tiers, Purist and Chrome moods.
+  - [Injuries and cyberware (user decisions, 2026-11-21; #311)](#injuries-and-cyberware-user-decisions-2026-11-21-311): Ten body parts feeding capacities as stat modifiers, injuries by source, first aid, treatment and surgery (med bed, safer with a surgical rig), implants as items per part with tiers, Purist and Chrome moods.
 - [Ship systems (M3 decisions)](#ship-systems-m3-decisions): Power: one network per ship for now, with module priorities deciding what loses power in a shortage; reactors burn energy crystals and battery banks store power (planned).
 - [Combat](#combat): FTL's decision-making with physical consequences, in a shared sector.
 - [Exploration & events](#exploration--events): Away teams board derelicts and stations (they're grids in the same world).
@@ -296,9 +296,10 @@ eyes and the main organs are parts, fingers are not.
   - **Treatment:** at a medical bed; the medic's Medicine skill and the supplies used set the healing quality.
   - **Recovery pod:** speeds healing of treated injuries; no surgery.
   - **Surgery:** below.
-- **Surgery.** A medical bed can operate at higher risk; a new **surgery table** module lowers the risk and is needed
-  for brain and spine work. Operations: repair an organ, amputate a destroyed limb, fit or remove an implant. Success
-  comes from the surgeon's Medicine, the bed or table, the supplies and the operation's difficulty. A failure injures
+- **Surgery.** A medical bed can operate at higher risk; a **surgical rig** built beside it (facing the bed's foot
+  from a long side) lowers the risk and is needed for brain and spine work (user, 2026-11-22; it replaced a surgery table).
+  Operations: repair an organ, amputate a destroyed limb, fit or remove an implant. Success
+  comes from the surgeon's Medicine, the rig or none, the supplies and the operation's difficulty. A failure injures
   the part; a bad failure destroys it. Surgery never kills outright, but bleeding afterwards can.
 - **Implants are items** (`ItemDef.implant`: slot, tier, modifiers; the weapon-upgrade pattern), one per part.
   Replacements: cyber arms, legs, eyes, lungs, heart. Augments that keep the flesh part: neural chip (brain), spine
@@ -350,11 +351,11 @@ eyes and the main organs are parts, fingers are not.
 - **Slices.**
   1. Injury core (sim): body map, capacities and modifiers, injury sources, bleeding and first aid, med-bed treatment,
      natural healing and scars, log lines, a plain injury list in the inspector, `?scenario=injuries`, wiki page.
-  2. Surgery and implants (sim, #311): surgery job and risk, surgery table (placeholder art first), implant defs,
+  2. Surgery and implants (sim, #311): surgery job and risk, surgical rig (placeholder art first), implant defs,
      fit and remove, ion effects, cyber repair, Purist and Chrome, zealots on implants (`SAVE_VERSION` bump), research
      and station stock.
   3. Visuals: a Health tab with a body diagram (static mocks first), crew art for missing and cyber limbs and eyes,
-     surgery table art, implant icons.
+     surgical rig art, implant icons.
   4. Later: a station clinic service, contraband implants, hacking.
 
 ## Ship systems (M3 decisions)

@@ -10,6 +10,7 @@ import { Struct } from '../structure';
 import { ModuleC } from './components';
 import { footprintTiles, hullOutward, hullRow, hullSide, inFootprint, openTilesOf, accessTiles } from './footprint';
 import { isTileWalkable } from './walk';
+import { rigPlacementError } from './rig';
 import { dismantleAirlock, initAirlock } from './airlock';
 import { VehicleBayC } from '../vehicles/components';
 import { AUTO_LEVEL_MAX } from '../rock/dig';
@@ -65,7 +66,7 @@ export function removeModule(sim: Sim, id: number): void {
 
 /**
  * Why a module cannot be placed here, or null if it can. Checks bounds, floor, free tiles,
- * a walkable access tile and overlap with other module blueprints (jobs).
+ * a walkable access tile, overlap with other module blueprints (jobs) and a surgical rig's bed (modules/rig.ts).
  */
 export function placementError(sim: Sim, shipId: number, defId: string, x: number, y: number, rot: number): string | null {
   const grid = shipGrid(sim, shipId);
@@ -101,15 +102,17 @@ export function placementError(sim: Sim, shipId: number, defId: string, x: numbe
       return 'noAccess';
     }
   }
+  const planned: { def: string; x: number; y: number; rot: number }[] = [];
   for (const jobId of sim.world.query(JobC)) {
     const j = sim.world.get(jobId, JobC);
     if (j?.kind !== 'module' || shipIdOf(sim, j) !== shipId || !j.module) continue;
+    planned.push({ def: j.module.def, x: j.x, y: j.y, rot: j.module.rot });
     const other = sim.content.modules[j.module.def];
     if (!other) continue;
     const theirs = footprintTiles(other, j.x, j.y, j.module.rot);
     if (theirs.some((a) => tiles.some((b) => a.x === b.x && a.y === b.y))) return 'jobExists';
   }
-  return null;
+  return rigPlacementError(sim.world, sim.content.modules, grid, def, x, y, rot, planned); // a surgical rig faces the foot of a medical bed
 }
 
 /** True if a crew member stands on, or is stepping onto, any footprint tile of a solid module. */

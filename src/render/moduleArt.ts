@@ -14,8 +14,7 @@ import { PlotC } from '../sim/farm/components';
 import { SCHEMES } from './roofArt';
 import { cropStage } from './cropStage';
 
-/** Storage reads 'full' from this share of its slots upward. */
-const FULL_SHARE = 0.75;
+/** Storage reads 'full' from this share of its slots upward. */ const FULL_SHARE = 0.75;
 
 /** Fill class of a storage module from its slots in use. */
 export function storageFill(world: World, id: number): 'empty' | 'partial' | 'full' {
@@ -218,6 +217,7 @@ export interface ModuleLayer {
   strips?: boolean;
   /** One sprite on this tile (the airlock's parts are 1x1 sprites each anchored at their own tile), not at the footprint's front tile. */
   at?: { x: number; y: number };
+  /** Drawn at the module's front tile but sorted by this tile (a surgical rig's front overlay, over the bed it faces). */ sortAt?: { x: number; y: number };
   /** With `at`: a deck mark, sorted under everything standing on the floor. */
   flat?: boolean;
   /** A livery overlay (a container shell's `<shell>.paint` and `<shell>.lv`, a livery module's emblem mask): recoloured by the ship's livery; drawn only if the art has it. */
