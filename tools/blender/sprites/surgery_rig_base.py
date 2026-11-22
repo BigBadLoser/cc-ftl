@@ -1,7 +1,8 @@
 """The surgical rig's upright body and its operator console (surgery_rig.py builds the rest): a floor flange bolted
 down, a flared collar, two white armour shells over a gunmetal core with a lit waist band and a front panel, the
-shoulder housing and the riser. A projector set flush into the body's left side (-u) throws the surgeon's console: a
-translucent pane beside it facing +v, across the bed's foot to the open tile on its other long side, where the operating surgeon stands, showing a body scan of
+shoulder housing and the riser. A projector set flush into the body's right side (+u, toward the bed's head) throws the surgeon's console: a
+translucent pane facing +u (turned a little toward the bed), toward the open tile on the rig's own side of the bed, beside its head half, where the
+operating surgeon stands, showing a body scan of
 the patient with the incision marked, and the tool rack.
 
 The hologram is its own layer (`holo`): rendered alone with the rig as holdout and baked to partial alpha, as the
@@ -12,9 +13,9 @@ from . import core
 
 C = (0.0, -0.04)                                                  # the body's axis (local u, v)
 LINE, FILM = "rgHolo", "rgHoloF"
-LENS_A, LENS_Z = math.pi - 0.35, 0.92                             # the projector: its heading round the body, height
+LENS_A, LENS_Z = 0.35, 0.92                                       # the projector: its heading round the body, height
 LENS = (C[0] + 0.182 * math.cos(LENS_A), C[1] + 0.182 * math.sin(LENS_A), LENS_Z)   # its lens
-PANE = dict(u=-0.6, v=0.15, z=0.86, w=0.42, h=0.5, lean=0.25, yaw=1.88)  # the console pane: foot centre, width, height; facing the tile across the bed's foot (0, 2)
+PANE = dict(u=0.6, v=0.06, z=0.86, w=0.42, h=0.5, lean=0.25, yaw=math.pi - 0.2)  # the console pane: foot centre, width, height; facing the open tile (1, 0)
 
 
 def at(r, a, z=0.0):
@@ -44,7 +45,7 @@ def body(R, on):
         p = at(0.17, (i + 0.5) * math.tau / 8)
         k.cyl(p[0], p[1], 1.52, 0.014, 0.012, "rgChrome", top="rgChrome", sides=6)
     k.cyl(*C, 1.52, 0.09, 0.36, "medWhite", top="plate", sides=10)                     # riser
-    # the console projector, set into the upper shell's left side: a dark bezel, the lens just proud of it
+    # the console projector, set into the upper shell's right side: a dark bezel, the lens just proud of it
     out = (math.cos(LENS_A), math.sin(LENS_A), 0.0)
     rim = at(0.15, LENS_A, LENS_Z)
     face = at(0.176, LENS_A, LENS_Z)
