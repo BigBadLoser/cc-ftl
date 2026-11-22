@@ -249,39 +249,54 @@ function helmFront(c: Ctx): Piece[] {
   const way: Box = { x: c.d, y: hd, w: 1, h: c.h - hd };
   const ways: Box[] = [way, ...(c.doors ?? []).map((t): Box => ({ x: t.x, y: t.y, w: 1, h: 1 })), { x: c.d, y: c.h - 1, w: 1, h: 1 }];
   const hit = (a: Box, b: Box, m: number): boolean => a.x < b.x + b.w + m && b.x < a.x + a.w + m && a.y < b.y + b.h + m && b.y < a.y + a.h + m;
+  // A tile of the room: anywhere its floor runs, past the frame's edges too (a tapered bridge's aft corners lie outside
+  // its deepest frame).
+  const room = (x: number, y: number): boolean => (c.floor ? c.floor(x, y) : x >= 0 && y >= 0 && x < c.w && y < c.h && !isCut(c, x, y));
   const free = (r: Box, m: number): boolean => {
-    if (r.x < 0 || r.y < 0 || r.x + r.w > c.w || r.y + r.h > c.h) return false;
-    for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) if (isCut(c, x, y)) return false;
+    for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) if (!room(x, y)) return false;
     return !boxes.some((b) => hit(r, b, m)) && !ways.some((b) => hit(r, b, m));
   };
-  // A console's back stands on a real wall of the room, whatever the frame's edge: the tiles behind it are not floor.
+  // A console's back stands on a real wall of the room: the tiles behind it are not floor.
   const backed = (r: Box, rot: number): boolean => {
-    const f = c.floor;
-    if (!f) return true;
     const dx = rot === 3 ? -1 : rot === 1 ? 1 : 0, dy = rot === 0 ? -1 : rot === 2 ? 1 : 0;
     const ex = rot === 3 ? r.x : rot === 1 ? r.x + r.w - 1 : undefined, ey = rot === 0 ? r.y : rot === 2 ? r.y + r.h - 1 : undefined;
     for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) {
       if ((ex !== undefined && x !== ex) || (ey !== undefined && y !== ey)) continue;
-      if (f(x + dx, y + dy)) return false;
+      if (room(x + dx, y + dy)) return false;
     }
     return true;
   };
+  // Its aft edge on the door wall: no floor behind any tile of that edge.
+  const aftFlush = (r: Box): boolean => { for (let x = r.x; x < r.x + r.w; x++) if (room(x, r.y + r.h)) return false; return true; };
   const put = (m: string, r: Box, rot: number): void => { out.push(P(m, r.x, r.y, rot)); boxes.push(r); };
   const ops = c.need.filter((m) => OPS.includes(m));
   const sideCount: number[] = [0, 0], load = (s: number): number => sideCount[s] ?? 0;
+  const reach = c.w + 24;
   ops.forEach((m) => {
     const [len, d] = fp(m);
-    // A side wall's spot: left turned east (rot 3), right turned west (rot 1), nearest the door wall first.
-    const side = (s: number, at: number): [Box, number] => [{ x: s === 0 ? 0 : c.w - d, y: at, w: d, h: len }, s === 0 ? 3 : 1];
+    // By a side wall, the door's line clear: first turned across the room (left facing east, rot 3; right facing west,
+    // rot 1) with its back on the hull and its aft edge on the door wall; else in the aft corner facing the bow, its back
+    // on the door wall and its side on the hull (a corner the hull steps into); else turned on the hull, furthest aft,
+    // then furthest out.
     const order = load(0) <= load(1) ? [0, 1] : [1, 0];
     for (const margin of [1, 0]) {
-      for (let at = c.h - len; at >= 0; at--) {
-        for (const s of order) {
-          const [r, rot] = side(s, at);
-          if (!free(r, margin) || !backed(r, rot)) continue;
-          put(m, r, rot); sideCount[s] = load(s) + 1;
-          return;
+      for (const s of order) {
+        let best: { r: Box; rot: number; k: number } | null = null;
+        const take = (r: Box, rot: number, tier: number): void => {
+          const far = s === 0 ? c.d - (r.x + r.w - 1) : r.x - c.d;
+          if (far < 1 || !free(r, margin) || !backed(r, rot)) return;
+          const k = tier * 1e7 + (r.y + r.h) * 1e3 + far;
+          if (!best || k > best.k) best = { r, rot, k };
+        };
+        const sided = (r: Box): boolean => { const x = s === 0 ? r.x - 1 : r.x + r.w; for (let y = r.y; y < r.y + r.h; y++) if (room(x, y)) return false; return true; };
+        for (let y = c.h - 1; y >= 0; y--) for (let x = -reach; x <= reach; x++) {
+          const turned: Box = { x, y, w: d, h: len };
+          if (y + len <= c.h) take(turned, s === 0 ? 3 : 1, aftFlush(turned) ? 2 : 0);
+          const fore: Box = { x, y, w: len, h: d };
+          if (y + d <= c.h && sided(fore)) take(fore, 2, 1);
         }
+        const got = best as { r: Box; rot: number } | null;
+        if (got) { put(m, got.r, got.rot); sideCount[s] = load(s) + 1; return; }
       }
       // The bow wall beside the helm, outermost first (with a tile between where there is one), then the door wall.
       const spots: [Box, number][] = [];
