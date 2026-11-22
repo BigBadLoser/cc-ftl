@@ -25,7 +25,24 @@ export interface BlocksLayout { kind: 'blocks'; guns: 'forward' | 'spread' }
  * - `decks`: passenger decks aft of the airlocks: single cabins both sides of the spine (its shallow bays), the commons
  *   in its deep ones; command, stores and systems forward.
  */
-export interface BaysLayout { kind: 'bays'; battery?: boolean; lane?: boolean; decks?: boolean }
+export interface BaysLayout { kind: 'bays'; battery?: boolean; lane?: boolean; decks?: boolean; program?: ProgramRules }
+
+/** A bay ship's room program past its plan (bayRooms.ts), each set by its parts and over them by the recipe. */
+export interface ProgramRules {
+  /** Escape pods in place of the plan's hangars (the frame has the hangar). */
+  pods?: boolean;
+  /**
+   * Mirrored sides: the guns and the point-defence pair fixed (the plan's point-defence room dropped), life support a
+   * room a side, the mess 9x4.
+   */
+  mirror?: boolean;
+  /** An annex (the pantry) cut beside its host, not behind it (the med bay keeps its trauma room behind). */
+  beside?: boolean;
+  /** A hold may take all its bays: spare floor is storage. */
+  holds?: boolean;
+  /** Floor a small room may take, as a multiple of its plan. */
+  grow?: number;
+}
 
 /**
  * A bay ship's departments (zones.ts), each its own run of bays: command, systems and stores forward, hab, and on a lane

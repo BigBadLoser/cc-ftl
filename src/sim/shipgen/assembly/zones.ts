@@ -2,6 +2,7 @@ import type { DeptRules, ShipDept } from '../outlineRecipe';
 import type { RoomSpec } from '../plan';
 import type { Bay } from './bays';
 import type { Frame } from './frame';
+import type { BayPart } from './parts';
 import type { Filler } from './roomSize';
 
 /**
@@ -35,12 +36,13 @@ function deptOf(r: RoomSpec): Dept {
  */
 export function zonesOf(
   fr: Frame, bays: readonly Bay[], weapons: ReadonlySet<number>, flight: number, need: Partial<Record<Dept, Need>>, area: (k: number) => number,
+  part: BayPart['zones'],
 ): Dept[] {
-  if (!fr.lane && !fr.decks) return [];
+  if (!part) return [];
   // The forward section: command at the bow, then stores and systems (either way round), each a run of bays. Of every
   // cut, one where each has a slot a room (a department with an annex a two-tier bay), the floor nearest its share.
-  // (Passenger decks: the bays ahead of the airlocks; those aft are hab's.)
-  const ks = bays.flatMap((b, k) => (b.row || (fr.decks && b.x0 > fr.dockAt) ? [] : [k])), tiers = (k: number): number => (bays[k] as Bay).tiers.length;
+  // (Which bays, the layout's part says: passenger decks the bays ahead of the airlocks.)
+  const ks = bays.flatMap((b, k) => (part.forward(b, fr) ? [k] : [])), tiers = (k: number): number => (bays[k] as Bay).tiers.length;
   const total = FWD.reduce((t, d) => t + (need[d]?.area ?? 0), 0), floor = ks.reduce((t, k) => t + area(k), 0);
   let best: { cost: number; of: Dept[] } | null = null;
   for (const order of [['command', 'stores', 'systems'], ['command', 'systems', 'stores']] as const) {
@@ -57,13 +59,8 @@ export function zonesOf(
     }
   }
   const of = new Map<number, Dept>(ks.map((k, n) => [k, best?.of[n] ?? 'systems']));
-  let out = 0;
-  return bays.map((b, k) => {
-    if (!b.row) return of.get(k) ?? (fr.decks ? 'hab' : 'systems');
-    if (b.row.dir < 0) return 'hab';
-    if (weapons.has(k)) return 'weapons';
-    return out++ < flight ? 'flight' : 'hab';
-  });
+  const z = { weapons, flight, out: { n: 0 } };
+  return bays.map((b, k) => of.get(k) ?? part.other(b, k, z));
 }
 
 /** A department's own rooms for floor left over, taken in turn (again and again), the plainest last. */
