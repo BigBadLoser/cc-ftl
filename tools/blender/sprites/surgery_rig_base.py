@@ -56,7 +56,7 @@ def _q(R, pts, col):
     R.m.poly([core.G(*R.g(p)) for p in pts], col, flip=True)
 
 
-def holo(R):
+def holo(R, scan=None):
     """The console hologram (in surgery): a tall pane, light lines from the lens to its corners, and a body
     scan on it: the patient's outline standing, the incision marked across the belly, the tool rack beside it and the halo
     with its arms in use lit (the bed's own monitor already shows the trace). Few, bold strokes: it is a few dozen pixels across in game."""
@@ -84,6 +84,9 @@ def holo(R):
     rx, rt = 0.036 / w, 0.036 / h
     line([(cx + rx * math.cos(a), 0.845 + rt * math.sin(a)) for a in (i * math.tau / 10 for i in range(11))])
     line([(cx - 0.06, 0.53), (cx + 0.06, 0.53)], r=0.008, col="red")                    # the incision
+    if scan is not None:                                                               # the scan line sweeping down
+        t = 0.88 - 0.82 * scan
+        line([(cx - 0.2, t), (cx + 0.2, t)], r=0.004, col="green")
     for j, t in enumerate((0.74, 0.62, 0.5)):                                          # the tool rack
         line([(0.26, t), (0.42, t)], r=0.009 if j == 0 else 0.006)
     rx, rt = 0.05 / w, 0.05 / h                                                        # the halo: its arms in use lit

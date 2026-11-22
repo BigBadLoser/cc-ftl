@@ -19,8 +19,6 @@ from .modkit import K
 from .surgery_rig_base import body, holo
 
 TOP = 0.22                                                       # the med bed's mattress top (medbay.MATTRESS)
-STAGES = {"cut": ("laser", "cutter", "camera"), "open": ("cutter", "clamp", "camera"),
-          "close": ("clamp", "suture", "camera")}                # three at a time; animated, tools swap in and out
 ARMS = ("camera", "laser", "cutter", "clamp", "suture")          # round the ring; the slim camera (always in use) faces
 # the viewer in surgery, where it hides least
 SPEC = {"laser": dict(r=0.04, fore="medWhite", band="medRed", L=0.36),
@@ -127,18 +125,56 @@ def unit(a, b):
     return tuple(x / n for x in d), n
 
 
-def arm(R, sh, out, tan, kind, wrist, aim, working, curl=False):
-    """Shoulder drum sh, a short link up and out to the first drum, two equal segments (IK) up to a high knee and down
-    to the wrist, an instrument carriage there, then (working) a thin shaft down to the tool, which ends at aim; folded,
-    the tool sits on the carriage, pointing at aim. out: the arm's outward unit (u, v)."""
+def link(sh, out, f):
+    """The first drum: a short link up and out from the shoulder, pivoting back as the arm folds (f)."""
+    lo, lz = 0.4 + 0.45 * f, 1.0 - 0.45 * f
+    return (sh[0] + out[0] * LINK * lo, sh[1] + out[1] * LINK * lo, sh[2] + LINK * lz)
+
+
+def joints(sh, out, kind, work, folded, f):
+    """(first drum, elbow, wrist, aim) of an arm f of the way from working (0; work = (wrist, aim)) to folded (1). The arm
+    bends in its own plane (out, up), so the move is made in joint angles, not by sliding the wrist: the upper arm swings,
+    the elbow straightens and bends the other way (out working, in over the ring folded, never folding flat through
+    itself), and the tool turns with the forearm."""
+    L = SPEC[kind]["L"]
+    tang = (-out[1], out[0])
+
+    def plane(v):
+        return (v[0] * out[0] + v[1] * out[1], v[2])
+    ends = []
+    for g, (wt, at), pole in ((0.0, work, (out[0], out[1], 1.3)), (1.0, folded, (-out[0], -out[1], 1.0))):
+        j = link(sh, out, g)
+        el, w = ik(j, wt, L, pole)
+        th = math.atan2(*plane(unit(j, el)[0])[::-1])
+        ph = math.atan2(*plane(unit(el, w)[0])[::-1])
+        d, n = unit(w, at)
+        side = d[0] * tang[0] + d[1] * tang[1]
+        ends.append((th, (ph - th + math.pi) % math.tau - math.pi, math.atan2(*plane(d)[::-1]) - ph, side, n))
+    (t0, b0, p0, s0, n0), (t1, b1, p1, s1, n1) = ends
+    wrap = lambda a: (a + math.pi) % math.tau - math.pi  # noqa: E731
+    th = t0 + wrap(t1 - t0) * f
+    bend = b0 + (b1 - b0) * f                                                        # through straight, never flat
+    psi = p0 + wrap(p1 - p0) * f
+    side, n = s0 + (s1 - s0) * f, n0 + (n1 - n0) * f
+    j = link(sh, out, f)
+    el = (j[0] + L * math.cos(th) * out[0], j[1] + L * math.cos(th) * out[1], j[2] + L * math.sin(th))
+    ph = th + bend
+    w = (el[0] + L * math.cos(ph) * out[0], el[1] + L * math.cos(ph) * out[1], el[2] + L * math.sin(ph))
+    a, c = ph + psi, math.sqrt(max(0.0, 1 - side * side))
+    d = (c * math.cos(a) * out[0] + side * tang[0], c * math.cos(a) * out[1] + side * tang[1], c * math.sin(a))
+    return j, el, w, tuple(w[i] + d[i] * n for i in range(3))
+
+
+def arm(R, sh, out, tan, kind, work, folded, fold=0.0, beam=True, jaw=1.0):
+    """Shoulder drum sh, a short link up and out to the first drum, two equal segments up to a high knee and down to the
+    wrist, an instrument carriage there, then (working) a thin shaft down to the tool, which ends at the aim; folded, the
+    tool sits on the carriage, pointing at it. out: the arm's outward unit (u, v); work, folded: (wrist, aim) at either end
+    and fold how far between (joints); beam: the laser fires (working); jaw: the clamp's opening, 1 its rest."""
     sp = SPEC[kind]
     r = sp["r"]
-    lo, lz = (0.85, 0.55) if curl else (0.4, 1.0)                                    # folded, the link pivots back
-    j1 = (sh[0] + out[0] * LINK * lo, sh[1] + out[1] * LINK * lo, sh[2] + LINK * lz)
+    j1, el, wrist, aim = joints(sh, out, kind, work, folded, fold)
     R.tube(sh, j1, r * 1.2, "medWhite", r1=r * 1.1)
     hinge(R, j1, tan, r * 1.35, r * 2.7)
-    pole = (-out[0], -out[1], 1.0) if curl else (out[0], out[1], 1.3)               # curled: knee leans over the ring
-    el, wrist = ik(j1, wrist, sp["L"], pole)
     R.tube(j1, el, r * 1.05, "medWhite", r1=r)
     hinge(R, el, tan, r * 1.25, r * 2.5)
     if sp["band"]:
@@ -149,27 +185,29 @@ def arm(R, sh, out, tan, kind, wrist, aim, working, curl=False):
     else:
         R.tube(el, wrist, r * 0.95, sp["fore"])
     R.ball(wrist, r * 0.95, "rgChromeD", seg=8)
+    working = fold < 0.5
     if working:
         R.ball((el[0], el[1], el[2] + r * 1.5), r * 0.45, "cyan", seg=8)
     d, n = unit(wrist, aim)
     ce = tuple(wrist[i] + d[i] * 0.06 for i in range(3))
     R.tube(wrist, ce, r * 1.05, "gm")                                                  # instrument carriage
     stand = HEAD[kind] + (BEAM if kind == "laser" else 0.0)                          # the laser stands off, its beam
-    hs = tuple(aim[i] - d[i] * stand for i in range(3)) if working else ce            # spanning the gap
-    if working and n > HEAD[kind] + 0.07:
+    hs = lerp(tuple(aim[i] - d[i] * stand for i in range(3)), ce, min(1.0, fold / 0.35))   # spanning the gap (the shaft
+    # runs out only as the arm settles)
+    if unit(ce, hs)[1] > 0.06:
         R.tube(ce, hs, 0.014, "rgChrome", sides=6)                                   # instrument shaft
-    head(R, hs, d, kind, working, aim)
+    head(R, hs, d, kind, working, aim, jaw, fire=fold == 0.0 and beam)
 
 
-def head(R, tp, d, kind, working, aim):
-    """The tool from tp pointing along unit d; the laser's beam is a short glow to aim."""
+def head(R, tp, d, kind, working, aim, jaw=1.0, fire=False):
+    """The tool from tp pointing along unit d (working: its lights lit); fire: the laser's beam, a short glow to aim."""
     at = lambda s: tuple(tp[i] + d[i] * s for i in range(3))  # noqa: E731
     if kind == "laser":
         R.tube(at(0.0), at(0.04), 0.04, "medWhite")
         R.tube(at(0.04), at(0.06), 0.042, "medRed")
         R.tube(at(0.06), at(0.09), 0.036, "medWhite", r1=0.024)
         R.tube(at(0.09), at(0.1), 0.018, "red" if working else "gmD")
-        if working:
+        if fire:
             R.tube(at(0.1), aim, 0.0045, "red", sides=5)
             R.ball(aim, 0.022, "red", seg=6)
     elif kind == "cutter":
@@ -183,7 +221,7 @@ def head(R, tp, d, kind, working, aim):
         for o in (-1, 1):
             b = at(0.05)
             R.tube(tuple(b[i] + side[i] * o * 0.02 for i in range(3)),
-                   tuple(b[i] + d[i] * 0.12 + side[i] * o * 0.035 for i in range(3)), 0.012, "rgChromeD", sides=6)
+                   tuple(b[i] + d[i] * 0.12 + side[i] * o * 0.035 * jaw for i in range(3)), 0.012, "rgChromeD", sides=6)
     elif kind == "camera":
         R.tube(at(0.0), at(0.08), 0.036, "gmD")
         R.tube(at(0.08), at(0.095), 0.026, "cyan" if working else "steelD")
@@ -215,13 +253,20 @@ HUB_IDLE = (1.0, 0.0, BZ - 0.06 - SLEEVE - 0.05)                  # swung over t
 
 
 def rig(state, rot, *_):
-    """state: 'idle' or a stage of STAGES."""
-    on = state != "idle"
-    use = STAGES.get(state, ())
-    R = Rig(f"surgery_rig_{state}_{rot}", rot)
+    """state: 'idle' or a stage (surgery_rig_anim.STAGES: three tools at a time), at rest (the first frame of its loop)."""
+    from .surgery_rig_anim import still
+    return build(still(state), rot, f"surgery_rig_{state}_{rot}")
+
+
+def build(P, rot, name, split=False):
+    """The rig in pose P (surgery_rig_anim.Pose): the hub where it hangs, each arm's fold and its aim's offset, the clamp's
+    jaw, the laser firing, the lights on. split: (the body: the column; the front: boom, piston, halo and arms, what
+    reaches over the bed and is drawn over it in game) as two object lists."""
+    B = Rig(name + "_body", rot)
+    body(B, P.on)
+    R = Rig(name, rot) if split else B
     k = R.k
-    body(R, on)
-    hu, hv, hz = HUB_ON if on else HUB_IDLE
+    hu, hv, hz = P.hub
     bz = BZ
     R.ball((0, -0.04, bz), 0.12, "steel")
     R.tube((0, -0.04, bz), (hu, hv, bz), 0.085, "medWhite")                             # boom (it swings about the column)
@@ -238,10 +283,10 @@ def rig(state, rot, *_):
         R.tube((hu, hv, bz - 0.06 - SLEEVE), (hu, hv, hz + 0.04), 0.032, "rgChromeD")    # (darker than the sleeve)
     # the halo
     R.torus((hu, hv), hz, RING_R, TUBE_R, "medWhite")
-    R.torus((hu, hv), hz - 0.06, RING_R, 0.016, "cyan" if on else "steelD", m=6)        # underglow
+    R.torus((hu, hv), hz - 0.06, RING_R, 0.016, "cyan" if P.on else "steelD", m=6)      # underglow
     k.cyl(hu, hv, hz - 0.04, 0.1, 0.08, "medWhite", top="plate", sides=10, rtop=0.08)   # core pod
-    k.cyl(hu, hv, hz - 0.055, 0.06, 0.015, "red" if on else "gmD", sides=10)            # sensor
-    site = (hu, hv, TOP + SITE)
+    k.cyl(hu, hv, hz - 0.055, 0.06, 0.015, "red" if P.on else "gmD", sides=10)          # sensor
+    site = (HUB_ON[0], HUB_ON[1], TOP + SITE)                                          # the incision stays put
     for i, kind in enumerate(ARMS):
         a = math.pi / 2 + math.pi / 5 + i * math.tau / 5                               # no arm hides behind the stem
         ca, sa = math.cos(a), math.sin(a)
@@ -249,22 +294,30 @@ def rig(state, rot, *_):
         R.tube((hu + 0.09 * math.cos(sp), hv + 0.09 * math.sin(sp), hz),
                (hu + (RING_R - 0.04) * math.cos(sp), hv + (RING_R - 0.04) * math.sin(sp), hz - 0.01), 0.022, "steel", sides=8)
         sh, tan = mount(R, hu, hv, hz, ca, sa)
-        wrist = (hu + WR * ca, hv + WR * sa, hz + WZ)
-        if kind in use:                                                                # the tools converge on the incision
-            up = 0.16 if kind == "camera" else 0.0
-            aim = (site[0] + SPREAD[0] * ca, site[1] + SPREAD[1] * sa, site[2] + up)       # each its own spot
-            arm(R, sh, (ca, sa), tan, kind, wrist, aim, True)
-        else:                                                                          # folded: curled in over the ring,
-            arm(R, sh, (ca, sa), tan, kind, (hu + 0.22 * ca, hv + 0.22 * sa, hz + 0.16),    # knee leaning back a little,
-                (hu + 0.15 * ca, hv + 0.15 * sa, hz - 0.1), False, curl=True)                # the tool down into its middle
-    return k.build()
+        f = P.fold.get(kind, 1.0)
+        off = P.aim.get(kind, (0.0, 0.0, 0.0))
+        up = 0.16 if kind == "camera" else 0.0                                         # the tools converge on the incision,
+        w_aim = (site[0] + SPREAD[0] * ca + off[0], site[1] + SPREAD[1] * sa + off[1], site[2] + up + off[2])   # each its own spot
+        w_wr = (hu + WR * ca, hv + WR * sa, hz + WZ)
+        f_wr = (hu + 0.22 * ca, hv + 0.22 * sa, hz + 0.16)                             # folded: curled in over the ring, knee
+        f_aim = (hu + 0.15 * ca, hv + 0.15 * sa, hz - 0.1)                             # leaning back, the tool down into its middle
+        arm(R, sh, (ca, sa), tan, kind, (w_wr, w_aim), (f_wr, f_aim), f, P.beam, P.jaw)
+    return (B.k.build(), k.build()) if split else k.build()
 
 
 def rig_holo(state, rot):
     """The console hologram layer: (the rig as holdout, the hologram); empty when idle."""
     if state == "idle":
         return None
-    mask = rig(state, rot)
-    R = Rig(f"surgery_rig_holo_{state}_{rot}", rot)
-    holo(R)
+    from .surgery_rig_anim import still
+    return holo_layer(still(state), rot, f"{state}_{rot}")
+
+
+def holo_layer(P, rot, name):
+    """The hologram of pose P with the rig in that pose as its holdout; None while it is off."""
+    if P.holo is None:
+        return None
+    mask = build(P, rot, f"surgery_rig_{name}")
+    R = Rig(f"surgery_rig_holo_{name}", rot)
+    holo(R, P.holo)
     return mask, R.k.build()

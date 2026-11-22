@@ -41,6 +41,8 @@
             the bed (leisure.py, built from their approved look studies; MODPACK_ROTS as storage_set)
   research_bench  the research bench module.research (3x2, c1), idle and .active (hologram baked in), four rotations (research_bench.py)
   medbay    the med bed and the med console, idle and .active (medbay.py; MODPACK_ROTS as storage_set)
+  surgery_rig  the surgical rig: body, the front over the bed through every animation phase, the console hologram
+            (surgery_rig_family.py; RIG_ROTS picks rotations, as MODPACK_ROTS)
   battery   the battery bank, .charge0 .. .charge3 (battery.py; MODPACK_ROTS as storage_set)
   hydroponics  the hydroponics beds (small and large), lit and .unpowered, and their crop layers (hydroponics.py; MODPACK_ROTS as storage_set)
   workbench the workbench, idle and .active (workbench.py; MODPACK_ROTS as storage_set)
@@ -161,7 +163,11 @@ def jobs(name):
     if name == "medbay":
         import os
         from . import medbay
-        return medbay.jobs(range(int(os.environ.get("MODPACK_ROTS", 4)))), "surgery"     # (the rig's chrome: palette_extra "set": "surgery")
+        return medbay.jobs(range(int(os.environ.get("MODPACK_ROTS", 4)))), True
+    if name == "surgery_rig":
+        import os
+        from . import surgery_rig_family
+        return surgery_rig_family.jobs(range(int(os.environ.get("RIG_ROTS", 4)))), surgery_rig_family.PAL
     if name == "battery":
         import os
         from . import battery
@@ -643,7 +649,7 @@ def jobs(name):
 
 # `structure` is preview-only (no full build yet): build it by name, it is not part of `all`.
 RENDERED = ("env", "walls", "consoles", "weapons", "roof", "robot_bay", "drones", "vehicle_bay", "shuttle", "airlock", "struct",
-            "fx", "galley", "derelict", "eggsac", "storage_set", "medbay", "battery", "hydroponics", "workbench",
+            "fx", "galley", "derelict", "eggsac", "storage_set", "medbay", "surgery_rig", "battery", "hydroponics", "workbench",
             "ops_consoles", "cryo", "wallprops", "hazards", "clutter", "decay", "corpse", "damage", "rock", "rockwall",
             "pod_bay", "mining_pod", "escape_pod", "fx_mining", "fx_shield", "starmap", "backdrop", "cargo", "items", "salvage", "storage_ore",
             "hull", "station_hull", "windows", "scrapper", "upgrades", "research_bench", "arcade_cabinet", "gametable_module",
