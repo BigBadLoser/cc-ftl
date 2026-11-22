@@ -19,6 +19,17 @@ ROOF_Z=2.05
 THRUST_Z=1.30
 CASSETTE_Z_FIT=.66
 CENTRE={0:(-1.5,-2),1:(-2,-1.5),2:(-1.5,-2),3:(-2,-1.5)}
+DEPTH=5                 # tiles inboard from the hull row: 5 (Mk I), 6 (Mk II), 7 (Mk III); see set_tier
+TIER=1
+VARIANT="KB"            # the tier fit-out concept (tierkit; KB is the approved one)
+
+
+def set_tier(tier,variant="KB"):
+    """Build the Mk <tier> engine: DEPTH 4 + tier. The hull row stays at u = 2 and the frame's origin on the module's
+    front tile, so for r0 / r3 (hull row at the back) the frame centre moves with the depth."""
+    global DEPTH,TIER,VARIANT
+    TIER,VARIANT,DEPTH=tier,variant,4+tier
+    CENTRE.update({0:(-1.5,3-DEPTH),3:(3-DEPTH,-1.5)})
 
 
 def prism(f,shape,a,b,mat="steel",top="steelL"):
@@ -356,10 +367,13 @@ def nozzle(f,stage):
         FT.nozzle(sys.modules[__name__],f,stage)
 
 
+# The exhaust's envelope: a long jet, about 13.6 tiles past the bell mouth (u = 3.88). The shader (plasma.py) draws the
+# flame inside it in tile units; the envelope only bounds the volume. Rendered as its own sprite, `<asset>.flame.r{n}`.
+FLAME=[(3.45,0.85),(3.88,1.15),(5.0,1.4),(8.0,1.9),(12.0,2.4),(17.5,2.8)]
+
+
 def exhaust(f,stage):
-    profile=[(3.45,0.23,BZ),(3.95,0.49,BZ),(4.3,0.58,BZ),
-             (4.78,0.3,BZ),(5.2,0.47,BZ),(5.65,0.22,BZ),
-             (6.1,0.34,BZ),(6.65,0.12,BZ),(7.4,0.006,BZ)]
+    profile=[(u,r,BZ) for u,r in FLAME]
     sleeve(f,profile,"cyan",sides=32)
     for (u,r,z),reverse in ((profile[0],True),(profile[-1],False)):
         pts=[f.pt(u,r*math.cos(t*math.tau/32),z+r*math.sin(t*math.tau/32)) for t in range(32)]
@@ -373,12 +387,19 @@ def machine(rot,hot=False,stage=1,holdout=True,part="machine"):
     block and the hull row, fittings; the engine lower and the bell pushed out)."""
     with FT.lowered(sys.modules[__name__],stage):
         objects=_machine(rot,hot,stage,holdout,part)
-    if stage>=8 and part=="bell":
+    if stage>=8 and part in ("bell","flame"):
         f=Frame(core.Mesh("unused"),rot,centre=CENTRE[rot])
         (x0,y0),(x1,y1)=f.xy(0,0),f.xy(1,0)
         for ob in objects:
             ob.location=ob.location+core.G((x1-x0)*FT.PUSH,(y1-y0)*FT.PUSH,0)
     return objects
+
+
+def u_of_(m,face,cx,cy,rot):
+    pts=[m.v[i] for i in face[0]]
+    gx=sum(p[0] for p in pts)/len(pts)-cx
+    gy=-sum(p[1] for p in pts)/len(pts)-cy
+    return (-gy,gx,gy,-gx)[rot]
 
 
 def _machine(rot,hot,stage,holdout,part):
@@ -394,7 +415,11 @@ def _machine(rot,hot,stage,holdout,part):
     objects=[]
     meshes=[(name,fn) for name,fn in (("bed",bed),("powerhead",powerhead),
             ("services",lambda f,s:services(f,s,hot)),("bell",nozzle))]
-    if hot:
+    if TIER>1:
+        import tierkit
+        squash=core.Mesh("KESTREL_tier_cast")
+        meshes.append(("tier",lambda f,s:tierkit.build(f,Frame(squash,rot,centre=CENTRE[rot]),TIER,VARIANT)))
+    if hot and part=="flame":
         meshes.append(("exhaust",exhaust))
     for name,fn in meshes:
         m=core.Mesh("KESTREL_"+name,selflit=name=="exhaust")
@@ -411,13 +436,24 @@ def _machine(rot,hot,stage,holdout,part):
                 m.v[i]=(x,y,THRUST_Z+(z-BZ)*fit)
         elif name in ("services","bell","exhaust"):
             m.v=[(x,y,z+THRUST_Z-BZ) for x,y,z in m.v]
+        elif name=="tier":
+            # Built in final coordinates; its round castings (KESTREL_tier_cast) squashed like the cassette.
+            squash.v=[(x,y,THRUST_Z+(z-THRUST_Z)*CASSETTE_Z_FIT) for x,y,z in squash.v]
+            squash.f=[face for face in squash.f if (u_of_(squash,face,cx,cy,rot)>outer)==(part in ("bell","flame"))]
+            if squash.f:
+                objects.append(squash.build())
+        if TIER>1 and name in ("bed","powerhead","services"):
+            # A tier's fit-out replaces the Mk I's inboard end: drop the faces inboard of its cut.
+            import tierkit
+            lo=tierkit.cut(VARIANT,name)
+            m.f=[face for face in m.f if u_of_(m,face,cx,cy,rot)>=lo]
         # Keep the faces on this part's side of the hull's outer face.
         def u_of(face):
             pts=[m.v[i] for i in face[0]]
             gx=sum(p[0] for p in pts)/len(pts)-cx
             gy=-sum(p[1] for p in pts)/len(pts)-cy
             return (-gy,gx,gy,-gx)[rot]
-        m.f=[face for face in m.f if (u_of(face)>outer)==(part=="bell")]
+        m.f=[face for face in m.f if (u_of(face)>outer)==(part in ("bell","flame"))]
         if m.f:
             objects.append(m.build())
     return objects

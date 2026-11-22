@@ -144,7 +144,7 @@ export function spawnShip(
   sim: Sim, template: ShipTemplate, opts: { faction: Faction; x: number; y: number; rest?: number; rolls?: readonly RolledCrew[]; gen?: GenOrigin },
 ): number {
   const ship = stampShip(sim, template, opts);
-  const layers = shieldCapacity(sim, ship, false);
+  const layers = shieldCapacity(sim, ship, true); // running, deployed generators only: a fresh ship's dishes are stowed, so no shield until combat deploys them
   const combat: Combat = {
     hold: false, volley: false, target: null, doctrine: template.doctrine ?? 'random', ftl: 0,
     shield: { layers, max: layers, timer: 0 }, heat: newHeat(), evasion: 0, pilot: 0, cruisePilot: 0, cruiseEvasion: 0, aiTimer: 0,
