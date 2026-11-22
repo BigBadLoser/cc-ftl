@@ -1,3 +1,9 @@
+import type { World } from '../sim/ecs';
+import { berthHolders } from '../sim/crew/berths';
+import { bedStandTile } from '../sim/crew/beds';
+import { PositionC } from '../sim/crew/components';
+import { isSettled } from '../sim/crew/helpers';
+import { ModuleC } from '../sim/modules/components';
 import type { ModuleDef } from '../sim/registry';
 import { footprintTiles } from '../sim/modules/footprint';
 
@@ -63,3 +69,19 @@ export function bedPose(def: ModuleDef, x: number, y: number, rot: number, rotat
  */
 export const turnedArt = (has: (id: string) => boolean, asset: string, rot: number): boolean =>
   rot % 4 === 0 || [`${asset}.r${rot % 4}`, `${asset}.r${rot % 4}.idle`, `${asset}.r${rot % 4}.active`].some(has);
+
+/** Medical beds with a patient lying in them (a berth holder settled on its tile, `bedStandTile`): they draw `.active`, the monitor and drip running (#614). */
+export function occupiedMedBeds(world: World, defs: Readonly<Record<string, ModuleDef | undefined>>): Set<number> {
+  const out = new Set<number>();
+  for (const id of world.query(ModuleC)) {
+    const m = world.get(id, ModuleC), def = m && defs[m.def];
+    if (!m || !def?.medical || !def.bed) continue;
+    const at = bedStandTile(def, m);
+    const lying = berthHolders(def, m).some((c) => {
+      const p = world.get(c, PositionC);
+      return !!p && isSettled(p) && p.x === at.x && p.y === at.y;
+    });
+    if (lying) out.add(id);
+  }
+  return out;
+}

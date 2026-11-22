@@ -253,10 +253,8 @@ export const isTargetable = (def: ModuleDef): boolean => !!(def.weapon || def.en
 /** True when a module shows its `.active` art: engines and machines while powered, consoles while manned, fabricators while crafting, research benches while worked. */
 export function showsActive(def: ModuleDef, on: boolean, crafting: boolean, manned: boolean): boolean {
   if (!on) return false;
-  if (def.leisure) return manned; // a game table or arcade in use
-  if (def.console) return manned;
+  if (def.leisure || def.console || def.research || def.medical) return manned; // in use: a game table or arcade played, a console or bench worked, a medical bed with its patient
   if (def.crafting) return crafting;
-  if (def.research) return manned;
   return !!(def.hullEdge || def.shieldGen || def.aiCore || def.recovery); // a recovery pod bubbles whenever it is powered
 }
 
