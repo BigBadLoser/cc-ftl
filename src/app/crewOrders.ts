@@ -32,7 +32,7 @@ export function moduleUnder(sim: Sim, r: Renderer, sx: number, sy: number, tile:
 
 /** The drafted, living crew of the player among `ids`. */
 export function draftedOf(sim: Sim, ids: readonly number[]): number[] {
-  return ids.filter((id) => sim.world.has(id, CrewC) && sim.world.has(id, DraftedC) && sim.world.has(id, PositionC) && !sim.world.has(id, DeadC) && isPlayers(sim, id, { held: false }));
+  return ids.filter((id) => sim.world.has(id, CrewC) && sim.world.has(id, DraftedC) && sim.world.has(id, PositionC) && !sim.world.has(id, DeadC) && isPlayers(sim, id));
 }
 
 /** True for a vehicle of the player's that crew can climb into or out of right now. */

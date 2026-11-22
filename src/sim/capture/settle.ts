@@ -32,7 +32,7 @@ export function settleYielded(sim: Sim, shipId: number, choice: 'letGo' | 'takeP
   }
   let gone = 0;
   for (const id of [...sim.world.query(CrewC, PositionC)]) {
-    if (shipIdOf(sim, sim.world.get(id, PositionC)) !== shipId || isPlayers(sim, id, { held: false }) || guestOn(sim, id, shipId)) continue;
+    if (shipIdOf(sim, sim.world.get(id, PositionC)) !== shipId || isPlayers(sim, id) || guestOn(sim, id, shipId)) continue;
     removeCrew(sim, id);
     gone++;
   }

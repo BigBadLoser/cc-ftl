@@ -96,7 +96,7 @@ export function coreRaidSystem(sim: Sim): void {
     if (!box) continue;
     const holding = raiders.some((r) => raiderOn(sim, r, shipId) && nearBox(sim.world.get(r, PositionC) as Position, box, CORE_RAID_RADIUS));
     const defended = sim.world.query(AllegianceC, PositionC).some((c) => {
-      if (!isPlayers(sim, c, { held: false }) || !raiderOn(sim, c, shipId)) return false;
+      if (!isPlayers(sim, c) || !raiderOn(sim, c, shipId)) return false;
       return nearBox(sim.world.get(c, PositionC) as Position, box, CORE_RAID_DEFENDER_RADIUS);
     });
     const raid = sim.world.get(id, CoreRaidC);

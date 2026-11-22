@@ -174,8 +174,7 @@ export function buildState(o: StateOptions): PlayState {
     weapons: (mine?.weapons ?? []).map((w) => ({ id: w.id, name: w.short, charge: pct(w.charge), mode: w.mode, ammo: w.ammo, powered: w.powered, target: w.target })),
     consoles: (mine?.consoles ?? []).map((c) => ({ name: c.name, operator: c.operator })),
     incoming: (mine?.incoming ?? []).map((i) => ({ name: i.name, eta: r1(i.eta) })),
-    // eslint-disable-next-line no-restricted-syntax -- UiCrew.side is a view tag, not a faction id
-    crew: crew.filter((c) => c.side === 'player').slice(0, CREW_CAP).map((c) => ({
+    crew: crew.filter((c) => c.side === 'own').slice(0, CREW_CAP).map((c) => ({
       id: c.id, name: c.name, role: c.role, where: c.where, hp: `${Math.round(c.hp)}/${Math.round(c.maxHp)}`, doing: c.job ?? c.activity,
       rest: Math.round(c.rest), hunger: c.hunger === null ? null : Math.round(c.hunger), mood: c.mood ? Math.round(c.mood.value) : null, flags: crewFlags(c),
     })),

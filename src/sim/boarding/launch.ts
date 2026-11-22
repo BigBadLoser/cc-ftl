@@ -36,7 +36,7 @@ export function orderLaunch(sim: Sim, vehicle: number, crew: readonly number[], 
   const err = dockError(sim, vehicle, airlock);
   if (err) return err;
   for (const c of ids) {
-    if (!isPlayers(sim, c, { held: false }) || !sim.world.has(c, CrewC) || sim.world.has(c, DeadC)) return 'noCrew';
+    if (!isPlayers(sim, c) || !sim.world.has(c, CrewC) || sim.world.has(c, DeadC)) return 'noCrew';
   }
   if (ids.some((c) => sim.world.has(c, AwayC) || launchOf(sim, c))) return 'crewBusy'; // already of a party, or picked for another launch
   if (sim.world.has(ship, AwaySiteC)) return 'siteOpen'; // one site per ship: a party already boards it

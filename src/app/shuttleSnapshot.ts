@@ -148,7 +148,7 @@ export function buildShuttles(sim: Sim): UiShuttles {
   }
   const roster: UiShuttleCrew[] = [];
   for (const id of sim.world.query(CrewC)) {
-    if (sim.world.has(id, DeadC) || sim.world.has(id, AboardC) || !isPlayers(sim, id, { held: false })) continue;
+    if (sim.world.has(id, DeadC) || sim.world.has(id, AboardC) || !isPlayers(sim, id)) continue;
     const pos = sim.world.get(id, PositionC);
     // Crew on the home ship, or on the ship one of the player's shuttles is docked at (a boarding party that can climb back in).
     if (shipIdOf(sim, pos) !== PLAYER && !shuttles.some((s) => s.boardShip === shipIdOf(sim, pos))) continue;
@@ -213,7 +213,7 @@ function derelictInfo(sim: Sim, id: number, s: Ship): UiDerelict {
 function crewOn(sim: Sim, id: number): number {
   let n = 0;
   for (const c of sim.world.query(CrewC, PositionC)) {
-    if (sim.world.has(c, DeadC) || !isPlayers(sim, c, { held: false })) continue;
+    if (sim.world.has(c, DeadC) || !isPlayers(sim, c)) continue;
     if (shipIdOf(sim, sim.world.get(c, PositionC)!) === id) n++;
   }
   return n;

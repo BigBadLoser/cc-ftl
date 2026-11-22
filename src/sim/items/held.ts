@@ -65,7 +65,7 @@ export function heldItems(sim: Sim, opts: HeldOptions = {}): Held[] {
     const w = sim.world;
     const ships = playerShips(sim);
     for (const id of w.query(AllegianceC)) {
-      if (!isPlayers(sim, id, { held: false })) continue;
+      if (!isPlayers(sim, id)) continue;
       const eq = w.get(id, EquipC);
       if (eq?.weapon) out.push({ item: eq.weapon, count: 1, where: 'wielded', holder: id, remove: () => void (eq.weapon = null) });
       const hauled = w.get(id, CarryingC);

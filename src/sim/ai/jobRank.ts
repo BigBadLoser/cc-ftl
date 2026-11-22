@@ -26,7 +26,7 @@ import { isPlayers } from '../side';
  */
 function canRelieve(sim: Sim, crewId: number, job: Job): boolean {
   const role = sim.world.get(crewId, CrewC)?.role;
-  const player = isPlayers(sim, crewId, { held: false });
+  const player = isPlayers(sim, crewId);
   if (!role || !(player || sim.content.roles[role]?.relievesStations) || sim.tick - (job.freeSince ?? sim.tick) < RELIEF_AFTER_SEC * TICK_HZ) return false;
   const m = sim.world.get(job.target ?? 0, ModuleC);
   return !!m && atBattle(sim, shipIdOf(sim, m)) && sim.content.modules[m.def]?.console !== 'shields' && freeOperatorFor(sim, shipIdOf(sim, m), job) === 0;

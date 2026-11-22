@@ -65,7 +65,7 @@ export function guestHere(sim: Sim, crew: number): Grant | undefined {
 
 /** The lodging grant the crew member lives where they stand by (a passenger: consent/components.ts `lodge`), if any. */
 export function lodgingHere(sim: Sim, crew: number): Grant | undefined {
-  if (isPlayers(sim, crew, { held: false })) return undefined; // the common case, without the ship lookup
+  if (isPlayers(sim, crew)) return undefined; // the common case, without the ship lookup
   const g = guestHere(sim, crew);
   return g?.lodge ? g : undefined;
 }
@@ -79,7 +79,7 @@ export function hasLeaveFrom(sim: Sim, from: number): boolean {
 /** True while one of the player's crew stands aboard the ship uninvited (alive, no grant covering them). */
 export function uninvitedOn(sim: Sim, ship: number): boolean {
   for (const id of sim.world.query(CrewC, PositionC)) {
-    if (sim.world.has(id, DeadC) || !isPlayers(sim, id, { held: false })) continue;
+    if (sim.world.has(id, DeadC) || !isPlayers(sim, id)) continue;
     if (shipIdOf(sim, sim.world.get(id, PositionC) as { x: number; y: number }) === ship && !guestOn(sim, id, ship)) return true;
   }
   return false;

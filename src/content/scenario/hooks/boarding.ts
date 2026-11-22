@@ -35,7 +35,7 @@ export default defineHook({
     if (st.step === 0) {
       // The raider's crew sleep through it (a debug scene: it keeps the party alive for the screenshots).
       for (const c of sim.world.query(CrewC)) if (sim.world.get(c, AllegianceC)?.faction === 'hostile' && !(args.menu && c % 2 === 0)) ctx.dispatch({ type: 'debug.setCrew', id: c, stun: 1e9 });
-      const crew = sim.world.query(CrewC).filter((c) => !sim.world.has(c, DeadC) && isPlayers(sim, c, { held: false })).slice(0, 3);
+      const crew = sim.world.query(CrewC).filter((c) => !sim.world.has(c, DeadC) && isPlayers(sim, c)).slice(0, 3);
       for (const c of crew) ctx.dispatch({ type: 'vehicle.embark', crew: c, vehicle: shuttle });
       st.step = 1;
     } else if (st.step === 1 && v.pilot !== 0 && v.passengers.length === 2) {

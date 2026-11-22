@@ -49,7 +49,7 @@ export function outpostSystem(sim: Sim): void {
     const near = (x: number, y: number) => x >= x0 - DISCOVER_RANGE && x <= x1 + DISCOVER_RANGE && y >= y0 - DISCOVER_RANGE && y <= y1 + DISCOVER_RANGE;
     let seen = false;
     for (const c of [...sim.world.query(PositionC)].sort((a, b) => a - b)) {
-      if (!isPlayers(sim, c, { held: false })) continue;
+      if (!isPlayers(sim, c)) continue;
       const p = sim.world.get(c, PositionC);
       if (!p) continue;
       const tx = Math.round(p.x), ty = Math.round(p.y);

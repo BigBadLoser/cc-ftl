@@ -13,7 +13,7 @@ import { isPlayers } from '../side';
  */
 export function provocationSystem(sim: Sim): void {
   for (const id of sim.world.query(AllegianceC, PositionC)) {
-    if (!isPlayers(sim, id, { held: false }) || sim.world.has(id, DeadC) || sim.world.has(id, PrisonerC)) continue;
+    if (!isPlayers(sim, id) || sim.world.has(id, DeadC) || sim.world.has(id, PrisonerC)) continue;
     const ship = shipIdOf(sim, sim.world.get(id, PositionC) as { x: number; y: number });
     if (ship && !isPlayers(sim, ship) && !guestOn(sim, id, ship)) hostileAct(sim, ship, 'boarded');
   }

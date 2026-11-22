@@ -4,7 +4,7 @@ import { CrewC, type Sim, isPlayers } from '../../../sim';
 export function organicCrew(sim: Sim): number[] {
   return sim.world.query(CrewC).filter((id) => {
     const c = sim.world.get(id, CrewC);
-    return isPlayers(sim, id, { held: false }) && !!c && !sim.content.species[c.species]?.mechanical;
+    return isPlayers(sim, id) && !!c && !sim.content.species[c.species]?.mechanical;
   });
 }
 

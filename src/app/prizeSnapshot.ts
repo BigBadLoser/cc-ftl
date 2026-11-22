@@ -21,7 +21,7 @@ export function buildPrizes(sim: Sim): UiPrize[] {
           id: c, name: crew.name, role: sim.content.roles[crew.role]?.name ?? crew.role, hp: Math.round(hp?.hp ?? 0), maxHp: hp?.max ?? 0,
           state: sim.world.has(c, DownedC) ? 'downed' : 'surrendered', seal: sealOf(sim, c) as NonNullable<ReturnType<typeof sealOf>>,
         });
-      } else if (isPlayers(sim, c, { held: false })) aboard++;
+      } else if (isPlayers(sim, c)) aboard++;
     }
     out.push({ ship: id, name: ship.name, from: prize.from, prisoners, crewAboard: aboard });
   }

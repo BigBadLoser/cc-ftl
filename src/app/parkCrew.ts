@@ -5,7 +5,7 @@ export function parkCrew(sim: Sim, x: number, y: number): void {
   let i = 0;
   for (const id of sim.world.query(CrewC, PositionC)) {
     const p = sim.world.get(id, PositionC);
-    if (!p || !isPlayers(sim, id, { held: false })) continue;
+    if (!p || !isPlayers(sim, id)) continue;
     p.x = p.toX = x + (i++ % 3);
     p.y = p.toY = y;
     p.progress = 0;

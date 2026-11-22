@@ -170,7 +170,7 @@ export function isOnOurSide(sim: Sim, crew: number): boolean {
 
 /** True if the player directs this crew member in combat: player side and drafted. */
 export function isPlayerControlled(sim: Sim, crew: number): boolean {
-  return isPlayers(sim, crew, { held: false }) && sim.world.has(crew, DraftedC);
+  return isPlayers(sim, crew) && sim.world.has(crew, DraftedC);
 }
 
 /**

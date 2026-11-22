@@ -146,7 +146,7 @@ export function spotCheck(sim: Sim, vehicle: number, insp: Inspection): void {
   for (const h of heldItems(sim)) {
     if ((h.where !== 'carried' && h.where !== 'wielded') || !isContraband(sim, h.item) || sim.world.has(h.holder, DeadC)) continue;
     const at = sim.world.get(h.holder, PositionC);
-    if (!at || !sim.world.has(h.holder, CrewC) || !isPlayers(sim, h.holder, { held: false }) || !eyes.some((e) => near(e, at))) continue;
+    if (!at || !sim.world.has(h.holder, CrewC) || !isPlayers(sim, h.holder) || !eyes.some((e) => near(e, at))) continue;
     h.remove();
     spillItems(sim, insp.ship, Math.round(at.x), Math.round(at.y), h.item, h.count);
   }

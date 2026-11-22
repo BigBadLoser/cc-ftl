@@ -34,7 +34,7 @@ export const MOOD_LABELS: Readonly<Record<string, string>> = {
 /** True for crew who have moods: their species says so, and they live aboard as the player's crew or as a passenger (enemy crews do not mope). */
 export function hasMood(sim: Sim, id: number): boolean {
   const crew = sim.world.get(id, CrewC);
-  return !!crew && !!sim.content.species[crew.species]?.mood && (isPlayers(sim, id, { held: false }) || !!lodgingHere(sim, id));
+  return !!crew && !!sim.content.species[crew.species]?.mood && (isPlayers(sim, id) || !!lodgingHere(sim, id));
 }
 
 /** The crew member's Mood, created neutral on first use (old saves, new crew). */

@@ -11,11 +11,10 @@ import { isPlayers, PLAYER } from '../side';
 
 /** Was the player shooting at the ship: a player ship's ship-wide target, or a weapon of one aimed at it? */
 function playerTargets(sim: Sim, shipId: number): boolean {
-  const mine = (id: number): boolean => isPlayers(sim, id);
-  for (const id of sim.world.query(ShipC, CombatC)) if (mine(id) && sim.world.get(id, CombatC)?.target?.ship === shipId) return true;
+  for (const id of sim.world.query(ShipC, CombatC)) if (isPlayers(sim, id) && sim.world.get(id, CombatC)?.target?.ship === shipId) return true;
   for (const id of sim.world.query(WeaponC)) {
     const w = sim.world.get(id, WeaponC);
-    if (w && (w.target?.ship === shipId || w.volleyTarget?.ship === shipId) && mine(shipIdOf(sim, sim.world.get(id, ModuleC)))) return true;
+    if (w && (w.target?.ship === shipId || w.volleyTarget?.ship === shipId) && isPlayers(sim, shipIdOf(sim, sim.world.get(id, ModuleC)))) return true;
   }
   return false;
 }

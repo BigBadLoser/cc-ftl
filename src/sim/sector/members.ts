@@ -94,7 +94,7 @@ export interface JumpWarnings {
 export function jumpWarnings(sim: Sim, ship: number): JumpWarnings {
   const lifting = new Set(liftSet(sim, ship, { withDocked: false }));
   const w = sim.world;
-  const crew = w.query(CrewC).filter((id) => !lifting.has(id) && !w.has(id, DeadC) && isPlayers(sim, id, { held: false }));
+  const crew = w.query(CrewC).filter((id) => !lifting.has(id) && !w.has(id, DeadC) && isPlayers(sim, id));
   const vehicles = w.query(VehicleC).filter((id) => {
     const v = w.get(id, VehicleC);
     return !lifting.has(id) && !!v && vehicleFaction(sim, v) === PLAYER;

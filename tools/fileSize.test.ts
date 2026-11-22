@@ -10,7 +10,7 @@ import { describe, expect, it } from 'vitest';
 const LIMIT = 400;
 const BASELINE: Record<string, number> = {
   'src/app/bridge.ts': 657,
-  'src/app/controller.ts': 491,
+  'src/app/controller.ts': 490,
   'src/content/modules.ts': 635,
   'src/main.ts': 527,
   'src/render/assets/loader.ts': 510,

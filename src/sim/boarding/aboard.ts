@@ -28,7 +28,7 @@ export function playerCrewAboard(sim: Sim, shipId: number): PlayerAboard {
   const rooms = new Set<number>();
   for (const id of sim.world.query(CrewC, PositionC)) {
     const pos = sim.world.get(id, PositionC);
-    if (!pos || sim.world.has(id, DeadC) || !isPlayers(sim, id, { held: false }) || shipIdOf(sim, pos) !== shipId) continue;
+    if (!pos || sim.world.has(id, DeadC) || !isPlayers(sim, id) || shipIdOf(sim, pos) !== shipId) continue;
     out.crew.push(id);
     const t = origin(pos);
     const key = t.y * 100000 + t.x;

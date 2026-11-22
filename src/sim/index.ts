@@ -199,7 +199,7 @@ export { evadeOdds, bribeCost, fleetStrength, playerHelm, evadeOddsFor } from '.
 export { eventNodeId, isEventNode, inEvent, leaveBlocker, hostilesPresent } from './galaxy/eventGrid';
 export { playerStock } from './items/held';
 export {
-  PLAYER, sideOf, isPlayers, shipsOf, mainShipOf, mainShipIdOf, crewOf, modulesOf, storagesOf, stockOf, type Side,
+  PLAYER, sideOf, holderOf, isPlayers, shipsOf, mainShipOf, mainShipIdOf, crewOf, modulesOf, storagesOf, stockOf, type Side,
 } from './side';
 export { siteStatus, siteIds, type SiteStatus, type SiteBlock, type SiteMaterial } from './crew/site';
 export { quoteYard, viewPlan, plannedTiles, type YardQuote, type HullView, type YardError } from './yard/plan';

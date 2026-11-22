@@ -41,7 +41,7 @@ function dropSpots(sim: Sim, vehicle: number, insp: Inspection): { x: number; y:
   const out: { x: number; y: number }[] = [];
   const at = cargoTile(sim, vehicle);
   if (at?.shipId === insp.ship) out.push(at);
-  const people = [...insp.crew, ...sim.world.query(CrewC).filter((c) => isPlayers(sim, c, { held: false }))];
+  const people = [...insp.crew, ...sim.world.query(CrewC).filter((c) => isPlayers(sim, c))];
   for (const c of people) {
     const p = sim.world.get(c, PositionC);
     if (p && shipIdOf(sim, p) === insp.ship) out.push({ x: Math.round(p.x), y: Math.round(p.y) });

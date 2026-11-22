@@ -19,7 +19,7 @@ export type PersonRole = 'crew' | 'recruit' | 'station' | 'passenger' | 'guest' 
 
 /** The role of `person`, aboard `ship` (default: the ship under their feet). */
 export function roleOf(sim: Sim, person: number, ship?: number): PersonRole {
-  if (isPlayers(sim, person, { held: false })) return 'crew';
+  if (isPlayers(sim, person)) return 'crew';
   if (sim.world.has(person, ForHireC)) return 'recruit';
   if (sim.world.has(person, StationCrewC)) return 'station';
   const pos = sim.world.get(person, PositionC);

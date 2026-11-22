@@ -224,8 +224,7 @@ function card(sim: Sim, ctx: Ctx, id: number, side: UiCrew['side']): UiCrew | nu
     suit: suitOf(sim, id),
     suitAt: suitAtOf(sim, id),
     traits: traitsOf(sim, id),
-    // eslint-disable-next-line no-restricted-syntax -- UiCrew.side is a view tag, not a faction id
-    skills: side === 'player' && !sim.content.species[crew.species]?.mechanical ? skillsOf(sim, id, role?.skills) : [],
+    skills: side === 'own' && !sim.content.species[crew.species]?.mechanical ? skillsOf(sim, id, role?.skills) : [],
   };
 }
 
@@ -244,9 +243,9 @@ export function buildCrewLists(sim: Sim, watch: number | null = null): { crew: U
   const occupied = new Set<number>();
   const enemies: number[] = [];
   for (const id of sim.world.query(CrewC)) {
-    const mine = isPlayers(sim, id, { held: false });
+    const mine = isPlayers(sim, id);
     if (mine) {
-      const c = card(sim, ctx, id, 'player');
+      const c = card(sim, ctx, id, 'own');
       if (!c) continue;
       crew.push(c);
       if (c.ship) occupied.add(c.ship);

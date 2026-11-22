@@ -15,7 +15,7 @@ export default defineHook({
       const insp = sim.world.get(searching()!, InspectionC)!;
       const me = sim.world.query(CrewC).find((c) => {
         const p = sim.world.get(c, PositionC);
-        return isPlayers(sim, c, { held: false }) && !!p && shipIdOf(sim, p) === insp.ship;
+        return isPlayers(sim, c) && !!p && shipIdOf(sim, p) === insp.ship;
       });
       if (me === undefined || insp.crew[0] === undefined) return;
       ctx.dispatch({ type: 'crew.draft', id: me, drafted: true });

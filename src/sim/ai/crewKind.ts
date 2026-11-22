@@ -12,5 +12,5 @@ export function crewKind(sim: Sim, id: number): CrewKind {
   const role = roleOf(sim, id);
   if (onStationRoll(role)) return 'station';
   if (isLodger(role)) return 'guest';
-  return isPlayers(sim, id, { held: false }) ? 'colonist' : 'npc';
+  return isPlayers(sim, id) ? 'colonist' : 'npc';
 }

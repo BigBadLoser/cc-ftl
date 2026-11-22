@@ -16,7 +16,7 @@ export function reachTest(sim: Sim, ship: number): ((goal: PathGoal) => boolean)
   const tests: ((goal: PathGoal) => boolean)[] = [];
   for (const id of [...sim.world.query(CrewC, PositionC)].sort((a, b) => a - b)) {
     const pos = sim.world.get(id, PositionC)!;
-    if (sim.world.has(id, DeadC) || isIncapacitated(sim, id) || !isPlayers(sim, id, { held: false }) || shipIdOf(sim, pos) !== ship) continue;
+    if (sim.world.has(id, DeadC) || isIncapacitated(sim, id) || !isPlayers(sim, id) || shipIdOf(sim, pos) !== ship) continue;
     const from = origin(pos);
     for (const m of siteWalkModes(sim, id, ship)) {
       const v = viewOf(sim, ship, m.opts);

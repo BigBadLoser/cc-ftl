@@ -26,7 +26,7 @@ export function buildFood(sim: Sim, stock: readonly UiStock[]): UiFood {
   for (const id of sim.world.query(CrewC, NeedsC)) {
     const crew = sim.world.get(id, CrewC);
     const decay = crew && sim.content.species[crew.species]?.hunger?.decayPerSec;
-    if (!decay || sim.world.has(id, DeadC) || !isPlayers(sim, id, { held: false })) continue;
+    if (!decay || sim.world.has(id, DeadC) || !isPlayers(sim, id)) continue;
     eaters++;
     decayPerSec += decay;
   }

@@ -138,15 +138,14 @@ export function nearestStorageFor(sim: Sim, shipId: number, item: string, at: { 
  * delivered. Other ships' and stations' stock is not ours: a docked station's crates must not satisfy a 'keep' order.
  */
 export function totalStock(sim: Sim, item: string): number {
-  const ours = (shipId: number): boolean => isPlayers(sim, shipId);
   let n = 0;
   for (const id of sim.world.query(ItemStackC)) {
     const s = sim.world.get(id, ItemStackC);
-    if (s?.item === item && ours(shipIdAt(sim, s.x, s.y))) n += s.count;
+    if (s?.item === item && isPlayers(sim, shipIdAt(sim, s.x, s.y))) n += s.count;
   }
   for (const id of sim.world.query(StorageC, ModuleC)) {
     const m = sim.world.get(id, ModuleC);
-    if (m && ours(shipIdOf(sim, m))) n += storageCount(sim, id, item);
+    if (m && isPlayers(sim, shipIdOf(sim, m))) n += storageCount(sim, id, item);
   }
   return n;
 }

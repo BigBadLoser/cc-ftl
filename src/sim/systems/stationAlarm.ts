@@ -55,7 +55,7 @@ export function stationAlarmSystem(sim: Sim): void {
     }
     if (ship.integrity < alarm.integrity - 1e-4) {
       reasons.push('attacked');
-      for (const c of outsiders) if (isPlayers(sim, c, { held: false }) && !sim.world.has(c, WantedC)) sim.world.add(c, WantedC, { station: st });
+      for (const c of outsiders) if (isPlayers(sim, c) && !sim.world.has(c, WantedC)) sim.world.add(c, WantedC, { station: st });
     }
     alarm.integrity = ship.integrity;
     if ((sim.tick + st) % HAZARD_EVERY === 0) {

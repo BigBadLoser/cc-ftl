@@ -152,7 +152,6 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     const b = sim.world.get(sim.world.get(id, AboardC)?.vehicle ?? 0, BodyC);
     if (b) r?.focusSector(b.x, b.y);
   };
-  const isPlayerCrew = (id: number) => isPlayers(sim, id, { held: false });
   /** Select crew: own crew join the group (alone, or as the whole box), an enemy is only inspected and the group keeps its place. */
   const selectCrews = (ids: readonly number[], focus = false) => {
     const first = ids[0];
@@ -165,7 +164,7 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
     shuttleSel.set(null);
     menu.set(null);
     pushSites();
-    if (isPlayerCrew(first)) group.set([...ids]);
+    if (isPlayers(sim, first)) group.set([...ids]);
     crewSel.set(ids.length === 1 ? first : null);
     r?.setSelection(null);
     bridge.setSelected(null);
@@ -219,7 +218,7 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
   };
   /** R: draft the selected crew, or stand them all down when every one is already drafted. */
   const toggleDraft = () => {
-    const ids = group.get().filter(isPlayerCrew);
+    const ids = group.get().filter((id) => isPlayers(sim, id));
     const all = ids.length > 0 && ids.every((id) => sim.world.has(id, DraftedC));
     for (const id of ids) sim.enqueue({ type: 'crew.draft', id, drafted: !all });
   };
@@ -393,7 +392,7 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
           const crewId = renderer.pickCrew(sx, sy);
           if (crewId !== null && !sim.world.has(crewId, EggSacC)) {
             // Your own crew join the selection (shift adds or removes); an enemy is only inspected, and the selection stays to order it.
-            if (!isPlayerCrew(crewId)) return selectCrews([crewId]);
+            if (!isPlayers(sim, crewId)) return selectCrews([crewId]);
             const next = clickSelection(group.get(), crewId, shift);
             return next.length ? selectCrews(next) : selectTile(null);
           }

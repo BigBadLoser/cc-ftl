@@ -71,10 +71,10 @@ export function fightLine(r: UiFightReport): LogEntry | null {
 export function createFightReporter(sim: Sim): FightReporter {
   let t: Tracker | null = null;
   const home = () => homeShip(sim);
-  const ours = (c: Tracker, crew: number) => c.crew.has(crew) || isPlayers(sim, crew, { held: false });
+  const ours = (c: Tracker, crew: number) => c.crew.has(crew) || isPlayers(sim, crew);
   const crewName = (c: Tracker, crew: number) => sim.world.get(crew, CrewC)?.name ?? c.crew.get(crew) ?? 'Crew';
   const seeCrew = (c: Tracker) => {
-    for (const id of sim.world.query(CrewC, AllegianceC)) if (isPlayers(sim, id, { held: false })) c.crew.set(id, sim.world.get(id, CrewC)?.name ?? 'Crew');
+    for (const id of sim.world.query(CrewC, AllegianceC)) if (isPlayers(sim, id)) c.crew.set(id, sim.world.get(id, CrewC)?.name ?? 'Crew');
   };
   const modName = (def: string) => sim.content.modules[def]?.name ?? 'Module';
   /** A module's name as the player sees it (a weapon renamed by its upgrade), else its def's. */

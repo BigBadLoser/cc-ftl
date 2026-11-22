@@ -9,7 +9,7 @@ import { ItemStackC, StorageC } from './items/components';
 import { playerStock } from './items/held';
 import { ModuleC } from './modules/components';
 import { setPackedGuard } from './packedGuard';
-import { PLAYER, crewOf, isPlayers, mainShipIdOf, mainShipOf, modulesOf, shipsOf, sideOf, stockOf, storagesOf } from './side';
+import { PLAYER, crewOf, holderOf, isPlayers, mainShipIdOf, mainShipOf, modulesOf, shipsOf, sideOf, stockOf, storagesOf } from './side';
 import { Sim } from './sim';
 import { playerCrew, playerCrewPackedOk, playerModules, playerShips, playerShipsPackedOk, playerStorages } from './story/world';
 import { playerShip, playerShipId, playerShipPackedOk } from './trade/player';
@@ -92,11 +92,13 @@ describe('sideOf / isPlayers', () => {
     expect(sideOf(sim, w.onEnemy)).toBe(PLAYER);
   });
 
-  it('puts a prisoner on its holder, the player when none is named', () => {
+  it('keeps a prisoner on its own allegiance; its holder is holderOf, the player when none is named', () => {
     expect(sideOf(sim, w.prisoner)).toBe(PLAYER);
+    expect(holderOf(sim, w.prisoner)).toBe(PLAYER);
+    expect(holderOf(sim, w.crew)).toBeNull();
     sim.world.get(w.prisoner, PrisonerC)!.holder = 'hostile';
-    expect(sideOf(sim, w.prisoner)).toBe('hostile');
-    expect(isPlayers(sim, w.prisoner)).toBe(false);
+    expect(holderOf(sim, w.prisoner)).toBe('hostile');
+    expect(sideOf(sim, w.prisoner)).toBe(PLAYER);
     delete sim.world.get(w.prisoner, PrisonerC)!.holder;
   });
 

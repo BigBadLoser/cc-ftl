@@ -18,7 +18,7 @@ export function grantXp(sim: Sim, id: number, skill: SkillName, xp: number, work
   if (xp === 0 || !Number.isFinite(xp)) return;
   const crew = sim.world.get(id, CrewC);
   if (!crew || !sim.content.species[crew.species]) return;
-  if (!isPlayers(sim, id, { held: false })) return; // hostile and NPC crew keep the skills their generator gave them
+  if (!isPlayers(sim, id)) return; // hostile and NPC crew keep the skills their generator gave them
   let c = sim.world.get(id, SkillXpC);
   if (!c) sim.world.add(id, SkillXpC, (c = { xp: {} }));
   const next = (c.xp[skill] ?? 0) + (xp > 0 ? xp * xpGainMult(sim, id, skill) : xp);

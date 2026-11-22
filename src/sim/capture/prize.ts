@@ -103,7 +103,7 @@ export function scuttle(sim: Sim, shipId: number): string | null {
   const ship = sim.world.get(entity, ShipC);
   if (!ship || ship.state !== 'prize') return 'notPrize';
   for (const id of sim.world.query(CrewC, PositionC)) {
-    if (shipIdOf(sim, sim.world.get(id, PositionC)) === shipId && isPlayers(sim, id, { held: false })
+    if (shipIdOf(sim, sim.world.get(id, PositionC)) === shipId && isPlayers(sim, id)
       && !sim.world.has(id, PrisonerC) && !sim.world.has(id, DeadC)) return 'crewAboard';
   }
   sim.world.remove(entity, PrizeC);

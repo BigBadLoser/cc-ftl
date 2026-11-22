@@ -63,7 +63,7 @@ function capableCrew(sim: Sim, ship: number): number[] {
   for (const id of sim.world.query(CrewC, PositionC, PrioritiesC)) {
     const p = sim.world.get(id, PositionC);
     if (!p || shipIdOf(sim, p) !== ship || sim.world.has(id, DeadC) || sim.world.has(id, DraftedC)) continue;
-    if (!isPlayers(sim, id, { held: false }) || isIncapacitated(sim, id) || isOffDuty(sim, id) || refusesWork(sim, id)) continue;
+    if (!isPlayers(sim, id) || isIncapacitated(sim, id) || isOffDuty(sim, id) || refusesWork(sim, id)) continue;
     if ((sim.world.get(id, PrioritiesC)?.construction ?? 0) <= 0 || stat(sim, id, 'workSpeed') <= 0) continue;
     out.push(id);
   }

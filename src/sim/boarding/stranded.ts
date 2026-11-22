@@ -16,7 +16,7 @@ import { isPlayers } from '../side';
 export function loseStrandedCrew(sim: Sim, shipId: number, how: 'fled' | 'lifted'): number[] {
   const lost: number[] = [];
   for (const id of sim.world.query(CrewC, PositionC)) {
-    if (sim.world.has(id, DeadC) || sim.world.has(id, EvaFloatC) || !isPlayers(sim, id, { held: false })) continue;
+    if (sim.world.has(id, DeadC) || sim.world.has(id, EvaFloatC) || !isPlayers(sim, id)) continue;
     if (shipIdOf(sim, sim.world.get(id, PositionC)) === shipId) lost.push(id);
   }
   for (const id of lost) {

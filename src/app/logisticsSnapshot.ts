@@ -24,7 +24,6 @@ export function buildStructCosts(sim: Sim): Record<string, UiCost[]> {
 }
 
 /** True for a region the player owns (the home ship, claimed bases and prizes): stock elsewhere is not "ours". */
-const isPlayerShip = (sim: Sim, shipId: number): boolean => isPlayers(sim, shipId);
 
 /** Totals per item on the player's ships: on the floor, in storage and in crew hands. Items with nothing anywhere are left out. */
 export function buildStock(sim: Sim): UiStock[] {
@@ -36,16 +35,16 @@ export function buildStock(sim: Sim): UiStock[] {
   };
   for (const id of sim.world.query(ItemStackC)) {
     const s = sim.world.get(id, ItemStackC);
-    if (s && isPlayerShip(sim, shipIdAt(sim, s.x, s.y))) row(s.item).floor += s.count;
+    if (s && isPlayers(sim, shipIdAt(sim, s.x, s.y))) row(s.item).floor += s.count;
   }
   for (const id of sim.world.query(StorageC, ModuleC)) {
     const m = sim.world.get(id, ModuleC);
-    if (!m || !isPlayerShip(sim, shipIdOf(sim, m))) continue;
+    if (!m || !isPlayers(sim, shipIdOf(sim, m))) continue;
     for (const st of sim.world.get(id, StorageC)?.stacks ?? []) row(st.item).stored += st.count;
   }
   for (const id of sim.world.query(CarryingC)) {
     const c = sim.world.get(id, CarryingC);
-    if (c && isPlayers(sim, id, { held: false })) row(c.item).carried += c.count;
+    if (c && isPlayers(sim, id)) row(c.item).carried += c.count;
   }
   const order = Object.keys(sim.content.items);
   return [...by.values()].filter((r) => r.floor + r.stored + r.carried > 0).sort((a, b) => order.indexOf(a.item) - order.indexOf(b.item));

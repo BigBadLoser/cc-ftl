@@ -37,7 +37,7 @@ export const captureHandlers: { [T in CaptureCommandType]: (sim: Sim, cmd: Extra
   },
   'debug.surrender': (sim, cmd) => {
     for (const id of [...sim.world.query(CrewC, PositionC)]) {
-      if (shipIdOf(sim, sim.world.get(id, PositionC)) === cmd.ship && !isPlayers(sim, id, { held: false }) && !sim.world.has(id, SurrenderedC)) surrender(sim, id);
+      if (shipIdOf(sim, sim.world.get(id, PositionC)) === cmd.ship && !isPlayers(sim, id) && !sim.world.has(id, SurrenderedC)) surrender(sim, id);
     }
   },
   'debug.capture': (sim, cmd) => {
@@ -52,7 +52,7 @@ export const captureHandlers: { [T in CaptureCommandType]: (sim: Sim, cmd: Extra
   },
   'debug.imprison': (sim, cmd) => {
     const pos = sim.world.get(cmd.crew, PositionC);
-    if (!pos || !sim.world.has(cmd.crew, CrewC) || isPlayers(sim, cmd.crew, { held: false })) return;
+    if (!pos || !sim.world.has(cmd.crew, CrewC) || isPlayers(sim, cmd.crew)) return;
     imprison(sim, cmd.crew, shipIdOf(sim, pos));
     const p = sim.world.get(cmd.crew, PrisonerC);
     if (p && cmd.from && sim.content.galaxy?.factions[cmd.from]) p.from = cmd.from;

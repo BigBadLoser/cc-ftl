@@ -33,7 +33,6 @@ export function dropAims(sim: Sim, ship: number, drop: (target: number) => boole
   }
 }
 
-const playerShips = (sim: Sim): number[] => sim.world.query(ShipC, CombatC).filter((id) => isPlayers(sim, id));
 const peaceful = (sim: Sim, ship: number): boolean => !factionsHostile(sim.world.get(ship, ShipC)?.faction, PLAYER);
 
 /**
@@ -45,7 +44,8 @@ export function battleStations(sim: Sim, on: boolean): void {
   if (on === !!sim.sector.stations) return;
   if (on) sim.sector.stations = true;
   else delete sim.sector.stations;
-  for (const ship of playerShips(sim)) {
+  for (const ship of sim.world.query(ShipC, CombatC)) {
+    if (!isPlayers(sim, ship)) continue;
     holdAll(sim, ship, on);
     if (!on) dropAims(sim, ship, (t) => peaceful(sim, t));
   }

@@ -22,32 +22,29 @@ const shipById = (sim: Sim, id: number): Ship | undefined => (id ? sim.world.get
 export type Side = string;
 export const PLAYER = 'player' satisfies Side;
 
-export interface HeldOpt {
-  /** `false`: a prisoner counts as its own allegiance, not as its holder's (the roster of who fights for whom, as opposed to who holds them). */
-  held?: boolean;
-}
-
 /**
- * Who controls an entity, or null when it has no side. Ship: its faction. Crew: its allegiance; a prisoner is held by `PrisonerC.holder` (the
- * player when absent). Vehicle: its home ship's side. Module, storage, item stack: the ship it stands on.
+ * Who controls an entity, or null when it has no side. Ship: its faction. Crew: its own allegiance, a prisoner's too (who holds one is `holderOf`). Vehicle: its home ship's side. Module, storage, item stack: the ship it stands on.
  */
-export function sideOf(sim: Sim, entity: number, opts: HeldOpt = {}): Side | null {
+export function sideOf(sim: Sim, entity: number): Side | null {
   const w = sim.world;
   const ship = w.get(entity, ShipC);
   if (ship) return ship.faction;
   const v = w.get(entity, VehicleC);
   if (v) return shipById(sim, v.homeShip)?.faction ?? 'neutral';
   const allegiance = w.get(entity, AllegianceC);
-  if (allegiance) {
-    const prisoner = w.get(entity, PrisonerC);
-    return prisoner && opts.held !== false ? (prisoner.holder ?? PLAYER) : allegiance.faction;
-  }
+  if (allegiance) return allegiance.faction;
   const at = w.get(entity, ModuleC) ?? w.get(entity, ItemStackC);
   return at ? (shipById(sim, shipIdOf(sim, at))?.faction ?? null) : null;
 }
 
 /** True if the entity is on the player's side (`sideOf`). */
-export const isPlayers = (sim: Sim, entity: number, opts: HeldOpt = {}): boolean => sideOf(sim, entity, opts) === PLAYER;
+export const isPlayers = (sim: Sim, entity: number): boolean => sideOf(sim, entity) === PLAYER;
+
+/** Who holds a prisoner: `PrisonerC.holder`, the player when none is named; null for anyone who is not a prisoner. */
+export function holderOf(sim: Sim, crew: number): Side | null {
+  const prisoner = sim.world.get(crew, PrisonerC);
+  return prisoner ? (prisoner.holder ?? PLAYER) : null;
+}
 
 export interface PackedOpt {
   /** Answer "none" while the side's ship is a hyperspace packet, instead of flagging the read (`guardPacked`). */

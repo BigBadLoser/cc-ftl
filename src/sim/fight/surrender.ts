@@ -35,7 +35,7 @@ export function wantsToSurrender(sim: Sim, id: number, friends: readonly number[
   const hp = sim.world.get(id, HealthC);
   const pos = sim.world.get(id, PositionC);
   if (!crew || !hp || !pos) return false;
-  const limit = surrenderBelow(sim.content, crew.role, crew.species, isPlayers(sim, id, { held: false }), { brave: traitFlag(sim, id, 'brave'), coward: traitFlag(sim, id, 'coward') });
+  const limit = surrenderBelow(sim.content, crew.role, crew.species, isPlayers(sim, id), { brave: traitFlag(sim, id, 'brave'), coward: traitFlag(sim, id, 'coward') });
   if (limit <= 0 || hp.hp / hp.max >= limit) return false;
   const count = (ids: readonly number[]): number => ids.filter((o) => {
     const p = sim.world.get(o, PositionC);
@@ -69,7 +69,7 @@ export function surrender(sim: Sim, id: number): void {
  */
 export function rallySurrendered(sim: Sim, units: ReadonlyMap<number, readonly number[]>): void {
   for (const id of [...sim.world.query(SurrenderedC)]) {
-    if (!isPlayers(sim, id, { held: false }) || sim.world.has(id, PrisonerC)) continue;
+    if (!isPlayers(sim, id) || sim.world.has(id, PrisonerC)) continue;
     if (sim.world.has(id, DeadC) || sim.world.has(id, DownedC)) continue;
     const since = sim.world.get(id, SurrenderedC)?.tick ?? 0;
     if (sim.tick - since < RALLY_AFTER_TICKS) continue;
