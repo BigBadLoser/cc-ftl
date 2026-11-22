@@ -133,7 +133,7 @@ describe('agendas', () => {
         // (Stops are recorded when a fleet arrives at the end of the leg it planned: a fleet beaten in a clash runs for home through nodes it never chose.)
         if (f.role === 'trader') expect(kinds(sim, node)).toContain('station');
         if (f.role === 'miner') expect(kinds(sim, node)).toContain('asteroids');
-        if (f.role === 'patrol') expect(index.nodes.get(node)?.faction).toBe(f.faction);
+        if (f.role === 'patrol') expect(index.nodes.get(node)?.genFaction).toBe(f.faction);
       }
     }
     expect(seenRoles.has('trader') || seenRoles.has('miner') || seenRoles.has('patrol')).toBe(true);

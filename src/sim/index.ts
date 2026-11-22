@@ -177,6 +177,7 @@ export { visibleFleets, sensorNodes } from './galaxy/fleets';
 export { fleetName } from './galaxy/names';
 export { portsAt, portOf } from './galaxy/portIndex';
 export { portNode, type Port } from './galaxy/ports';
+export { sectorOwner, nodeOwner, nodeOwnerAt, structureOwner } from './galaxy/control';
 export { econOf, stockAt, factorAt, quoteAt, moveStock, advance, capOf, type Econ } from './galaxy/market';
 export { bindMarkets, bindStation, unbindMarkets } from './galaxy/marketLive';
 export { populateNode } from './galaxy/populate';

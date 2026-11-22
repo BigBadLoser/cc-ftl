@@ -159,8 +159,9 @@ import { newYard, type YardState } from './yard/types';
  * v127 (ground turrets, #514): the `cable` grid field (a power cable laid over rock ground, sim/cable.ts).
  * v128 (prefab base tubes, #508): the `tube` grid field (a tube's floor tile, drawn as a glass tube: sim/tube.ts).
  * v129 (one deal flow, #548): a trader's deal (`Deal.courier` 'them') runs on the station's real shuttle through every phase (no shuttle is made up for it, nor for an inspection or a yard order); `TraderDef.shuttle` removed.
+ * v130 (far galaxy, #604): `GalaxyState.control` (sectors whose owner differs from the generated one, and the pressure on them).
  */
-export const SAVE_VERSION = 129;
+export const SAVE_VERSION = 130;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {

@@ -8,6 +8,7 @@ import { graceHolds } from './grace';
 import { fleetStrength } from './encounterOdds';
 import { isHostileFaction } from './standing';
 import { nodeOf } from './state';
+import { nodeOwnerAt } from './control';
 import { ENCOUNTER_COOLDOWN, ENCOUNTER_MAX, ENCOUNTER_TTL, PASSING_ENCOUNTER_CHANCE } from './tuning';
 import type { CrossingHow, Encounter, EncounterKind, Fleet } from './types';
 
@@ -43,7 +44,7 @@ export function encounterKind(sim: Sim, f: Fleet): EncounterKind {
 
 /** Is the fleet a route guard outside its own faction's space? */
 export function offRoute(sim: Sim, f: Fleet): boolean {
-  return !!sim.content.galaxy?.factions[f.faction]?.guardsRoutes && nodeOf(sim, f.node)?.faction !== f.faction;
+  return !!sim.content.galaxy?.factions[f.faction]?.guardsRoutes && nodeOwnerAt(sim, f.node) !== f.faction;
 }
 
 const PASSING_SALT = 0x9a55;

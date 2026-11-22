@@ -6,6 +6,7 @@ import { portsAt } from './portIndex';
 import { sizeOf, stationKindOf, structureSeed } from './populateSpawn';
 import type { Port } from './ports';
 import { nodeOf } from './state';
+import { structureOwner } from './control';
 
 /**
  * What each of a node's structures becomes when the node is populated (populate.ts), decided from the galaxy seed, the node and content alone: no sim
@@ -40,7 +41,7 @@ export function planNode(sim: Sim, id: string): StructurePlan[] {
     if (!def) return;
     const port = ports.get(i);
     if (def.kind === 'station') {
-      const pirate = content.factions[s.owner ?? '']?.kind === 'pirates';
+      const pirate = content.factions[structureOwner(sim, node, s) ?? '']?.kind === 'pirates';
       if (port?.kind === 'den' && hasField) {
         // A den among the rocks is dug into a big asteroid and hidden there.
         out.push({ i, port, type: 'outpost', outpost: { style: 'dug', kind: 'pirate', seed: structureSeed(sim, id, i, SALT.dug) } });

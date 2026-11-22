@@ -1,5 +1,6 @@
 import type { Sim } from '../sim';
 import type { FleetRole, ShipSize } from './defs';
+import { structureOwner } from './control';
 import { portNode, portsOf, type Port } from './ports';
 import { galaxyIndex, nodeOf } from './state';
 import type { PortState } from './types';
@@ -9,7 +10,7 @@ export function portsAt(sim: Sim, id: string): Port[] {
   const content = sim.content.galaxy;
   const node = nodeOf(sim, id);
   if (!content || !node) return [];
-  return portsOf(sim.seed, content, node, !!galaxyIndex(sim.galaxy).sectors.get(node.sector)?.hub);
+  return portsOf(sim.seed, content, node, !!galaxyIndex(sim.galaxy).sectors.get(node.sector)?.hub, (s) => structureOwner(sim, node, s));
 }
 
 /** A port by id, or undefined. */

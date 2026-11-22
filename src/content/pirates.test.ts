@@ -162,7 +162,7 @@ describe('pirate factions: territory and fleets', () => {
 
 describe('the cartel guards its routes', () => {
   it('interdicts in its own space and only hails elsewhere, unless it was sent to hunt the player', () => {
-    const owned = (faction: string): Sim => newGame(1, contentEdited(1, `owner:${faction}`, (c) => { for (const n of c.nodes) n.faction = faction; }));
+    const owned = (faction: string): Sim => newGame(1, contentEdited(1, `owner:${faction}`, (c) => { for (const n of c.nodes) n.genFaction = faction; for (const s of c.sectors) s.genFaction = faction; }));
     const sim = owned('cartel');
     const navy = owned('navy');
     const fleet = { id: 1, faction: 'cartel', role: 'pirate', node: nodeOf(sim, sim.galaxy.current)!.id, ships: [], hunt: undefined } as unknown as Fleet;

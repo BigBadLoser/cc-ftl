@@ -12,6 +12,7 @@ import { graceHolds } from './grace';
 import { pickWeighted, trafficPool } from './sector';
 import { isHostileFaction, tierOf } from './standing';
 import { currentNode, nodeState, withGalaxyRng } from './state';
+import { nodeOwner } from './control';
 import {
   ARRIVAL_EVERY_SEC, ARRIVAL_FRIENDLY_TERRITORY, ARRIVAL_HOSTILE_TERRITORY, ARRIVAL_MAX_CHANCE, ARRIVAL_PER_DANGER,
   MAX_HOSTILE_CONTACTS,
@@ -210,8 +211,9 @@ function arrivalChance(sim: Sim): number {
   const node = currentNode(sim);
   if (!node) return 0;
   let p = Math.min(ARRIVAL_MAX_CHANCE, ARRIVAL_PER_DANGER * node.danger);
-  if (node.faction) {
-    const tier = tierOf(sim, node.faction);
+  const owner = nodeOwner(sim, node);
+  if (owner) {
+    const tier = tierOf(sim, owner);
     if (tier === 'hostile') p *= ARRIVAL_HOSTILE_TERRITORY;
     if (tier === 'friendly') p *= ARRIVAL_FRIENDLY_TERRITORY;
   }
@@ -257,7 +259,7 @@ export function rollArrival(sim: Sim): void {
 function arrivalPool(sim: Sim, node: NonNullable<ReturnType<typeof currentNode>>): { p: number; pool: { value: string; weight: number }[] } {
   let p = arrivalChance(sim);
   const content = sim.content.galaxy;
-  let pool = trafficPool(content, node.faction, node.danger).filter((w) => isHostileFaction(sim, w.value));
+  let pool = trafficPool(content, nodeOwner(sim, node), node.danger).filter((w) => isHostileFaction(sim, w.value));
   if (!pool.length && node.danger <= SCAVENGER_MAX_DANGER && content?.factions[SCAVENGER_FACTION] && isHostileFaction(sim, SCAVENGER_FACTION)) {
     pool = [{ value: SCAVENGER_FACTION, weight: 1 }];
     p = Math.max(p, SCAVENGER_CHANCE);

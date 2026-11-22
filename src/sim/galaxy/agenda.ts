@@ -5,6 +5,7 @@ import { unit } from './hash';
 import { portNode } from './ports';
 import { portsAt } from './portIndex';
 import { nodeOf } from './state';
+import { nodeOwnerAt } from './control';
 import {
   BREAKDOWN_CHANCE, CATCHUP_MAX, FLEET_LEGS, FLEET_LEG_HOPS, FLEET_RANGE, FLEET_REST, FLEET_WORK, REPAIR_TURNS,
 } from './tuning';
@@ -39,9 +40,9 @@ function suits(sim: Sim, f: Fleet, id: string): boolean {
   switch (f.role) {
     case 'trader': return structureKinds(sim, id).station;
     case 'miner': return structureKinds(sim, id).ore;
-    case 'patrol': return nodeOf(sim, id)?.faction === f.faction;
+    case 'patrol': return nodeOwnerAt(sim, id) === f.faction;
     // A route guard keeps to its own space.
-    case 'pirate': return !sim.content.galaxy?.factions[f.faction]?.guardsRoutes || nodeOf(sim, id)?.faction === f.faction;
+    case 'pirate': return !sim.content.galaxy?.factions[f.faction]?.guardsRoutes || nodeOwnerAt(sim, id) === f.faction;
     default: return true;
   }
 }
@@ -67,7 +68,7 @@ function hunt(sim: Sim, f: Fleet, turn: number): string | null {
   if (!ARMED.includes(f.role) || rnd(sim, f, turn, SALT.hunt) >= HUNT_CHANCE) return null;
   const mine = fleetPower(f);
   const guard = !!sim.content.galaxy?.factions[f.faction]?.guardsRoutes;
-  const here = targets(sim, f, true).filter((n) => !guard || nodeOf(sim, n)?.faction === f.faction);
+  const here = targets(sim, f, true).filter((n) => !guard || nodeOwnerAt(sim, n) === f.faction);
   const prey = new Set<string>();
   for (const g of sim.galaxy.fleets) {
     if (g === f || !g.ships.length || g.node === f.node || !here.includes(g.node) || !wouldFight(sim, f, g)) continue;

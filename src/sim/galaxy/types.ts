@@ -1,9 +1,11 @@
 import type { ItemQty } from '../registry';
 import type { FleetRole, ShipSize } from './defs';
 import type { Vec } from './geometry';
+import type { NewsItem } from './newsTypes';
 import type { SceneSpec, SceneWatch } from '../scene/types';
 
 export type { FleetRole, ShipSize } from './defs';
+export type { NewsItem, NewsKind } from './newsTypes';
 
 /**
  * The starmap model. Terms (user decision): a **node** is one playable location (older code says "sector" for it); a
@@ -14,7 +16,8 @@ export type { FleetRole, ShipSize } from './defs';
 /** A structure at a node: its StructureDef id and the faction that owns it (null = nobody, e.g. a derelict). */
 export interface StructureRef {
   def: string;
-  owner: string | null;
+  /** The generated owner. Read the current one through `structureOwner` (control.ts): territory can change hands. */
+  genOwner: string | null;
 }
 
 /** A ship present at a node when the galaxy was generated (galaxy faction, generator seed, depth). */
@@ -32,8 +35,8 @@ export interface NodeData {
   y: number;
   name: string;
   danger: number;
-  /** Territory (the sector's faction); null = open space. */
-  faction: string | null;
+  /** Territory as generated (the sector's faction); null = open space. Read the current owner through `nodeOwner` (control.ts). */
+  genFaction: string | null;
   structures: StructureRef[];
   /** Item ids the node can supply (from its structures). */
   resources: string[];
@@ -49,7 +52,8 @@ export interface SectorData {
   /** Radius of the disc the nodes (plus padding) lie in. */
   r: number;
   name: string;
-  faction: string | null;
+  /** The generated faction. Read the current owner through `sectorOwner` (control.ts). */
+  genFaction: string | null;
   danger: number;
   nodes: string[];
   /** Padded convex hull of the nodes, counter-clockwise. */
@@ -155,27 +159,6 @@ export interface WreckSeed {
 }
 
 /**
- * What the news log reports (news.ts). `destroyed`: `who` destroyed `foe`; `driven`: `who` drove `foe` off; `clash`: `who` and `foe` fought to a bloody draw;
- * `raid`: `who` raided a den and destroyed `foe`; `cut`: a trade route is cut, `foe` (a trader) was lost near here; `loot`: `who` took `count` of `item`
- * from `foe`; `shortage`: the port here is short of `item`; `rebuilt`: `who` was launched from the port here; `hunt`: `who` set out from here after the player.
- */
-export type NewsKind = 'destroyed' | 'driven' | 'clash' | 'raid' | 'cut' | 'loot' | 'shortage' | 'rebuilt' | 'hunt';
-
-export interface NewsItem {
-  id: number;
-  turn: number;
-  kind: NewsKind;
-  /** Where it happened (a node id; for a clash on a lane, the end it was settled at). */
-  node: string;
-  who: string;
-  faction: string;
-  foe?: string;
-  foeFaction?: string;
-  item?: string;
-  count?: number;
-}
-
-/**
  * Hyperspace travel of the player's ship along a route (`sector.state === 'hyperspace'`, the ship waits as the sector's packet).
  * `route[0]` is the node it left; `at` is the index of the node last passed (`galaxy.current` is `route[at]`).
  */
@@ -260,6 +243,16 @@ export interface Fleet {
 export interface MarketState {
   turn: number;
   stock: Record<string, number>;
+}
+
+/**
+ * A sector whose control differs from what was generated (control.ts). `owner` is its faction now (null = nobody) and `since` the turn it changed;
+ * `pressure` is an enemy pushing on it (`by`), `value` building up over `ticks` coarse ticks in a row over the threshold (coarse.ts).
+ */
+export interface SectorControl {
+  owner: string | null;
+  since: number;
+  pressure?: { by: string; value: number; ticks: number };
 }
 
 /** A port that lost ships: the replacements it owes (in build order) and the turn the first is done; one is built every `PortKindDef.rebuildTurns`. */
@@ -459,6 +452,8 @@ export interface GalaxyState {
   travel: Travel | null;
   /** A distress call waiting for its tug, or null (stranded.ts). */
   distress: Distress | null;
+  /** Sectors whose control differs from their generated state, by sector id (control.ts). No entry = the generated owner, no pressure. */
+  control: Record<string, SectorControl>;
   /** Bumped on every change the starmap view shows. */
   rev: number;
 }
