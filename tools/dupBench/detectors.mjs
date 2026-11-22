@@ -101,7 +101,7 @@ export function detectors({ only } = {}) {
     // DUPBENCH_SEMANTIC_MODELS=a,b. Score scales differ by model, so these sweep wide from a low cutoff.
     ...HTTP_MODELS.map((model) => ({
       id: `semantic-${model.replace(/[^a-z0-9.]+/gi, '_')}`,
-      sweep: [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],
+      sweep: [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.825, 0.85, 0.875, 0.9],
       run: (root) => jscpd(root, ['--semantic', '--kind', 'semantic', '--semantic-url', HTTP_URL, '--semantic-model', model, '--semantic-same-threshold', '0.3']),
     })),
   ];
