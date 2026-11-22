@@ -18,9 +18,10 @@ from . import core
 from .modkit import K
 
 TOP = 0.22                                                       # the med bed's mattress top (medbay.MATTRESS)
-STAGES = {"cut": ("laser", "cutter", "clamp", "camera"), "open": ("cutter", "clamp", "camera"),
-          "close": ("clamp", "suture", "camera")}
-ARMS = ("laser", "cutter", "camera", "clamp", "suture")          # round the ring
+STAGES = {"cut": ("laser", "cutter", "camera"), "open": ("cutter", "clamp", "camera"),
+          "close": ("clamp", "suture", "camera")}                # three at a time; animated, tools swap in and out
+ARMS = ("camera", "laser", "cutter", "clamp", "suture")          # round the ring; the slim camera (always in use) faces
+# the viewer in surgery, where it hides least
 SPEC = {"laser": dict(r=0.04, fore="medWhite", band="medRed", L=0.36),
         "cutter": dict(r=0.034, fore="steelL", band=None, L=0.36),
         "clamp": dict(r=0.05, fore="gm", band=None, L=0.34),
@@ -202,7 +203,8 @@ def mount(R, hu, hv, hz, ca, sa):
 
 
 SITE = 0.12                                                       # the incision, this far over the mattress
-HUB_ON, HUB_IDLE = (0.42, 0.98, 0.92), (0.0, 0.6, 1.5)
+SPREAD = (0.15, 0.1)                                              # the tools' spots round it (along the bed, across)
+HUB_ON, HUB_IDLE = (0.42, 0.98, 0.92), (0.3, 0.86, 1.45)    # idle: raised, poised over the bed's foot
 
 
 def rig(state, rot, *_):
@@ -230,22 +232,22 @@ def rig(state, rot, *_):
     # the halo
     R.torus((hu, hv), hz, RING_R, TUBE_R, "medWhite")
     R.torus((hu, hv), hz - 0.06, RING_R, 0.016, "cyan" if on else "steelD", m=6)        # underglow
-    k.cyl(hu, hv, hz - 0.1, 0.15, 0.14, "medWhite", top="plate", sides=10, rtop=0.12)   # core disc
-    k.cyl(hu, hv, hz - 0.118, 0.09, 0.018, "red" if on else "gmD", sides=10)            # sensor
+    k.cyl(hu, hv, hz - 0.04, 0.1, 0.08, "medWhite", top="plate", sides=10, rtop=0.08)   # core pod
+    k.cyl(hu, hv, hz - 0.055, 0.06, 0.015, "red" if on else "gmD", sides=10)            # sensor
     site = (hu, hv, TOP + SITE)
     for i, kind in enumerate(ARMS):
-        a = math.pi / 2 + i * math.tau / 5                                             # a gap faces the column (-v)
+        a = math.pi / 2 + math.pi / 5 + i * math.tau / 5                               # no arm hides behind the stem
         ca, sa = math.cos(a), math.sin(a)
         sp = a + math.pi / 5                                                           # spokes between the arms
-        R.tube((hu + 0.14 * math.cos(sp), hv + 0.14 * math.sin(sp), hz - 0.02),
+        R.tube((hu + 0.09 * math.cos(sp), hv + 0.09 * math.sin(sp), hz),
                (hu + (RING_R - 0.04) * math.cos(sp), hv + (RING_R - 0.04) * math.sin(sp), hz - 0.01), 0.022, "steel", sides=8)
         sh, tan = mount(R, hu, hv, hz, ca, sa)
         wrist = (hu + WR * ca, hv + WR * sa, hz + WZ)
         if kind in use:                                                                # the tools converge on the incision
             up = 0.16 if kind == "camera" else 0.07 if kind == "laser" else 0.0
-            aim = (site[0] + 0.035 * ca, site[1] + 0.035 * sa, site[2] + up)
+            aim = (site[0] + SPREAD[0] * ca, site[1] + SPREAD[1] * sa, site[2] + up)       # each its own spot
             arm(R, sh, (ca, sa), tan, kind, wrist, aim, True)
-        else:                                                                          # folded: tool tucked, pointing in
-            arm(R, sh, (ca, sa), tan, kind, (hu + (WR - 0.04) * ca, hv + (WR - 0.04) * sa, hz + 0.02),
-                (hu + 0.25 * ca, hv + 0.25 * sa, hz - 0.3), False)
+        else:                                                                          # folded: tool tucked up by the forearm
+            w = (hu + (WR - 0.04) * ca, hv + (WR - 0.04) * sa, hz + 0.02)
+            arm(R, sh, (ca, sa), tan, kind, w, (w[0] + 0.1 * ca + 0.2 * tan[0], w[1] + 0.1 * sa + 0.2 * tan[1], w[2] + 0.6), False)
     return k.build()
