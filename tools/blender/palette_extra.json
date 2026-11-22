@@ -4084,5 +4084,9 @@
   "stPT": {"hex": "#8699a4", "set": "station"},
   "stPS": {"hex": "#6e8694", "set": "station"},
   "stPLo": {"hex": "#8699a4", "set": "station"},
-  "stPM": {"hex": "#5c7585", "set": "station"}
+  "stPM": {"hex": "#5c7585", "set": "station"},
+  "rgChrome": {"hex": "#b4bdc6", "set": "surgery"},
+  "rgChromeD": {"hex": "#8d97a2", "set": "surgery"},
+  "rgHolo": {"hex": "#6ff0ff", "emissive": 2.2, "set": "surgery"},
+  "rgHoloF": {"hex": "#3c9db3", "set": "surgery"}
 }
