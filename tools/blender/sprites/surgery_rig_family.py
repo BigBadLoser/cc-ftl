@@ -11,7 +11,7 @@ The same set again under module.surgery_rig.m (`.m.r{n}.idle`, `.m.front.r{n}...
 (surgery_rig.MK), for the bed's other long side. The plain set's halo reaches toward local +u, the mirrored one's toward
 -u; the game picks the one whose halo reaches toward the bed's head (render/rigArt.ts).
 
-The front is rendered with the body as a holdout ("over"), so it holds only what is in front of the column. Frames run at
+The front is rendered with the body as a holdout ("overline": "over" with an outline on its own silhouette), so it holds only what is in front of the column. Frames run at
 surgery_rig_anim.FPS; the game picks them from the operation's progress."""
 from . import core, post
 from . import env_build as E
@@ -36,7 +36,7 @@ def _item(sid, kind, objs):
 def _front(sid, P, rot, hand):
     _fresh()
     b, f = build(P, rot, sid.replace(".", "_"), split=True, hand=hand)
-    return _item(sid, "over", (f, f + b))
+    return _item(sid, "overline", (f, f + b))
 
 
 def _base(hand):

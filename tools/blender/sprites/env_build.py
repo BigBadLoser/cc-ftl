@@ -75,7 +75,8 @@ def render_sprite(sid, kind, objs, want_uv=False):
         c, al = _pad1(c), np.pad(al, 1)
         z = np.zeros((H + 2, W + 2, 4), np.uint8)
         return c, al > 0, z, (W + 2) // 2, (H + 2) // 2, al
-    own, wide = objs if kind in ("wide", "over") else (objs, None)
+    own, wide = objs if kind in ("wide", "over", "overline") else (objs, None)
+    whole = None
     xmin, xmax, ymin, ymax = core.extent_px(own)
     W = 2 * (int(math.ceil(max(-xmin, xmax))) + 5)
     H = 2 * (int(math.ceil(max(-ymin, ymax))) + 5)
@@ -95,6 +96,7 @@ def render_sprite(sid, kind, objs, want_uv=False):
         _show(extra, False)
         c, _ = post.downsample(rgb, aw > 0.5, SS, 8, True, sid.startswith(AA))
         op = post.blocks(a > 0.5, SS).sum(-1) >= post.scaled(8, SS)
+        whole = post.blocks(aw > 0.5, SS).sum(-1) >= post.scaled(8, SS)     # own's px, in front of the others or not
     else:
         rgb, a = core.render(W, H, "color")
         c, op = post.downsample(rgb, a > 0.5, SS, 8, True, sid.startswith(AA))
@@ -112,6 +114,9 @@ def render_sprite(sid, kind, objs, want_uv=False):
         c, op = _pad1(c), _pad1(op)
     elif kind in ("block", "wide", "over", "fx", "ghost"):
         c, op = _pad1(c), _pad1(op)
+    elif kind == "overline":                            # "over" with a prop's outline on its own silhouette, none along
+        c, lined = post.outline(c, op, True)            # the edge where the others hide it (a whole render has none there)
+        op = lined & ~(_pad1(whole) & ~_pad1(op))
     else:
         c, op = post.outline(c, op, True)
     grgb, _ = core.render(W, H, "glow")
