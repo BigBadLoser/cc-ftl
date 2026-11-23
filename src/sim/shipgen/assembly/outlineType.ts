@@ -69,6 +69,23 @@ export function shipCommons(r: OutlineRecipe, crew: number, depth: number): Room
 }
 
 /**
+ * A miner's works (`OutlineRecipe.mining`): the pod deck (the bays in one row), the
+ * ore store beside it (two bins a pod), and from its depth a refinery room (each machine with its own ore bin); none
+ * without the recipe's `mining`.
+ */
+export function shipWorks(r: OutlineRecipe, depth: number): RoomSpec[] {
+  const m = r.mining;
+  if (!m) return [];
+  // (One row of bays however many: a ship's bays are shallower than a station's two-row deck.)
+  const pods = Math.min(m.pods.max, m.pods.base + Math.floor(m.pods.perDepth * depth));
+  const deck: RoomSpec = { role: 'hangar', mods: Array<string>(pods).fill('module.pod_bay'), w: 4 * pods + 1, h: 5, vehicle: 'vehicle.mining_pod' };
+  const ore: RoomSpec = { role: 'cargo', mods: Array<string>(2 * pods).fill('module.storage_ore'), w: Math.max(5, 2 * pods + 1), h: 5 };
+  const refs = !m.refinery || depth < m.refinery.from ? 0 : depth >= m.refinery.second ? 2 : 1;
+  const plant: RoomSpec[] = refs === 0 ? [] : [{ role: 'industry', mods: [...Array<string>(refs).fill('module.refinery'), ...Array<string>(refs).fill('module.storage_ore')], w: 4 * refs + 1, h: 7 }];
+  return [deck, ore, ...plant];
+}
+
+/**
  * Single cabins for `n` sleepers: the beds made even, in blocks of four (two cabins each side of the corridor, two rows
  * deep), the last of two where that is all that is left: the layout claims deep floor for them as one block a side
  * (blockLayout.ts), or lays these as rows of cabins where no floor is deep enough (a lane's or a deck's strip).

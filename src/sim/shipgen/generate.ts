@@ -170,7 +170,7 @@ function specsOf(b: Builder): (RoomSpec | undefined)[] {
 /**
  * Generate a ship for a faction, deterministically from `seed` and sector `depth`: role and archetype, module plan,
  * structure, fit-out, validation. Bad layouts are reseeded up to GEN_ATTEMPTS times. The one owner of which generator
- * builds a faction's ships: a seed whose hull family has an outline recipe (the navy's, the civilian liner and freighter)
+ * builds a faction's ships: a seed whose hull family has an outline recipe (the navy's; the civilian liner, freighter and miner)
  * its type's outline hull (assembly/outlineShip.ts), the rest by their hull families or roles (the arranger).
  */
 export function generateShip(

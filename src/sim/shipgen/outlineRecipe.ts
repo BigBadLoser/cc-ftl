@@ -111,4 +111,15 @@ export interface OutlineRecipe {
   depts?: DeptRules;
   /** A pusher: the hull behind a truss of containers it pushes. */
   truss?: TrussSpec;
+  /** A miner: its pod deck, the ore store beside it, and from some depth a refinery aboard. */
+  mining?: MiningSpec;
+}
+
+/**
+ * A miner's works (#581): mining pods (a pod deck of their bays, which they leave and enter through the floor) and an
+ * ore store of two bins a pod; from `refinery.from` deep a refinery room (one machine, a second `refinery.second` deep).
+ */
+export interface MiningSpec {
+  pods: { base: number; perDepth: number; max: number };
+  refinery?: { from: number; second: number };
 }

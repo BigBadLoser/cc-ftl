@@ -44,7 +44,31 @@ const TUG: readonly Profile[] = [
     stern: [{ kind: 'quarters', len: [8, 10], out: [2, 3], aft: [2, 3] }, { kind: 'flare', len: [6, 8], out: [3, 4] }] },
 ];
 
+/**
+ * A miner: a working hull round its pod deck (the pods drop out through the floor), plain and boxy, its bow blunt or
+ * stepped, its drive on a flat bank or quarter flares. The small ones mine and haul the ore home; the deep ones carry
+ * a refinery.
+ */
+const MINER: readonly Profile[] = [
+  // A box: one straight section.
+  { id: 'miner.box', nose: { style: 'stepped', len: [3, 4], front: [6, 7] }, sections: [{ len: [18, 24], half: [8, 9] }],
+    stern: [{ kind: 'bank', len: [0, 0], out: [0, 0] }, { kind: 'quarters', len: [6, 8], out: [2, 2], aft: [2, 3] }] },
+  // A hammer: a broad forward section over a narrower drive section.
+  { id: 'miner.hammer', nose: { style: 'stepped', len: [2, 3], front: [8, 9] }, sections: [{ len: [12, 16], half: [9, 10] }, { len: [10, 14], half: [6, 7], taper: 1 }],
+    stern: [{ kind: 'flare', len: [5, 7], out: [2, 3] }, { kind: 'bank', len: [0, 0], out: [0, 0] }] },
+  // A barge: a round bow, a long section.
+  { id: 'miner.barge', nose: { style: 'round', len: [4, 5], front: [5, 6] }, sections: [{ len: [20, 28], half: [8, 9] }],
+    stern: [{ kind: 'quarters', len: [6, 8], out: [2, 3], aft: [2, 3] }, { kind: 'flare', len: [5, 7], out: [2, 3] }] },
+];
+
 export const civilianOutline = {
+  mining: {
+    family: 'mining', profiles: MINER, maxBeam: 23, crew: { sleep: 'bunks', rooms: 1 }, layout: { kind: 'bays', program: { pd: false, least: 64 } },
+    // (Its hold the ore store: few crates.)
+    bonus: { crates: -4 },
+    // (Two pods early, a pod more about every two depths, six at most; a refinery from depth 4, a second from 7.)
+    mining: { pods: { base: 2, perDepth: 0.5, max: 6 }, refinery: { from: 4, second: 7 } },
+  },
   freighter: {
     family: 'freighter', profiles: TUG, maxBeam: 27, crew: { sleep: 'bunks', rooms: 1 }, layout: { kind: 'bays', cockpit: true, program: { pd: false, least: 64 } },
     // (Its cargo the truss's containers: no holds planned aboard, only spare floor's.)

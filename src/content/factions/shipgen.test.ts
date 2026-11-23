@@ -117,13 +117,13 @@ describe('ship generator: doctrines', () => {
     expect(anchors.size).toBeGreaterThanOrEqual(4);
   });
 
-  it('civilians: four families, lightly armed, never a battery; liners and freighters outline first, the rest arranged', () => {
+  it('civilians: four families, lightly armed, never a battery; a family with an outline recipe drawn from it, the rest arranged', () => {
     const families = new Set<string>();
     for (let seed = 0; seed < 40; seed++) {
       const g = gen('faction.civilian', seed, seed % 10);
       families.add(g.role);
       // One generator a type: a family with an outline recipe is drawn from it, one without keeps the arranger.
-      const recipe = ['freighter', 'liner'].includes(g.role);
+      const recipe = g.role in ((factions['faction.civilian'] as FactionDef).outline ?? {});
       expect(g.topology.startsWith('outline '), `seed ${seed} ${g.role}: ${g.topology}`).toBe(recipe);
       expect(g.problems, `seed ${seed} ${g.role}`).toEqual([]);
       expect(count(g, (m) => !!m.weapon && !m.pointDefense), `seed ${seed} guns`).toBeLessThanOrEqual(2);
