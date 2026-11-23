@@ -148,8 +148,11 @@ export function surgeryJobOf(sim: Sim, patient: number): [number, Job] | undefin
   return undefined;
 }
 
-/** Is a surgeon at work on the patient right now? */
-export const surgeryUnderway = (sim: Sim, patient: number): boolean => (surgeryJobOf(sim, patient)?.[1].progress ?? 0) > 0;
+/** Is a surgeon at work on the patient right now (the job is begun and someone holds it: a surgeon taken off it leaves its progress behind)? */
+export function surgeryUnderway(sim: Sim, patient: number): boolean {
+  const job = surgeryJobOf(sim, patient)?.[1];
+  return !!job && job.progress > 0 && job.reservedBy > 0;
+}
 
 /** Give up waiting in the bed: the next operation is marked `untended` now. */
 export function giveUpSurgery(sim: Sim, id: number): void {

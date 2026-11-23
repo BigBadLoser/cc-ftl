@@ -80,7 +80,7 @@ function succeed(sim: Sim, id: number, op: Operation, ship: number): boolean {
 function fail(sim: Sim, id: number, op: Operation, ship: number, botched: boolean): void {
   if (botched && op.kind === 'fit' && op.item) drawFromStores(sim, ship, op.item, 1);
   const brain = sim.content.injuries?.parts[op.part]?.slot === 'brain';
-  addInjury(sim, id, op.part, 'injury.surgical', botched && !brain ? 'destroyed' : undefined);
+  addInjury(sim, id, op.part, 'injury.surgical', brain ? 'spare' : botched ? 'destroyed' : undefined);
 }
 
 /** The surgery job's work is done: roll, then do it (or not), and take the operation off the queue. */

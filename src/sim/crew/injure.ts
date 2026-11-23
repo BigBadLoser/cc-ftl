@@ -93,8 +93,9 @@ function injure(sim: Sim, id: number, source: InjurySource, serious: boolean): v
 /**
  * Put one injury of `kind` on `part` (the sources, and `debug.setCrew`, which may set it `as` a scar or a lost part at once). A part already lost takes
  * none, nor does a replacement implant. A serious injury that leaves the part with no condition destroys it: its injuries go, and one `destroyed` entry stays for good.
+ * `as: 'spare'` never destroys the part: an injury that would is not added (a failed brain operation only hurts the brain).
  */
-export function addInjury(sim: Sim, id: number, part: string, kind: string, as?: 'scar' | 'destroyed', src?: InjurySource): void {
+export function addInjury(sim: Sim, id: number, part: string, kind: string, as?: 'scar' | 'destroyed' | 'spare', src?: InjurySource): void {
   const k = sim.content.injuries?.kinds[kind];
   if (!k || !sim.content.injuries?.parts[part] || !partInjurable(sim, id, part)) return;
   const inj = injuriesComp(sim, id);
@@ -104,6 +105,10 @@ export function addInjury(sim: Sim, id: number, part: string, kind: string, as?:
     return;
   }
   inj.list.push({ part, kind, sev: k.severity, age: 0, heal: 0, ...(k.bleed ? { bleeding: true as const } : {}), ...from });
+  if (as === 'spare' && k.severity === 'serious' && partCondition(sim, id, part, inj.list) <= 0) {
+    inj.list.pop();
+    return;
+  }
   if (as === 'destroyed' || (k.severity === 'serious' && partCondition(sim, id, part, inj.list) <= 0)) {
     inj.list = inj.list.filter((i) => i.part !== part);
     inj.list.push({ part, kind, sev: 'destroyed', age: 0, heal: 0, ...from });

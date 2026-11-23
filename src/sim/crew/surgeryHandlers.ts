@@ -22,8 +22,7 @@ export const surgeryHandlers: { [T in SurgeryCommand]: (sim: Sim, cmd: Extract<C
     const ops = sim.world.get(cmd.id, OperationsC);
     const at = ops?.list.findIndex((o) => o.id === cmd.op) ?? -1;
     if (!ops || at < 0) return reject(sim, cmd.type, 'noOperation');
-    ops.list.splice(at, 1);
-    if (!ops.list.length) sim.world.remove(cmd.id, OperationsC);
+    ops.list.splice(at, 1); // an emptied queue stays until the surgery system's pass, which also drops the cancelled op's job, so a new op never reuses its id
   },
 };
 
