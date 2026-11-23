@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CrewC, DeadC, DownedC, PositionC } from '../sim/crew/components';
+import { CrewC, DeadC, DownedC, PositionC, RecoveringC } from '../sim/crew/components';
 import { capacitiesOf, injuriesOf, partDestroyed, vitalLost } from '../sim/crew/body';
 import { addInjury } from '../sim/crew/injure';
 import { implantLoad, implantOn, implantsOf } from '../sim/crew/implants';
@@ -129,6 +129,7 @@ describe('surgery and implants (#311)', () => {
       const patient = pickCrew(sim, 0)!;
       const pilot = pickCrew(sim, 2)!;
       const bed = moduleOf(sim, 'module.med_bed');
+      sim.world.add(patient, RecoveringC, { bed }); // the patient lies in the rigged bed, as the job needs at its end
       const out: string[] = [];
       for (let n = 0; n < 40; n++) {
         if (!implantsOf(sim, patient).length) fitImplant(sim, patient, DERMAL, 'item.dermal_armor_1');

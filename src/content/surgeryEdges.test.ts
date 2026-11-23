@@ -1,8 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { CrewC, JobC, type Job } from '../sim/crew/components';
+import { ModuleC } from '../sim/modules/components';
+import { finishSurgery } from '../sim/crew/surgeryOutcome';
+import { lyingIn, operationsOf, surgeryUnderway } from '../sim/crew/surgery';
+import { cachedScenario } from '../../test/support/scenario';
+import { pickCrew } from './scenario/lib/crewPick';
 import { partCondition, partDestroyed } from '../sim/crew/body';
 import { addInjury } from '../sim/crew/injure';
-import { surgeryUnderway } from '../sim/crew/surgery';
 import { queueOperation, surgeryHandlers } from '../sim/crew/surgeryHandlers';
 import { playerCrew } from '../sim/story/world';
 import type { Sim } from '../sim/sim';
@@ -44,5 +48,16 @@ describe('surgery edge cases (#311)', () => {
     const first = queueOperation(sim, id, { kind: 'amputate', part: 'part.arm_left' });
     surgeryHandlers['crew.cancelOperation'](sim, { type: 'crew.cancelOperation', id, op: first });
     expect(queueOperation(sim, id, { kind: 'amputate', part: 'part.arm_right' })).not.toBe(first);
+  });
+
+  it('a finished surgery job does nothing once the patient is out of its bed', () => {
+    const sim = cachedScenario('surgery').sim;
+    const [patient, medic] = [pickCrew(sim, 0)!, pickCrew(sim, 1)!];
+    const bed = sim.world.query(ModuleC).find((id) => sim.world.get(id, ModuleC)?.def === 'module.med_bed') as number;
+    expect(lyingIn(sim, patient)).not.toBe(bed);
+    const op = queueOperation(sim, patient, { kind: 'fit', part: 'part.eye_right', item: 'item.cyber_eye_2' });
+    const job: Job = { category: 'medical', kind: 'surgery', x: 0, y: 0, struct: 0, work: 1, progress: 1, reservedBy: medic, target: patient, bed, surgery: { op } };
+    finishSurgery(sim, medic, job);
+    expect(operationsOf(sim, patient).map((o) => o.id)).toEqual([op]);
   });
 });
