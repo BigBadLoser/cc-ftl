@@ -78,7 +78,7 @@ export function leanPlan(plan: ShipPlan, r: OutlineRecipe, depth: number): ShipP
   if (!isLean(r, depth)) return plan;
   const crates = plan.cargo.reduce((n, c) => n + c.mods.length, 0);
   const command = { ...plan.command, mods: plan.command.mods.filter((m) => m !== 'module.weaponsConsole') };
-  return { ...plan, command, weapons: [], cargo: crates > 0 ? [cargoSpec(crates)] : [] };
+  return { ...plan, command, weapons: [], cargo: crates > 0 && !r.mining ? [cargoSpec(crates)] : [] };
 }
 
 /** A type's beam at `depth`: its `maxBeam`, wider by `wider` a depth up to its most. */

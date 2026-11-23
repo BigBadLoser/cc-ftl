@@ -64,8 +64,8 @@ const MINER: readonly Profile[] = [
   { id: 'miner.hammer', nose: { style: 'stepped', len: [2, 3], front: [6, 7] }, sections: [{ len: [8, 11], half: [7, 8] }, { len: [7, 10], half: [5, 6], taper: 1 }],
     stern: [{ kind: 'flare', len: [4, 6], out: [2, 2] }, { kind: 'bank', len: [0, 0], out: [0, 0] }] },
   // A barge: a round bow, a long section.
-  { id: 'miner.barge', nose: { style: 'round', len: [3, 4], front: [4, 5] }, sections: [{ len: [14, 18], half: [7, 7] }],
-    stern: [{ kind: 'quarters', len: [5, 7], out: [1, 2], aft: [2, 3] }, { kind: 'flare', len: [4, 6], out: [1, 2] }] },
+  { id: 'miner.barge', nose: { style: 'round', len: [3, 4], front: [5, 6] }, sections: [{ len: [14, 18], half: [7, 7] }],
+    stern: [{ kind: 'bank', len: [0, 0], out: [0, 0] }, { kind: 'flare', len: [4, 6], out: [1, 2] }] },
 ];
 
 export const civilianOutline = {
@@ -77,6 +77,8 @@ export const civilianOutline = {
     bonus: { crates: -4 },
     // (Two pods early, a pod more about every two depths, six at most; a refinery from depth 4, a second from 7.)
     mining: { pods: { base: 2, perDepth: 0.5, max: 6 }, refinery: { from: 4, second: 7 } },
+    // (Its pod deck with the stores, the ore beside it: no flight deck.)
+    depts: { of: { hangar: 'hab' } },
   },
   freighter: {
     family: 'freighter', profiles: TUG, maxBeam: 27, crew: { sleep: 'bunks', rooms: 1 }, layout: { kind: 'bays', cockpit: true, program: { pd: false, least: 64 } },
