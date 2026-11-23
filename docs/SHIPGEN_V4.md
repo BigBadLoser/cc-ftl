@@ -399,3 +399,26 @@ A part is a module with hooks the pipeline calls in order; a recipe without the 
 The navy moves first with no change: every navy sheet the same tile for tile before and after (a golden dump of
 `generateOutline` over the types, depths 1, 3 and 6, seeds 1 to 6). Then the civilians are new recipes, and new parts
 where they need them (a freighter's outside container rack).
+
+### Civilian recipes (2026-11-23)
+
+`faction.civilian` has two recipes (`src/content/factions/civilianOutline.ts`), each with a part of its own; the
+navy's sheets are unchanged by them (golden dump re-baselined only where a shared rule changed, problems never grew).
+
+- **Liner** (`drum` part, `parts/drum.ts`): the widest section a drum, a ring corridor round a garden, single cabins
+  along the hull, a suite in each corner, lounges forward and gyms aft; crew, mess and med bay ahead, machinery aft.
+- **Freighter, a pusher** (`cockpit` part, `parts/cockpit.ts`, and the recipe's `truss`): a small tug hull (`TUG`
+  silhouettes: block, round, waist; flared, tapered-in, quartered or banked sterns) pushes a truss of sealed large
+  containers ahead of it. Big ship, little floor. The bridge is an offset pod on one front corner, run on from the
+  hull's corner, its door off the airlocks' corridor behind it; the other side of the bow a hold. The truss
+  (`assembly/truss.ts`, called by `assembleOutline` after the regions compile): a spine three beams deep on the
+  axis, one bank of 3x6 containers either side stood across it, two tiles apart, in columns both sides share; the side
+  without the pod fills on aft to its hull. Containers a bank: `banks` drawn, `perDepth` more a level, `max` at most.
+- Shared rules these brought: an AI core only on ships with point defence or drones (`coreSpec`, plan.ts; a bay
+  layout's own point-defence pair adds one); twin engine rooms furnish alike, the second mirrored (`shipgen/twin.ts`,
+  fitOut); racks stand end-on to a hold's long walls; bridge consoles take the room's whole floor (helm on the hull,
+  aft corners).
+- Parts gained hooks for it: `dock` (where the airlocks' corridor goes), `skip`, `program`, and `Region.doorOut`
+  (a region's door at the outer end of its access hall).
+- Open: civilian mining ships and stations keep the older generator; a small civilian type (courier, shuttle) so
+  civilians are not all large; the freighter's tapered-in tail is one stern of several (about 1 in 6).
