@@ -3,7 +3,11 @@ import type { ModuleDef } from '../registry';
 import { rescueSpot } from '../away/rescue';
 import { abortTask } from '../ai/task';
 import { breachTiles, canAffordWall } from '../crew/breach';
-import { CarriedC, CrewC, DownedC, JobC, PositionC, type Job } from '../crew/components';
+import { CarriedC, CrewC, DeadC, DownedC, JobC, PositionC, RecoveringC, type Job } from '../crew/components';
+import { isBleeding } from '../crew/body';
+import { InjuriesC } from '../crew/injuryTypes';
+import { FIRST_AID_SEC } from '../crew/tuningInjury';
+import { TICK_HZ } from '../time';
 import { isIncapacitated } from '../crew/helpers';
 import { jobFits } from '../crew/jobFit';
 import { walkOpts } from '../eva/route';
@@ -63,6 +67,7 @@ const fireless = new WeakMap<object, number>();
  *  - repair (repair): one per damaged module, removed at full hp or when the module is gone; never on a wreck (nobody keeps one up: its
  *    modules are for stripping, and crew working aboard one would otherwise mend it part by part);
  *  - rescue (medical): one per downed, unstabilized crew member while a free bed exists (a prisoner ranks last and a still-fighting enemy is never taken by the other side's crew: crew/care.ts);
+ *  - aid (medical): one per bleeding crew member on their feet, following them, dropped once the bleeding stops (crew/body.ts `isBleeding`);
  *  - tend (medical): one per medical bed with a patient in it, dropped when they leave it (crew/treatment.ts `bedsToTend`);
  *  - robots (robots/jobs): mend damaged robots, salvage wrecks; ordered hacks are dropped once their hacker lets go.
  * Jobs are keyed by (kind, tile) or (kind, target) so none is duplicated.
@@ -76,6 +81,7 @@ export function autoJobsSystem(sim: Sim): void {
       : job.kind === 'repair' ? keepRepair(sim, job)
       : job.kind === 'rescue' ? keepRescue(sim, job)
       : job.kind === 'tend' ? tendBeds.has(job.target ?? 0)
+      : job.kind === 'aid' ? keepAid(sim, job)
       : job.kind === 'forceDoor' && job.holder ? keepForceDoor(sim, jobId, job)
       : job.kind === 'sabotage' ? keepSabotage(sim, jobId, job)
       : job.kind === 'build' && job.category === 'firefighting' && onWreck(sim, job) ? false // a breach seal on a wreck (#404; none are posted now)
@@ -126,6 +132,12 @@ export function autoJobsSystem(sim: Sim): void {
     if (!downed.bed && !bedForRescue(sim, job) && !rescueSpot(sim, id)) continue; // nowhere to take them, or no one who could
     addJob(sim, job);
   }
+  // A bleeding crew member on their feet gets a first-aid job (medical): a medic stops the bleeding where they are.
+  for (const id of sim.world.query(InjuriesC, PositionC)) {
+    const pos = sim.world.get(id, PositionC);
+    if (!pos || seen.has(`aid:${id}`) || !needsAid(sim, id)) continue;
+    addJob(sim, { category: 'medical', kind: 'aid', x: pos.x, y: pos.y, target: id, work: FIRST_AID_SEC * TICK_HZ });
+  }
   // A medical bed with a patient in it gets a tend job (medical category): a medic stands beside it, and the patient heals faster while they do.
   for (const bed of tendBeds) {
     const m = sim.world.get(bed, ModuleC);
@@ -149,6 +161,20 @@ function keepRepair(sim: Sim, job: Job): boolean {
   const m = sim.world.get(job.target ?? 0, ModuleC);
   const def = m && sim.content.modules[m.def];
   return !!m && !!def && m.hp < def.maxHp && !onWreck(sim, m);
+}
+
+/** A first-aid patient: bleeding (crew/body.ts `isBleeding`), standing and free (not downed, carried, in a bed or dead). */
+function needsAid(sim: Sim, id: number): boolean {
+  return isBleeding(sim, id) && !sim.world.has(id, DownedC) && !sim.world.has(id, CarriedC) && !sim.world.has(id, RecoveringC) && !sim.world.has(id, DeadC);
+}
+
+/** A first-aid job follows its patient while they still need it. */
+function keepAid(sim: Sim, job: Job): boolean {
+  const pos = sim.world.get(job.target ?? 0, PositionC);
+  if (!pos || !needsAid(sim, job.target ?? 0)) return false;
+  job.x = pos.x;
+  job.y = pos.y;
+  return true;
 }
 
 /** True for a module of a wreck (a derelict, a destroyed ship). */

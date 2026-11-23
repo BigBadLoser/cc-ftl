@@ -1,7 +1,8 @@
 <script lang="ts" module>
   import { TABLER } from './tablerIcons';
-  /** Line icons: Tabler Icons (outline, MIT) on a 24-unit grid; see tablerIcons.ts for the name -> Tabler file mapping. */
-  export const ICONS = TABLER;
+  import { BODY_GLYPHS } from './bodyGlyphs';
+  /** Line icons: Tabler Icons (outline, MIT) on a 24-unit grid; see tablerIcons.ts for the name -> Tabler file mapping. A few body-part glyphs are drawn in the same style (bodyGlyphs.ts). */
+  export const ICONS = { ...TABLER, ...BODY_GLYPHS };
   export type IconName = keyof typeof ICONS;
 </script>
 

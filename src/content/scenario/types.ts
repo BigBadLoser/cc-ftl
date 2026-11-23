@@ -13,7 +13,9 @@ export type UiRequest =
   | { kind: 'speed'; speed: 0 | 1 | 2 | 3 }
   | { kind: 'select'; crew: number; focus: boolean }
   | { kind: 'tool'; tool: { tool: 'build'; build: 'hull'; hull: { brush: 'rect'; erase: boolean; mirror: boolean } } }
-  | { kind: 'frame'; target: 'station' };
+  | { kind: 'frame'; target: 'station' }
+  /** A debug preview of UI that has no sim behind it yet (the Health tab's surgery section, #601): data the app shows, nothing in play. */
+  | { kind: 'preview'; what: 'operations' };
 
 /** Everything a part's `apply` may use: the sim to read, the command queue, and the clock. A part changes the sim through commands. */
 export interface BuildCtx {

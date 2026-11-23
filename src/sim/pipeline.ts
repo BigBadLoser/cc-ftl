@@ -62,6 +62,7 @@ import { supplyJobsSystem } from './systems/supplyJobs';
 import { temperatureSystem } from './systems/temperature';
 import { turretSystem } from './systems/turrets';
 import { vitalsSystem } from './systems/vitals';
+import { injurySystem } from './systems/injuries';
 import { robotsSystem } from './systems/robots';
 import { fabricatorSystem } from './systems/fabricators';
 import { robotBaySystem } from './systems/robotBays';
@@ -141,6 +142,8 @@ export const pipeline: readonly System[] = [
   airStoresSystem,
   // Vitals after the environment is final: breathing, harm, downing, bleeding, dying.
   vitalsSystem,
+  // Injuries after vitals: bleeding, healing, scars and treatment (a bleed's hp downs them on vitals' next pass, like a hit).
+  injurySystem,
   // Auto jobs after vitals, so a crew member who just went down gets a rescue job this tick.
   autoJobsSystem,
   // Prisoner holding after power (a wheel's power is fresh) and autojobs: carts that ended are set down, reserves drain or refill, thawed prisoners

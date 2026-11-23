@@ -72,6 +72,8 @@ export interface UiGearSlot {
 export interface UiCrewDetail {
   id: number;
   health: { hp: number; maxHp: number; conditions: UiCondition[] };
+  /** The Health tab (#601): null for a body that takes no injuries (robots). */
+  body: UiHealth | null;
   /** Null for crew without moods (robots). `source`: the trait that set or changed the factor. `strain`: what can set off a break now whatever the mood. */
   mood: { value: number; base: number; factors: { label: string; value: number; source?: string }[]; workMult: number; strain: string } | null;
   skills: UiSkillDetail[];
@@ -150,4 +152,66 @@ export interface UiSocial {
   caps: { friends: number; rivals: number };
   /** The live mood from people nearby: who, and the mood it adds. */
   moodLine: { who: string; value: number }[];
+}
+
+/**
+ * The Health tab (#601). Tones: `alert` (red: needs care now), `plain` (white), `fine` (grey). Everything here is the sim's own answers in words.
+ */
+export type UiTone = 'alert' | 'plain' | 'fine';
+/** A body part's glyph (ui/bodyIcons.ts); a left-side part is drawn mirrored. */
+export type UiPartIcon = 'part-brain' | 'part-eye' | 'part-heart' | 'part-lungs' | 'part-spine' | 'part-arm' | 'part-leg';
+
+export interface UiHealth {
+  hpPct: number;
+  /** The bleeding rate in a word, only while bleeding. */
+  bleeding: 'slow' | 'fast' | null;
+  capacities: { key: string; name: string; pct: number; tone: UiTone }[];
+  /** All ten parts, in the fixed order; `gap`: a small gap above (a new group: head, torso, arms, legs). */
+  parts: UiBodyPart[];
+  /** The surgery queue and picker; null until surgery exists (slice 2, #311). */
+  operations: UiOperations | null;
+}
+
+export interface UiBodyPart {
+  id: string;
+  name: string;
+  icon: UiPartIcon;
+  mirror: boolean;
+  gap: boolean;
+  /** "Fine", or the worst injury ("Fracture, treated", "Destroyed"); `more`: how many other injuries the part has. */
+  state: string;
+  more: number;
+  tone: UiTone;
+  card: UiInjuryCard | null;
+}
+
+/** The hover card of an injured part: what is wrong, the care it needs, what it does, and how it happened, per injury. */
+export interface UiInjuryCard {
+  title: string;
+  tone: UiTone;
+  injuries: { what: string; care: string; got: string }[];
+  /** The capacity it lowers, its value and the effect in words. */
+  effect: string;
+}
+
+export interface UiOperations {
+  queue: { id: number; label: string; icon: UiPartIcon; mirror: boolean; status: string }[];
+  picker: {
+    parts: { id: string; name: string; icon: UiPartIcon; mirror: boolean }[];
+    /** Per part id, the operations in order; a greyed one says why. */
+    ops: Record<string, UiOperationOption[]>;
+    where: string[];
+    surgeon: string;
+  };
+  /** False while the queue only previews (the dev route): buttons are inert. */
+  live: boolean;
+}
+
+export interface UiOperationOption {
+  kind: 'fit' | 'repair' | 'amputate' | 'remove';
+  label: string;
+  note: string;
+  /** Why it does not apply, when it does not. */
+  disabled?: string;
+  implants?: { id: string; name: string; stock: number }[];
 }

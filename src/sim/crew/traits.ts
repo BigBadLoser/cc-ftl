@@ -5,6 +5,7 @@ import type { Modifier, ModifierSource } from '../stats';
 import { BLEED_OUT_SECONDS } from '../tuning';
 import type { TraitDef, TraitEffects } from './traitDef';
 import { INTEREST_XP, InterestsC, interestIn } from './background';
+import { bleedOutMult } from './body';
 
 /** A crew member's traits (content ids, `trait.<name>`), rolled at creation (crew/roll.ts). docs/TRAITS.md section 4. */
 export interface Traits {
@@ -65,9 +66,9 @@ export function traitEffect<K extends keyof TraitEffects>(sim: Sim, id: number, 
   return undefined;
 }
 
-/** Seconds a newly downed crew member lasts before bleeding out (Tough lasts longer). */
+/** Seconds a newly downed crew member lasts before bleeding out (Tough lasts longer, a hurt heart less: blood pumping, crew/body.ts). */
 export function bleedOutSec(sim: Sim, id: number): number {
-  return BLEED_OUT_SECONDS * traitMult(sim, id, 'bleedMult');
+  return BLEED_OUT_SECONDS * traitMult(sim, id, 'bleedMult') * bleedOutMult(sim, id);
 }
 
 /** The XP multiplier for a gain in `skill`: interest, Gifted, Bookish. */

@@ -161,8 +161,9 @@ import { newYard, type YardState } from './yard/types';
  * v129 (one deal flow, #548): a trader's deal (`Deal.courier` 'them') runs on the station's real shuttle through every phase (no shuttle is made up for it, nor for an inspection or a yard order); `TraderDef.shuttle` removed.
  * v130 (NPC fights in the player's node, #603): `Sector.engagements` (fights between NPC ships: sides, members, who the player joined) and `Sector.met` / `Sector.meetTurn` (the fleets that fought here this turn).
  * v131 (far galaxy, #604): `GalaxyState.control` (sectors whose owner differs from the generated one, and the pressure on them) and `GalaxyState.war` (faction pairs whose stance differs from the relations table).
+ * v132 (crew injuries, #601): `InjuriesC` on crew (body-part injuries, crew/injuryTypes.ts), job kind 'aid' (first aid), `debug.setCrew.injuries`.
  */
-export const SAVE_VERSION = 131;
+export const SAVE_VERSION = 132;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {

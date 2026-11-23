@@ -9,7 +9,7 @@
 
   /**
    * The crew Status tab on the inspector grid: health and the needs as bars, then a Conditions line that lists only real
-   * conditions (downed, surrendered); mood with its whole breakdown (base, each factor with the trait behind it, total).
+   * conditions (downed, surrendered); mood with its whole breakdown (base, each factor with the trait behind it, total). Injuries are on the Health tab.
    */
   let { d }: { d: UiCrewDetail | null } = $props();
   const health = $derived.by<Condition[]>(() => {

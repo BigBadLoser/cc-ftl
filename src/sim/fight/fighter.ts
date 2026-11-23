@@ -16,7 +16,7 @@ import { grantXp } from '../crew/xp';
 import { claimHiddenRescue, hiddenFrom, onRescue } from './rescue';
 import { sightLine, type Cover } from './los';
 import { headingAboard, isBoarding, isCombatReady, isHostile, isInvader, isPlayerControlled } from './relations';
-import { armorOf } from '../robots/core';
+import { damageCrew } from '../crew/injure';
 import { stunCrew } from '../robots/halt';
 import { surrender, wantsToSurrender } from './surrender';
 import { cooldownTicks, hitChance, isArmed, wielded } from './weapons';
@@ -289,8 +289,7 @@ function attack(
     return;
   }
   const health = sim.world.get(targetId, HealthC);
-  const damage = weapon.def.damage * (1 - armorOf(sim, targetId));
-  if (health) health.hp = Math.max(0, health.hp - damage); // vitals downs them next tick
+  const damage = damageCrew(sim, targetId, weapon.def.damage, weapon.def.kind === 'ranged' ? 'bullet' : 'blade', { armor: true }); // vitals downs them next tick
   grantXp(sim, id, weapon.def.kind === 'ranged' ? 'gunnery' : 'melee', damage / XP_DAMAGE_PER_XP);
   sim.events.emit({ type: 'crew.hit', crew: id, target: targetId, damage, hp: health?.hp ?? 0, cover });
   if (weapon.def.ion) stunCrew(sim, targetId);

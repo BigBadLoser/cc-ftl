@@ -1,5 +1,7 @@
 import { shipById } from '../combat/shipQuery';
-import { CarriedC, CrewC, DeadC, DownedC, HealthC, PositionC } from '../crew/components';
+import { CarriedC, CrewC, DeadC, DownedC, HealthC, PositionC, RecoveringC } from '../crew/components';
+import { isBleeding } from '../crew/body';
+import { stopBleeding } from '../crew/injure';
 import { douseTile, repairModule, type WorkResult } from '../crew/jobWork';
 import { AllegianceC } from '../fight/components';
 import { ModuleC } from '../modules/components';
@@ -100,7 +102,7 @@ const extinguish: KindRules<Extract<DroneJobDef, { kind: 'extinguish' }>> = {
 
 type FirstAid = Extract<DroneJobDef, { kind: 'firstAid' }>;
 
-/** 0: downed and still bleeding (patch them), 1: awake and hurt below `healTo` (heal them), -1: nothing for a first-aid drone to do. */
+/** 0: bleeding, downed or on their feet (patch them), 1: awake and hurt below `healTo` (heal them), -1: nothing for a first-aid drone to do. */
 function aidNeed(sim: Sim, ship: number, crew: number, job: FirstAid): number {
   const c = sim.world.get(crew, CrewC);
   const pos = sim.world.get(crew, PositionC);
@@ -111,6 +113,7 @@ function aidNeed(sim: Sim, ship: number, crew: number, job: FirstAid): number {
   if (sim.world.get(crew, AllegianceC)?.faction !== shipById(sim, ship)?.faction) return -1;
   const downed = sim.world.get(crew, DownedC);
   if (downed) return downed.stabilized || downed.patched ? -1 : 0;
+  if (isBleeding(sim, crew) && !sim.world.has(crew, RecoveringC)) return 0;
   return hp.hp < hp.max * job.healTo ? 1 : -1;
 }
 
@@ -139,6 +142,13 @@ const firstAid: KindRules<FirstAid> = {
       downed.patched = true;
       sim.events.emit({ type: 'crew.patched', crew: t.id, by: id });
       return 'done';
+    }
+    if (isBleeding(sim, t.id)) { // first aid on their feet: the bleeding stops (crew/injure.ts), then the heal
+      d.work += 1 / TICK_HZ;
+      if (d.work < job.patchSec) return 'working';
+      stopBleeding(sim, t.id);
+      d.work = 0;
+      sim.events.emit({ type: 'crew.patched', crew: t.id, by: id });
     }
     const hp = sim.world.get(t.id, HealthC);
     if (!hp) return 'done';

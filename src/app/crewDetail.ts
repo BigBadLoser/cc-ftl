@@ -12,6 +12,8 @@ import { buildBonds } from './bondSnapshot';
 import { buildSocial } from './socialSnapshot';
 import { xpGainMult } from '../sim/crew/traits';
 import { carriedCard, suitCard, weaponCard } from './crewItemCards';
+import { buildHealth } from './healthDetail';
+import { previewOperations } from './opsPreview';
 import type { UiCondition, UiCrewDetail, UiGearSlot, UiItemCard, UiSkillDetail, UiStatDetail, UiStatPart } from '../ui/crewDetailApi';
 
 const cap = (s: string): string => s[0]!.toUpperCase() + s.slice(1);
@@ -46,6 +48,12 @@ function partsOf(sim: Sim, id: number, name: StatName, b: StatBreakdown): UiStat
       case 'bond': out.push({ label: 'Working beside a friend', kind: 'state', op: p.op, value: p.value }); break;
       case 'dark': out.push({ label: 'Dark room', kind: 'env', op: p.op, value: p.value }); break;
       case 'lowAir': out.push({ label: 'Thin air', kind: 'env', op: p.op, value: p.value }); break;
+      case 'injury': { // one row for every capacity the injuries lower
+        const row = out.find((r) => r.label === 'Injuries');
+        if (row) row.value *= p.value;
+        else out.push({ label: 'Injuries', kind: 'state', op: p.op, value: p.value });
+        break;
+      }
     }
   }
   return out;
@@ -163,6 +171,7 @@ export function buildCrewDetail(sim: Sim, id: number | null): UiCrewDetail | nul
   return {
     id,
     health: { hp: Math.round(hp?.hp ?? 100), maxHp: hp?.max ?? 100, conditions: conditionsOf(sim, id) },
+    body: buildHealth(sim, id, previewOperations(sim, id)),
     mood: moodOf(sim, id),
     skills: skillsOf(sim, id),
     ...backgroundOf(sim, id),

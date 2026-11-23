@@ -1,5 +1,6 @@
 import { CrewC } from '../crew/components';
 import { traitMult } from '../crew/traits';
+import { breathMult } from '../crew/body';
 import { shipById } from '../combat/shipQuery';
 import { ModuleC } from '../modules/components';
 import { AirlockC } from '../modules/airlock';
@@ -65,7 +66,7 @@ export function shipHasLifeSupport(sim: Sim, shipId: number): boolean {
   return false;
 }
 
-/** Seconds of suit time one second of the wearer's tank is worth: the tank of a Void-born crew member lasts longer. */
+/** Seconds of suit time one second of the wearer's tank is worth: the tank of a Void-born crew member lasts longer, of one with hurt lungs less (crew/body.ts `breathMult`). */
 export function airValue(sim: Sim, crew: number): number {
-  return sim.world.has(crew, CrewC) ? traitMult(sim, crew, 'suitAirMult') : 1;
+  return sim.world.has(crew, CrewC) ? traitMult(sim, crew, 'suitAirMult') * breathMult(sim, crew) : 1;
 }
