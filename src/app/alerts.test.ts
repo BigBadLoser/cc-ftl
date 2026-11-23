@@ -31,10 +31,10 @@ function current(a: ReturnType<typeof createAlerts>): UiAlert[] {
   return out;
 }
 
-/** A new game with a derelict and one of the player's crew standing on it. */
+/** A new game with a derelict (seed 4 a liner, over 140 tiles long: centred below the home ship) and one of the player's crew standing on it. */
 function awayTeam(): { sim: Sim; crew: number } {
   const sim = newGame(1, content);
-  sim.enqueue({ type: 'debug.spawnDerelict', faction: 'faction.civilian', seed: 4, depth: 2, cx: 130, cy: 70, intensity: 0.6, cause: 'decay' });
+  sim.enqueue({ type: 'debug.spawnDerelict', faction: 'faction.civilian', seed: 4, depth: 2, cx: 130, cy: 150, intensity: 0.6, cause: 'decay' });
   sim.step();
   const wreck = sim.world.query(ShipC).find((i) => sim.world.get(i, ShipC)?.faction === 'neutral') as number;
   const g = shipGrid(sim, wreck)!;

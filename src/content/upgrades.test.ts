@@ -311,7 +311,8 @@ describe('enemy loadouts', () => {
     for (const u of found) expect(content.factions['faction.scrapper'].upgrades.map((e) => e.item)).toContain(u);
     expect(found.size).toBeGreaterThan(0);
     const sim = newGame(3, content);
-    expect(fitted(sim, spawn(sim, 'faction.civilian', 4))).toEqual([]);
+    // (Seed 4 a liner, over 140 tiles long: centred below the home ship.)
+    expect(fitted(sim, spawn(sim, 'faction.civilian', 4, 110, 150))).toEqual([]);
   });
 
 });
