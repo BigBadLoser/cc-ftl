@@ -281,6 +281,18 @@ def rig(state, rot, hand=1):
     return build(still(state), rot, f"surgery_rig_{state}_{rot}", hand=hand)
 
 
+# The first arm's heading round the ring as the camera sees it: set on the view of bed r0 (the rig turned 3, not mirrored), where
+# no arm hides behind the stem; every view keeps it, so each tool sits at the same place round the ring on screen.
+ARM_WORLD = 3 * math.pi / 2 + math.pi / 2 + math.pi / 5
+
+
+def arm_angle(rot, hand):
+    """The first arm's heading in the rig's local frame for a rig turned `rot` with handedness `hand`, so that on screen it
+    lies at ARM_WORLD: K turns local headings by rot quarter turns, MK mirrors u (a heading a becomes pi - a)."""
+    a = ARM_WORLD - rot * math.pi / 2
+    return a if hand == 1 else math.pi - a
+
+
 def build(P, rot, name, split=False, hand=1):
     """The rig in pose P (surgery_rig_anim.Pose): the hub where it hangs, each arm's fold and its aim's offset, the clamp's
     jaw, the laser firing, the lights on. split: (the body: the column; the front: boom, piston, halo and arms, what
@@ -310,10 +322,11 @@ def build(P, rot, name, split=False, hand=1):
     k.cyl(hu, hv, hz - 0.04, 0.1, 0.08, "medWhite", top="plate", sides=10, rtop=0.08)   # core pod
     k.cyl(hu, hv, hz - 0.055, 0.06, 0.015, "red" if P.on else "gmD", sides=10)          # sensor
     site = (HUB_ON[0], HUB_ON[1], TOP + SITE)                                          # the incision stays put
+    a0 = arm_angle(rot, hand)
     for i, kind in enumerate(ARMS):
-        a = math.pi / 2 + math.pi / 5 + i * math.tau / 5                               # no arm hides behind the stem
+        a = a0 + hand * i * math.tau / 5                                               # the same round the ring in every view
         ca, sa = math.cos(a), math.sin(a)
-        sp = a + math.pi / 5                                                           # spokes between the arms
+        sp = a + hand * math.pi / 5                                                    # spokes between the arms
         R.tube((hu + 0.09 * math.cos(sp), hv + 0.09 * math.sin(sp), hz),
                (hu + (RING_R - 0.04) * math.cos(sp), hv + (RING_R - 0.04) * math.sin(sp), hz - 0.01), 0.022, "steel", sides=8)
         sh, tan = mount(R, hu, hv, hz, ca, sa)
