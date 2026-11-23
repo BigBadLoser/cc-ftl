@@ -78,11 +78,11 @@ export function salvage(b: Builder, f: FactionDef, plan: ShipPlan): string | nul
   if (!conn) return null;
   const strapped = Math.min(plan.engines - 1, b.rng.int(0, plan.engines - 1));
   const tugEngines = plan.engines - strapped;
-  const rs = reactorSpec(plan.reactors);
+  const rs = reactorSpec(plan.reactors, plan.kit);
   const reactor = b.place({ x: conn.x + conn.w - 1, y: row - 1 - b.rng.int(0, rs.h - 1), w: rs.w + 2, h: rs.h + 2 }, 'reactor', rs);
   if (!reactor) return null;
   b.door(conn, reactor);
-  const es = engineSpec(tugEngines, 'w');
+  const es = engineSpec(tugEngines, 'w', plan.kit);
   const er = b.place({ x: reactor.x + reactor.w - 1, y: reactor.y - b.rng.int(0, es.h - 2), w: es.w + 2, h: es.h + 2 }, 'engine', es);
   if (!er) return null;
   b.door(reactor, er);
@@ -91,7 +91,7 @@ export function salvage(b: Builder, f: FactionDef, plan: ShipPlan): string | nul
   const hosts = all.filter((p) => p.role !== 'hall' && p.role !== 'bridge' && p.role !== 'dock');
   for (let i = 0; i < strapped; i++) {
     for (const host of shuffle(b.rng, [...hosts])) {
-      const e = engineSpec(1, 'ns');
+      const e = engineSpec(1, 'ns', plan.kit);
       const side = b.rng.chance(0.5) ? 'n' : 's';
       const x = host.x + host.w - 1 - (e.w + 1);
       const y = side === 'n' ? host.y - e.h - 1 : host.y + host.h - 1;

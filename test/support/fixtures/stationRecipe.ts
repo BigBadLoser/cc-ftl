@@ -2,6 +2,7 @@ import type { ModuleDef } from '../../../src/sim/registry';
 import { Rng } from '../../../src/sim/rng';
 import { assemble, type Assembly, recipeRooms } from '../../../src/sim/shipgen/assembly/assemble';
 import { missing as missingRooms } from '../../../src/sim/shipgen/assembly/finish';
+import { stranded } from '../../../src/sim/shipgen/assembly/regionOps';
 import { hullProblems } from '../../../src/sim/shipgen/assembly/hull';
 import { stationProgram } from '../../../src/sim/shipgen/assembly/program';
 import { type Recipe, recipeAt } from '../../../src/sim/shipgen/assembly/recipe';
@@ -34,7 +35,7 @@ export function problemsOf(a: Assembly | null, rooms: readonly RoomSpec[], rejec
   // Every room of the program stands: the assembler's own check (guns by mount, quarters by beds).
   const short = missingRooms(a.ctx, recipeRooms(a.recipe, rooms));
   if (short) out.push(short);
-  if (g.stranded().length > 0) out.push('floor that cannot be walked to');
+  if (stranded(g).length > 0) out.push('floor that cannot be walked to');
   return out;
 }
 

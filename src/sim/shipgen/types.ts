@@ -1,5 +1,7 @@
+import type { OutlineRecipe } from './outlineRecipe';
 import type { Faction } from '../combat/components';
 import type { ItemQty, ShipTemplate } from '../registry';
+import type { Equipment } from './equipment';
 
 /**
  * Procedural ship layouts, in stages: pick a ship role and a hull archetype (weighted by the faction's architectural
@@ -88,6 +90,8 @@ export interface ShipRoleDef {
   bonus?: Partial<Record<keyof ShipBudget, number>>;
   /** Shuttle bays (with shuttles). */
   bays?: number;
+  /** Guns it always carries, one to a room, drawn a pair at a time (each pair the same gun) and never dropped for power. */
+  guns?: number;
   /** Mining pod bays (with pods), and the ore store beside them (`podDeck`, as a mining station's). */
   pods?: number;
 }
@@ -187,6 +191,8 @@ export interface FactionDef {
   architecture: ArchitectureDef;
   /** Assembly-driven generation (v3): hull families. When present, the faction uses the composer instead of v2. */
   hullFamilies?: readonly HullFamilyDef[];
+  /** Prototype (SHIPGEN_V4 step 2): the drawn hull's walls and doors are settled on the region grid (assembly/regrid.ts), not thinned. */
+  regrid?: boolean;
   /** Tapered transitions where sections of different widths meet (none: exposed joins, e.g. drone beams). */
   transition?: TransitionStyle;
   /** Salvage sources: the factions whose generators build navy- and drone-origin donors, and the families they use. */
@@ -209,6 +215,10 @@ export interface FactionDef {
   crew: { required: readonly string[]; pool: readonly Weighted<string>[]; species: readonly string[] };
   doctrine: { targeting: NonNullable<ShipTemplate['doctrine']>; boarding?: NonNullable<ShipTemplate['boarding']> };
   budget: ShipBudget;
+  /** Highest engine and reactor tier this faction's ships carry (1 to 3, default 3): drones' sealed pods hold Mk I only. */
+  maxCoreTier?: 1 | 2 | 3;
+  /** Outline ship recipes, keyed by type id (SHIPGEN_V4, "Ship recipes and layout parts"; PROTOTYPE, #581). */
+  outline?: Readonly<Record<string, OutlineRecipe>>;
 }
 
 /** Where a generated ship came from: stored on its ship entity. */
@@ -248,6 +258,8 @@ export interface GenResult {
   failures: string[];
   /** Diagnostic metrics of the layout. */
   metrics?: Record<MetricId, number>;
+  /** The equipment the ship's plan asked for (`plannedEquipment`; generated ships only), which the template must carry. */
+  planned?: Equipment;
   /** Wall thinning (thinWalls.ts): slabs absorbed, tiles folded, outline tiles changed (must stay 0). */
   thin?: { slabs: number; folded: number; outlineChanged: number };
   /** Airlock-only docks opened into their corridor, and those left walled for want of one (openDocks.ts). */

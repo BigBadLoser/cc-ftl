@@ -1,4 +1,5 @@
 import type { FactionDef } from '../../sim';
+import { civilianOutline } from './civilianOutline';
 
 /**
  * Civilians: freighters, liners, mining ships and stations, from the shared civil builders (the same sections the
@@ -26,6 +27,7 @@ export const civilian = {
   },
   transition: { slope: 3, max: 2, jitter: 0, label: 'fairing' },
   // Civil families (assembly-driven): each its own construction, one grammar each.
+  outline: civilianOutline,
   hullFamilies: [
     {
       id: 'freighter', hullPerRoomTile: 2.5, weight: { base: 4, perDepth: 0, max: 4 }, bonus: { crates: 8 }, grammars: [{ value: 'freighter', weight: 1 }],

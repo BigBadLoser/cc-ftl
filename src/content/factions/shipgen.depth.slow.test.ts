@@ -14,10 +14,13 @@ const gen = (id: keyof typeof factions, seed: number, depth: number): GenResult 
 const count = (g: GenResult, pred: (d: ModuleDef) => boolean): number =>
   (g.template.modules ?? []).filter((m) => defs[m.def] && pred(defs[m.def] as ModuleDef)).length;
 
+/** Total reactor output: deeper ships use bigger reactors (tiers), not always more of them. */
+const power = (g: GenResult): number => (g.template.modules ?? []).reduce((n, m) => n + Math.max(0, defs[m.def]?.power ?? 0), 0);
+
 describe('ship generator, depth scaling', () => {
   it('scales with depth: deeper ships are longer, better armed and shielded, with more power and crew', () => {
     for (const id of ids) {
-      const stats = (g: GenResult) => [g.width, count(g, (d) => !!d.weapon), count(g, (d) => !!d.shieldGen), count(g, (d) => d.power > 0), g.template.crew?.length ?? 0];
+      const stats = (g: GenResult) => [g.width, count(g, (d) => !!d.weapon), count(g, (d) => !!d.shieldGen), power(g), g.template.crew?.length ?? 0];
       const avgs = (depth: number): number[] => {
         const s = [0, 0, 0, 0, 0];
         for (let seed = 0; seed < SEEDS; seed++) stats(gen(id, seed, depth)).forEach((v, k) => { s[k]! += v / SEEDS; });

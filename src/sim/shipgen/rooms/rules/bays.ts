@@ -20,3 +20,28 @@ export function db(c: Ctx): Piece[] {
   const xs = n === 1 ? [Math.floor((w - 2) / 2)] : range(0, n - 1, 1).map((i) => m + Math.round((i * (w - 2 * m - 2)) / (n - 1)));
   return xs.map((x) => P(DR, x, 1, 0));
 }
+
+/**
+ * D5 ward to size (#581): med beds only, as many as the room holds three tiles apart. In a room deeper than wide, head
+ * to the side walls down both, two rows between each, the aisle down the middle; else standing on end along the back
+ * wall, two tiles between.
+ */
+export function ward(c: Ctx): Piece[] {
+  if (c.h >= c.w) return [0, 1].flatMap((s) => range(0, c.h - 2, WARD).map((y) => P(MB, s === 0 ? 0 : c.w - 2, y, 1)));
+  return range(0, c.w - 1, WARD).map((x) => P(MB, x, 0, 0));
+}
+
+/** A ward's beds' pitch: a bed and two tiles. */
+const WARD = 3;
+
+/** The beds `ward` stands in a w x h room. */
+export const wardBeds = (w: number, h: number): number => (h >= w ? 2 * (Math.floor((h - 2) / WARD) + 1) : Math.floor((w - 1) / WARD) + 1);
+
+/** T2: a trauma room of recovery pods only: in the back corners (more along the back wall between, a tile apart). */
+export function pods2(c: Ctx): Piece[] {
+  const n = count(c.need, RP), xs = n <= 1 ? [0] : range(0, n - 1, 1).map((i) => Math.round((i * (c.w - 2)) / (n - 1)));
+  return xs.map((x) => P(RP, x, 0, 0));
+}
+
+/** Whether `pods2` stands its pods across a w-wide back wall, a tile between. */
+export const pods2Fit = (need: readonly string[], w: number): boolean => need.length > 0 && need.every((m) => m === RP) && 3 * count(need, RP) - 1 <= w;

@@ -4,8 +4,9 @@
  * Stores place their planned modules first and then as many more of the same as the floor suits (place.ts keeps those
  * only where they fit and the room still works).
  */
+import type { ModuleDef } from '../../../registry';
 import type { Piece } from './check';
-import { BT, CN, P, count, range } from './parts';
+import { BT, CN, FB, LS, P, count, range } from './parts';
 import type { Ctx } from './rules';
 
 export const AI = 'module.aiCore', PDF = 'module.pointDefense', CR = 'module.storage', VB = 'module.vehicle_bay', PB = 'module.pod_bay';
@@ -42,6 +43,20 @@ export function bank(c: Ctx): Piece[] {
   return out;
 }
 
+/** MR: a machine room: its machines (life support, a fabricator) side by side on the back wall, facing the door, centred, a tile apart where the wall allows. */
+export function machines(c: Ctx): Piece[] {
+  const ws = c.need.map((m) => c.defs[m]?.footprint[0] ?? 1), total = ws.reduce((a, b) => a + b, 0);
+  const gap = total + c.need.length - 1 <= c.w ? 1 : 0;
+  let x = Math.floor((c.w - (total + gap * (c.need.length - 1))) / 2);
+  return c.need.map((m, i) => { const p = P(m, x, 0, 0); x += (ws[i] as number) + gap; return p; });
+}
+
+/** Whether a room's planned modules are machines that stand in a row on its back wall with a walkway before them. */
+export const machinesFit = (need: readonly string[], r: { w: number; h: number; defs: Record<string, ModuleDef> }): boolean =>
+  need.length > 0 && need.every((m) => !!r.defs[m] && m !== BT && m !== CN)
+  && need.reduce((n, m) => n + (r.defs[m]?.footprint[0] ?? 1), 0) <= r.w
+  && Math.max(...need.map((m) => r.defs[m]?.footprint[1] ?? 1)) + 1 <= r.h;
+
 /**
  * The crate places of a w x h hold, `clear` tiles ("x,y") left open, and `cut` ones (wall) neither stood on nor faced:
  * rows back to back round aisles, a lane across.
@@ -61,6 +76,8 @@ function crateSlots(w: number, h: number, clear: ReadonlySet<string>, cut: Reado
       if (y + 2 <= h - 3) rows.push({ y: y + 2, rot: 2 });
     }
     if (h >= 3) rows.push({ y: h - 1, rot: 2 });
+    // A closet two deep: one row on the back wall, the door's row to reach it.
+    if (h === 2) rows.push({ y: 0, rot: 0 });
   }
   const m = Math.max(1, Math.ceil((w + 1) / 5)), cols = w - (m - 1), xs: number[] = [];
   for (let s = 0, x = 0; s < m; s++) {
@@ -74,8 +91,9 @@ function crateSlots(w: number, h: number, clear: ReadonlySet<string>, cut: Reado
 
 /**
  * CG: a warehouse or crate room: rows of crates in stacks of four at most with a cross lane between, back to back round an
- * aisle (the back wall's row faces south, the next one north), the door wall's row only in a room three or four deep. The
- * planned crates take the first places; a roomier hold fills up to a quarter of its floor.
+ * aisle (the back wall's row faces south, the next one north), the door wall's row only in a room three or four deep, the
+ * back row alone in a closet two deep. The planned crates take the first places; a roomier hold fills up to a quarter of
+ * its floor.
  */
 export function crates(c: Ctx): Piece[] {
   const { w, h, d } = c, planned = count(c.need, CR);
@@ -112,3 +130,54 @@ export function pods(c: Ctx): Piece[] {
   const xs = per === 1 ? [Math.floor((c.w - 4) / 2)] : range(0, per - 1, 1).map((i) => Math.round((i * (c.w - 4)) / (per - 1)));
   return range(0, n - 1, 1).map((i) => P(PB, xs[i % per] as number, 4 * Math.floor(i / per), 0));
 }
+
+/**
+ * L1 life support on the walls (#581): the units against the side walls, facing in, taken in turn left and right and
+ * spread down each; a fabricator in the middle of the back wall.
+ */
+export function lifeWalls(c: Ctx): Piece[] {
+  const units = c.need.filter((m) => m === LS), fab = c.need.filter((m) => m !== LS);
+  const side = (s: 0 | 1): Piece[] => {
+    // (Spread over the rows short of the door's, a unit a row.)
+    const mine = units.filter((_, i) => i % 2 === s), k = mine.length, last = c.h - 2;
+    return mine.map((m, i) => P(m, s === 0 ? 0 : c.w - 2, k === 1 ? Math.floor(last / 2) : Math.round((i * last) / (k - 1)), s === 0 ? 3 : 1));
+  };
+  return [...side(0), ...side(1), ...fab.map((m) => P(m, Math.floor((c.w - (c.defs[m]?.footprint[0] ?? 2)) / 2), 0, 0))];
+}
+
+/** Whether `lifeWalls` suits a room: life support (and a fabricator) only, a unit a side's row each, the aisle between. */
+export const lifeWallsFit = (need: readonly string[], r: { w: number; h: number }): boolean =>
+  need.includes(LS) && need.every((m) => m === LS || m === FB) && r.w >= 6 && Math.ceil(count(need, LS) / 2) <= r.h - 1;
+
+/**
+ * CW walkway hold (#581): entered at a short end, a walkway straight down the middle from the door to the far wall, the
+ * crates in rows along it: the rows either side facing it, a row back to back behind each facing a side aisle, and so on
+ * out to the walls (a row against a wall faces in). The door's row is a lane across. Every place takes a crate.
+ */
+export function walkwayHold(c: Ctx): Piece[] {
+  const { w, h, d } = c, id = c.need[0] as string, out: Piece[] = [];
+  // (A piece turned a quarter to lie along its row: as wide as it is deep, as long as it is wide.)
+  const [len, wide] = c.defs[id]?.footprint ?? [1, 1];
+  const skip = new Set([...(c.cut ?? []), ...(c.doors ?? [])].map((e) => `${e.x},${e.y}`));
+  const clear = (x: number, y: number, toward: number): boolean => {
+    for (let j = 0; j < len; j++) for (let i = 0; i < wide; i++) if (skip.has(`${x + i},${y + j}`)) return false;
+    return !skip.has(`${toward > 0 ? x + wide : x - 1},${y}`);
+  };
+  for (const side of [-1, 1] as const) {
+    // (Columns a piece wide out from the walkway: two of pieces, then an aisle.)
+    for (let k = 0, x = side < 0 ? d - wide : d + 1; x >= 0 && x + wide <= w; k = (k + 1) % 3, x += side * wide) {
+      if (k === 2) continue;
+      // (Facing the walkway side (k 0) or away to the aisle beyond (k 1), where that aisle is floor.)
+      const away = k === 1, toward = away ? side : -side;
+      if (away && (side < 0 ? x - 1 < 0 : x + wide >= w)) continue;
+      const rot = toward > 0 ? 3 : 1;
+      for (let y = 0; y + len - 1 <= h - 2; y += len) if (clear(x, y, toward)) out.push(P(id, x, y, rot));
+    }
+  }
+  return out;
+}
+
+/** Whether `walkwayHold` suits a room: crates only, entered at a short end, deep enough for a row past the lane. */
+export const walkwayFits = (need: readonly string[], r: { w: number; h: number }): boolean =>
+  need.length > 0 && need.every((m) => m === CR) && r.h > r.w && r.h >= 4 && r.w >= 3;
+

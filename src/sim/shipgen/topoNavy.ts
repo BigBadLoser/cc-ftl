@@ -1,7 +1,7 @@
 import type { Rng } from '../rng';
 import { doorRows } from './canvas';
 import type { Builder, Part, Rect } from './builder';
-import { cargoSpec, dockSpec, engineSpec, reactorSpec, type RoomSpec, type ShipPlan } from './plan';
+import { cargoSpec, dockSpec, engineSpec, reactorSpec, type RoomSpec, type ShipPlan, type CoreKit } from './plan';
 import { pickWeighted } from './plan';
 import type { ChunkDef, FactionDef } from './types';
 
@@ -29,22 +29,22 @@ export function pairUp(specs: RoomSpec[]): [RoomSpec[], RoomSpec[]] {
 const stripLen = (specs: RoomSpec[]): number => specs.reduce((t, s) => t + s.w + 1, 1);
 
 /** Zoning order for side strips: guns forward, then defences, command support, crew, stores aft. */
-const ZONE = ['weapons', 'shields', 'core', 'dock', 'quarters', 'support', 'cargo', 'hangar', 'reactor'];
+const ZONE = ['weapons', 'shields', 'core', 'dock', 'quarters', 'support', 'plant', 'cargo', 'hangar', 'reactor'];
 const zoned = (specs: RoomSpec[]): RoomSpec[] => [...specs].sort((a, b) => ZONE.indexOf(a.role) - ZONE.indexOf(b.role));
 
 /**
  * Engineering at the stern: a transverse corridor at column `x` (its west wall) spanning the joins, engines and
  * reactors stacked on its east side, mirrored about the axis, with a centre item on the axis.
  */
-export function stern(b: Builder, x: number, joins: Rect[], engines: number, reactors: number): Part[] {
+export function stern(b: Builder, x: number, joins: Rect[], engines: number, reactors: number, kit: CoreKit): Part[] {
   const items: RoomSpec[] = [];
   let rLeft = reactors;
   let eLeft = engines;
   let centre: RoomSpec;
-  if (eLeft % 2 === 1) { centre = engineSpec(1, 'w'); eLeft--; } else { const k = rLeft % 2 === 1 ? 1 : 2; centre = reactorSpec(Math.min(k, rLeft)); rLeft -= Math.min(k, rLeft); }
+  if (eLeft % 2 === 1) { centre = engineSpec(1, 'w', kit); eLeft--; } else { const k = rLeft % 2 === 1 ? 1 : 2; centre = reactorSpec(Math.min(k, rLeft), kit); rLeft -= Math.min(k, rLeft); }
   while (eLeft > 0 || rLeft > 0) {
-    if (rLeft > 0) { const k = Math.ceil(rLeft / 2); items.push(reactorSpec(k)); rLeft -= Math.min(rLeft, 2 * k); }
-    if (eLeft > 0) { items.push(engineSpec(1, 'w')); eLeft -= 2; }
+    if (rLeft > 0) { const k = Math.ceil(rLeft / 2); items.push(reactorSpec(k, kit)); rLeft -= Math.min(rLeft, 2 * k); }
+    if (eLeft > 0) { items.push(engineSpec(1, 'w', kit)); eLeft -= 2; }
   }
   // Centre item on the axis: pad its height for parity.
   let ch = centre.h + 2;
@@ -117,7 +117,7 @@ export function spine(b: Builder, f: FactionDef, plan: ShipPlan): string | null 
   if (!corr || !nose(b, front, 0)) return null;
   b.strip(corr, 'n', n2, 0);
   b.strip(corr, 's', s2, 0);
-  if (stern(b, L - 1, [corr], plan.engines, plan.reactors).length === 0) return null;
+  if (stern(b, L - 1, [corr], plan.engines, plan.reactors, plan.kit).length === 0) return null;
   return `spine ${profile}, ${n.length}+${s.length} pods`;
 }
 
@@ -147,12 +147,12 @@ const bandLen = (specs: RoomSpec[], crosses: number): number => specs.reduce((t,
 export function ring(b: Builder, f: FactionDef, plan: ShipPlan, carrier = false): string | null {
   const front = pickNose(b.rng, f, plan);
   const inner = carrier
-    ? [...plan.hangars, ...(plan.core ? [plan.core] : []), ...plan.quarters, ...plan.support, ...plan.cargo, ...Array.from({ length: plan.reactors }, () => reactorSpec(1))]
+    ? [...plan.hangars, ...(plan.core ? [plan.core] : []), ...plan.quarters, ...plan.support, ...plan.cargo, ...Array.from({ length: plan.reactors }, () => reactorSpec(1, plan.kit))]
     : [...plan.shields, ...(plan.core ? [plan.core] : []), ...plan.quarters, ...plan.support, ...plan.cargo];
   const outer = [...(carrier ? [...plan.weapons, ...plan.shields] : [...plan.weapons, ...plan.hangars]), dockSpec(), dockSpec()];
   // Balance the band against the outboard strips: crew and stores move outboard until the strips cover the band.
   for (let guard = 0; guard < 12 && !carrier; guard++) {
-    const i = inner.findIndex((r) => r.role === 'quarters' || r.role === 'support' || r.role === 'cargo');
+    const i = inner.findIndex((r) => r.role === 'quarters' || r.role === 'support' || r.role === 'plant' || r.role === 'cargo');
     if (i < 0 || bandLen(inner, 0) <= stripLen(pairUp(outer)[0]) + 4) break;
     outer.push(...inner.splice(i, 1));
   }
@@ -178,16 +178,17 @@ export function ring(b: Builder, f: FactionDef, plan: ShipPlan, carrier = false)
     // Nacelles: engines at the east ends of both corridors, the band ends in a notch between them.
     const kN = Math.ceil(plan.engines / 2);
     const kS = plan.engines - kN;
-    const e = engineSpec(kN, 'w');
-    const pn = b.place({ x: nc.x + nc.w - 1, y: 1 - 4 * kN, w: 7, h: 4 * kN + 2 }, 'engine', e);
+    const e = engineSpec(kN, 'w', plan.kit);
+    const pn = b.place({ x: nc.x + nc.w - 1, y: 1 - 4 * kN, w: e.w + 2, h: 4 * kN + 2 }, 'engine', e);
     if (!pn) return null;
     b.door(nc, pn);
     if (kS > 0) {
-      const ps = b.place(b.mir({ x: nc.x + nc.w - 1, y: 1 - 4 * kS, w: 7, h: 4 * kS + 2 }), 'engine', engineSpec(kS, 'w'));
+      const eS = engineSpec(kS, 'w', plan.kit);
+      const ps = b.place(b.mir({ x: nc.x + nc.w - 1, y: 1 - 4 * kS, w: eS.w + 2, h: 4 * kS + 2 }), 'engine', eS);
       if (ps) b.door(sc, ps);
     }
     return `carrier, ${plan.hangars.length} bays, twin nacelles ${kN}+${kS}`;
   }
-  if (stern(b, nc.x + nc.w - 1, [nc, sc], plan.engines, plan.reactors).length === 0) return null;
+  if (stern(b, nc.x + nc.w - 1, [nc, sc], plan.engines, plan.reactors, plan.kit).length === 0) return null;
   return `ring, ${loops + 1} loop${loops > 0 ? 's' : ''}, band ${inner.length}`;
 }

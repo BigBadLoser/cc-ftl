@@ -24,11 +24,8 @@ export function cabinsWithin(r: RoomSpec): RoomSpec[] {
   return Array.from({ length: beds }, (_, i): RoomSpec => ({ ...r, mods: ['module.bed', ...(i === 0 ? others : [])], w: base + (i < room - base * beds ? 1 : 0), cabin: true, cabins: false }));
 }
 
-/**
- * The barracks' sleeper piece and how many sleep in one: a bed today; switching to a bunk (two sleepers in a bed's
- * footprint) halves the pieces a barracks holds and shrinks the rooms, with this line alone.
- */
-export const SLEEPER: { readonly def: string; readonly sleepers: number } = { def: 'module.bed', sleepers: 1 };
+/** The barracks' sleeper piece and how many sleep in one: a bunk, two sleepers in a bed's footprint. */
+export const SLEEPER: { readonly def: string; readonly sleepers: number } = { def: 'module.bunk', sleepers: 2 };
 
 /** Sleepers a room's planned modules hold: a bed one, a SLEEPER piece its count. */
 export const sleepersIn = (mods: readonly string[]): number =>
@@ -37,10 +34,12 @@ export const sleepersIn = (mods: readonly string[]): number =>
 /**
  * Floor for a barracks of `pieces` sleeper pieces, as the furnishing rules (rooms/rules) lay them: in pairs (a locker
  * between) on both long walls, the far wall's pairs and the door wall's either side of the door, five deep (a pair,
- * an aisle, a pair), and a few tiles over for the door's off-centre and the room's life support.
+ * an aisle, a pair), and a few tiles over for the door's off-centre. `oneWall`: the pairs on the far wall alone, three
+ * deep (a pair and the aisle), for a narrow hull (a ship's).
  */
-export function barracksSize(pieces: number): { w: number; h: number } {
+export function barracksSize(pieces: number, oneWall = false): { w: number; h: number } {
   const pairs = Math.ceil(pieces / 2), far = Math.ceil(pairs / 2), near = pairs - far;
+  if (oneWall) return { w: Math.max(3, 4 * pairs - 1), h: 3 };
   return { w: Math.max(3, 4 * far - 1, near > 0 ? 4 * near + 1 : 0) + 3, h: 5 };
 }
 
@@ -48,14 +47,14 @@ export function barracksSize(pieces: number): { w: number; h: number } {
  * Barracks for so many sleepers, each room holding a number of them in `size`: their pieces (SLEEPER) in pairs, the
  * sleepers shared out so that every room but one holds whole pairs.
  */
-export function barracksOf(rng: Rng, like: RoomSpec, beds: number, size: readonly [number, number]): RoomSpec[] {
+export function barracksOf(rng: Rng, like: RoomSpec, beds: number, size: readonly [number, number], oneWall = false): RoomSpec[] {
   if (beds <= 0) return [];
   // As many rooms as the sleepers need at a size in the range, the pairs shared out evenly: no room of one pair left over.
   const count = Math.max(1, Math.round(beds / rng.int(size[0], size[1])));
   const pieces = Math.ceil(beds / SLEEPER.sleepers), pairs = Math.floor(pieces / 2);
   return Array.from({ length: count }, (_, i): RoomSpec => {
     const n = 2 * (Math.floor(pairs / count) + (i < pairs % count ? 1 : 0)) + (i === count - 1 ? pieces % 2 : 0);
-    return { ...like, mods: Array<string>(n).fill(SLEEPER.def), ...barracksSize(n), cabins: false };
+    return { ...like, mods: Array<string>(n).fill(SLEEPER.def), ...barracksSize(n, oneWall), cabins: false };
   }).filter((r) => r.mods.length > 0);
 }
 
@@ -74,8 +73,8 @@ export function house(rng: Rng, recipe: Recipe, all: readonly RoomSpec[]): { roo
     // The crew's quarters, not a cabin that belongs to another department (the chief's, by the bridge).
     const crews = (r: RoomSpec): boolean => r.role === 'quarters' && (r.dept ?? 'habitation') === 'habitation';
     const quarters = rooms.filter(crews), first = quarters[0];
-    const others = quarters.flatMap((r) => r.mods.filter((m) => m !== 'module.bed'));
-    let beds = quarters.reduce((n, r) => n + r.mods.length, 0) - others.length;
+    const others = quarters.flatMap((r) => r.mods.filter((m) => m !== 'module.bed' && m !== SLEEPER.def));
+    let beds = sleepersIn(quarters.flatMap((r) => r.mods));
     rooms = rooms.filter((r) => !crews(r));
     if (first) {
       const singles = q === 'scatter' ? beds : Math.min(beds, q.singles ?? 0);

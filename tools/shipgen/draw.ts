@@ -2,6 +2,7 @@
  * Ship layout viewer core (dev tool, not shipped): renders generated layouts top-down into an RGBA buffer, plus an
  * ASCII dump and a validation summary. Used by the node CLI (PNG contact sheets) and the live page.
  */
+import { generateOutline } from '../../src/sim/shipgen/assembly/outlineShip';
 import { content } from '../../src/content';
 import { stationRecipes } from '../../src/content/stationRecipes';
 import {
@@ -122,11 +123,16 @@ export const factionIds = (): string[] => Object.keys(content.factions);
 /** `faction.drones:picket` keeps only that hull family (one family's sheet). */
 export function gen(factionSpec: string, seed: number, depth: number): GenResult {
   if (factionSpec.startsWith('station.')) return genStation(factionSpec, seed);
-  const [faction, family] = factionSpec.split(':') as [string, string | undefined];
+  if (factionSpec.includes('@v5')) {
+    const type = factionSpec.split(':')[1] ?? 'corvette', id = factionSpec.split('@')[0] as string;
+    return generateOutline(content.factions[id as keyof typeof content.factions] as never, id, seed, depth, defs, type);
+  }
+  const grid = factionSpec.includes('~grid');
+  const [faction, family] = factionSpec.replace('~grid', '').split(':') as [string, string | undefined];
   const f0 = (content.factions as Record<string, (typeof content.factions)[keyof typeof content.factions]>)[faction];
   if (!f0) throw new Error(`unknown faction ${faction}; try ${factionIds().join(', ')}`);
   const f = family && f0.hullFamilies ? { ...f0, hullFamilies: f0.hullFamilies.filter((h) => h.id === family) } : f0;
-  return generateShip(f as typeof f0, faction, seed, depth, defs);
+  return generateShip((grid ? { ...f, regrid: true } : f) as typeof f0, faction, seed, depth, defs);
 }
 
 export const stationIds = (): string[] => Object.keys(content.stations);

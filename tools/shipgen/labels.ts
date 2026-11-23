@@ -36,7 +36,8 @@ export function roomKind(role: string, mods: readonly string[]): string {
   if (role === 'plaza' && has('console')) return 'market';
   if (has('galley')) return 'mess';
   if (has('bed') && has('mess_table') && sleepers === 1) return 'chief';
-  if (role === 'quarters') return sleepers > 1 ? 'barracks' : 'cabin';
+  // (Beds, not bunks, for two: a passenger's suite.)
+  if (role === 'quarters') return sleepers === 2 && !has('bunk') ? 'suite' : sleepers > 1 ? 'barracks' : 'cabin';
   if (has('stasis_wheel')) return 'brig';
   if (has('storage_armory')) return 'quartermaster';
   if (has('research')) return 'lab';
@@ -45,7 +46,8 @@ export function roomKind(role: string, mods: readonly string[]): string {
   if (has('storage_tank')) return 'tanks';
   // A market stall: racks and a counter (console), not cold stores.
   if (role === 'cargo' && has('storage_rack') && has('console') && !has('storage_cold')) return 'stall';
-  if (has('storage_cold') || (role === 'cargo' && has('storage_rack'))) return 'pantry';
+  // (A pantry has cold stores; racks alone are a hold (a bay hull's).)
+  if (has('storage_cold')) return 'pantry';
   // Gun bays and engine rooms carry a battery bank too: they keep their role's name.
   if (role !== 'weapons' && role !== 'engine' && has('battery') && !has('reactor') && !has('reactor.mk2') && !has('reactor.mk3') && !has('shieldGen')) return 'batteries';
   if (has('recovery') && mods.filter((m) => m === 'module.med_bed').length <= 1) return 'trauma';
@@ -56,6 +58,7 @@ export function roomKind(role: string, mods: readonly string[]): string {
   if (has('storage_ore') || has('storage_ore_large')) return 'ore';
   if (has('exercise')) return 'gym';
   if (has('arcade')) return 'rec';
+  if (has('planter')) return 'garden';
   if (role === 'support' && has('storage_locker')) return 'suits';
   return NAMES[role] ?? role;
 }
@@ -92,7 +95,10 @@ function outlined(r: Raster, s: string, x: number, y: number, c: RGB, ts: number
 /** One layout as a labelled image: tiles `t` pixels square, the key in a column on the right; with `marks`, its edge markings drawn on the floor. */
 export function labelView(spec: string, seed: number, depth = 4, t = 16, marks = false): Raster {
   const g = gen(spec, seed, depth);
-  return labelOf(g, `${spec} seed ${seed}`, t, [], true, marks ? edgeMarkings(g, defs) : undefined);
+  // The faction without its prefix, the hull's profile where it has one (an outline hull), its beam by its length.
+  const profile = /^outline (\S+\.\S+)/.exec(g.topology)?.[1] ?? g.role;
+  const title = `${spec.split(':')[0]?.replace(/^faction\./, '')} ${profile.toUpperCase()} ${g.height}x${g.width} seed ${seed} d${depth}`;
+  return labelOf(g, title, t, [], true, marks ? edgeMarkings(g, defs) : undefined);
 }
 
 /** Line colour of each edge marking on the view (the hazard band alternates with black, as chevrons would). */
@@ -146,7 +152,14 @@ function drawCable(r: Raster, g: GenResult, t: number, top: number): boolean {
 }
 
 /** Any layout as a labelled image (a generated one, or a hand-made mock), with captions at tiles when given. */
-export function labelOf(g: GenResult, title: string, t = 16, captions: readonly { x: number; y: number; text: string }[] = [], names = true, marks?: EdgeMarkings): Raster {
+/**
+ * `rooms`: what each room holds where the layout has no furniture placed yet (an outline), to name it by; a filler room
+ * is hatched.
+ */
+export function labelOf(
+  g: GenResult, title: string, t = 16, captions: readonly { x: number; y: number; text: string }[] = [], names = true, marks?: EdgeMarkings,
+  rooms?: readonly { mods: readonly string[]; filler?: boolean }[],
+): Raster {
   const rows = g.template.rows;
   const H = rows.length, W = Math.max(...rows.map((row) => row.length));
   const roles = g.rooms.map((rm) => rm.role as RoomRole);
@@ -157,6 +170,7 @@ export function labelOf(g: GenResult, title: string, t = 16, captions: readonly 
   // What each room holds, by the tile a module stands on (for its name: roomKind).
   const mods: string[][] = roles.map(() => []);
   for (const m of g.template.modules ?? []) mods[g.roomOf[m.y * g.width + m.x] ?? -1]?.push(m.def);
+  rooms?.forEach((rm, i) => mods[i]?.push(...rm.mods));
   const kinds = new Map<string, RoomRole>(roles.map((role, i) => [roomKind(role, mods[i] ?? []), role]));
   // A base on open ground (a prefab asteroid base): its levelled site as rock ground, its landing pads framed.
   const site = (g as { site?: { pads: { x: number; y: number; w: number; h: number }[] } }).site;
@@ -172,7 +186,7 @@ export function labelOf(g: GenResult, title: string, t = 16, captions: readonly 
     if (c === 'D') { r.rect(px, py, t, t, DOOR); continue; }
     const room = g.roomOf[y * W + x] ?? -1;
     const role = roles[room] ?? 'hall';
-    r.rect(px, py, t, t, roleTint(role));
+    r.rect(px, py, t, t, rooms?.[room]?.filler && (x + y) % 3 === 0 ? (roleTint(role).map((v) => v * 0.6) as RGB) : roleTint(role));
     if (room >= 0) { const m = mid.get(room) ?? [0, 0, 0]; m[0] += x; m[1] += y; m[2]++; mid.set(room, m); }
   }
   if (marks) drawMarks(r, marks, g.width, t, TOP);
@@ -194,7 +208,7 @@ export function labelOf(g: GenResult, title: string, t = 16, captions: readonly 
   // Room names at the middle of every room big enough to carry one.
   for (const [room, [sx, sy, n]] of names ? mid : []) {
     const name = roomKind(roles[room] as string, mods[room] ?? []);
-    if (!name || n < 10) continue;
+    if (!name || n < 10 || roles[room] === 'hall') continue;
     const cx = (sx / n) * t + (t >> 1), cy = TOP + (sy / n) * t + (t >> 1);
     outlined(r, name, Math.round(cx - name.length * 4), Math.round(cy - 5), [255, 255, 255], 2);
   }

@@ -4,6 +4,7 @@ import { warehoused } from '../sim/shipgen/assembly/program';
 import type { Recipe } from '../sim/shipgen/assembly/recipe';
 import { assembleStation } from '../sim/shipgen/assembly/station';
 import { crewSize } from '../sim/shipgen/stationCrew';
+import { sleepersIn } from '../sim/shipgen/assembly/quarters';
 import type { StationSize } from '../sim/shipgen/stationTypes';
 import { modules } from './modules';
 import { assembled, programOf } from '../../test/support/fixtures/stationRecipe';
@@ -41,7 +42,7 @@ describe('station program', () => {
   it('houses the whole crew, with a medbay, no filler plant rooms, every common room a mess or a rec room', () => {
     for (const kind of ['station.pirate', 'station.military', 'station.farming'] as const) {
       const { rooms } = programOf(kind, 'station', 2);
-      const beds = rooms.flatMap((r) => r.mods).filter((m) => m === 'module.bed').length;
+      const beds = sleepersIn(rooms.flatMap((r) => r.mods));
       expect(beds).toBe(crewSize(stations[kind], 'station'));
       expect(rooms.some((r) => r.role === 'medbay')).toBe(true);
       expect(rooms.filter((r) => r.role === 'plant' && r.mods.every((m) => m === 'module.lifeSupport'))).toHaveLength(0);

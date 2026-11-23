@@ -1,7 +1,6 @@
-import type { Builder } from '../builder';
-import { letterOf } from '../canvas';
 import type { RoomSpec } from '../plan';
 import type { RoomRole } from '../types';
+import { addDoors } from './regionDoors';
 
 /**
  * A station floor as owner regions on a tile grid, and the one wall writer that turns them into tiles.
@@ -26,14 +25,18 @@ export interface Region {
   spec?: RoomSpec;
   /** Regions this room may open a door onto (default: any hall). */
   access?: number[];
-  doors: number;
+  doors: number; /** One door at its frontage's bow end, not the middle (fixtures fill the rest). */ doorFirst?: boolean;
+  /** Its one door into an airlock's hall at its outer end, clear of the airlock (an offset cockpit's: its helm in line, outboard). */
+  doorOut?: boolean;
+  /** Doors in a wall running along this axis where it has any (a lane hull's forward rooms: onto the spine). */
+  doorAlong?: 'x' | 'y';
   /** Wall rank among rooms: the lower gives way. Defaults to creation order. */
   rank: number;
   /** The department this region belongs to (flow planner), for sheets and the plan class. */
   dept?: string;
 }
 
-interface Shape { x0: number; y0: number; x1: number; y1: number; n: number }
+export interface Shape { x0: number; y0: number; x1: number; y1: number; n: number }
 
 export class RegionGrid {
   readonly size: number;
@@ -125,9 +128,9 @@ export class RegionGrid {
     return false;
   }
 
-  room(role: RoomRole, o: { spec?: RoomSpec; access?: number[]; doors?: number; rank?: number; dept?: string } = {}): number {
+  room(role: RoomRole, o: { spec?: RoomSpec; access?: number[]; doors?: number; rank?: number; dept?: string; doorFirst?: boolean; doorAlong?: 'x' | 'y' } = {}): number {
     const id = this.regions.length;
-    this.regions.push({ role, hall: false, doors: o.doors ?? 1, rank: o.rank ?? id, ...(o.spec ? { spec: o.spec } : {}), ...(o.access ? { access: o.access } : {}), ...(o.dept ?? o.spec?.dept ? { dept: o.dept ?? o.spec?.dept } : {}) });
+    this.regions.push({ role, hall: false, doors: o.doors ?? 1, rank: o.rank ?? id, ...(o.spec ? { spec: o.spec } : {}), ...(o.access ? { access: o.access } : {}), ...(o.doorFirst ? { doorFirst: true } : {}), ...(o.doorAlong ? { doorAlong: o.doorAlong } : {}), ...(o.dept ?? o.spec?.dept ? { dept: o.dept ?? o.spec?.dept } : {}) });
     return id;
   }
 
@@ -307,7 +310,7 @@ export class RegionGrid {
       }
       cell[(y + half) * size + x + half] = wall ? '#' : '_';
     }
-    this.regions.forEach((rg, id) => { if (!rg.hall && rg.doors > 0) this.addDoors(cell, id, rg); });
+    this.regions.forEach((rg, id) => { const sh = this.shapes[id]; if (!rg.hall && rg.doors > 0 && sh) addDoors(cell, id, rg, sh, this); });
     for (const [x, y] of this.gates) {
       const k = this.idx(x, y);
       if (k >= 0 && cell[k] === '#') cell[k] = 'D';
@@ -391,110 +394,5 @@ export class RegionGrid {
       }
     }
     return n;
-  }
-
-  /**
-   * Rooms in the box x0 <= x < x1, y0 <= y < y1 whose floor, as the grid stands, is not one rectangle (a notch or a
-   * bump where a wall took part of one edge), as region ids. Only rooms wholly inside the box are judged.
-   */
-  lumps(x0: number, y0: number, x1: number, y1: number): Set<number> {
-    const box = new Map<number, [number, number, number, number, number, boolean]>();
-    for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) {
-      const a = this.at(x, y);
-      if (a < 0 || (this.regions[a] as Region).hall) continue;
-      let b = box.get(a);
-      if (!b) box.set(a, (b = [x, y, x, y, 0, false]));
-      if (x === x0 || y === y0 || x === x1 - 1 || y === y1 - 1) b[5] = true;
-      if (this.wallAt(x, y)) continue;
-      if (b[4] === 0) { b[0] = x; b[1] = y; b[2] = x; b[3] = y; }
-      b[0] = Math.min(b[0], x); b[1] = Math.min(b[1], y); b[2] = Math.max(b[2], x); b[3] = Math.max(b[3], y); b[4]++;
-    }
-    const out = new Set<number>();
-    for (const [id, [bx0, by0, bx1, by1, n, edge]] of box) if (!edge && n > 0 && n !== (bx1 - bx0 + 1) * (by1 - by0 + 1)) out.add(id);
-    return out;
-  }
-
-  /** Doors for one room: straight wall tiles with its floor on one side and an allowed region's floor opposite, spread along the frontage. */
-  private addDoors(cell: string[], id: number, rg: Region): void {
-    const { size, half } = this;
-    const c = (x: number, y: number): string => (this.idx(x, y) < 0 ? '.' : (cell[(y + half) * size + x + half] as string));
-    const floor = (x: number, y: number): number => (c(x, y) === '_' ? this.at(x, y) : -3);
-    const ok = (b: number): boolean => b >= 0 && b !== id && (rg.access ? rg.access.includes(b) : (this.regions[b] as Region).hall);
-    const cands: [number, number][] = [];
-    const sh = this.shapes[id];
-    if (!sh) return;
-    // Wall beside this room's floor lies within a tile of its painted extent.
-    const ya = Math.max(-half + 1, sh.y0 - 1), yb = Math.min(half - 2, sh.y1 + 1), xa = Math.max(-half + 1, sh.x0 - 1), xb = Math.min(half - 2, sh.x1 + 1);
-    for (let y = ya; y <= yb; y++) for (let x = xa; x <= xb; x++) {
-      if (c(x, y) !== '#') continue;
-      const n = floor(x, y - 1), s = floor(x, y + 1), e = floor(x + 1, y), w = floor(x - 1, y);
-      const alongX = c(x - 1, y) === '#' && c(x + 1, y) === '#', alongY = c(x, y - 1) === '#' && c(x, y + 1) === '#';
-      if ((alongX && ((n === id && ok(s)) || (s === id && ok(n)))) || (alongY && ((e === id && ok(w)) || (w === id && ok(e))))) cands.push([x, y]);
-    }
-    for (let k = 0; k < Math.min(rg.doors, cands.length); k++) {
-      // The middle of the frontage for one door; evenly spread for more.
-      const [x, y] = cands[Math.floor(((k + 0.5) * cands.length) / Math.min(rg.doors, cands.length))] as [number, number];
-      cell[(y + half) * size + x + half] = 'D';
-    }
-  }
-
-  /**
-   * Floor that cannot be walked to from the first hall, as [x, y, region] of one tile a stranded region: a room with no
-   * door, or a hall cut off from the rest (but not a region standing `apart`: a module reached across open ground). The fit-out places nothing solid while any floor is stranded.
-   */
-  stranded(cell: string[] = this.compile()): [number, number, number][] {
-    const apart = this.apart;
-    const { size, half } = this;
-    const walk = (k: number): boolean => cell[k] === '_' || cell[k] === 'D';
-    const start = cell.findIndex((c, k) => c === '_' && (this.own[k] as number) >= 0 && (this.regions[this.own[k] as number] as Region).hall);
-    if (start < 0) return [];
-    const seen = new Uint8Array(cell.length);
-    const stack = [start];
-    seen[start] = 1;
-    while (stack.length > 0) {
-      const k = stack.pop() as number;
-      for (const j of [k - 1, k + 1, k - size, k + size]) if (j >= 0 && j < cell.length && !seen[j] && walk(j)) { seen[j] = 1; stack.push(j); }
-    }
-    const out = new Map<number, [number, number, number]>();
-    for (let k = 0; k < cell.length; k++) {
-      if (cell[k] !== '_' || seen[k]) continue;
-      const id = this.own[k] as number;
-      if (apart.has(id)) continue;
-      if (!out.has(id)) out.set(id, [(k % size) - half, Math.floor(k / size) - half, id]);
-    }
-    return [...out.values()];
-  }
-
-  /** Stamp the compiled floor into a builder: one chunk a region (its spec with it), then every wall and door. */
-  stamp(b: Builder): void {
-    const { size, half } = this;
-    const cell = this.compile();
-    const rowsOf = (keep: (k: number) => string | null): { rows: string[]; x0: number; y0: number } | null => {
-      let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
-      for (let k = 0; k < cell.length; k++) {
-        if (keep(k) === null) continue;
-        const x = k % size, y = Math.floor(k / size);
-        x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y);
-      }
-      if (x1 < x0) return null;
-      const rows: string[] = [];
-      for (let y = y0; y <= y1; y++) {
-        let row = '';
-        for (let x = x0; x <= x1; x++) row += keep(y * size + x) ?? '.';
-        rows.push(row);
-      }
-      return { rows, x0: x0 - half, y0: y0 - half };
-    };
-    this.regions.forEach((rg, id) => {
-      const letter = letterOf(rg.role);
-      const f = rowsOf((k) => (cell[k] === '_' && this.own[k] === id ? letter : null));
-      if (!f) return;
-      const key = `flow${id}`;
-      b.cv.stamp(f.rows, f.x0, f.y0, key);
-      b.chunkRoles.set(`${key}:${letter}`, rg.role);
-      if (rg.spec) b.chunkSpecs.set(`${key}:${letter}`, rg.spec);
-    });
-    const w = rowsOf((k) => (cell[k] === '#' || cell[k] === 'D' ? (cell[k] as string) : null));
-    if (w) b.cv.stamp(w.rows, w.x0, w.y0, 'flowwalls');
   }
 }

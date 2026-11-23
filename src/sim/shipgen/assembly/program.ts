@@ -1,10 +1,10 @@
 import type { ModuleDef } from '../../registry';
 import type { Rng } from '../../rng';
 import { shuffle } from '../civilKit';
-import { cargoSpec, dockSpec, pickWeighted, podDeck, weaponSpec, type RoomSpec, type StationDept } from '../plan';
+import { cargoSpec, dockSpec, pickWeighted, podDeck, weaponSpec, type RoomSpec, type StationDept, LAMP_AREA, REACTOR_TIERS, reactorTier } from '../plan';
 import { docksOf, stationCrew } from '../stationCrew';
 import type { StationDef, StationSize } from '../stationTypes';
-import { messSize } from '../rooms/rules/parts';
+import { messFloor } from '../rooms/rules/mess';
 import { barracksOf, cabinOf, sleepersIn } from './quarters';
 
 /**
@@ -23,10 +23,6 @@ function grown(rng: Rng, r: RoomSpec, s: number): RoomSpec {
 }
 
 
-/** Reactor tiers, Mk I to Mk III (50, 100 and 180 power; 2x2, 2x3 and 2x4). */
-/** Tiles of planned room a lamp, halls' share included (measured on generated stations). */
-const LAMP_AREA = 10;
-const REACTOR_TIERS = ['module.reactor', 'module.reactor.mk2', 'module.reactor.mk3'];
 
 /** The planned rooms: command, guns, shields, the core, quarters, messes, the kind's rooms, docks, holds, bays, reactors. */
 function planned(rng: Rng, def: StationDef, size: StationSize, defs: Record<string, ModuleDef>): { command: RoomSpec; rest: RoomSpec[]; docks: RoomSpec[]; space: number } {
@@ -142,7 +138,7 @@ function reactorsFor(drawing: readonly RoomSpec[], def: StationDef, size: Statio
   if (def.atrium?.role === 'garden') demand += 30;
   const tiers = REACTOR_TIERS.slice(0, size === 'hub' ? 3 : size === 'station' ? 2 : 1).filter((id) => defs[id]);
   const out = (id: string): number => defs[id]?.power ?? 50;
-  const id = tiers.find((x) => Math.ceil(demand / out(x)) <= 2) ?? tiers[tiers.length - 1] ?? 'module.reactor';
+  const id = reactorTier(defs, demand, tiers);
   // Reactor rooms of two at most, with floor round the reactors: a plant room, not a walkway (more on roomy stations).
   const margin = Math.max(2, Math.round(3 * space));
   const reactors: RoomSpec[] = [];
@@ -214,10 +210,9 @@ export function withCommons(rooms: readonly RoomSpec[], size: StationSize, pantr
     const mess = i < messes;
     r.mods.push(...(mess ? ['module.galley', ...Array<string>(tables).fill('module.mess_table'), ...(rec ? [] : ['module.gametable'])] : ['module.arcade', 'module.arcade', 'module.gametable']));
     r.dept = 'commons';
-    // Floor for what it holds: a counter and a row of tables with chairs either side and an aisle (the furnishing
-    // rules' tables in pairs: seven tiles a pair, three for the galleys), or a wall of cabinets and a table.
+    // Floor for what it holds (`messFloor`: the furnishing rules' own answer), or a wall of cabinets and a table.
     // Sized to what it holds, not grown with the station's spaciousness: a big mess with one table reads as empty.
-    const [long, short] = mess ? messSize(tables) : [6, 5];
+    const { w: long, h: short } = mess ? messFloor(tables) : { w: 6, h: 5 };
     [r.w, r.h] = r.w >= r.h ? [long, short] : [short, long];
     if (mess) r.annex = { role: 'cargo', dept: 'commons', mods: Array<string>(Math.max(2, tables)).fill('module.storage_rack'), w: 5, h: 3, ...(pantry?.length ? { stock: true, items: pantry } : {}) };
   }

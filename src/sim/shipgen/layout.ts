@@ -1,5 +1,5 @@
 import type { ModuleDef } from '../registry';
-import { accessTile, footprintTiles, hullOutward, hullRow, hullSide, openTilesOf, type Tile } from '../modules/footprint';
+import { accessTile, footprintTiles, rotatedSize, hullOutward, hullRow, hullSide, openTilesOf, type Tile } from '../modules/footprint';
 import { airlockTiles } from '../modules/airlock';
 import type { RoomRole } from './types';
 
@@ -32,8 +32,6 @@ export class Layout {
   private readonly protects: number[][] = [];
   readonly defs: Record<string, ModuleDef>;
   roles: RoomRole[];
-  /** The generator's own choice, not a rule of the game: a gun stands beside the hull. Off for the station assembly. */
-  gunsOnHull = true;
   /** Rooms where a module standing apart on open ground is entered (its airlock): each is the start of a walk of its own. */
   entries = new Set<number>();
 
@@ -117,7 +115,6 @@ export class Layout {
       if (this.at(ins.x, ins.y) !== '_' || this.occ[ins.y * this.w + ins.x] !== -1) return 'noAccess';
       if (room >= 0 && this.roomOf[ins.y * this.w + ins.x] !== room) return 'otherRoom';
     }
-    if (this.gunsOnHull && def.weapon && !tiles.some((t) => this.besideHull(t.x, t.y))) return 'offHull';
     if (roofMounted(def)) {
       for (const t of tiles) {
         for (let dy = -1; dy <= 1; dy++) {
@@ -130,14 +127,6 @@ export class Layout {
       }
     }
     return null;
-  }
-
-  /** True if (x, y) is next to an exterior hull wall (a wall tile with space beyond it). */
-  besideHull(x: number, y: number): boolean {
-    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
-      if (this.at(x + dx, y + dy) === '#' && this.at(x + 2 * dx, y + 2 * dy) === '.') return true;
-    }
-    return false;
   }
 
   /** The tile just inside an airlock's inner door. */
@@ -181,6 +170,42 @@ export class Layout {
     if (a && this.occ[a.y * this.w + a.x] === -1) out.push(a);
     if (def.airlock) out.push(this.airlockInside(pm));
     return out.filter((t) => this.inBounds(t.x, t.y));
+  }
+
+  /**
+   * Whether crew can stand beside module `idx` to work it: a walkable tile in the ring around its footprint, diagonals
+   * included (the ring `findPath` stops on for an adjacent goal, navView `isGoalTile`).
+   */
+  workable(idx: number): boolean {
+    const pm = this.modules[idx];
+    const def = pm && this.defs[pm.def];
+    if (!pm || !def) return false;
+    const [w, h] = rotatedSize(def, pm.rot);
+    for (let y = pm.y - 1; y <= pm.y + h; y++) for (let x = pm.x - 1; x <= pm.x + w; x++) {
+      if (x >= pm.x && x < pm.x + w && y >= pm.y && y < pm.y + h) continue;
+      if (this.inBounds(x, y) && this.walkable(y * this.w + x)) return true;
+    }
+    return false;
+  }
+
+  /**
+   * Whether the module just placed leaves every solid module workable (`workable`): itself, and each one whose ring it
+   * stands in.
+   */
+  allWorkable(): boolean {
+    const last = this.modules.length - 1, pm = this.modules[last];
+    const def = pm && this.defs[pm.def];
+    if (!pm || !def) return true;
+    if (def.solid && !this.workable(last)) return false;
+    const [w, h] = rotatedSize(def, pm.rot);
+    for (let i = 0; i < last; i++) {
+      const o = this.modules[i] as PlacedModule, od = this.defs[o.def];
+      if (!od?.solid) continue;
+      const [ow, oh] = rotatedSize(od, o.rot);
+      // (Its ring touches the new footprint: the new module may have taken its last tile.)
+      if (o.x - 1 < pm.x + w && pm.x < o.x + ow + 1 && o.y - 1 < pm.y + h && pm.y < o.y + oh + 1 && !this.workable(i)) return false;
+    }
+    return true;
   }
 
   /** True if every walkable tile and every protected tile is reachable from the first door. */

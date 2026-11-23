@@ -12,8 +12,8 @@ import type { ChunkData, Contact, Fleet } from './types';
  * Rosters (user decisions 2026-10-22: a living world). When a chunk is generated, each port in it gets its fleets (`populate`), deterministically
  * from the world seed and the port: the port's kind and size set how many groups it fields (`PortKindDef.groups`), the owner's `FleetGroupDef`
  * for the role sets each group's size budget, and the generator's hull families give the ships (`FleetContent.classes`: family -> size class).
- * A slot asks for a size, and a generator seed is searched whose first attempt builds a family of that size (`previewHull`), so a "heavy" ship really
- * is a cruiser. Ships only become real in the player's node (fleetShips.ts); here they are descriptors with a name. Replacements for lost ships
+ * A slot asks for a size, and a generator seed is searched that builds a family of that size (`previewHull`: every attempt of a seed builds its family), so a
+ * "heavy" ship really is a cruiser. Ships only become real in the player's node (fleetShips.ts); here they are descriptors with a name. Replacements for lost ships
  * come from `makeFleet` too (rebuild.ts).
  */
 const SIZES: readonly ShipSize[] = ['small', 'medium', 'heavy'];

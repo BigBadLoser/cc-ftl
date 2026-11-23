@@ -415,10 +415,9 @@ fit-out needs no builder or canvas in between.
 - CLI: `node tools/shipgen/cli.js station.trading --size station --layout assembly.bazaar --count 4`.
 - What the handoff changed in the assembly: an airlock unit on a quay is three by three (the airlock module's own
   floor, its walkway innermost) and its hatch becomes plain hull at the handoff, since the module is the door; airlocks
-  may face any way there (`airlocksAnyWay`; the arranger's hulls keep theirs off the stern); guns may stand anywhere in
-  their bay (`gunsAnywhere`): the game has no rule that a gun touches the hull, only the ship generator's fit-out
-  chose to put them there, and in a ring's band a two-gun bay stands end on to the hull with room for one beside it
-  (the user: "a gun does not have that rule"); the dock count the station rules ask for is the assembly's own
+  may face any way (ships too; a ship's prefer a side of the hull); guns may stand anywhere in
+  their bay: the game has no rule that a gun touches the hull (the user: "a gun does not have that rule"; ships
+  dropped it too), and in a ring's band a two-gun bay stands end on to the hull with room for one beside it; the dock count the station rules ask for is the assembly's own
   (`docksOf`).
 
 ## Ring stations: what was decided, and where they stand
@@ -541,8 +540,8 @@ differ little.
 
 ## Known limits
 
-- **Barracks need a double bunk module** (a bed's footprint, two beds). There is none, so a barracks cannot be furnished
-  as drawn.
+- **Barracks plan single beds.** The bunk (`module.bunk`, two sleepers in a bed's footprint) is in the game, but the
+  program and the barracks rules do not place it yet (`rooms/rules/parts.ts` `Beds`). [SHIPGEN_V4.md](SHIPGEN_V4.md) step 1 switches them.
 - The mess and the rec room have no room recipe of their own (`support` furnishes as a mess), and medbays and plant
   rooms have none at all. The rooms added since are the same: planned with their modules, no room recipe (workshop,
   battery room, suit-up rooms, chief's cabin, pantry, trauma room, laboratory, breaker shop, drone bay).

@@ -7,8 +7,25 @@
 import { accessTiles, footprintTiles } from '../../../modules/footprint';
 import { stretchOf } from '../../assembly/sizing';
 import type { Piece } from './check';
-import { C, G, GT, LS, P, T, count, messSize } from './parts';
+import { C, G, GT, LS, P, T, count, middle, off } from './parts';
 import type { Ctx } from './rules';
+
+/**
+ * A mess's floor for its tables and galleys, long side then short (the one answer: the programme and the ship plans size
+ * a mess by it, the mess rules tell a hall from a mess by it): the smallest room where some arrangement below places
+ * every table with its chairs, the galleys and a game table, for a main door anywhere on a long wall and a second door
+ * (a pantry's) anywhere on an end wall (a sweep of every door pair, every size from the floor up, finds no failure). A
+ * single line of tables down a room five deep where that is smaller; the two lines of M4, seven deep (a liner bay's
+ * depth), where they come within a tenth of it. `depth` 4: a hull's side rooms are four deep, one line.
+ */
+export function messFloor(tables: number, galleys = 1, depth = 0): { w: number; h: number } {
+  const t = Math.max(1, Math.round(tables)), two = galleys >= 2;
+  if (depth > 0 && depth < 5) return { w: 4 * t + 4 + (two ? 4 : 0), h: 4 };
+  // Measured widths by tables (1 to 4), one galley then a pair (the most a mess takes).
+  const line = two ? [11, 15, 19, 23] : [6, 9, 14, 15], lines = two ? [8, 11, 15, 18] : [7, 7, 10, 11];
+  const w1 = line[t - 1] ?? 3 * t + 3 + (two ? 8 : 0), w2 = Math.max(7, lines[t - 1] ?? 3 * Math.ceil(t / 2) + 5 + (two ? 7 : 0));
+  return w2 * 7 * 10 <= w1 * 5 * 11 ? { w: w2, h: 7 } : { w: w1, h: 5 };
+}
 
 /**
  * The tables a mess holds: the planned ones (seats for its share of the crew); a mess bigger than the programme would
@@ -16,7 +33,7 @@ import type { Ctx } from './rules';
  * proportion to its floor.
  */
 export function messTables(c: { w: number; h: number; need: readonly string[] }): number {
-  const planned = Math.max(1, count(c.need, T)), [a, b] = messSize(planned);
+  const planned = Math.max(1, count(c.need, T)), { w: a, h: b } = messFloor(planned);
   const most = a * b * stretchOf({ role: 'support', dept: 'commons', mods: [], w: a, h: b });
   return Math.max(planned, Math.round((planned * c.w * c.h) / most));
 }
@@ -71,7 +88,8 @@ function aside(c: Ctx, id: string, pieces: readonly Piece[], clear: ReadonlySet<
  * count from `most` up whose tables leave `most` clear, those spread evenly along it; else the count that leaves the
  * most clear, if that is `least` at least. Empty when none does.
  */
-export function tablesClear(c: Ctx, most: number, least: number, lay: (m: number) => Piece[]): Piece[] {
+function lineClear(c: Ctx, most: number, least: number, lay: (m: number) => Piece[]): Piece[] {
+  if (most < 1) return [];
   const clear = doorways(c);
   const free = (p: Piece): boolean => { const d = c.defs[p.def]; return (d ? footprintTiles(d, p.x, p.y, p.rot) : [p]).every((t) => !clear.has(key(t.x, t.y))); };
   const fp = (t: Piece): Set<string> => new Set((c.defs[T] ? footprintTiles(c.defs[T], t.x, t.y, t.rot) : [t]).map((q) => key(q.x, q.y)));
@@ -90,11 +108,59 @@ export function tablesClear(c: Ctx, most: number, least: number, lay: (m: number
   return best && best.ok.length >= least && best.ok.length > 0 ? keep(best.pieces, best.ok) : [];
 }
 
+/**
+ * `lineClear` where the line may stand a tile off the middle across the room: moved that far across (`tall`: along x),
+ * for a doorway on one side that a centred table's chairs would block. The centred line first, then a tile either way;
+ * the first that holds `most` tables, else the one with the most.
+ */
+export function tablesClear(c: Ctx, most: number, least: number, lay: (m: number) => Piece[], tall = false): Piece[] {
+  let best: Piece[] = [];
+  const n = (ps: Piece[]): number => ps.filter((p) => p.def === T).length;
+  for (const shift of [0, -1, 1]) {
+    const got = lineClear(c, most, least, (m) => lay(m).map((p) => (tall ? { ...p, x: p.x + shift } : { ...p, y: p.y + shift })));
+    if (n(got) >= most) return got;
+    if (n(got) > n(best)) best = got;
+  }
+  return best;
+}
+
+/**
+ * M4: a long mess: the galleys on a short wall, tables with their chairs down the long axis in a line (two where the
+ * room is wide enough across, either side of the middle), its tables (`messTables`) shared between the lines, each line's
+ * evenly spaced and centred (`middle`), clear of the doorways (`tablesClear`). Where that holds fewer than the planned
+ * tables and the room is seven across or more: two lines with their chairs against the walls (`flush`).
+ */
+export function m4(c: Ctx): Piece[] {
+  const tall = c.h > c.w, across = tall ? c.w : c.h, n = messTables(c), planned = Math.max(1, count(c.need, T));
+  // In the corners of the short wall, a tile in where a corner is cut.
+  const galleys = tall
+    ? [P(G, off(c, 0, 0, 0, 1), 0, 0), ...(c.w >= 5 ? [P(G, off(c, c.w - 1, 0, c.w - 2, -1), 0, 0)] : [])]
+    : [P(G, 0, off(c, 0, 0, 0, 1), 3), ...(c.h >= 5 ? [P(G, 0, off(c, 0, c.h - 1, c.h - 2, -1), 3)] : [])];
+  const build = (lines: number, flush: boolean): Piece[] => {
+    // Each line's band across the room: the whole of it, or the halves either side of its middle, a tile in from the
+    // walls where the room is wide (an aisle down each wall two wide, clear of the doorways in it).
+    const inset = across >= 11 ? 1 : 0;
+    const bands = lines === 1 ? [[0, across - 1]] : [[inset, (across >> 1) - 1], [(across + 1) >> 1, across - 1 - inset]];
+    return bands.flatMap(([a, b], k) => {
+      const most = Math.floor(n / lines) + (k < n % lines ? 1 : 0), least = Math.floor(planned / lines) + (k < planned % lines ? 1 : 0);
+      return tablesClear(c, most, least, (m) => (tall ? middle(a as number, 2, b as number, c.h - 1, false, true, m, flush) : middle(2, a as number, c.w - 1, b as number, true, true, m, flush)), tall);
+    });
+  };
+  const tables = (ps: Piece[]): number => ps.filter((p) => p.def === T).length;
+  let line = build(across >= 9 ? 2 : 1, false);
+  if (tables(line) < planned && across >= 7) { const alt = build(2, true); if (tables(alt) > tables(line)) line = alt; }
+  return [...galleys, ...line];
+}
+
 /** A mess arrangement as laid: see the file comment. */
 export function laid(c: Ctx, pieces: readonly Piece[]): Piece[] {
   const clear = doorways(c);
   const tiles = (p: Piece): { x: number; y: number }[] => { const d = c.defs[p.def]; return d ? footprintTiles(d, p.x, p.y, p.rot) : [{ x: p.x, y: p.y }]; };
-  let out = pieces.filter((p) => tiles(p).every((t) => !clear.has(key(t.x, t.y))));
+  // Life support only where the plan put it (a ship's stands in its plant room): an arrangement's own unit goes when the room asked for none.
+  let out = pieces.filter((p) => tiles(p).every((t) => !clear.has(key(t.x, t.y)) && onFloor(c, t.x, t.y)) && (p.def !== LS || c.need.includes(LS)));
+  // A table stands only with a chair on two sides at least (a chair off the floor or in a doorway is gone).
+  const seated = (p: Piece): boolean => out.filter((q) => q.def === C && N4.some(([dx, dy]) => tiles(p).some((t) => t.x === q.x + dx && t.y === q.y + dy))).length >= 2;
+  out = out.filter((p) => p.def !== T || seated(p));
   // A pair of galleys at most; its tables (`messTables`), those nearest the galleys (the dining end).
   const galleys = out.filter((p) => p.def === G).slice(0, 2), n = messTables(c), planned = Math.max(1, count(c.need, T));
   const [cx, cy] = galleys.length > 0 ? [galleys.reduce((t, p) => t + p.x, 0) / galleys.length, galleys.reduce((t, p) => t + p.y, 0) / galleys.length] : [(c.w - 1) / 2, (c.h - 1) / 2];
