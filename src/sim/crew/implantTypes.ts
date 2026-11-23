@@ -13,8 +13,10 @@ export type ImplantSlot = 'brain' | 'eye' | 'heart' | 'lungs' | 'spine' | 'arm' 
 /** An implant item (`ItemDef.implant`). */
 export interface ImplantDef {
   slot: ImplantSlot;
-  /** Mk I, II or III: also the surgery's difficulty. */
-  tier: 1 | 2 | 3;
+  /** Mk I, II or III: also the surgery's difficulty. Omitted by named cyberware (`named`), which has no Mk tier (crew/implants.ts `implantTier`). */
+  tier?: 1 | 2 | 3;
+  /** Named cyberware (Halcyon Heart): its own kind, found only (never researched, made or auto-picked); same slots, so surgery and load work as for any implant. */
+  named?: true;
   /** A replacement takes the flesh part's place (and restores a lost one); an augment sits beside it. */
   kind: 'replacement' | 'augment';
   /** A replacement: the part's condition while fitted, against flesh = 1 (Mk I 0.8, Mk III above 1). */

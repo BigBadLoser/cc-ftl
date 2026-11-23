@@ -42,7 +42,7 @@
         {#if chosen === o && o.implants}
           {#each o.implants as i (i.id)}
             <button class="implant" class:on={fitted === i} disabled={i.stock <= 0} onclick={() => (implant = i.id)}>
-              <span>{i.name}</span><small>{i.note ?? (i.stock > 0 ? `${i.stock} in stock` : 'not in stock')}</small>
+              <span class:t-named={i.named} title={i.tip}>{i.name}</span><small>{i.note ?? (i.stock > 0 ? `${i.stock} in stock` : 'not in stock')}</small>
             </button>
           {/each}
         {/if}

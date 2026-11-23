@@ -1019,7 +1019,7 @@ export interface UiTradeLine {
   /** Sold as surplus (older, middle-grade gear: a military depot's). */
   surplus?: boolean;
   /** Contraband: only a black market takes it, and navy and corporation scans confiscate it. */
-  contraband?: boolean;
+  contraband?: boolean; /** Named cyberware: its name shows in the named colour. */ named?: true;
 }
 
 /** A station's black-market services (sim blackmarket/): shown at the top of its trade window. */

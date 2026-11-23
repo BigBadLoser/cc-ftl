@@ -7,6 +7,7 @@
   --amber: #f0b13a;
   --green: #47e0a0;
   --gold: #e8c56a; /* credits and rewards */
+  --named: #c9a45c; /* named cyberware: a muted gold (class `t-named`) */
   /* Soft ink for text on dark panels (bad text is plain --red; amber is the warning colour). */
   --good-ink: #9fe0a8;
   --warn-ink: #ffcf7a;
@@ -191,6 +192,7 @@ html[data-fw-cursor] * { cursor: var(--fw-cursor) !important; }
 .build button:disabled { opacity: 0.4; }
 /* Text tones by meaning: good, bad (plain red), warning. */
 .t-good { color: var(--good-ink); }
+.t-named { color: var(--named); }
 .t-bad { color: var(--red); }
 .t-warn { color: var(--amber); }
 /* Utility classes for buttons that have no styles of their own: `commit` (a gameplay change, green edge) and `interact` (opens, navigates; cyan edge). */

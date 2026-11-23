@@ -1,5 +1,6 @@
 import { CrewC, ForHireC, ShipC, TraderC, VehicleC, type Trader, hailVerdict, isSurplus, planCourier, playerItems, playerShip, profileFor, commitments, liveDealWith, reputationWith, unitPrice, type Deal, type Sim, PLAYER } from '../sim';
 import { fetching } from '../sim/galaxy/recruit';
+import { isNamedItem } from '../sim/crew/implants';
 import { contrabandRate, isContraband, setsOf, truceBanned, truceHolds } from '../sim';
 import { isIncapacitated } from '../sim/crew/helpers';
 import { hardware, stationInfo } from './stationInfo';
@@ -90,7 +91,7 @@ export function buildTrade(sim: Sim, log?: StationLog): UiTrade {
         const sell = unitPrice(sim, id, item, 'sell');
         const buy = unitPrice(sim, id, item, 'buy');
         if (sell !== null && buy !== null && (theirs > 0 || mine > 0)) {
-          lines.push({ item, name: sim.content.items[item]?.name ?? item, theirs, mine, mineFree, theirsFree, sell, buy, ...(isSurplus(sim, trader.profile, item) ? { surplus: true } : {}), ...(isContraband(sim, item) ? { contraband: true } : {}) });
+          lines.push({ item, name: sim.content.items[item]?.name ?? item, theirs, mine, mineFree, theirsFree, sell, buy, ...(isSurplus(sim, trader.profile, item) ? { surplus: true } : {}), ...(isContraband(sim, item) ? { contraband: true } : {}), ...(isNamedItem(sim, item) ? { named: true as const } : {}) });
         }
       }
     }

@@ -18,7 +18,7 @@ function rigBeside(sim: Sim): Command[] {
 
 /**
  * `?scenario=surgery` (#311): surgery and implants. A medical bed with a surgical rig beside it is added and implants put in the hold (cyber eyes and arms, a neural
- * chip, a cyber heart). The first crew member (the patient, selected) has lost the right eye and the left arm, and carries a Mk I dermal armour already;
+ * chip, a cyber heart, the named Halcyon Heart). The first crew member (the patient, selected) has lost the right eye and the left arm, and carries a Mk I dermal armour already;
  * the second is made a surgeon (Medicine +6, medical work first). Queue operations from the patient's Health tab. `&queue`: an eye replacement and an
  * amputation are queued at once, so the patient walks to the rigged bed. Works on any starter crew (the app rolls them).
  */
@@ -28,7 +28,7 @@ export default definePreset({
   spec: (p) => ({
     node: { warm: 10 },
     modules: { add: [{ def: 'module.med_bed' }] },
-    items: { give: { 'item.cyber_eye_1': 1, 'item.cyber_eye_2': 1, 'item.cyber_arm_1': 1, 'item.cyber_arm_2': 1, 'item.chip_gunnery_1': 1, 'item.cyber_heart_1': 1 } },
+    items: { give: { 'item.cyber_eye_1': 1, 'item.cyber_eye_2': 1, 'item.cyber_arm_1': 1, 'item.cyber_arm_2': 1, 'item.chip_gunnery_1': 1, 'item.cyber_heart_1': 1, 'item.halcyon_heart': 1 } },
     crew: [
       {
         who: 0,

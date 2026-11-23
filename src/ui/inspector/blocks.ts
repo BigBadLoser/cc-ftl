@@ -21,7 +21,7 @@ export interface Slot {
   key: string;
   label: string;
   glyph: string;
-  item: { icon: string; name: string; count?: number; note?: string; card?: Card | null } | null;
+  item: { icon: string; name: string; count?: number; note?: string; named?: true; card?: Card | null } | null;
   action?: { label: string; onClick: () => void; disabled?: boolean; testId?: string };
 }
 

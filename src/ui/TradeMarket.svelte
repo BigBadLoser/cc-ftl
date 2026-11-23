@@ -40,7 +40,7 @@
       {@const m = lim(l)}
       <div class="row" class:set={q !== 0} data-testid="trade-row-{l.item}">
         <ItemIcon {api} item={l.item} size={28} />
-        <span class="nm">{l.name}{#if l.surplus}<span class="chip good" use:tip={{ text: 'Older, middle-grade gear this depot sells off' }}>SURPLUS</span>{/if}{#if l.contraband}<span class="chip bad" use:tip={{ text: 'Contraband: only a black market takes it, and navy and corporation scans confiscate it' }}>CONTRABAND</span>{/if}</span>
+        <span class="nm"><span class:t-named={l.named}>{l.name}</span>{#if l.surplus}<span class="chip good" use:tip={{ text: 'Older, middle-grade gear this depot sells off' }}>SURPLUS</span>{/if}{#if l.contraband}<span class="chip bad" use:tip={{ text: 'Contraband: only a black market takes it, and navy and corporation scans confiscate it' }}>CONTRABAND</span>{/if}</span>
         <span class="c" class:dim={l.mine === 0}>{l.mine > 0 ? l.mine : dash}</span>
         <span class="c" class:dim={!sellable(l, p)}>{#if sellable(l, p)}<span class="gold">₵ {l.buy}</span>{:else}{dash}{/if}</span>
         <span class="c" class:dim={l.theirs === 0}>{l.theirs > 0 ? l.theirs : dash}</span>

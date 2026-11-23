@@ -1,7 +1,7 @@
 import { CrewC, PositionC, type Sim } from '../sim';
 import { skillOf } from '../sim/combat/operators';
 import { canBeInjured } from '../sim/crew/body';
-import { implantsOf, partTakes } from '../sim/crew/implants';
+import { implantsOf, isNamedItem, partTakes } from '../sim/crew/implants';
 import { DERMAL_PART, type Operation, type OperationKind } from '../sim/crew/implantTypes';
 import {
   couldOperate, lyingIn, operationError, operationsOf, readyOperation, stockFor, surgeryChance, surgeryJobOf, theatreFits, theatreOf,
@@ -38,6 +38,8 @@ function partsOf(sim: Sim): { id: string; name: string; icon: UiPartIcon; mirror
   return [...body, SKIN];
 }
 
+/** The picker's mark of named cyberware (its colour) and its tooltip line. */
+const namedOf = (sim: Sim, item: string): { named?: true; tip?: string } => (isNamedItem(sim, item) ? { named: true, tip: sim.content.items[item]?.description } : {});
 const itemName = (sim: Sim, item?: string): string => (item ? (sim.content.items[item]?.name ?? item) : '');
 
 function label(sim: Sim, op: Pick<Operation, 'kind' | 'part' | 'item' | 'urgent'>): string {
@@ -85,12 +87,12 @@ function optionsFor(sim: Sim, id: number, part: { id: string; name: string }, su
   const ship = shipIdOf(sim, sim.world.get(id, PositionC));
   const fits = Object.entries(sim.content.items).filter(([, d]) => d.implant && partTakes(sim, part.id, d.implant.slot));
   const open = fits.filter(([item]) => !check({ kind: 'fit', part: part.id, item }));
-  const implants = open.map(([item, d]) => ({ id: item, name: d.name, stock: shipStoreCount(sim, ship, item), odds: oddsOf(sim, id, surgeon, { kind: 'fit', part: part.id, item }) }));
+  const implants = open.map(([item, d]) => ({ id: item, name: d.name, ...namedOf(sim, item), stock: shipStoreCount(sim, ship, item), odds: oddsOf(sim, id, surgeon, { kind: 'fit', part: part.id, item }) }));
   const lost = sim.content.injuries?.parts[part.id] ? operationError(sim, id, { kind: 'repair', part: part.id }) === 'partLost' : false;
   const anyReplacement = open.some(([, d]) => d.implant?.kind === 'replacement');
   const fitDisabled = !fits.length ? 'no implant fits here' : !open.length ? check({ kind: 'fit', part: part.id, item: fits[0]![0] }) : !implants.some((i) => i.stock > 0) ? why('noStock', what) : undefined;
   const fitted = implantsOf(sim, id).filter((f) => f.part === part.id);
-  const removes = fitted.map((f) => ({ id: f.item, name: itemName(sim, f.item), stock: 1, note: check({ kind: 'remove', part: part.id, item: f.item }) ?? 'fitted', odds: oddsOf(sim, id, surgeon, { kind: 'remove', part: part.id, item: f.item }) }));
+  const removes = fitted.map((f) => ({ id: f.item, name: itemName(sim, f.item), ...namedOf(sim, f.item), stock: 1, note: check({ kind: 'remove', part: part.id, item: f.item }) ?? 'fitted', odds: oddsOf(sim, id, surgeon, { kind: 'remove', part: part.id, item: f.item }) }));
   const out: UiOperationOption[] = [
     {
       kind: 'fit', label: 'Fit implant', note: anyReplacement ? (lost ? `replaces the lost ${what}` : `replaces the ${what}`) : 'an augment', implants,

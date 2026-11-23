@@ -66,7 +66,7 @@ export interface UiGearSlot {
   slot: 'weapon' | 'suit' | 'hands' | 'implant';
   label: string;
   /** What fills it (`id`: the item id, for its sprite), or null for an empty slot. */
-  item: { id: string; name: string; count?: number; natural?: boolean; card: UiItemCard | null } | null;
+  item: { id: string; name: string; count?: number; natural?: boolean; named?: true; card: UiItemCard | null } | null;
 }
 
 export interface UiCrewDetail {
@@ -218,5 +218,5 @@ export interface UiOperationOption {
   /** The best free surgeon's odds, in words ("success 82% at a table, 62% at a bed"); per implant on `implants`. */
   odds?: string;
   /** fit: the implants that fit, with stock; remove: the fitted ones (`note` instead of the stock). */
-  implants?: { id: string; name: string; stock: number; note?: string; odds?: string }[];
+  implants?: { id: string; name: string; stock: number; note?: string; odds?: string; named?: true; tip?: string }[];
 }

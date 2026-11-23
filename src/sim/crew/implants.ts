@@ -16,6 +16,15 @@ export const implantsOf = (sim: Sim, id: number): readonly FittedImplant[] => si
 /** An item's implant def, if it is one. */
 export const implantDef = (sim: Sim, item: string): ImplantDef | undefined => sim.content.items[item]?.implant;
 
+/** Named cyberware: found only, no Mk tier. The one answer to "is this named cyberware". */
+export const isNamedImplant = (def: ImplantDef | undefined): boolean => !!def?.named;
+
+/** The Mk tier the surgery rules use: a named piece operates like Mk III (rare, powerful hardware), a missing item like Mk I. */
+export const implantTier = (def: ImplantDef | undefined): 1 | 2 | 3 => (def ? (def.tier ?? 3) : 1);
+
+/** Is this item named cyberware (an item id)? */
+export const isNamedItem = (sim: Sim, item: string): boolean => isNamedImplant(implantDef(sim, item));
+
 /** The implant of `kind` fitted on a part, if any: its item id and def. */
 export function implantOn(sim: Sim, id: number, part: string, kind: ImplantDef['kind']): { item: string; def: ImplantDef } | undefined {
   for (const f of implantsOf(sim, id)) {

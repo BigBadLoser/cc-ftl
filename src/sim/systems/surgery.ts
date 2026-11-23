@@ -2,6 +2,7 @@ import { abortTask } from '../ai/task';
 import { DeadC, DownedC, JobC, PositionC, type Job } from '../crew/components';
 import { injuriesOf } from '../crew/body';
 import { OperationsC } from '../crew/implantTypes';
+import { implantTier, isNamedImplant } from '../crew/implants';
 import { queueOperation } from '../crew/surgeryHandlers';
 import { lyingIn, operationError, operationSec, operationsOf, readyOperation, stockFor, surgeryJobOf, theatreFits } from '../crew/surgery';
 import { SURGERY_STEP_TICKS } from '../crew/tuningSurgery';
@@ -15,7 +16,7 @@ import { TICK_HZ } from '../time';
 
 /**
  * The surgery planner (#311), every `SURGERY_STEP_TICKS`:
- *  - a downed crew member of the player's whose heart or lungs are lost gets an urgent replacement queued at the front, when one is in stock on their ship (the best tier);
+ *  - a downed crew member of the player's whose heart or lungs are lost gets an urgent replacement queued at the front, when one is in stock on their ship (the best tier; named cyberware is never picked, it is the player's to choose);
  *  - an operation at the head of a queue that no longer applies (the part healed, the implant came out) leaves it;
  *  - a surgery job (medical) is posted for a patient lying where their ready operation can be done (crew/surgery.ts `theatreFits`), and dropped once that stops being so.
  * The patient gets there by the recover drive or a rescue (crew/beds.ts `bedUseOf`); the job's end is crew/surgeryOutcome.ts.
@@ -44,8 +45,8 @@ function queueUrgent(sim: Sim, id: number): void {
     let best: { item: string; tier: number } | null = null;
     for (const [item, d] of Object.entries(sim.content.items)) {
       const imp = d.implant;
-      if (imp?.kind !== 'replacement' || imp.slot !== def.slot || (best && imp.tier <= best.tier) || shipStoreCount(sim, shipIdOf(sim, pos), item) < 1) continue;
-      best = { item, tier: imp.tier };
+      if (imp?.kind !== 'replacement' || imp.slot !== def.slot || isNamedImplant(imp) || (best && implantTier(imp) <= best.tier) || shipStoreCount(sim, shipIdOf(sim, pos), item) < 1) continue;
+      best = { item, tier: implantTier(imp) };
     }
     if (best) queueOperation(sim, id, { kind: 'fit', part: inj.part, item: best.item });
   }

@@ -24,7 +24,7 @@ Counts are table rows per status (each row is one entry, so a row that groups se
 | Area | Covers | In game | Partial | Art only | Defined, unused | Debug only | Planned |
 |---|---|---|---|---|---|---|---|
 | [modules](catalog/modules.md) | Modules, furniture, containers, tiers; module art with no def | 49 | 21 | 5 | 2 | 0 | 0 |
-| [items](catalog/items.md) | Items, recipes, ship weapons, hand weapons, crops, ores; item sprites with no def | 70 | 9 | 31 | 0 | 0 | 0 |
+| [items](catalog/items.md) | Items, recipes, ship weapons, hand weapons, crops, ores; item sprites with no def | 70 | 10 | 31 | 0 | 0 | 0 |
 | [crew](catalog/crew.md) | Species, roles, skills, backgrounds, traits, needs, mood, breaks, bonds, schedules, injuries, surgery, implants | 100 | 8 | 0 | 0 | 0 | 3 |
 | [ships-factions](catalog/ships-factions.md) | Ship templates, generator styles, galaxy factions, hull families, derelicts | 36 | 5 | 0 | 0 | 5 | 2 |
 | [stations](catalog/stations.md) | Station kinds, services, shipyard, black markets | 17 | 5 | 0 | 0 | 0 | 1 |

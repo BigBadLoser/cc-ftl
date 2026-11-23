@@ -8,7 +8,7 @@ import { TICK_HZ } from '../time';
 import { canBeInjured, injuriesOf, partDestroyed } from './body';
 import { DownedC, JobC, PositionC, PrioritiesC, RecoveringC, type Job } from './components';
 import { isIncapacitated, refusesWork } from './helpers';
-import { implantDef, implantOn, partTakes } from './implants';
+import { implantDef, implantOn, implantTier, partTakes } from './implants';
 import { DERMAL_PART, OperationsC, type Operation, type OperationKind } from './implantTypes';
 import { STRANDED_RETRY_SEC } from './tuningInjury';
 import {
@@ -164,7 +164,7 @@ export function giveUpSurgery(sim: Sim, id: number): void {
 
 /** How hard the operation is (taken off the chance): by implant tier for fitting and removing, plus a dying patient's urgency. */
 function difficulty(sim: Sim, id: number, op: Pick<Operation, 'kind' | 'part' | 'item'>): number {
-  const tier = implantDef(sim, op.item ?? '')?.tier ?? 1;
+  const tier = implantTier(implantDef(sim, op.item ?? ''));
   const base = op.kind === 'fit' || op.kind === 'remove' ? (tier - 1) * SURGERY_TIER_DIFFICULTY : op.kind === 'repair' ? SURGERY_REPAIR_DIFFICULTY : 0;
   return base + (isUrgent(sim, id, op) ? SURGERY_URGENT_DIFFICULTY : 0);
 }
@@ -181,7 +181,7 @@ export const botchShare = (where: 'rig' | 'bed'): number => (where === 'bed' ? S
 /** Seconds of a surgeon's work the operation takes at work speed 1. */
 export function operationSec(sim: Sim, id: number, op: Pick<Operation, 'kind' | 'part' | 'item'>): number {
   if (isUrgent(sim, id, op)) return SURGERY_URGENT_SEC;
-  const tier = implantDef(sim, op.item ?? '')?.tier ?? 1;
+  const tier = implantTier(implantDef(sim, op.item ?? ''));
   const by: Record<OperationKind, number> = { fit: SURGERY_FIT_SEC + (tier - 1) * SURGERY_FIT_TIER_SEC, remove: SURGERY_REMOVE_SEC, repair: SURGERY_REPAIR_SEC, amputate: SURGERY_AMPUTATE_SEC };
   return by[op.kind];
 }

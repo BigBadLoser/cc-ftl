@@ -8,7 +8,8 @@ Sprites exist for many goods that have no item def (copper, alloy, nanites, stim
 ## Items
 | Name | id | What it does | Status | Where |
 |---|---|---|---|---|
-| Implants (cyber arm, leg, eye, lungs, heart Mk I-III; spinal frame Mk I-II; neural chips Mk I-II for gunnery, piloting, engineering, medical, science; co-processor; reflex booster Mk II-III; dermal armour Mk I-III) | `item.cyber_*`, `item.spinal_frame_*`, `item.chip_*`, `item.reflex_booster_*`, `item.dermal_armor_*` | Fitted by surgery (#311); priced, no source yet | Partial | src/content/implants.ts; placeholder art `item.implant` |
+| Implants (cyber arm, leg, eye, lungs, heart Mk I-III; spinal frame Mk I-III; neural chips Mk I-III for gunnery, piloting, engineering, medical, science; reflex booster Mk I-III; dermal armour Mk I-III; every line has all three tiers) | `item.cyber_*`, `item.spinal_frame_*`, `item.chip_*`, `item.reflex_booster_*`, `item.dermal_armor_*` | Fitted by surgery (#311); priced, no source yet | Partial | src/content/implants.ts; placeholder art `item.implant` |
+| Named cyberware (Halcyon Heart, Neural co-processor): no Mk tier, found only | `item.halcyon_heart`, `item.chip_coprocessor` | Fitted by surgery like any implant (operates as Mk III, never an urgent pick), shown in the named gold; no source yet | Partial | src/content/implants.ts `named`; sim/crew/implants.ts `isNamedImplant` |
 | Hull scrap | `item.scrap_hull` | Stripped from derelicts | In game | src/content/items.ts:7; flak ammo; scrapper -> metal. sim/shipgen/salvage.ts, recipes.ts |
 | Tech scrap | `item.scrap_tech` | Stripped from derelicts | In game | src/content/items.ts:8; scrapper -> electronics, parts |
 | Energy scrap | `item.scrap_energy` | Stripped from derelicts | In game | src/content/items.ts:9; scrapper -> parts, electronics, metal |

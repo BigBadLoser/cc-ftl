@@ -280,7 +280,7 @@ export interface ItemQty {
 }
 
 export interface ItemDef {
-  name: string;
+  name: string; /** A short tooltip line (named cyberware has one). */ description?: string;
   tags: string[];
   /** Most units one floor stack or one storage slot holds. */
   stackSize: number;

@@ -10,6 +10,7 @@ import { TICK_HZ } from '../sim/time';
 import { breakNow, strainOf } from './breakText';
 import { buildBonds } from './bondSnapshot';
 import { buildSocial } from './socialSnapshot';
+import { isNamedItem } from '../sim/crew/implants';
 import { xpGainMult } from '../sim/crew/traits';
 import { carriedCard, suitCard, weaponCard } from './crewItemCards';
 import { buildHealth } from './healthDetail';
@@ -152,7 +153,7 @@ function gearOf(sim: Sim, id: number): UiGearSlot[] {
   const implants = sim.world.get(id, ImplantsC)?.list ?? [];
   for (let i = 0; i < Math.max(1, implants.length); i++) {
     const imp = implants[i];
-    out.push({ slot: 'implant', label: 'Implant', item: imp ? { id: imp.item, name: sim.content.items[imp.item]?.name ?? imp.item, card: null } : null });
+    out.push({ slot: 'implant', label: 'Implant', item: imp ? { id: imp.item, name: sim.content.items[imp.item]?.name ?? imp.item, ...(isNamedItem(sim, imp.item) ? { named: true as const } : {}), card: null } : null });
   }
   return out;
 }

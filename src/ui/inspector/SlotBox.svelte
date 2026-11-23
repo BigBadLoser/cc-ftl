@@ -36,7 +36,7 @@
   {:else}
     {@render box()}
   {/if}
-  <span class="name" class:dim={!slot.item}>{slot.item ? slot.item.name : 'Empty'}{#if slot.item?.note} <small>{slot.item.note}</small>{/if}</span>
+  <span class="name" class:dim={!slot.item} class:t-named={slot.item?.named}>{slot.item ? slot.item.name : 'Empty'}{#if slot.item?.note} <small>{slot.item.note}</small>{/if}</span>
   {#if sub}<span class="sub">{sub}</span>{/if}
   {#if slot.action}<button disabled={slot.action.disabled} data-testid={slot.action.testId} onclick={slot.action.onClick}>{slot.action.label}</button>{/if}
 </div>

@@ -16,7 +16,7 @@
     const g = d?.gear.find((x) => x.slot === kind);
     return {
       key: kind, label: g?.label ?? kind, glyph: GLYPH[kind],
-      item: g?.item ? { icon: g.item.id, name: g.item.name, count: g.item.count, note: g.item.natural ? '(natural)' : undefined, card: g.item.card } : null,
+      item: g?.item ? { icon: g.item.id, name: g.item.name, count: g.item.count, note: g.item.natural ? '(natural)' : undefined, named: g.item.named, card: g.item.card } : null,
       action: kind === 'weapon' && g?.item && !g.item.natural ? { label: 'Stow', testId: 'gear-unequip', onClick: () => api.dispatch({ type: 'crew.unequip', id: c.id }) } : undefined,
     };
   };

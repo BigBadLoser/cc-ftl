@@ -3,8 +3,8 @@ import type { ItemDef, Modifier, SkillName } from '../sim';
 /**
  * Implants (DESIGN.md "Injuries and cyberware", the implant table, #311): items a surgeon fits to a body part (crew/surgery.ts). First-pass numbers from the
  * user-approved table. Replacements set their part's condition (`capacity`, flesh = 1); augments add modifiers beside the flesh part. `load` is the cyber points
- * (heavily augmented at `HEAVY_LOAD`), `ionSec` the shutdown an ion hit will cause (slice 2b), 2 s per load point. Reflex boosters and dermal armour Mk II-III
- * are military: contraband. Placeholder art: the generic implant icon. Not yet in effect: the Mk III eye's dark sight and the Mk III lungs' thin-air work.
+ * (heavily augmented at `HEAVY_LOAD`), `ionSec` the shutdown an ion hit will cause (slice 2b), 2 s per load point. Reflex boosters Mk II-III and dermal armour Mk II-III
+ * are military: contraband (the Mk I booster is a civilian mover's aid). Placeholder art: the generic implant icon. Not yet in effect: the Mk III eye's dark sight and the Mk III lungs' thin-air work.
  */
 
 const add = (stat: Modifier['stat'], value: number): Modifier => ({ stat, op: 'add', value });
@@ -17,9 +17,27 @@ const SKILL_NAMES: Partial<Record<SkillName, string>> = { gunnery: 'gunnery', pi
 const chips = Object.fromEntries(Object.entries(SKILL_NAMES).flatMap(([skill, name]) => [
   [`item.chip_${skill}_1`, { ...base, name: `Neural chip Mk I (${name})`, price: 160, tier: 1, implant: { slot: 'brain', tier: 1, kind: 'augment', mods: [add(skill as SkillName, 1)], ...ion(1) } }],
   [`item.chip_${skill}_2`, { ...base, name: `Neural chip Mk II (${name})`, price: 380, tier: 2, implant: { slot: 'brain', tier: 2, kind: 'augment', mods: [add(skill as SkillName, 2)], ...ion(2) } }],
+  [`item.chip_${skill}_3`, { ...base, name: `Neural chip Mk III (${name})`, price: 900, tier: 3, implant: { slot: 'brain', tier: 3, kind: 'augment', mods: [add(skill as SkillName, 3)], ...ion(3) } }],
 ])) as Record<string, ItemDef>;
 
 const ALL_SKILLS: SkillName[] = ['gunnery', 'piloting', 'shielding', 'melee', 'construction', 'hacking', 'medicine', 'science', 'cooking', 'botany', 'industry'];
+
+/**
+ * Named cyberware: its own kind (`ImplantDef.named`, no Mk tier), found only: never researched, made or sold in a stock list. Same slots as the Mk lines, so
+ * surgery and load work as for any implant; the surgery rules treat one as Mk III (crew/implants.ts `implantTier`). `price` is only what a fence pays.
+ */
+const named = {
+  'item.chip_coprocessor': {
+    ...base, name: 'Neural co-processor', price: 1200,
+    description: 'A brain-stem co-processor of unknown make: every skill a little sharper and the hands a little quicker.',
+    implant: { slot: 'brain', named: true, kind: 'augment', mods: [...ALL_SKILLS.map((s) => add(s, 1)), mul('workSpeed', 1.05)], ...ion(3) },
+  },
+  'item.halcyon_heart': {
+    ...base, name: 'Halcyon Heart', price: 2400,
+    description: 'A legendary heart replacement. Bleed-out takes four times as long and the body heals twice as fast.',
+    implant: { slot: 'heart', named: true, kind: 'replacement', capacity: 1, bleedOutMul: 4, healMul: 2, ...ion(3) },
+  },
+} satisfies Record<string, ItemDef>;
 
 export const implantItems = {
   'item.cyber_arm_1': { ...base, name: 'Cyber arm Mk I', price: 140, tier: 1, implant: { slot: 'arm', tier: 1, kind: 'replacement', capacity: 0.8, ...ion(1) } },
@@ -39,10 +57,11 @@ export const implantItems = {
   'item.cyber_heart_3': { ...base, name: 'Cyber heart Mk III', price: 950, tier: 3, implant: { slot: 'heart', tier: 3, kind: 'replacement', capacity: 1, bleedOutMul: 2, healMul: 1.5, ...ion(3) } },
   'item.spinal_frame_1': { ...base, name: 'Spinal frame Mk I', price: 300, tier: 1, implant: { slot: 'spine', tier: 1, kind: 'replacement', capacity: 0.8, ...ion(2) } },
   'item.spinal_frame_2': { ...base, name: 'Spinal frame Mk II', price: 600, tier: 2, implant: { slot: 'spine', tier: 2, kind: 'replacement', capacity: 1, mods: [add('carryCapacity', 2)], ...ion(3) } },
+  'item.spinal_frame_3': { ...base, name: 'Spinal frame Mk III', price: 1000, tier: 3, implant: { slot: 'spine', tier: 3, kind: 'replacement', capacity: 1.15, mods: [add('carryCapacity', 3)], ...ion(4) } },
   ...chips,
-  'item.chip_coprocessor': {
-    ...base, name: 'Neural co-processor Mk III', price: 1200, tier: 3,
-    implant: { slot: 'brain', tier: 3, kind: 'augment', mods: [...ALL_SKILLS.map((s) => add(s, 1)), mul('workSpeed', 1.05)], ...ion(3) },
+  'item.reflex_booster_1': {
+    ...base, name: 'Reflex booster Mk I', price: 260, tier: 1,
+    implant: { slot: 'spine', tier: 1, kind: 'augment', mods: [mul('moveSpeed', 1.05)], ...ion(1) },
   },
   'item.reflex_booster_2': {
     ...base, tags: ['implant', 'contraband'], name: 'Reflex booster Mk II', price: 520, tier: 2,
@@ -61,4 +80,5 @@ export const implantItems = {
     ...base, tags: ['implant', 'contraband'], name: 'Dermal armour Mk III', price: 900, tier: 3,
     implant: { slot: 'dermal', tier: 3, kind: 'augment', armor: 0.15, contraband: true, ...ion(3) },
   },
+  ...named,
 } satisfies Record<string, ItemDef>;

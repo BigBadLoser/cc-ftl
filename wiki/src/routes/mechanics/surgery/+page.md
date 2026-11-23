@@ -74,14 +74,22 @@ Replacements take no injuries.
 | Cyber eye | Eye | 80% of an eye | as good as flesh, gunnery +1 | 110%, gunnery +1 |
 | Cyber lungs | Lungs | 80% breathing | full breathing, suit air ×1.25 | full breathing, suit air ×1.6 |
 | Cyber heart | Heart | 80% circulation | full circulation, bleeds out ×1.5 slower | full, bleeds out ×2 slower, heals ×1.5 faster |
-| Spinal frame | Spine | 80% moving | full moving, carries more | – |
-| Neural chip | Brain (augment) | +1 to one skill | +2 to one skill | co-processor: +1 to every skill, work ×1.05 |
-| Reflex booster | Spine (augment) | – | move ×1.1, melee +1 | move ×1.15, melee +2 |
+| Spinal frame | Spine | 80% moving | full moving, carries more | 115% moving, carries even more |
+| Neural chip | Brain (augment) | +1 to one skill | +2 to one skill | +3 to one skill |
+| Reflex booster | Spine (augment) | move ×1.05 | move ×1.1, melee +1 | move ×1.15, melee +2 |
 | Dermal armour | Skin (augment) | 5% less weapon damage | 10% | 15% |
 
 Reflex boosters and dermal armour Mk II and III are military hardware: contraband in the hold.
 
-Every implant has a **load** (Mk I 1, Mk II 2, Mk III 3; a spinal frame one more). A crew member at load
+**Named cyberware** is a kind of its own: no Mk tier, and it is only ever found, never made. Its name shows in a muted gold.
+Surgery treats it like a Mk III piece, and an urgent replacement never takes it, so the patient's surgeon fits it by choice.
+
+| Named cyberware | Part | Effect |
+|---|---|---|
+| Halcyon Heart | Heart | full circulation, bleeds out ×4 slower, heals ×2 faster |
+| Neural co-processor | Brain (augment) | +1 to every skill, work ×1.05 |
+
+Every implant has a **load** (Mk I 1, Mk II 2, Mk III 3; a spinal frame one more; named pieces 3). A crew member at load
 <Stat kind="tuning" id="HEAVY_LOAD" /> or more counts as **heavily augmented**, which the zealots respect.
 
 <ComingLater>Where implants come from (research, fabricators, station and black-market stock), ion shutdowns of implants, repairing cyber parts, and crew who love or hate cyberware.</ComingLater>
