@@ -118,6 +118,7 @@ Player-facing changes, newest first. Each dated entry is a deploy of the live ga
 
 ### Fixed
 
+- Medical beds: an empty bed no longer looks switched on, a patient lies with their head on the pillow whichever way the bed faces, and the bed's monitor station draws in front of the patient instead of under them. ([#619](https://github.com/BigBadLoser/cc-ftl/pull/619))
 - Inspections: a jump you queued to fire once the drive charges is called off while inspectors are aboard, instead of carrying them away (which counted as attacking them). The "Before you jump" confirm names any inspectors aboard, and an urgent alert shows when hunters arrive in your node. ([#550](https://github.com/BigBadLoser/cc-ftl/pull/550))
 - Pods: mining pods no longer vanish when they land or show twice when they launch. Robot fabricators and bays, freight containers, the banner post, deck inlay and hazard plate are no longer offered in the build menu. Deconstructing a module marks its footprint in red while the order is pending. Drone bays draw their front posts over docked drones and light their charge contacts while charging. ([#549](https://github.com/BigBadLoser/cc-ftl/pull/549))
 - Hull: odd hull outlines (a one-tile step or nub, as damage and wrecks leave) no longer show the old dark hull underside in cutaway; they take the new hull's underside like the rest of the ship. ([#496](https://github.com/BigBadLoser/cc-ftl/pull/496))
