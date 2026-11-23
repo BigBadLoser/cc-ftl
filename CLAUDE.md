@@ -26,7 +26,7 @@ see `docs/STATUS_ARCHIVE.md` and the October handoff snapshot in `docs/HANDOFF.m
   `.jscpd-semantic-baseline.json`; prints new pairs as markdown, nothing when there are none. Advisory: about a third are real
   "one answer per question" breaks. Fold a real one into its owner; accept a false one with `npm run dup:semantic:accept` and commit
   the baseline. `.github/workflows/dup-semantic.yml` runs it nightly on `main` on the self-hosted `pi` runner (the agent-harness
-  host, CPU embeddings) and keeps one issue updated with new pairs. On ready PRs, `dup-semantic-pr.yml` runs it with
+  host, embeddinggemma on its NPU) and keeps one issue updated with new pairs. On ready PRs, `dup-semantic-pr.yml` runs it with
   `--changed` (only pairs touching the PR's `src/` files) and keeps one advisory PR comment updated.
 - `npm run test:why -- <file>`: how many fast test files an edit to `<file>` selects and through which import;
   `--top` lists the files most tests reach. Use it to keep focused tests off `newGame` and the pipeline.
