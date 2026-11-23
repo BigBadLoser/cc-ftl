@@ -7,7 +7,7 @@ import { addInjury } from './injure';
 import { InjuriesC } from './injuryTypes';
 import { implantDef } from './implants';
 import { ImplantsC, OperationsC, type Operation, type SurgeryOutcome } from './implantTypes';
-import { botchShare, lyingIn, operationError, surgeryChance, theatreFits, theatreOf } from './surgery';
+import { botchShare, lyingIn, operationError, stockFor, surgeryChance, theatreFits, theatreOf } from './surgery';
 
 /**
  * The end of an operation (#311): one roll of the seeded sim rng against the surgeon's chance (crew/surgery.ts `surgeryChance`). Done, it does what the
@@ -91,8 +91,8 @@ export function finishSurgery(sim: Sim, surgeon: number, job: Job): void {
   const bed = job.bed ?? 0;
   const where = theatreOf(sim, bed);
   const pos = sim.world.get(patient, PositionC);
-  // The planner rechecks the job only every SURGERY_STEP_TICKS: the patient may have left the bed, or the rig gone, since.
-  if (!ops || !op || op.id !== job.surgery?.op || !where || !pos || lyingIn(sim, patient) !== bed || !theatreFits(sim, bed, op) || operationError(sim, patient, op)) return;
+  // The planner rechecks the job only every SURGERY_STEP_TICKS: the patient may have left the bed, the rig or the implant gone, since. Every outcome waits for stock.
+  if (!ops || !op || op.id !== job.surgery?.op || !where || !pos || lyingIn(sim, patient) !== bed || !theatreFits(sim, bed, op) || !stockFor(sim, patient, op) || operationError(sim, patient, op)) return;
   const ship = shipIdOf(sim, pos);
   const chance = surgeryChance(sim, surgeon, patient, op, where);
   const r = sim.rng.next();

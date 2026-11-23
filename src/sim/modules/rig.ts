@@ -44,17 +44,18 @@ export function rigPlacementError(
   return beds.some((b) => rigFitsBed(def, x, y, rot, bedDef, b.x, b.y, b.rot)) ? null : 'rigNeedsBedFoot';
 }
 
-/** The rig facing bed `bed` (whatever its state), or 0. */
-export function rigFacing(world: World, modules: Readonly<Record<string, ModuleDef>>, bed: number): number {
+/** The rigs facing bed `bed`, whatever their state: none, or one per long side. */
+export function rigsFacing(world: World, modules: Readonly<Record<string, ModuleDef>>, bed: number): number[] {
   const b = world.get(bed, ModuleC);
   const bedDef = b && modules[b.def];
-  if (!b || !bedDef) return 0;
+  if (!b || !bedDef) return [];
+  const out: number[] = [];
   for (const id of world.query(ModuleC)) {
     const m = world.get(id, ModuleC) as Module;
     const def = modules[m.def];
-    if (def?.rig?.bed === b.def && rigFitsBed(def, m.x, m.y, m.rot, bedDef, b.x, b.y, b.rot)) return id;
+    if (def?.rig?.bed === b.def && rigFitsBed(def, m.x, m.y, m.rot, bedDef, b.x, b.y, b.rot)) out.push(id);
   }
-  return 0;
+  return out;
 }
 
 /** The bed a rig faces (built), or 0: a rig whose bed is gone serves nothing. */

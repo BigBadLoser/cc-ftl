@@ -1,7 +1,7 @@
 import { skillOf } from '../combat/operators';
 import { shipStoreCount } from '../items/stock';
 import { ModuleC } from '../modules/components';
-import { rigFacing } from '../modules/rig';
+import { rigsFacing } from '../modules/rig';
 import { shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
@@ -103,12 +103,14 @@ export const surgeryNeedsRig = (sim: Sim, id: number): boolean => {
 };
 
 /**
- * Is the bed surgery-grade: a powered, intact surgical rig faces its foot (modules/rig.ts `rigFacing`). The one answer for the operation's place, the odds,
+ * Is the bed surgery-grade: a powered, intact surgical rig faces its foot (modules/rig.ts `rigsFacing`; with a rig on each side, either will do). The one answer for the operation's place, the odds,
  * the planner, the bed choice and the Health tab.
  */
 export function surgeryGrade(sim: Sim, bed: number): boolean {
-  const rig = sim.world.get(rigFacing(sim.world, sim.content.modules, bed), ModuleC);
-  return !!rig && rig.hp > 0 && rig.powered && rig.enabled;
+  return rigsFacing(sim.world, sim.content.modules, bed).some((id) => {
+    const rig = sim.world.get(id, ModuleC);
+    return !!rig && rig.hp > 0 && rig.powered && rig.enabled;
+  });
 }
 
 /** Where a module operates: a surgery-grade medical bed (`rig`), a plain one (`bed`; intact, not a recovery pod), or neither. */
