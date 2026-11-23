@@ -83,7 +83,19 @@ export interface DeptRules {
  */
 export interface TrussSpec { banks: [number, number]; perDepth?: number; max?: number; layers: 1 | 2 }
 
+/** A raider blade of the palette (assembly/bladeShapes.ts). */
+export type BladeKind = 'slab' | 'slabPlain' | 'slab2' | 'slab3' | 'spikes2' | 'spikes3' | 'claw' | 'claw2' | 'horn' | 'kink';
+
+/**
+ * Raider blades (PROTOTYPE, #581): hull added to the sides of the body once its rooms are cut (assembly/blades.ts). Each
+ * ship draws which end leads, one fore and one aft blade (a list of `null` for none), and a horn by chance; the leading
+ * end's blade is drawn larger.
+ */
+export interface BladeSpec { fore: readonly (BladeKind | null)[]; aft: readonly (BladeKind | null)[]; horn: number; lead: readonly ('fore' | 'aft')[] }
+
 export interface OutlineRecipe {
+  /** A raider's blades, past its body (PROTOTYPE). */
+  blades?: BladeSpec;
   /** The hull family whose budget it plans with. */
   family: string;
   /** Takes its family's even seeds (a destroyer: every other frigate). */
