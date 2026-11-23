@@ -23,22 +23,22 @@ Counts are table rows per status (each row is one entry, so a row that groups se
 
 | Area | Covers | In game | Partial | Art only | Defined, unused | Debug only | Planned |
 |---|---|---|---|---|---|---|---|
-| [modules](catalog/modules.md) | Modules, furniture, containers, tiers; module art with no def | 46 | 23 | 5 | 2 | 0 | 0 |
+| [modules](catalog/modules.md) | Modules, furniture, containers, tiers; module art with no def | 48 | 21 | 5 | 2 | 0 | 0 |
 | [items](catalog/items.md) | Items, recipes, ship weapons, hand weapons, crops, ores; item sprites with no def | 69 | 8 | 32 | 0 | 0 | 0 |
 | [crew](catalog/crew.md) | Species, roles, skills, backgrounds, traits, needs, mood, breaks, bonds, schedules, injuries | 99 | 7 | 0 | 0 | 0 | 4 |
 | [ships-factions](catalog/ships-factions.md) | Ship templates, generator styles, galaxy factions, hull families, derelicts | 36 | 5 | 0 | 0 | 5 | 2 |
 | [stations](catalog/stations.md) | Station kinds, services, shipyard, black markets | 17 | 5 | 0 | 0 | 0 | 1 |
 | [combat](catalog/combat.md) | Ship combat, boarding, capture, hand weapons, cover | 30 | 2 | 11 | 0 | 0 | 0 |
 | [drones-vehicles-robots](catalog/drones-vehicles-robots.md) | Drones, shuttles, pods, robots | 14 | 1 | 0 | 0 | 0 | 4 |
-| [research-upgrades](catalog/research-upgrades.md) | Research, blueprints, weapon upgrades | 28 | 5 | 0 | 0 | 0 | 1 |
+| [research-upgrades](catalog/research-upgrades.md) | Research, blueprints, weapon upgrades | 31 | 2 | 0 | 0 | 0 | 1 |
 | [economy](catalog/economy.md) | Trade, traders, jobs, contraband, hauling, production | 38 | 0 | 0 | 1 | 0 | 2 |
 | [events-story](catalog/events-story.md) | Events, scenes, goals, lessons, story engine | 27 | 0 | 0 | 0 | 0 | 5 |
-| [galaxy-starmap](catalog/galaxy-starmap.md) | Map generator, structures, jumps, fleets, wars, heat, starmap UI | 22 | 2 | 0 | 0 | 0 | 2 |
+| [galaxy-starmap](catalog/galaxy-starmap.md) | Map generator, structures, jumps, fleets, wars, heat, starmap UI | 25 | 2 | 0 | 0 | 0 | 2 |
 | [environment](catalog/environment.md) | Air, power, fire, heat, light, rooms, hull, roof | 26 | 4 | 0 | 0 | 0 | 1 |
 | [ui](catalog/ui.md) | Windows, panels, menus, kit | 29 | 4 | 0 | 1 | 1 | 1 |
-| [dev-tools](catalog/dev-tools.md) | Scenarios, debug commands, labs, profilers, test tools | 0 | 0 | 0 | 0 | 43 | 0 |
+| [dev-tools](catalog/dev-tools.md) | Scenarios, debug commands, labs, profilers, test tools | 0 | 0 | 0 | 0 | 44 | 0 |
 | [art](catalog/art.md) | Manifest families, art-only sprites, render systems | 16 | 2 | 11 | 0 | 0 | 3 |
-| **Total** | | 497 | 68 | 59 | 4 | 49 | 26 |
+| **Total** | | 503 | 63 | 59 | 4 | 49 | 26 |
 
 ## Commonly confused
 

@@ -123,6 +123,21 @@ describe('alerts', () => {
     expect(current(alerts)).toEqual([]);
   });
 
+  it('a fight between other ships here raises an urgent "Join" alert while it lasts; an ally coming to help only goes to the log (#603)', () => {
+    const sim = newGame(1, content);
+    const node = sim.galaxy.current;
+    sim.sector.engagements = [{ id: 7, kind: 'meeting', node, since: 0, turn: 0, fleets: [[], []], members: [[], []], names: ['Gull', 'Mule'], factions: ['pirates', 'traders'] }];
+    const alerts = createAlerts(sim);
+    const started = { type: 'engagement.started', engagement: 7, node, who: 'Gull', faction: 'pirates', foe: 'Mule', foeFaction: 'traders', ship: 0 } as const;
+    alerts.onEvents([{ ...started, kind: 'aid' }]);
+    expect(current(alerts)).toEqual([]);
+    alerts.onEvents([{ ...started, kind: 'meeting' }]);
+    expect(current(alerts).map((a) => [a.kind, a.text])).toEqual([['fight.nearby', 'Join the fight? Gull attacks Mule']]);
+    sim.sector.engagements = [];
+    alerts.sync();
+    expect(current(alerts)).toEqual([]);
+  });
+
   describe('alerts built from state', () => {
     /** A condition on a new game: `set` makes it true, `clear` resolves it. */
     interface Case { kind: UiAlertKind; set(sim: Sim, crew: number): void; clear(sim: Sim, crew: number): void }

@@ -73,6 +73,8 @@ export default defineConfig({
             { title: 'Ship combat', to: '/mechanics/combat/' },
             { title: 'Boarding and crew fights', to: '/mechanics/boarding/' },
             { title: 'Travel and encounters', to: '/mechanics/encounters/' },
+            { title: 'Fights between other ships', to: '/mechanics/fights/' },
+            { title: 'Other ships at work', to: '/mechanics/traffic/' },
             { title: 'Salvage and derelicts', to: '/mechanics/salvage/' },
             { title: 'Stations and trading', to: '/mechanics/trading/' },
             { title: 'Contraband and inspections', to: '/mechanics/inspections/' },

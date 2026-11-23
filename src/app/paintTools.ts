@@ -1,6 +1,5 @@
 import { asteroidAt, inShip, shipIdAt } from '../sim/regions';
-import { ShipC, Struct, VehicleC, footprintTiles, isBlueprintKnown, isOreTile, isSolidRock, placementError, type Sim } from '../sim';
-import { shipById } from '../sim/combat/shipQuery';
+import { Struct, VehicleC, footprintTiles, isBlueprintKnown, isOreTile, isSolidRock, placementError, type Sim, isPlayers } from '../sim';
 import type { Renderer } from '../render/scene';
 import { ROCK_MASS_Z } from '../render/asteroidView';
 import type { UiBuildKind, UiToolState } from '../ui/api';
@@ -164,7 +163,7 @@ export function createPaintTools(sim: Sim, bridge: Bridge, deps: PaintDeps): Pic
   /** The player's region (home ship or a claimed base) whose rectangle holds the tile, or 0. */
   const mineAt = (x: number, y: number): number => {
     const id = shipIdAt(sim, x, y);
-    return id && sim.world.get(id, ShipC)?.faction === 'player' && inShip(sim, id, x, y) ? id : 0;
+    return id && isPlayers(sim, id) && inShip(sim, id, x, y) ? id : 0;
   };
   const commit = () => {
     const { tool: t, build } = tool.get();
@@ -184,7 +183,7 @@ export function createPaintTools(sim: Sim, bridge: Bridge, deps: PaintDeps): Pic
       const chosen = tool.get().pods ?? [];
       const pods = (chosen.length ? chosen : [...sim.world.query(VehicleC)]).filter((id) => {
         const v = sim.world.get(id, VehicleC);
-        return !!v && !!sim.content.vehicles?.[v.def]?.mining && shipById(sim, v.homeShip)?.faction === 'player';
+        return !!v && !!sim.content.vehicles?.[v.def]?.mining && isPlayers(sim, v.homeShip);
       });
       if (!asteroid) showToast('No ore in that rectangle');
       else if (!pods.length) showToast('No mining pod to send');

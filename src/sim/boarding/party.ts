@@ -1,8 +1,9 @@
 import { markRaiders } from '../capture/coreRaid';
-import { ShipC } from '../combat/components';
+import { CombatC, ShipC } from '../combat/components';
 import { DeadC, PositionC } from '../crew/components';
 import { isIncapacitated } from '../crew/helpers';
-import { EquipC } from '../fight/components';
+import { AllegianceC, EquipC } from '../fight/components';
+import { inEngagement, opposed } from '../galaxy/engagements';
 import { ModuleC } from '../modules/components';
 import { AirlockC, airlockWorking } from '../modules/airlock';
 import { shipIdOf } from '../regions';
@@ -11,12 +12,26 @@ import { BOARDING_MIN_HOME } from '../tuning';
 import { VehicleC, type Boarder } from '../vehicles/components';
 import { dockError } from '../vehicles/handlers';
 import { vehicleDefOf } from '../vehicles/lifecycle';
+import { isPlayers } from '../side';
 
-/** The first free working airlock of the first live player ship, or 0. */
+/**
+ * The ships a ship's boarding party goes for, in order: in a fight between NPC ships here, its foes there (the one it is fighting first: NPCs board
+ * each other as they board the player, #603); otherwise the live player ships.
+ */
+export function boardTargets(sim: Sim, shipId: number): number[] {
+  const live = (id: number): boolean => {
+    const s = sim.world.get(id, ShipC);
+    return !!s && (s.state === 'active' || s.state === 'disabled');
+  };
+  if (!inEngagement(sim, shipId)) return sim.world.query(ShipC).filter((id) => live(id) && isPlayers(sim, id));
+  const prey = sim.world.get(shipId, CombatC)?.prey;
+  const foes = sim.world.query(ShipC).filter((id) => live(id) && opposed(sim, shipId, id));
+  return prey !== undefined && foes.includes(prey) ? [prey, ...foes.filter((id) => id !== prey)] : foes;
+}
+
+/** The first free working airlock of the first ship the shuttle's home ship boards (`boardTargets`), or 0. */
 export function pickAirlock(sim: Sim, vehicle: number): number {
-  for (const sid of sim.world.query(ShipC)) {
-    const s = sim.world.get(sid, ShipC);
-    if (s?.faction !== 'player' || (s.state !== 'active' && s.state !== 'disabled')) continue;
+  for (const sid of boardTargets(sim, sim.world.get(vehicle, VehicleC)?.homeShip ?? 0)) {
     for (const mid of sim.world.query(AirlockC)) {
       if (shipIdOf(sim, sim.world.get(mid, ModuleC)) === sid && airlockWorking(sim, mid) && !dockError(sim, vehicle, mid)) return mid;
     }
@@ -55,6 +70,8 @@ export function startParty(sim: Sim, shipId: number, b: Boarder): boolean {
   b.state = 'loading';
   for (const crew of b.crew) {
     if (weapon) sim.world.add(crew, EquipC, { weapon });
+    const a = sim.world.get(crew, AllegianceC);
+    if (a) a.ship = shipId; // the party serves its ship wherever it goes (fight/relations.ts `crewShipOf`)
     sim.enqueue({ type: 'vehicle.embark', crew, vehicle });
   }
   return true;

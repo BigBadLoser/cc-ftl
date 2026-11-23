@@ -1,7 +1,6 @@
 import { isContraband } from '../blackmarket/services';
 import { INSPECT_SEARCH_SEC, INSPECT_SPOT_TILES } from '../blackmarket/tuning';
 import { CrewC, DeadC, JobC, PositionC, type Job } from '../crew/components';
-import { AllegianceC } from '../fight/components';
 import { ItemStackC, StorageC } from '../items/components';
 import { heldItems } from '../items/held';
 import { makeHaul } from '../items/plan';
@@ -18,6 +17,7 @@ import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { DEFAULT_CARRY_CAPACITY } from '../tuning';
 import { InspectionC, type Inspection } from './types';
+import { isPlayers } from '../side';
 
 /**
  * The search (#138): a search job at each module that can hold goods (storage, and a module with a fitted upgrade), taken only by the inspection's
@@ -146,7 +146,7 @@ export function spotCheck(sim: Sim, vehicle: number, insp: Inspection): void {
   for (const h of heldItems(sim)) {
     if ((h.where !== 'carried' && h.where !== 'wielded') || !isContraband(sim, h.item) || sim.world.has(h.holder, DeadC)) continue;
     const at = sim.world.get(h.holder, PositionC);
-    if (!at || !sim.world.has(h.holder, CrewC) || sim.world.get(h.holder, AllegianceC)?.faction !== 'player' || !eyes.some((e) => near(e, at))) continue;
+    if (!at || !sim.world.has(h.holder, CrewC) || !isPlayers(sim, h.holder) || !eyes.some((e) => near(e, at))) continue;
     h.remove();
     spillItems(sim, insp.ship, Math.round(at.x), Math.round(at.y), h.item, h.count);
   }

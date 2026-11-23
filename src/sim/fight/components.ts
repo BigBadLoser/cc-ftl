@@ -4,6 +4,8 @@ import type { Faction } from '../combat/components';
 /** Which side a crew member fights for. Boarders keep theirs when they land on the enemy ship. */
 export interface Allegiance {
   faction: Faction;
+  /** The ship this crew member serves while away from it: set on a boarding party as it leaves (boarding/party.ts), so two crews of one side tell their ships apart (fight/relations.ts `crewShipOf`). */
+  ship?: number;
 }
 export const AllegianceC = defineComponent<Allegiance>('allegiance');
 
@@ -54,5 +56,7 @@ export interface Prisoner {
   seal?: true;
   /** The galaxy faction whose ship they were taken from (`factionOfShip` when imprisoned): the standing a release earns goes to it wherever they are held. */
   from?: string;
+  /** The side holding them (`side.ts` `sideOf`); absent means the player. */
+  holder?: string;
 }
 export const PrisonerC = defineComponent<Prisoner>('prisoner');

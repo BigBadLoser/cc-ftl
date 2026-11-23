@@ -27,6 +27,18 @@ describe('the news feed in the starmap', () => {
     expect(galaxyIndex(sim.galaxy).nodes.has(near)).toBe(true);
   });
 
+  it('words a war and a peace, for the place in range and as a rumour from afar', () => {
+    const sim = newGame(21, content);
+    const near = [...nodesWithin(sim, sim.galaxy.current, 1)].find(([, d]) => d === 1)![0];
+    let far = '';
+    for (const [id, d] of nodesWithin(sim, sim.galaxy.current, 6)) if (d === 6) far = id;
+    reportNews(sim, { kind: 'war', node: near, who: '', faction: 'navy', foeFaction: 'meridian' });
+    reportNews(sim, { kind: 'peace', node: far, who: '', faction: 'meridian', foeFaction: 'helix' });
+    const texts = buildStarmap(sim).news.map((n) => n.text);
+    expect(texts.some((t) => /Concord Navy declared war on Meridian/.test(t))).toBe(true);
+    expect(texts.some((t) => /have made peace/.test(t))).toBe(true);
+  });
+
   it('is empty in a fresh game and bounded in a long one', () => {
     const sim = newGame(21, content);
     expect(buildStarmap(sim).news).toEqual([]);

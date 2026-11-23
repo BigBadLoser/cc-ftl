@@ -1,7 +1,7 @@
 import { haloTex, makeHalo } from './haloTex';
 import { batchAdditive } from './batch';
 import { animNow } from './animClock';
-import { Sprite, type Container, type Geometry, type Mesh, type Shader } from 'pixi.js';
+import { Sprite, type Geometry, type Mesh, type Shader } from 'pixi.js';
 import type { World } from '../sim/ecs';
 import type { Grid } from '../sim/grid';
 import { ModuleC, type Module } from '../sim/modules/components';
@@ -30,7 +30,6 @@ import { SCHEMES } from './roofArt';
 import type { ShipRuin } from '../sim/combat/components';
 import { createCollarAnimator, dockedAt } from './airlockArt';
 import { layersOf } from './layerPick';
-import { tierBase, tierMark } from './tierArt';
 import type { WallLevel } from './tiles';
 import { createBayAnimator, shuttleHome, steady } from './vehicleBayArt';
 import { cropOverlay } from './cropOverlay';
@@ -97,8 +96,6 @@ interface Part {
 interface Entry {
   sig: string;
   parts: Part[];
-  /** Tier outline and badge (placeholder, see tierArt.ts). */
-  mark?: Container;
 }
 
 /** Depth key of a module sprite drawn on tile (tx, ty): solid modules sit just behind the crew of their tile, flat ones under everything. */
@@ -159,7 +156,6 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
   let painting: keyof HullPaint | undefined;
 
   function dropEntry(e: Entry): void {
-    e.mark?.destroy({ children: true });
     for (const p of e.parts) {
       p.spr.destroy();
       p.glow?.destroy();
@@ -380,12 +376,8 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
         }
         // Modules are in sector tiles; their art is built region-local (the region's containers sit at its sector offset).
         const lm: Module = { ...m, x: m.x - grid.x0, y: m.y - grid.y0 };
-        // A bigger tier draws its base module's art at the base footprint (see tierBase).
-        const tb = def.tierArt ? tierBase(lm, def) : null;
-        const am = tb?.m ?? lm;
-        const ad = tb?.def ?? def;
         const look = { off: !on && m.hp > 0, now, hp: m.hp, maxHp: def.maxHp, has: hasArt(def.asset) };
-        const raw = layersOf(world, id, am, ad, {
+        const raw = layersOf(world, id, lm, def, {
           active, now, livery: host.livery?.(), look,
           airlock: { level, roofed, collar: def.airlock?.layout ? collarAnim.stepOf(id, dockedAt(world, id) !== 0, now) : null },
           bay: def.vehicleBay ? bayAnim.stepOf(id, shuttleHome(world, id), now) : steady(true),
@@ -447,7 +439,7 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
           e = undefined;
         }
         // An animated layer is built from its base frame (which has the glow), then its frames swap texture on the same parts.
-        const fresh = (ls: typeof layers): Entry => ({ sig, parts: build(am, ad, ls, roofed), mark: def.tierArt && !roofed ? L.fx.addChild(tierMark(lm, def, L.scale)) : undefined });
+        const fresh = (ls: typeof layers): Entry => ({ sig, parts: build(lm, def, ls, roofed) });
         if (!e) mods.set(id, (e = fresh(ruined ? layers : layers.map((l) => {
           const base = l.layer.anim && atlas.stat(l.layer.anim);
           return base && base.glow ? { ...l, art: { ...l.art, s: base } } : l;

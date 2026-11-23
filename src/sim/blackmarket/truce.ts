@@ -5,6 +5,7 @@ import { nodeState } from '../galaxy/state';
 import type { Sim } from '../sim';
 import { reputationOf } from '../story/state';
 import { BAN_TURNS, BREACH_STANDING } from './tuning';
+import { PLAYER } from '../side';
 
 /**
  * The truce of a black market's node. It is a flag on the node (`NodeState.truce`) that a market service sets when it is attached (attach.ts), so it
@@ -55,7 +56,7 @@ export function applyBan(sim: Sim, node: string): void {
   for (const id of [...sim.world.query(ShipC)].sort((a, b) => a - b)) {
     const s = sim.world.get(id, ShipC);
     if (!s) continue;
-    if (ban && s.faction !== 'player' && s.faction !== 'hostile' && s.faction !== 'rogue' && s.banned === undefined && (s.state === 'active' || s.state === 'disabled')) {
+    if (ban && s.faction !== PLAYER && s.faction !== 'hostile' && s.faction !== 'rogue' && s.banned === undefined && (s.state === 'active' || s.state === 'disabled')) {
       s.banned = s.faction;
       turnCrew(sim, id, s.faction, 'hostile');
       s.faction = 'hostile';

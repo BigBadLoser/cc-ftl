@@ -1,4 +1,4 @@
-import { AssignmentC, CombatC, CrewC, DeadC, DownedC, HealthC, JobC, ModuleC, PositionC, ShipC, WeaponC, type Sim } from '../sim';
+import { AssignmentC, CombatC, CrewC, DeadC, DownedC, HealthC, JobC, ModuleC, PositionC, ShipC, WeaponC, type Sim, PLAYER } from '../sim';
 import { footprintTiles } from '../sim/modules/footprint';
 import { targetableVehicle, weaponAntiVehicle } from '../sim/combat/targets';
 import { playerCrewAboard } from '../sim/boarding/aboard';
@@ -16,7 +16,7 @@ export function buildBoarding(sim: Sim): UiBoarding[] {
   const out: UiBoarding[] = [];
   for (const id of sim.world.query(ShipC)) {
     const ship = sim.world.get(id, ShipC);
-    if (!ship || id === home || ship.faction === 'player') continue;
+    if (!ship || id === home || ship.faction === PLAYER) continue;
     const aboard = playerCrewAboard(sim, id);
     // The party of the boarding site on this ship: one recalled, or aboard its shuttle, is listed 'returning' until they step out at home.
     const ofSite = sim.world.query(AwayC).filter((c) => sim.world.get(c, AwayC)!.site === id && sim.world.has(c, CrewC) && !sim.world.has(c, DeadC));

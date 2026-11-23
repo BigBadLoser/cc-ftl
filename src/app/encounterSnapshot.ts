@@ -1,7 +1,5 @@
 import { podOf } from './podSnapshot';
-import {
-  bribeCost, contrabandAboard, choicesOf, evadeOdds, galaxyIndex, hostilesPresent, isHostileFaction, leaveBlocker, type Encounter, type Sim,
-} from '../sim';
+import { bribeCost, contrabandAboard, choicesOf, evadeOdds, galaxyIndex, hostilesPresent, isHostileFaction, leaveBlocker, type Encounter, type Sim, PLAYER } from '../sim';
 import type { UiEncounter, UiEncounterChoice, UiEncounterResult, UiEventGrid } from '../ui/starmapApi';
 import { toneOf } from './starmapTone';
 import { patrolHailOf } from './comms/patrolComms';
@@ -95,9 +93,9 @@ function rosterRow(sim: Sim, c: Contact, extra: { helpless?: boolean; hailed?: b
   if (extra.gone || s?.state === 'fled') return { ...row, ship: 0, status: 'Jumped away', tone: 'dim' };
   if (!s) return { ...row, status: 'Inbound', tone: 'dim' };
   if (s.state === 'wreck') return { ...row, status: 'Wreck', tone: 'dim' };
-  if (s.state === 'prize' || s.faction === 'player') return { ...row, status: 'Taken', tone: 'green' };
+  if (s.state === 'prize' || s.faction === PLAYER) return { ...row, status: 'Taken', tone: 'green' };
   if (s.state === 'disabled') return { ...row, status: 'Disabled', tone: 'amber' };
-  if (factionsHostile(s.faction, 'player')) return { ...row, status: 'Hostile', tone: 'red' };
+  if (factionsHostile(s.faction, PLAYER)) return { ...row, status: 'Hostile', tone: 'red' };
   if (extra.visit === 'asked') return { ...row, status: 'Asks to dock', tone: 'amber' };
   if (extra.visit === 'granted') return { ...row, status: 'Shuttle docking', tone: 'amber' };
   if (extra.visit === 'delivered') return { ...row, status: 'Debt paid', tone: 'green' };
@@ -131,7 +129,7 @@ function aidOf(sim: Sim): UiEventGrid['aid'] {
   const ship = id === undefined ? undefined : sim.world.get(id, ShipC);
   if (!spec || !s || id === undefined || !ship) return null;
   const name = ship.name ?? s.contact.name ?? 'The ship';
-  const alive = (ship.state === 'active' || ship.state === 'disabled') && !factionsHostile(ship.faction, 'player');
+  const alive = (ship.state === 'active' || ship.state === 'disabled') && !factionsHostile(ship.faction, PLAYER);
   const site = sim.world.get(id, AwaySiteC);
   const a = s.aid;
   const action = !alive ? null : !a ? 'offer' : a.state === 'agreed' && a.sent && !site ? 'resend' : null;
