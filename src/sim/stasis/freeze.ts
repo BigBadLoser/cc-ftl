@@ -10,6 +10,7 @@ import { storageCount, storageTake } from '../items/storage';
 import { ModuleC } from '../modules/components';
 import { shipIdAt, shipIdOf } from '../regions';
 import type { Sim } from '../sim';
+import { holderOf } from '../side';
 import { SLOT_EMPTY, SLOT_NONE, SlabRackC, StasisC, StasisWheelC, type SlabSource } from './components';
 import { floorSpot, standSpot } from './place';
 import { slabPlace, wheelHatch, wheelOf } from './query';
@@ -204,6 +205,7 @@ export function thawPrisoner(sim: Sim, prisoner: number): void {
   if (!out) return;
   const ship = out.ship;
   const at = standSpot(sim, ship, out);
+  const holder = holderOf(sim, prisoner); // read before the prisoner goes: the log line belongs to whoever held them
   sim.world.remove(prisoner, PrisonerC);
   sim.world.remove(prisoner, SurrenderedC);
   sim.world.add(prisoner, PositionC, { x: at.x, y: at.y, toX: at.x, toY: at.y, progress: 0, facing: 0 });
@@ -214,5 +216,5 @@ export function thawPrisoner(sim: Sim, prisoner: number): void {
   if (f) Object.assign(f, { mode: 'idle', target: 0, ordered: 0, engage: true });
   const crew = sim.world.get(prisoner, CrewC) as Crew | undefined;
   if (crew) crew.activity = downed ? 'downed' : 'drafted';
-  sim.events.emit({ type: 'stasis.thawed', crew: prisoner, ship, x: at.x, y: at.y });
+  sim.events.emit({ type: 'stasis.thawed', crew: prisoner, ship, x: at.x, y: at.y, holder });
 }

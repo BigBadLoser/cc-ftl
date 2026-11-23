@@ -4,14 +4,13 @@ import { PrisonerC } from '../fight/components';
 import { ModuleC } from '../modules/components';
 import { shipIdAt, shipIdOf } from '../regions';
 import type { Sim } from '../sim';
-import { playerShips } from '../story/world';
 import { PLAN_INTERVAL } from '../tuning';
 import { StasisC } from './components';
 import { dropSlab, thawPrisoner } from './freeze';
 import { keepCartRests } from './cart';
 import { aimFetch, postSlabJob, slabDestination, stasisRoom } from './jobs';
 import { tendShuttles } from './shuttle';
-import { scrapSealJob, sealMarked } from './order';
+import { holdsHere, scrapSealJob, sealMarked } from './order';
 import { cartsFor, fullSlabs, slabDraining, slabHeld, wheelHatch, wheelOf } from './query';
 import { REFILL_PER_TICK, RESERVE_TICKS } from './tuning';
 import { VehicleC } from '../vehicles/components';
@@ -27,8 +26,8 @@ const ACT_WORK = 1;
  *    wheel refills REFILL_PER_TICK a tick;
  *  - slabs by shuttle (shuttle.ts): a slab whose shuttle is gone is lost, a shuttle home from a prize sets its full slabs down and stocks its rack,
  *    and a prize with prisoners marked and no wheel of its own gets a shuttle run;
- *  - every PLAN_INTERVAL ticks the 'stasis' jobs (hauling) are kept or dropped, slabs on the floor get a pickup job and prisoners on the player's
- *    ships the player marked (stasis/order.ts) get a seal job, while the ship's wheels have room (`stasisRoom`) and, for a seal, an empty slab is to be had.
+ *  - every PLAN_INTERVAL ticks the 'stasis' jobs (hauling) are kept or dropped, slabs on the floor get a pickup job and prisoners on the holder's
+ *    ships (the player's, marked by the player, or an NPC captor's: stasis/order.ts `holdsHere`) get a seal job, while the ship's wheels have room (`stasisRoom`) and, for a seal, an empty slab is to be had.
  */
 export function stasisSystem(sim: Sim): void {
   for (const id of fullSlabs(sim)) {
@@ -64,7 +63,6 @@ function planJobs(sim: Sim): void {
     if (keep(sim, job) && !handled.has(job.target ?? 0)) handled.add(job.target ?? 0);
     else scrapSealJob(sim, jid);
   }
-  const ships = playerShips(sim);
   const room = new Map<number, number>();
   const roomOf = (ship: number): number => {
     if (!room.has(ship)) room.set(ship, stasisRoom(sim, ship));
@@ -78,13 +76,13 @@ function planJobs(sim: Sim): void {
   for (const id of fullSlabs(sim)) {
     const s = sim.world.get(id, StasisC);
     const ship = s ? shipIdAt(sim, s.x, s.y) : 0;
-    if (!s || s.at !== 'floor' || handled.has(id) || !ships.has(ship) || !slabDestination(sim, ship, s) || !take(ship)) continue;
+    if (!s || s.at !== 'floor' || handled.has(id) || !holdsHere(sim, id, ship) || !slabDestination(sim, ship, s) || !take(ship)) continue;
     postSlabJob(sim, s, id, { phase: 'pickup' });
   }
   for (const id of [...sim.world.query(PrisonerC, PositionC, CrewC)].sort((a, b) => a - b)) {
     const pos = sim.world.get(id, PositionC);
     const ship = shipIdOf(sim, pos);
-    if (!pos || handled.has(id) || !ships.has(ship) || !sealMarked(sim, id) || !sealable(sim, id) || roomOf(ship) <= 0) continue;
+    if (!pos || handled.has(id) || !holdsHere(sim, id, ship) || !sealMarked(sim, id) || !sealable(sim, id) || roomOf(ship) <= 0) continue;
     const job: Job = { category: 'hauling', kind: 'stasis', x: pos.x, y: pos.y, struct: 0, work: ACT_WORK, progress: 0, reservedBy: 0, target: id, stasis: { phase: 'fetch' } };
     if (!aimFetch(sim, job, job.stasis!, ship, origin(pos))) continue; // no empty slab on this ship
     take(ship);
@@ -107,7 +105,7 @@ function keep(sim: Sim, job: Job): boolean {
   if (st.phase === 'unstow') return st.lifted ? !!job.reservedBy && cartsFor(sim, job.reservedBy, prisoner) : sim.world.get(prisoner, StasisC)?.at === 'wheel';
   if (st.phase === 'fetch' || st.phase === 'seal') {
     const pos = sim.world.get(prisoner, PositionC);
-    if (!pos || !sealMarked(sim, prisoner) || !sealable(sim, prisoner) || !playerShips(sim).has(shipIdOf(sim, pos))) return false;
+    if (!pos || !sealMarked(sim, prisoner) || !sealable(sim, prisoner) || !holdsHere(sim, prisoner, shipIdOf(sim, pos))) return false;
     if (job.reservedBy) {
       if (st.phase === 'seal') Object.assign(job, origin(pos));
       return true;

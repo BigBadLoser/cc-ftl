@@ -13,6 +13,7 @@ import { VehicleC, type Vehicle } from '../vehicles/components';
 import { occupants } from '../vehicles/lifecycle';
 import { boardingSite } from './launch';
 import { cancelSabotage } from './sabotage';
+import { PLAYER } from '../side';
 
 /**
  * `crew.recall` (#287): boarders called home. Their sabotage orders end (`cancelled`); the away site's run brings them aboard and home
@@ -47,7 +48,7 @@ function joinLanded(sim: Sim, ids: readonly number[]): void {
     if (!pos || sim.world.has(c, AwayC) || notRecallable(sim, c) === 'noCrew') continue;
     const ship = shipIdOf(sim, pos);
     const host = shipById(sim, ship);
-    if (!host || host.faction === 'player') continue;
+    if (!host || host.faction === PLAYER) continue;
     let site = sim.world.get(ship, AwaySiteC);
     if (!site) {
       const v = landedShuttle(sim, c, ship);

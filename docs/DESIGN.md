@@ -845,6 +845,9 @@ Built in slices 2a and 2b (#295); ARCHITECTURE.md "Away sites and the air drive"
 
 ## Starmap and factions
 
+- **NPCs treat each other as they treat the player** (user, 2026-11-21): they fight, board, take ships and defend against each other through the
+  same systems as the player. See "One answer per question" in `ARCHITECTURE.md`.
+
 - **Galaxy:** endless, generated in chunks as you push outward, shaped by a terrain of dense filaments, nebula clouds and **rifts** (voids).
   Space is grouped three ways: nodes make a **sector** (6 to 12 nodes around a **central body**: a star, red dwarf, blue giant, gas giant,
   nebula or black hole; the nodes take a layout such as a cloud, streak, ring, fork or corridor), sectors make a **cluster**, clusters
@@ -1314,6 +1317,13 @@ are unchanged. After the answer the window stays open with how it ended and the 
     the airlock and carted back to a wheel; one already out in the player's shuttle rides home and is set down by the bay. A shuttle destroyed with
     the slab aboard loses the prisoner (logged). A run called off is not retried on its own: accept the deal again.
   - Recruiting is not in this slice: it happens over time aboard.
+- **NPC captors use the same system (user decision, 2026-11-21; #615):** one system for each mechanic, whoever acts. A ship taken in a fight
+  between NPC ships makes its beaten crew the captor's prisoners (the prisoner records who holds it, `Prisoner.holder`; the player's carry none).
+  Where the ship has a stasis wheel with a free slot, the captor's crew on board seal them and cart the slabs to it with the same jobs the player's
+  crew use, with no mark to set: the captor decides for itself. No wheel or no free slot: the captives stay aboard. A prisoner an NPC holds is
+  not the player's: no prisoner panel, ransom, release or alert. Built for a wheel on the taken ship itself; NPC hulls have no wheel yet, so in
+  normal play nothing changes until ship generation adds them, and carrying slabs to a wheel on another ship of the captor (a shuttle run), rescuing
+  captives, ransom between factions and black markets selling captives are later work.
 - **What to do with prisoners:** recruit one over time (odds by faction and mood), ransom them to their faction (credits
   and a little standing), hand pirate prisoners to navy or corporation stations for a bounty (credits and standing), hand
   them over at a black market (credits, and cartel standing), or release them (standing with their faction).

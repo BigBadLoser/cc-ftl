@@ -18,6 +18,7 @@ import { TURN_TICKS } from './tuning';
 import { FTL_CHARGE_SEC } from '../tuning';
 import { crossAfterHop, interdicted } from './encounters';
 import { liftFleetsAt, materialiseFleetsAt } from './fleetShips';
+import { settleEngagements } from './engagementFlow';
 import { bindMarkets, unbindMarkets } from './marketLive';
 import { populateNode } from './populate';
 import { placeWrecks } from './wrecks';
@@ -101,6 +102,7 @@ export function jump(sim: Sim, ship: number, route: readonly string[], withDocke
   burnFuel(sim, fuel, ship);
   settleLosses(sim);
   unbindMarkets(sim);
+  settleEngagements(sim);
   liftFleetsAt(sim, g.current);
   enterHyperspace(sim, ship, withDocked ?? false);
   // The node left keeps its ships in its archive: no descriptors of it remain.
@@ -227,6 +229,7 @@ export function flee(sim: Sim, ship: number): boolean {
   abortPatrolStop(sim);
   settleLosses(sim);
   unbindMarkets(sim);
+  settleEngagements(sim);
   liftFleetsAt(sim, g.current);
   enterHyperspace(sim, ship, false);
   const left = g.nodes[g.current];
@@ -269,6 +272,7 @@ export function teleport(sim: Sim, to: string): boolean {
   const from = g.current;
   settleLosses(sim);
   unbindMarkets(sim);
+  settleEngagements(sim);
   liftFleetsAt(sim, from);
   enterHyperspace(sim, me.id, false);
   const left = g.nodes[from];

@@ -1,4 +1,4 @@
-import { ModuleC, ShipC, Struct, type Sim } from '../sim';
+import { ModuleC, ShipC, Struct, type Sim, PLAYER } from '../sim';
 import { factionsHostile } from '../sim/combat/factions';
 import { provokable } from '../sim/combat/provoke';
 import { targetableShip } from '../sim/combat/targets';
@@ -24,7 +24,7 @@ export function aimTargetAt(sim: Sim, shipId: number, x: number, y: number): { m
 export function aimable(sim: Sim, shipId: number, x: number, y: number): boolean {
   const ship = sim.world.get(shipId, ShipC);
   const grid = shipGrid(sim, shipId);
-  const foe = !!ship && (factionsHostile(ship.faction, 'player') || (!!sim.sector.stations && provokable(sim, shipId)));
+  const foe = !!ship && (factionsHostile(ship.faction, PLAYER) || (!!sim.sector.stations && provokable(sim, shipId)));
   return !!ship && !!grid && foe && ship.state !== 'wreck' && targetableShip(sim, shipId)
     && grid.inBounds(x, y) && grid.get('struct', x, y) !== Struct.Space;
 }

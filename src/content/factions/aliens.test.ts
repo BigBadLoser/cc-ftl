@@ -18,7 +18,8 @@ const sacsOn = (sim: Sim, id: number) => sim.world.query(EggSacC).filter((s) => 
 describe('derelict infestations', () => {
   it('old civilian and scrapper wrecks carry dormant egg sacs and a nest as entities, not static dressing', () => {
     for (const f of ['faction.civilian', 'faction.scrapper']) {
-      const { sim, id } = derelict(f, 'decay', 4);
+      // Seed 3: a hull with room for the nest (#603's pod bays on civilian mining hulls moved seed 4's civilian wreck to one without).
+      const { sim, id } = derelict(f, 'decay', 3);
       const sacs = sacsOn(sim, id);
       expect(sacs.length).toBeGreaterThan(0);
       expect(sacs.every((s) => sim.world.get(s, EggSacC)?.state === 'dormant')).toBe(true);

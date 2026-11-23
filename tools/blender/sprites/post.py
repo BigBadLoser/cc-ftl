@@ -319,9 +319,10 @@ def outline(rgb, opaque, quant, vertical_only=False):
     return rgb, op | ring
 
 
-def glow_down(rgb, S, thresh=3):
-    """rgb (H*S,W*S,3) 0..255 emission render. Returns (h,w,4) uint8, premultiplied-friendly (black = nothing)."""
-    lit = rgb.max(-1) > 40
+def glow_down(rgb, S, thresh=3, floor=40):
+    """rgb (H*S,W*S,3) 0..255 emission render. Returns (h,w,4) uint8, premultiplied-friendly (black = nothing).
+    A sample counts as lit above `floor` (a soft volume, an exhaust plume, passes a lower one to keep its fade)."""
+    lit = rgb.max(-1) > floor
     lb, rb = blocks(lit, S), blocks(rgb, S)
     cnt = lb.sum(-1)
     mean = (rb * lb[..., None]).sum(2) / np.maximum(cnt, 1)[..., None]

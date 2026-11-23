@@ -1,9 +1,8 @@
-import { shipById } from '../combat/shipQuery';
 import { CrewC, DeadC, PositionC } from '../crew/components';
 import { origin } from '../crew/helpers';
-import { AllegianceC } from '../fight/components';
 import { shipGrid, shipIdOf } from '../regions';
 import type { Sim } from '../sim';
+import { isPlayers } from '../side';
 
 /** Where the player's crew stand on another ship: for the friendly-fire warning ("Your crew aboard") and the room marks. */
 export interface PlayerAboard {
@@ -24,12 +23,12 @@ export interface PlayerAboard {
 export function playerCrewAboard(sim: Sim, shipId: number): PlayerAboard {
   const out: PlayerAboard = { crew: [], tiles: [], rooms: [] };
   const grid = shipGrid(sim, shipId);
-  if (!grid || shipById(sim, shipId)?.faction === 'player') return out;
+  if (!grid || isPlayers(sim, shipId)) return out;
   const seen = new Set<number>();
   const rooms = new Set<number>();
   for (const id of sim.world.query(CrewC, PositionC)) {
     const pos = sim.world.get(id, PositionC);
-    if (!pos || sim.world.has(id, DeadC) || sim.world.get(id, AllegianceC)?.faction !== 'player' || shipIdOf(sim, pos) !== shipId) continue;
+    if (!pos || sim.world.has(id, DeadC) || !isPlayers(sim, id) || shipIdOf(sim, pos) !== shipId) continue;
     out.crew.push(id);
     const t = origin(pos);
     const key = t.y * 100000 + t.x;

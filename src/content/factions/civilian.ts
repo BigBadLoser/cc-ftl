@@ -36,7 +36,7 @@ export const civilian = {
       aspect: [3, 7], depth: {}, batteryCols: [1, 1], sponsonChance: 0, sectionRooms: 3, propulsion: ['bank'],
     },
     {
-      id: 'mining', hullPerRoomTile: 3.1, weight: { base: 3, perDepth: 0, max: 3 }, bonus: { crates: 6 }, grammars: [{ value: 'mining', weight: 1 }],
+      id: 'mining', hullPerRoomTile: 3.1, weight: { base: 3, perDepth: 0, max: 3 }, bonus: { crates: 6 }, pods: 1, grammars: [{ value: 'mining', weight: 1 }],
       aspect: [2, 4], depth: {}, batteryCols: [1, 1], sponsonChance: 0, sectionRooms: 3, propulsion: ['bank'],
     },
     {

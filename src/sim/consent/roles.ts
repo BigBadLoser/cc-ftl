@@ -1,9 +1,9 @@
 import { PositionC } from '../crew/components';
-import { AllegianceC } from '../fight/components';
 import { shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { ForHireC, StationCrewC } from '../stations/components';
 import { guestGrant } from './guests';
+import { isPlayers } from '../side';
 
 /**
  * What a person is to the ship they stand on: the one place that reads the marker components (ForHireC, StationCrewC, a ConsentC grant, the player's
@@ -19,7 +19,7 @@ export type PersonRole = 'crew' | 'recruit' | 'station' | 'passenger' | 'guest' 
 
 /** The role of `person`, aboard `ship` (default: the ship under their feet). */
 export function roleOf(sim: Sim, person: number, ship?: number): PersonRole {
-  if (sim.world.get(person, AllegianceC)?.faction === 'player') return 'crew';
+  if (isPlayers(sim, person)) return 'crew';
   if (sim.world.has(person, ForHireC)) return 'recruit';
   if (sim.world.has(person, StationCrewC)) return 'station';
   const pos = sim.world.get(person, PositionC);

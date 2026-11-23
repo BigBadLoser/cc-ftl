@@ -1,4 +1,4 @@
-import { CrewC, ShipC, siteIds, siteStatus, type Sim, type SiteBlock, type SiteStatus } from '../sim';
+import { CrewC, siteIds, siteStatus, type Sim, type SiteBlock, type SiteStatus, isPlayers } from '../sim';
 import { shipGrid } from '../sim/regions';
 import type { UiSite } from '../ui/api';
 
@@ -36,7 +36,7 @@ export function buildSites(sim: Sim): UiSite[] {
   const out: UiSite[] = [];
   for (const id of siteIds(sim)) {
     const s = siteStatus(sim, id);
-    if (s && sim.world.get(s.ship, ShipC)?.faction === 'player') out.push(uiSite(sim, s));
+    if (s && isPlayers(sim, s.ship)) out.push(uiSite(sim, s));
   }
   return out;
 }

@@ -1,6 +1,4 @@
-import {
-  CrewC, ForHireC, ShipC, TraderC, VehicleC, type Trader, hailVerdict, isSurplus, planCourier, playerItems, playerShip, profileFor, commitments, liveDealWith, reputationWith, unitPrice, type Deal, type Sim,
-} from '../sim';
+import { CrewC, ForHireC, ShipC, TraderC, VehicleC, type Trader, hailVerdict, isSurplus, planCourier, playerItems, playerShip, profileFor, commitments, liveDealWith, reputationWith, unitPrice, type Deal, type Sim, PLAYER } from '../sim';
 import { fetching } from '../sim/galaxy/recruit';
 import { contrabandRate, isContraband, setsOf, truceBanned, truceHolds } from '../sim';
 import { isIncapacitated } from '../sim/crew/helpers';
@@ -76,7 +74,7 @@ export function buildTrade(sim: Sim, log?: StationLog): UiTrade {
   const candidates = [...sim.world.query(ShipC), ...sim.world.query(TraderC).filter((i) => !sim.world.has(i, ShipC))];
   for (const id of candidates) {
     const ship = sim.world.get(id, ShipC);
-    if (ship && (ship.faction === 'player' || ship.outpost?.hidden || (ship.state !== 'active' && ship.state !== 'disabled'))) continue;
+    if (ship && (ship.faction === PLAYER || ship.outpost?.hidden || (ship.state !== 'active' && ship.state !== 'disabled'))) continue;
     const trader = sim.world.get(id, TraderC);
     const profile = trader?.profile ?? (ship ? profileFor(sim, ship) : null);
     const hail = sim.trade.hails.find((h) => h.ship === id);

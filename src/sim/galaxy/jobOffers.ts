@@ -1,5 +1,5 @@
 import type { Sim } from '../sim';
-import { atWar } from './clash';
+import { atWar } from './relations';
 import { nodesWithin } from './graph';
 import { hash32, strHash, unit } from './hash';
 import { shipNameFor } from './names';

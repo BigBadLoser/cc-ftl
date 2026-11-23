@@ -1,7 +1,8 @@
 import { ModuleC } from '../modules/components';
 import type { Sim } from '../sim';
-import { WeaponC, type Combat, type Faction, type Target } from './components';
-import { factionsHostile, rogueAlly } from './factions';
+import { WeaponC, type Combat, type Target } from './components';
+import { shipsHostile } from './engage';
+import { factionsHostile } from './factions';
 import { VehicleC } from '../vehicles/components';
 
 import { shipIdOf } from '../regions';
@@ -26,11 +27,15 @@ export function weaponAntiVehicle(sim: Sim, weaponId: number): boolean {
   return !!weaponDefOf(sim, weaponId)?.antiVehicle;
 }
 
-/** True if a shuttle is targetable and its home ship's faction is at war with `faction` (a captured home ship makes it friendly). */
-export function hostileVehicle(sim: Sim, id: number, faction: Faction): boolean {
+/**
+ * True if a shuttle is targetable and its home ship is a foe of `ship` (`shipsHostile`: at war by side, or the other side of a fight between NPC
+ * ships here; a captured home ship makes it friendly). A shuttle whose home ship is gone counts as neutral.
+ */
+export function hostileVehicle(sim: Sim, id: number, ship: number): boolean {
   const v = sim.world.get(id, VehicleC);
-  if (faction === 'rogue' && rogueAlly(sim, v?.homeShip ?? 0)) return false;
-  return !!v && targetableVehicle(sim, id) && factionsHostile(faction, shipById(sim, v.homeShip)?.faction ?? 'neutral');
+  if (!v || !targetableVehicle(sim, id)) return false;
+  if (shipById(sim, v.homeShip)) return shipsHostile(sim, ship, v.homeShip);
+  return factionsHostile(shipById(sim, ship)?.faction, 'neutral');
 }
 
 /** Module ids on a grid, ascending. */

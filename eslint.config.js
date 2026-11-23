@@ -39,7 +39,16 @@ const noAssignmentWrites = [
   { selector: "AssignmentExpression > MemberExpression.left Identifier[name='AssignmentC']", message: assignmentMsg },
 ];
 
+// Whose is this: the player's side is `PLAYER` and every ownership question goes through src/sim/side.ts (docs/ARCHITECTURE.md "One answer per question").
+const noPlayerLiteral = [
+  {
+    selector: "BinaryExpression[operator=/^[!=]==?$/] > Literal[value='player']",
+    message: "Don't compare with the 'player' literal: ask side.ts (isPlayers, sideOf, shipsOf, crewOf...), or compare with PLAYER when only a faction id is at hand.",
+  },
+];
+
 const simSyntax = [
+  ...noPlayerLiteral,
   {
     selector: "BinaryExpression[operator=/^[-+]$/][left.type='MemberExpression'][left.object.name=/^(ship|s|sh)$/][left.property.name=/^[xy]$/][right.type='MemberExpression'][right.property.name=/^[xy]$/]",
     message: 'Positions are sector tiles: no ship-origin + local sums (step 6).',
@@ -101,7 +110,12 @@ export default tseslint.config(
   {
     files: ['src/app/**/*.ts', 'src/render/**/*.ts', 'src/ui/**/*.ts', 'src/ui/**/*.svelte'],
     ignores: ['src/**/*.test.ts'],
-    rules: { 'no-restricted-syntax': ['error', ...noAssignmentWrites] },
+    rules: { 'no-restricted-syntax': ['error', ...noPlayerLiteral, ...noAssignmentWrites] },
+  },
+  {
+    files: ['src/content/**/*.ts'],
+    ignores: ['src/**/*.test.ts'],
+    rules: { 'no-restricted-syntax': ['error', ...noPlayerLiteral] },
   },
   {
     files: ['src/sim/**/*.test.ts'],

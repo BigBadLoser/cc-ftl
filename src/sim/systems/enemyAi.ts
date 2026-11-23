@@ -1,8 +1,8 @@
 
 import { truceHolds } from '../blackmarket/truce';
-import { CombatC, ShipC, type Combat, type Ship } from '../combat/components';
+import { CombatC, ShipC, type Combat } from '../combat/components';
 import { isDormant } from '../combat/dormant';
-import { factionsHostile, isAiFaction, rogueAlly } from '../combat/factions';
+import { aiRuns, atBattle, shipsHostile } from '../combat/engage';
 import { shipCanAct } from '../combat/shipQuery';
 import { hostileVehicle, modulesOnGrid, randomModule } from '../combat/targets';
 import { ModuleC } from '../modules/components';
@@ -11,6 +11,7 @@ import { BoarderC, VehicleC } from '../vehicles/components';
 import { partyOut } from '../boarding/partyOut';
 import { AI_RETARGET_TICKS, AI_THREAT_SEC, FLEE_BELOW, FTL_CHARGE_SEC } from '../tuning';
 import { TICK_HZ } from '../time';
+import { PLAYER } from '../side';
 
 /**
  * Enemy doctrine. Hostile and rogue active ships (a) retreat via combat.flee once integrity < FLEE_BELOW and the FTL drive
@@ -25,7 +26,7 @@ export function enemyAiSystem(sim: Sim): void {
   for (const id of sim.world.query(ShipC, CombatC)) {
     const ship = sim.world.get(id, ShipC);
     const combat = sim.world.get(id, CombatC);
-    if (!ship || !combat || !isAiFaction(ship.faction) || !shipCanAct(ship) || !sim.sector.inCombat || isDormant(ship)) continue;
+    if (!ship || !combat || !aiRuns(sim, id) || !shipCanAct(ship) || !atBattle(sim, id) || isDormant(ship)) continue;
     if (!ship.immobile && ship.integrity < FLEE_BELOW && combat.ftl >= FTL_CHARGE_SEC) {
       sim.enqueue({ type: 'combat.flee', ship: id });
       continue;
@@ -39,12 +40,12 @@ export function enemyAiSystem(sim: Sim): void {
       combat.aiTimer--;
       continue;
     }
-    const fv = flyingFoeVehicle(sim, ship.faction);
+    const fv = flyingFoeVehicle(sim, id);
     // A foe shuttle in flight is hunted by the anti-vehicle weapons only; the rest keep shooting the ship below.
     if (fv && combat.vehicleTarget !== fv) {
       sim.enqueue({ type: 'combat.setTarget', ship: id, weaponId: null, targetShip: 0, targetModuleId: 0, targetVehicle: fv });
     }
-    const foe = chooseFoe(sim, ship, combat);
+    const foe = chooseFoe(sim, id, combat);
     if (!foe) continue;
     const t = combat.target;
     const hp = t && sim.world.get(t.moduleId, ModuleC)?.hp;
@@ -54,10 +55,10 @@ export function enemyAiSystem(sim: Sim): void {
   }
 }
 
-/** The first shuttle in flight that is hostile to `faction` (the same test targeting keeps it by), or 0. */
-function flyingFoeVehicle(sim: Sim, faction: Ship['faction']): number {
+/** The first shuttle in flight that is hostile to the ship (the same test targeting keeps it by), or 0. */
+function flyingFoeVehicle(sim: Sim, ship: number): number {
   for (const id of sim.world.query(VehicleC)) {
-    if (sim.world.get(id, VehicleC)?.state === 'flying' && hostileVehicle(sim, id, faction)) return id;
+    if (sim.world.get(id, VehicleC)?.state === 'flying' && hostileVehicle(sim, id, ship)) return id;
   }
   return 0;
 }
@@ -70,21 +71,20 @@ function flyingFoeVehicle(sim: Sim, faction: Ship['faction']): number {
  */
 const TARGET_ORDER = ['threat', 'prey', 'foe'] as const;
 
-function chooseFoe(sim: Sim, ship: Ship, combat: Combat): number {
+function chooseFoe(sim: Sim, ship: number, combat: Combat): number {
   for (const k of TARGET_ORDER) {
-    const id = k === 'threat' ? threatOf(sim, ship, combat) : k === 'prey' ? preyOf(sim, combat) : firstFoe(sim, ship.faction);
+    const id = k === 'threat' ? threatOf(sim, ship, combat) : k === 'prey' ? preyOf(sim, combat) : firstFoe(sim, ship);
     if (id) return id;
   }
   return 0;
 }
 
 /** The ship's recent attacker while it is in play and at war with it, else 0; an old or gone threat is forgotten. */
-function threatOf(sim: Sim, ship: Ship, combat: Combat): number {
+function threatOf(sim: Sim, ship: number, combat: Combat): number {
   const t = combat.threat;
   if (!t) return 0;
   const s = sim.world.get(t.ship, ShipC);
-  const ok = sim.tick - t.at <= AI_THREAT_SEC * TICK_HZ && !!s && (s.state === 'active' || s.state === 'disabled') && factionsHostile(ship.faction, s.faction)
-    && !(ship.faction === 'rogue' && rogueAlly(sim, t.ship));
+  const ok = sim.tick - t.at <= AI_THREAT_SEC * TICK_HZ && !!s && (s.state === 'active' || s.state === 'disabled') && shipsHostile(sim, ship, t.ship);
   if (ok) return t.ship;
   delete combat.threat;
   return 0;
@@ -99,14 +99,13 @@ function preyOf(sim: Sim, combat: Combat): number {
   return 0;
 }
 
-/** Ship id of the first ship still in play at war with `faction` (a player ship first), or 0. */
-export function firstFoe(sim: Sim, faction: Ship['faction']): number {
+/** Ship id of the first ship still in play that is a foe of `ship` (`shipsHostile`; a player ship first), or 0. */
+export function firstFoe(sim: Sim, ship: number): number {
   let other = 0;
   for (const id of sim.world.query(ShipC)) {
     const s = sim.world.get(id, ShipC);
-    if (!s || (s.state !== 'active' && s.state !== 'disabled') || !factionsHostile(faction, s.faction)) continue;
-    if (faction === 'rogue' && rogueAlly(sim, id)) continue; // the zealots, at any standing
-    if (s.faction === 'player') return id;
+    if (!s || (s.state !== 'active' && s.state !== 'disabled') || !shipsHostile(sim, ship, id)) continue; // the zealots and the Rogue AI never, at any standing
+    if (s.faction === PLAYER) return id;
     other ||= id;
   }
   return other;

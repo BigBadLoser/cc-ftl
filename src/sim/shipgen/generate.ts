@@ -282,7 +282,7 @@ function buildAttempt(
   if (f.hullFamilies && f.hullFamilies.length > 0) {
     // Assembly-driven: a hull family, its standard sections, composed by constraints.
     const fam = pickWeighted(rng, hullChoices(f, depth)) as HullFamilyDef;
-    role = { id: fam.id, weight: fam.weight, archetypes: [], ...(fam.bonus ? { bonus: fam.bonus } : {}), ...(fam.bays ? { bays: fam.bays } : {}) };
+    role = { id: fam.id, weight: fam.weight, archetypes: [], ...(fam.bonus ? { bonus: fam.bonus } : {}), ...(fam.bays ? { bays: fam.bays } : {}), ...(fam.pods ? { pods: fam.pods } : {}) };
     archetype = 'sections';
     plan = planShip(rng, f, role, depth, defs, extraEngines, fam.hullPerRoomTile);
     const r = arrangeHull(rng, f, fam, plan, defs);

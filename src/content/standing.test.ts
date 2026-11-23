@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { gatedBlueprints, portBlueprints } from '../sim/galaxy/blueprintShop';
-import { atWar } from '../sim/galaxy/clash';
+import { atWar } from '../sim/galaxy/relations';
 import type { GalaxyContent } from '../sim/galaxy/defs';
 import type { Port } from '../sim/galaxy/ports';
-import { spillSources, stanceBetween } from '../sim/galaxy/relations';
+import { spillSources, baselineStance } from '../sim/galaxy/relations';
 import { standing, standings, tierOf } from '../sim/galaxy/standing';
 import { galaxyIndex, nodeOf } from '../sim/galaxy/state';
 import { newGame } from '../sim/newGame';
@@ -97,16 +97,16 @@ describe('faction relations table', () => {
     const war = new Set(WAR_PAIRS.map(([a, b]) => [a, b].sort().join('|')));
     for (const a of ids) for (const b of ids) {
       if (a >= b) continue;
-      expect(stanceBetween(galaxy, a, b) === 'war', `${a} ${b}`).toBe(war.has([a, b].sort().join('|')));
+      expect(baselineStance(galaxy, a, b) === 'war', `${a} ${b}`).toBe(war.has([a, b].sort().join('|')));
     }
   });
 
   it('is symmetric, never at war with itself, and neutral for unknown or unlisted pairs', () => {
-    for (const a of ids) for (const b of ids) expect(stanceBetween(galaxy, a, b)).toBe(stanceBetween(galaxy, b, a));
-    expect(stanceBetween(galaxy, 'navy', 'navy')).toBe('allied');
-    expect(stanceBetween(galaxy, 'navy', 'nobody')).toBe('neutral');
-    expect(stanceBetween(galaxy, 'navy', 'meridian')).toBe('neutral');
-    expect(stanceBetween(galaxy, 'helix', 'vantor')).toBe('neutral');
+    for (const a of ids) for (const b of ids) expect(baselineStance(galaxy, a, b)).toBe(baselineStance(galaxy, b, a));
+    expect(baselineStance(galaxy, 'navy', 'navy')).toBe('allied');
+    expect(baselineStance(galaxy, 'navy', 'nobody')).toBe('neutral');
+    expect(baselineStance(galaxy, 'navy', 'meridian')).toBe('neutral');
+    expect(baselineStance(galaxy, 'helix', 'vantor')).toBe('neutral');
     const sim = newGame(1, content);
     expect(atWar(sim, 'meridian', 'helix')).toBe(true);
     expect(atWar(sim, 'navy', 'navy')).toBe(false);

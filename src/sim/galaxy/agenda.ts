@@ -5,6 +5,7 @@ import { unit } from './hash';
 import { portNode } from './ports';
 import { portsAt } from './portIndex';
 import { nodeOf } from './state';
+import { nodeOwnerAt } from './control';
 import {
   BREAKDOWN_CHANCE, CATCHUP_MAX, FLEET_LEGS, FLEET_LEG_HOPS, FLEET_RANGE, FLEET_REST, FLEET_WORK, REPAIR_TURNS,
 } from './tuning';
@@ -39,9 +40,9 @@ function suits(sim: Sim, f: Fleet, id: string): boolean {
   switch (f.role) {
     case 'trader': return structureKinds(sim, id).station;
     case 'miner': return structureKinds(sim, id).ore;
-    case 'patrol': return nodeOf(sim, id)?.faction === f.faction;
+    case 'patrol': return nodeOwnerAt(sim, id) === f.faction;
     // A route guard keeps to its own space.
-    case 'pirate': return !sim.content.galaxy?.factions[f.faction]?.guardsRoutes || nodeOf(sim, id)?.faction === f.faction;
+    case 'pirate': return !sim.content.galaxy?.factions[f.faction]?.guardsRoutes || nodeOwnerAt(sim, id) === f.faction;
     default: return true;
   }
 }
@@ -67,7 +68,7 @@ function hunt(sim: Sim, f: Fleet, turn: number): string | null {
   if (!ARMED.includes(f.role) || rnd(sim, f, turn, SALT.hunt) >= HUNT_CHANCE) return null;
   const mine = fleetPower(f);
   const guard = !!sim.content.galaxy?.factions[f.faction]?.guardsRoutes;
-  const here = targets(sim, f, true).filter((n) => !guard || nodeOf(sim, n)?.faction === f.faction);
+  const here = targets(sim, f, true).filter((n) => !guard || nodeOwnerAt(sim, n) === f.faction);
   const prey = new Set<string>();
   for (const g of sim.galaxy.fleets) {
     if (g === f || !g.ships.length || g.node === f.node || !here.includes(g.node) || !wouldFight(sim, f, g)) continue;
@@ -219,10 +220,11 @@ export function strand(sim: Sim, f: Fleet, turn: number): void {
   f.dwell = intIn(REPAIR_TURNS, rnd(sim, f, turn, SALT.repair));
 }
 
-/** The fleet runs for home (or, at home, for a neighbouring node and back): one hop now, the rest of the way as its route. */
+/** The fleet runs for home (or, at home or with no way home known, for a neighbouring node, and back home if there): one hop now, the rest of the way as its route. */
 export function retreat(sim: Sim, f: Fleet, turn: number): void {
   const home = portNode(f.home);
-  const path = f.node === home ? [reachFrom(sim, home).order[1], home].filter((n): n is string => !!n) : pathTo(sim, f.node, home);
+  const way = f.node === home ? [] : pathTo(sim, f.node, home);
+  const path = way.length ? way : [reachFrom(sim, f.node).order[1], f.node === home ? home : undefined].filter((n): n is string => !!n);
   if (!path.length) return;
   f.from = f.node;
   f.node = path[0] as string;

@@ -14,6 +14,7 @@ import { builtCount, dropJobs, earned, jobsOf, totalTiles } from './progress';
 import { postHullJobs } from './jobs';
 import { openInnerWalls } from './open';
 import { isLiveOrder, type YardOrder } from './types';
+import { PLAYER } from '../side';
 
 /** Ticks between repeats of an order the crew or shuttle has not obeyed yet. */
 const REPEAT = 20;
@@ -107,7 +108,7 @@ function step(sim: Sim, o: YardOrder): void {
   o.timer++;
   const me = shipById(sim, o.ship);
   const station = shipById(sim, o.station);
-  if (!me || me.faction !== 'player') return endNow(sim, o, 'lost');
+  if (!me || me.faction !== PLAYER) return endNow(sim, o, 'lost');
   if (!station || station.state !== 'active' || sim.sector.state !== 'active') return endNow(sim, o, 'left');
   const v = sim.world.get(o.vehicle, VehicleC);
   switch (o.phase) {

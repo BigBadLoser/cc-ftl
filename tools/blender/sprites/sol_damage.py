@@ -7,6 +7,7 @@ own `model` module, so they cannot share one Blender).
              gets no flicker frame, it has no lights when idle)
   ai_core    module.ai_core.r<n>.{damaged,damaged.flicker,destroyed}
   shields    module.shield_gen[_small].r<n>.{damaged,damaged.flicker,destroyed}
+  engine_mk2, engine_mk3  the engine's tiers, as `engine` under module.engine_mk<n> (family `damage_sol_tiers`)
 
 Job (inside Blender):  blender -b --python sol_damage.py -- --kind K --out DIR [--rot N...] [--quality preview|final]
 Build (build_sprites `damage_sol`): renders every job into $SOL_DIR/damage-<kind> (reused when present) and packs them.
@@ -21,7 +22,10 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
 EXP = ROOT / "tools/blender/experiments"
-DIRS = {"engine": "engine_kestrel_h185", "ai_core": "ai_core_oracle_h185", "shields": "shield_bastion_h185_ward_lowbody"}
+DIRS = {"engine": "engine_kestrel_h185", "ai_core": "ai_core_oracle_h185", "shields": "shield_bastion_h185_ward_lowbody",
+        "engine_mk2": "engine_kestrel_h185", "engine_mk3": "engine_kestrel_h185"}
+KINDS = ("engine", "ai_core", "shields")              # family damage_sol
+TIER_KINDS = ("engine_mk2", "engine_mk3")             # family damage_sol_tiers
 LEVELS = ("damaged", "damaged.flicker", "destroyed")
 
 
@@ -29,14 +33,18 @@ def _jobs(kind, rots):
     """[(sid, footprint, builder, levels)] of the undamaged idle builds, inside the pack's own sys.path."""
     import model
     out = []
+    tier = int(kind[-1]) if kind.startswith("engine_mk") else 1
+    asset = "module.engine" if tier == 1 else f"module.engine_mk{tier}"
+    if kind.startswith("engine"):
+        model.set_tier(tier)
     for r in rots:
-        if kind == "engine":
-            fp = [4, 5] if r % 2 == 0 else [5, 4]
+        if kind.startswith("engine"):
+            fp = [4, model.DEPTH] if r % 2 == 0 else [model.DEPTH, 4]
             for part in ("machine", "machine.open", "bell"):
                 lv = LEVELS if part != "bell" else ("damaged", "destroyed")
                 stage = 8 if r in (1, 2) else 7                              # (sol_pack's: the block where it shows)
                 build = lambda r=r, p=part, s=stage: model.machine(r, False, s, part=p)  # noqa: E731
-                out.append((f"module.engine.{part}.r{r}", fp, build, lv))
+                out.append((f"{asset}.{part}.r{r}", fp, build, lv))
         elif kind == "ai_core":
             out.append((f"module.ai_core.r{r}", [2, 2], lambda r=r: model.core_module(r, False, 2), LEVELS))
         else:
@@ -116,15 +124,16 @@ def job():
     (a.out / "manifest.fragment.json").write_text(json.dumps(man, indent=2) + "\n")
 
 
-def build(out, log=print):
-    """Render (or reuse) every pack's damage job and pack them into the `damage_sol` sheets."""
+def build(out, log=print, kinds=KINDS, family="damage_sol"):
+    """Render (or reuse) the damage jobs of `kinds` and pack them into the family's sheets (KINDS: `damage_sol`;
+    TIER_KINDS: `damage_sol_tiers`)."""
     import bpy
     from . import pack
     base = Path(os.environ.get("SOL_DIR", Path(tempfile.gettempdir()) / "sol-pack-1x"))
     rots = [str(r) for r in range(int(os.environ.get("SOL_DAMAGE_ROTS", 4)))]
     quality = os.environ.get("SOL_DAMAGE_QUALITY", "final")
     items = []
-    for kind in DIRS:
+    for kind in kinds:
         d = base / f"damage-{kind}"
         if not (d / "manifest.fragment.json").exists():
             tmp = base / f"damage-{kind}.part"
@@ -142,7 +151,7 @@ def build(out, log=print):
             glow = pack.read_png(gp) if gp.exists() else img * 0
             items.append({"id": sid, "fp": a["footprint"], "rgba": img, "g": glow, "ax": a["anchor"]["x"],
                           "ay": a["anchor"]["y"]})
-    return pack.pack("damage_sol", items, out, log)
+    return pack.pack(family, items, out, log)
 
 
 if __name__ == "__main__":

@@ -1,7 +1,7 @@
 import type { ContentRegistry } from './registry';
 import { CommandQueue, type Command } from './commands';
 import { World } from './ecs';
-import { EventBuffer } from './events';
+import { EventBuffer } from './eventBuffer';
 import { commandHandlers } from './handlers';
 import { breakOrderRejection } from './crew/breakOrders';
 import { newSectorGrid } from './stamp';

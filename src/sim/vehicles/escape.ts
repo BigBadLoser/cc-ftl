@@ -9,6 +9,7 @@ import { VehicleC, type Vehicle } from './components';
 import { boardingTile } from './geometry';
 import { TICK_HZ } from '../time';
 import { occupants, undock, unboardCrew, vehicleDefOf } from './lifecycle';
+import { PLAYER } from '../side';
 
 /**
  * Escape pods (`VehicleDef.escape`; DESIGN.md "Physical encounters", the medical pod). A pod is a vehicle with no pilot: it drifts where it was left until
@@ -55,7 +56,7 @@ export function escapePodSystem(sim: Sim): void {
     for (const crew of occupants(v)) {
       unboardCrew(sim, crew, id, at);
       // Taken in by the player: a person of another side lives aboard as a passenger (no intruder, never drafted).
-      if (host === 'player' && ship === playerShip(sim) && sim.world.has(crew, CrewC)) takePassenger(sim, ship, crew);
+      if (host === PLAYER && ship === playerShip(sim) && sim.world.has(crew, CrewC)) takePassenger(sim, ship, crew);
     }
     v.castOff = sim.tick + Math.round(POD_HOLD_SEC * TICK_HZ);
   }
