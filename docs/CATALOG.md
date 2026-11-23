@@ -38,7 +38,7 @@ Counts are table rows per status (each row is one entry, so a row that groups se
 | [ui](catalog/ui.md) | Windows, panels, menus, kit | 29 | 4 | 0 | 1 | 1 | 1 |
 | [dev-tools](catalog/dev-tools.md) | Scenarios, debug commands, labs, profilers, test tools | 0 | 0 | 0 | 0 | 44 | 0 |
 | [art](catalog/art.md) | Manifest families, art-only sprites, render systems | 16 | 2 | 11 | 0 | 0 | 3 |
-| **Total** | | 506 | 65 | 58 | 4 | 49 | 25 |
+| **Total** | | 508 | 65 | 58 | 4 | 50 | 25 |
 
 ## Commonly confused
 
