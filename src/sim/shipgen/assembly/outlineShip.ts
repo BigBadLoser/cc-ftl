@@ -12,7 +12,7 @@ import { partOf } from './parts';
 import { deptsOf } from './zones';
 import { outlineFrame } from './frame';
 import { paintPlaced } from './placePaint';
-import type { Placed } from './placeLayout';
+import type { Placed } from './placeTypes';
 import { batteryWeapons, gunsAndReactors } from './pairs';
 import { outlineAttempts, outlineRole, recipeOf, shipCommons, shipQuarters } from './outlineType';
 import { SPACE, type RegionGrid } from './regions';
@@ -310,7 +310,7 @@ export function assembleOutline(
   return { ...res, planned, family: r.family };
 }
 
-/** An outline ship of its faction's recipe `type`, by attempts (the game's navy ships: `generateShip`, `outlineTypeOf`). */
+/** An outline ship of its faction's recipe `type`, by attempts (in the game, each seed whose hull family has a recipe: `generateShip`, `outlineTypeOf`). */
 export function generateOutline(f: FactionDef, factionId: string, seed: number, depth: number, defs: Record<string, ModuleDef>, type: string): GenResult {
   return outlineAttempts(defs, (n, extra) => assembleOutline(f, factionId, seed, depth, defs, type, n, extra));
 }
