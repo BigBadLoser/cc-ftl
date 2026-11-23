@@ -209,6 +209,17 @@ export interface UiOperations {
   live: boolean;
 }
 
+/** One implant line in the fit list ("Cyber heart") with its Mk tiers; a named piece has one entry with `tier` null (no chooser). */
+export interface UiImplantLine {
+  id: string;
+  name: string;
+  named?: true;
+  tip?: string;
+  /** The item to fit when no tier was chosen: the best tier in stock (undefined when none is). */
+  best?: string;
+  tiers: { id: string; tier: 1 | 2 | 3 | null; stock: number; odds?: string }[];
+}
+
 export interface UiOperationOption {
   kind: 'fit' | 'repair' | 'amputate' | 'remove';
   label: string;
@@ -217,6 +228,8 @@ export interface UiOperationOption {
   disabled?: string;
   /** The best free surgeon's odds, in words ("success 82% at a table, 62% at a bed"); per implant on `implants`. */
   odds?: string;
-  /** fit: the implants that fit, with stock; remove: the fitted ones (`note` instead of the stock). */
+  /** fit: one entry per implant line that fits (named cyberware only while in stock); pick a tier on it. */
+  lines?: UiImplantLine[];
+  /** remove: the fitted implants (`note` instead of the stock). */
   implants?: { id: string; name: string; stock: number; note?: string; odds?: string; named?: true; tip?: string }[];
 }

@@ -1,7 +1,7 @@
-import { CrewC, PositionC, type Sim } from '../sim';
+import { CrewC, PositionC, type ItemDef, type Sim } from '../sim';
 import { skillOf } from '../sim/combat/operators';
 import { canBeInjured } from '../sim/crew/body';
-import { implantsOf, isNamedItem, partTakes } from '../sim/crew/implants';
+import { implantLine, implantLineName, implantsOf, isNamedItem, partTakes } from '../sim/crew/implants';
 import { DERMAL_PART, type Operation, type OperationKind } from '../sim/crew/implantTypes';
 import {
   couldOperate, lyingIn, operationError, operationsOf, readyOperation, stockFor, surgeryChance, surgeryJobOf, theatreFits, theatreOf,
@@ -10,7 +10,7 @@ import { shipStoreCount } from '../sim/items/stock';
 import { ModuleC } from '../sim/modules/components';
 import { shipIdOf } from '../sim/regions';
 import { playerCrewPackedOk } from '../sim/story/world';
-import type { UiOperationOption, UiOperations, UiPartIcon } from '../ui/crewDetailApi';
+import type { UiImplantLine, UiOperationOption, UiOperations, UiPartIcon } from '../ui/crewDetailApi';
 import { partIcon } from './healthDetail';
 
 /**
@@ -77,6 +77,22 @@ function statusOf(sim: Sim, id: number, op: Operation, n: number): string {
 }
 
 /** The operations open on one part of this patient, in order: fit, repair, amputate, remove. */
+/** The fit list: one entry per implant line (crew/implants.ts `implantLine`), its tiers in Mk order, and the best tier in stock as the default. */
+export function fitLines(sim: Sim, items: [string, ItemDef][], ship: number, odds: (item: string) => string | undefined): UiImplantLine[] {
+  const byLine = new Map<string, UiImplantLine>();
+  for (const [item, d] of items) {
+    const key = implantLine(item, d.implant);
+    const entry = byLine.get(key) ?? { id: key, name: implantLineName(d.name), ...namedOf(sim, item), tiers: [] };
+    entry.tiers.push({ id: item, tier: d.implant?.tier ?? null, stock: shipStoreCount(sim, ship, item), odds: odds(item) });
+    byLine.set(key, entry);
+  }
+  for (const l of byLine.values()) {
+    l.tiers.sort((a, b) => (a.tier ?? 0) - (b.tier ?? 0));
+    l.best = l.tiers.filter((t) => t.stock > 0).at(-1)?.id;
+  }
+  return [...byLine.values()];
+}
+
 function optionsFor(sim: Sim, id: number, part: { id: string; name: string }, surgeon: number): UiOperationOption[] {
   const what = part.name.toLowerCase();
   const queued = new Set(operationsOf(sim, id).map((o) => `${o.kind}|${o.part}`));
@@ -86,16 +102,16 @@ function optionsFor(sim: Sim, id: number, part: { id: string; name: string }, su
   };
   const ship = shipIdOf(sim, sim.world.get(id, PositionC));
   const fits = Object.entries(sim.content.items).filter(([, d]) => d.implant && partTakes(sim, part.id, d.implant.slot));
-  const open = fits.filter(([item]) => !check({ kind: 'fit', part: part.id, item }));
-  const implants = open.map(([item, d]) => ({ id: item, name: d.name, ...namedOf(sim, item), stock: shipStoreCount(sim, ship, item), odds: oddsOf(sim, id, surgeon, { kind: 'fit', part: part.id, item }) }));
+  const open = fits.filter(([item]) => !check({ kind: 'fit', part: part.id, item }) && !(isNamedItem(sim, item) && shipStoreCount(sim, ship, item) < 1)); // named cyberware is listed only while in stock
+  const lines = fitLines(sim, open, ship, (item) => oddsOf(sim, id, surgeon, { kind: 'fit', part: part.id, item }));
   const lost = sim.content.injuries?.parts[part.id] ? operationError(sim, id, { kind: 'repair', part: part.id }) === 'partLost' : false;
   const anyReplacement = open.some(([, d]) => d.implant?.kind === 'replacement');
-  const fitDisabled = !fits.length ? 'no implant fits here' : !open.length ? check({ kind: 'fit', part: part.id, item: fits[0]![0] }) : !implants.some((i) => i.stock > 0) ? why('noStock', what) : undefined;
+  const fitDisabled = !fits.length ? 'no implant fits here' : !open.length ? check({ kind: 'fit', part: part.id, item: fits[0]![0] }) : !lines.some((l) => l.best) ? why('noStock', what) : undefined;
   const fitted = implantsOf(sim, id).filter((f) => f.part === part.id);
   const removes = fitted.map((f) => ({ id: f.item, name: itemName(sim, f.item), ...namedOf(sim, f.item), stock: 1, note: check({ kind: 'remove', part: part.id, item: f.item }) ?? 'fitted', odds: oddsOf(sim, id, surgeon, { kind: 'remove', part: part.id, item: f.item }) }));
   const out: UiOperationOption[] = [
     {
-      kind: 'fit', label: 'Fit implant', note: anyReplacement ? (lost ? `replaces the lost ${what}` : `replaces the ${what}`) : 'an augment', implants,
+      kind: 'fit', label: 'Fit implant', note: anyReplacement ? (lost ? `replaces the lost ${what}` : `replaces the ${what}`) : 'an augment', lines,
       ...(fitDisabled ? { disabled: fitDisabled } : {}),
     },
   ];

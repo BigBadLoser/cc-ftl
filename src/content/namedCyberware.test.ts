@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { CrewC, DownedC } from '../sim/crew/components';
 import { bleedOutMult, healMult } from '../sim/crew/body';
-import { implantTier, isNamedImplant } from '../sim/crew/implants';
+import { implantLine, implantTier, isNamedImplant } from '../sim/crew/implants';
 import { fitImplant } from '../sim/crew/surgeryOutcome';
 import { operationsOf, surgeryChance } from '../sim/crew/surgery';
 import { playerCrew } from '../sim/story/world';
@@ -13,14 +13,12 @@ import { pickCrew } from './scenario/lib/crewPick';
 
 const human = (sim: Sim): number => playerCrew(sim).filter((id) => sim.world.get(id, CrewC)?.species === 'species.human')[0] as number;
 const implants = (sim: Sim) => Object.entries(sim.content.items).flatMap(([id, item]) => (item.implant ? [{ id, def: item.implant, item }] : []));
-/** The Mk lines: an item id minus its trailing tier digit. */
-const line = (id: string): string => id.replace(/_\d$/, '');
 
 describe('Mk tiers and named cyberware (#626)', () => {
   it('every Mk line has Mk I, II and III', () => {
     const sim = cachedNewGame(3);
     const lines = new Map<string, Set<number>>();
-    for (const { id, def } of implants(sim)) if (!isNamedImplant(def)) lines.set(line(id), (lines.get(line(id)) ?? new Set()).add(def.tier as number));
+    for (const { id, def } of implants(sim)) if (!isNamedImplant(def)) lines.set(implantLine(id, def), (lines.get(implantLine(id, def)) ?? new Set()).add(def.tier as number));
     expect(lines.size).toBeGreaterThan(10);
     for (const [name, tiers] of lines) expect([name, [...tiers].sort()]).toEqual([name, [1, 2, 3]]);
   });

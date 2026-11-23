@@ -22,6 +22,12 @@ export const isNamedImplant = (def: ImplantDef | undefined): boolean => !!def?.n
 /** The Mk tier the surgery rules use: a named piece operates like Mk III (rare, powerful hardware), a missing item like Mk I. */
 export const implantTier = (def: ImplantDef | undefined): 1 | 2 | 3 => (def ? (def.tier ?? 3) : 1);
 
+/** The line an implant item belongs to: its id without the Mk digit (`item.cyber_heart`); a named piece is a line of its own. The one owner of "which line". */
+export const implantLine = (item: string, def: ImplantDef | undefined): string => (isNamedImplant(def) ? item : item.replace(/_\d$/, ''));
+
+/** A line's name from any item's name: no Mk tier, a skill in brackets capitalised ("Neural chip Mk II (gunnery)" is "Neural chip (Gunnery)"). */
+export const implantLineName = (name: string): string => name.replace(/ Mk I{1,3}\b/, '').replace(/\((\w)/, (_, c: string) => `(${c.toUpperCase()}`);
+
 /** Is this item named cyberware (an item id)? */
 export const isNamedItem = (sim: Sim, item: string): boolean => isNamedImplant(implantDef(sim, item));
 
