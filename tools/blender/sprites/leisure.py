@@ -70,7 +70,7 @@ def job(family, sid, fp, study, name, rot):
         build = STUDIES[study].DESIGNS[name]
         base = sid.rsplit(".r", 1)[0]
         if base in BERTHS:                       # (before the scene is read: building the crew rig replaces it)
-            return bed_items(family, sid, fp, build, rot, BERTHS[base])
+            return bed_items(sid, fp, build, rot, BERTHS[base], palette(family), [sid] if rot else [sid, base], base)
         sc = bpy.context.scene
         sc.cycles.samples = SAMPLES.get(family, core.SAMPLES)
         try:
@@ -89,15 +89,16 @@ def job(family, sid, fp, study, name, rot):
     return run
 
 
-def bed_items(family, sid, fp, build, rot, berths):
-    """A bed's sprite and its front overlays `<asset>.front.b<b>.r<r>` (bed_front.py). The crew rig is built first
-    (building it clears the scene) and hidden, and the bed is dropped after each render instead of clearing the scene."""
+def bed_items(sid, fp, build, rot, berths, pal, ids, base, tag=""):
+    """A bed's sprite (as each of `ids`) and its front overlays `<base>.front.b<b>.r<r><tag>` (bed_front.py; `tag` a
+    state, ".active"). The crew rig is built first (building it clears the scene) and hidden, and the bed is dropped
+    after each render instead of clearing the scene. `pal`: the family's palette selection (post.select)."""
     from . import bed_front as BF
     from . import consoles as CO
     from .research_bench import drop
     hr, (_, rig) = CO._rig()
     hr.set_state(rig, [], [])
-    post.select(palette(family))
+    post.select(pal)
     f = fp if rot % 2 == 0 else (fp[1], fp[0])
     objs = turned(build, rot)
     c, op, g, ox, oy, al = E.render_sprite(sid, "prop", objs)
@@ -111,13 +112,12 @@ def bed_items(family, sid, fp, build, rot, berths):
         front |= m
     gb = g.copy()
     gb[front] = 0
-    base = sid.rsplit(".r", 1)[0]
-    out = [E.crop_item(aid, f, c, op, gb, ox, oy, al) for aid in ([sid] if rot else [sid, base])]
+    out = [E.crop_item(aid, f, c, op, gb, ox, oy, al) for aid in ids]
     for b, m in enumerate(masks):
         if m.any():
             gm = g.copy()
             gm[~m] = 0
-            out.append(E.crop_item(f"{base}.front.b{b}.r{rot}", f, c, m, gm, ox, oy, np.where(m, al, 0) if al is not None else None))
+            out.append(E.crop_item(f"{base}.front.b{b}.r{rot}{tag}", f, c, m, gm, ox, oy, np.where(m, al, 0) if al is not None else None))
     return [it for it in out if it]
 
 

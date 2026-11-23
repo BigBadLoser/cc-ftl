@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import type { ModuleDef } from '../sim/registry';
-import { SLEEP_SHIFT, bedPose } from './bedPose';
+import { World } from '../sim/ecs';
+import { PositionC, type Position } from '../sim/crew/components';
+import { ModuleC, type Module } from '../sim/modules/components';
+import { SLEEP_SHIFT, bedPose, occupiedMedBeds } from './bedPose';
+import { showsActive } from './moduleArt';
 
 const bed = { footprint: [1, 2] } as unknown as ModuleDef;
 
@@ -24,5 +28,25 @@ describe('bedPose', () => {
   });
   it('turns the head clockwise with the bed when each rotation has its own sprite', () => {
     expect([0, 1, 2, 3].map((r) => bedPose(bed, 0, 0, r, true).dir)).toEqual([2, 4, 6, 0]);
+  });
+});
+
+describe('occupiedMedBeds (#614)', () => {
+  it('is a medical bed whose berth holder lies settled on it, not one they are still walking to, nor an ordinary bed', () => {
+    const defs = { med: { bed: true, medical: true, footprint: [1, 2] }, bunk: { bed: true, footprint: [1, 2] } } as unknown as Record<string, ModuleDef>;
+    const w = new World();
+    const at = (x: number, y: number, toX = x): Position => ({ x, y, toX, toY: y, progress: 0, facing: 0 }) as Position;
+    const bed = (def: string, x: number, holder: number): number => {
+      const id = w.createEntity();
+      w.add(id, ModuleC, { def, x, y: 0, rot: 0, hp: 100, powerPriority: 5, enabled: true, powered: true, reservedBy: holder } as Module);
+      return id;
+    };
+    const crew = (p: Position): number => { const id = w.createEntity(); w.add(id, PositionC, p); return id; };
+    const lying = crew(at(0, 0)), walking = crew(at(4, 0, 5)), sleeper = crew(at(8, 0));
+    const a = bed('med', 0, lying), b = bed('med', 4, walking), c = bed('bunk', 8, sleeper), d = bed('med', 12, 0);
+    expect([...occupiedMedBeds(w, defs)]).toEqual([a]);
+    expect([b, c, d].some((id) => occupiedMedBeds(w, defs).has(id))).toBe(false);
+    const med = defs.med as ModuleDef;
+    expect([showsActive(med, true, false, true), showsActive(med, true, false, false), showsActive(med, false, false, true)]).toEqual([true, false, false]); // lain in and powered
   });
 });

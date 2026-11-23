@@ -1,12 +1,14 @@
-import { Container, Sprite } from 'pixi.js';
+import { Container, Graphics, Sprite } from 'pixi.js';
 import type { ClipDef } from '../../src/render/assets/manifest';
 import { artZoom, createCrewFilter, crewFilters, crewPalette, setFilterTint, setFilterZoom } from '../../src/render/assets/palette';
-import { berthLift, bedPose } from '../../src/render/bedPose';
+import { berthLift, bedPose, turnedArt } from '../../src/render/bedPose';
+import { moduleAssets } from '../../src/render/moduleArt';
 import { drawLayers } from '../../src/render/crewSprites';
 import { ART_SCALE, iso } from '../../src/render/iso';
 import { lightTint } from '../../src/render/lightTint';
 import { crewLoadout, preloadLayers } from '../../src/render/loadout';
 import { content } from '../../src/content';
+import type { Module } from '../../src/sim/modules/components';
 import type { ModuleDef } from '../../src/sim/registry';
 import type { LabCell, LabCtx, LabPanel } from './panel';
 
@@ -18,18 +20,20 @@ function sprite(ctx: LabCtx, root: Container, id: string, x: number, y: number):
 }
 
 /**
- * `?panel=bunk`: the double bunk and the single bed (#441) at each rotation, empty and with sleepers, layered as the game draws them
+ * `?panel=bunk`: the double bunk, the single bed (#441) and the med bed (#614) at each rotation, empty and with sleepers, layered as the game draws them
  * (crewView, moduleArt bedFronts): the bed body, the lower sleeper, `<asset>.front.b0.r<n>`, the upper sleeper, `<asset>.front.b1.r<n>`.
- * The sleepers lie where bedPose puts them, raised by berthLift. `rots=0,1,2,3` (default all), `beds=bunk,bed`.
+ * The sleepers lie where bedPose puts them, raised by berthLift. `rots=0,1,2,3` (default all), `beds=bunk,bed,med_bed`; `active` draws the
+ * beds' active art and overlays.
  */
 export const bunkPanel: LabPanel = {
   id: 'bunk',
   title: 'Bunk',
   zoom: 1,
-  help: 'rots=0,1,2,3 (default all), beds=bunk,bed; each bed empty and with a sleeper in every berth',
+  help: 'rots=0,1,2,3 (default all), beds=bunk,bed,med_bed, active; each bed empty and with a sleeper in every berth',
   async cells(ctx) {
     const rots = (ctx.params.get('rots')?.split(',').map(Number).filter((r) => r >= 0 && r < 4)) ?? [0, 1, 2, 3];
-    const beds = (ctx.params.get('beds') ?? 'bunk,bed').split(',').map((b) => `module.${b.trim()}`);
+    const active = ctx.params.has('active');
+    const beds = (ctx.params.get('beds') ?? 'bunk,bed,med_bed').split(',').map((b) => `module.${b.trim()}`);
     const looks = CAST.map((c) => crewLoadout(ctx.atlas, { species: 'species.human', role: c.role, appearanceSeed: c.seed } as never));
     for (const layers of looks) {
       preloadLayers(layers);
@@ -50,6 +54,9 @@ export const bunkPanel: LabPanel = {
           newRow: i === 0,
           mount(root) {
             const ox = 150, oy = 210;
+            const clip = new Graphics().rect(0, 0, 300, 300).fill(0xffffff); // the floor reaches past the cell: keep the next cell's off this one's bed
+            root.addChild(clip);
+            root.mask = clip;
             const floor = ctx.atlas.stat('tile.floor.a');
             for (let gy = -2; gy <= 1; gy++) for (let gx = -2; gx <= 1; gx++) {
               if (!floor) continue;
@@ -59,9 +66,11 @@ export const bunkPanel: LabPanel = {
             // The footprint at (0, 0) - its front tile, the sprite anchor, sits at (w - 1, d - 1).
             const [w, d] = rot % 2 === 0 ? def.footprint : [def.footprint[1], def.footprint[0]];
             const fx = w - 1, fy = d - 1;
-            sprite(ctx, root, `${a}.r${rot}`, ox, oy);
+            const has = (id: string) => !!ctx.atlas.manifest.assets[id];
+            const art = moduleAssets(null as never, 0, { rot } as Module, def, active).find(has);
+            if (art) sprite(ctx, root, art, ox, oy);
             const figures: { parts: { layer: (typeof looks)[number][number]; sprite: Sprite }[] }[] = [];
-            const pose = bedPose(def, 0, 0, rot, true);
+            const pose = bedPose(def, 0, 0, rot, turnedArt(has, a, rot));
             for (let b = 0; b < (def.berths ?? 1); b++) {
               if (filled) {
                 const p = iso(pose.x - fx, pose.y - fy);
@@ -80,7 +89,8 @@ export const bunkPanel: LabPanel = {
                 root.addChild(body);
                 figures.push({ parts });
               }
-              sprite(ctx, root, `${a}.front.b${b}.r${rot}`, ox, oy);
+              const front = `${a}.front.b${b}.r${rot}`;
+              sprite(ctx, root, active && has(`${front}.active`) ? `${front}.active` : front, ox, oy);
             }
             return (t) => { for (const f of figures) drawLayers({ parts: f.parts, glows: [] }, 'sleep', pose.dir, t); };
           },

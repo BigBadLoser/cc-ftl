@@ -34,6 +34,7 @@ import { createBayAnimator, shuttleHome, steady } from './vehicleBayArt';
 import { cropOverlay } from './cropOverlay';
 import { bedBox } from './bedBox';
 import { rigInputs, rigView } from './rigArt';
+import { occupiedMedBeds } from './bedPose';
 import { craftProgress, diagonalFront, moduleAssets, mergeRuinChain, stateArt, glowKey, layerKey, mannedConsoles, playedModules, workedLabs, showsActive, type ModuleLayer } from './moduleArt';
 
 export type ModuleDefs = Readonly<Record<string, ModuleDef>>;
@@ -351,7 +352,7 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
       const progress = craftProgress(world);
       const manned = mannedConsoles(world);
       const worked = workedLabs(world);
-      const played = playedModules(world);
+      const played = new Set([...playedModules(world), ...occupiedMedBeds(world, defs)]); // in use: leisure played, a medical bed lain in
       const { grid } = t;
       const emergency = host.emergency();
       const pulse = emergency ? pulsePhase(now) : -1;
