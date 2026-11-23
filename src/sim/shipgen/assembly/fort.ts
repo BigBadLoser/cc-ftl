@@ -2,6 +2,7 @@ import type { RoomSpec } from '../plan';
 import type { Asm } from './asm';
 import type { Built, Ctx } from './model';
 import { SPACE } from './regions';
+import { stranded } from './regionOps';
 
 /**
  * A fort (the user's pick, "F2": a star fort): a parade hall at the centre, an arm off each side of it (the recipe's
@@ -100,7 +101,7 @@ export function batteries(a: Asm, hall: number, h: number, guns: readonly RoomSp
       }
     }
     const cell = g.compile();
-    if (g.blocks(...box) > before || g.stranded(cell).some(([, , o]) => ids.includes(o))) { g.reset(mark); continue; }
+    if (g.blocks(...box) > before || stranded(g, cell).some(([, , o]) => ids.includes(o))) { g.reset(mark); continue; }
     return [];
   }
   return [...guns];

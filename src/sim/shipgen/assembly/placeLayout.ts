@@ -1,12 +1,12 @@
 import type { ModuleDef } from '../../registry';
-import type { FrameGrid } from './frameGrid';
 import type { RoomSpec, ShipPlan } from '../plan';
-import { MIN_DEPTH, outlineFrame, type Frame, type Mask, type Row } from './frame';
+import { MIN_DEPTH, outlineFrame, type Mask } from './frame';
 import { areaOf, capOf, minLen, programPairs, type Pair } from './pairs';
 import { CABIN_TIER, cabinsFor } from './cabinBlock';
 import { SLEEPER } from './quarters';
 import { FILL_MAX, fillerSpec, maxArea, type Filler } from './roomSize';
 import { opensThrough, roomKind, type RoomKind } from './roomAccess';
+import { clone, fillers, repeats, type Block, type Layout, type Part, type Piece, type Placed } from './placeTypes';
 
 /**
  * PROTOTYPE (#581): rooms placed one by one into the outline's frame, the hardest first, with backtracking, instead of
@@ -16,33 +16,12 @@ import { opensThrough, roomKind, type RoomKind } from './roomAccess';
  * found is scored (filler floor, corridor, growth) and the best kept. North side; the south mirrors the shapes.
  */
 
-/** A rectangle of a piece: columns [x0, x1), floor rows r0..r1 (r1 Infinity: to the hull), a spec a side or open. */
-export interface Part {
-  x0: number; x1: number; r0: number; r1: number; spec: [RoomSpec | null, RoomSpec | null]; fill?: boolean; grown?: boolean;
-  /** Its way in, where the layout fixed it: the dock's corridor, the battery's, or the room in front. */ via?: 'dock' | 'maint' | 'front';
-  /** Its rows, where not out from the spine (a lane hull's side corridor). */ row?: Row;
-}
-export interface Piece { x0: number; x1: number; parts: Part[]; cabins?: boolean; /** Single cabins in a row, that many (a lane's strip). */ strip?: number }
-/** A side's stretch between corridors and the drive: columns [a, b), its free runs (end exclusive) and its pieces. */
-export interface Block { a: number; b: number; crossL: boolean; crossR: boolean; free: [number, number][]; pieces: Piece[] }
-/** A corridor stub: a hall column from the spine to the hull. */
-export interface Stub { x: number }
-export interface Layout { blocks: Block[]; stern: Part | null; stubs: Stub[]; /** Program pairs placed out of turn (stacked with another). */ done: number[] }
-export interface Placed {
-  /** A layout part's own rooms, painted over the closed frame. */ paint?: (fg: FrameGrid) => void;
-  fr: Frame; lay: Layout; score: number; viable: number; nodes: number; why: Map<string, number>; /** Gun pairs pinned to the outline's gun sites, of how many sites. */ pins: number; sites: number; /** The battery's gun pairs, a blister each (prototype). */ battery: Pair[] }
 
 const ASPECT = 3, DEEP = 1.25;
 /** Floor any room may take, past its own cap: the least room a deep hull can cut (three columns by seven rows, about). */
 const SMALL = 24;
 /** A free stretch narrower than this is a strip: the room beside it takes it rather than a filler. */
 const THIN = 6, CABIN_LEN = 11;
-/** Filler rooms' specs (for the score and the prototype's metrics). */
-export const fillers = new WeakSet<RoomSpec>(), repeats = new WeakSet<RoomSpec>();
-const clone = (l: Layout): Layout => ({
-  blocks: l.blocks.map((b) => ({ ...b, free: b.free.map(([u, v]) => [u, v] as [number, number]), pieces: b.pieces.map((p) => ({ ...p, parts: p.parts.map((q) => ({ ...q, spec: [...q.spec] as Part['spec'] })) })) })),
-  stern: l.stern ? { ...l.stern, spec: [...l.stern.spec] as Part['spec'] } : null, stubs: [...l.stubs], done: [...l.done],
-});
 
 export function placeLayout(plan: ShipPlan, m: Mask, defs: Record<string, ModuleDef>, budget = 4000): Placed | null {
   const fr = outlineFrame(plan, m);

@@ -1,6 +1,7 @@
 import type { RoomSpec } from '../plan';
 import { DEEP, K, type Site } from './lattice';
 import { SPACE } from './regions';
+import { stranded } from './regionOps';
 
 /**
  * Corner rooms of a square outline. Each cut corner is one room: the band's corner block, with the lattice steps of the
@@ -35,7 +36,7 @@ function shoulderCells(s: Site, [sx, sy]: readonly [number, number]): number {
     const cell = g.compile();
     let floor = 0;
     for (let y = -R; y < R; y++) for (let x = -R; x < R; x++) if (g.at(x, y) === corner && cell[(y + g.half) * g.size + x + g.half] === '_') floor++;
-    const ok = floor >= 24 && g.blocks(...box) === before && !g.stranded(cell).some(([, , id]) => id === corner);
+    const ok = floor >= 24 && g.blocks(...box) === before && !stranded(g, cell).some(([, , id]) => id === corner);
     g.reset(mark);
     if (ok) return m;
   }

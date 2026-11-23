@@ -11,7 +11,7 @@ import { partOf } from './parts';
 import { deptsOf } from './zones';
 import { outlineFrame } from './frame';
 import { paintPlaced } from './placePaint';
-import type { Placed } from './placeLayout';
+import type { Placed } from './placeTypes';
 import { gunsAndReactors } from './pairs';
 import { outlineAttempts, outlineRole, recipeOf, shipCommons, shipQuarters } from './outlineType';
 import { SPACE, type RegionGrid } from './regions';

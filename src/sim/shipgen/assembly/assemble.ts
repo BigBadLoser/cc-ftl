@@ -15,6 +15,7 @@ import { key, type Ctx, type Dir, type Port } from './model';
 import { cabinsOf, house } from './quarters';
 import type { Recipe } from './recipe';
 import { RegionGrid, SOLID, SPACE } from './regions';
+import { stranded } from './regionOps';
 import { noses } from './noses';
 import { PREFAB_PADS, prefab } from './prefab';
 import { fillRing, ringPorts, ringSite } from './ring';
@@ -230,7 +231,7 @@ export function assemble(rng: Rng, recipe: Recipe, rooms: readonly RoomSpec[], t
     const r = tryOnce(rng, recipe, all, n);
     if (!r.why) r.why = missing(r.asm.ctx, all);
     if (!r.why) {
-      const cut = r.asm.ctx.g.stranded();
+      const cut = stranded(r.asm.ctx.g);
       if (cut.length > 0) r.why = `no way in to ${cut.slice(0, 3).map(([x, y, id]) => `${r.asm.ctx.g.regions[id]?.role} at ${x},${y}`).join('; ')}`;
     }
     if (r.why) { rejected.push(r.why); continue; }
