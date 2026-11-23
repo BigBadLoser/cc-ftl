@@ -104,8 +104,8 @@ export function createDescriber(sim: Sim) {
         const hurt = [e.damaged ? `${e.damaged} damaged` : '', e.destroyed ? `${e.destroyed} destroyed` : '', e.fires ? `${e.fires} fire${e.fires === 1 ? '' : 's'}` : ''].filter(Boolean).join(', ');
         return isPlayers(sim, e.ship) ? { kind: 'warning', tone: hurt ? 'bad' : 'warn', text: `Overcharged jump${hurt ? `: ${hurt}` : ''}` } : null;
       }
-      case 'crew.injured': return player(e.crew) && e.severity !== 'minor' ? { kind: 'crew', tone: e.severity === 'destroyed' ? 'bad' : 'warn', text: injuryLine(e), ...sub(crewSubject(sim, e.crew)) } : null;
-      case 'crew.scarred': return player(e.crew) ? { kind: 'crew', tone: 'warn', text: `${crewName(e.crew)}: the ${kindName(e.kind).toLowerCase()} on the ${partName(e.part)} healed badly and left a scar`, ...sub(crewSubject(sim, e.crew)) } : null;
+      case 'crew.injured': return isOnOurSide(sim, e.crew) && e.severity !== 'minor' ? { kind: 'crew', tone: e.severity === 'destroyed' ? 'bad' : 'warn', text: injuryLine(e), ...sub(crewSubject(sim, e.crew)) } : null;
+      case 'crew.scarred': return isOnOurSide(sim, e.crew) ? { kind: 'crew', tone: 'warn', text: `${crewName(e.crew)}: the ${kindName(e.kind).toLowerCase()} on the ${partName(e.part)} healed badly and left a scar`, ...sub(crewSubject(sim, e.crew)) } : null;
       case 'crew.knockedDown': return { kind: 'crew', tone: side(e.crew), text: `${crewName(e.crew)} was knocked down`, ...sub(crewSubject(sim, e.crew)) };
       case 'crew.imprisoned': return mine(e.crew) ? { kind: 'crew', tone: side(e.crew), text: `${crewName(e.crew)} locked up aboard ${shipName(e.ship)}`, ...sub(crewSubject(sim, e.crew)) } : null;
       case 'crew.surrendered': return { kind: 'crew', tone: side(e.crew), text: `${crewName(e.crew)} surrenders`, ...sub(crewSubject(sim, e.crew)) };

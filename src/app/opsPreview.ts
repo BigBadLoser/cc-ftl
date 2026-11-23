@@ -1,4 +1,5 @@
-import { AllegianceC, CrewC, DeadC, type Sim } from '../sim';
+import { CrewC, DeadC, type Sim } from '../sim';
+import { isPlayers } from '../sim/side';
 import { injuriesOf, partDestroyed } from '../sim/crew/body';
 import { skillOf } from '../sim/combat/operators';
 import { partIcon } from './healthDetail';
@@ -41,7 +42,7 @@ export function previewOperations(sim: Sim, id: number): UiOperations | null {
   }
   let best = { name: '', skill: -1 };
   for (const m of sim.world.query(CrewC)) {
-    const mine = sim.world.get(m, AllegianceC)?.faction === 'player' && !sim.world.has(m, DeadC);
+    const mine = isPlayers(sim, m) && !sim.world.has(m, DeadC);
     const s = m === id || !mine ? -1 : skillOf(sim, m, 'medicine');
     if (s > best.skill) best = { name: sim.world.get(m, CrewC)?.name ?? '', skill: s };
   }
