@@ -1,4 +1,5 @@
 import type { FactionDef } from '../../sim';
+import { raiderOutline } from './raiderOutline';
 import { scrapper } from './scrapper';
 
 /**
@@ -28,6 +29,7 @@ export const raider = {
   ...base,
   name: 'Raider clan',
   art: { ...scrapper.art, livery: 'livery.raider' },
+  outline: raiderOutline,
   architecture: architecture([{ ...role('raider'), weight: { base: 5, perDepth: 0, max: 5 } }, { ...role('gunrunner'), weight: { base: 0, perDepth: 0.3, max: 2 } }]),
   hullFamilies: [{ ...family('raider'), weight: { base: 5, perDepth: 0, max: 5 } }, { ...family('gunrunner'), weight: { base: 0, perDepth: 0.3, max: 2 } }],
   weapons: { light: [{ value: 'module.ionCannon', weight: 3 }, { value: 'module.burstLaser', weight: 2 }], heavy: [{ value: 'module.massDriver', weight: 1 }] },
