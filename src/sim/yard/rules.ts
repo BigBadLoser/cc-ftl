@@ -4,6 +4,7 @@ import type { Sim } from '../sim';
 import { hailVerdict } from '../trade/traders';
 import { TraderC } from '../trade/types';
 import type { YardMoney, YardSizeDef } from './types';
+import { PLAYER } from '../side';
 
 /** A station's shipyard: the tier it runs at and the multiplier its prices carry. */
 export interface YardService {
@@ -26,7 +27,7 @@ export function yardService(sim: Sim, station: number): YardService | null {
   const def = sim.content.yard;
   const ship = sim.world.get(station, ShipC);
   if (!def || !ship?.gen || !ship.immobile) return null;
-  if (ship.faction === 'player' || ship.state !== 'active' || !sim.world.has(station, TraderC)) return null;
+  if (ship.faction === PLAYER || ship.state !== 'active' || !sim.world.has(station, TraderC)) return null;
   const size = ship.gen.role ?? '';
   const tier = def.sizes[size];
   if (!def.kinds.includes(ship.gen.faction) || !tier || !hailVerdict(sim, station).answers) return null;

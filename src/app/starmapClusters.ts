@@ -79,12 +79,22 @@ function sectorPairs(index: GalaxyIndex): SectorPair[] {
   return [...pairs.values()];
 }
 
+/** The faction holding most of a cluster's sectors now (ties go to the one met first); null when most are nobody's. */
+function majorityOwner(list: readonly SectorData[], ownerOf: (sector: string) => string | null): string | null {
+  const count = new Map<string | null, number>();
+  for (const s of list) count.set(ownerOf(s.id), (count.get(ownerOf(s.id)) ?? 0) + 1);
+  let best: string | null = null;
+  let n = 0;
+  for (const [f, c] of count) if (c > n) [best, n] = [f, c];
+  return best;
+}
+
 /**
  * The outer zoom levels: clusters (with fluid areas over their sectors), lanes between sectors, and links between
  * clusters: their gates, plus one faint link per pair of clusters a patch of unclaimed sectors joins (a minimum spanning
  * tree over the clusters each patch touches).
  */
-export function buildClusters(index: GalaxyIndex, content: GalaxyContent | undefined, known: (sector: string) => boolean, current: SectorData | undefined): {
+export function buildClusters(index: GalaxyIndex, content: GalaxyContent | undefined, known: (sector: string) => boolean, current: SectorData | undefined, ownerOf: (sector: string) => string | null): {
   clusters: UiStarCluster[];
   sectorLinks: UiStarLink[];
   clusterLinks: UiStarLink[];
@@ -107,9 +117,10 @@ export function buildClusters(index: GalaxyIndex, content: GalaxyContent | undef
       if (clusterOutlines.size > 2000) clusterOutlines.clear();
       clusterOutlines.set(okey, outline);
     }
+    const faction = majorityOwner(list, ownerOf);
     clusters.push({
       id, name: first.clusterName ?? id, type: first.clusterType ?? '', typeLabel: CLUSTER_TYPE_LABEL[first.clusterType ?? ''] ?? '',
-      faction: first.faction, tone: first.faction ? toneOf(content?.factions[first.faction]?.kind) : 'dim',
+      faction, tone: faction ? toneOf(content?.factions[faction]?.kind) : 'dim',
       x: Math.round(x), y: Math.round(y), sectors: list.length, outline, known: list.some((s) => known(s.id)),
       revealed: false, current: id === current?.cluster,
     });

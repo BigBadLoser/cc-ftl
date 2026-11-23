@@ -11,9 +11,10 @@ import { engagementId } from './engagementFlow';
 import { engagements, inEngagement, sideIn } from './engagements';
 import { contactOf, shipmates } from './groups';
 import { factionOfShip } from './heat';
-import { stanceBetween } from './relations';
+import { stanceOf } from './relations';
 import { standing, tierOf } from './standing';
 import { AID_STANDING } from './tuningWar';
+import { PLAYER } from '../side';
 
 /**
  * Allies come to the player's aid (#603; user decisions 2026-11-21). When a ship hostile to the player fires on the player's ship, armed ships in the
@@ -31,18 +32,18 @@ export function playerAttacker(sim: Sim): number {
   const t = me ? sim.world.get(me.id, CombatC)?.threat : undefined;
   if (!t || sim.tick - t.at > AI_THREAT_SEC * TICK_HZ) return 0;
   const s = sim.world.get(t.ship, ShipC);
-  return s && (s.state === 'active' || s.state === 'disabled') && factionsHostile(s.faction, 'player') ? t.ship : 0;
+  return s && (s.state === 'active' || s.state === 'disabled') && factionsHostile(s.faction, PLAYER) ? t.ship : 0;
 }
 
 /** May this ship take on the player's attacker (whose galaxy faction is `foe`)? Armed, awake, not hostile to the player, not in a fight, of a faction that likes the player and is no friend of the foe. */
 export function canAid(sim: Sim, id: number, foe: string | null): boolean {
   const s = sim.world.get(id, ShipC);
-  if (!s || s.state !== 'active' || s.faction === 'player' || factionsHostile(s.faction, 'player') || isDormant(s) || s.outpost || s.base) return false;
+  if (!s || s.state !== 'active' || s.faction === PLAYER || factionsHostile(s.faction, PLAYER) || isDormant(s) || s.outpost || s.base) return false;
   if (!modulesOn(sim, id, isWeapon).length || inEngagement(sim, id)) return false;
   const owner = factionOfShip(sim, id, s, s.faction);
   const content = sim.content.galaxy;
   if (!owner || !content || owner === foe || tierOf(sim, owner) === 'hostile' || standing(sim, owner) < AID_STANDING) return false;
-  return !foe || stanceBetween(content, owner, foe) !== 'allied';
+  return !foe || stanceOf(sim, owner, foe) !== 'allied';
 }
 
 const member = (sim: Sim, ship: number): EngagementMember => {

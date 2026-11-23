@@ -15,6 +15,8 @@ from sprites.cmbkit import Frame  # noqa: E402
 import model  # noqa: E402
 import plasma  # noqa: E402
 
+ASSET="module.engine"   # the sprite family; a tier renders as module.engine_mk<n> (--tier)
+
 
 def flame_visible(visible):
     for ob in bpy.data.objects:
@@ -32,7 +34,7 @@ def block_sprite(out,rot,part,preview=False):
     core._state["scene"].cycles.samples=4 if preview else 24
     post.select("walls+hull")
     try:
-        sid=f"module.engine.{part}.r{rot}"
+        sid=f"{ASSET}.{part}.r{rot}"
         if part in ("block","end"):
             objs=HE.module_block(rot) if part=="block" else HE.module_end(rot)
             c,op,g,ox,oy,_=env_build.render_sprite(sid,"over",objs)
@@ -47,7 +49,7 @@ def block_sprite(out,rot,part,preview=False):
     post.write_png(directory/(sid+".png"),rgba)
     post.write_png(directory/(sid+".glow.png"),g[y0:y1,x0:x1])
     entry={"kind":"static","sheet":sid,"frame":{"x":0,"y":0,"w":int(x1-x0),"h":int(y1-y0)},
-           "anchor":{"x":int(ox-x0),"y":int(oy-y0)},"footprint":[5,4] if rot%2 else [4,5],"glow":False}
+           "anchor":{"x":int(ox-x0),"y":int(oy-y0)},"footprint":[model.DEPTH,4] if rot%2 else [4,model.DEPTH],"glow":False}
     print("SPRITE",sid,entry,flush=True)
     return sid,entry
 
@@ -88,11 +90,13 @@ def sprite(out,rot,hot,part,stage,preview=False):
     rgb,_=core.render(w,h,"glow")
     if stage>=1 and hot:
         core._set_pass=original
-    g=np.pad(post.glow_down(rgb,core.SS,3),((1,1),(1,1),(0,0)))
+    g=np.pad(post.glow_down(rgb,core.SS,3,floor=8 if part=="flame" else 40),((1,1),(1,1),(0,0)))
+    if part=="flame":
+        op=np.zeros_like(op)       # glow only: the bell is the bell sprite's; here it only hides the flame behind it
     x0,y0,x1,y1=post.crop_box(op|(g[...,3]>0))
     rgba=post.to_rgba(c,op)[y0:y1,x0:x1]
     g=g[y0:y1,x0:x1]
-    sid=f"module.engine.{part}.r{rot}"+(".active" if hot else "")
+    sid=f"{ASSET}.{part}.r{rot}"+(".active" if hot and part!="flame" else "")
     directory=out/"sprites"
     directory.mkdir(parents=True,exist_ok=True)
     post.write_png(directory/(sid+".png"),rgba)
@@ -104,7 +108,7 @@ def sprite(out,rot,hot,part,stage,preview=False):
     assert set(np.unique(rgba[...,3])).issubset({0,255})
     entry={"kind":"static","sheet":sid,"frame":{"x":0,"y":0,"w":int(x1-x0),"h":int(y1-y0)},
            "anchor":{"x":int((w+2)//2-x0),"y":int((h+2)//2-y0)},
-           "footprint":[5,4] if rot%2 else [4,5],"glow":bool(g[...,3].any())}
+           "footprint":[model.DEPTH,4] if rot%2 else [4,model.DEPTH],"glow":bool(g[...,3].any())}
     print("SPRITE",sid,entry,flush=True)
     return sid,entry
 
@@ -230,7 +234,14 @@ def main():
     p.add_argument("--no-sprites",action="store_true")
     p.add_argument("--sprite-state",choices=("idle","active","both"),default="both")
     p.add_argument("--beauty-state",choices=("idle","active","both"),default="both")
+    p.add_argument("--tier",type=int,default=1,choices=(1,2,3),help="Mk I / II / III (4x5 / 4x6 / 4x7)")
+    p.add_argument("--variant",default="KB",help="the tier fit-out (tierkit; only KB remains)")
+    p.add_argument("--parts",help="render only these sprite parts (comma list, e.g. flame), merged into the --out fragment")
+    p.add_argument("--asset",help="sprite family (default module.engine, module.engine_mk<n> for a tier)")
     a=p.parse_args(sys.argv[sys.argv.index("--")+1:])
+    global ASSET
+    model.set_tier(a.tier,a.variant)
+    ASSET=a.asset or ("module.engine" if a.tier==1 else f"module.engine_mk{a.tier}")
     a.out.mkdir(parents=True,exist_ok=True)
     if a.review_walls:
         review_walls(a.out)
@@ -240,9 +251,11 @@ def main():
         stage=stage_of(r,a.stage)
         if not a.no_sprites:
             parts=(("hull",False),)+((("block",False),("end",False)) if stage>=8 else ())+(("machine",False),("machine",True),
-                   ("machine.open",False),("machine.open",True),("bell",False),("bell",True))
+                   ("machine.open",False),("machine.open",True),("bell",False),("bell",True),("flame",True))
             for part,hot in parts:
                 if part not in ("hull","block","end") and a.sprite_state!="both" and hot!=(a.sprite_state=="active"):
+                    continue
+                if a.parts and part not in a.parts.split(","):
                     continue
                 sid,entry=sprite(a.out,r,hot,part,stage,a.preview)
                 entries[sid]=entry
@@ -255,8 +268,8 @@ def main():
                     beauty(a.out,r,hot,stage,a.save_blend)
     entries=json.loads(fragment.read_text())["assets"] if fragment.exists() else entries
     (a.out/"design.json").write_text(json.dumps({"name":"KESTREL / 02","stage":a.stage,
-        "rotationsRendered":sorted(int(s[-1]) for s in entries if s.startswith("module.engine.hull.r")),
-        "footprintAlongHull":4,"footprintDepth":5,
+        "rotationsRendered":sorted(int(s[-1]) for s in entries if s.startswith(ASSET+".hull.r")),
+        "footprintAlongHull":4,"footprintDepth":model.DEPTH,
         "variant":"wall-1.85-roof-2.05","wallZ":model.WALL_Z,"roofZ":model.ROOF_Z,
         "thrustAxisZ":model.THRUST_Z,"cassetteVerticalFit":model.CASSETTE_Z_FIT,
         "spriteSamples":4 if a.preview else 24,

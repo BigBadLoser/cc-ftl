@@ -17,6 +17,7 @@ import { liftFleet, sendOff } from './fleetShips';
 import { answerYields } from './engagementPrize';
 import { aftermath, apply, liveMeetings, type Meeting } from './meetings';
 import { fleetName } from './names';
+import { fightPressure } from './pressure';
 import { report } from './news';
 import { standingShift } from './standing';
 import { FTL_CHARGE_SEC } from '../tuning';
@@ -95,7 +96,7 @@ function fateOf(sim: Sim, e: Engagement, ship: number, contact: number | undefin
   return kept ? 'fled' : 'lost';
 }
 
-/** A side's result from its ships' fates: the descriptors it lost (those still known) and its fate as the stats fight would name it. */
+/** A side's result from its ships' fates: every ship it lost (a reaped one as a stand-in) and its fate as the stats fight would name it. */
 function sideResult(sim: Sim, e: Engagement, side: 0 | 1): SideResult & { held: boolean } {
   const lost: Contact[] = [];
   let hold = 0;
@@ -110,8 +111,10 @@ function sideResult(sim: Sim, e: Engagement, side: 0 | 1): SideResult & { held: 
     } else if (fate === 'fled') fled++;
     else {
       hurt = true;
+      // A fleet ship lost earlier in the fight may already be reaped (tendFleets): it still counts, as a stand-in of its side's faction.
       const c = fleets.flatMap((f) => f.ships).find((x) => x.id === m.contact);
       if (c) lost.push(c);
+      else if (m.contact !== undefined) lost.push({ id: m.contact, faction: e.factions[side], shipgen: e.factions[side], seed: 0, depth: 0, since: 0 });
     }
   }
   const fate = hold ? (hurt ? 'hurt' : 'unhurt') : fled ? 'fled' : 'destroyed';
@@ -182,6 +185,8 @@ function finish(sim: Sim, e: Engagement): void {
       if (x.fate === 'hurt' && f.node === e.node && f.ships.length) strand(sim, f, sim.galaxy.turn);
     });
     aftermath(sim, { a, b, node: e.node }, { kind, winner: winner === null ? null : winner === 0 ? 'a' : 'b', share: 0.5, a: r[0], b: r[1] }, sim.galaxy.turn, e.names);
+    // A ship taken is a loss the aftermath does not count (kind 'avoided'): it moves the border like a ship destroyed (the others go through `aftermath`, which feeds the same `fightPressure`).
+    if (taken && winner !== null) fightPressure(sim, e.node, e.factions[winner], e.factions[winner === 0 ? 1 : 0], 1, false);
   }
   close(sim, e, winner, false);
 }

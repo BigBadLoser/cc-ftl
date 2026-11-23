@@ -1,12 +1,12 @@
-import { homeShip, isOnOurSide } from '../sim/index';
+import { homeShip, isOnOurSide, isPlayers, PLAYER } from '../sim/index';
 import { hasLiveCore } from '../sim/robots/core';
 import { shipIdOf, shipGrid } from '../sim/regions';
-import { BreakdownC, CrewC, DeadC, DownedC, ModuleC, PickupC, NeedsC, PositionC, AllegianceC, ShipC, incomingFleets, isSuited, roomTiles, type Sim, type SimEvent } from '../sim';
+import { BreakdownC, CrewC, DeadC, DownedC, ModuleC, PickupC, NeedsC, PositionC, ShipC, incomingFleets, isSuited, roomTiles, type Sim, type SimEvent } from '../sim';
 import { Struct } from '../sim/structure';
 import { O2_ALERT_CLEAR_ABOVE, ALERT_INTERVAL_TICKS } from '../sim/tuning';
 import { AwayC, AwaySiteC } from '../sim/away/components';
 import { pendingAsks } from '../sim/galaxy/joinOffer';
-import { deriveAlerts, shortOnPower, underAttack, powerSubject, powerAlertText, hazardKey, alertShips, shipHelpless, DERIVED_KINDS, type Wanted } from './alertsDerived';
+import { deriveAlerts, shortOnPower, underAttack, powerSubject, powerAlertText, hazardKey, shipHelpless, DERIVED_KINDS, type Wanted } from './alertsDerived';
 import { ALERT_PRIORITY, raisesAlert } from './eventRoute';
 import { passengerName } from './jobsSnapshot';
 import type { UiAlert, UiAlertKind, UiSubject } from '../ui/api';
@@ -61,11 +61,10 @@ export function createAlerts(sim: Sim): Alerts {
 
   const crewName = (id: number) => sim.world.get(id, CrewC)?.name ?? 'Crew';
   const home = () => homeShip(sim);
-  const playerSuit = (id: number) => sim.world.get(id, AllegianceC)?.faction === 'player';
   const alive = (id: number) => sim.world.has(id, CrewC) && !sim.world.has(id, DeadC);
   /** Hostile ships and their crew raise no alerts of their own: hazards count on any ship the player owns, "down" only for the player's side. */
   const foreign = (e: SimEvent): boolean => {
-    if (e.type === 'fire.started' || e.type === 'hull.breach' || e.type === 'o2.low') return !alertShips(sim, e.ship);
+    if (e.type === 'fire.started' || e.type === 'hull.breach' || e.type === 'o2.low') return !isPlayers(sim, e.ship);
     if (e.type === 'power.shortage') return e.ship !== home();
     if (e.type === 'crew.downed') return !isOnOurSide(sim, e.crew);
     return false;
@@ -117,12 +116,12 @@ export function createAlerts(sim: Sim): Alerts {
         resolved: () => !alive(e.crew) || !sim.world.has(e.crew, DownedC) || !!sim.world.get(e.crew, DownedC)?.stabilized,
       };
       case 'suit.airLow': case 'suit.airOut': {
-        if (!playerSuit(e.crew)) return null;
+        if (!isPlayers(sim, e.crew)) return null;
         return { kind: e.type, key: `sa${e.crew}`, text: `${e.type === 'suit.airLow' ? 'Suit air low' : 'Suit air out'}: ${crewName(e.crew)}`, subject: crewSubject(sim, e.crew), resolved: () => !alive(e.crew) || !isSuited(sim, e.crew) };
       }
       case 'crew.airUnreachable': {
         // No air source in reach (#286): the pickup request is out; a shuttle answers it (the site's own, or a pickup run).
-        if (!playerSuit(e.crew)) return null;
+        if (!isPlayers(sim, e.crew)) return null;
         const left = `${Math.floor(e.sec / 60)}:${String(e.sec % 60).padStart(2, '0')}`;
         return { kind: e.type, key: `au${e.crew}`, text: `No air in reach: ${crewName(e.crew)} (${left} left)`, subject: crewSubject(sim, e.crew), resolved: () => !alive(e.crew) || !sim.world.has(e.crew, PickupC) };
       }
@@ -136,12 +135,12 @@ export function createAlerts(sim: Sim): Alerts {
         };
       }
       case 'crew.break': {
-        if (!e.alert || !playerSuit(e.crew)) return null;
+        if (!e.alert || !isPlayers(sim, e.crew)) return null;
         // Clears itself when the break ends (the sim's `crew.breakEnded`).
         return { kind: e.type, key: `br${e.crew}`, text: `${crewName(e.crew)} ${breakWhat(e.kind, e.context)}`, subject: crewSubject(sim, e.crew), resolved: () => !alive(e.crew) || !sim.world.has(e.crew, BreakdownC) };
       }
       case 'crew.starving': {
-        if (!playerSuit(e.crew)) return null;
+        if (!isPlayers(sim, e.crew)) return null;
         return { kind: e.type, key: `st${e.crew}`, text: `Starving: ${crewName(e.crew)}`, subject: crewSubject(sim, e.crew), resolved: () => !alive(e.crew) || (sim.world.get(e.crew, NeedsC)?.hunger ?? 0) > 0 };
       }
       case 'eggsac.hatched': {
@@ -166,14 +165,14 @@ export function createAlerts(sim: Sim): Alerts {
       case 'vehicle.destroyed': {
         // The shuttle's people: those inside went down or died with it, the rest of its party are out with no ride home.
         const people = [...e.aboard, ...e.away];
-        if (e.faction !== 'player' || !people.length) return null;
+        if (e.faction !== PLAYER || !people.length) return null;
         const trouble = (c: number) => alive(c) && ((!!sim.world.get(c, DownedC) && !sim.world.get(c, DownedC)?.stabilized) || sim.world.get(c, AwayC)?.vehicle === e.vehicle);
         const first = people.find(trouble) ?? people[0] as number;
         const text = `Shuttle lost: ${e.aboard.length ? `${e.aboard.length} aboard` : ''}${e.aboard.length && e.away.length ? ', ' : ''}${e.away.length ? `${e.away.length} away` : ''}`;
         return { kind: 'vehicle.lost', key: `vl${e.vehicle}`, text, subject: crewSubject(sim, first) ?? tileAt(e.x, e.y), resolved: () => !people.some(trouble) };
       }
       case 'core.torn': case 'core.hacked': {
-        if (e.ship !== home() || (e.type === 'core.hacked' && e.by === 'player')) return null;
+        if (e.ship !== home() || (e.type === 'core.hacked' && e.by === PLAYER)) return null;
         const text = e.type === 'core.torn' ? 'AI core torn out: robots shut down' : 'AI core hacked: robots shut down';
         const core = e.type === 'core.hacked' ? sim.world.get(e.moduleId, ModuleC) : undefined;
         return { kind: 'core.lost', key: `core${e.ship}`, text, subject: core ? tileAt(core.x, core.y) : shipSubject(sim, e.ship), resolved: () => hasLiveCore(sim, e.ship) };

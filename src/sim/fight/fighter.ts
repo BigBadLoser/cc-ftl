@@ -33,6 +33,7 @@ import { TICK_HZ } from '../time';
 import { DroneC } from '../drones/components';
 import { damageDrone } from '../drones/damage';
 import { droneInReach } from '../drones/target';
+import { PLAYER } from '../side';
 
 /** Combat-ready crew with an allegiance, grouped by grid, each list in ascending id order. */
 export function combatReadyUnits(sim: Sim): Map<number, number[]> {
@@ -160,10 +161,10 @@ export function stepFighter(sim: Sim, grid: Grid, id: number, units: readonly nu
   const faction = sim.world.get(id, AllegianceC)?.faction;
   // Non-combatants (station civilians, lodging passengers: crew who are neither armed nor fighters) run from trouble like the player's do. A Brave crew member fights bare-handed.
   // A won't-fight (Pacifist) never does (docs/TRAITS.md 10.10): they flee like the unarmed.
-  const canFight = !wontDo(sim, id, 'violence') && (isArmed(sim, id) || !!role?.fighter || traitFlag(sim, id, 'brave') || (faction !== 'player' && fightsBareHanded(roleOf(sim, id))));
+  const canFight = !wontDo(sim, id, 'violence') && (isArmed(sim, id) || !!role?.fighter || traitFlag(sim, id, 'brave') || (faction !== PLAYER && fightsBareHanded(roleOf(sim, id))));
   // Armed undrafted crew of the player's own ship fight what they meet; the good fighters among them (and armed robots) hunt intruders
   // they have not seen yet (docs/TRAITS.md 10.9, Q4).
-  const defender = faction === 'player' && !controlled && !invader && isArmed(sim, id) && (!isPlayerPerson(sim, id) || huntsBoarders(sim, id));
+  const defender = faction === PLAYER && !controlled && !invader && isArmed(sim, id) && (!isPlayerPerson(sim, id) || huntsBoarders(sim, id));
   const hunter = invader || huntsBoarders(sim, id) || defender;
 
   // The nearest foe we can see (sight range, clear line).
@@ -191,7 +192,7 @@ export function stepFighter(sim: Sim, grid: Grid, id: number, units: readonly nu
   else if (!sim.content.species[crew.species]?.fearless) {
     // Unarmed player crew know about every intruder aboard (a small ship): they keep away from all of them, not just those in view.
     // Others (station civilians) run only from what they see.
-    if (faction === 'player') {
+    if (faction === PLAYER) {
       if (sim.world.has(id, EquipOrderC)) return; // on the way to arm (emergency arming): keep walking to the locker
       const threats = foes.map((o) => o.pos);
       // Hidden from every intruder: a rescue (on the way or just claimed, for a patient out of their sight) goes on instead of hiding.

@@ -1,4 +1,4 @@
-import { AllegianceC, CrewC, DeadC, NeedsC, type Sim } from '../sim';
+import { CrewC, DeadC, NeedsC, type Sim, isPlayers } from '../sim';
 import type { UiFood, UiStock } from '../ui/api';
 
 /** Nutrition used for the rate when there is no food in stock to average (a ration). */
@@ -26,7 +26,7 @@ export function buildFood(sim: Sim, stock: readonly UiStock[]): UiFood {
   for (const id of sim.world.query(CrewC, NeedsC)) {
     const crew = sim.world.get(id, CrewC);
     const decay = crew && sim.content.species[crew.species]?.hunger?.decayPerSec;
-    if (!decay || sim.world.has(id, DeadC) || sim.world.get(id, AllegianceC)?.faction !== 'player') continue;
+    if (!decay || sim.world.has(id, DeadC) || !isPlayers(sim, id)) continue;
     eaters++;
     decayPerSec += decay;
   }

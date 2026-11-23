@@ -13,6 +13,7 @@ import type { Rect } from '../grid';
 import { AsteroidC } from '../asteroids/components';
 import { FLEET_NODE_SHIPS, STRANDED_INTEGRITY, WARM_HOPS } from './tuning';
 import type { Contact, Fleet } from './types';
+import { PLAYER } from '../side';
 
 /**
  * A fleet's ships in the player's node. Fleets are descriptors everywhere; only in the node the player is in do their ships become real
@@ -24,7 +25,7 @@ type Fate = 'present' | 'fled' | 'gone';
 
 function fateOf(sim: Sim, id: number): Fate {
   const s = sim.world.get(id, ShipC);
-  if (!s || s.faction === 'player') return 'gone';
+  if (!s || s.faction === PLAYER) return 'gone';
   if (s.state === 'active' || s.state === 'disabled') return 'present';
   return s.state === 'fled' ? 'fled' : 'gone';
 }
@@ -36,7 +37,7 @@ export const inPlay = (sim: Sim, id: number): boolean => fateOf(sim, id) === 'pr
 function shipsInPlay(sim: Sim): number {
   return sim.world.query(ShipC).filter((id) => {
     const s = sim.world.get(id, ShipC);
-    return !!s && s.faction !== 'player' && (s.state === 'active' || s.state === 'disabled');
+    return !!s && s.faction !== PLAYER && (s.state === 'active' || s.state === 'disabled');
   }).length;
 }
 

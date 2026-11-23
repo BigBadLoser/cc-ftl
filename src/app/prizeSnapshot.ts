@@ -1,5 +1,5 @@
 import { shipIdOf } from '../sim/regions';
-import { AllegianceC, CrewC, DeadC, DownedC, HealthC, PositionC, PrisonerC, PrizeC, ShipC, type Sim } from '../sim';
+import { CrewC, DeadC, DownedC, HealthC, PositionC, PrisonerC, PrizeC, ShipC, type Sim, isPlayers } from '../sim';
 import { sealOf } from './sealSnapshot';
 import type { UiPrize } from '../ui/api';
 
@@ -21,7 +21,7 @@ export function buildPrizes(sim: Sim): UiPrize[] {
           id: c, name: crew.name, role: sim.content.roles[crew.role]?.name ?? crew.role, hp: Math.round(hp?.hp ?? 0), maxHp: hp?.max ?? 0,
           state: sim.world.has(c, DownedC) ? 'downed' : 'surrendered', seal: sealOf(sim, c) as NonNullable<ReturnType<typeof sealOf>>,
         });
-      } else if (sim.world.get(c, AllegianceC)?.faction === 'player') aboard++;
+      } else if (isPlayers(sim, c)) aboard++;
     }
     out.push({ ship: id, name: ship.name, from: prize.from, prisoners, crewAboard: aboard });
   }

@@ -220,7 +220,7 @@ describe('stasis wheel', () => {
     expect(slabInfo(sim, prisoner)!.reserve).toBe(1);
     m.enabled = false;
     const events = run(sim, RESERVE_TICKS + 5);
-    expect(events.some((e) => e.type === 'stasis.thawed' && e.crew === prisoner)).toBe(true);
+    expect(events.some((e) => e.type === 'stasis.thawed' && e.crew === prisoner && e.holder === 'player')).toBe(true);
     expect(isFrozen(sim, prisoner)).toBe(false);
     expect(sim.world.has(prisoner, PrisonerC)).toBe(false);
     expect(sim.world.has(prisoner, DraftedC)).toBe(true);

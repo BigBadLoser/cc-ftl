@@ -1,4 +1,3 @@
-import { ShipC } from '../combat/components';
 import { CrewC, DeadC, PositionC, type Position } from '../crew/components';
 import { defineComponent } from '../ecs';
 import { AllegianceC } from '../fight/components';
@@ -9,6 +8,7 @@ import { removeModule } from '../modules/spawn';
 import { shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { CORE_RAID_DEFENDER_RADIUS, CORE_RAID_HOLD_TICKS, CORE_RAID_RADIUS } from '../tuning';
+import { isPlayers } from '../side';
 
 /**
  * The zealots' raid on an AI core. Their boarders (`CoreRaiderC`, given when the party leaves its shuttle) walk to the core room instead of the
@@ -91,12 +91,12 @@ export function coreRaidSystem(sim: Sim): void {
     const m = sim.world.get(id, ModuleC);
     if (!m || !sim.content.modules[m.def]?.aiCore) continue;
     const shipId = shipIdOf(sim, m);
-    if (sim.world.get(shipId, ShipC)?.faction !== 'player') continue;
+    if (!isPlayers(sim, shipId)) continue;
     const box = boxOf(sim, m);
     if (!box) continue;
     const holding = raiders.some((r) => raiderOn(sim, r, shipId) && nearBox(sim.world.get(r, PositionC) as Position, box, CORE_RAID_RADIUS));
     const defended = sim.world.query(AllegianceC, PositionC).some((c) => {
-      if (sim.world.get(c, AllegianceC)?.faction !== 'player' || !raiderOn(sim, c, shipId)) return false;
+      if (!isPlayers(sim, c) || !raiderOn(sim, c, shipId)) return false;
       return nearBox(sim.world.get(c, PositionC) as Position, box, CORE_RAID_DEFENDER_RADIUS);
     });
     const raid = sim.world.get(id, CoreRaidC);

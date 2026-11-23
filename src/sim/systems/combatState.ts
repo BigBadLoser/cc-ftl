@@ -3,6 +3,7 @@ import { factionsHostile } from '../combat/factions';
 import type { Sim } from '../sim';
 import { truceHolds } from '../blackmarket/truce';
 import { isDormant } from '../combat/dormant';
+import { PLAYER } from '../side';
 
 /**
  * The sector is "in combat" while a player ship and a ship at war with the player (hostile or rogue) are both still in play (active or disabled;
@@ -15,8 +16,8 @@ export function combatStateSystem(sim: Sim): void {
   for (const id of sim.world.query(ShipC)) {
     const ship = sim.world.get(id, ShipC);
     if (!ship || (ship.state !== 'active' && ship.state !== 'disabled') || isDormant(ship)) continue;
-    if (ship.faction === 'player') player = true;
-    else if (factionsHostile(ship.faction, 'player')) hostile = true;
+    if (ship.faction === PLAYER) player = true;
+    else if (factionsHostile(ship.faction, PLAYER)) hostile = true;
   }
   const engaged = player && hostile && !truceHolds(sim);
   if (engaged === sim.sector.inCombat) return;

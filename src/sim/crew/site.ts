@@ -1,4 +1,3 @@
-import { AllegianceC } from '../fight/components';
 import { isOffDuty } from '../fight/relations';
 import { footprintBlockedByCrew } from '../modules/spawn';
 import { missingMaterials } from '../items/materials';
@@ -11,6 +10,7 @@ import { AssignmentC, CrewC, DeadC, DraftedC, JobC, PositionC, PrioritiesC, type
 import { isIncapacitated, jobGoal, refusesWork, origin } from './helpers';
 import { walkOpts } from '../eva/route';
 import { findPath } from './pathfind';
+import { isPlayers } from '../side';
 
 /** Why a construction site is stuck (the first that applies). */
 export type SiteBlock =
@@ -63,7 +63,7 @@ function capableCrew(sim: Sim, ship: number): number[] {
   for (const id of sim.world.query(CrewC, PositionC, PrioritiesC)) {
     const p = sim.world.get(id, PositionC);
     if (!p || shipIdOf(sim, p) !== ship || sim.world.has(id, DeadC) || sim.world.has(id, DraftedC)) continue;
-    if (sim.world.get(id, AllegianceC)?.faction !== 'player' || isIncapacitated(sim, id) || isOffDuty(sim, id) || refusesWork(sim, id)) continue;
+    if (!isPlayers(sim, id) || isIncapacitated(sim, id) || isOffDuty(sim, id) || refusesWork(sim, id)) continue;
     if ((sim.world.get(id, PrioritiesC)?.construction ?? 0) <= 0 || stat(sim, id, 'workSpeed') <= 0) continue;
     out.push(id);
   }

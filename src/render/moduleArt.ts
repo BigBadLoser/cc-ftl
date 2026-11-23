@@ -261,9 +261,9 @@ export function showsActive(def: ModuleDef, on: boolean, crafting: boolean, mann
 /**
  * The sprite layers of a module, bottom first.
  *  - Engines: `<asset>.hull.r{n}` (the bulkhead, never cut; with the walls up or roofed it stands in a gap of the hull wall, otherwise the hull tile draws it), the
- *    machine `<asset>.machine.r{n}` (cut by the wall; `.machine.open.r{n}` when the walls are down, `open`), the hull's thruster block
- *    `<asset>.block.r{n}` (`engineBlock`: in every view, outside the hull) and the bell outside the hull `<asset>.bell.r{n}`, both
- *    sorted by the tile beyond the hull row (`out`); `.active` while burning.
+ *    machine `<asset>.machine.r{n}` (cut by the wall; `.machine.open.r{n}` when the walls are down, `open`), the hull's thruster block `<asset>.block.r{n}`
+ *    (`engineBlock`: in every view, outside the hull) and the bell outside the hull `<asset>.bell.r{n}`, both sorted by the tile beyond the hull row (`out`);
+ *    `.active` while burning, with the exhaust `<asset>.flame.r{n}` over the bell (glow only, cut where the bell hides it, so it runs long past the hull).
  *  - Ground mounts (`isGroundMount`): `<asset>.r{n}`, the 3x3 mount with its cable port on the side the rotation faces.
  *  - Weapons: the floor bay `<asset>.bay.r{n}`; the turret above it is drawn by turretView.
  *  - Consoles and seated modules (the research bench): the usual chain, then the desk-front overlay `<asset>.front.r{n}[.active]` over the seated operator.
@@ -317,9 +317,9 @@ export function moduleLayers(world: World, id: number, m: Module, def: ModuleDef
       { chain: [`${a}.hull${r}`, `${a}.hull`], key: `${a}.hull`, tiles: 'hull' },
       // The hull row's end cut over it, in the hull's paint (its black is the belly cut tops' around it).
       ...(engineBlock(def, m.rot) ? [{ chain: [`${a}.end${r}`], key: `${a}.end`, tiles: 'hull', optional: true, paint: 'armour', dz: 0.0005 } as ModuleLayer] : []),
-      { chain: machine, key: active ? `${a}.machine.active` : `${a}.machine`, tiles: 'rest' },
-      ...block,
+      { chain: machine, key: active ? `${a}.machine.active` : `${a}.machine`, tiles: 'rest' }, ...block,
       { chain: variant('bell'), key: `${a}.bell`, tiles: 'rest', out: true },
+      ...(active ? [{ chain: [`${a}.flame${r}`], key: `${a}.flame`, tiles: 'rest', out: true, optional: true, dz: 0.001 } as ModuleLayer] : []),
     ];
   }
   if (def.plot) {

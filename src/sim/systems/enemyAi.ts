@@ -11,6 +11,7 @@ import { BoarderC, VehicleC } from '../vehicles/components';
 import { partyOut } from '../boarding/partyOut';
 import { AI_RETARGET_TICKS, AI_THREAT_SEC, FLEE_BELOW, FTL_CHARGE_SEC } from '../tuning';
 import { TICK_HZ } from '../time';
+import { PLAYER } from '../side';
 
 /**
  * Enemy doctrine. Hostile and rogue active ships (a) retreat via combat.flee once integrity < FLEE_BELOW and the FTL drive
@@ -104,7 +105,7 @@ export function firstFoe(sim: Sim, ship: number): number {
   for (const id of sim.world.query(ShipC)) {
     const s = sim.world.get(id, ShipC);
     if (!s || (s.state !== 'active' && s.state !== 'disabled') || !shipsHostile(sim, ship, id)) continue; // the zealots and the Rogue AI never, at any standing
-    if (s.faction === 'player') return id;
+    if (s.faction === PLAYER) return id;
     other ||= id;
   }
   return other;
