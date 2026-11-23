@@ -21,12 +21,13 @@ from .surgery_rig_base import body, holo
 TOP = 0.22                                                       # the med bed's mattress top (medbay.MATTRESS)
 ARMS = ("camera", "laser", "cutter", "clamp", "suture")          # round the ring; the slim camera (always in use) faces
 # the viewer in surgery, where it hides least
-SPEC = {"laser": dict(r=0.04, fore="medWhite", band="medRed", L=0.36),
-        "cutter": dict(r=0.034, fore="steelL", band=None, L=0.36),
-        "clamp": dict(r=0.05, fore="gm", band=None, L=0.34),
-        "camera": dict(r=0.028, fore="medWhite", band="cyan", L=0.37),
-        "suture": dict(r=0.028, fore="medWhite", band="green", L=0.36)}
-RING_R, TUBE_R = 0.3, 0.05
+# Sizes read at the game's 64x32 art (about 45 art px a unit): nothing that should show is under 1.5 px across.
+SPEC = {"laser": dict(r=0.058, fore="medWhite", band="medRed", L=0.36),
+        "cutter": dict(r=0.052, fore="steelL", band=None, L=0.36),
+        "clamp": dict(r=0.068, fore="gm", band=None, L=0.34),
+        "camera": dict(r=0.046, fore="medWhite", band="cyan", L=0.37),
+        "suture": dict(r=0.046, fore="medWhite", band="green", L=0.36)}
+RING_R, TUBE_R = 0.3, 0.068
 
 
 class MK(K):
@@ -208,7 +209,7 @@ def arm(R, sh, out, tan, kind, work, folded, fold=0.0, beam=True, jaw=1.0):
     hs = lerp(tuple(aim[i] - d[i] * stand for i in range(3)), ce, min(1.0, fold / 0.35))   # spanning the gap (the shaft
     # runs out only as the arm settles)
     if unit(ce, hs)[1] > 0.06:
-        R.tube(ce, hs, 0.014, "rgChrome", sides=6)                                   # instrument shaft
+        R.tube(ce, hs, 0.024, "rgChrome", sides=6)                                   # instrument shaft
     head(R, hs, d, kind, working, aim, jaw, fire=fold == 0.0 and beam)
 
 
@@ -216,33 +217,33 @@ def head(R, tp, d, kind, working, aim, jaw=1.0, fire=False):
     """The tool from tp pointing along unit d (working: its lights lit); fire: the laser's beam, a short glow to aim."""
     at = lambda s: tuple(tp[i] + d[i] * s for i in range(3))  # noqa: E731
     if kind == "laser":
-        R.tube(at(0.0), at(0.04), 0.04, "medWhite")
-        R.tube(at(0.04), at(0.06), 0.042, "medRed")
-        R.tube(at(0.06), at(0.09), 0.036, "medWhite", r1=0.024)
-        R.tube(at(0.09), at(0.1), 0.018, "red" if working else "gmD")
+        R.tube(at(0.0), at(0.04), 0.06, "medWhite")
+        R.tube(at(0.04), at(0.06), 0.062, "medRed")
+        R.tube(at(0.06), at(0.09), 0.052, "medWhite", r1=0.036)
+        R.tube(at(0.09), at(0.1), 0.03, "red" if working else "gmD")
         if fire:
-            R.tube(at(0.1), aim, 0.0045, "red", sides=5)
-            R.ball(aim, 0.022, "red", seg=6)
+            R.tube(at(0.1), aim, 0.013, "red", sides=5)
+            R.ball(aim, 0.035, "red", seg=6)
     elif kind == "cutter":
-        R.tube(at(0.0), at(0.03), 0.024, "steel")
-        R.tube(at(0.03), at(0.1), 0.014, "rgChrome", r1=0.002, sides=6)
+        R.tube(at(0.0), at(0.03), 0.04, "steel")
+        R.tube(at(0.03), at(0.1), 0.026, "rgChrome", r1=0.01, sides=6)
     elif kind == "clamp":
-        R.tube(at(0.0), at(0.05), 0.04, "gmD")
+        R.tube(at(0.0), at(0.05), 0.058, "gmD")
         side = (-d[1], d[0], 0.0)
         sn = math.hypot(side[0], side[1]) or 1
         side = (side[0] / sn, side[1] / sn, 0.0)
         for o in (-1, 1):
             b = at(0.05)
             R.tube(tuple(b[i] + side[i] * o * 0.02 for i in range(3)),
-                   tuple(b[i] + d[i] * 0.12 + side[i] * o * 0.035 * jaw for i in range(3)), 0.012, "rgChromeD", sides=6)
+                   tuple(b[i] + d[i] * 0.12 + side[i] * o * 0.035 * jaw for i in range(3)), 0.022, "rgChromeD", sides=6)
     elif kind == "camera":
-        R.tube(at(0.0), at(0.08), 0.036, "gmD")
-        R.tube(at(0.08), at(0.095), 0.026, "cyan" if working else "steelD")
+        R.tube(at(0.0), at(0.08), 0.052, "gmD")
+        R.tube(at(0.08), at(0.095), 0.04, "cyan" if working else "steelD")
     else:
-        R.tube(at(0.0), at(0.02), 0.034, "medWhite")
-        R.tube(at(0.02), at(0.045), 0.036, "green")
-        R.tube(at(0.045), at(0.065), 0.034, "medWhite")
-        R.tube(at(0.065), at(0.15), 0.006, "rgChrome", r1=0.002, sides=5)
+        R.tube(at(0.0), at(0.02), 0.05, "medWhite")
+        R.tube(at(0.02), at(0.045), 0.052, "green")
+        R.tube(at(0.045), at(0.065), 0.05, "medWhite")
+        R.tube(at(0.065), at(0.15), 0.016, "rgChrome", r1=0.008, sides=5)
 
 
 def mount(R, hu, hv, hz, ca, sa):
@@ -252,7 +253,7 @@ def mount(R, hu, hv, hz, ca, sa):
     po = (hu + (RING_R + 0.03) * ca, hv + (RING_R + 0.03) * sa, hz)
     R.ball(po, 0.085, "medWhite")
     R.tube((hu + (RING_R + 0.07) * ca, hv + (RING_R + 0.07) * sa, hz), (hu + (RING_R + 0.085) * ca, hv + (RING_R + 0.085) * sa, hz), 0.06, "gmD")
-    R.ball((po[0], po[1], hz + 0.08), 0.018, "cyan", seg=6)
+    R.ball((po[0], po[1], hz + 0.08), 0.028, "cyan", seg=6)
     sh = (hu + (RING_R + 0.11) * ca, hv + (RING_R + 0.11) * sa, hz)
     hinge(R, sh, tan, 0.055, 0.12)
     return sh, tan

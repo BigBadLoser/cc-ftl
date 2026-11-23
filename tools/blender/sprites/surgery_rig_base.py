@@ -71,11 +71,11 @@ def holo(R, scan=None):
     _q(R, [P(-0.5, 0), P(0.5, 0), P(0.5, 1), P(-0.5, 1)], FILM)
     edge = [P(-0.5, 0, 0.004), P(0.5, 0, 0.004), P(0.5, 1, 0.004), P(-0.5, 1, 0.004)]
     for a, b in zip(edge, edge[1:] + edge[:1]):
-        R.tube(a, b, 0.006, LINE, sides=5)
+        R.tube(a, b, 0.012, LINE, sides=5)
     for c in (P(-0.5, 0), P(0.5, 0), P(-0.5, 1), P(0.5, 1)):                           # projection lines
-        R.tube(LENS, c, 0.005, LINE, sides=4)
+        R.tube(LENS, c, 0.009, LINE, sides=4)
 
-    def line(pts, r=0.006, col=LINE):
+    def line(pts, r=0.011, col=LINE):
         for a, b in zip(pts, pts[1:]):
             R.tube(P(*a, 0.006), P(*b, 0.006), r, col, sides=5)
     cx = -0.1                                                                          # the body scan
@@ -84,14 +84,14 @@ def holo(R, scan=None):
     line([(cx + x, t) for x, t in half] + [(cx - x, t) for x, t in half[::-1]])
     rx, rt = 0.036 / w, 0.036 / h
     line([(cx + rx * math.cos(a), 0.845 + rt * math.sin(a)) for a in (i * math.tau / 10 for i in range(11))])
-    line([(cx - 0.06, 0.53), (cx + 0.06, 0.53)], r=0.008, col="red")                    # the incision
+    line([(cx - 0.06, 0.53), (cx + 0.06, 0.53)], r=0.013, col="red")                    # the incision
     if scan is not None:                                                               # the scan line sweeping down
         t = 0.88 - 0.82 * scan
-        line([(cx - 0.2, t), (cx + 0.2, t)], r=0.004, col="green")
+        line([(cx - 0.2, t), (cx + 0.2, t)], r=0.01, col="green")
     for j, t in enumerate((0.74, 0.62, 0.5)):                                          # the tool rack
-        line([(0.26, t), (0.42, t)], r=0.009 if j == 0 else 0.006)
+        line([(0.26, t), (0.42, t)], r=0.013 if j == 0 else 0.011)
     rx, rt = 0.05 / w, 0.05 / h                                                        # the halo: its arms in use lit
-    line([(0.33 + rx * math.cos(a), 0.2 + rt * math.sin(a)) for a in (i * math.tau / 12 for i in range(13))], r=0.005)
+    line([(0.33 + rx * math.cos(a), 0.2 + rt * math.sin(a)) for a in (i * math.tau / 12 for i in range(13))], r=0.01)
     for i in range(5):
         a = math.pi / 2 + i * math.tau / 5
         R.ball(P(0.33 + rx * math.cos(a), 0.2 + rt * math.sin(a), 0.008), 0.014 if i < 3 else 0.008, LINE, seg=6)
