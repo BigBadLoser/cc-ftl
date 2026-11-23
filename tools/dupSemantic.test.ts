@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { jscpdArgs, report } from './dupSemantic.mjs';
+import { jscpdArgs, report, THRESHOLD } from './dupSemantic.mjs';
 
 const pair = (lines: number, isNew: boolean, kind = 'semantic') => ({
   kind, isNew, lines, fragment: Array.from({ length: lines }, (_, i) => `line ${i}`).join('\n'),
@@ -23,11 +23,11 @@ describe('dup:semantic report', () => {
 });
 
 describe('dup:semantic jscpd arguments', () => {
-  it('uses the local model unless an embeddings URL is given, and names the model for the URL', () => {
-    expect(jscpdArgs({ out: 'o', url: '' })).toContain('--semantic-download');
-    const http = jscpdArgs({ out: 'o', url: 'http://127.0.0.1:8792/v1' });
-    expect(http).toEqual(expect.arrayContaining(['--semantic-url', 'http://127.0.0.1:8792/v1', '--semantic-model', 'nomic-ai/CodeRankEmbed']));
-    expect(http).not.toContain('--semantic-download');
+  it('asks embeddinggemma at a local Ollama unless an embeddings URL is given, with the bench cutoff', () => {
+    expect(jscpdArgs({ out: 'o', url: '' })).toEqual(expect.arrayContaining(['--semantic-url', 'http://127.0.0.1:11434/v1', '--semantic-model', 'embeddinggemma']));
+    const npu = jscpdArgs({ out: 'o', url: 'http://127.0.0.1:8794/v1' });
+    expect(npu).toEqual(expect.arrayContaining(['--semantic-url', 'http://127.0.0.1:8794/v1', '--semantic-same-threshold', THRESHOLD]));
+    expect(npu).not.toContain('--semantic-download');
   });
   it('rewrites the baseline only when accepting', () => {
     expect(jscpdArgs({ out: 'o', url: '' })).not.toContain('--update-baseline');
