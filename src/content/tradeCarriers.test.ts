@@ -188,7 +188,9 @@ describe('who carries a deal (#548)', () => {
 
   it("the yard's contractors come in the station's own shuttle", () => {
     const { sim, station, me } = yardGame();
-    const vehicles = new Set(sim.world.query(VehicleC));
+    // The station's and the player's craft (a fleet passing through may bring its own, a miner its pod): none is made for the job.
+    const craft = (): Set<number> => new Set(sim.world.query(VehicleC).filter((v) => [station, me].includes(sim.world.get(v, VehicleC)?.homeShip ?? 0)));
+    const vehicles = craft();
     expect(yardService(sim, station)).toBeTruthy();
     planHull(sim, me, outline(sim, me, 8, -2, 4, 3));
     sim.enqueue({ type: 'yard.order', station });
@@ -202,6 +204,6 @@ describe('who carries a deal (#548)', () => {
     expect(order.phase).toBe('done');
     runYard(sim, 3000, () => sim.world.get(vehicle, VehicleC)?.state === 'stowed');
     expect(sim.world.get(vehicle, VehicleC)).toMatchObject({ homeShip: station, state: 'stowed' });
-    expect(new Set(sim.world.query(VehicleC))).toEqual(vehicles);
+    expect(craft()).toEqual(vehicles);
   });
 });

@@ -15,6 +15,7 @@ import { AMBUSH_NO_DOCK_SEC, AMBUSH_SPRING_SEC, HONEST_STAY_SEC, VISIT_RETRY_TIC
 import { AboardC, BoarderC, EmbarkOrderC, VehicleC, type Boarder } from '../vehicles/components';
 import type { Ambush, SceneShip, SceneSpec } from './types';
 import { grant, revoke } from '../consent/guests';
+import { PLAYER } from '../side';
 
 /**
  * A boarding trigger outside combat (DESIGN.md "Pirate ambush"). A scene skiff (a trap or honest, the same request) asks to dock a while after the scene opens; the player's
@@ -217,7 +218,7 @@ export function tendVisit(sim: Sim, spec: SceneSpec): boolean {
     const ship = sim.world.get(id, ShipC);
     if (!ship || a.visit === 'refused' || a.visit === 'sprung' || (a.visit === 'delivered' && a.home)) continue;
     // The player's shot (or anything of its group turning) got there first: it is hostile already, the party with it.
-    if (ship.provoked !== undefined || factionsHostile(ship.faction, 'player')) {
+    if (ship.provoked !== undefined || factionsHostile(ship.faction, PLAYER)) {
       a.visit = 'sprung';
       changed = true;
       continue;

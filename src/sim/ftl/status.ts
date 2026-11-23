@@ -6,6 +6,7 @@ import { ModuleC } from '../modules/components';
 import { shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { FTL_CHARGE_SEC } from '../tuning';
+import { PLAYER } from '../side';
 
 /** Why a ship's drive cannot be charged right now. */
 export type FtlBlock = 'noShip' | 'notActive' | 'noHelm' | 'helmOffline' | 'noEngines' | 'noCrewAboard';
@@ -53,7 +54,7 @@ function hasEngine(sim: Sim, ship: number): boolean {
 /** The first thing that stops the ship's drive charging, or null. */
 export function ftlBlocker(sim: Sim, ship: number): FtlBlock | null {
   const s = sim.world.get(ship, ShipC);
-  if (!s || !sim.world.has(ship, CombatC) || s.faction !== 'player') return 'noShip';
+  if (!s || !sim.world.has(ship, CombatC) || s.faction !== PLAYER) return 'noShip';
   if (s.state !== 'active' || sim.sector.state !== 'active') return 'notActive';
   const helms = helmsOf(sim, ship);
   if (!helms.any) return 'noHelm';

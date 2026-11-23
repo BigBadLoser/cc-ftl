@@ -1,5 +1,6 @@
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
+import { stepCoarse } from './coarse';
 import { expireEncounters } from './encounters';
 import { decayNotoriety } from './heat';
 import { dispatchHunters } from './hunters';
@@ -32,6 +33,7 @@ export function onTurn(sim: Sim, turn: number, cause: 'hop' | 'time' = 'hop'): v
   expireEncounters(sim, turn);
   stepLiveMarkets(sim, turn);
   stepFleets(sim, turn);
+  stepCoarse(sim, turn);
   decayNotoriety(sim);
   dispatchHunters(sim, turn);
   expireJobs(sim, turn);

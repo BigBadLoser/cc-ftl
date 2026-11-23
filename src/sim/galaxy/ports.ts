@@ -1,6 +1,6 @@
 import type { FleetRole, GalaxyContent, GalaxyFactionDef, PortKind, StructureDef } from './defs';
 import { strHash, unit } from './hash';
-import type { NodeData } from './types';
+import type { NodeData, StructureRef } from './types';
 
 /**
  * Home ports. Every NPC ship belongs to one. A port is a structure of a node that a faction fields ships from, derived (not stored) from the
@@ -50,12 +50,17 @@ function kindOf(def: StructureDef, owner: GalaxyFactionDef): PortKind | null {
   return owner.kind === 'rogue' && groups.raider ? 'nest' : null;
 }
 
-/** The ports of a node (`hub`: its sector is a hub, so its ports are bigger). */
-export function portsOf(seed: number, content: GalaxyContent, node: NodeData, hub: boolean): Port[] {
+/**
+ * The ports of a node (`hub`: its sector is a hub, so its ports are bigger). `ownerOf` says who owns a structure now (`structureOwner`, control.ts);
+ * by default the generated owner, which is what a chunk just generated has.
+ */
+export function portsOf(
+  seed: number, content: GalaxyContent, node: NodeData, hub: boolean, ownerOf: (s: StructureRef) => string | null = (s) => s.genOwner,
+): Port[] {
   const out: Port[] = [];
   node.structures.forEach((s, i) => {
     const def = content.structures[s.def];
-    const ownerId = s.owner ?? (def?.kind === 'derelict' ? node.faction : null);
+    const ownerId = ownerOf(s) ?? (def?.kind === 'derelict' ? node.genFaction : null);
     const owner = ownerId ? content.factions[ownerId] : undefined;
     if (!def || !ownerId || !owner) return;
     const kind = kindOf(def, owner);

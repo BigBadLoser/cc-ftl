@@ -1,4 +1,4 @@
-import { CrewC, ModuleC, ShipC, type Sim, type SimEvent } from '../sim';
+import { CrewC, ModuleC, ShipC, type Sim, type SimEvent, PLAYER } from '../sim';
 import { homeShip } from '../sim/index';
 import { factionsHostile } from '../sim/combat/factions';
 import type { LogEntry } from './logText';
@@ -17,7 +17,7 @@ export function describeBoarding(sim: Sim, e: SimEvent): LogEntry | null {
   const crew = (id: number) => sim.world.get(id, CrewC)?.name ?? 'A boarder';
   const module = (id: number) => sim.content.modules[sim.world.get(id, ModuleC)?.def ?? '']?.name ?? 'module';
   const shipName = (id: number) => sim.world.get(id, ShipC)?.name ?? 'the enemy ship';
-  const hostile = (id: number) => factionsHostile('player', sim.world.get(id, ShipC)?.faction ?? 'player');
+  const hostile = (id: number) => factionsHostile(PLAYER, sim.world.get(id, ShipC)?.faction ?? 'player');
   const who = (ids: number[]) => (ids.length === 1 ? crew(ids[0] as number) : `${ids.length} crew`);
   const at = (id: number) => { const s = crewSubject(sim, id); return s ? { subject: s } : {}; };
   switch (e.type) {

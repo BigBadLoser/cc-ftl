@@ -1,9 +1,10 @@
 import { chunkOfId, galaxyGen, type ChunkData, type Sim } from '../sim';
 import type { ChunkRequest } from './chunkWorker';
 import { provideOutlines, warmOutlines } from './starmapClusters';
+import { SIM_RING } from '../sim/galaxy/tuningCoarse';
 
-/** Chunks generated ahead of the player: this many rings around their chunk (the sim itself needs FRONTIER_RING = 1). */
-export const PREFETCH_RING = 2;
+/** Chunks generated ahead of the player: this many rings around their chunk (the sim needs FRONTIER_RING = 1 to travel and SIM_RING for the coarse tick, which the prefetch covers). */
+export const PREFETCH_RING = SIM_RING;
 /** Normally one chunk every PREFETCH_EVERY bridge updates; for PREFETCH_BOOST_MS after a jump (while the starmap
  * slides the ship along the lane) as many as fit in PREFETCH_BOOST_BUDGET_MS per update. */
 export const PREFETCH_EVERY = 4;

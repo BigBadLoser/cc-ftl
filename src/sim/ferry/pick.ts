@@ -14,11 +14,12 @@ import { MiningPodC } from '../mining/components';
 import { outsideCrew } from '../eva/shuttle';
 import { FerryC } from './components';
 import { SiteRunC } from '../away/components';
+import { PLAYER } from '../side';
 
 /** True for a player region a run can start or end at: the home ship or a claimed base. */
 export function isFerryRegion(sim: Sim, ship: number): boolean {
   const s = sim.world.get(ship, ShipC);
-  return !!s && s.faction === 'player' && (s.state === 'active' || s.state === 'disabled');
+  return !!s && s.faction === PLAYER && (s.state === 'active' || s.state === 'disabled');
 }
 
 /**

@@ -6,6 +6,7 @@ import type { StationJobKind } from './galaxy/types';
 import type { DealPhase } from './trade/types';
 import type { ItemQty, ShotLook } from './registry';
 import type { InjuryEvent } from './crew/injuryTypes';
+import type { EngagementEvent } from './combat/engagementTypes';
 
 /** Why a ship turned up in the current grid (`ship.arrived`). */ export type ArriveReason = 'spawn' | 'scene' | 'fleet' | 'jump-in';
 /** Why a ship left the current grid (`ship.departed`). */ export type DepartReason = 'jump-away' | 'fled' | 'fleet' | 'scene' | 'wrecked';
@@ -13,6 +14,7 @@ import type { InjuryEvent } from './crew/injuryTypes';
 /** Outbound notifications for UI and audio. */
 export type SimEvent =
   | InjuryEvent
+  | EngagementEvent
   | { type: 'debug.markerSpawned'; entity: number; x: number; y: number }
   | { type: 'crew.jobDone'; crew: number; kind: JobKind; ship: number; x: number; y: number }
   /** A room caught fire (first burning tile in a room with no fire). */
@@ -195,12 +197,12 @@ export type SimEvent =
   /** A shuttle home from a prize set its full slabs down by its bay, for the crew to cart to a wheel. */
   | { type: 'stasis.unloaded'; vehicle: number; ship: number; crew: number[] }
   /** A full slab went with its shuttle (destroyed): the prisoner is gone. */
-  | { type: 'stasis.lost'; crew: number; name: string; vehicle: number }
+  | { type: 'stasis.lost'; crew: number; name: string; vehicle: number; holder: string | null }
   /** A prisoner's slab reached the station and was paid for (capture/delivery.ts): ransomed, sold for a bounty, or to a black market. */
   /** A station's offer for a prisoner was accepted (capture/offers.ts): a shuttle comes for the slab, the station's ('station') or the player's ('own'). */
   | { type: 'prisoner.collecting'; crew: number; name: string; station: number; via: 'station' | 'own' }
   | { type: 'prisoner.handedOver'; crew: number; name: string; station: number; kind: 'ransom' | 'bounty' | 'market'; credits: number; faction: string }
-  | { type: 'stasis.thawed'; crew: number; ship: number; x: number; y: number }
+  | { type: 'stasis.thawed'; crew: number; ship: number; x: number; y: number; holder: string | null }
   /** The player let a beaten crew go: `crew` of them left, and the ship is a derelict (capture/settle.ts). */
   /** A prisoner was released and left (capture/settle.ts); `faction` is the galaxy faction whose standing it raised ('' for none). */
   | { type: 'crew.released'; crew: number; name: string; ship: number; faction: string }
@@ -393,33 +395,3 @@ export type SimEvent =
   | { type: 'galaxy.discovered'; count: number }
   /** A command failed validation and was ignored. `reason` is a short machine-readable code. */
   | { type: 'command.rejected'; command: string; reason: string };
-
-/**
- * The single outbound channel. Systems emit during a tick; the app drains after the tick.
- * Events are NEVER read by sim logic. Anything the sim needs later belongs in components or grids.
- */
-export class EventBuffer {
-  private buffer: SimEvent[] = [];
-  private stamps = new WeakMap<SimEvent, number>();
-
-  /** `clock` reads the tick an event is emitted in (see `tickOf`). */
-  constructor(private readonly clock: () => number = () => 0) {}
-
-  /** Record an event. */
-  emit(e: SimEvent): void {
-    this.stamps.set(e, this.clock());
-    this.buffer.push(e);
-  }
-
-  /** The tick an event was emitted in (a drained event keeps its stamp), or `fallback` for an event this buffer never saw. */
-  tickOf(e: SimEvent, fallback: number): number {
-    return this.stamps.get(e) ?? fallback;
-  }
-
-  /** Return all buffered events and clear the buffer. */
-  drain(): SimEvent[] {
-    const out = this.buffer;
-    this.buffer = [];
-    return out;
-  }
-}

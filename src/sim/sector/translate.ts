@@ -55,6 +55,7 @@ export const TRANSLATE: Record<string, Shift | null> = {
   marker: xy,
   yardCrew: null,
   inspection: null,
+  shuttleCall: null,
   consent: null,
   hullPlan: (c, dx, dy) => (c.tiles as Xy[]).forEach((t) => point(t, dx, dy)),
   staging: (c, dx, dy) => (c.tiles as Xy[]).forEach((t) => point(t, dx, dy)),

@@ -7,7 +7,7 @@ import { lyingIn, operationError, operationSec, operationsOf, readyOperation, st
 import { SURGERY_STEP_TICKS } from '../crew/tuningSurgery';
 import { shipStoreCount } from '../items/stock';
 import { ModuleC } from '../modules/components';
-import { AllegianceC } from '../fight/components';
+import { isPlayers } from '../side';
 import { moduleSite } from '../modules/footprint';
 import { shipIdOf } from '../regions';
 import type { Sim } from '../sim';
@@ -37,7 +37,7 @@ export function surgerySystem(sim: Sim): void {
 function queueUrgent(sim: Sim, id: number): void {
   const parts = sim.content.injuries?.parts;
   const pos = sim.world.get(id, PositionC);
-  if (!parts || !pos || sim.world.has(id, DeadC) || sim.world.get(id, AllegianceC)?.faction !== 'player') return; // the player's own stock, for their own people
+  if (!parts || !pos || sim.world.has(id, DeadC) || !isPlayers(sim, id)) return; // the player's own stock, for their own people
   for (const inj of injuriesOf(sim, id)) {
     const def = parts[inj.part];
     if (inj.sev !== 'destroyed' || !def?.vital || def.slot === 'brain' || operationsOf(sim, id).some((o) => o.part === inj.part)) continue;

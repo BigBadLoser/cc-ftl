@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { playerReach } from '../../sim/boarding/reach';
+import { boardersReach } from '../../sim/boarding/reach';
 import { captureReady } from '../../sim/capture/control';
 import { SurrenderedC } from '../../sim/fight/components';
 import { ModuleC } from '../../sim/modules/components';
@@ -28,7 +28,7 @@ describe('a surrendered ship stays capturable while the player can reach it', ()
     run(sim, 400, () => party.every((c) => sim.world.has(c, AboardC)));
     expect(party.every((c) => sim.world.has(c, AboardC))).toBe(true);
     run(sim, 200);
-    expect(playerReach(sim, nth(sim, 2))).toBe(true);
+    expect(boardersReach(sim, nth(sim, 2))).toBe(true);
     expect(ship(sim, 2).state).toBe('active'); // used to become a wreck here
   });
 

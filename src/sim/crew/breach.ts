@@ -6,6 +6,7 @@ import type { Sim } from '../sim';
 import type { ShipGrid } from '../shipGrid';
 import { Struct } from '../structure';
 import type { Tile } from './pathfind';
+import { PLAYER } from '../side';
 
 const SIDES = [[1, 0], [-1, 0], [0, 1], [0, -1]] as const;
 
@@ -17,7 +18,7 @@ export function breachTiles(sim: Sim): { ship: number; tile: Tile }[] {
   const out: { ship: number; tile: Tile }[] = [];
   for (const { grid, ship } of regions(sim)) {
     const s = sim.world.get(ship, ShipC);
-    if (s?.faction === 'player' && s.state !== 'wreck') for (const tile of breachesOf(grid)) out.push({ ship, tile });
+    if (s?.faction === PLAYER && s.state !== 'wreck') for (const tile of breachesOf(grid)) out.push({ ship, tile });
   }
   return out;
 }

@@ -653,11 +653,6 @@ export interface ModuleDef {
    * the station's danger tier; `tier` (2, 3...) is only a label.
    */
   blueprint?: { tier: number; minDanger: number; price: number };
-  /**
-   * Placeholder art of a bigger tier of an existing module: the base `asset` is drawn normally at the footprint `base` (the one it was
-   * modelled for), with an outline in `tint` over the whole footprint and a tier badge. Render-only; goes when the tier has its own art.
-   */
-  tierArt?: { base: readonly [number, number]; tint: number };
   /** Point-defence turret: shoots down interceptable shots; needs a working AI core on the ship. */
   pointDefense?: true;
   /**

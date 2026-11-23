@@ -1,6 +1,7 @@
 import type { Sim } from '../sim';
 import { guardPacked } from '../packedGuard';
 import { ShipC, type Ship } from './components';
+import { isPlayers } from '../side';
 
 /**
  * Ship lookups with no dependencies beyond the ship component: which ship an id is, whether it may act, which one is the player's home.
@@ -23,6 +24,6 @@ export function shipCanAct(ship: Ship | undefined): boolean {
 export function homeShip(sim: Sim): number {
   guardPacked(sim, 'homeShip');
   let best = 0;
-  for (const id of sim.world.query(ShipC)) if (sim.world.get(id, ShipC)?.faction === 'player' && (best === 0 || id < best)) best = id;
+  for (const id of sim.world.query(ShipC)) if (isPlayers(sim, id) && (best === 0 || id < best)) best = id;
   return best;
 }

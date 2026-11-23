@@ -2,9 +2,9 @@ import { abortTask } from '../ai/task';
 import { releaseBedOwner } from '../crew/beds';
 import { CrewC, DeadC, PositionC } from '../crew/components';
 import { EvaFloatC } from '../eva/components';
-import { AllegianceC } from '../fight/components';
 import { shipIdOf } from '../regions';
 import type { Sim } from '../sim';
+import { isPlayers } from '../side';
 
 /**
  * Stranded parties are lost. When a hostile ship leaves (it jumps away: `how` 'fled', or it is lifted out of the node with the
@@ -16,7 +16,7 @@ import type { Sim } from '../sim';
 export function loseStrandedCrew(sim: Sim, shipId: number, how: 'fled' | 'lifted'): number[] {
   const lost: number[] = [];
   for (const id of sim.world.query(CrewC, PositionC)) {
-    if (sim.world.has(id, DeadC) || sim.world.has(id, EvaFloatC) || sim.world.get(id, AllegianceC)?.faction !== 'player') continue;
+    if (sim.world.has(id, DeadC) || sim.world.has(id, EvaFloatC) || !isPlayers(sim, id)) continue;
     if (shipIdOf(sim, sim.world.get(id, PositionC)) === shipId) lost.push(id);
   }
   for (const id of lost) {

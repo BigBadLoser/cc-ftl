@@ -66,7 +66,7 @@ const factions = {
     traffic: { weight: 2, danger: { max: 7 } },
   },
   pirates: {
-    name: 'Scrapper Clans', kind: 'pirates', reputation: 'pirates',
+    name: 'Scrapper Clans', kind: 'pirates', reputation: 'pirates', takesPrizes: true,
     ships: [{ value: 'faction.scrapper', weight: 1 }],
     territory: { weight: 1.4, danger: { min: 3 }, reach: 680 },
     stations: [{ value: 'structure.station_trade', weight: 1 }],
@@ -77,7 +77,7 @@ const factions = {
   // --- Phase 2b pirate factions (DESIGN.md "Pirate factions and the black market"). Their dens use the pirate den placeholder (station generation is the shipgen
   // session's); their ships are the scrapper hulls told apart by loadout (content/factions/pirates.ts). Numbers are provisional. ---
   raiders: {
-    name: 'Raider Clans', kind: 'pirates', reputation: 'raiders',
+    name: 'Raider Clans', kind: 'pirates', reputation: 'raiders', takesPrizes: true,
     ships: [{ value: 'faction.raider', weight: 1 }],
     territory: { weight: 0.7, danger: { min: 3 }, reach: 620, shares: 'pirates' },
     stations: [{ value: 'structure.station_trade', weight: 1 }],
@@ -86,7 +86,7 @@ const factions = {
     traffic: { weight: 1.2, danger: { min: 2 } },
   },
   cartel: {
-    name: 'The Cartel', kind: 'pirates', reputation: 'cartel', guardsRoutes: true,
+    name: 'The Cartel', kind: 'pirates', reputation: 'cartel', guardsRoutes: true, takesPrizes: true,
     ships: [{ value: 'faction.cartel', weight: 1 }],
     territory: { weight: 0.7, danger: { min: 3 }, reach: 700, shares: 'pirates' },
     stations: [{ value: 'structure.station_trade', weight: 1 }],
@@ -96,7 +96,7 @@ const factions = {
     traffic: { weight: 0.8, danger: { min: 1 } },
   },
   zealots: {
-    name: 'Zealots of the Signal', kind: 'pirates', reputation: 'zealots', combatFaction: 'rogue',
+    name: 'Zealots of the Signal', kind: 'pirates', reputation: 'zealots', combatFaction: 'rogue', takesPrizes: true,
     ships: [{ value: 'faction.zealot', weight: 1 }],
     // Niche: their space only grows beside the machines'. A fifth of machine seeds give them one neighbouring cell (a chance, not a weight).
     territory: { weight: 0.2, danger: { min: 4 }, reach: 560, near: 'rogue', max: 1 },
@@ -106,7 +106,7 @@ const factions = {
     traffic: { weight: 0.3, danger: { min: 4 } },
   },
   mercenaries: {
-    name: 'Free Lances', kind: 'pirates', reputation: 'mercenaries',
+    name: 'Free Lances', kind: 'pirates', reputation: 'mercenaries', takesPrizes: true,
     ships: [{ value: 'faction.mercenary', weight: 1 }],
     territory: { weight: 0.15, danger: { min: 3 }, reach: 520, shares: 'pirates' },
     stations: [{ value: 'structure.station_trade', weight: 1 }],

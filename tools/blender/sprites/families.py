@@ -20,6 +20,7 @@
   derelict  derelict dressing: breached walls, scorch, debris, dead lights, infestation, AI scrap (derelict*.py)
   damage    .damaged / .destroyed of the modules (damage.py: a pass over each module's own idle build)
   damage_sol  the same for Sol's packs (engine, AI core, shield generators), in a Blender job per pack (sol_damage.py)
+  damage_sol_tiers  the same for the engine's Mk II / Mk III (sol_damage.py)
   decay     more derelict dressing: fallen ceiling, glass, parts; frost, blood, oil, scratch decals (derelict_more.py)
   corpse    dead crew lying on the deck, 2 poses x 4 rotations, from the real crew rig (corpse.py)
   eggsac    the alien egg sacs, 1x1 and 2x2, every damage / hatch state (derelict_sac.py)
@@ -55,6 +56,7 @@
   clutter   floor clutter props: barrels, crates, potted plants, a toppled chair, a tool cart (clutter.py)
   cryo      the cryo pod, idle / .active (frozen, occupied) / .empty (open) (cryo.py; MODPACK_ROTS as above)
   sol       Sol's engine, AI core and shield packs (rendered by their own scripts, see sol_pack.py)
+  sol_tiers the engine's Mk II / Mk III (module.engine_mk2/3), rendered by the engine pack's script (sol_pack.py)
   rock      asteroid rock: rock mass by neighbour mask, levelled ground with its worn edge and under-lip, ore tiles (rock.py)
   rockwall  finished rock walls: dressed stone, the metal wall set mirrored piece for piece (rockwall.py)
   pod_bay   the mining pod's 3x3 bay (pit, iris, clamp arms) and the pod parked in it, 4 rotations (pod_family.py)
@@ -656,4 +658,4 @@ RENDERED = ("env", "walls", "consoles", "weapons", "roof", "robot_bay", "drones"
             "recovery_pod", "bunk_module", "exercise_module", "bench_module", "planter_module", "vending_module", "bar_module",
             "stasis", "stasisload", "decor", "lights", "deck_finishes", "deck_marks", "landmarks", "purifier_module",
             "cable", "tube", "landing_pad")
-ALL = RENDERED + ("sol", "damage_sol", "marks")
+ALL = RENDERED + ("sol", "sol_tiers", "damage_sol", "damage_sol_tiers", "marks")

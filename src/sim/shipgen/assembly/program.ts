@@ -1,7 +1,7 @@
 import type { ModuleDef } from '../../registry';
 import type { Rng } from '../../rng';
 import { shuffle } from '../civilKit';
-import { cargoSpec, dockSpec, pickWeighted, weaponSpec, type RoomSpec, type StationDept } from '../plan';
+import { cargoSpec, dockSpec, pickWeighted, podDeck, weaponSpec, type RoomSpec, type StationDept } from '../plan';
 import { docksOf, stationCrew } from '../stationCrew';
 import type { StationDef, StationSize } from '../stationTypes';
 import { messSize } from '../rooms/rules/parts';
@@ -116,11 +116,13 @@ function planned(rng: Rng, def: StationDef, size: StationSize, defs: Record<stri
   for (let left = t.crates; left > 0; left -= 6) cargo.push(grown(rng, cargoSpec(Math.min(6, left)), space));
   // Every station keeps a shuttle at least (the user: "every station should have at least 1 shuttle").
   const hangars: RoomSpec[] = Array.from({ length: Math.max(1, t.bays ?? 0) }, (): RoomSpec => ({ role: 'hangar', mods: ['module.vehicle_bay'], w: 5, h: 7, vehicle: true }));
-  // The pod deck: mining pod bays in a row (two rows past four), each with the tile beside it crew unload at, and an aisle.
-  const pods = t.pods ?? 0, podRows = pods > 4 ? 2 : 1, perRow = Math.ceil(pods / podRows);
-  if (pods > 0) hangars.push({ role: 'hangar', mods: Array<string>(pods).fill('module.pod_bay'), w: 4 * perRow + 1, h: podRows === 1 ? 5 : 8, vehicle: true, annex: suits('works', Math.min(6, pods + 2)) });
-  // The ore store beside it: two ore bins a pod, in a row along each long wall with an aisle between. It is the works'.
-  if (pods > 0) support.push({ role: 'cargo', dept: 'works', mods: Array<string>(2 * pods).fill('module.storage_ore'), w: Math.max(5, 2 * pods + 1), h: 6 });
+  // The pod deck (`podDeck`, as a mining ship's), with a suit room as its annex; the ore store beside it is the works'.
+  const pods = t.pods ?? 0;
+  if (pods > 0) {
+    const { deck, ore } = podDeck(pods);
+    hangars.push({ ...deck, annex: suits('works', Math.min(6, pods + 2)) });
+    support.push({ ...ore, dept: 'works' });
+  }
   const rest = [...weapons, ...pdRooms, ...shields, core, ...quarters, ...cargo, ...hangars, ...support];
   return { command, rest, docks, space };
 }
