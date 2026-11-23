@@ -35,7 +35,7 @@ import type { Layers } from './layers';
 import { SEAT_CLIP, clipFor, crewLoadout, preloadLayers } from './loadout';
 import type { ClipDef } from './assets/manifest';
 import { drawLayers } from './crewSprites';
-import { berthLift, bedPose } from './bedPose';
+import { berthLift, bedPose, turnedArt } from './bedPose';
 import { berthOf } from '../sim/crew/berths';
 import { POD_LIFT, podPose } from './podPose';
 import { FAMILY, fireClip, prefetchClips, stanceClip } from './handWeapon';
@@ -377,7 +377,7 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
         const clipName = pod ? 'idle' : hurtLying ? (dead && has('dead') ? 'dead' : has('wreck') ? 'wreck' : 'sleep') : sitting ? (stool ? SEAT_CLIP[stool.seat] : crew.activity === 'working' ? 'sit_work' : 'sit_idle') : playing ? 'work' : s.shot?.clip ?? (gun ? stanceClip(gun.family, { engaged: nowSec < s.engagedUntil, moving: speed > 0.3 }) : null) ?? clipFor(crew.activity, speed > 0.3, flight);
         const docked = crew.activity === 'charging' && !!at?.def.robotBay && !hurtLying;
         // A sleeper in a bed lies along it, head on the pillow, centred on its footprint and raised to the mattress.
-        const bed = clipName === 'sleep' && !carried && !dead && !downed && speed <= 0.3 && at?.def.bed ? bedPose(at.def, at.m.x, at.m.y, at.m.rot, !!atlas.manifest.assets[`${at.def.asset}.r${at.m.rot % 4}`]) : null;
+        const bed = clipName === 'sleep' && !carried && !dead && !downed && speed <= 0.3 && at?.def.bed ? bedPose(at.def, at.m.x, at.m.y, at.m.rot, turnedArt((a) => !!atlas.manifest.assets[a], at.def.asset, at.m.rot)) : null;
         const dir = pod ? pod.dir : bed ? bed.dir : sitting && stool ? (SEAT_DIR[(stool.m.rot + (stool.index === 0 ? 0 : 2)) % 4] as number) : (sitting || docked) && at ? (SEAT_DIR[at.m.rot % 4] as number) : playing && play ? (SEAT_DIR[play.m.rot % 4] as number) : facing; // a console's operator and an arcade player face the module alike
         s.shadow.visible = !sitting && !bed && !pod; // a sleeper in a bed lies on the mattress: no floor shadow under the bed
         if (clipName !== s.clip) {
