@@ -27,7 +27,6 @@ const BASELINE: Record<string, number> = {
   'src/sim/registry.ts': 694,
   'src/sim/shipgen/arranger.ts': 418,
   'src/sim/shipgen/assembly/prefab.ts': 403,
-  'src/sim/shipgen/assembly/regions.ts': 479,
   'src/sim/shipgen/groundTurrets.ts': 443,
   'src/sim/tuning.ts': 634,
   'src/ui/App.svelte': 434,

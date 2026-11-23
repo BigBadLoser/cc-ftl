@@ -4,7 +4,7 @@ import { closeFrame, frameGrid } from './frameGrid';
 import { cabinsFor } from './cabinBlock';
 import { crewRoom } from './roomSize';
 import { SOLID, type RegionGrid } from './regions';
-import type { Part, Placed } from './placeLayout';
+import type { Part, Placed } from './placeTypes';
 
 /** PROTOTYPE (#581): paints a placed layout's room outlines (no fit-out): the frame's bridge, drive and corridors, then each part. */
 export function paintPlaced(plan: ShipPlan, { fr, lay, battery, paint: own }: Placed): RegionGrid {
