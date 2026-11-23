@@ -48,11 +48,14 @@ function strayDoors(g: GenResult): string[] {
   return out;
 }
 
-/** The dock rooms of a layout's airlocks: where each airlock's inside tile lies, and what else that room holds. */
-function airlockRooms(g: GenResult): { role: string; bare: boolean; hasDoor: boolean; besideHall: boolean }[] {
+/**
+ * The dock rooms of a layout's airlocks: where each airlock's inside tile lies, and what else that room holds. `open`: an
+ * airlock-only dock whose floor runs straight into a corridor's, no wall between (an outline hull's airlock passage).
+ */
+function airlockRooms(g: GenResult): { role: string; bare: boolean; open: boolean; hasDoor: boolean; besideHall: boolean }[] {
   const { width: w, rows } = { width: g.width, rows: g.template.rows };
   const at = (x: number, y: number): string => rows[y]?.[x] ?? ' ';
-  const out: { role: string; bare: boolean; hasDoor: boolean; besideHall: boolean }[] = [];
+  const out: { role: string; bare: boolean; open: boolean; hasDoor: boolean; besideHall: boolean }[] = [];
   const occ = new Map<number, string>();
   for (const m of g.template.modules ?? []) for (const t of footprintTiles(defs[m.def] as ModuleDef, m.x, m.y, m.rot)) occ.set(t.y * w + t.x, m.def);
   for (const m of g.template.modules ?? []) {
@@ -63,8 +66,10 @@ function airlockRooms(g: GenResult): { role: string; bare: boolean; hasDoor: boo
     const r = g.rooms[room];
     if (!r) continue;
     const floor = r.tiles;
-    const bare = floor.length <= 12 && floor.every((i) => FIXTURES.includes(occ.get(i) ?? 'module.airlock'));
+    const fixtures = floor.every((i) => FIXTURES.includes(occ.get(i) ?? 'module.airlock'));
+    const bare = floor.length <= 12 && fixtures;
     let hasDoor = false;
+    let onHall = false;
     let besideHall = false;
     for (const i of floor) {
       const x = i % w;
@@ -72,11 +77,12 @@ function airlockRooms(g: GenResult): { role: string; bare: boolean; hasDoor: boo
       for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
         if (at(x + dx, y + dy) === 'D') hasDoor = true;
         const c = at(x + dx, y + dy);
+        if (c === '_' && g.rooms[g.roomOf[(y + dy) * w + x + dx] ?? -1]?.role === 'hall') onHall = true;
         const across = g.roomOf[(y + 2 * dy) * w + x + 2 * dx] ?? -1;
         if ((c === '#' || c === 'D') && at(x + 2 * dx, y + 2 * dy) === '_' && g.rooms[across]?.role === 'hall') besideHall = true;
       }
     }
-    out.push({ role: r.role, bare, hasDoor, besideHall });
+    out.push({ role: r.role, bare, open: fixtures && onHall, hasDoor, besideHall });
   }
   return out;
 }
@@ -98,6 +104,7 @@ describe('airlocks', () => {
       for (const r of airlockRooms(g)) {
         if (r.role === 'hall') { t.merged++; continue; } // merged: the airlock's walkway is corridor floor, no door between
         if (r.role !== 'dock') bad.push(`${name}: airlock in a ${r.role} room`); // never merged into a non-corridor room
+        else if (r.open) t.merged++; // open on its corridor as built (an outline hull's passage): as good as merged
         else if (r.bare && r.besideHall) bad.push(`${name}: an airlock-only dock beside a corridor kept its wall`);
         else if (r.bare) t.walled++;
         else if (!r.hasDoor) bad.push(`${name}: a dock with contents lost its door`);

@@ -39,7 +39,8 @@ describe('cargo containers', () => {
       const g = freighter(seed);
       expect(g.problems, `seed ${seed}`).toEqual([]);
       const ks = boxes(g.template);
-      expect(ks.length, `seed ${seed}`).toBeGreaterThanOrEqual(4);
+      // (A pusher's truss at depth 0: a bank of one or two large containers a side, civilianOutline.ts.)
+      expect(ks.length, `seed ${seed}`).toBeGreaterThanOrEqual(2);
       for (const m of ks) {
         for (const t of footprintTiles(defs[m.def] as ModuleDef, m.x, m.y, m.rot)) expect(g.template.rows[t.y]?.[t.x]).toBe('=');
       }

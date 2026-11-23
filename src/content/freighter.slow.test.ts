@@ -15,7 +15,12 @@ describe('distress freighter: the natural clock', () => {
     run(sim, (t.at as number) - (t.fires!.leadSec * 20) - sim.tick - 20);
     expect(firesOn(sim, freighter)).toBe(0);
     run(sim, 3 * 20);
-    expect(firesOn(sim, freighter)).toBeGreaterThan(0);
+    // A wave has broken out (on some layouts a crew member beside the reactor has it out within a second: seed 4's Mk II
+    // reactor room, the outline freighter's), and burns by the next.
+    expect(t.fired ?? 0).toBeGreaterThan(0);
+    let burned = 0;
+    while (sim.tick < (t.at as number) - 20 && !burned) { run(sim, 5); burned = firesOn(sim, freighter); }
+    expect(burned).toBeGreaterThan(0);
     run(sim, (t.at as number) - sim.tick + 3 * 20);
     expect(t.blown).toBe(true);
     expect(sim.world.get(freighter, ShipC)?.state).toBe('wreck');
@@ -38,8 +43,8 @@ describe('distress freighter: the rescue on more seeds', () => {
     expect(s.damaged?.length).toBe(2);
     expect(s.failing).toHaveLength(1);
     const m = sim.world.get(s.failing![0]!, ModuleC)!;
-    expect(m.def).toBe('module.reactor');
-    expect(m.hp).toBe(Math.round((200 * (s.damage![0]!.pct)) / 100));
+    expect(m.def).toMatch(/^module\.reactor(\.mk\d)?$/); // a reactor of any tier
+    expect(m.hp).toBe(Math.round(((sim.content.modules[m.def]?.maxHp ?? 0) * (s.damage![0]!.pct)) / 100));
     run(sim, 60 * 20);
     expect(sim.world.get(freighter, ShipC)?.state).not.toBe('fled');
     expect(sim.world.get(s.failing![0]!, ModuleC)!.hp).toBe(m.hp); // its own crew cannot mend it

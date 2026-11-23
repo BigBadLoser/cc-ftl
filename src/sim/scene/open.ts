@@ -48,8 +48,11 @@ function spawnSceneShip(sim: Sim, s: SceneShip): boolean {
   return true;
 }
 
+/** A module of def `def` or one of its tiers (`module.reactor.mk2` is a `module.reactor`: content/tiers.ts). */
+const ofDef = (id: string, def: string): boolean => id === def || id.startsWith(`${def}.mk`);
+
 /**
- * What a scene ship suffered before the player came (`SceneShip.damage`): of its modules of each line's category or def, in id order, the first `count`
+ * What a scene ship suffered before the player came (`SceneShip.damage`): of its modules of each line's category or def (a def's tiers too), in id order, the first `count`
  * (absent: all) are left at the rolled share of their hp. A power source keeps 1 hp at least (none left at 0 is the ship-state system's wreck). The modules
  * hit are kept (the observer's `repaired`, a timer's `stopOn`).
  */
@@ -60,7 +63,7 @@ function applyDamage(sim: Sim, s: SceneShip, ship: number): void {
   for (const d of s.damage ?? []) {
     const hit = mods.filter((m) => {
       const def = sim.content.modules[sim.world.get(m, ModuleC)?.def ?? ''];
-      return !!def && !damaged.includes(m) && (d.def ? sim.world.get(m, ModuleC)?.def === d.def : def.category === d.category);
+      return !!def && !damaged.includes(m) && (d.def ? ofDef(sim.world.get(m, ModuleC)?.def ?? '', d.def) : def.category === d.category);
     }).slice(0, d.count ?? Infinity);
     for (const id of hit) {
       const m = sim.world.get(id, ModuleC) as { def: string; hp: number };

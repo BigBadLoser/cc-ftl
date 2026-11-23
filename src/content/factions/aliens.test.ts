@@ -8,7 +8,7 @@ import { content } from '../index';
 
 function derelict(faction: string, cause: 'combat' | 'decay', seed: number): { sim: Sim; id: number } {
   const sim = newGame(1, content);
-  sim.enqueue({ type: 'debug.spawnDerelict', faction, seed, depth: 2, cx: 130, cy: 70, intensity: 0.6, cause });
+  sim.enqueue({ type: 'debug.spawnDerelict', faction, seed, depth: 2, cx: 130, cy: 150, intensity: 0.6, cause }); // (below the home ship: a civilian seed 4 is a liner over 140 tiles long)
   sim.step();
   const id = sim.world.query(ShipC).find((i) => sim.world.get(i, ShipC)?.faction === 'neutral') ?? 0;
   return { sim, id };

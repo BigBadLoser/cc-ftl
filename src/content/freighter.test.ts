@@ -56,8 +56,8 @@ describe('distress freighter: the scene', () => {
     expect(s.damaged?.length).toBe(2);
     expect(s.failing).toHaveLength(1);
     const m = sim.world.get(s.failing![0]!, ModuleC)!;
-    expect(m.def).toBe('module.reactor');
-    expect(m.hp).toBe(Math.round((200 * (s.damage![0]!.pct)) / 100));
+    expect(m.def).toMatch(/^module\.reactor(\.mk\d)?$/); // a reactor of any tier
+    expect(m.hp).toBe(Math.round(((sim.content.modules[m.def]?.maxHp ?? 0) * (s.damage![0]!.pct)) / 100));
     run(sim, 10 * 20); // (a minute in freighter.slow)
     expect(sim.world.get(freighter, ShipC)?.state).not.toBe('fled');
     expect(sim.world.get(s.failing![0]!, ModuleC)!.hp).toBe(m.hp); // its own crew cannot mend it
@@ -137,7 +137,7 @@ describe('distress freighter: the scene', () => {
     const { sim, freighter } = inScene(4);
     const s = spec(sim);
     const m = sim.world.get(s.failing![0]!, ModuleC)!;
-    m.hp = 200;
+    m.hp = (sim.content.modules[m.def]?.maxHp ?? 0);
     timer(sim).at = sim.tick + 100;
     const out = run(sim, 21);
     expect(timer(sim).stopped).toBe(true);
