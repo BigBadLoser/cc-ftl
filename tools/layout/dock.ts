@@ -3,7 +3,7 @@
  * collapsed (a title bar, or a rail button when docked) and how big each dock is. A plain reducer, so it is testable and the
  * arrangement persists as JSON (localStorage, per viewer).
  */
-export type PanelId = 'palette' | 'layers' | 'inspector' | 'notes' | 'changes' | 'preview';
+export type PanelId = 'palette' | 'layers' | 'inspector' | 'notes' | 'shapes' | 'changes' | 'preview';
 export type Dock = 'left' | 'right' | 'bottom';
 export interface Rect { x: number; y: number; w: number; h: number }
 export interface PanelState {
@@ -32,8 +32,8 @@ export type DockAction =
   | { type: 'group'; group: Group; open: boolean }
   | { type: 'reset' };
 
-export const PANELS: readonly PanelId[] = ['palette', 'layers', 'inspector', 'notes', 'changes', 'preview'];
-export const TITLES: Record<PanelId, string> = { palette: 'Palette', layers: 'Layers and key', inspector: 'Inspector', notes: 'Notes', changes: 'Changes', preview: 'Preview' };
+export const PANELS: readonly PanelId[] = ['palette', 'layers', 'inspector', 'notes', 'shapes', 'changes', 'preview'];
+export const TITLES: Record<PanelId, string> = { palette: 'Palette', layers: 'Layers and key', inspector: 'Inspector', notes: 'Notes', shapes: 'Shapes', changes: 'Changes', preview: 'Preview' };
 export const MIN_RECT = { w: 220, h: 140 };
 const MIN_SIZE = 12, MAX_SIZE = 60, MIN_GROW = 0.1, MAX_GROW = 20;
 
@@ -42,7 +42,8 @@ export const DEFAULT_DOCK: DockState = {
     palette: { place: 'left', collapsed: false, rect: { x: 16, y: 16, w: 260, h: 420 }, grow: 1 },
     layers: { place: 'right', collapsed: true, rect: { x: 16, y: 16, w: 260, h: 420 }, grow: 1 },
     inspector: { place: 'right', collapsed: false, rect: { x: 16, y: 16, w: 280, h: 420 }, grow: 1 },
-    notes: { place: 'right', collapsed: false, rect: { x: 16, y: 16, w: 280, h: 300 }, grow: 1 },
+    notes: { place: 'right', collapsed: false, rect: { x: 16, y: 16, w: 280, h: 300 }, grow: 0.6 },
+    shapes: { place: 'right', collapsed: false, rect: { x: 16, y: 16, w: 300, h: 360 }, grow: 1.4 },
     changes: { place: 'right', collapsed: true, rect: { x: 16, y: 16, w: 320, h: 300 }, grow: 1 },
     preview: { place: 'bottom', collapsed: false, rect: { x: 560, y: 380, w: 520, h: 300 }, grow: 1 },
   },

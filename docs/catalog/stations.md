@@ -24,6 +24,7 @@ Station crews run on the shared crew AI with a director that posts patrol jobs (
 | Repair | `service: repair` | Listed on stations; nothing implements a paid repair service (crew repair the ship) | Partial: tag only | content/galaxy.ts:131; no `repair` service code found |
 | Crew for hire | `service: recruit` | Candidates drawn from hashes of the port; hire and pay | In game | sim/galaxy/recruit.ts; ui/RecruitList.svelte |
 | Blueprints | `service: blueprints` | Buy module blueprints; Mk II/III gated by standing | In game | sim/galaxy/blueprintShop.ts; ui/BlueprintList.svelte |
+| Prisoners | `prisoners` | A station buys sealed prisoners: ransom (their own faction), bounty (navy or corporate, for a pirate) or a black-market sale; the slab goes by shuttle and is paid on arrival | In game | sim/capture/offers.ts, delivery.ts; ui/PrisonerDeals.svelte; `?scenario=stasis&deals` (#116) |
 | Job board | `jobs` | Deliveries, bounties, surveys, passage | In game | sim/galaxy/jobs.ts, jobOffers.ts; ui/JobsPanel.svelte |
 | Shipyard | `yard` | Station pays contractors to build the hull you plan; trading and military stations of station/hub size | In game | content/yard.ts; sim/yard/*; ui/YardPane.svelte; vantor has a discount (numbers provisional, #125) |
 | Docking | `dock` | Dock a shuttle or the ship at a station; station docks and airlocks | In game | sim/galaxy/dock.ts, sim/trade/stationDock.ts; ui/StationDock.svelte |

@@ -3,6 +3,9 @@
 import json
 import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from sprites import manifest_io  # noqa: E402
 import numpy as np
 from PIL import Image, ImageDraw
 
@@ -10,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[3]
 AS = ROOT / "public/assets/1x"
 D, OUTD = Path(sys.argv[1]), Path(sys.argv[2])
 DIRS = [a for a in sys.argv[3:] if a in ("H", "S", "R")] or ["H", "S", "R"]
-MAN = json.loads((AS / "manifest.json").read_text())["assets"]
+MAN = manifest_io.read_manifest(AS)["assets"]
 ENV = np.array(Image.open(AS / "sprites/env.png").convert("RGBA")).astype(np.float32)
 BG = np.array([10, 14, 22], np.float32)
 GHOST = 0.30

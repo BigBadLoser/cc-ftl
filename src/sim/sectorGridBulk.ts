@@ -57,12 +57,21 @@ function writeTiles(grid: SectorGrid, field: string, rect: Rect, cx: number, cy:
 }
 
 /**
+ * The tiles of each chunk a `writeDelta` may skip to (see `only`): for chunk (cx, cy), the pairs (index in `rect`, index in the
+ * chunk) of the only tiles that can have changed, interleaved; or null to scan the chunk's whole part of `rect`.
+ */
+export type ChunkTiles = (cx: number, cy: number) => Int32Array | null;
+
+/**
  * Write `vals` (row-major over `rect`) where a value differs from `before` by more than `eps` (`round`: rounded and clamped to
  * 0..255 first), exactly as a `set` per such tile would: same stored values, revisions, watch count and chunk allocation.
  * Returns how many tiles it wrote (changed by more than `eps`, whether or not the stored value moved). `sync`: also store each written tile's new value (as the field holds it) in `before`, which
- * then mirrors the field over `rect`.
+ * then mirrors the field over `rect`. `only`: the caller vouches that in an allocated chunk it lists, no other tile differs from
+ * `before`, so only those are compared.
  */
-export function writeDelta(grid: SectorGrid, field: string, rect: Rect, vals: Float64Array, before: Float64Array, eps: number, round: boolean, sync: boolean): number {
+export function writeDelta(
+  grid: SectorGrid, field: string, rect: Rect, vals: Float64Array, before: Float64Array, eps: number, round: boolean, sync: boolean, only?: ChunkTiles,
+): number {
   const { x, y, w, h } = rect;
   if (w <= 0 || h <= 0) return 0;
   if (!grid.inBounds(x, y) || !grid.inBounds(x + w - 1, y + h - 1)) throw new RangeError(`SectorGrid: write rect (${x}, ${y}, ${w}x${h}) out of range`);
@@ -76,25 +85,28 @@ export function writeDelta(grid: SectorGrid, field: string, rect: Rect, vals: Fl
         wrote += writeTiles(grid, field, rect, cx, cy, vals, before, eps, round, sync);
         continue;
       }
-      const { tx0, tx1, ty0, ty1 } = span(rect, cx, cy);
       let n = 0, crossed = 0;
-      for (let ty = ty0; ty < ty1; ty++) {
-        const row = (ty - y) * w - x, crow = (ty & CHUNK_MASK) << CHUNK_SHIFT;
-        for (let tx = tx0; tx < tx1; tx++) {
-          const i = row + tx;
-          const v = round ? rounded(vals[i] as number) : (vals[i] as number);
-          const d = v - (before[i] as number);
-          // |d| > eps, without the call (NaN fails both, as it fails Math.abs(d) > eps).
-          if (d > eps || -d > eps) {
-            const j = crow + (tx & CHUNK_MASK);
-            const was = arr[j] as number;
-            arr[j] = v;
-            wrote++;
-            if (sync) before[i] = arr[j] as number;
-            if (Object.is(arr[j] as number, was)) continue; // stored value unchanged: no revision, as in `set`
-            if (watched && was < below !== (arr[j] as number) < below) crossed++;
-            n++;
-          }
+      /** Tile `i` of `rect`, at `j` in the chunk. */
+      const put = (i: number, j: number): void => {
+        const v = round ? rounded(vals[i] as number) : (vals[i] as number);
+        const d = v - (before[i] as number);
+        // |d| > eps, without the call (NaN fails both, as it fails Math.abs(d) > eps).
+        if (!(d > eps || -d > eps)) return;
+        const was = arr[j] as number;
+        arr[j] = v;
+        wrote++;
+        if (sync) before[i] = arr[j] as number;
+        if (Object.is(arr[j] as number, was)) return; // stored value unchanged: no revision, as in `set`
+        if (watched && was < below !== (arr[j] as number) < below) crossed++;
+        n++;
+      };
+      const list = only?.(cx, cy);
+      if (list) for (let k = 0; k < list.length; k += 2) put(list[k] as number, list[k + 1] as number);
+      else {
+        const { tx0, tx1, ty0, ty1 } = span(rect, cx, cy);
+        for (let ty = ty0; ty < ty1; ty++) {
+          const row = (ty - y) * w - x, crow = (ty & CHUNK_MASK) << CHUNK_SHIFT;
+          for (let tx = tx0; tx < tx1; tx++) put(row + tx, crow + (tx & CHUNK_MASK));
         }
       }
       if (n > 0) grid.bulkWrote(field, cx, cy, n, crossed);

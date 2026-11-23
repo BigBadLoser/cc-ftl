@@ -12,3 +12,13 @@ profile.json
 profile-sim.json
 .vitest-report.json
 .tick-stats/
+
+# review and preview renders (the core-systems frames stay tracked: export_core_systems.py reuses them as approved art)
+artifacts/*
+!artifacts/core-systems-orientations/
+!artifacts/core-systems-damage/
+*.blend1
+.DS_Store
+*.log
+*.orig
+*.rej

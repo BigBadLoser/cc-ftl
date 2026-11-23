@@ -3,13 +3,17 @@ import { ShipC } from '../combat/components';
 import { liftShip } from '../sector/packet';
 import type { Sim } from '../sim';
 import { retreat, strand } from './agenda';
-import { isWarmedElsewhere, spawnContact, warmContact } from './arrivals';
+import { isWarmedElsewhere, playerShipInfo, spawnContact, warmContact } from './arrivals';
+import { callingStation, minersField } from './business';
 import { graceHolds } from './grace';
 import { inspectingFleets } from '../inspect/holds';
 import { nodesWithin } from './graph';
 import { owe } from './portIndex';
+import type { Rect } from '../grid';
+import { AsteroidC } from '../asteroids/components';
 import { FLEET_NODE_SHIPS, STRANDED_INTEGRITY, WARM_HOPS } from './tuning';
 import type { Contact, Fleet } from './types';
+import { PLAYER } from '../side';
 
 /**
  * A fleet's ships in the player's node. Fleets are descriptors everywhere; only in the node the player is in do their ships become real
@@ -21,7 +25,7 @@ type Fate = 'present' | 'fled' | 'gone';
 
 function fateOf(sim: Sim, id: number): Fate {
   const s = sim.world.get(id, ShipC);
-  if (!s || s.faction === 'player') return 'gone';
+  if (!s || s.faction === PLAYER) return 'gone';
   if (s.state === 'active' || s.state === 'disabled') return 'present';
   return s.state === 'fled' ? 'fled' : 'gone';
 }
@@ -33,7 +37,7 @@ export const inPlay = (sim: Sim, id: number): boolean => fateOf(sim, id) === 'pr
 function shipsInPlay(sim: Sim): number {
   return sim.world.query(ShipC).filter((id) => {
     const s = sim.world.get(id, ShipC);
-    return !!s && s.faction !== 'player' && (s.state === 'active' || s.state === 'disabled');
+    return !!s && s.faction !== PLAYER && (s.state === 'active' || s.state === 'disabled');
   }).length;
 }
 
@@ -48,7 +52,31 @@ export function materialiseFleet(sim: Sim, f: Fleet, node: string = f.node): voi
   if (!f.ships.some((c) => c.ship === undefined)) return; // every ship already real (the common case, every tendFleets pass)
   const visit = inspectingFleets(sim).has(f.id);
   if (!visit && node === f.node && !sim.galaxy.event && graceHolds(sim, node, f.faction)) return; // opening grace: it stays a descriptor
-  for (const c of f.ships) if (c.ship === undefined && shipsInPlay(sim) < FLEET_NODE_SHIPS) spawnContact(sim, node, c, { reason: 'fleet', ...(visit ? { side: 'neutral' as const } : {}) });
+  const anchor = businessAnchor(sim, f, node);
+  for (const c of f.ships) {
+    if (c.ship === undefined && shipsInPlay(sim) < FLEET_NODE_SHIPS) spawnContact(sim, node, c, { reason: 'fleet', ...(visit ? { side: 'neutral' as const } : {}), ...(anchor ? { anchor } : {}) });
+  }
+}
+
+/**
+ * Where a fleet's business is in the node (#603): a miner by the nearest rock of the field it works (`minersField`), a trader by the station it calls at (`callingStation`), so its
+ * ships turn up there (`freeSpot`'s anchor); anyone else, or a node without that place in play, by the player.
+ */
+export function businessAnchor(sim: Sim, f: Fleet, node: string): Rect | undefined {
+  if (f.role === 'miner') {
+    const field = minersField(sim);
+    const parts = field === undefined ? [] : sim.world.get(field, AsteroidC)?.parts ?? [];
+    if (!parts.length) return undefined;
+    // Beside the field's nearest rock (to the player, where ships otherwise turn up), not round the field's bounds: on a wide field those are far from any rock.
+    const me = playerShipInfo(sim)?.ship;
+    const cx = me ? me.x + me.width / 2 : sim.sector.width / 2;
+    const cy = me ? me.y + me.height / 2 : sim.sector.height / 2;
+    const gap = (p: Rect) => Math.hypot(p.x + p.w / 2 - cx, p.y + p.h / 2 - cy);
+    return parts.reduce((best, p) => (gap(p) < gap(best) ? p : best));
+  }
+  const station = callingStation(sim, f, node);
+  const s = station !== undefined ? sim.world.get(station, ShipC) : undefined;
+  return s ? { x: s.x, y: s.y, w: s.width, h: s.height } : undefined;
 }
 
 /**
@@ -74,6 +102,12 @@ export function reap(sim: Sim, f: Fleet): { lost: Contact[]; fled: Contact[] } {
   for (const c of lost) owe(sim, f.home, f.faction, f.role, c.size ?? 'small', sim.galaxy.turn);
   if (lost.length) sim.galaxy.rev++;
   return { lost, fled };
+}
+
+/** The fleet jumps away from the player's node: its ships are lifted out and it runs for home (`retreat`). */
+export function sendOff(sim: Sim, f: Fleet): void {
+  liftFleet(sim, f);
+  retreat(sim, f, sim.galaxy.turn);
 }
 
 /** A ship in play that is disabled or barely holding together leaves its fleet stranded (real damage: the fleet calls for help until repaired). */
@@ -129,8 +163,7 @@ export function tendFleet(sim: Sim, f: Fleet, node: string = f.node, escaped?: C
   if (fled.length && escaped) escaped.push(...fled);
   else if (fled.length) {
     f.ships.push(...fled);
-    liftFleet(sim, f);
-    retreat(sim, f, sim.galaxy.turn);
+    sendOff(sim, f);
     return true;
   }
   materialiseFleet(sim, f, node);

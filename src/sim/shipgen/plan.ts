@@ -196,6 +196,19 @@ export const coreSpec = (drones?: RoomSpec['drones']): RoomSpec => ({ role: 'cor
 
 export const dockSpec = (): RoomSpec => ({ role: 'dock', mods: ['module.airlock'], w: 3, h: 3 });
 
+/**
+ * A pod deck: `pods` mining pod bays in a row (two rows past four), each with the tile beside it crew unload at, and an aisle; and the ore store
+ * beside it, two ore bins a pod. The one plan of it, for a mining station (assembly/program.ts) and a mining ship (`planShip`).
+ */
+export function podDeck(pods: number): { deck: RoomSpec; ore: RoomSpec } {
+  const rows = pods > 4 ? 2 : 1;
+  const perRow = Math.ceil(pods / rows);
+  return {
+    deck: { role: 'hangar', mods: Array<string>(pods).fill('module.pod_bay'), w: 4 * perRow + 1, h: rows === 1 ? 5 : 8, vehicle: true },
+    ore: { role: 'cargo', mods: Array<string>(2 * pods).fill('module.storage_ore'), w: Math.max(5, 2 * pods + 1), h: 6 },
+  };
+}
+
 export function cargoSpec(n: number): RoomSpec {
   return { role: 'cargo', mods: Array<string>(n).fill('module.storage'), w: Math.max(3, Math.ceil(n / 2) + 1), h: 3, stock: true };
 }
@@ -287,6 +300,12 @@ export function planShip(rng: Rng, f: FactionDef, role: ShipRoleDef, depth: numb
   const hangars: RoomSpec[] = Array.from({ length: role.bays ?? (f.doctrine.boarding ? 1 : 0) }, () => ({
     role: 'hangar' as const, mods: ['module.vehicle_bay'], w: 5, h: 7, vehicle: true,
   }));
+  // A mining hull's pod deck, as a mining station's: the pods its crew mine with, and where they unload.
+  if (role.pods) {
+    const { deck, ore } = podDeck(role.pods);
+    hangars.push(deck);
+    support.push(ore);
+  }
   const kit = coreKit(defs, depth, f.maxCoreTier);
   const engine = kit.engine;
   // The budget counts Mk I engines: a bigger tier stands in for as many as it out-evades.

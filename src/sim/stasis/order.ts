@@ -1,6 +1,8 @@
+import { holderOf, PLAYER } from '../side';
 import { CrewC, JobC, PositionC } from '../crew/components';
 import { origin } from '../crew/helpers';
 import { PrisonerC } from '../fight/components';
+import { factionOfShip } from '../galaxy/heat';
 import { CarryingC } from '../items/components';
 import { dropCarried } from '../items/stacks';
 import { destroyJob } from '../crew/jobEnd';
@@ -16,7 +18,7 @@ import { VehicleC } from '../vehicles/components';
 import { SLAB_ITEM } from './tuning';
 
 /**
- * The player's seal order (#116): crew seal a prisoner into stasis only after the player marks them (`Prisoner.seal`, command 'prisoner.seal').
+ * The seal order (#116): crew seal a player's prisoner into stasis only after the player marks them (`Prisoner.seal`, command 'prisoner.seal').
  * The order sits on the prisoner, so it is saved with them and ends with the prisoner (thawed, released, dead).
  */
 
@@ -68,8 +70,25 @@ function hasStasisJob(sim: Sim, prisoner: number): boolean {
   });
 }
 
-/** True if the player has marked this prisoner for sealing. */
-export const sealMarked = (sim: Sim, crew: number): boolean => !!sim.world.get(crew, PrisonerC)?.seal;
+/**
+ * True if the crew are to seal this prisoner: the player marked them, or an NPC captor holds them (`Prisoner.holder`, #615), whose crew decide for
+ * themselves and so seal every prisoner they can find a wheel slot for.
+ */
+export const sealMarked = (sim: Sim, crew: number): boolean => {
+  const holder = holderOf(sim, crew);
+  return holder !== null && (holder !== PLAYER || !!sim.world.get(crew, PrisonerC)?.seal);
+};
+
+/**
+ * The one answer to "does the side holding this prisoner own this ship, so its crew work the seal and stow here": the player's ships for the player's
+ * prisoners, else the ships flying for the NPC captor (`Prisoner.holder`, a galaxy faction).
+ */
+export function holdsHere(sim: Sim, prisoner: number, ship: number): boolean {
+  const holder = holderOf(sim, prisoner);
+  if (holder === PLAYER) return playerShips(sim).has(ship);
+  const s = sim.world.get(ship, ShipC);
+  return !!s && s.state !== 'wreck' && factionOfShip(sim, ship, s, s.faction) === holder;
+}
 
 /**
  * Set a prisoner's seal order: a reject reason, or null. Marking is refused by `sealRefusal`; calling it off is always allowed and scraps their

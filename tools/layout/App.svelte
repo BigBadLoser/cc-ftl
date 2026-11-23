@@ -4,8 +4,6 @@
 	import Undo from '@lucide/svelte/icons/undo-2';
 	import GitCompare from '@lucide/svelte/icons/git-compare';
 	import Maximize from '@lucide/svelte/icons/maximize';
-	import PopOut from '@lucide/svelte/icons/picture-in-picture-2';
-	import { popOut } from './popout.svelte';
 	import RotateCcw from '@lucide/svelte/icons/rotate-ccw';
 	import { Badge } from '$lib/components/ui/badge/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
@@ -15,34 +13,19 @@
 	import { describe } from './design';
 	import { docks } from './dock.svelte';
 	import { ladder } from './camera';
-	import { dpr, lab, type Tool } from './lab.svelte';
+	import { dpr, lab } from './lab.svelte';
+	import { onKey } from './keys';
 	import SaveCase from './SaveCase.svelte';
 	import SourcePicker from './SourcePicker.svelte';
 	import Workspace from './Workspace.svelte';
 
 	let open = $state(false);
-	const TOOLS: Record<string, Tool> = { v: 'select', f: 'floor', w: 'wall', d: 'door', b: 'beam', e: 'space', g: 'room', m: 'module', n: 'note', x: 'window' };
-	/** Shortcuts: tools by letter, 0 fits the design, R turns the ghost or the selected module, Delete removes the selection, Esc drops the tool, Ctrl+Z undoes (with Shift: redoes). */
-	function keys(e: KeyboardEvent) {
-		if ((e.target as HTMLElement | null)?.closest('input, textarea, [role=combobox]')) return;
-		const k = e.key.toLowerCase();
-		if ((e.ctrlKey || e.metaKey) && k === 'z') { e.preventDefault(); if (e.shiftKey) lab.redo(); else lab.undo(); }
-		else if ((e.ctrlKey || e.metaKey) && k === 'y') { e.preventDefault(); lab.redo(); }
-		else if (e.ctrlKey || e.metaKey || e.altKey) return;
-		else if (k === 'c') lab.toggleCompare();
-		else if (lab.compare && k !== 'c' && k !== '0' && k !== 'escape') return;
-		else if (k === 'r') lab.rotate();
-		else if (k === '0') lab.fit();
-		else if (k === 'delete' || k === 'backspace') lab.removeSelected();
-		else if (k === 'escape') { lab.setTool('select'); lab.armed = null; lab.ghost = null; }
-		else if (TOOLS[k]) lab.setTool(TOOLS[k] as Tool);
-	}
 	const hint = $derived(lab.design ? describe(lab.design, lab.hover ?? lab.selected) : '');
 	lab.import(lab.source);
 	// A hook for scripted screenshots and agents: import by query (`?station=station.trading&size=hub&seed=3`).
 	const q = new URLSearchParams(location.search);
 	// A saved case by its slug (`?case=mock-furnishing`, tools/layout/cases/<slug>.json).
-	// `&view=cx,cy,step`: centre the view on a tile at a zoom step (0 the furthest out), for scripted shots of one spot.
+	// `&view=cx,cy,step`: centre the view on a tile at a zoom step (0 the furthest out), for scripted shots of one spot (a case or an import).
 	const at = (): void => {
 		const v = q.get('view')?.split(',').map(Number);
 		if (!v || v.length < 3) return;
@@ -50,13 +33,14 @@
 		lab.view = { cx: v[0] as number, cy: v[1] as number, zoom: levels[Math.min(levels.length - 1, v[2] as number)] as number };
 	};
 	if (q.has('case')) void lab.loadCaseNamed(q.get('case') as string).then(() => setTimeout(at, 1500));
-	else if (q.has('station') || q.has('faction') || q.has('starter')) {
-		const kind = q.has('station') ? 'station' : q.has('faction') ? 'faction' : 'starter';
+	else if (q.has('station') || q.has('outpost') || q.has('faction') || q.has('starter')) {
+		const kind = q.has('station') ? 'station' : q.has('outpost') ? 'outpost' : q.has('faction') ? 'faction' : 'starter';
 		lab.import({ ...lab.source, kind, id: q.get(kind) as string, size: q.get('size') ?? 'station', layout: q.get('layout') ?? '', family: q.get('family') ?? '', seed: Number(q.get('seed') ?? 1), depth: Number(q.get('depth') ?? 4) });
+		setTimeout(at, 1500);
 	}
 </script>
 
-<svelte:window onkeydown={keys} />
+<svelte:window onkeydown={onKey} />
 <Tooltip.Provider delayDuration={300}>
 	<div class="flex h-screen flex-col bg-background text-foreground">
 		<header class="flex h-11 shrink-0 items-center gap-3 border-b bg-card px-3">
@@ -78,7 +62,6 @@
 				<Popover.Content align="end" class="w-auto"><SourcePicker done={() => (open = false)} /></Popover.Content>
 			</Popover.Root>
 			<SaveCase />
-			<Button variant="outline" size="sm" disabled={!lab.design} onclick={popOut} title="Open the preview in a window of its own (a second monitor)"><PopOut /> Pop out preview</Button>
 			<Button variant="ghost" size="icon-sm" aria-label="Undo" disabled={!lab.canUndo} onclick={() => lab.undo()}><Undo /></Button>
 			<Button variant="ghost" size="icon-sm" aria-label="Redo" disabled={!lab.canRedo} onclick={() => lab.redo()}><Redo /></Button>
 			<Tooltip.Root>

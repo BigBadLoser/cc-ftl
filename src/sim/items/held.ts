@@ -1,6 +1,7 @@
 import { AllegianceC, EquipC } from '../fight/components';
 import { ModuleC } from '../modules/components';
 import { shipIdAt, shipIdOf } from '../regions';
+import { PLAYER, stockOf, isPlayers } from '../side';
 import type { Sim } from '../sim';
 import { playerShips, playerStorages, withPlayerAboard } from '../story/world';
 import { AssignmentC, JobC } from '../crew/components';
@@ -64,7 +65,7 @@ export function heldItems(sim: Sim, opts: HeldOptions = {}): Held[] {
     const w = sim.world;
     const ships = playerShips(sim);
     for (const id of w.query(AllegianceC)) {
-      if (w.get(id, AllegianceC)?.faction !== 'player') continue;
+      if (!isPlayers(sim, id)) continue;
       const eq = w.get(id, EquipC);
       if (eq?.weapon) out.push({ item: eq.weapon, count: 1, where: 'wielded', holder: id, remove: () => void (eq.weapon = null) });
       const hauled = w.get(id, CarryingC);
@@ -118,8 +119,4 @@ export function heldItems(sim: Sim, opts: HeldOptions = {}): Held[] {
 export const withHeld = <T>(sim: Sim, fn: (held: Held[]) => T, opts: HeldOptions = {}): T => withPlayerAboard(sim, () => fn(heldItems(sim, opts)));
 
 /** Units of an item on player ships only: their storage modules plus loose stacks (delivery crates too). Other ships' stock never counts, nor do carried, wielded or fitted items. */
-export function playerStock(sim: Sim, item: string): number {
-  let n = 0;
-  for (const h of heldItems(sim, { reserved: true })) if (h.item === item && (h.where === 'storage' || h.where === 'stack')) n += h.count;
-  return n;
-}
+export const playerStock = (sim: Sim, item: string): number => withPlayerAboard(sim, () => stockOf(sim, PLAYER, item));

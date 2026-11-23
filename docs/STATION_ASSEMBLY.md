@@ -30,7 +30,7 @@ as the game does, or one recipe by layout name (`assembly.<family>`, below).
 | Hull check | `hull.ts` |
 | The hub inside a ring (the bazaar's market and spokes) | `hub.ts` |
 | Fitting one out (the handoff to the shared fit-out) | `station.ts` (`assembleStation`), `fitShell` in `../generate.ts` |
-| Sheets | `node tools/shipgen/assemblySheets.js [--seeds 1,2,3,4] [--out dir] [--versus]` |
+| Sheets | `node tools/shipgen/assemblySheets.js [--seeds 1,2,3,4] [--out dir] [--family tree]` |
 
 `--program station.research:station` assembles a family's recipes for another kind and size than its own.
 
@@ -423,7 +423,7 @@ fit-out needs no builder or canvas in between.
 ## Ring stations: what was decided, and where they stand
 
 The record: the user's own messages in this work (the review that redirected it, the kit, the inventory, the assembly
-model), and `docs/STATION_FLOW_WHEEL.md` on the branch `stationgen/architecture-integration`. Read both before
+model), and `docs/STATION_FLOW_WHEEL.md` on the branch `stationgen/architecture-integration` (not on `main`, and the branch is no longer in this clone, so it may be gone). Read what exists before
 changing the ring recipes; do not redesign from scratch.
 
 - The compound (an enclosed ring or arc joined to a substantial rectangular industrial section) is one of the two
@@ -524,8 +524,7 @@ which has 43 to 56 solid wall blocks.
 
 ### The spine
 
-`stationRecipes.spine`, on the mining station's rooms (`--family spine`, `--versus` for the old Spine as the first
-row): the harbour at the head of a main street 3 wide, habitation with the commons and the guns along it, the
+`stationRecipes.spine`, on the mining station's rooms (`--family spine`): the harbour at the head of a main street 3 wide, habitation with the commons and the guns along it, the
 machinery behind a gate at the tail. Between the parts the street runs through a hall and steps to one side. Works
 and freight are wings on stubs off the flanks along the street. The works wing is a line: the refineries, the ore
 store, a passage (before the pod deck or partway down, as the seed has it), and the pod deck across its end. The

@@ -1,4 +1,4 @@
-import { AsteroidC, ContainerC, ModuleC, nodeOf, openRefusal, shipIdOf, CrewC, MiningPodC, ShipC, VehicleC, cargoCount, homeShip, type OreDef, type Sim } from '../sim';
+import { AsteroidC, ContainerC, ModuleC, nodeOf, openRefusal, shipIdOf, CrewC, MiningPodC, ShipC, VehicleC, cargoCount, homeShip, type OreDef, type Sim, isPlayers } from '../sim';
 import type { UiAsteroid, UiContainer, UiMining, UiPod } from '../ui/api';
 
 /** Ore units left per kind over an asteroid's rock (one sweep of its rock bodies' boxes). */
@@ -35,7 +35,7 @@ export function buildMining(sim: Sim): UiMining {
   for (const id of [...sim.world.query(VehicleC)].sort((a, b) => a - b)) {
     const v = sim.world.get(id, VehicleC);
     const def = v && sim.content.vehicles?.[v.def];
-    if (!v || !def?.mining || sim.world.get(v.homeShip, ShipC)?.faction !== 'player') continue;
+    if (!v || !def?.mining || !isPlayers(sim, v.homeShip)) continue;
     const m = sim.world.get(id, MiningPodC);
     pods.push({
       id, name: `${def.name} ${pods.length + 1}`, state: v.state, phase: m ? (m.waiting ? 'waiting' : m.phase) : null,

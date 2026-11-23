@@ -5,6 +5,7 @@ import { shipIdOf } from '../regions';
 import type { GenOrigin } from '../shipgen/types';
 import type { Sim } from '../sim';
 import { playerShips } from '../story/world';
+import { isPlayers } from '../side';
 
 /** Deeper ships carry more: the chance of an entry is scaled by this, from 0.6 at depth 0 up to 1. */
 const depthScale = (depth: number): number => Math.min(1, 0.6 + 0.1 * depth);
@@ -16,7 +17,7 @@ const depthScale = (depth: number): number => Math.min(1, 0.6 + 0.1 * depth);
  */
 export function rollLoadout(sim: Sim, shipId: number, gen: GenOrigin): void {
   const table = sim.content.factions?.[gen.faction]?.upgrades;
-  if (!table?.length || sim.world.get(shipId, ShipC)?.faction === 'player') return;
+  if (!table?.length || isPlayers(sim, shipId)) return;
   const scale = depthScale(gen.depth);
   const origin = sim.world.get(shipId, ShipC);
   for (const id of sim.world.query(ModuleC)) {

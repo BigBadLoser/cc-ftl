@@ -1,7 +1,7 @@
 # Heavy Kestrel — wall 1.85 / roof 2.05 variant
 
 Separate adaptation of the approved stage-7 engine. The original
-`../engine_kestrel` remains intact. No production assets, shared wall builder
+The original `engine_kestrel` study is removed (it is in git history). No production assets, shared wall builder
 or gameplay constants are changed.
 
 - The engine's full-height hull ends now meet **1.85-high** walls. This folder's

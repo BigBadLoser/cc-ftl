@@ -10,13 +10,12 @@ anchor) are untouched. Idempotent: a trimmed sheet's box is its whole cell.
 
   python3 -m sprites.crew_trim [assets dir]      # retrofit an existing sprite output (default: public/assets/1x)
 """
-import json
 import sys
 from pathlib import Path
 
 import numpy as np
 
-from . import pack, post
+from . import manifest_io, pack, post
 
 
 def cell_geom(asset, clip):
@@ -83,7 +82,7 @@ def retrofit(outdir, log=print):
     are dropped. -> (bytes before, bytes after) of decoded pixels."""
     outdir = Path(outdir)
     mp = outdir / "manifest.json"
-    m = json.loads(mp.read_text())
+    m = manifest_io.read_manifest(mp)
     before = after = 0
     for a in m["assets"].values():
         if a.get("kind") != "crew.layer":

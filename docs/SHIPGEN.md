@@ -3,22 +3,24 @@
 > New to the generator? Start with [SHIPGEN_HANDOFF.md](SHIPGEN_HANDOFF.md): scope, file map, how to render
 > sheets, metrics, design constraints and the open backlog.
 
-**Historical v4 status:** the generic 2D arranger and four navy hull grammars are built (v4). Drones and scrappers still run on v2
-(structure-first topologies) until their proofs of concept replace it; v2's topology code is then removed. There is
-one pipeline; only its stage 3 currently branches on whether a faction has hull families.
+**Status (2026-11-21):** navy, drones, scrappers and civilians all run on the arranger through hull families (the sections below are the
+design and iteration history, oldest first). The v2 topology files (`topoNavy.ts`, `topoDrone.ts`, `topoParts.ts`, `topoSalvage.ts`) remain
+only for factions without hull families, and `topoNavy.ts` still supplies a few helpers. There is one pipeline; its stage 3 branches on
+whether a faction has hull families. `composeNavy.ts` and `compose.ts`, named in the diagram below, are gone: their work is in
+`navyLayouts.ts`, `navyBlocks.ts` and `arranger.ts`.
 
 ## Pipeline
 
 ```
  FactionDef + seed + depth
   1 BRIEF        role / hull family (weights scale with depth), budget            plan.ts
-  2 ASSEMBLIES   functional assemblies from the plan: command, batteries, core,   composeNavy.ts (sectionsOf)
+  2 ASSEMBLIES   functional assemblies from the plan: command, batteries, core,   navyLayouts.ts / grammars
                  habitat, cargo, hangar, power, drive; each holds its rooms
-  3 ARRANGE      constraint-scored order and per-kind depths, with seeded slack;  composeNavy.ts (arrange)
+  3 ARRANGE      constraint-scored order and per-kind depths, with seeded slack;  navyLayouts.ts (arrangeHull)
                  FEASIBILITY FEEDBACK while building: a section that cannot hold
                  its rooms at its depth raises that depth; a bulkhead port that
                  finds no counterpart reorders; at most 8 revisions
-  4 STRUCTURE    joins recorded per assembly pair: frame (shared bulkhead),       compose.ts (Composer)
+  4 STRUCTURE    joins recorded per assembly pair: frame (shared bulkhead),       arranger.ts
                  graft (sponson on a section), beam (solid strut; drones next)
   5 TRAVERSAL    derived from the assemblies' access requirements: navy halls     sections' halls, bulkhead doors
                  meet at bulkhead ports; drones will get crawlways (robots
@@ -293,7 +295,7 @@ The navy's structural helpers carry over:
 
 Same arranger, no sim changes. Files:
 - `scrapDonors.ts`: the donor registry and its pool of jobs.
-- `scrapBlocks.ts`: the hand-made civil and one-off hulls.
+- `civilBlocks.ts`: the civil builders the donors reuse (`scrapBlocks.ts` was folded into it).
 - `salvage.ts`: cut, damage, outline ports and freezing a section.
 - `scrapGrammars.ts`: composition.
 
@@ -437,7 +439,7 @@ section diversity above 0.4.
 
 ## Viewer
 
-Three views, in both the CLI sheets (`--views all`) and the phone page (View selector):
+Three views, in both the CLI sheets (`--views all`) and the browser viewer (View selector):
 - **layout:** the detailed view.
 - **silhouette:** the filled hull outline.
 - **assemblies:** each assembly tinted and labelled; frame joins yellow, grafts orange, beams magenta; traversal

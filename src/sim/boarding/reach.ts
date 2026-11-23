@@ -2,10 +2,12 @@ import { AirlockC } from '../modules/airlock';
 import { ModuleC } from '../modules/components';
 import { shipIdOf } from '../regions';
 import type { Sim } from '../sim';
+import { shipsHostile } from '../combat/engage';
 import { VehicleC, type Vehicle } from '../vehicles/components';
 import { occupants, vehicleFaction } from '../vehicles/lifecycle';
+import { PLAYER } from '../side';
 
-/** The ship a player shuttle is tied to right now: where it is docked or heading to dock, or what it hovers at or flies to hover at; 0 if none. */
+/** The ship a shuttle is tied to right now: where it is docked or heading to dock, or what it hovers at or flies to hover at; 0 if none. */
 function shuttleTarget(sim: Sim, v: Vehicle): number {
   const airlockShip = (airlock: number): number => (sim.world.has(airlock, AirlockC) ? shipIdOf(sim, sim.world.get(airlock, ModuleC)) : 0);
   if (v.state === 'docked') return airlockShip(v.dock);
@@ -15,14 +17,15 @@ function shuttleTarget(sim: Sim, v: Vehicle): number {
 }
 
 /**
- * Can the player still reach this ship with a boarding party? True when a player shuttle with someone aboard is docked at it,
- * flying to dock or hover at it, or hovering beside it (the party is out, or about to land). A ship the player has no way to
- * reach is one to give up on (`crewSubdued`).
+ * Can a foe still reach this ship with a boarding party? True when a shuttle with someone aboard is docked at it, flying to dock or hover at it,
+ * or hovering beside it (the party is out, or about to land), and it is the player's or its home ship is the ship's foe (`shipsHostile`: an NPC
+ * fight's other side too). A ship no boarder has a way to reach is one to give up on (`crewSubdued`).
  */
-export function playerReach(sim: Sim, shipId: number): boolean {
+export function boardersReach(sim: Sim, shipId: number): boolean {
   for (const id of sim.world.query(VehicleC)) {
     const v = sim.world.get(id, VehicleC) as Vehicle;
-    if (vehicleFaction(sim, v) === 'player' && occupants(v).length > 0 && shuttleTarget(sim, v) === shipId) return true;
+    if (occupants(v).length === 0 || shuttleTarget(sim, v) !== shipId) continue;
+    if (vehicleFaction(sim, v) === PLAYER || shipsHostile(sim, v.homeShip, shipId)) return true;
   }
   return false;
 }

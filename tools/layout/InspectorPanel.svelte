@@ -75,7 +75,7 @@
 				</div>
 			</div>
 			<div class="grid grid-cols-3 gap-2 text-sm">
-				<span class="text-muted-foreground">Code</span><span class="col-span-2 font-mono">{mod.code || 'lamp'}</span>
+				<span class="text-muted-foreground">Code</span><span class="col-span-2 font-mono">{mod.code || 'light'}</span>
 				<span class="text-muted-foreground">At</span><span class="col-span-2">{mod.x}, {mod.y}</span>
 				<span class="text-muted-foreground">Turn</span><span class="col-span-2">{mod.rot * 90} deg</span>
 				<span class="text-muted-foreground">Size</span><span class="col-span-2">{mod.w} x {mod.h}</span>

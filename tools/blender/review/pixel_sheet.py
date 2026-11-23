@@ -4,13 +4,16 @@ section built from the real wall/floor/module/roof tiles (open and roofed).
 import json
 import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from sprites import manifest_io  # noqa: E402
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
 ROOT = Path(__file__).resolve().parents[3]
 AS = Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / "public/assets/1x"
 OUT = Path(sys.argv[2]) if len(sys.argv) > 2 else Path(".")
-MAN = json.loads((AS / "manifest.json").read_text())["assets"]
+MAN = manifest_io.read_manifest(AS)["assets"]
 ENV = np.array(Image.open(AS / "sprites/env.png").convert("RGBA"))
 GLW = np.array(Image.open(AS / "sprites/env.glow.png").convert("RGBA"))
 BG = (22, 27, 34)

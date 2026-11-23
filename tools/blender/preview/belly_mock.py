@@ -26,6 +26,7 @@ from PIL import Image
 sys.path.insert(0, str(Path(__file__).parent))
 import belly_shapes as BS  # noqa: E402
 from sprites import hull_outline as HO  # noqa: E402
+from sprites import manifest_io  # noqa: E402
 
 out, S, name, level, dirs = sys.argv[1], int(sys.argv[2]), sys.argv[3], sys.argv[4], [Path(p) for p in sys.argv[5:]]
 tiles, NX, NY = BS.shape(name)
@@ -146,10 +147,10 @@ if os.environ.get("EXTVAR"):                        # (the roof plating, from th
     import json
     import roof_rule as RR
     ASSETS = Path(__file__).resolve().parents[3] / "public/assets"
-    SHEET = {k: v for k, v in json.loads((ASSETS / "manifest.json").read_text())["assets"].items()
+    SHEET = {k: v for k, v in manifest_io.read_manifest(ASSETS)["assets"].items()
              if v.get("sheet") == "roof"}
     ROOF = np.asarray(Image.open(ASSETS / "sprites/roof.png").convert("RGBA")).astype(np.float32)
-    RK = json.loads((ASSETS / "manifest.json").read_text()).get("tile", {}).get("w", TW) // TW   # (the sheet's
+    RK = manifest_io.read_manifest(ASSETS).get("tile", {}).get("w", TW) // TW   # (the sheet's
                                                     # scale over the mock's: its px taken every RK-th, as the mock's)
     _paste = paste
 

@@ -1,10 +1,10 @@
-import { AllegianceC, CrewC, type Sim } from '../../../sim';
+import { CrewC, type Sim, isPlayers } from '../../../sim';
 
 /** The player's organic (not mechanical) crew, in creation order. */
 export function organicCrew(sim: Sim): number[] {
   return sim.world.query(CrewC).filter((id) => {
     const c = sim.world.get(id, CrewC);
-    return sim.world.get(id, AllegianceC)?.faction === 'player' && !!c && !sim.content.species[c.species]?.mechanical;
+    return isPlayers(sim, id) && !!c && !sim.content.species[c.species]?.mechanical;
   });
 }
 

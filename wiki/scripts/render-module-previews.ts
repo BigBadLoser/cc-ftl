@@ -20,10 +20,11 @@ import { layerKey } from '../../src/render/moduleArt.ts';
 import { steady } from '../../src/render/vehicleBayArt.ts';
 import { previewGeometry } from '../../src/ui/buildCatalog.ts';
 import type { Manifest, StaticAsset } from '../../src/render/assets/manifest.ts';
+import { readManifest } from '../../src/render/assets/manifestParts.ts';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const assetRoot = resolve(root, '../public/assets/1x');
-const manifest = JSON.parse(await readFile(join(assetRoot, 'manifest.json'), 'utf8')) as Manifest;
+const manifest: Manifest = await readManifest(`${assetRoot}/manifest.json`, async (file) => JSON.parse(await readFile(file, 'utf8')) as unknown);
 const mods: Record<string, ModuleDef> = { ...baseModules, ...tierModules };
 const dest = join(root, 'static/generated/previews');
 const urlPrefix = '/cc-ftl/wiki/generated/previews/';
@@ -31,7 +32,7 @@ const world = new World();
 const mult = 128 / manifest.tile.w; // 2× world/art conversion; mirrors composeManifest().
 const HW = 64, HH = 32;
 const box = { w: 300, h: 200 };
-const result: Record<string, { url: string; art: boolean; layers: number; placeholder: boolean; gameFallback?: boolean; thumb?: { url: string; w: number; h: number; ax: number; ay: number } }> = {};
+const result: Record<string, { url: string; art: boolean; layers: number; gameFallback?: boolean; thumb?: { url: string; w: number; h: number; ax: number; ay: number } }> = {};
 const cache = new Map<string, string>();
 sharp.cache(false);
 sharp.concurrency(2);
@@ -107,13 +108,9 @@ for (const [id, original] of Object.entries(mods).sort(([a],[b])=>a.localeCompar
   const m = {def:id,x:0,y:0,rot:0,hp:def.maxHp,powerPriority:3,enabled:true,powered:true,reservedBy:0};
   const entity = world.createEntity();
   if (def.airlock) world.add(entity, AirlockC, {state:'toInner',timer:Math.round((def.airlock.cycleSec*TICK_HZ)/2),request:null});
-  // Tiered engines intentionally share Mk I art (the game draws a coloured
-  // tier outline over the larger footprint). Retain Mk I art at the origin.
-  const tb = def.tierArt ? def.tierArt.base : null;
-  const layerDef = tb ? {...def,footprint:tb} : def;
   let picked;
   try {
-    picked = layersOf(world,entity,m,layerDef,{active:false,now:0,airlock:{level:'up',roofed:false,collar:null},bay:steady(true)});
+    picked = layersOf(world,entity,m,def,{active:false,now:0,airlock:{level:'up',roofed:false,collar:null},bay:steady(true)});
   } finally {
     world.destroyEntity(entity);
   }
@@ -124,7 +121,7 @@ for (const [id, original] of Object.entries(mods).sort(([a],[b])=>a.localeCompar
     if (!match) continue;
     const {asset}=match;
     try {
-      const tile = layer.at ?? {x: (tb?.[0] ?? w)-1,y:(tb?.[1] ?? h)-1};
+      const tile = layer.at ?? {x:w-1,y:h-1};
       const center = iso(tile.x,tile.y);
       layers.push({
         left:center.x - asset.anchor.x*mult,
@@ -136,7 +133,7 @@ for (const [id, original] of Object.entries(mods).sort(([a],[b])=>a.localeCompar
         // exterior collar by their *tile depth*, not the layer array order.
         // Flat walk marks sort below equipment; the collar gets its own
         // exterior bias. Use precisely the game's layerKey() calculation.
-        z:layerKey(layerDef,m,layer,index,false,tile.x+tile.y-(layerDef.solid?0.05:0.5))
+        z:layerKey(def,m,layer,index,false,tile.x+tile.y-(def.solid?0.05:0.5))
       });
     } catch (e) {
       console.warn('Preview layer omitted for '+id+': '+String(e));
@@ -179,37 +176,12 @@ for (const [id, original] of Object.entries(mods).sort(([a],[b])=>a.localeCompar
     const y=g.sprite!.top+(l.top-bounds.minY)*scale;
     return '<image x="'+number(x)+'" y="'+number(y)+'" width="'+number(l.w*scale)+'" height="'+number(l.h*scale)+'" href="data:image/png;base64,'+l.png+'" style="image-rendering:pixelated" preserveAspectRatio="none"/>';
   }).join(''): '';
-  // Tiered engine placeholders share Mk I art, but the game adds a tier
-  // outline and badge around the actual expanded footprint.
-  let tierOverlay = '';
-  if (def.tierArt) {
-    const tint='#'+def.tierArt.tint.toString(16).padStart(6,'0');
-    const tilePolygons=g.foot.map(p=>p.split(' ').map(q=>q.split(',').map(Number) as [number,number]));
-    const edgeIndices=[ [1,2],[2,3],[3,0],[0,1] ] as const;
-    for (let py=0;py<h;py++) for(let px=0;px<w;px++) {
-      const p=tilePolygons[py*w+px];
-      if(!p)continue;
-      for(const [side,hasNeighbor] of [
-        [0,px<w-1],[1,py<h-1],[2,px>0],[3,py>0]
-      ] as [number,boolean][]) {
-        if(hasNeighbor)continue;
-        const [a,b]=edgeIndices[side]!;
-        tierOverlay+='<line x1="'+number(p[a]![0])+'" y1="'+number(p[a]![1])+'" x2="'+number(p[b]![0])+'" y2="'+number(p[b]![1])+'" stroke="'+tint+'" stroke-width="2.3" stroke-linecap="round"/>';
-      }
-    }
-    const frontPoly=tilePolygons.at(-1);
-    if(frontPoly){
-      const cx=frontPoly.reduce((s,p)=>s+p[0],0)/4,cy=frontPoly.reduce((s,p)=>s+p[1],0)/4;
-      const badge=def.blueprint?.tier===3?'III':'II';
-      tierOverlay+='<text x="'+number(cx)+'" y="'+number(cy-2)+'" text-anchor="middle" fill="'+tint+'" stroke="#05080d" paint-order="stroke" stroke-width="3" font-size="12" font-family="monospace" font-weight="bold">'+badge+'</text>';
-    }
-  }
   const svg='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 200" width="300" height="200">'
     +'<rect width="300" height="200" fill="#070b11"/>'
     +'<g stroke="#29313b" stroke-width="0.8" fill="none">'+g.grid.map(p=>polygon(p,'grid')).join('')+'</g>'
     +'<g stroke="#36d4ff" stroke-width="1.15" fill="#143341" fill-opacity=".65">'+g.foot.map(p=>polygon(p,'foot')).join('')+'</g>'
     +g.access.map(p=>'<polygon points="'+p+'" stroke="#f0b13a" stroke-width="1.1" stroke-dasharray="4 3" fill="#f0b13a" fill-opacity=".12"/>').join('')
-    +svgLayers+ tierOverlay
+    +svgLayers
     +g.accessLabel.map(l=>'<text x="'+number(l.x)+'" y="'+number(l.y)+'" text-anchor="middle" fill="#f0b13a" stroke="#05080d" stroke-width="2.5" paint-order="stroke" font-family="sans-serif" font-weight="700" font-size="9">USE</text>').join('')
     +(!layers.length?'<text x="150" y="185" text-anchor="middle" fill="#8290a0" font-family="sans-serif" font-size="9">ARTWORK PENDING</text>':'')
     +'</svg>';
@@ -226,7 +198,7 @@ for (const [id, original] of Object.entries(mods).sort(([a],[b])=>a.localeCompar
     await sharp(Buffer.from(art)).png({compressionLevel:9}).toFile(join(dest,thumbName));
     thumbOut={url:urlPrefix+thumbName,w:tw,h:th,ax:thumb.ax,ay:thumb.ay};
   }
-  result[id]={url:urlPrefix+name,...(thumbOut?{thumb:thumbOut}:{}),art:layers.length>0,layers:layers.length,placeholder:!!def.tierArt,gameFallback:(!!def.container || id === 'module.cargo_container') && layers.length>0};
+  result[id]={url:urlPrefix+name,...(thumbOut?{thumb:thumbOut}:{}),art:layers.length>0,layers:layers.length,gameFallback:(!!def.container || id === 'module.cargo_container') && layers.length>0};
   if(layers.length){withArt++;if(layers.length>1)multi++;totalLayers+=layers.length;}else {blank++;console.warn('No atlas artwork for module '+id+' ('+def.name+')');}
 }
 await mkdir(join(root,'src/data/generated'),{recursive:true});

@@ -5,8 +5,7 @@ import { hullSum } from '../combat/hull';
 import { neverSurrenders } from '../combat/factions';
 import { crewSubdued } from '../combat/subdued';
 import { hopeless } from '../combat/hopeless';
-import { AllegianceC } from '../fight/components';
-import { isSubdued } from '../fight/relations';
+import { isInvader, isSubdued } from '../fight/relations';
 import { surrender } from '../fight/surrender';
 import { ModuleC } from '../modules/components';
 import type { Sim } from '../sim';
@@ -19,7 +18,7 @@ import { shipIdOf, shipGrid } from '../regions';
  * maxima. A ship is a WRECK (terminal) when integrity < WRECK_BELOW or every power source is destroyed: its
  * crew dies, its weapons and shields go dead, but the grid stays as a derelict. It is DISABLED while no crew
  * member can act or no power flows (no reactor runs and no bank feeds a consumer), and recovers when that clears. An enemy ship whose whole crew is subdued or dead (and
- * none of the player's can reach it) is wrecked too if it is a zealots' ship, else it waits as `yielded` for the player to let them go (a derelict) or take prisoners (a prize); see `crewSubdued`. A hostile ship whose fight is hopeless
+ * no boarder can reach it) is wrecked too if it is a zealots' ship, else it waits as `yielded` for its foe's answer: the player lets them go (a derelict) or takes prisoners (a prize), an NPC foe answers by its habit (galaxy/engagementPrize.ts `answerYields`); see `crewSubdued`. A ship whose fight is hopeless
  * (combat/hopeless.ts) surrenders first: its crew give up through the ordinary surrender path. Fled ships are left alone.
  */
 export function shipStateSystem(sim: Sim): void {
@@ -60,7 +59,7 @@ export function shipStateSystem(sim: Sim): void {
       let gaveUp = 0;
       for (const c of sim.world.query(CrewC, PositionC)) {
         const crew = sim.world.get(c, CrewC);
-        if (shipIdOf(sim, sim.world.get(c, PositionC)) !== id || isSubdued(sim, c) || sim.world.get(c, AllegianceC)?.faction === 'player') continue;
+        if (shipIdOf(sim, sim.world.get(c, PositionC)) !== id || isSubdued(sim, c) || isInvader(sim, c)) continue;
         if (crew && sim.content.species[crew.species]?.fearless) continue;
         surrender(sim, c);
         gaveUp++;

@@ -14,7 +14,7 @@ import { HACK_MIN_SKILL, MEND_MIN_SKILL, MEND_PER_SEC, SALVAGE_SEC, SKILL_STEP }
 import { HackedC, WreckC } from './components';
 import { speciesOf } from './core';
 import { shipIdOf } from '../regions';
-import { shipById } from '../combat/shipQuery';
+import { isPlayers } from '../side';
 
 type NewJob = Partial<Job> & Pick<Job, 'category' | 'kind' | 'x' | 'y'>;
 
@@ -66,7 +66,7 @@ export function robotJobs(sim: Sim, seen: Set<string>, add: (job: NewJob) => voi
   }
   for (const id of sim.world.query(WreckC, PositionC)) {
     const pos = sim.world.get(id, PositionC);
-    if (!pos || seen.has(`salvage:${id}`) || shipById(sim, shipIdOf(sim, pos))?.faction !== 'player') continue;
+    if (!pos || seen.has(`salvage:${id}`) || !isPlayers(sim, shipIdOf(sim, pos))) continue;
     add({ category: 'hauling', kind: 'salvage', x: pos.x, y: pos.y, target: id, work: SALVAGE_SEC * TICK_HZ });
   }
 }

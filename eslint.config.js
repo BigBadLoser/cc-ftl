@@ -39,7 +39,16 @@ const noAssignmentWrites = [
   { selector: "AssignmentExpression > MemberExpression.left Identifier[name='AssignmentC']", message: assignmentMsg },
 ];
 
+// Whose is this: the player's side is `PLAYER` and every ownership question goes through src/sim/side.ts (docs/ARCHITECTURE.md "One answer per question").
+const noPlayerLiteral = [
+  {
+    selector: "BinaryExpression[operator=/^[!=]==?$/] > Literal[value='player']",
+    message: "Don't compare with the 'player' literal: ask side.ts (isPlayers, sideOf, shipsOf, crewOf...), or compare with PLAYER when only a faction id is at hand.",
+  },
+];
+
 const simSyntax = [
+  ...noPlayerLiteral,
   {
     selector: "BinaryExpression[operator=/^[-+]$/][left.type='MemberExpression'][left.object.name=/^(ship|s|sh)$/][left.property.name=/^[xy]$/][right.type='MemberExpression'][right.property.name=/^[xy]$/]",
     message: 'Positions are sector tiles: no ship-origin + local sums (step 6).',
@@ -50,7 +59,7 @@ const simSyntax = [
 
 export default tseslint.config(
   { linterOptions: { reportUnusedDisableDirectives: 'error' } },
-  { ignores: ['dist', 'coverage', 'node_modules', 'spikes', 'docs', 'wiki/**', 'tools/layout/lib/**', '.claude/**', 'tools/shipgen/out/**'] },
+  { ignores: ['dist', 'coverage', 'node_modules', 'docs', 'wiki/**', 'tools/layout/lib/**', '.claude/**', 'tools/shipgen/out/**'] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   ...svelte.configs['flat/recommended'],
@@ -101,7 +110,12 @@ export default tseslint.config(
   {
     files: ['src/app/**/*.ts', 'src/render/**/*.ts', 'src/ui/**/*.ts', 'src/ui/**/*.svelte'],
     ignores: ['src/**/*.test.ts'],
-    rules: { 'no-restricted-syntax': ['error', ...noAssignmentWrites] },
+    rules: { 'no-restricted-syntax': ['error', ...noPlayerLiteral, ...noAssignmentWrites] },
+  },
+  {
+    files: ['src/content/**/*.ts'],
+    ignores: ['src/**/*.test.ts'],
+    rules: { 'no-restricted-syntax': ['error', ...noPlayerLiteral] },
   },
   {
     files: ['src/sim/**/*.test.ts'],
@@ -132,9 +146,9 @@ export default tseslint.config(
   },
   {
     // The sim-only test helpers serve src/sim tests, so they follow the sim's import boundary; only content.ts and the scenario fixtures in
-    // test/support/fixtures (used by content tests) may reach content.
+    // test/support/fixtures (used by content tests) may reach content; manifest.ts reads the shipped art manifest for render, content and wiki tests.
     files: ['test/support/**/*.ts'],
-    ignores: ['test/support/content.ts', 'test/support/scenario.ts', 'test/support/content.test.ts', 'test/support/fixtures/**'],
+    ignores: ['test/support/content.ts', 'test/support/manifest.ts', 'test/support/scenario.ts', 'test/support/content.test.ts', 'test/support/fixtures/**'],
     rules: noImports(pixiNames, [...pixiPat, ...sveltePat, ...pat(['content', 'render', 'ui', 'app'])]),
   },
   {

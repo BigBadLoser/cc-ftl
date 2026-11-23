@@ -1,6 +1,6 @@
 # Crew AI architecture (issue #194)
 
-Status: architecture approved in principle; revision 3 (after revision 2's five design issues and nine decisions, section 12) fixes EVA child holds, console handoff, same-tick path ownership, preemption constants and BoardIndex scope. No blocking conflict found in revision 3. No code. Implementation starts after PR #184 (`combat/inset`) merges, because that branch changes `decide.ts` and `autojobs.ts`; Phase 0 tooling starts now. References are to `main` unless marked **#184**.
+Status (2026-11-21): Phases 0 to 3 are built (see "as built" in sections 7.4, 10 and the Phase 1 and 3 notes); the live code is `src/sim/ai/` (`schedule.ts`, `scheduler.ts`, `utility.ts`, `task.ts`, `machines/`) and `src/content/policies.ts`. Sections 1 to 3 and the phase scopes below are the original design (revision 3) and describe the pre-AI code: `systems/decide.ts`, `systems/work.ts`, `crew/vacate.ts`, `stations/life.ts`, `ai/policy.ts` and `ai/legacyPick.ts` are gone (`pickJob` is replaced by the global matching, `assignJobs`, in `src/sim/ai`; `emergency.ts` keeps `emergencyWaiting`). Open items are the Phase 2 follow-ups listed under "Phase 2: scheduler" and the #286 slices. Read ARCHITECTURE.md "Crew AI" for the current rules.
 
 **New conflicts from this revision: none blocking, three placement constraints.** (1) Pending claims change what `reservedBy === 0` means as "free" in about six readers (`claimHiddenRescue`, `rescuePending`, `callOperator`, `heldForMend`, `canRelieve`, `pickJob`); all must go through one `isOpen(job)` helper, so pending claims land in Phase 2, not Phase 1. (2) Operator handoff by atomic swap removes today's brief unmanned gap, and same-level emergency preemption is new: both are behaviour changes, so both are Phase 2 (Phase 1 reproduces release-then-repick). (3) Priority 0 now waits for a safe point, so a disabled category can keep a task running for a few seconds (bounded by class, section 5).
 
@@ -538,6 +538,6 @@ Planned as three PRs: (A) the engine and `policies` content with Phase 2-equival
 - Refill nests through the errand's `resume`: the job stays reserved and resumes when the tank is full.
 - Critical (`urgent.below` 500, `breaksFinish`) sets a carried patient down.
 - A blocked drive (`onMissing: 'block'`) raises the pickup request (`PickupC`, alert `crew.airUnreachable`).
-- See ARCHITECTURE.md "Slice 1 is built".
+- See ARCHITECTURE.md "Away sites and the air drive" (slice 1).
 
 **The return drive (#286 slice 2a).** `return` (after `air` in `policy.colonist`) reads `awayReturn` (away/crew.ts) and walks an away crew member to their site's shuttle and floats them aboard (`ai/machines/return.ts`). Its due line (rest 25, hunger 35, charge 30) sits above sleep, eat and charge, which never lie down on the site; robots have it too (`policy.robot`), since a need a crew member lacks is satisfied. Riders and pickups read 0 (slice 2b). See ARCHITECTURE.md "Slice 2a is built" and "Slice 2b is built".

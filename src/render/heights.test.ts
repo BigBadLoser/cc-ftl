@@ -1,14 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { ROOF_H, ROOF_Z, WALL_Z, Z_PX } from './heights';
 import { ART_SCALE, TILE_H, TILE_W } from './iso';
-import raw from '../../public/assets/1x/manifest.json?raw';
+import { shippedManifest } from '../../test/support/manifest';
 
 describe('art heights', () => {
   it('match the heights the sprite pipeline wrote to the manifest', () => {
-    const m = JSON.parse(raw) as {
-      tile?: { w: number; h: number };
-      heights?: { wall: number; roof: number; zPx: number };
-    };
+    const m = shippedManifest();
     // The sheets were rendered at this tile size (core.TILE_W/H), at half resolution; the code's TILE_W/H must be ART_SCALE times it.
     expect(m.tile).toEqual({ w: TILE_W / ART_SCALE, h: TILE_H / ART_SCALE });
     expect(m.heights).toBeDefined();

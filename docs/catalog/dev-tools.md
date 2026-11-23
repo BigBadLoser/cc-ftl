@@ -30,8 +30,15 @@ Presets are files in `presets/`; `?scenario=<name>` takes the preset's own flags
 | patrol | `?scenario=patrol` | Navy patrol hails you to stop | Debug only | src/content/scenario/presets/ (the preset file of that name) |
 | pirates | `?scenario=pirates` | Pirate fleet waits at the next node; `&hunt` | Debug only | src/content/scenario/presets/ (the preset file of that name) |
 | farm | `?scenario=farm` | Three hydroponics beds near a galley (#59) | Debug only | src/content/scenario/presets/ (the preset file of that name) |
-| prisoners | `?scenario=prisoners` | A stasis wheel, two hostile prisoners and two spare empty slabs (#116); `&unpowered` switches the wheel off once both are in | Debug only | src/content/scenario/presets/ (the preset file of that name) |
+| prisoners | `?scenario=prisoners` | A raider beside the ship whose crew has surrendered, so the take-prisoners alert waits; `&taken` takes them, `&seal` adds a wheel and marks them for sealing (#116) | Debug only | src/content/scenario/presets/ (the preset file of that name) |
 | busy | `?scenario=busy` | Civilian ship, derelict and station: the profiling scene | Debug only | src/content/scenario/presets/ (the preset file of that name) |
+| business | `?scenario=business` | A trading outpost and an asteroid field in the player's node; a trader and a miner turn up and go about their business (`&patrol`: a navy patrol inspects them; `&stage=busy` for tests) (#603) | Debug only | src/content/scenario/presets/ (the preset file of that name) |
+| skirmish | `?scenario=skirmish` | Two fleets at war (`&a=`, `&b=` factions; default pirates and traders) fight in the player's node (#603) | Debug only | src/content/scenario/presets/ (the preset file of that name) |
+| stasis | `?scenario=stasis` | A stasis wheel, two hostile prisoners and two spare empty slabs (#116); `&unpowered` switches the wheel off once both are in; `&deals` adds a third prisoner and a station that bids (#116) | Debug only | src/content/scenario/presets/ (the preset file of that name) |
+| bar | `?scenario=bar` | A bar counter, corner and stools built as an L on the debug hull (#441) | Debug only | src/content/scenario/presets/ (the preset file of that name) |
+| lostcargo | `?scenario=lostcargo` | The node's lost cargo spawned beside the ship; `&cargoSeed= &tier= &cut` (#503) | Debug only | src/content/scenario/presets/ (the preset file of that name) |
+| vents | `?scenario=vents` | A door with its vent open and thin air on one side (#591) | Debug only | src/content/scenario/presets/ (the preset file of that name) |
+| start | `?scenario=start` | A plain new game on the hull you name; `&template= &populate &rolled` | Debug only | src/content/scenario/presets/ (the preset file of that name) |
 
 ## Debug commands (`debug.*` in `src/sim/commands.ts`)
 
@@ -39,22 +46,20 @@ Presets are files in `presets/`; `?scenario=<name>` takes the preset's own flags
 |---|---|---|---|---|
 | Spawn things | ``debug.spawnCrew, spawnEnemy, spawnGenerated, spawnDerelict, spawnStation, spawnOutpost, spawnAsteroid, spawnModule, spawnItems, giveItems, spawnMarker`` | Place ships, stations, crew, modules, items | Debug only | src/sim/commands.ts; handlers in sim/*/handlers.ts; ui/DebugPanel.svelte |
 | Set state | ``debug.setCredits, setCrew, setCharge, setField, setModuleHp, setPlot, setStruct, setUpgrade, notoriety, chargeFtl, ignite`` | Edit values and fields | Debug only | src/sim/commands.ts; handlers in sim/*/handlers.ts; ui/DebugPanel.svelte |
-| Scenario helpers | ``debug.ambush, pirates, patrol, capture, imprison, bond, breakCrew, jobScenario, sceneArrivals`` | Stage encounters and crew states | Debug only | src/sim/commands.ts; handlers in sim/*/handlers.ts; ui/DebugPanel.svelte |
+| Scenario helpers | ``debug.ambush, pirates, patrol, capture, imprison, surrender, bond, breakCrew, jobScenario, sceneArrivals`` | Stage encounters and crew states | Debug only | src/sim/commands.ts; handlers in sim/*/handlers.ts; ui/DebugPanel.svelte |
 | Galaxy | ``debug.galaxyReveal, galaxyTeleport`` | Reveal the map and teleport | Debug only | src/sim/commands.ts; handlers in sim/*/handlers.ts; ui/DebugPanel.svelte |
 
 ## Tools
 
 | Name | id | What it does | Status | Where |
 |---|---|---|---|---|
-| Render lab | ``npm run lab -- --panel <id>`` | Screenshot any visual as a grid of stills; 10 panels: shield, sprites, drones, droneLaunch, marks, shots, upgrades, pods, hydroponics, ore | Debug only | tools/lab/*; docs/RENDER_LAB.md; dev page /tools/lab/ |
+| Render lab | ``npm run lab -- --panel <id>`` | Screenshot any visual as a grid of stills; 25 panels: sprites, shield, drones, droneLaunch, marks, shots, upgrades, pods, hydroponics, ore, recovery, leisure, bench, bar, bunk, stasis, stasisface, slabuv, stasisload, floor-finishes, deck-marks, cable, tube, bayHandoff, station-hull | Debug only | tools/lab/*; docs/RENDER_LAB.md; dev page /tools/lab/ |
 | Comms and kit labs | ``tools/lab/CommsLab.svelte, KitLab.svelte`` | UI kit and comms window samples | Debug only | tools/lab/commsLab.ts, kitLab.ts |
-| Layout lab | ``/tools/layout/`` | Ship layout editor: grid, layers, palette (incl. Window tool, X: 2/3/4 tile windows on walls, saved in cases, shown in the preview), notes, source picker (station layouts include the station assembly's recipes, `assembly.<family>`) | Debug only | tools/layout/* |
+| Layout lab | ``/tools/layout/`` | Ship layout editor: grid, layers, palette (incl. Window tool, X: 2/3/4 tile windows on walls, saved in cases, shown in the preview; Room tool: a click inside a walled-in space fills it as a room, any shape; lights: floor light, cage lamp and light mast placed like any module, each with its own mark on the grid (Lights layer, key); Move tool, S: box-select an area and drag it (Alt: a duplicate), R/Shift+R turn, H/Shift+H mirror, arrows nudge, Delete clears, Ctrl+C/X/V copy, cut and paste, clipboard kept across reloads; Shapes panel: save the box as a named shape (Ctrl+Shift+C), click one to place it, kept in the browser; keyboard: [ ] step the tool option, arrows nudge the selected module or pan, +/- zoom, list in tools/layout/keys.ts), notes, preview (Pop out in its move menu), source picker (asteroid outposts as the game builds them, `?outpost=<kind>&seed=N`, their levelled ground shaded on the grid (Asteroid ground layer); opens a case from a file, `?case=<slug>` for the saved ones; station layouts include the station assembly's recipes, `assembly.<family>`) | Debug only | tools/layout/* |
 | Ship generator viewer | ``/tools/shipgen/, npm run shipgen`` | Generate and draw faction ships and stations, benchmark metrics | Debug only | tools/shipgen/*; docs/SHIPGEN.md |
 | Asteroid sheets | ``tools/asteroids/`` | Asteroid generation CLI and sheet drawing | Debug only | tools/asteroids/* |
 | Profiler | ``npm run profile, profile:sim, profile:baseline, ai:diff`` | Per-system sim cost, headless-game profile, crew decision diffs | Debug only | tools/profile/*; docs/PROFILING.md; in-game ?perf |
-| Sprite pipeline | ``npm run sprites, assets`` | Headless Blender renders sprite sheets into public/assets/1x | Debug only | tools/blender/* (243 sprite scripts) |
-| Damage mock | ``tools/damage_mock`` | Python mocks for breach and roof damage art | Debug only | tools/damage_mock/* |
-| Spikes | ``spikes/crew-lab, spikes/pixel-lab`` | Old art experiments with their own vite config (`lab:build`, `pixel-lab:build`) | Debug only | spikes/* |
+| Sprite pipeline | ``npm run sprites, assets`` | Headless Blender renders sprite sheets into public/assets/1x | Debug only | tools/blender/* (about 400 sprite scripts) |
 | Test harness and checks | `npm run check:fast`, `npm run check:push`, `npm run test:soak`, `npm run test:weights:ci` | Shared fixtures, near and branch checks, soak tests, and shard weights | Debug only | `test/support/` and [Test tiers](../ARCHITECTURE.md#test-tiers) |
 
 Planned tooling: end-to-end browser regression tests (#157), Vite dependency scan limit (#53), room-layout solver (#193).

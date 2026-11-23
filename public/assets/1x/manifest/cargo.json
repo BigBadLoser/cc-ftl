@@ -1,0 +1,9 @@
+{
+"sheets":{
+"cargo":{"image":"sprites/cargo.png","glow":"sprites/cargo.glow.png"}
+},
+"assets":{
+"item.cargo_crate.held":{"kind":"static","sheet":"cargo","frame":{"x":46,"y":1,"w":18,"h":16},"anchor":{"x":9,"y":11},"footprint":[1,1],"glow":true},
+"item.cargo_crate.l":{"kind":"static","sheet":"cargo","frame":{"x":1,"y":1,"w":44,"h":37},"anchor":{"x":22,"y":26},"footprint":[1,1],"glow":true}
+}
+}

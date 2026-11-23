@@ -2,6 +2,11 @@ import { AwayC, SiteRunC } from '../away/components';
 import { scanPrices } from '../blackmarket/scan';
 import { INSPECT_BOARD_SEC, INSPECT_HOME_SEC, INSPECT_STALL_SEC } from '../blackmarket/tuning';
 import { factionsHostile } from '../combat/factions';
+import { atBattle, shipsHostile } from '../combat/engage';
+import { unit } from '../galaxy/hash';
+import { report } from '../galaxy/news';
+import { INSPECT_NPC_SEIZE } from '../galaxy/tuningWar';
+import { tradeFactionOf } from '../trade/traders';
 import { shipById } from '../combat/shipQuery';
 import { CrewC, DeadC, DownedC, JobC } from '../crew/components';
 import { SurrenderedC } from '../fight/components';
@@ -15,6 +20,7 @@ import { patrolBoards } from './patrol';
 import { refuseConsequences } from './settle';
 import { endInspection, go, leave } from './start';
 import { InspectionC, inspections, type Inspection } from './types';
+import { PLAYER } from '../side';
 
 const alive = (sim: Sim, id: number): boolean => sim.world.has(id, CrewC) && !sim.world.has(id, DeadC);
 
@@ -48,6 +54,10 @@ function release(sim: Sim, vehicle: number, insp: Inspection): void {
 export function abortInspections(sim: Sim): void {
   for (const id of inspections(sim)) {
     const insp = sim.world.get(id, InspectionC)!;
+    if (insp.npc) {
+      endInspection(sim, id); // an NPC ship's: nothing of the player's at stake
+      continue;
+    }
     if (insp.phase !== 'fight' && aboard(sim, insp)) fightInspection(sim, id, insp);
     else if (insp.phase === 'fly' || insp.phase === 'search' || insp.phase === 'settle') {
       refuseConsequences(sim, insp);
@@ -61,20 +71,37 @@ export function abortInspections(sim: Sim): void {
   }
 }
 
+/**
+ * An NPC ship's inspection is settled by itself once the search is over (#603): the inspectors take what they found, and with INSPECT_NPC_SEIZE (or
+ * when they did find contraband) they seize cargo and the news says so. NPC holds carry no contraband yet, so this is mostly the news line.
+ */
+function settleNpc(sim: Sim, id: number, insp: Inspection): void {
+  const seized = insp.found.length > 0 || unit(sim.seed, id, insp.ship, sim.galaxy.turn, 0x5e12) < INSPECT_NPC_SEIZE;
+  const target = shipById(sim, insp.ship);
+  if (seized && target) report(sim, { node: sim.galaxy.current, kind: 'seized', who: insp.name, faction: insp.faction, foe: target.name, foeFaction: tradeFactionOf(target) });
+  leave(sim, id, insp, seized ? 'seized' : 'clean');
+}
+
 function step(sim: Sim, id: number, insp: Inspection): void {
   insp.timer++;
   const station = shipById(sim, insp.station);
   const ship = shipById(sim, insp.ship);
   if (insp.phase === 'fight') {
     // Over once nobody of theirs stands aboard (the player's ship lost or left is abortInspections / the checks below).
-    if (!ship || ship.faction !== 'player' || sim.sector.state !== 'active' || !standing(sim, insp)) release(sim, id, insp);
+    if (!ship || ship.faction !== PLAYER || sim.sector.state !== 'active' || !standing(sim, insp)) release(sim, id, insp);
     return;
   }
-  // The player turned on the ship that sent them (fired on it): its inspectors aboard fight too.
-  if (station && insp.phase !== 'leave' && factionsHostile(station.faction, 'player')) return fightInspection(sim, id, insp);
-  if (!station || station.state !== 'active' || !ship || ship.faction !== 'player' || sim.sector.state !== 'active') return endInspection(sim, id);
+  if (insp.npc) {
+    // An NPC ship's (#603): it ends with either ship gone, and they leave when a fight is on around either or the two have fallen out.
+    if (!station || station.state !== 'active' || !ship || ship.state !== 'active' || sim.sector.state !== 'active') return endInspection(sim, id);
+    if (insp.phase !== 'leave' && (atBattle(sim, insp.station) || atBattle(sim, insp.ship) || shipsHostile(sim, insp.station, insp.ship))) return leave(sim, id, insp, 'off');
+  } else {
+    // The player turned on the ship that sent them (fired on it): its inspectors aboard fight too.
+    if (station && insp.phase !== 'leave' && factionsHostile(station.faction, PLAYER)) return fightInspection(sim, id, insp);
+    if (!station || station.state !== 'active' || !ship || ship.faction !== PLAYER || sim.sector.state !== 'active') return endInspection(sim, id);
+    if (insp.phase !== 'leave' && sim.sector.inCombat) return leave(sim, id, insp, 'off');
+  }
   if (!insp.crew.some((c) => alive(sim, c))) return endInspection(sim, id);
-  if (insp.phase !== 'leave' && sim.sector.inCombat) return leave(sim, id, insp, 'off');
   switch (insp.phase) {
     case 'fly': {
       if (!sim.world.has(id, SiteRunC)) return endInspection(sim, id);
@@ -94,6 +121,7 @@ function step(sim: Sim, id: number, insp: Inspection): void {
       const open = partyJobs(sim, id);
       if (open.length === 0) {
         tally(sim, id, insp);
+        if (insp.npc) return settleNpc(sim, id, insp);
         if (!insp.found.length) {
           sim.events.emit({ type: 'inspect.settled', inspection: id, faction: insp.faction, outcome: 'clean', cost: 0, ...(insp.patrol !== undefined ? { patrol: true as const } : {}) });
           return leave(sim, id, insp, 'clean');

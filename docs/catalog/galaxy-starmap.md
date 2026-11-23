@@ -2,7 +2,7 @@
 
 Terminology: a **node** is one playable grid, a **sector** is a group of nodes, **hyperlanes** link sectors; clusters (provinces) group sectors under a faction.
 The map is generated lazily in chunks from the world seed (`sim/galaxy/generator.ts`) and is turn-based (a turn comes from a jump or from waiting).
-Fleets of every faction persist, follow agendas, fight each other off-screen and can hunt the player. Code reads "sector" for a node in older places (rename pending).
+Fleets of every faction persist, follow agendas, fight each other (off-screen by stats, in the player's node as real ships) and can hunt the player. Code reads "sector" for a node in older places (rename pending).
 
 ## Node structures (`content.galaxy.structures`)
 | Name | id | What it does | Status | Where |
@@ -26,12 +26,16 @@ Fleets of every faction persist, follow agendas, fight each other off-screen and
 | Encounters and interdiction | `-` | Crossings, ambush odds, evade, bribe, fight | In game | sim/galaxy/encounters.ts, encounterOdds.ts, respond.ts; ui/StarmapEncounter.svelte |
 | Fleets and NPC traffic | `-` | Persistent fleets with home ports, agendas, rebuilds | In game | sim/galaxy/fleets.ts, agenda.ts, roster.ts, rebuild.ts; content/galaxyFleets.ts |
 | Off-screen wars | `-` | Hostile fleets that meet fight in a stats mini-sim; wrecks and news | In game | sim/galaxy/meetings.ts, clash.ts, wrecks.ts, news.ts |
-| Heat (notoriety) and hunters | `-` | Kills and captures raise heat; factions send hunters | In game | sim/galaxy/heat.ts, hunters.ts, tuningHeat.ts |
+| Fights in the player's node | `-` | Fleets at war that meet in the player's node fight as real ships until a side is out or jumps away, no time limit; a stalemate sends the weaker side away; boarders board and take each other's ships (stats fallback when a side has no room or the player leaves); an urgent alert; firing on one side joins the other (+2 standing, +3 more on a win) (#603) | In game | sim/galaxy/engagements.ts, engagementFlow.ts; combat/engage.ts; systems/engagement.ts |
+| NPC ships at work | `-` | In the player's node a trader turns up by the station it calls at and the station's shuttle flies over, docks and returns; a miner turns up by its field's nearest rock and its pod (mining hulls have a pod bay) mines a trip that its crew unload; a patrol inspects a non-hostile trader or miner (the player's inspection flow, settled by itself; `seized` news); at most `NPC_ACTIVITIES` at once, giving way to the player's trade and to fights (#603) | In game | sim/galaxy/traffic.ts, trafficCall.ts, business.ts; systems/npcTraffic.ts; inspect/flow.ts |
+| Allies aid the player | `-` | Armed ships and stations of a faction at standing 3+ take on a ship that fires on the player (#603) | In game | sim/galaxy/engagementAid.ts |
+| Heat (notoriety) and hunters | `-` | Kills and captures raise heat; factions send hunters; an urgent alert fires when hunters reach the player's node | In game | sim/galaxy/heat.ts, hunters.ts, tuningHeat.ts |
 | Stranding and distress tug | `-` | Broken fleets and the player can be towed | In game | sim/galaxy/stranded.ts; ui/StrandedBanner.svelte |
 | Opening grace period | `-` | No fights until act one is done or a timer passes | In game | sim/galaxy/grace.ts |
 | Event grids | `event:<id>` | Temporary deep-space pocket nodes | In game | sim/galaxy/eventGrid.ts |
 | Sector archive and jump | `-` | Nodes persist as packets; the sector is swapped on arrival | In game | sim/sector/* |
-| Faction relations | `-` | Pairwise war table and shared standing | In game | content/galaxyRelations.ts; sim/galaxy/relations.ts |
+| Moving borders (coarse tier) | `-` | Every 8 turns, over the chunks within 5 of the player's (about 120 chunks, generated as the player moves; a new game runs 200 ticks of history first), sectors that border a faction at war (touching space or a hyperlane) take pressure; after 3 ticks over the threshold it flips (up to 6 per tick galaxy-wide, never two within 6 sectors); factions also claim unowned sectors beside their own (pirates do not); the player's kills and captures push too; stations follow, ports rebuild the new owner's roster; the start sector, hubs and a faction's last sectors are safe. The starmap colours follow; news `front` / `fell` / `held` outside the fleet area. Wars start and end between neighbours (navy and corporations, pirate factions among themselves; the other pairs are `fixed`), news `war` / `peace`. Slice 1 of #604: no contested-border look, hail lines or station livery yet | In game | sim/galaxy/control.ts, coarse.ts, flip.ts, pressure.ts, war.ts, warmup.ts, tuningCoarse.ts, tuningStance.ts; docs/plans/far-galaxy-604.md |
+| Faction relations | `-` | Pairwise war table (the baseline; `fixed` rows never change) and shared standing; the stance now is `stanceOf` (`GalaxyState.war`, moved by wars starting and ending) | In game | content/galaxyRelations.ts; sim/galaxy/relations.ts |
 | Node population | `-` | Structures become real ships and stations on first visit | In game | sim/galaxy/populate.ts, populateSpawn.ts |
 | Starmap UI | `-` | SVG/GPU map, nebula, clusters, POIs, route preview, drawer, news, stats, sell panel | In game | ui/Starmap*.svelte, ui/starmapGpu.ts; render/starmap/*; app/starmap*.ts |
 | Backdrops | `backdrop.*` | Planets, stars, black hole, binary star backdrops behind the node | In game | render/backdrop.ts; 51 manifest assets |

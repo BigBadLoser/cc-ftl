@@ -32,8 +32,8 @@ Each owns its question (see "One answer per question" in `docs/ARCHITECTURE.md`)
 | Building and hull plan | `-` | Build modules and hull from the catalog; hull plan brushes; shipyard planning | In game | sim/modules/handlers.ts; app/hullBrush.ts, hullPlanTool.ts; ui/BuildCatalog.svelte, HullPlanBar.svelte |
 | Rock digging | `-` | Dig and carve asteroid rock for outposts | In game | sim/rock/dig.ts |
 | Overlays | `-` | Nine field views: o2, co2, temp, fire, smoke, light, power, room quality, rooms | In game | render/overlayDefs.ts; ui/OverlayPicker.svelte |
-| Door vents | `ventsSystem` | Every door has a vent the player opens in the tile inspector; open, it passes air and pressure (not fire, heat or smoke) through a shut door; shuts itself on a hazard either side or no power, reopens when clear | In game | sim/systems/vents.ts, ventCommand.ts, diffusion.ts; ui/TileInspector.svelte; `?scenario=vents` |
+| Door vents | `ventsSystem` | Every door has a vent, open from the start (#591), that the player toggles in the door inspector; open, it passes air and pressure (not fire, heat or smoke) through a shut door; shuts itself on a hazard either side or no power, reopens when clear | In game | sim/systems/vents.ts, sim/ventCommand.ts, diffusion.ts; ui/DoorInspector.svelte; `?scenario=vents` |
 | Water purifier module | `module.waterPurifier` | Ice to water module | In game | issue #321 |
-| Arcade module | `-` | New recreation module | Art only | issue #319 |
+| Arcade module | `module.arcade` | A break spot for one; see modules.md | In game | src/content/modules.ts; sim/ai/machines/leisureSpots.ts |
 | Recovery pod module | `module.recovery` | Recovery module | Partial (built, first pass; see catalog/modules.md) | issue #319 |
 | Performance of environment systems | `-` | Per-tick environment cost dominates | Planned | issue #65 |

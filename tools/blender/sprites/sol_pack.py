@@ -1,4 +1,4 @@
-"""Sol's approved module packs (tools/blender/experiments, see height_185/HANDOFF.md), rendered at final quality by
+"""Sol's approved module packs (tools/blender/experiments), rendered at final quality by
 their own scripts and packed into game sheets. Runs inside Blender (build_sprites.py `sol`); each pack is rendered by a
 separate Blender job, one at a time.
 
@@ -8,6 +8,8 @@ separate Blender job, one at a time.
   shields   BASTION + WARD (shield_bastion_h185_ward_lowbody): module.shield_gen[_small].r<n>[.active];
             roof.shield_gen[_small][.stowed|.deploy.f<k>|.active]. BASTION is 2x3, so its roof parts are also
             rendered at rotation 1 (roof.shield_gen.r1.*, anchored like the rotated module); r2 / r3 reuse r0 / r1.
+  engine_mk2, engine_mk3 (family `sol_tiers`)  the engine's Mk II / Mk III (render.py --tier, the approved KB fit-out):
+            module.engine_mk<n>.* with the Mk I's layers, in sheets of their own so the Mk I packs are not re-rendered
 Roof parts are modelled on the 2.05 roof plane: like the turrets they need no roof lift at runtime.
 
 Renders go to $SOL_DIR (default <tmp>/sol-pack); an existing job folder is reused, so delete it to re-render."""
@@ -22,6 +24,7 @@ from . import pack
 ROOT = Path(__file__).resolve().parents[3]
 EXP = ROOT / "tools/blender/experiments"
 SHEETS = ("engine", "ai_core", "shields")
+TIER_SHEETS = ("engine_mk2", "engine_mk3")
 _R1 = """
 import sys; from pathlib import Path
 d = Path({d!r}); sys.path[:0] = [str(d.parents[1]), str(d)]
@@ -44,14 +47,19 @@ def _jobs():
     out += [("shields", f"shield-{p}", ["--python", str(sh), "--", "--part", p, "--quality", "final"])
             for p in ("roof-large-a", "roof-large-b", "roof-small-a", "roof-small-b")]
     out += [("shields", "shield-roof-large-r1", ["--python-expr", "R1"])]
+    out += [(f"engine_mk{t}", f"engine-mk{t}-r{r}",
+             ["--python", str(eng), "--", "--stage", "8", "--rot", str(r), "--no-beauty", "--tier", str(t)])
+            for t in (2, 3) for r in range(4)]
     return out
 
 
-def render(base):
+def render(base, fams=SHEETS):
     import bpy
     blender = bpy.app.binary_path
     threads = os.environ.get("SOL_THREADS", "3")
     for fam, tag, args in _jobs():
+        if fam not in fams:
+            continue
         d = base / tag
         if (d / "manifest.fragment.json").exists():
             print("SOL reuse", tag, flush=True)
@@ -68,13 +76,16 @@ def render(base):
         tmp.rename(d)
 
 
-def build(out, log=print):
+def build(out, log=print, fams=SHEETS):
+    """Render (or reuse) the jobs of `fams` (SHEETS: build_sprites `sol`; TIER_SHEETS: `sol_tiers`) and pack them."""
     base = Path(os.environ.get("SOL_DIR", Path(tempfile.gettempdir()) / "sol-pack-1x"))
     base.mkdir(parents=True, exist_ok=True)
-    render(base)
-    by = {f: [] for f in SHEETS}
+    render(base, fams)
+    by = {f: [] for f in fams}
     seen = set()
     for fam, tag, _ in _jobs():
+        if fam not in fams:
+            continue
         frag = json.loads((base / tag / "manifest.fragment.json").read_text())
         for sid, a in frag["assets"].items():
             if sid.startswith("review.") or sid in seen:

@@ -10,6 +10,7 @@ import { changeViolations } from './width';
 import { postHullJobs, postTrussJobs } from './jobs';
 import { finishOrder } from './flow';
 import { HullPlanC, isLiveOrder, type YardOrder } from './types';
+import { PLAYER } from '../side';
 
 type YardCommandType = Extract<Command['type'], `yard.${string}` | 'hull.plan'>;
 
@@ -41,7 +42,7 @@ export const yardHandlers: { [T in YardCommandType]: Handler<T> } = {
    */
   'hull.plan': (sim, cmd) => {
     const s = sim.world.get(cmd.ship, ShipC);
-    if (!s || s.faction !== 'player') return reject(sim, cmd.type, 'badGrid');
+    if (!s || s.faction !== PLAYER) return reject(sim, cmd.type, 'badGrid');
     const near = { x: s.x - PLAN_REACH, y: s.y - PLAN_REACH, w: s.width + 2 * PLAN_REACH, h: s.height + 2 * PLAN_REACH };
     if (cmd.tiles.length > MAX_PLAN || cmd.tiles.some((t) => !Number.isInteger(t.x) || !Number.isInteger(t.y) || t.x < near.x || t.y < near.y || t.x >= near.x + near.w || t.y >= near.y + near.h)) {
       return reject(sim, cmd.type, 'badValue');

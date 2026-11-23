@@ -9,11 +9,12 @@ import { weapons } from '../../src/content/weapons.ts';
 import { vehicles } from '../../src/content/vehicles.ts';
 import { items } from '../../src/content/items.ts';
 import type { Manifest, StaticAsset } from '../../src/render/assets/manifest.ts';
+import { readManifest } from '../../src/render/assets/manifestParts.ts';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const assetsRoot = resolve(root, '../public/assets/1x');
 const target = join(root, 'static/generated/sprites');
-const manifest = JSON.parse(await readFile(join(assetsRoot, 'manifest.json'), 'utf8')) as Manifest;
+const manifest: Manifest = await readManifest(`${assetsRoot}/manifest.json`, async (file) => JSON.parse(await readFile(file, 'utf8')) as unknown);
 if (manifest.version !== 1) throw Error('Unsupported sprite manifest version: ' + manifest.version);
 const modules: Record<string, ModuleDef> = { ...baseModules, ...tierModules };
 const chosen = new Map<string, { source: string; icon: boolean }>();
@@ -31,12 +32,8 @@ function selectVariant(id: string, candidates: string[], icon = false): void {
   const source = candidates.find(candidate => manifest.assets[candidate]?.kind === 'static');
   if (source) chosen.set(id, { source, icon });
 }
-for (const [id, def] of Object.entries(modules)) {
-  // Tier variants that share placeholder art should not advertise a distinct
-  // model. Only use their own art if it really exists in the manifest.
-  const declared = def.asset;
-  if (def.tierArt && declared === modules['module.engine']?.asset) continue;
-  select(declared);
+for (const def of Object.values(modules)) {
+  select(def.asset);
 }
 for (const def of Object.values(vehicles)) {
   if (!def.asset) continue;

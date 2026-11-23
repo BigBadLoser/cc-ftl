@@ -95,15 +95,15 @@ function structuresFor(rng: Rng, ctx: SectorContext, nodes: readonly Vec[], fact
   if (!g) return out;
   const civilian = Object.keys(g.factions).find((id) => g.factions[id]?.kind === 'civilian') ?? null;
   // The start node always has a free traders' station: fuel and a market within reach of a new game.
-  if (start) out[0]?.push({ def: 'structure.station_trade', owner: civilian });
+  if (start) out[0]?.push({ def: 'structure.station_trade', genOwner: civilian });
   const stations = faction ? g.factions[faction]?.stations ?? [] : [];
   const lo = start && nodes.length > 1 ? 1 : 0;
   const at = rng.int(lo, nodes.length - 1);
   if (stations.length) {
     const def = pickWeighted(stations, rng.next());
-    if (def && g.structures[def]) out[at]?.push({ def, owner: faction });
+    if (def && g.structures[def]) out[at]?.push({ def, genOwner: faction });
   } else if (rng.chance(OPEN_STATION_CHANCE) && g.structures['structure.station_trade']) {
-    out[at]?.push({ def: 'structure.station_trade', owner: civilian });
+    out[at]?.push({ def: 'structure.station_trade', genOwner: civilian });
   }
   const kind = faction ? g.factions[faction]?.kind ?? null : null;
   nodes.forEach((p, k) => {
@@ -113,7 +113,7 @@ function structuresFor(rng: Rng, ctx: SectorContext, nodes: readonly Vec[], fact
     const e = id ? g.nodeContents.entries[id] : undefined;
     if (!e) return;
     const owner = e.owner === 'none' ? null : e.owner === 'territory' ? faction : faction ?? civilian;
-    out[k]?.push({ def: e.structure, owner });
+    out[k]?.push({ def: e.structure, genOwner: owner });
   });
   return out;
 }
@@ -144,7 +144,7 @@ export function buildSector(ctx: SectorContext, site: Site, hub = false): BuiltS
     const resources = [...new Set(list.flatMap((s) => ctx.content?.structures[s.def]?.resources ?? []))].sort();
     return {
       id: `${site.id}.n${k}`, sector: site.id, x: p.x, y: p.y, name: `${name.short} ${GREEK[k % GREEK.length]}`,
-      danger: nodeDanger, faction, structures: list, resources, contacts,
+      danger: nodeDanger, genFaction: faction, structures: list, resources, contacts,
     };
   });
   const routes: EdgeData[] = [];
@@ -159,7 +159,7 @@ export function buildSector(ctx: SectorContext, site: Site, hub = false): BuiltS
     routes.push({ id: `r:${lo.id}|${hi.id}`, a: lo.id, b: hi.id, kind: 'route', length, ...jumpCosts('route', length) });
   }
   const sector: SectorData = {
-    id: site.id, chunk: ctx.chunkOf(site), x: site.x, y: site.y, r: site.r, name: name.full, faction, danger,
+    id: site.id, chunk: ctx.chunkOf(site), x: site.x, y: site.y, r: site.r, name: name.full, genFaction: faction, danger,
     nodes: nodes.map((n) => n.id), hull: paddedHull(pts, HULL_PAD), layout: layout.style, body: { kind: body.kind, x: site.x + body.dx, y: site.y + body.dy, r: body.r }, ...(hub ? { hub: true as const } : {}),
   };
   return { sector, nodes, routes };

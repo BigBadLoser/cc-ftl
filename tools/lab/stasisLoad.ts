@@ -1,4 +1,5 @@
 import { Assets, Container, Rectangle, Sprite, Texture } from 'pixi.js';
+import { readManifest } from '../../src/render/assets/manifestParts';
 import { LAMP_TINT } from '../../src/render/stasisArt';
 import { HATCH_FRAMES, LOAD_TICKS, RUN_IN_TICK, STAR_FRAMES, loadPlan, loadTick, patchId, planHasCart, turnPlan, unloadPlan } from '../../src/render/stasisLoad';
 import { STOW_SECONDS, UNSTOW_SECONDS } from '../../src/sim/stasis/tuning';
@@ -19,7 +20,7 @@ interface Man {
 }
 
 async function frames(src: string): Promise<Map<string, Fr>> {
-  const m = await (await fetch(`${src}manifest.json?t=${Date.now()}`)).json() as Man;
+  const m = await readManifest(`${src}manifest.json`, async (url) => (await fetch(`${url}?t=${Date.now()}`)).json()) as unknown as Man;
   const sh = m.sheets.stasisload as { image: string; glow?: string };
   const img = await Assets.load<Texture>(`${src}${sh.image}?t=${Date.now()}`);
   const gl = sh.glow ? await Assets.load<Texture>(`${src}${sh.glow}?t=${Date.now()}`) : null;

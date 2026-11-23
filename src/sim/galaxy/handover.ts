@@ -23,6 +23,7 @@ import { boardRecruits, landRecruits } from '../trade/recruitLand';
 import { postedCards } from './passage';
 import { passengerOff } from './passengerOff';
 import { askingToJoin } from './joinOffer';
+import { PLAYER } from '../side';
 
 /**
  * The physical handover of a delivery (issue #178), and of a passenger (a passage job, or a refused card: galaxy/passage.ts; the recruit run reversed,
@@ -57,7 +58,7 @@ const FLIGHT_SEC = 240;
 function stationShip(sim: Sim): number {
   for (const id of [...sim.world.query(ShipC)].sort((a, b) => a - b)) {
     const s = sim.world.get(id, ShipC);
-    if (!s || !s.immobile || s.faction === 'player' || s.state !== 'active') continue;
+    if (!s || !s.immobile || s.faction === PLAYER || s.state !== 'active') continue;
     if (ensureTrader(sim, id) && hailVerdict(sim, id).answers) return id;
   }
   return 0;

@@ -16,7 +16,7 @@ see `docs/STATUS_ARCHIVE.md` and the October handoff snapshot in `docs/HANDOFF.m
 - `npm run typecheck`: `tsc` and `svelte-check`
 - `npm run check:fast`: lint, typecheck, the rule checks (`npm run test:rules`: file size, system imports, isolated mocks, duplication,
   import cycles; about a second, run every time since they read files rather than imports), and the near tests of uncommitted changes (untracked files included): the test
-  files within two imports of what changed, plus edited test files; with nothing uncommitted, the branch against
+  files within two imports of what changed (for a `tuning*.ts` file, of the users of the constants that changed), plus edited test files; with nothing uncommitted, the branch against
   `origin/main`. Run it before every commit. A sim edit reaches most of the suite through three imports, so the rest
   waits for the push.
 - `npm run check:push`: lint, typecheck and every fast test the branch affects (Vitest's import graph, since the merge
@@ -48,7 +48,7 @@ see `docs/STATUS_ARCHIVE.md` and the October handoff snapshot in `docs/HANDOFF.m
   use them instead of local copies. Read "Writing a test" in `docs/ARCHITECTURE.md` before adding or reshaping tests: start near the moment
   tested, never weaken to save time (a shortened fast test keeps its original verbatim in `*.slow.test.ts`), import owning modules, not
   the sim index.
-- Tests share one module graph (`isolate: false`) except the files listed as isolated in `vite.config.ts`. A test that
+- Tests share one module graph (`isolate: false`) except the files listed in `tools/isolatedTests.ts` (`ISOLATED`, read by `vite.config.ts`). A test that
   mocks or spies, or changes shared or cached data (the component registry, generated nodes cached per seed), goes on that list.
 - `npm run lab -- --panel <id>`: screenshot a render lab panel, any visual drawn on its own as a grid of stills (dev page
   `/tools/lab/`). New visual work gets a panel. See `docs/RENDER_LAB.md`.
@@ -103,6 +103,8 @@ see `docs/STATUS_ARCHIVE.md` and the October handoff snapshot in `docs/HANDOFF.m
   3. Mark the PR ready once the fixes are batched in. That is the testing round: CI runs the full suite (and another Codex
      review runs). Fix whatever it finds; after a later merge of `main`, CI runs again on the push. CI and Codex review
      it, and only the user merges it to `main`. Nothing reaches `main` any other way.
+  From the moment a PR opens, the `steward` skill (`.claude/skills/steward/SKILL.md`) looks after it: subscribe to it, fix
+  CI failures and review findings, reply on each thread and resolve it once fixed, and say when it is ready to merge.
   Docs-only changes (`*.md`, no code) skip the PR and go straight to `main`.
 - Small bug fixes found together go in one PR on one `fix/…` branch, not a PR each.
 - `CHANGELOG.md` holds player-facing patch notes; refactors, tests and tooling stay out. When a PR with a player-visible
@@ -146,6 +148,7 @@ see `docs/STATUS_ARCHIVE.md` and the October handoff snapshot in `docs/HANDOFF.m
     builds on, decisions the user's requirements hinge on, tricky reviews or fixes). Delegate what is well scoped and
     can be checked from a report.
   - Subagents default to Sonnet, which handles most well-scoped work.
+  - No subagents for art (sprites, Blender, art prompts): the main session does art work itself (user, 2026-11-21).
   - Keep one Opus agent (the `opus-fixer` type in `.claude/agents`, 1-hour cache) open for bug fixes and work that
     really needs Opus, and reuse it by message rather than starting new ones, so its cache isn't rebuilt every time. Use
     it only when Opus is needed, and tell the user when it gets a task. Other subagents keep the 5-minute cache.

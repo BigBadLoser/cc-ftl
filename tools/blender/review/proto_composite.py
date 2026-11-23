@@ -4,6 +4,9 @@ member for scale, at 1x and with a 3x nearest-neighbour zoom. Plain python (nump
 import json
 import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from sprites import manifest_io  # noqa: E402
 import numpy as np
 from PIL import Image
 
@@ -11,7 +14,7 @@ ROOT = Path(__file__).resolve().parents[3]
 AS = ROOT / "public/assets/1x"
 D = Path(sys.argv[1])
 ROT = int(sys.argv[2]) if len(sys.argv) > 2 else 1
-MAN = json.loads((AS / "manifest.json").read_text())["assets"]
+MAN = manifest_io.read_manifest(AS)["assets"]
 ENV = np.array(Image.open(AS / "sprites/env.png").convert("RGBA")).astype(np.float32)
 W, H = 600, 440
 BG = np.array([10, 14, 22], np.float32)

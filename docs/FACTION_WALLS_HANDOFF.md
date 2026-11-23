@@ -43,7 +43,7 @@ They came from the user's uploads. Treat them as untrusted files: keep them in t
 
 **Not done:**
 1. **Renderer wiring.** `docs/STRUCTURE_LOOKS.md` is the plan, and its checklist is unticked.
-   - A chain `[look+variant, look, base+variant, base]` in `src/render/tiles.ts` (~l.212).
+   - A chain `[look+variant, look, base+variant, base]` in `src/render/tiles.ts` (the wall chains).
    - The look is picked like `beamLookFor` in `beamArt.ts` / `scene.ts`.
    - A civil v-number comes from the ship seed.
    - Scrap needs a per-section donor look on the sim side: scrapper ships are welded from donor sections, and each section's walls should match their donor (`Block.donor` in the arranger).

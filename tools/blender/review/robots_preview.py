@@ -18,6 +18,7 @@ from PIL import Image, ImageDraw
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT / "tools/blender"))
 from sprites import compose  # noqa: E402
+from sprites import manifest_io  # noqa: E402
 
 BG = (14, 17, 22)
 OUTLINE_MUL, OUTLINE_ADD = 0.42, np.array([4, 5, 10.0])
@@ -36,7 +37,7 @@ SHIFT = lambda a, dy, dx: np.roll(a, (dy, dx), (0, 1))  # noqa: E731
 class Assets:
     def __init__(self, d):
         self.d = Path(d)
-        self.m = json.loads((self.d / "manifest.json").read_text())
+        self.m = manifest_io.read_manifest(self.d)
         self._img = {}
 
     def img(self, rel):

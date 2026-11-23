@@ -152,7 +152,7 @@ export interface UiCrew {
    * Which side: the player's crew, a passenger living aboard (a lodging guest), a visitor aboard by the ship's leave who does not live there (an
    * inspector, a yard contractor: `visit` names them), or another side's crew standing on a grid the player's crew is on.
    */
-  side: 'player' | 'guest' | 'visitor' | 'enemy';
+  side: 'own' | 'guest' | 'visitor' | 'enemy';
   /** For a visitor: what they are aboard as ('Inspector', 'Contractor', 'Visitor'). */
   visit?: string;
   /** Ship they stand on (ShipC entity id; 0 = aboard a shuttle), and a label for where they are. */
@@ -723,7 +723,7 @@ export type UiSubject =
 export type UiAlertKind =
   | 'fire.started' | 'hull.breach' | 'power.shortage' | 'o2.low' | 'crew.downed' | 'suit.airLow' | 'suit.airOut' | 'crew.airUnreachable' | 'away.stranded' | 'crew.starving' | 'crew.break'
   | 'combat.started' | 'creatures.aboard' | 'galaxy.incomingHostile' | 'story.lead' | 'fight.report' | 'boarders.stranded' | 'save.failed' | 'crew.asksToJoin'
-  | 'inspect.waiting' | 'inspect.blocked' | 'ship.disabled' | 'fuel.low' | 'fuel.out' | 'core.lost' | 'vehicle.lost' | 'ship.yielded' | 'stasis.failing' | 'hunters.here';
+  | 'inspect.waiting' | 'inspect.blocked' | 'ship.disabled' | 'fuel.low' | 'fuel.out' | 'core.lost' | 'vehicle.lost' | 'ship.yielded' | 'stasis.failing' | 'hunters.here' | 'fight.nearby';
 
 export type UiLogKind =
   | 'fire' | 'breach' | 'crew.downed' | 'crew.died' | 'crew.rescued' | 'module.destroyed' | 'combat' | 'ship.disabled' | 'ship.destroyed'

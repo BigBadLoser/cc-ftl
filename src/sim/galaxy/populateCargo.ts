@@ -3,6 +3,7 @@ import { rotatedSize } from '../modules/footprint';
 import type { Place } from '../regions';
 import type { Sim } from '../sim';
 import { rollCargo } from './cargoLoot';
+import { nodeOwner } from './control';
 import { hash32, unit } from './hash';
 import { growSector } from './populateSpawn';
 import { pickWeighted, trafficPool } from './sector';
@@ -30,7 +31,8 @@ const HP = [0.55, 1] as const;
 export function lostCargoFaction(sim: Sim, node: NodeData, seed: number): string | null {
   const content = sim.content.galaxy;
   const ok = (id: string | null): id is string => !!id && !['pirates', 'rogue'].includes(content?.factions[id]?.kind ?? 'pirates');
-  const owner = ok(node.faction) ? node.faction : pickWeighted(trafficPool(content, null, node.danger).filter((w) => ok(w.value)), unit(seed, 221));
+  const here = nodeOwner(sim, node);
+  const owner = ok(here) ? here : pickWeighted(trafficPool(content, null, node.danger).filter((w) => ok(w.value)), unit(seed, 221));
   return ok(owner) ? pickWeighted(content?.factions[owner]?.ships ?? [], unit(seed, 222)) : null;
 }
 

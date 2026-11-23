@@ -14,16 +14,16 @@ These aren't features. They're the aims we use to choose which features to build
 
 Shipped and no longer listed: physical encounters, the UI consistency pass and prisoners ([#116](https://github.com/BigBadLoser/cc-ftl/issues/116)); see the [changelog](../CHANGELOG.md).
 
-- **Core loop: more to find per node.** One node-content table weighted by distance tier (no visible bands), with physical finds (small wrecks, probes, cargo pods, beacons, anomalies) that crew reach by shuttle or EVA, and some nodes left quiet on purpose. Loot and ore quality then scale with tier, and deep-only content follows later. Danger bands (#382) are folded in. ([#171](https://github.com/BigBadLoser/cc-ftl/issues/171))
+- **Core loop: more to find per node.** One node-content table weighted by distance tier (no visible bands), with physical finds (small wrecks, probes, cargo pods, beacons, anomalies) that crew reach by shuttle or EVA, and some nodes left quiet on purpose. Started: the node content table, four asteroid field kinds and lost cargo ([#517](https://github.com/BigBadLoser/cc-ftl/pull/517)) are in; probes, beacons and anomalies are not. Loot and ore quality then scale with tier, and deep-only content follows later. Danger bands (#382) are folded in. ([#171](https://github.com/BigBadLoser/cc-ftl/issues/171))
 - **Station assembly follow-ups.** The [station assembler](STATION_ASSEMBLY.md) generates stations and outposts on
-  `main`. See [project status](STATUS.md#in-progress) for remaining performance and validation work.
+  `main`. The generator, ground turrets, landing pads, station hull look and off-thread builds have shipped. See [project status](STATUS.md#in-progress) for what remains (#444, #561, soft-limit files, assembler tests).
   ([#460](https://github.com/BigBadLoser/cc-ftl/issues/460))
 
 ## Next
 
 - **Research pass.** ([#380](https://github.com/BigBadLoser/cc-ftl/issues/380))
 - **Story arcs.** ([#383](https://github.com/BigBadLoser/cc-ftl/issues/383))
-- **Goals after the tutorial.** A rolling captain's log of goals past act 3, with a pull toward deeper space. ([#172](https://github.com/BigBadLoser/cc-ftl/issues/172), [#52](https://github.com/BigBadLoser/cc-ftl/issues/52))
+- **Goals after the tutorial.** Emergent goals from the world past act 3, with a pull toward deeper space; no captain's log or goal list (#172 is dropped, see DESIGN.md "Core loop direction"). ([#52](https://github.com/BigBadLoser/cc-ftl/issues/52))
 - **A second income and things to spend on.** Another way to earn besides deliveries, and real costs for credits. Needs your design call. ([#174](https://github.com/BigBadLoser/cc-ftl/issues/174))
 - **Recruiting prisoners.** Offer captives a place in the crew. ([#492](https://github.com/BigBadLoser/cc-ftl/issues/492))
 

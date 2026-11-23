@@ -1,6 +1,6 @@
 import { isDormant } from '../sim/combat/dormant';
 import { isIdle } from '../sim/modules/draw';
-import { homeShip, isOnOurSide, factionsHostile } from '../sim/index';
+import { homeShip, isOnOurSide, factionsHostile, isPlayers, PLAYER } from '../sim/index';
 import { playerShipsPackedOk } from '../sim/story/world';
 import { aiCores } from '../sim/robots/core';
 import { HackedC } from '../sim/robots/components';
@@ -17,7 +17,7 @@ import { suitAir, suitDef } from '../sim/eva/suit';
 import { isHeldOffline } from '../sim/modules/hold';
 import { fuelLow, hasFuel } from '../sim/modules/energy';
 import { AwayC, AwaySiteC, SiteRunC } from '../sim/away/components';
-import { InspectionC, inspections } from '../sim/inspect/types';
+import { InspectionC, playerInspections } from '../sim/inspect/types';
 import { EVA_AIR_LOW_FRAC, O2_ALERT_BELOW, O2_ALERT_CLEAR_ABOVE } from '../sim/tuning';
 import type { UiAlert, UiAlertKind, UiSubject } from '../ui/api';
 import { breakWhat } from './breakText';
@@ -44,7 +44,7 @@ export function underAttack(sim: Sim): boolean {
   let yielded = false;
   for (const id of sim.world.query(ShipC)) {
     const s = sim.world.get(id, ShipC);
-    if (!s || (s.state !== 'active' && s.state !== 'disabled') || isDormant(s) || !factionsHostile(s.faction, 'player')) continue;
+    if (!s || (s.state !== 'active' && s.state !== 'disabled') || isDormant(s) || !factionsHostile(s.faction, PLAYER)) continue;
     if (!s.yielded) return true;
     yielded = true;
   }
@@ -106,16 +106,13 @@ export function hazardKey(sim: Sim, prefix: 'f' | 'b' | 'o', ship: number, room:
   return ship === homeShip(sim) ? `${prefix}${room}` : `${prefix}${ship}.${room}`;
 }
 
-/** Ships whose fire, breach and air alerts count: every ship the player owns (the home ship, prizes, captured hulls), not hostile ones. */
-export const alertShips = (sim: Sim, ship: number): boolean => sim.world.get(ship, ShipC)?.faction === 'player';
-
 /**
  * The ship cannot act, and not because the whole crew is away on purpose: that case is every able player crew member out on a party, with
  * power running (the ship is disabled only for want of hands aboard). Anyone left home, downed, or no power, and it is an emergency.
  */
 export function shipHelpless(sim: Sim, ship: number): boolean {
   if (sim.world.get(ship, ShipC)?.state !== 'disabled') return false;
-  const able = sim.world.query(CrewC, AllegianceC).filter((c) => sim.world.get(c, AllegianceC)?.faction === 'player' && !sim.world.has(c, DeadC) && !sim.world.has(c, DownedC));
+  const able = sim.world.query(CrewC, AllegianceC).filter((c) => isPlayers(sim, c) && !sim.world.has(c, DeadC) && !sim.world.has(c, DownedC));
   const allAway = able.length > 0 && able.every((c) => sim.world.has(c, AwayC));
   return !(allAway && powerBalance(sim, ship).supply > 0);
 }
@@ -144,7 +141,7 @@ function aliensAboard(sim: Sim): Map<number, number[]> {
   for (const id of sim.world.query(AlienC, CrewC, PositionC)) {
     if (sim.world.has(id, DeadC)) continue;
     const ship = shipIdOf(sim, sim.world.get(id, PositionC));
-    if (!alertShips(sim, ship)) continue;
+    if (!isPlayers(sim, ship)) continue;
     out.set(ship, [...(out.get(ship) ?? []), id]);
   }
   return out;
@@ -159,13 +156,13 @@ function boardersLeft(sim: Sim): Map<number, number[]> {
   const docked = new Set<number>();
   for (const id of sim.world.query(VehicleC)) {
     const v = sim.world.get(id, VehicleC);
-    if (v?.state === 'docked' && sim.world.get(v.homeShip, ShipC)?.faction === 'player') docked.add(shipIdOf(sim, sim.world.get(v.dock, ModuleC)));
+    if (v?.state === 'docked' && isPlayers(sim, v.homeShip)) docked.add(shipIdOf(sim, sim.world.get(v.dock, ModuleC)));
   }
   for (const id of sim.world.query(CrewC, PositionC, AllegianceC)) {
-    if (sim.world.has(id, DeadC) || sim.world.get(id, AllegianceC)?.faction !== 'player' || sim.world.has(id, AwayC)) continue;
+    if (sim.world.has(id, DeadC) || !isPlayers(sim, id) || sim.world.has(id, AwayC)) continue;
     const ship = shipIdOf(sim, sim.world.get(id, PositionC));
     const host = sim.world.get(ship, ShipC);
-    if (!host || host.state === 'wreck' || !factionsHostile('player', host.faction) || docked.has(ship)) continue;
+    if (!host || host.state === 'wreck' || !factionsHostile(PLAYER, host.faction) || docked.has(ship)) continue;
     out.set(ship, [...(out.get(ship) ?? []), id]);
   }
   return out;
@@ -181,7 +178,6 @@ export function deriveAlerts(sim: Sim, held: (key: string) => boolean): Map<stri
   const home = homeShip(sim);
   const name = (id: number) => sim.world.get(id, CrewC)?.name ?? 'Crew';
   const alive = (id: number) => !sim.world.has(id, DeadC);
-  const player = (id: number) => sim.world.get(id, AllegianceC)?.faction === 'player';
 
   for (const ship of playerShipsPackedOk(sim)) {
     const grid = shipGrid(sim, ship);
@@ -212,14 +208,14 @@ export function deriveAlerts(sim: Sim, held: (key: string) => boolean): Map<stri
   }
   const full = suitDef(sim).airSec;
   for (const id of sim.world.query(SuitC, CrewC)) {
-    if (!alive(id) || !player(id)) continue;
+    if (!alive(id) || !isPlayers(sim, id)) continue;
     const air = suitAir(sim, id);
     if (air > full * EVA_AIR_LOW_FRAC) continue;
     const out0 = air <= 0;
     add({ kind: out0 ? 'suit.airOut' : 'suit.airLow', key: `sa${id}`, text: `${out0 ? 'Suit air out' : 'Suit air low'}: ${name(id)}`, subject: crewSubject(sim, id) });
   }
   for (const id of sim.world.query(PickupC, CrewC)) {
-    if (!alive(id) || !player(id)) continue;
+    if (!alive(id) || !isPlayers(sim, id)) continue;
     const sec = Math.floor(airLeft(sim, id));
     add({ kind: 'crew.airUnreachable', key: `au${id}`, text: `No air in reach: ${name(id)} (${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')} left)`, subject: crewSubject(sim, id) });
   }
@@ -233,11 +229,11 @@ export function deriveAlerts(sim: Sim, held: (key: string) => boolean): Map<stri
   for (const id of sim.world.query(BreakdownC, CrewC)) {
     const b = sim.world.get(id, BreakdownC);
     // The sim marks the break that earned an alert on the crew member's break memory (`alertAt` is the tick it began).
-    if (!b || !alive(id) || !player(id) || sim.world.get(id, BreakMemoryC)?.alertAt !== b.since) continue;
+    if (!b || !alive(id) || !isPlayers(sim, id) || sim.world.get(id, BreakMemoryC)?.alertAt !== b.since) continue;
     add({ kind: 'crew.break', key: `br${id}`, text: `${name(id)} ${breakWhat(b.kind, b.context)}`, subject: crewSubject(sim, id) });
   }
   for (const id of sim.world.query(NeedsC, CrewC)) {
-    if (!alive(id) || !player(id) || (sim.world.get(id, NeedsC)?.hunger ?? 1) > 0) continue;
+    if (!alive(id) || !isPlayers(sim, id) || (sim.world.get(id, NeedsC)?.hunger ?? 1) > 0) continue;
     add({ kind: 'crew.starving', key: `st${id}`, text: `Starving: ${name(id)}`, subject: crewSubject(sim, id) });
   }
   const failing = stasisFailing(sim);
@@ -247,7 +243,7 @@ export function deriveAlerts(sim: Sim, held: (key: string) => boolean): Map<stri
   for (const core of aiCores(sim, home)) {
     const hack = sim.world.get(core, HackedC);
     const m = sim.world.get(core, ModuleC);
-    if (hack && hack.by !== 'player' && m) add({ kind: 'core.lost', key: `core${home}`, text: 'AI core hacked: robots shut down', subject: tileAt(m.x, m.y) });
+    if (hack && hack.by !== PLAYER && m) add({ kind: 'core.lost', key: `core${home}`, text: 'AI core hacked: robots shut down', subject: tileAt(m.x, m.y) });
   }
   for (const [ship, aliens] of aliensAboard(sim)) {
     add({ kind: 'creatures.aboard', key: `ca${ship}`, text: `Creatures aboard: ${sim.world.get(ship, ShipC)?.name ?? 'wreck'}`, subject: crewSubject(sim, aliens[0] as number) });
@@ -269,7 +265,7 @@ export function deriveAlerts(sim: Sim, held: (key: string) => boolean): Map<stri
     const def = sim.content.events?.[n.event];
     if (def?.lead && n.id > 0) add({ kind: 'story.lead', key: `ev${n.event}`, text: def.text, subject: null, notice: { id: n.id, lead: true, title: def.title } });
   }
-  for (const id of inspections(sim)) {
+  for (const id of playerInspections(sim)) {
     const insp = sim.world.get(id, InspectionC)!;
     const lead = insp.crew.find(alive);
     if (insp.phase === 'settle' && lead !== undefined) {
