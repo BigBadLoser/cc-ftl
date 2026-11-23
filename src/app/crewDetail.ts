@@ -13,7 +13,7 @@ import { buildSocial } from './socialSnapshot';
 import { xpGainMult } from '../sim/crew/traits';
 import { carriedCard, suitCard, weaponCard } from './crewItemCards';
 import { buildHealth } from './healthDetail';
-import { previewOperations } from './opsPreview';
+import { buildOperations } from './surgeryDetail';
 import type { UiCondition, UiCrewDetail, UiGearSlot, UiItemCard, UiSkillDetail, UiStatDetail, UiStatPart } from '../ui/crewDetailApi';
 
 const cap = (s: string): string => s[0]!.toUpperCase() + s.slice(1);
@@ -152,7 +152,7 @@ function gearOf(sim: Sim, id: number): UiGearSlot[] {
   const implants = sim.world.get(id, ImplantsC)?.list ?? [];
   for (let i = 0; i < Math.max(1, implants.length); i++) {
     const imp = implants[i];
-    out.push({ slot: 'implant', label: 'Implant', item: imp ? { id: imp, name: cap(imp.replace(/^.*\./, '').replace(/_/g, ' ')), card: null } : null });
+    out.push({ slot: 'implant', label: 'Implant', item: imp ? { id: imp.item, name: sim.content.items[imp.item]?.name ?? imp.item, card: null } : null });
   }
   return out;
 }
@@ -171,7 +171,7 @@ export function buildCrewDetail(sim: Sim, id: number | null): UiCrewDetail | nul
   return {
     id,
     health: { hp: Math.round(hp?.hp ?? 100), maxHp: hp?.max ?? 100, conditions: conditionsOf(sim, id) },
-    body: buildHealth(sim, id, previewOperations(sim, id)),
+    body: buildHealth(sim, id, buildOperations(sim, id)),
     mood: moodOf(sim, id),
     skills: skillsOf(sim, id),
     ...backgroundOf(sim, id),

@@ -159,7 +159,7 @@ export interface UiSocial {
  */
 export type UiTone = 'alert' | 'plain' | 'fine';
 /** A body part's glyph (ui/bodyIcons.ts); a left-side part is drawn mirrored. */
-export type UiPartIcon = 'part-brain' | 'part-eye' | 'part-heart' | 'part-lungs' | 'part-spine' | 'part-arm' | 'part-leg';
+export type UiPartIcon = 'part-brain' | 'part-eye' | 'part-heart' | 'part-lungs' | 'part-spine' | 'part-arm' | 'part-leg' | 'part-skin';
 
 export interface UiHealth {
   hpPct: number;
@@ -168,7 +168,7 @@ export interface UiHealth {
   capacities: { key: string; name: string; pct: number; tone: UiTone }[];
   /** All ten parts, in the fixed order; `gap`: a small gap above (a new group: head, torso, arms, legs). */
   parts: UiBodyPart[];
-  /** The surgery queue and picker; null until surgery exists (slice 2, #311). */
+  /** The surgery queue and picker (#311); null for a body that takes no surgery. */
   operations: UiOperations | null;
 }
 
@@ -182,6 +182,8 @@ export interface UiBodyPart {
   state: string;
   more: number;
   tone: UiTone;
+  /** The fitted implants' names, drawn in cyan (the one place cyan is used), or null. */
+  implant: string | null;
   card: UiInjuryCard | null;
 }
 
@@ -203,7 +205,7 @@ export interface UiOperations {
     where: string[];
     surgeon: string;
   };
-  /** False while the queue only previews (the dev route): buttons are inert. */
+  /** False when the buttons are inert. */
   live: boolean;
 }
 
@@ -213,5 +215,8 @@ export interface UiOperationOption {
   note: string;
   /** Why it does not apply, when it does not. */
   disabled?: string;
-  implants?: { id: string; name: string; stock: number }[];
+  /** The best free surgeon's odds, in words ("success 82% at a table, 62% at a bed"); per implant on `implants`. */
+  odds?: string;
+  /** fit: the implants that fit, with stock; remove: the fitted ones (`note` instead of the stock). */
+  implants?: { id: string; name: string; stock: number; note?: string; odds?: string }[];
 }

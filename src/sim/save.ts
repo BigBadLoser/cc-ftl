@@ -162,8 +162,9 @@ import { newYard, type YardState } from './yard/types';
  * v130 (NPC fights in the player's node, #603): `Sector.engagements` (fights between NPC ships: sides, members, who the player joined) and `Sector.met` / `Sector.meetTurn` (the fleets that fought here this turn).
  * v131 (far galaxy, #604): `GalaxyState.control` (sectors whose owner differs from the generated one, and the pressure on them) and `GalaxyState.war` (faction pairs whose stance differs from the relations table).
  * v132 (crew injuries, #601): `InjuriesC` on crew (body-part injuries, crew/injuryTypes.ts), job kind 'aid' (first aid), `debug.setCrew.injuries`.
+ * v133 (surgery and implants, #311): `ImplantsC` holds `{ part, item }` fitted implants (was item ids), `OperationsC` (the surgery queue), job kind 'surgery' with `Job.surgery`.
  */
-export const SAVE_VERSION = 132;
+export const SAVE_VERSION = 133;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {

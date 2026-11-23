@@ -61,7 +61,7 @@ export function operatorSkill(sim: Sim, shipId: number, kind: ConsoleKind): numb
 
 /** Path-score bonus that makes skilled crew prefer their own console (and the medically skilled a sickbed to tend). */
 export function operateAffinity(sim: Sim, crew: number, job: Job): number {
-  if (job.kind === 'tend') return skillOf(sim, crew, 'medicine') * 50;
+  if (job.kind === 'tend' || job.kind === 'surgery') return skillOf(sim, crew, 'medicine') * 50; // the best surgeon takes the operation
   if (job.kind !== 'operate') return 0;
   const m = sim.world.get(job.target ?? 0, ModuleC);
   const kind = m && sim.content.modules[m.def]?.console;

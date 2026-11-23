@@ -68,6 +68,7 @@ export default defineConfig({
             { title: 'Crew', to: '/mechanics/crew/' },
             { title: 'Mood, relationships and breaks', to: '/mechanics/mood/' },
             { title: 'Injuries and healing', to: '/mechanics/injuries/' },
+            { title: 'Surgery and implants', to: '/mechanics/surgery/' },
             { title: 'Food and farming', to: '/mechanics/food/' },
             { title: 'Drones', to: '/mechanics/drones/' },
             { title: 'Ship combat', to: '/mechanics/combat/' },

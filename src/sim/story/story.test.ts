@@ -15,7 +15,8 @@ import { storageAdd, storageCount } from '../items/storage';
 import { ModuleC } from '../modules/components';
 import { StorageC } from '../items/components';
 
-import { SkillXpC, ImplantsC } from './components';
+import { SkillXpC } from './components';
+import { ImplantsC } from '../crew/implantTypes';
 import { levelsFor } from '../crew/xp';
 import { checkOdds, describeRequirement, meets, unmetReasons } from './requirements';
 import { playerCrew, skillOf } from './world';
@@ -101,7 +102,7 @@ describe('requirements', () => {
     expect(meets(sim, { kind: 'crew', count: 2 })).toBe(true);
     expect(meets(sim, { kind: 'crew', count: 3 })).toBe(false);
     expect(meets(sim, { kind: 'implant', implant: 'imp.eye' })).toBe(false);
-    sim.world.add(playerCrew(sim)[0] as number, ImplantsC, { list: ['imp.eye'] });
+    sim.world.add(playerCrew(sim)[0] as number, ImplantsC, { list: [{ part: 'part.eye_left', item: 'imp.eye' }] });
     expect(meets(sim, { kind: 'implant', implant: 'imp.eye' })).toBe(true);
   });
 

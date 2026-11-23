@@ -1,5 +1,7 @@
 import { defineComponent } from '../ecs';
 import type { StatName } from '../stats';
+import type { ImplantSlot, SurgeryEvent } from './implantTypes';
+export type { ImplantDef } from './implantTypes';
 
 /**
  * Crew injuries (DESIGN.md "Injuries and cyberware", slice 1, #601): the content shapes, the component and the events. Content is data
@@ -26,6 +28,8 @@ export interface BodyPartDef {
   vital?: true;
   /** A paired part's side (the Health tab mirrors its icon). Content order is the order the Health tab lists the parts in. */
   side?: 'left' | 'right';
+  /** The implant slot kind it takes (`ImplantDef.slot`: a cyber arm fits either arm). */
+  slot: ImplantSlot;
 }
 
 /** A capacity: its floor (what is left with every part of it gone) and the stats it scales (`weight`: the share of the stat it takes away at 0). */
@@ -111,8 +115,9 @@ export interface Injuries {
 }
 export const InjuriesC = defineComponent<Injuries>('injuries');
 
-/** Output only (the ship's log): a new injury (`severity` destroyed: the part is lost), a serious one set as a scar, one a medic treated. */
+/** Output only (the ship's log): a new injury (`severity` destroyed: the part is lost), a serious one set as a scar, one a medic treated, an operation (#311). */
 export type InjuryEvent =
+  | SurgeryEvent
   | { type: 'crew.injured'; crew: number; part: string; kind: string; severity: 'minor' | 'serious' | 'destroyed' }
   | { type: 'crew.scarred'; crew: number; part: string; kind: string }
   | { type: 'crew.injuryTreated'; crew: number; part: string; kind: string; by: number };

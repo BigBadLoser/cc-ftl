@@ -42,6 +42,7 @@ The crew inspector's **Health** tab shows it all at a glance:
   a full one grey.
 - On the right, all ten body parts with their state: "Fine", or the worst injury, such as "Fracture, treated" or
   "Destroyed" (with "+1" when the part has more). Red only when it needs care now: bleeding, or serious and untreated.
+  A fitted implant shows on its part in cyan.
 - Point at an injured part for its card: what is wrong, what care it needs, what it does to the crew member, and how
   and when it happened.
 
@@ -64,10 +65,12 @@ Health stays the pool. On top of the damage, a hit can injure a part, more often
 2. **Serious:** fractures, deep burns, concussions, organ damage. They heal only once a medic has treated them.
    Left untreated, one may heal badly into a **scar**: every <Stat kind="tuning" id="SCAR_AFTER_SEC" unit="s" /> there
    is a <Stat kind="tuning" id="SCAR_CHANCE" percent /> chance. A scar is a small loss on the part for good.
-3. **Lost:** a part whose condition runs out is destroyed. A lost eye or limb stays lost. A lost brain, heart or lungs
-   knocks the crew member down, and they bleed out even in a bed.
+3. **Lost:** a part whose condition runs out is destroyed. A lost eye or limb stays lost until an implant replaces it.
+   A lost brain, heart or lungs knocks the crew member down, and they bleed out even in a bed, unless a surgeon fits a
+   cyber heart or lungs in time. There is no cyber brain.
 
-<ComingLater>Surgery to repair organs and fit cyberware (cyber arms, legs, eyes, lungs and hearts) that restores lost parts.</ComingLater>
+Surgery repairs organs, takes off lost limbs and fits implants that replace lost parts: see
+[Surgery and implants](/mechanics/surgery/).
 
 ## Bleeding and first aid
 

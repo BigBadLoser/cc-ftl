@@ -7,6 +7,7 @@ import type { Sim } from '../sim';
 import { HackedC, InertC, StunC } from './components';
 import { shipIdOf } from '../regions';
 import { shipById } from '../combat/shipQuery';
+import { implantArmor } from '../crew/implants';
 
 /** The species def of a crew member, if known. */
 export function speciesOf(sim: Sim, crew: number): SpeciesDef | undefined {
@@ -52,7 +53,7 @@ export function crewOnGrid(sim: Sim, shipId: number): number[] {
   return sim.world.query(CrewC, PositionC).filter((id) => shipIdOf(sim, sim.world.get(id, PositionC)) === shipId);
 }
 
-/** Damage fraction a crew member's body ignores (SpeciesDef.armor, 0..1). */
+/** Damage fraction a crew member's body ignores (SpeciesDef.armor plus dermal armour, crew/implants.ts; 0..1). */
 export function armorOf(sim: Sim, crew: number): number {
-  return Math.min(1, Math.max(0, speciesOf(sim, crew)?.armor ?? 0));
+  return Math.min(1, Math.max(0, (speciesOf(sim, crew)?.armor ?? 0) + implantArmor(sim, crew)));
 }

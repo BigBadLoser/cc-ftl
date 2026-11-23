@@ -28,6 +28,7 @@ const REASONS: Record<string, string> = {
   notFloor: 'Modules need bare floor',
   occupied: 'Something is already there',
   noAccess: 'Keep a walkable tile free for crew access',
+  rigNeedsBedFoot: 'Must face the foot of a medical bed, from its side',
   badRot: "Can't rotate that",
   badDef: 'Unknown module',
   notPrize: 'Only a captured ship can be scuttled',

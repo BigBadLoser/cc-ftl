@@ -26,6 +26,7 @@ Presets are files in `presets/`; `?scenario=<name>` takes the preset's own flags
 | damage | `?scenario=damage` | Fire, breach, damaged reactor | Debug only | src/content/scenario/presets/ (the preset file of that name) |
 | hullplan | `?scenario=hullplan` | Hull plan brushes next to a trading hub with credits | Debug only | src/content/scenario/presets/ (the preset file of that name) |
 | injuries | `?scenario=injuries` | Injured crew: fracture to treat, lost eye, scar, bleeding wounds for first aid (#601) | Debug only | src/content/scenario/presets/ (the preset file of that name) |
+| surgery | `?scenario=surgery` | A medical bed with a surgical rig, a surgeon, implants in stock, a patient with a lost eye and arm; `&queue` (#311) | Debug only | src/content/scenario/presets/ (the preset file of that name) |
 | medpod | `?scenario=medpod` | Medical pod and passenger; `&passage` | Debug only | src/content/scenario/presets/ (the preset file of that name) |
 | inspect | `?scenario=inspect` | Station inspectors board and search; `&clean` | Debug only | src/content/scenario/presets/ (the preset file of that name) |
 | patrol | `?scenario=patrol` | Navy patrol hails you to stop | Debug only | src/content/scenario/presets/ (the preset file of that name) |

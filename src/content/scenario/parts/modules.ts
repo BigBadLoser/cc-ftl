@@ -17,8 +17,8 @@ export interface ModulesSpec {
 }
 declare module '../types' { interface ScenarioSpec { modules?: ModulesSpec } }
 
-/** `n` free spots for a 2x1 bed with a walkway tile below it, nearest `near` (a module def) first, none overlapping another. */
-export function bedSpots(sim: Sim, ship: number, def: string, n: number, near?: string): { x: number; y: number }[] {
+/** `n` free spots for a 2x1 bed with a walkway tile below it, nearest `near` (a module def) first, none overlapping another nor a spot in `kept`. */
+export function bedSpots(sim: Sim, ship: number, def: string, n: number, near?: string, kept: readonly { x: number; y: number }[] = []): { x: number; y: number }[] {
   const s = sim.world.get(ship, ShipC);
   const anchor = near ? sim.world.query(ModuleC).map((id) => sim.world.get(id, ModuleC)!).find((m) => m.def === near) : undefined;
   if (!s) return [];
@@ -36,6 +36,8 @@ export function bedSpots(sim: Sim, ship: number, def: string, n: number, near?: 
     const at = d && accessTile(d, m.x, m.y, m.rot);
     if (at) for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) taken.add(`${at.x + dx},${at.y + dy}`);
   }
+  // Spots already chosen for another def of the same scene (2x1 beds) and their walkway.
+  for (const k of kept) for (const [x, y] of [[k.x, k.y], [k.x + 1, k.y], [k.x, k.y + 1], [k.x - 1, k.y], [k.x + 2, k.y]]) taken.add(`${x},${y}`);
   const out: { x: number; y: number }[] = [];
   for (const c of cells) {
     const tiles = [[c.x, c.y], [c.x + 1, c.y], [c.x, c.y + 1], [c.x - 1, c.y], [c.x + 2, c.y]];
@@ -61,7 +63,7 @@ export default definePart<'modules'>({
     const groups = new Map<string, ModuleAdd[]>();
     for (const add of spec.add ?? []) groups.set(`${add.def}|${add.near ?? ''}`, [...(groups.get(`${add.def}|${add.near ?? ''}`) ?? []), add]);
     for (const adds of groups.values()) {
-      const spots = bedSpots(sim, ship, adds[0]!.def, adds.length, adds[0]!.near);
+      const spots = bedSpots(sim, ship, adds[0]!.def, adds.length, adds[0]!.near, placed);
       spots.forEach((spot, i) => placed.push({ add: adds[i]!, ...spot }));
     }
     ctx.enqueue(...placed.map((p): Command => ({ type: 'debug.spawnModule', ship, x: p.x, y: p.y, def: p.add.def, rot: 0 })));

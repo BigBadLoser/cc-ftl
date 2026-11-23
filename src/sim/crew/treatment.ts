@@ -5,6 +5,7 @@ import { skillOf } from '../combat/operators';
 import { SKILL_STEP } from '../tuning';
 import { AssignmentC, CrewC, DownedC, JobC, PositionC, RecoveringC, type Downed } from './components';
 import { isIncapacitated } from './helpers';
+import { awaitsSurgeryAt } from './surgery';
 
 /**
  * The heal multiplier of a patient's stay in a medical bed (`ModuleDef.medical`; a recovery pod is one too, crew/recovery.ts): the first tick of a stay with a medicinal item in the ship's stock
@@ -26,7 +27,8 @@ export function treatmentMult(sim: Sim, shipId: number, downed: Pick<Downed, 'be
 
 /**
  * Medical beds that have a patient to tend: a stabilised downed patient or a walking one lying in a medical bed (not a recovery pod: it needs no medic).
- * The tend jobs follow this set (systems/autojobs.ts).
+ * Not while the patient waits there for their next operation (crew/surgery.ts `awaitsSurgeryAt`): the surgery job has the bed first, so a lone medic is
+ * not held at it tending. The tend jobs follow this set (systems/autojobs.ts).
  */
 export function bedsToTend(sim: Sim): Set<number> {
   const beds = new Set<number>();
@@ -37,11 +39,11 @@ export function bedsToTend(sim: Sim): Set<number> {
   };
   for (const id of sim.world.query(DownedC)) {
     const d = sim.world.get(id, DownedC);
-    if (d?.stabilized && medicalBed(d.bed)) beds.add(d.bed);
+    if (d?.stabilized && medicalBed(d.bed) && !awaitsSurgeryAt(sim, id, d.bed)) beds.add(d.bed);
   }
   for (const id of sim.world.query(RecoveringC)) {
     const bed = sim.world.get(id, RecoveringC)?.bed ?? 0;
-    if (medicalBed(bed)) beds.add(bed);
+    if (medicalBed(bed) && !awaitsSurgeryAt(sim, id, bed)) beds.add(bed);
   }
   return beds;
 }

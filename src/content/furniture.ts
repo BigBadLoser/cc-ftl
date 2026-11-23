@@ -213,6 +213,16 @@ export const furniture = {
     asset: 'module.recovery', footprint: [2, 2], solid: true, access: [0, 2], power: -3, flammability: 0.2, bed: true, medical: true, recovery: true,
     maxHp: 120, buildWork: 180, cost: [{ item: 'item.metal', count: 10 }, { item: 'item.electronics', count: 8 }],
   },
+  // A surgical rig (#311): a 1x1 machine beside a medical bed, facing the bed's foot from a long side (modules/rig.ts). Powered, it makes that bed surgery-grade:
+  // lower-risk operations, and brain and spine work. Placeholder art: the med console's until its own sheets land (render/fallback).
+  'module.surgery_rig': {
+    scrap: 'tech',
+    name: 'Surgical rig',
+    category: 'life',
+    description: "Surgical arms and lights on a stand. Place it beside a medical bed, facing the foot of the bed: while powered, operations on that bed carry less risk, and brain and spine surgery becomes possible.",
+    asset: 'module.surgery_rig', footprint: [1, 1], solid: true, power: -2, flammability: 0.2, rig: { bed: 'module.med_bed' },
+    maxHp: 60, buildWork: 140, cost: [{ item: 'item.metal', count: 6 }, { item: 'item.electronics', count: 8 }],
+  },
   // A stasis wheel (#116): prisoners sealed in stasis slabs stand in its ten slots, frozen while it is powered (it draws only while it holds one). Built with
   // ten empty slabs. Crew load it at the hatch, the tile beyond the footprint's front corner. Unpowered or destroyed, each slab runs on its reserve.
   'module.stasis_wheel': {

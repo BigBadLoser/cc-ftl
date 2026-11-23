@@ -10,15 +10,6 @@ export interface SkillXp {
 }
 export const SkillXpC = defineComponent<SkillXp>('skillXp');
 
-/**
- * Implants a crew member carries (content ids). Placeholder until the implant system lands: events only read it.
- * Nothing grants these yet except tests and the debug hook.
- */
-export interface Implants {
-  list: string[];
-}
-export const ImplantsC = defineComponent<Implants>('implants');
-
 const NONE: readonly Modifier[] = [];
 
 /** Stat modifier source: levels earned from skill xp (docs/TRAITS.md sections 3 and 10.4), stopping where base plus XP reaches 10. */

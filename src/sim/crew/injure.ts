@@ -1,7 +1,7 @@
 import { armorOf } from '../robots/core';
 import type { Rng } from '../rng';
 import type { Sim } from '../sim';
-import { canBeInjured, partCondition, partDestroyed } from './body';
+import { canBeInjured, partCondition, partInjurable } from './body';
 import { DeadC, DownedC, HealthC } from './components';
 import { InjuriesC, type Injuries, type InjurySource } from './injuryTypes';
 
@@ -74,13 +74,13 @@ function weighted(rng: Rng, weights: Readonly<Record<string, number>>): string |
   return entries.at(-1)?.[0];
 }
 
-/** Injure `count` parts (the source's) from `source`: a part by weight (not one already lost), then a fitting kind of the severity (the other when none fits). */
+/** Injure `count` parts (the source's) from `source`: a part by weight (not one already lost or replaced by an implant), then a fitting kind of the severity (the other when none fits). */
 function injure(sim: Sim, id: number, source: InjurySource, serious: boolean): void {
   const c = sim.content.injuries;
   const def = c?.sources[source];
   if (!c || !def) return;
   for (let n = 0; n < (def.count ?? 1); n++) {
-    const open = Object.fromEntries(Object.entries(def.parts).filter(([p]) => !partDestroyed(sim, id, p)));
+    const open = Object.fromEntries(Object.entries(def.parts).filter(([p]) => partInjurable(sim, id, p)));
     const part = weighted(sim.rng, open);
     if (!part) return;
     const fits = (list: readonly string[]) => list.filter((k) => { const parts = c.kinds[k]?.parts; return !!c.kinds[k] && (!parts || parts.includes(part)); });
@@ -92,11 +92,12 @@ function injure(sim: Sim, id: number, source: InjurySource, serious: boolean): v
 
 /**
  * Put one injury of `kind` on `part` (the sources, and `debug.setCrew`, which may set it `as` a scar or a lost part at once). A part already lost takes
- * none. A serious injury that leaves the part with no condition destroys it: its injuries go, and one `destroyed` entry stays for good.
+ * none, nor does a replacement implant. A serious injury that leaves the part with no condition destroys it: its injuries go, and one `destroyed` entry stays for good.
+ * `as: 'spare'` never destroys the part: an injury that would is not added (a failed brain operation only hurts the brain).
  */
-export function addInjury(sim: Sim, id: number, part: string, kind: string, as?: 'scar' | 'destroyed', src?: InjurySource): void {
+export function addInjury(sim: Sim, id: number, part: string, kind: string, as?: 'scar' | 'destroyed' | 'spare', src?: InjurySource): void {
   const k = sim.content.injuries?.kinds[kind];
-  if (!k || !sim.content.injuries?.parts[part] || partDestroyed(sim, id, part)) return;
+  if (!k || !sim.content.injuries?.parts[part] || !partInjurable(sim, id, part)) return;
   const inj = injuriesComp(sim, id);
   const from = src ? { src, at: sim.tick } : {};
   if (as === 'scar') {
@@ -104,6 +105,10 @@ export function addInjury(sim: Sim, id: number, part: string, kind: string, as?:
     return;
   }
   inj.list.push({ part, kind, sev: k.severity, age: 0, heal: 0, ...(k.bleed ? { bleeding: true as const } : {}), ...from });
+  if (as === 'spare' && k.severity === 'serious' && partCondition(sim, id, part, inj.list) <= 0) {
+    inj.list.pop();
+    return;
+  }
   if (as === 'destroyed' || (k.severity === 'serious' && partCondition(sim, id, part, inj.list) <= 0)) {
     inj.list = inj.list.filter((i) => i.part !== part);
     inj.list.push({ part, kind, sev: 'destroyed', age: 0, heal: 0, ...from });

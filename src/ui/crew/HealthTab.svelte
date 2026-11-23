@@ -1,4 +1,5 @@
 <script lang="ts">
+  import type { UiApi, UiCrew } from '../api';
   import type { UiCrewDetail, UiBodyPart } from '../crewDetailApi';
   import Icon from '../Icon.svelte';
   import { tip } from '../kit';
@@ -8,9 +9,9 @@
   /**
    * The crew Health tab (#601; the approved round-6 mock). OVERALL and CAPACITIES on the left and the whole BODY on the right
    * (ten parts in a fixed order, each with its state; a hover card per injured part). One alert colour: red is "needs care now"; plain text is white and
-   * anything fine is grey. Under the body, the surgery queue and its picker, drawn only when the crew detail API has operations (slice 2, #311).
+   * anything fine is grey; a fitted implant is cyan (the one place cyan is used). Under the body, the surgery queue (✕ takes one off) and its picker (#311).
    */
-  let { d }: { d: UiCrewDetail | null } = $props();
+  let { api, c, d }: { api: UiApi; c: UiCrew; d: UiCrewDetail | null } = $props();
   const h = $derived(d?.body ?? null);
   let picking = $state<string | null>(null);
   let root = $state<HTMLElement | null>(null);
@@ -39,7 +40,7 @@
           {#snippet rich()}{#if p.card}<InjuryCard card={p.card} part={p.name} onQueue={h.operations ? () => openPicker(p.id) : null} />{/if}{/snippet}
           <div class="row part {p.tone}" class:gap={p.gap} data-testid="part-{p.id}" use:tip={p.card ? { rich, side: 'right', focus: true } : null}>
             <span class="name">{@render glyph(p)}{p.name}</span>
-            <span class="state">{p.state}{#if p.more} <small>+{p.more}</small>{/if}</span>
+            <span class="state">{#if p.implant}<span class="cyber" data-testid="implant-{p.id}">{p.implant}</span>{#if p.state}, {/if}{/if}{p.state}{#if p.more} <small>+{p.more}</small>{/if}</span>
           </div>
         {/each}
         {#if h.operations}
@@ -47,7 +48,7 @@
           {#each h.operations.queue as q (q.id)}
             <div class="row plain queued">
               <span class="name">{@render glyph(q)}<span class="lbl">{q.label}</span></span>
-              <span class="state fine">{q.status} <button class="x" disabled={!h.operations.live} aria-label="Cancel">✕</button></span>
+              <span class="state fine">{q.status} <button class="x" disabled={!h.operations.live} aria-label="Cancel" data-testid="op-cancel-{q.id}" onclick={() => api.dispatch({ type: 'crew.cancelOperation', id: c.id, op: q.id })}>✕</button></span>
             </div>
           {/each}
         {/if}
@@ -55,7 +56,8 @@
     </div>
   </div>
   {#if h.operations && picking && root}
-    <OperationPicker ops={h.operations} bind:part={picking} anchor={root} onClose={() => (picking = null)} />
+    <OperationPicker ops={h.operations} bind:part={picking} anchor={root} onClose={() => (picking = null)}
+      onQueue={(kind, part, item) => { api.dispatch({ type: 'crew.queueOperation', id: c.id, kind, part, ...(item ? { item } : {}) }); picking = null; }} />
   {/if}
 {/if}
 
@@ -79,6 +81,7 @@
   .state { overflow: hidden; text-overflow: ellipsis; text-align: right; }
   .state small { color: var(--dim); font-size: var(--fs-small); }
   .state.fine { color: var(--dim); }
+  .cyber { color: var(--cyan); }
   .queued .name { flex: 1 1 auto; }
   .queued .state { flex: none; }
   .lbl { overflow: hidden; text-overflow: ellipsis; }

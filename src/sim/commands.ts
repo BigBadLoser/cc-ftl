@@ -1,6 +1,7 @@
 import type { Faction } from './combat/components';
 import type { BreakContext, BreakKind } from './crew/breakTypes';
 import type { WorkCategory } from './crew/components';
+import type { SurgeryCommand } from './crew/implantTypes';
 import type { ScheduleBlock } from './ai/types';
 import type { ItemQty, ScrapType, SkillName } from './registry';
 
@@ -68,6 +69,7 @@ export type Command =
   | { type: 'crew.equip'; id: number; item: string }
   /** Drop the wielded weapon at the crew member's feet. */
   | { type: 'crew.unequip'; id: number }
+  | SurgeryCommand
   /** Walk a drafted crew member to a tile (on `ship` if given, which must be the ship it stands on). */
   | { type: 'crew.moveTo'; id: number; x: number; y: number; ship?: number }
   /** Walk a group of drafted crew to the free tiles nearest (x, y) of `ship` (default: the first one's ship): each takes its own tile. Members on another ship are left out. */
@@ -139,10 +141,7 @@ export type Command =
    * instant cargo swap). Then it flies home. Replaces nothing: a shuttle on a trade run, a ferry or a mining order is busy.
    */
   | { type: 'ferry.order'; vehicle?: number; from: number; to: number; items?: { item: string; count: number }[]; crew?: number[] }
-  /**
-   * Queue a logistics transfer: move `items` (clipped to what `from` holds) from player region `from` (or a salvage site) to player
-   * region `to`. A free shuttle and pilot take it in as many trips as it needs; nothing else to micro-manage.
-   */
+  /** Queue a logistics transfer: move `items` (clipped to what `from` holds) from player region `from` (or a salvage site) to player region `to`. A free shuttle and pilot take it in as many trips as it needs. */
   | { type: 'transfer.order'; from: number; to: number; items: { item: string; count: number }[] }
   /** Cancel a transfer: pending trips stop, goods stay where they are (a trip already on its way to the drop-off finishes). */
   | { type: 'transfer.cancel'; order: number }
@@ -228,7 +227,7 @@ export type Command =
    */
   | { type: 'debug.spawnCrew'; ship: number; x: number; y: number; role: string; faction?: Faction; lodge?: true; carry?: { event: string; origin: string; purse: number } }
   /** Debug (the inspector scenario): set a crew member's traits, skill XP, wielded hand weapon (no storage needed), hunger and rest. Fields left out stay. */
-  | { type: 'debug.setCrew'; id: number; traits?: string[]; xp?: Partial<Record<SkillName, number>>; weapon?: string | null; hunger?: number; rest?: number; /** Set hp (0 downs them on the next vitals pass). */ hp?: number; /** Stun them until this tick (the boarding scene's sleeping raider crew). */ stun?: number; /** Injuries to add (crew/injure.ts `addInjury`; `as` a scar or a lost part). */ injuries?: { part: string; kind: string; as?: 'scar' | 'destroyed' }[] }
+  | { type: 'debug.setCrew'; id: number; traits?: string[]; xp?: Partial<Record<SkillName, number>>; weapon?: string | null; hunger?: number; rest?: number; /** Set hp (0 downs them on the next vitals pass). */ hp?: number; /** Stun them until this tick (the boarding scene's sleeping raider crew). */ stun?: number; /** Injuries to add (crew/injure.ts `addInjury`; `as` a scar or a lost part). */ injuries?: { part: string; kind: string; as?: 'scar' | 'destroyed' }[]; /** Implants to fit at once (crew/surgeryOutcome.ts `fitImplant`), no surgery. */ implants?: { part: string; item: string }[] }
   /** Debug (the breaks scenario): start a mental break of `kind` on a crew member now, from `context` (default low mood), for `sec` seconds (default the kind's own). Rejected without a mood. */
   | { type: 'debug.breakCrew'; id: number; kind: BreakKind; context?: BreakContext; sec?: number }
   /** Debug (the bonds scenario): change what crew members `a` and `b` think of each other, both ways, by `delta` for the bond reason `reason` (default a chat). Rejected without a mood. */

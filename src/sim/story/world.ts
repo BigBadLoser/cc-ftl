@@ -3,7 +3,7 @@ import type { Sim } from '../sim';
 import { stat } from '../stats';
 import { aboard, guardPacked } from '../packedGuard';
 import { crewOf, modulesOf, PLAYER, shipsOf, storagesOf } from '../side';
-import { ImplantsC } from './components';
+import { ImplantsC } from '../crew/implantTypes';
 import { VehicleC } from '../vehicles/components';
 import { vehicleDefOf, vehicleFaction } from '../vehicles/lifecycle';
 
@@ -87,5 +87,5 @@ export function bestAt(sim: Sim, skill: SkillName): { crew: number; level: numbe
   });
 }
 
-export const hasImplant = (sim: Sim, crew: number, implant: string): boolean => !!sim.world.get(crew, ImplantsC)?.list.includes(implant);
+export const hasImplant = (sim: Sim, crew: number, implant: string): boolean => !!sim.world.get(crew, ImplantsC)?.list.some((i) => i.item === implant);
 

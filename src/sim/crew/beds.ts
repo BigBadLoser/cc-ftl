@@ -8,6 +8,7 @@ import { findPath, type PathOpts, type Tile } from './pathfind';
 import { shipIdOf } from '../regions';
 import { berthHolder, freeBerth, releaseBerth } from './berths';
 import { seeksTreatment } from './body';
+import { seeksSurgery, surgeryGrade, surgeryNeedsRig } from './surgery';
 
 /** A bed tile a planner must not use (a hazard there for this sleeper). */
 export type BedSkip = (x: number, y: number) => boolean;
@@ -24,22 +25,41 @@ export function isIntactBed(sim: Sim, id: number, shipId: number): boolean {
   return !!m && m.hp > 0 && !!sim.content.modules[m.def]?.bed && shipIdOf(sim, m) === shipId;
 }
 
-/** Who a bed is for: a sleeper, a patient who can walk to treatment, one whose serious injury needs a medic's treatment (a medical bed: a pod does not treat), or a critical (downed) one. */
-export type BedUse = 'sleep' | 'walking' | 'treatment' | 'critical';
-const BED_ORDER: Record<BedUse, readonly BedKind[]> = {
+/**
+ * Who a bed is for: a sleeper, a patient who can walk to treatment, one whose serious injury needs a medic's treatment (a medical bed: a pod does not treat), or a
+ * critical (downed) one; and a patient whose next operation is ready (crew/surgery.ts `seeksSurgery`): a surgery-grade medical bed first (`rigged`, a surgical
+ * rig beside it), any medical bed when the operation allows one (not brain or spine work), and a downed one anywhere after those.
+ */
+export type BedUse = 'sleep' | 'walking' | 'treatment' | 'critical' | 'surgery' | 'surgeryRig' | 'criticalSurgery' | 'criticalRig';
+/** A kind of bed, or `rigged`: a surgery-grade medical bed (crew/surgery.ts `surgeryGrade`). */
+type BedPick = BedKind | 'rigged';
+const BED_ORDER: Record<BedUse, readonly BedPick[]> = {
   sleep: ['ordinary'],
   walking: ['medical', 'recovery'],
   treatment: ['medical'],
   critical: ['recovery', 'medical', 'ordinary'],
+  surgery: ['rigged', 'medical'],
+  surgeryRig: ['rigged'],
+  criticalSurgery: ['rigged', 'medical', 'recovery', 'ordinary'],
+  criticalRig: ['rigged', 'recovery', 'medical', 'ordinary'],
 };
+
+const picks = (sim: Sim, id: number, def: ModuleDef, pick: BedPick): boolean =>
+  pick === 'rigged' ? bedKind(def) === 'medical' && surgeryGrade(sim, id) : bedKind(def) === pick;
+
+/** May bed module `id` serve this use (the picks of `BedUse`)? */
+export const bedServes = (sim: Sim, id: number, def: ModuleDef, use: BedUse): boolean => BED_ORDER[use].some((p) => picks(sim, id, def, p));
 
 /**
  * The use a hurt crew member's bed search is for: critical when downed or carried (the game's incapacitated-by-injury test), treatment when a serious
  * injury waits for a medic (crew/body.ts `seeksTreatment`), else walking. The one place that decides.
  */
 export function bedUseOf(sim: Sim, crew: number): BedUse {
-  if (sim.world.has(crew, DownedC) || sim.world.has(crew, CarriedC)) return 'critical';
-  return seeksTreatment(sim, crew) ? 'treatment' : 'walking';
+  const surgery = seeksSurgery(sim, crew);
+  const rig = surgery && surgeryNeedsRig(sim, crew);
+  if (sim.world.has(crew, DownedC) || sim.world.has(crew, CarriedC)) return rig ? 'criticalRig' : surgery ? 'criticalSurgery' : 'critical';
+  if (seeksTreatment(sim, crew)) return 'treatment';
+  return rig ? 'surgeryRig' : surgery ? 'surgery' : 'walking';
 }
 
 /** Which kind of bed a module is: a recovery pod, a medical bed (patients only) or an ordinary bed. */
@@ -79,13 +99,13 @@ export function findFreeBed(sim: Sim, shipId: number, crew: number, from: Tile, 
   return null;
 }
 
-/** Only beds of `kind`. */
-function searchBeds(sim: Sim, shipId: number, from: Tile, adjacent: boolean, skip: BedSkip | undefined, kind: BedKind, walk?: PathOpts): BedPlan | null {
+/** Only beds of `kind` (or surgery-grade medical beds, `rigged`). */
+function searchBeds(sim: Sim, shipId: number, from: Tile, adjacent: boolean, skip: BedSkip | undefined, kind: BedPick, walk?: PathOpts): BedPlan | null {
   const cands: { id: number; lb: number }[] = [];
   for (const id of sim.world.query(ModuleC)) {
     const m = sim.world.get(id, ModuleC);
     const def = m && sim.content.modules[m.def];
-    if (!m || !def || !bedUsable(def, m) || bedKind(def) !== kind || shipIdOf(sim, m) !== shipId) continue;
+    if (!m || !def || !bedUsable(def, m) || !picks(sim, id, def, kind) || shipIdOf(sim, m) !== shipId) continue;
     const at = bedStandTile(def, m);
     if (skip?.(at.x, at.y)) continue;
     const cheb = Math.max(Math.abs(at.x - from.x), Math.abs(at.y - from.y));

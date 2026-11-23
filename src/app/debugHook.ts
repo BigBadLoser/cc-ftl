@@ -107,13 +107,13 @@ export function installDebugHook(sim: Sim, r: Renderer, loop?: Loop): { onEvents
     }),
     /** Modules of a def: grid, origin and access tile. */
     modules(def: string) {
-      const out: { id: number; shipId: number; ship: number; x: number; y: number; ax: number; ay: number }[] = [];
+      const out: { id: number; shipId: number; ship: number; x: number; y: number; rot: number; ax: number; ay: number }[] = [];
       for (const id of sim.world.query(ModuleC)) {
         const m = sim.world.get(id, ModuleC);
         const d = m && sim.content.modules[m.def];
         if (!m || !d || m.def !== def) continue;
         const a = accessTile(d, m.x, m.y, m.rot) ?? { x: m.x, y: m.y };
-        out.push({ id, shipId: shipIdOf(sim, m), ship: shipIdOf(sim, m), x: m.x, y: m.y, ax: a.x, ay: a.y });
+        out.push({ id, shipId: shipIdOf(sim, m), ship: shipIdOf(sim, m), x: m.x, y: m.y, rot: m.rot, ax: a.x, ay: a.y });
       }
       return out;
     },

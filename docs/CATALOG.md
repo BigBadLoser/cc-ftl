@@ -23,9 +23,9 @@ Counts are table rows per status (each row is one entry, so a row that groups se
 
 | Area | Covers | In game | Partial | Art only | Defined, unused | Debug only | Planned |
 |---|---|---|---|---|---|---|---|
-| [modules](catalog/modules.md) | Modules, furniture, containers, tiers; module art with no def | 48 | 21 | 5 | 2 | 0 | 0 |
-| [items](catalog/items.md) | Items, recipes, ship weapons, hand weapons, crops, ores; item sprites with no def | 69 | 8 | 32 | 0 | 0 | 0 |
-| [crew](catalog/crew.md) | Species, roles, skills, backgrounds, traits, needs, mood, breaks, bonds, schedules, injuries | 99 | 7 | 0 | 0 | 0 | 4 |
+| [modules](catalog/modules.md) | Modules, furniture, containers, tiers; module art with no def | 49 | 21 | 5 | 2 | 0 | 0 |
+| [items](catalog/items.md) | Items, recipes, ship weapons, hand weapons, crops, ores; item sprites with no def | 70 | 9 | 31 | 0 | 0 | 0 |
+| [crew](catalog/crew.md) | Species, roles, skills, backgrounds, traits, needs, mood, breaks, bonds, schedules, injuries, surgery, implants | 100 | 8 | 0 | 0 | 0 | 3 |
 | [ships-factions](catalog/ships-factions.md) | Ship templates, generator styles, galaxy factions, hull families, derelicts | 36 | 5 | 0 | 0 | 5 | 2 |
 | [stations](catalog/stations.md) | Station kinds, services, shipyard, black markets | 17 | 5 | 0 | 0 | 0 | 1 |
 | [combat](catalog/combat.md) | Ship combat, boarding, capture, hand weapons, cover | 30 | 2 | 11 | 0 | 0 | 0 |
@@ -38,7 +38,7 @@ Counts are table rows per status (each row is one entry, so a row that groups se
 | [ui](catalog/ui.md) | Windows, panels, menus, kit | 29 | 4 | 0 | 1 | 1 | 1 |
 | [dev-tools](catalog/dev-tools.md) | Scenarios, debug commands, labs, profilers, test tools | 0 | 0 | 0 | 0 | 44 | 0 |
 | [art](catalog/art.md) | Manifest families, art-only sprites, render systems | 16 | 2 | 11 | 0 | 0 | 3 |
-| **Total** | | 503 | 63 | 59 | 4 | 49 | 26 |
+| **Total** | | 508 | 65 | 58 | 4 | 50 | 25 |
 
 ## Commonly confused
 
@@ -57,8 +57,8 @@ Things people believe exist and do not (or only partly), and the reverse.
 - **Cover in combat:** targets do get cover from solid modules, but crew never seek it (issue #50).
 - **Lessons:** the engine is general, but only two lessons exist (combat, hail).
 - **Research module:** no ship template or ship generator places one, so research on a ship needs the player to build one first (research stations and breaker shops on stations do carry the research module and scrapper). Same for the radiator, large hydroponics bed, bunk, scrap bin and armory/tank storage ("buildable only").
-- **Zealot "augmented" crews:** a stand-in body; real implants are phase 7 (issue #311).
-- **Recovery pod:** built as a first pass (#319): buildable, heals HP to full and speeds the healing of treated injuries (#601), but does not treat them; no ship starts with one, no surgery yet.
+- **Zealot "augmented" crews:** a stand-in body; implants exist now (#311 slice 2a), zealots spawning with them is slice 2b.
+- **Recovery pod:** built as a first pass (#319): buildable, heals HP to full and speeds the healing of treated injuries (#601), but does not treat them; no ship starts with one; surgery is at a medical bed, safer with a surgical rig.
 - **Water purifier:** in game (`module.waterPurifier`, #321): buildable, `recipe.purify_ice` turns ice into water; art from `purifier_g1` (family `purifier_module`, four rotations).
 - **Construction pods and drones, logistics robot:** planned only, even though `module.pod_bay` text mentions construction pods.
 - **Leisure furniture** (art in `tools/blender/sprites/leisure.py`, four rotations each; #441). Buildable from the Life tab, in game:
