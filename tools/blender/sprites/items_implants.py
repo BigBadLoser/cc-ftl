@@ -1,177 +1,193 @@
-"""Implant items (#626, family `items`): each implant line on a small surgical tray, one model per line, the tier shown
-by the tray's trim and the implant's lights: Mk I plain steel, Mk II cyan, Mk III violet. Named cyberware has a gold
-trim. Neural chips add a stripe in their skill's colour. Colours are the "implant" palette set (palette_extra.json).
+"""Implant items (#626, family `items`): each implant on its own, big and in colour (user's pick, 2026-11-23: no tray or
+case). The tier is the colour of its lights: Mk I plain steel, Mk II cyan, Mk III violet; named cyberware gold. Neural
+chips add a stripe in their skill's colour. Colours are the "implant" palette set (palette_extra.json).
 
-Models in the tray's frame: u along it, v across, z up from its top; k the unit scale (items_kit.place)."""
+Models in the grid frame (x, y on the deck, z up; +x+y toward the viewer), about 0.5 long, then scaled per stack size."""
+import math
+
 import bmesh
 from mathutils import Matrix
 
-from .items_kit import emit, jobs, place, rot, tube
+from .items_kit import emit, jobs, tube
 
-TIERS = {1: ("imSteel", "imSteelD"), 2: ("imCyan", "imCyanD"), 3: ("imViolet", "imVioletD"), "named": ("imGold", "imGoldD")}
+LIGHTS = {1: "imSteel", 2: "imCyan", 3: "imViolet", "named": "imGold"}
 SKILLS = {"gunnery": "imRed", "piloting": "imBlue", "engineering": "imOrange", "medical": "imGreen", "science": "imWhite"}
-CHROME, CHROME_D, DARK = "c3W2", "c3W0", "xnK"
-TRAY = (0.25, 0.15, 0.02)
-GROW = 1.3                      # the whole item drawn this much bigger than the shared item unit: implants are small
+BODY, BODY_D, JOINT, DARK = "gm", "steelD", "c3W2", "xnK"
+HEART, HEART_D, LUNG, LUNG_D, EYE = "medRed", "red", "imLung", "imLungD", "medWhite"
+TO_CAM = (0.62, 0.62, 0.48)
 
 
-class Tray:
-    """One tray at c (turned rz, floor z, scale k): local points, and the parts built on its top."""
+class P:
+    """Parts at c (grid x, y), floor z, turned rz and scaled k; lit = the tier's light colour."""
 
-    def __init__(self, m, c, z, rz, k, tier):
-        self.m, self.c, self.z, self.rz, self.k = m, c, z, rz, k
-        self.lit, self.trim = TIERS[tier]
-        w, d, h = (s * k for s in TRAY)
-        m.box((c[0], c[1], z), (w, d, h), DARK, top="black", rz=rz, base=True, bevel=0.006 * k)
-        for v in (-d / 2, d / 2):                                                       # the tier trim, both long edges
-            m.box((*rot(c, rz, 0, v * 0.96), z + h * 0.55), (w * 0.92, 0.01 * k, 0.014 * k), self.trim, rz=rz, base=True)
-        self.top = z + h
+    def __init__(self, m, c, z, rz, k, lit):
+        self.m, self.c, self.z, self.rz, self.k, self.lit = m, c, z, rz, k, lit
 
-    def p(self, u, v, zz=0.0):
-        return (*rot(self.c, self.rz, u * self.k, v * self.k), self.top + zz * self.k)
+    def p(self, x, y, z):
+        cs, sn = math.cos(self.rz), math.sin(self.rz)
+        return (self.c[0] + (x * cs - y * sn) * self.k, self.c[1] + (x * sn + y * cs) * self.k, self.z + z * self.k)
 
-    def box(self, u, v, zz, s, col, top=None, rz=0.0, bevel=0.004):
-        self.m.box(self.p(u, v, zz), tuple(x * self.k for x in s), col, top=top, rz=self.rz + rz, base=True, bevel=bevel * self.k)
+    def box(self, x, y, z, s, col, top=None, rz=0.0, bevel=0.006):
+        self.m.box(self.p(x, y, z), tuple(v * self.k for v in s), col, top=top, rz=self.rz + rz, base=True, bevel=bevel * self.k)
 
-    def tube(self, a, b, r, col, cap=None, r1=None, sides=10):
-        tube(self.m, self.p(*a), self.p(*b), r * self.k, col, cap=cap, sides=sides, r1=None if r1 is None else r1 * self.k)
+    def tube(self, a, b, r, col, cap=None, r1=None, sides=12):
+        tube(self.m, self.p(*a), self.p(*b), r * self.k, col, cap=cap or col, r1=None if r1 is None else r1 * self.k, sides=sides)
 
-    def ball(self, u, v, zz, r, col, sz=1.0, sx=1.0):
+    def ball(self, x, y, z, r, col, sx=1.0, sz=1.0):
+        """A ball (stretched sx along x, sz up) resting at height z."""
         bm = bmesh.new()
-        bmesh.ops.create_uvsphere(bm, u_segments=10, v_segments=6, radius=r * self.k)
+        bmesh.ops.create_uvsphere(bm, u_segments=12, v_segments=8, radius=r * self.k)
         bmesh.ops.transform(bm, matrix=Matrix.Diagonal((sx, 1.0, sz, 1.0)), verts=bm.verts)
         bmesh.ops.rotate(bm, verts=bm.verts, cent=(0, 0, 0), matrix=Matrix.Rotation(self.rz, 3, "Z"))
-        bmesh.ops.translate(bm, verts=bm.verts, vec=self.p(u, v, zz + r * sz))
+        bmesh.ops.translate(bm, verts=bm.verts, vec=self.p(x, y, z + r * sz))
         emit(self.m, bm, lambda n, c: col)
+
+    def disc(self, x, y, z, r, h, col, top=None, sides=14):
+        self.m.cyl(self.p(x, y, z), r * self.k, h * self.k, col, sides=sides, top=top or col, rz=self.rz)
+
+
+def at(base, d, r):
+    """The point r along direction d from base (3-tuples)."""
+    return tuple(b + v * r for b, v in zip(base, d))
 
 
 # ---- the lines -------------------------------------------------------------------------------------------------------
 
-def arm(t):
-    """A cyber arm lying along the tray: upper arm, a lit elbow, forearm, a three-fingered hand."""
-    t.tube((-0.105, 0, 0.026), (-0.01, 0, 0.026), 0.024, CHROME, cap=CHROME_D)
-    t.ball(-0.01, 0, 0.004, 0.024, CHROME_D)
-    t.tube((-0.01, 0, 0.026), (0.06, 0.04, 0.022), 0.02, CHROME, cap=CHROME_D, r1=0.017)
-    t.box(-0.01, 0, 0.046, (0.016, 0.034, 0.006), t.lit)
-    t.box(0.08, 0.05, 0.006, (0.04, 0.045, 0.026), CHROME_D, top=CHROME, rz=0.5)
-    for i in (-1, 0, 1):
-        t.box(0.105 + i * 0.007, 0.065 + i * 0.014, 0.008, (0.03, 0.009, 0.012), CHROME, rz=0.5)
-    t.box(0.07, 0.077, 0.01, (0.02, 0.009, 0.012), CHROME, rz=1.5)
+def arm(q):
+    """A cyber arm lying on the deck: upper arm, a white elbow, forearm, an open hand."""
+    q.tube((-0.26, -0.1, 0.05), (-0.04, 0.0, 0.05), 0.05, BODY)
+    q.ball(-0.04, 0.0, 0.0, 0.055, JOINT)
+    q.tube((-0.04, 0.0, 0.05), (0.14, 0.1, 0.04), 0.04, BODY, r1=0.034)
+    q.ball(0.14, 0.1, 0.004, 0.038, JOINT)
+    q.box(0.2, 0.14, 0.0, (0.1, 0.09, 0.05), BODY_D, top=BODY, rz=0.5)
+    for i, a in enumerate((-0.5, -0.15, 0.15, 0.45)):
+        y0 = 0.14 + i * 0.02
+        q.tube((0.24, y0, 0.03), (0.24 + 0.1 * math.cos(0.27 + a), y0 + 0.1 * math.sin(0.27 + a) + 0.06 * a, 0.03), 0.014, JOINT)
+    q.tube((0.17, 0.2, 0.03), (0.15, 0.28, 0.03), 0.015, JOINT)                                  # thumb
+    q.box(-0.15, -0.05, 0.095, (0.06, 0.03, 0.012), q.lit, rz=0.42, bevel=0)
 
 
-def leg(t):
-    """A cyber leg: thigh, a lit knee, shin, and a flat foot turned up at the end."""
-    t.tube((-0.11, 0, 0.026), (-0.02, 0, 0.026), 0.027, CHROME, cap=CHROME_D)
-    t.ball(-0.02, 0, 0.0, 0.026, CHROME_D)
-    t.tube((-0.02, 0, 0.026), (0.07, 0, 0.02), 0.019, CHROME, cap=CHROME_D, r1=0.016)
-    t.box(-0.02, 0, 0.048, (0.014, 0.032, 0.006), t.lit)
-    t.box(0.085, 0.02, 0.0, (0.03, 0.065, 0.026), CHROME_D, top=CHROME)
+def leg(q):
+    """A cyber leg lying on the deck: thigh, a white knee, shin, a flat foot."""
+    q.tube((-0.27, -0.06, 0.055), (-0.06, 0.0, 0.055), 0.055, BODY)
+    q.ball(-0.06, 0.0, 0.0, 0.058, JOINT)
+    q.tube((-0.06, 0.0, 0.05), (0.15, 0.06, 0.04), 0.042, BODY, r1=0.034)
+    q.ball(0.15, 0.06, 0.004, 0.036, JOINT)
+    q.box(0.2, 0.075, 0.0, (0.07, 0.11, 0.15), BODY_D, top=BODY, rz=0.28, bevel=0.012)         # the foot, standing up
+    q.box(-0.17, -0.03, 0.105, (0.07, 0.03, 0.012), q.lit, rz=0.28, bevel=0)
 
 
-def eye(t):
-    """A cyber eye on a stand: a white ball, a big lit lens toward the viewer, the optic cable behind."""
-    t.box(0, 0, 0, (0.07, 0.07, 0.012), CHROME_D)
-    t.ball(0, 0, 0.01, 0.046, CHROME)
-    t.tube((0.0, -0.046, 0.052), (0.0, -0.06, 0.052), 0.032, t.trim, cap=t.lit)
-    t.tube((-0.03, 0.03, 0.04), (-0.09, 0.05, 0.016), 0.01, DARK)
+def eye(q):
+    """A cyber eye: a white ball looking at the viewer, a lit iris, a cable behind."""
+    q.ball(0.0, 0.0, 0.0, 0.14, EYE)
+    c = (0.0, 0.0, 0.14)
+    q.tube(at(c, TO_CAM, 0.1), at(c, TO_CAM, 0.135), 0.075, q.lit)
+    q.tube(at(c, TO_CAM, 0.13), at(c, TO_CAM, 0.15), 0.032, "black")
+    q.tube((-0.1, -0.1, 0.08), (-0.26, -0.18, 0.02), 0.024, BODY)
 
 
-def heart(t):
-    """A cyber heart: two chrome chambers, a lit band, three vessels out of the top."""
-    t.ball(-0.02, 0.0, 0.0, 0.042, CHROME, sz=1.1)
-    t.ball(0.03, 0.01, 0.0, 0.034, CHROME_D, sz=1.0)
-    t.tube((-0.06, 0, 0.042), (0.07, 0, 0.042), 0.008, t.lit, sides=8)
-    for u, h in ((-0.03, 0.12), (0.0, 0.13), (0.025, 0.11)):
-        t.tube((u, 0.0, 0.07), (u, 0.0, h), 0.011, CHROME_D, cap=CHROME)
+def heart(q, trim=JOINT):
+    """A cyber heart: two red chambers, a lit band round them, three vessels out of the top (trim: their colour)."""
+    q.ball(-0.04, 0.03, 0.0, 0.12, HEART, sz=0.8)
+    q.ball(0.07, -0.03, 0.0, 0.1, HEART_D, sz=0.8)
+    q.tube((0.0, 0.0, 0.085), (0.0, 0.0, 0.115), 0.135, q.lit, sides=16)
+    for x, y, h in ((-0.06, 0.08, 0.3), (0.0, 0.04, 0.32), (0.05, 0.0, 0.27)):
+        q.tube((x, y, 0.14), (x, y, h), 0.026, trim)
 
 
-def lungs(t):
-    """Cyber lungs: two long lobes side by side, a windpipe forking between them, lit seams."""
-    for v in (-0.033, 0.033):
-        t.ball(0.0, v, 0.0, 0.032, CHROME, sx=1.9)
-        t.box(0.0, v, 0.062, (0.09, 0.006, 0.004), t.lit, bevel=0)
-    t.tube((-0.1, 0, 0.03), (-0.05, 0, 0.03), 0.011, CHROME_D, cap=CHROME)
+def halcyon(q):
+    """The Halcyon Heart (named): the heart in deep red with gold vessels."""
+    heart(q, trim="imGoldD")
 
 
-def spine(t):
-    """A spinal frame: a column of chrome vertebrae with lit discs between."""
+def lungs(q):
+    """Cyber lungs: two pink lobes side by side, a steel windpipe forking between them, a lit band on each."""
+    for y, col in ((-0.08, LUNG_D), (0.08, LUNG)):
+        q.ball(0.02, y, 0.0, 0.085, col, sx=1.6, sz=0.9)
+        q.tube((-0.03, y - 0.09, 0.1), (-0.03, y + 0.09, 0.1), 0.012, q.lit)
+    q.tube((-0.27, 0.0, 0.08), (-0.12, 0.0, 0.08), 0.026, JOINT)
+    for y in (-0.06, 0.06):
+        q.tube((-0.12, 0.0, 0.08), (-0.06, y, 0.08), 0.02, JOINT)
+
+
+def spine(q):
+    """A spinal frame: a chain of white vertebrae with spines up and lit discs between."""
+    for i in range(7):
+        x = (i - 3) * 0.075
+        q.box(x, 0, 0, (0.05, 0.1, 0.06), JOINT, top=EYE, bevel=0.01)
+        q.box(x, 0, 0.06, (0.022, 0.03, 0.05), JOINT, bevel=0.006)
+        if i < 6:
+            q.box(x + 0.0375, 0, 0.012, (0.016, 0.07, 0.036), q.lit, bevel=0)
+
+
+def booster(q):
+    """A reflex booster: a gunmetal canister wound with lit coils, a white clamp at one end."""
+    q.tube((-0.2, 0, 0.065), (0.16, 0, 0.065), 0.065, BODY, cap=BODY_D)
+    for x in (-0.12, -0.04, 0.04):
+        q.tube((x - 0.012, 0, 0.065), (x + 0.012, 0, 0.065), 0.072, q.lit)
+    q.box(0.21, 0, 0.0, (0.07, 0.16, 0.11), JOINT, top=EYE, bevel=0.01)
+
+
+def dermal(q):
+    """Dermal armour: a bowed patch of gunmetal hexagonal scales with lit seams between."""
+    q.box(0, 0, 0, (0.42, 0.3, 0.012), q.lit, bevel=0)
     for i in range(6):
-        u = (i - 2.5) * 0.036
-        t.box(u, 0, 0, (0.026, 0.055, 0.03), CHROME, top=CHROME, bevel=0.004)
-        t.box(u, 0, 0.03, (0.012, 0.016, 0.016), CHROME_D)
-        if i < 5:
-            t.box(u + 0.018, 0, 0.006, (0.008, 0.04, 0.02), t.lit)
-
-
-def booster(t):
-    """A reflex booster: a canister wound with lit coils, a spine clip at one end."""
-    t.tube((-0.07, 0, 0.03), (0.06, 0, 0.03), 0.03, CHROME_D, cap=CHROME)
-    for u in (-0.035, 0.025):
-        t.tube((u - 0.004, 0, 0.03), (u + 0.004, 0, 0.03), 0.034, t.lit)
-    t.box(0.085, 0, 0.0, (0.03, 0.05, 0.05), CHROME, top=CHROME_D)
-
-
-def dermal(t):
-    """Dermal armour: a sheet of hexagonal scales with lit seams."""
-    t.box(0, 0, 0, (0.2, 0.12, 0.006), DARK, bevel=0)
-    t.box(0, 0, 0.006, (0.19, 0.004, 0.003), t.lit, bevel=0)
-    for i in range(5):
-        for j in range(3):
-            u, v = (i - 2) * 0.04 + (0.02 if j % 2 else 0.0), (j - 1) * 0.036
-            if abs(u) < 0.1:
-                t.m.cyl(t.p(u, v, 0.006), 0.017 * t.k, 0.01 * t.k, CHROME_D, sides=6, top=t.trim, rz=t.rz)
+        for j in range(4):
+            x, y = (i - 2.5) * 0.068 + (0.034 if j % 2 else 0.0), (j - 1.5) * 0.068
+            if abs(x) < 0.2:
+                q.disc(x, y, 0.012 + 0.04 * (1 - (y / 0.15) ** 2), 0.034, 0.02, BODY_D, top=BODY, sides=6)
 
 
 def chip(skill):
-    """A neural chip: a small board with gold pins, a black die and its skill's lit stripe."""
-    def build(t):
-        t.box(0, 0, 0, (0.13, 0.09, 0.012), "pcb")
-        t.box(-0.055, 0, 0.012, (0.012, 0.08, 0.004), "brass", bevel=0)
-        t.box(0.01, 0, 0.012, (0.07, 0.06, 0.016), "black", top=DARK)
-        t.box(0.01, 0, 0.028, (0.07, 0.014, 0.003), SKILLS[skill], bevel=0)
+    """A neural chip: a green board with gold pins, a black die with its skill's lit stripe, the tier's light in a corner."""
+    def build(q):
+        q.box(0, 0, 0, (0.34, 0.24, 0.025), "pcb")
+        for y in (-0.08, -0.04, 0.0, 0.04, 0.08):
+            q.box(-0.17, y, 0.0, (0.04, 0.02, 0.018), "brass", bevel=0)
+        q.box(0.03, 0, 0.025, (0.18, 0.16, 0.04), "black", top=DARK)
+        q.box(0.03, 0, 0.065, (0.18, 0.04, 0.006), SKILLS[skill], bevel=0)
+        q.box(0.15, 0.09, 0.025, (0.03, 0.03, 0.012), q.lit, bevel=0)
     return build
 
 
-def coprocessor(t):
-    """The neural co-processor (named): a larger board under a finned heatsink, lit in gold."""
-    t.box(0, 0, 0, (0.17, 0.11, 0.014), "pcb")
-    t.box(0, 0, 0.014, (0.12, 0.09, 0.012), CHROME_D)
-    for i in range(6):
-        t.box(-0.05 + i * 0.02, 0, 0.026, (0.006, 0.08, 0.03), CHROME)
-    t.box(0.075, 0, 0.014, (0.012, 0.06, 0.008), t.lit, bevel=0)
+def coprocessor(q):
+    """The neural co-processor (named): a larger board under a finned heatsink."""
+    q.box(0, 0, 0, (0.4, 0.28, 0.03), "pcb")
+    q.box(0, 0, 0.03, (0.3, 0.22, 0.03), BODY_D)
+    for i in range(7):
+        q.box(-0.12 + i * 0.04, 0, 0.06, (0.014, 0.2, 0.07), JOINT)
+    q.box(0.18, 0, 0.03, (0.03, 0.16, 0.02), q.lit, bevel=0)
 
 
 LINES = {"cyber_arm": arm, "cyber_leg": leg, "cyber_eye": eye, "cyber_heart": heart, "cyber_lungs": lungs,
          "spinal_frame": spine, "reflex_booster": booster, "dermal_armor": dermal}
+NAMED = {"chip_coprocessor": coprocessor, "halcyon_heart": halcyon}
 
-
-def unit(build, tier):
-    return lambda m, c, z, rz, k: build(Tray(m, c, z, rz, k * GROW, tier))
-
-
-# Stacks of 4 (itemView.stackClass): s one tray, m two side by side, l three.
-LAYOUT = {"held": [(0.0, 0.0, 0.0, 0.3)], "s": [(0.0, 0.0, 0.0, 0.3)],
-          "m": [(-0.07, 0.11, 0.0, 0.3), (0.07, -0.11, 0.0, 0.3)],
-          "l": [(-0.12, 0.2, 0.0, 0.3), (0.0, 0.0, 0.0, 0.3), (0.12, -0.2, 0.0, 0.3)]}
+# Stacks of 4 (itemView.stackClass): s one, m two side by side, l three; the carried one a little smaller.
+LAYOUT = {"held": [(0.0, 0.0)], "s": [(0.0, 0.0)], "m": [(-0.1, 0.14), (0.1, -0.14)],
+          "l": [(-0.16, 0.24), (0.0, 0.0), (0.16, -0.24)]}
+SCALE = {"held": 0.7, "s": 1.0, "m": 0.78, "l": 0.66}
 
 
 def stack(build, tier):
-    return lambda m, size: place(m, size, unit(build, tier), LAYOUT)
+    def fn(m, size):
+        for x, y in LAYOUT[size]:
+            build(P(m, (x, y), 0.0, 0.0, SCALE[size], LIGHTS[tier]))
+    return fn
 
 
-def table(tiers=(1, 2, 3)):
-    """item id (no "item.") -> stack builder, for every line and tier, the chips per skill, and the named pieces."""
-    out = {f"{line}_{n}": stack(fn, n) for line, fn in LINES.items() for n in tiers}
-    out.update({f"chip_{s}_{n}": stack(chip(s), n) for s in SKILLS for n in tiers})
-    out["chip_coprocessor"] = stack(coprocessor, "named")
+def table():
+    """item id (no "item.") -> stack builder: every line and Mk, the chips per skill and Mk, and the named pieces."""
+    out = {f"{line}_{n}": stack(fn, n) for line, fn in LINES.items() for n in (1, 2, 3)}
+    out.update({f"chip_{s}_{n}": stack(chip(s), n) for s in SKILLS for n in (1, 2, 3)})
+    out.update({k: stack(fn, "named") for k, fn in NAMED.items()})
     return out
 
 
-def sprite_jobs(only=None):
-    return [j for k, fn in table().items() if not only or k in only for j in jobs(k, fn)]
+def sprite_jobs():
+    return [j for k, fn in table().items() for j in jobs(k, fn)]
 
 
 def palette(sid):
     """Palette selection for the items family: implant sprites add the "implant" set, the rest keep theirs."""
     return "implant" if any(sid.startswith(f"item.{k}.") for k in table()) else None
-

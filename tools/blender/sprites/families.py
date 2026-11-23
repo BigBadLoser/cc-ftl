@@ -611,10 +611,7 @@ def jobs(name):
         planned = {**items_tech.ITEMS, **items_materials.ITEMS, **items_parts.ITEMS, **items_goods.ITEMS}
         crystal = _crystal("energy_crystal")
         jobs_ = items_now.SPRITES + [j for k, fn in planned.items() for j in item_jobs(k, fn)] + items_implants.sprite_jobs()
-        if __import__('os').environ.get('IMPLANT_PROTO'):
-            from . import items_implants_proto
-            jobs_ += items_implants_proto.sprite_jobs()
-        return jobs_, lambda sid: "implant" if sid.startswith("item.proto_") else (items_implants.palette(sid) or crystal(sid))
+        return jobs_, lambda sid: items_implants.palette(sid) or crystal(sid)
     if name == "salvage":
         from . import items_salvage
         return items_salvage.jobs(), items_salvage.palette

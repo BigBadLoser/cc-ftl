@@ -4101,5 +4101,7 @@
   "imBlue": {"hex": "#4a8cff", "emissive": 2.4, "set": "implant"},
   "imOrange": {"hex": "#ffa23a", "emissive": 2.4, "set": "implant"},
   "imGreen": {"hex": "#4cff8a", "emissive": 2.4, "set": "implant"},
-  "imWhite": {"hex": "#eef4ff", "emissive": 2.0, "set": "implant"}
+  "imWhite": {"hex": "#eef4ff", "emissive": 2.0, "set": "implant"},
+  "imLung": {"hex": "#d77a8a", "set": "implant"},
+  "imLungD": {"hex": "#a85466", "set": "implant"}
 }
