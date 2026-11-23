@@ -1,19 +1,22 @@
 import type { ModuleDef } from '../../registry';
 import { Rng } from '../../rng';
-import { drawSilhouette, type Drive, type Silhouette } from '../hull/silhouette';
-import { NAVY_PROFILES } from '../hull/navyProfiles';
+import { drawSilhouette, type Drive, type Profile, type Silhouette } from '../hull/silhouette';
 import { fitShell, seedOf } from '../shell';
+import type { BaysLayout, OutlineRecipe } from '../outlineRecipe';
 import { ENGINE_TIERS, REACTOR_TIERS, engineSpec, planShip, reactorsFor, type ShipPlan } from '../plan';
 import { equipmentShort, plannedEquipment } from '../equipment';
 import type { FactionDef, GenResult } from '../types';
 import { layoutBlocks, type Mask } from './blockLayout';
-import { bayRooms } from './bayRooms';
+import { bayRooms, type BayRules } from './bayRooms';
+import { partOf } from './parts';
+import { deptsOf } from './zones';
 import { outlineFrame } from './frame';
 import { paintPlaced } from './placePaint';
 import type { Placed } from './placeLayout';
 import { batteryWeapons, gunsAndReactors } from './pairs';
-import { NAVY_TYPES, navyAttempts, navyRole, navyTypeOf, shipCommons, shipQuarters, type BayLayout, type NavyType } from './navyShip';
+import { outlineAttempts, outlineRole, recipeOf, shipCommons, shipQuarters } from './outlineType';
 import { SPACE, type RegionGrid } from './regions';
+import { addTruss } from './truss';
 
 /**
  * Navy hulls outline first (SHIPGEN_V4): the type's silhouette is drawn, scaled until the plan's rooms fit, and the
@@ -31,12 +34,23 @@ import { SPACE, type RegionGrid } from './regions';
 const BATTERY_SITES = 2;
 
 function scaled(sil: Silhouette, sx: number, sy: number): Mask {
-  const W0 = Math.round(sil.length * sx);
+  // A chamfered section (a liner's drum) keeps its length in tiles, so its rooms keep their size; the rest scales.
+  const cols: number[] = [];
+  let src = 0, flex = 0;
+  for (const [a, b] of [...(sil.chamfer ?? []), [sil.length, sil.length - 1] as [number, number]]) {
+    const x0 = cols.length, end = cols.length + Math.round((flex + a - src) * sx) - Math.round(flex * sx), last = a === sil.length;
+    for (let x = x0; x < end; x++) { const c = src + Math.floor((x - x0) / sx); cols.push(last ? c : Math.min(a - 1, c)); }
+    flex += a - src;
+    for (let c = a; c <= b; c++) cols.push(c);
+    src = b + 1;
+  }
+  const W0 = cols.length;
   const bodyAt = (c: number): number => sil.body[Math.min(c, sil.body.length - 1)] as number;
   const H0 = Math.max(...sil.body.map((b) => Math.round(b * sy) + sil.axis - b));
+  const colOf = (x: number): number => cols[x] as number;
   const base = (x: number, y: number): boolean => {
     if (x < 0 || x >= W0 || Math.abs(y) > H0) return false;
-    const c = Math.floor(x / sx), b = bodyAt(c), hb = Math.round(b * sy), d = Math.abs(y);
+    const c = colOf(x), b = bodyAt(c), hb = Math.round(b * sy), d = Math.abs(y);
     // Rounded by distance from the axis, so the two sides mirror (Math.round takes -2.5 to -2 but 2.5 to 3).
     const raw = d <= hb ? Math.round(d / sy) : b + d - hb;
     return sil.rows[sil.axis + Math.sign(y) * raw]?.[c] === '#';
@@ -130,8 +144,8 @@ function dropIslands(g: RegionGrid): boolean {
 
 /** What an outline is built from: the plan with the type's commons and quarters, the drawn silhouette, the rooms' size draws. */
 export interface OutlineInputs {
-  rng: Rng; role: ReturnType<typeof navyRole>; plan: ShipPlan; sil: Silhouette; vary: number[]; maxBeam: number;
-  /** The silhouette's profile (`NAVY_PROFILES`). */
+  rng: Rng; role: ReturnType<typeof outlineRole>; plan: ShipPlan; sil: Silhouette; vary: number[]; maxBeam: number;
+  /** The silhouette's profile (its recipe's). */
   profile: string;
   /** On bays, the same silhouette with its drive section drawn again, a tile wider each (`DRIVE_REDRAWS` of them). */
   drives: Silhouette[];
@@ -154,10 +168,11 @@ const LANES = [8, 7, 6, 5, 4, 3];
 const LIT = 0.3;
 
 export function outlineInputs(
-  f: FactionDef, seed: number, depth: number, defs: Record<string, ModuleDef>, type: NavyType, n = 0, extra = 0, bay?: BayLayout,
+  f: FactionDef, seed: number, depth: number, defs: Record<string, ModuleDef>, type: string, n = 0, extra = 0,
 ): OutlineInputs {
   const rng = new Rng(seedOf(seed, n));
-  const role = navyRole(f, type);
+  const recipe = recipeOf(f, type), bay = recipe.layout.kind === 'bays' ? recipe.layout : undefined;
+  const role = outlineRole(f, type, recipe);
   // A drive short of thrust gets engines a tier up before it gets more of them (more need a deeper stern, so a bigger hull).
   const engineUp = ENGINE_TIERS[ENGINE_TIERS.indexOf(planShip(new Rng(seedOf(seed, n)), f, role, depth, defs).kit.engine as (typeof ENGINE_TIERS)[number]) + 1];
   const tierUp = extra > 0 && !!engineUp && !!defs[engineUp];
@@ -165,14 +180,13 @@ export function outlineInputs(
   // A reactor a tier up where the plan's is Mk I: the power the fit-out would otherwise squeeze into stores as extra reactors.
   const up = REACTOR_TIERS[Math.min(REACTOR_TIERS.length - 1, REACTOR_TIERS.indexOf(planned.kit.reactor as (typeof REACTOR_TIERS)[number]) + 1)] as string;
   const kit = { ...planned.kit, ...(planned.kit.reactor === REACTOR_TIERS[0] && defs[up] ? { reactor: up } : {}), ...(tierUp ? { engine: engineUp } : {}) };
-  // The type's commons and quarters (a few spare beds past the crew's) join the plan, their power counted.
-  const pax = NAVY_TYPES[type].passengers;
-  const quarters = shipQuarters(type, planned.quarters, planned.crew.length, rng.int(2, 4) + (pax ? rng.int(pax[0], pax[1]) : 0));
-  const plan: ShipPlan = { ...planned, kit, quarters, support: [...planned.support, ...shipCommons(type, planned.crew.length)] };
+  // The type's commons and quarters (a few spare beds past the crew's, its passengers' cabins) join the plan, their power counted.
+  const quarters = shipQuarters(recipe, planned.quarters, planned.crew.length, rng.int(2, 4), depth);
+  const plan: ShipPlan = { ...planned, kit, quarters, support: [...planned.support, ...shipCommons(recipe, planned.crew.length, depth)] };
   // A battery holds its sites' gun pairs and its inner pair (the odd gun out stands with the other rooms): the plan's guns
   // past them have no room, so it carries only these, its power counted without the rest.
   if (bay?.battery) plan.weapons = batteryWeapons(plan, defs, BATTERY_SITES + 1);
-  const fixed = NAVY_TYPES[type].engines;
+  const fixed = recipe.engines;
   if (fixed) plan.engines = fixed + (tierUp ? extra - 1 : extra);
   plan.reactors = reactorsFor(plan, defs);
   const next = ENGINE_TIERS[ENGINE_TIERS.indexOf(kit.engine as (typeof ENGINE_TIERS)[number]) + 1];
@@ -182,7 +196,7 @@ export function outlineInputs(
   // deep); with a battery, a notched gun site per gun pair in place of the profile's embrasures.
   const sites = !!bay?.battery;
   const gp = gunsAndReactors(plan, defs).gunPairs;
-  const profile = rng.pick(NAVY_PROFILES[type] ?? []), from = rng.getState();
+  const profile = rng.pick(recipe.profiles as Profile[]), from = rng.getState();
   // A bay hull's flare holds its full width an engine room deep (the deepest engine it may take, a walk column and wall).
   const hold = bay ? engineSpec(1, 'w', planUp?.kit ?? kit).w + 2 : 0;
   const draw = (drive?: Drive, lane?: number): Silhouette => {
@@ -200,7 +214,7 @@ export function outlineInputs(
   const both = lanes ? new Rng(seedOf(seed, 2000 + n)).chance(0.5) : undefined;
   const sil = draw();
   const vary = Array.from({ length: 24 }, () => rng.int(80, 135) / 100);
-  return { rng, role, plan, sil, drives, vary, maxBeam: NAVY_TYPES[type].maxBeam, profile: profile.id, ...(planUp ? { planUp } : {}), ...(lanes ? { lanes, both } : {}) };
+  return { rng, role, plan, sil, drives, vary, maxBeam: recipe.maxBeam, profile: profile.id, ...(planUp ? { planUp } : {}), ...(lanes ? { lanes, both } : {}) };
 }
 
 /**
@@ -224,9 +238,9 @@ export function scaleSearch<T>(sil: Silhouette, maxBeam: number, fit: (m: Mask) 
   return null;
 }
 
-function blockGrid(plan: ShipPlan, sil: Silhouette, maxBeam: number, defs: Record<string, ModuleDef>, type: NavyType, vary: number[]): RegionGrid {
-  const found = scaleSearch(sil, maxBeam, (m) => layoutBlocks(plan, m, type, vary, defs));
-  if (!found) throw new Error(`outline ${type}: rooms do not fit`);
+function blockGrid(plan: ShipPlan, sil: Silhouette, maxBeam: number, defs: Record<string, ModuleDef>, r: OutlineRecipe, vary: number[]): RegionGrid {
+  const found = scaleSearch(sil, maxBeam, (m) => layoutBlocks(plan, m, r, vary, defs));
+  if (!found) throw new Error(`outline ${r.family}: rooms do not fit`);
   return found.l.g;
 }
 
@@ -236,8 +250,8 @@ function blockGrid(plan: ShipPlan, sil: Silhouette, maxBeam: number, defs: Recor
  * engines its size needs: its own drive section (`sils[0]`) with the plan's engines, then with engines a tier up (`plans`),
  * then each wider drive section the same way. The rest of the hull is the same in each.
  */
-function bayGrid(plans: ShipPlan[], lanes: Silhouette[][], maxBeam: number, defs: Record<string, ModuleDef>, type: NavyType, both?: boolean): RegionGrid {
-  const cands: { W: number; l: Placed; plan: ShipPlan }[] = [];
+function bayGrid(plans: ShipPlan[], lanes: Silhouette[][], maxBeam: number, defs: Record<string, ModuleDef>, r: OutlineRecipe, bay: BaysLayout, both?: boolean): RegionGrid {
+  const cands: { W: number; l: Placed; plan: ShipPlan }[] = [], rules: BayRules = { depts: deptsOf(r.depts), part: partOf(bay) };
   // A lane hull's corridor style: rooms both sides of its side corridors where any size holds them, else outboard only.
   for (const style of both === undefined ? [undefined] : both ? [true, false] : [false]) {
     const lane = style === undefined ? undefined : { both: style };
@@ -245,18 +259,18 @@ function bayGrid(plans: ShipPlan[], lanes: Silhouette[][], maxBeam: number, defs
       // (Past a quarter longer than the first fit, a hull is never the best: stop there.)
       const first = cands[0];
       if (first && m0.W > 1.25 * first.W) return first.l;
-      if (m0.W < (NAVY_TYPES[type].minLength ?? 0)) return null;
+      if (m0.W < (r.minLength ?? 0)) return null;
       const [sx, sy] = m0.scale ?? [1, 1];
       // The widest lane the rooms fit (its side hulls deep enough), at its first drive that holds the engines.
       lanes: for (const [j, sils] of lanes.entries()) for (const [k, sil] of sils.entries()) {
         const m = j === 0 && k === 0 ? m0 : scaled(sil, sx, sy);
         if (2 * m.H + 3 > maxBeam) continue;
         for (const plan of plans) {
-          const fr = outlineFrame(plan, m, defs[plan.kit.engine]?.engine?.hullCapacity ?? 0, ENGINE_GAP, lane);
+          const fr = outlineFrame(plan, m, defs[plan.kit.engine]?.engine?.hullCapacity ?? 0, ENGINE_GAP, lane, rules.part);
           if (!fr) continue;
           // (A lane hull's floor is far past its rooms' plan: its reactors light the hull's.)
           const lit = fr.lane ? { ...plan, reactors: reactorsFor(plan, defs, Math.round(LIT * fr.area)) } : plan;
-          const q = bayRooms(lit, fr, defs, 400);
+          const q = bayRooms(lit, fr, defs, 400, rules);
           if (q.viable > 0) { cands.push({ W: m.W, l: q, plan: lit }); break lanes; }
           continue lanes;
         }
@@ -266,37 +280,37 @@ function bayGrid(plans: ShipPlan[], lanes: Silhouette[][], maxBeam: number, defs
     if (cands.length > 0) break;
   }
   const best = cands.sort((a, b) => a.l.score + a.W / 20 - (b.l.score + b.W / 20))[0];
-  if (!best) throw new Error(`outline ${type}: rooms do not fit`);
-  return paintPlaced(best.plan, bayRooms(best.plan, best.l.fr, defs, 3000));
+  if (!best) throw new Error(`outline ${r.family}: rooms do not fit`);
+  return paintPlaced(best.plan, bayRooms(best.plan, best.l.fr, defs, 3000, rules));
 }
 
 export function assembleOutline(
-  f: FactionDef, factionId: string, seed: number, depth: number, defs: Record<string, ModuleDef>, type: NavyType, n = 0, extra = 0,
+  f: FactionDef, factionId: string, seed: number, depth: number, defs: Record<string, ModuleDef>, type: string, n = 0, extra = 0,
 ): GenResult {
-  // PROTOTYPE (#581): a type with a bay layout has its rooms on bays (a cruiser along a gun battery).
-  const bay = NAVY_TYPES[type].layout;
-  const { rng, role, plan, sil, drives, planUp, vary, maxBeam, profile, lanes, both } = outlineInputs(f, seed, depth, defs, type, n, extra, bay);
-  const g = bay ? bayGrid([plan, ...(planUp ? [planUp] : [])], lanes ?? [[sil, ...drives]], maxBeam, defs, type, both) : blockGrid(plan, sil, maxBeam, defs, type, vary);
+  // PROTOTYPE (#581): a recipe with a bay layout has its rooms on bays (a cruiser along a gun battery).
+  const r = recipeOf(f, type), bay = r.layout.kind === 'bays' ? r.layout : undefined;
+  const { rng, role, plan, sil, drives, planUp, vary, maxBeam, profile, lanes, both } = outlineInputs(f, seed, depth, defs, type, n, extra);
+  const g = bay ? bayGrid([plan, ...(planUp ? [planUp] : [])], lanes ?? [[sil, ...drives]], maxBeam, defs, r, bay, both) : blockGrid(plan, sil, maxBeam, defs, r, vary);
   thinHull(g);
   if (dropIslands(g)) thinHull(g);
   const cell = g.compile(), snap = g.snapshot(cell);
   const at = (cx: number, cy: number): string => snap.rows[cy]?.[cx] ?? '.';
   const rows = snap.rows.map((r, y) => [...r].map((c, cx) => (c === 'D' && [at(cx + 1, y), at(cx - 1, y), at(cx, y + 1), at(cx, y - 1)].includes('.') ? '#' : c)).join(''));
-  const r = fitShell(
+  // A pusher's truss ahead of its hull (its centre row the grid's row 0).
+  const shell = r.truss ? addTruss(rng, r.truss, { rows, roomOf: snap.roomOf, width: snap.width, height: snap.height }, -snap.y0, depth) : { rows, roomOf: snap.roomOf, width: snap.width, height: snap.height };
+  const res = fitShell(
     rng, f, factionId, seed, role, 'sections', { crew: plan.crew } as Pick<ShipPlan, 'crew'>,
-    { rows, roomOf: snap.roomOf, width: snap.width, height: snap.height, roles: g.regions.map((q) => q.role), specs: g.regions.map((q) => q.spec) },
+    { ...shell, roles: g.regions.map((q) => q.role), specs: g.regions.map((q) => q.spec) },
     `outline ${profile}`, defs, n, { bareHalls: true },
   );
   // The guns, shields, point defence and bays the plan asked for are required, as on every generated ship (#577).
   const planned = plannedEquipment(defs, plan);
-  const short = equipmentShort(defs, planned, r.template);
-  if (short) r.problems.push(short);
-  return { ...r, planned, family: NAVY_TYPES[type].family };
+  const short = equipmentShort(defs, planned, res.template);
+  if (short) res.problems.push(short);
+  return { ...res, planned, family: r.family };
 }
 
-/** An outline navy ship by attempts (as `generateNavy`). `type` defaults to the seed's (`navyTypeOf`): the game's navy ships (`generateShip`). */
-export function generateOutline(
-  f: FactionDef, factionId: string, seed: number, depth: number, defs: Record<string, ModuleDef>, type = navyTypeOf(f, seed, depth),
-): GenResult {
-  return navyAttempts(defs, (n, extra) => assembleOutline(f, factionId, seed, depth, defs, type, n, extra));
+/** An outline ship of its faction's recipe `type`, by attempts (the game's navy ships: `generateShip`, `outlineTypeOf`). */
+export function generateOutline(f: FactionDef, factionId: string, seed: number, depth: number, defs: Record<string, ModuleDef>, type: string): GenResult {
+  return outlineAttempts(defs, (n, extra) => assembleOutline(f, factionId, seed, depth, defs, type, n, extra));
 }

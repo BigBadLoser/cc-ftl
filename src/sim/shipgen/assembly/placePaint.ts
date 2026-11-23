@@ -7,7 +7,7 @@ import { SOLID, type RegionGrid } from './regions';
 import type { Part, Placed } from './placeLayout';
 
 /** PROTOTYPE (#581): paints a placed layout's room outlines (no fit-out): the frame's bridge, drive and corridors, then each part. */
-export function paintPlaced(plan: ShipPlan, { fr, lay, battery }: Placed): RegionGrid {
+export function paintPlaced(plan: ShipPlan, { fr, lay, battery, paint: own }: Placed): RegionGrid {
   const { W, xS, dockAt, used, engine, lane } = fr;
   const fg = frameGrid(fr, plan), { g, hall, docks, paint } = fg;
   const stubs = lay.stubs.map((s) => ({ ...s, id: g.hall('hall') })), maint = fr.maint ? g.hall('hall') : -1;
@@ -66,9 +66,9 @@ export function paintPlaced(plan: ShipPlan, { fr, lay, battery }: Placed): Regio
         // one, not the cross corridor or an airlock's hall.)
         const id = g.room(h.role, { spec: h, ...(access ? { access } : {}), ...(fr.lane ? { doorAlong: 'x' as const } : {}) });
         paint(id, q.x0, q.x1, (y) => rows(q, d(y)));
-        // (A room cut from its stern end, entered only through it: the mess's pantry.)
-        const cut = h.beside;
-        if (cut && q.x1 - q.x0 >= cut.w + 6) paint(g.room(cut.role, { spec: cut, access: [id] }), q.x1 - cut.w, q.x1, (y) => rows(q, d(y)));
+        // (A room cut from its stern end, entered only through it: the mess's pantry, a ward's trauma room (its share).)
+        const cut = h.beside, cw = cut ? Math.max(cut.w, Math.round((cut.share ?? 0) * (q.x1 - q.x0))) : 0;
+        if (cut && q.x1 - q.x0 >= cw + 6) paint(g.room(cut.role, { spec: cut, access: [id] }), q.x1 - cw, q.x1, (y) => rows(q, d(y)));
         return id;
       }) as [number, number];
       front.set(q, ids); frontOf.set(q, ids);
@@ -126,6 +126,7 @@ export function paintPlaced(plan: ShipPlan, { fr, lay, battery }: Placed): Regio
     });
   }
   closeFrame(fr, fg);
+  own?.(fg);
   for (const s of stubs) paint(s.id, s.x, s.x + 1, (y) => Math.abs(y) >= BAND);
   return g;
 }

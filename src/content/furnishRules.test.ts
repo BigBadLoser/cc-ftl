@@ -206,4 +206,24 @@ describe('furnishing rules', () => {
       expect(beside, `locker ${l.x},${l.y}`).toHaveLength(2);
     }
   });
+  it('a stepped room (narrower at one end) backs its galleys onto a real wall, not the edge of the largest rectangle', () => {
+    // 16 wide, seven deep from column 4 on, five deep (the top two rows wall) over its first four columns; the door under column 9.
+    const W = 18, rows = ['#'.repeat(W), '#' + '_'.repeat(16) + '#', ...Array.from({ length: 5 }, () => '#' + '_'.repeat(16) + '#')].map((r, y) => (y >= 1 && y <= 2 ? '#' + '#'.repeat(4) + '_'.repeat(12) + '#' : r));
+    rows.splice(1, 2, ...rows.slice(1, 3));
+    const grid = [...rows, '#'.repeat(10) + 'D' + '#'.repeat(7), '.'.repeat(5) + '_'.repeat(12) + '.', '#'.repeat(W)];
+    // (rows 1-2: wall over the first four columns; rows 3-7: floor; row 8: wall with the door; rows 9-10: the hall)
+    const roomOf = new Int16Array(W * grid.length).fill(-1);
+    for (let y = 1; y <= 7; y++) for (let x = 1; x < W - 1; x++) if (grid[y]![x] === '_') roomOf[y * W + x] = 0;
+    for (let x = 5; x < W - 1; x++) roomOf[9 * W + x] = 1;
+    const lay = new Layout(grid, roomOf, ['support', 'hall'], defs);
+    const made = furnishByRule(lay, new Rng(5), 0, 'support', ['module.galley', 'module.mess_table', 'module.mess_table'], () => [0, 1, 2, 3]);
+    expect(made).not.toBeNull();
+    const galleys = lay.modules.filter((m) => m.def === 'module.galley');
+    expect(galleys.length).toBeGreaterThan(0);
+    const FACE = [[0, 1], [-1, 0], [0, -1], [1, 0]] as const;
+    for (const g of galleys) {
+      const [fx, fy] = FACE[g.rot % 4] as readonly [number, number];
+      for (const t of footprintTiles(defs[g.def]!, g.x, g.y, g.rot)) expect(lay.roomOf[(t.y - fy) * W + t.x - fx], `galley ${g.x},${g.y} has floor behind it`).not.toBe(0);
+    }
+  });
 });

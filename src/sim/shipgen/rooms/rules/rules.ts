@@ -10,9 +10,10 @@ import type { Piece } from './check';
 import { db, pods2, pods2Fit, tr, traumaFits, ward, wardBeds } from './bays';
 import { HY, HYL, f1, f3, f3Fits } from './farm';
 import { rw } from './refinery';
-import { AC, B, seats, BT, OB, OBL, CD, DR, EX, FB, RF, G, GT, L, LS, MB, P, RK, RP, RS, SB, SP, SW, T, bunks, messSize, count, leftover, middle, range, rowsOf, sidePairs, tables, type Beds, type Run } from './parts';
+import { AC, B, seats, BT, OB, OBL, CD, DR, EX, FB, RF, G, GT, L, LS, MB, P, RK, RP, RS, SB, SP, SW, T, bunks, count, isCut, leftover, middle, off, range, rowsOf, sidePairs, tables, type Beds, type Run } from './parts';
 import { PB, VB, AI, CR, bank, core, crates, lifeWalls, lifeWallsFit, machines, machinesFit, podsFit, pods, shuttle, walkwayFits, walkwayHold } from './plant';
-import { laid, messTables, tablesClear } from './mess';
+import { laid, m4, messFloor } from './mess';
+import { rackHold, rackHoldFits } from './rackhold';
 import { co, cu, gy, hl, mk, pz } from './social';
 import { bg, ore, pa, qm, shelfSlots } from './stores';
 import { bk, lb, rf, rf2, rf2Fits, su, ws } from './works';
@@ -26,6 +27,8 @@ export interface Ctx {
   w: number; h: number; d: number; need: readonly string[]; defs: Record<string, ModuleDef>; doors?: readonly { x: number; y: number }[];
   /** The frame's corner tiles that are wall (a cut or round corner): nothing stands there. */
   cut?: readonly { x: number; y: number }[];
+  /** Whether a frame tile (also one past the frame's edge) is floor of the room: where it is not, a wall (or hull) stands. */
+  floor?: (x: number, y: number) => boolean;
 }
 
 export interface RuleArrangement {
@@ -47,11 +50,6 @@ const pieces = (need: readonly string[], defs: Record<string, ModuleDef>): numbe
 const size = (c: Ctx, id: string): number => c.defs[id]?.footprint[0] ?? 2;
 const isGun = (c: Ctx, id: string): boolean => !!(c.defs[id]?.weapon || c.defs[id]?.pointDefense);
 const guns = (c: Ctx): string[] => c.need.filter((m) => isGun(c, m));
-/** Whether a frame tile is a cut corner (wall: nothing stands there). */
-const isCut = (c: Ctx, x: number, y: number): boolean => (c.cut ?? []).some((t) => t.x === x && t.y === y);
-/** A tile in from a cut corner: `v` when the corner at (x, y) stands, else `v` moved a tile toward the room by `step`. */
-const off = (c: Ctx, x: number, y: number, v: number, step: number): number => (isCut(c, x, y) ? v + step : v);
-
 /** Whether the room is walked through: a door in its back wall too, none in its sides. */
 const through = (c: Ctx): boolean => (c.doors ?? []).some((t) => t.y === 0) && !(c.doors ?? []).some((t) => t.x === 0 || t.x === c.w - 1);
 
@@ -60,9 +58,19 @@ const through = (c: Ctx): boolean => (c.doors ?? []).some((t) => t.y === 0) && !
  * pair. A room walked through (a door in its back wall too) lines the walls either side of the way through instead.
  */
 function b1(c: Ctx): Piece[] {
-  const { w, h, d } = c, bank = beds(c);
+  const { w, h, d } = c;
+  let bank = beds(c);
   if (w >= h && !through(c)) {
-    const top = bunks(bank, 0, w - 1, 0, 0), left = bunks(bank, 0, d - 2, h - 2, 2), right = bunks(bank, w - 1, d + 2, h - 2, 2);
+    // Half the pairs on the back wall, half on the door wall either side of the door (two rows, as a barracks is built);
+    // the back wall first, as many as it holds, where that leaves a bed over.
+    const all = bank.left, half = Math.min(all, 2 * Math.ceil(all / 4)), back = { def: bank.def, left: half };
+    let top = bunks(back, 0, w - 1, 0, 0);
+    bank = { def: bank.def, left: all - half + back.left };
+    let left = bunks(bank, 0, d - 2, h - 2, 2), right = bunks(bank, w - 1, d + 2, h - 2, 2);
+    if (bank.left > 0) {
+      bank = beds(c);
+      top = bunks(bank, 0, w - 1, 0, 0); left = bunks(bank, 0, d - 2, h - 2, 2); right = bunks(bank, w - 1, d + 2, h - 2, 2);
+    }
     const runs: Run[] = [
       { from: 0, to: w - 1, n: top.pairs, at: (v, end) => (end ? P(GT, v, 0, 1) : P(GT, v, 1, 0)) },
       { from: 0, to: d - 2, n: left.pairs, door: true, at: (v, end) => (end ? P(GT, v, h - 2, 1) : P(GT, v, h - 2, 2)) },
@@ -125,27 +133,6 @@ function d3(c: Ctx): Piece[] {
   const last = c.h - (Math.abs(c.d - (x + 0.5)) <= 1.5 ? 3 : 2);
   const beds = range(pod ? 3 : 0, last, 2).slice(0, count(c.need, MB)).map((y) => P(MB, x, y, 1));
   return [...(pod ? [P(RP, x, 0, 0)] : []), ...beds];
-}
-
-/**
- * M4: a long mess: the galleys on a short wall, tables with their chairs down the long axis in a line (two where the
- * room is wide enough across, either side of the middle), its tables (`messTables`) shared between the lines, each line's
- * evenly spaced and centred (`middle`), clear of the doorways (`tablesClear`).
- */
-function m4(c: Ctx): Piece[] {
-  const tall = c.h > c.w, across = tall ? c.w : c.h, lines = across >= 9 ? 2 : 1, n = messTables(c), planned = Math.max(1, count(c.need, T));
-  // Each line's band across the room: the whole of it, or the halves either side of its middle, a tile in from the
-  // walls where the room is wide (an aisle down each wall two wide, clear of the doorways in it).
-  const inset = across >= 11 ? 1 : 0;
-  const bands = lines === 1 ? [[0, across - 1]] : [[inset, (across >> 1) - 1], [(across + 1) >> 1, across - 1 - inset]];
-  // In the corners of the short wall, a tile in where a corner is cut.
-  const galleys = tall
-    ? [P(G, off(c, 0, 0, 0, 1), 0, 0), ...(c.w >= 5 ? [P(G, off(c, c.w - 1, 0, c.w - 2, -1), 0, 0)] : [])]
-    : [P(G, 0, off(c, 0, 0, 0, 1), 3), ...(c.h >= 5 ? [P(G, 0, off(c, 0, c.h - 1, c.h - 2, -1), 3)] : [])];
-  return [...galleys, ...bands.flatMap(([a, b], k) => {
-    const most = Math.floor(n / lines) + (k < n % lines ? 1 : 0), least = Math.floor(planned / lines) + (k < planned % lines ? 1 : 0);
-    return tablesClear(c, most, least, (m) => (tall ? middle(a as number, 2, b as number, c.h - 1, false, true, m) : middle(2, a as number, c.w - 1, b as number, true, true, m)));
-  })];
 }
 
 /** Units (gens, reactors) spread across the back wall, batteries in each gap side by side against it: two, or three (`along`). */
@@ -224,7 +211,7 @@ const has = (id: string) => (need: readonly string[]): boolean => need.includes(
  * A mess with a galley that is no hall: its floor within three times what its planned tables ask (a hub mess, long for
  * the branches off it, takes M4's line only: the corner and grid arrangements would cluster its few tables in a corner).
  */
-const mess = (need: readonly string[], r: { w: number; h: number }): boolean => { const [a, b] = messSize(count(need, T)); return need.includes(G) && r.w * r.h <= 3 * a * b; };
+const mess = (need: readonly string[], r: { w: number; h: number }): boolean => { const { w, h } = messFloor(count(need, T), count(need, G)); return need.includes(G) && r.w * r.h <= 3 * w * h; };
 
 /** Consoles a station's bridge holds besides the helm. */
 const OPS: readonly string[] = ['module.weaponsConsole', 'module.shieldConsole'];
@@ -246,36 +233,81 @@ const helmFits = (need: readonly string[], r: { w: number; h: number; defs: Reco
 };
 
 /**
- * HF: the helm the frontmost module, on the back wall (the bow, on a ship) and centred on the door. Each console beside it
- * on the back wall where the corner has room, else on a side wall facing in, stacked back from the helm's row (only
- * where the back wall is closed off beside the helm, so no corner is walled in). A console with no spot is left to the
- * plain placer, which keeps the room walkable.
+ * HF: the helm the frontmost module, on the back wall (the bow, on a ship) and centred on the door. Every other console
+ * stands against a wall, never loose on the floor, turned across the room on a side wall (a quarter turn from the helm)
+ * with its aft edge on the door wall: the first in one aft corner, the next in the other, then forward along the walls a
+ * tile apart. Where that has no room: the corner a tile off the door wall, then elsewhere on a side wall, then the bow
+ * wall beside the helm, then the door wall beside the door. The door's way to the helm stays clear (a tile either side
+ * of it where there is room), and so does every other door's approach.
  */
 function helmFront(c: Ctx): Piece[] {
   const fp = (m: string): readonly [number, number] => c.defs[m]?.footprint ?? [2, 2];
   const [hw, hd] = fp(HELM), hx = Math.max(0, Math.min(c.w - hw, c.d - Math.floor(hw / 2)));
   const out: Piece[] = [P(HELM, hx, 0, 0)];
-  const ops = c.need.filter((m) => OPS.includes(m)), deep = Math.max(0, ...ops.map((m) => fp(m)[1]));
-  // Room on the back wall each side of the helm; side walls in use behind it (both only where a walk is left between).
-  const gap = [hx, c.w - hx - hw], closed = [hx === 0, c.w - hx - hw === 0], y = [hd, hd];
-  const sides = 2 * deep + 1 <= c.w ? [0, 1] : [0];
+  type Box = { x: number; y: number; w: number; h: number };
+  const boxes: Box[] = [{ x: hx, y: 0, w: hw, h: hd }];
+  const way: Box = { x: c.d, y: hd, w: 1, h: c.h - hd };
+  const ways: Box[] = [way, ...(c.doors ?? []).map((t): Box => ({ x: t.x, y: t.y, w: 1, h: 1 })), { x: c.d, y: c.h - 1, w: 1, h: 1 }];
+  const hit = (a: Box, b: Box, m: number): boolean => a.x < b.x + b.w + m && b.x < a.x + a.w + m && a.y < b.y + b.h + m && b.y < a.y + a.h + m;
+  // A tile of the room: anywhere its floor runs, past the frame's edges too (a tapered bridge's aft corners lie outside
+  // its deepest frame).
+  const room = (x: number, y: number): boolean => (c.floor ? c.floor(x, y) : x >= 0 && y >= 0 && x < c.w && y < c.h && !isCut(c, x, y));
+  const free = (r: Box, m: number): boolean => {
+    for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) if (!room(x, y)) return false;
+    return !boxes.some((b) => hit(r, b, m)) && !ways.some((b) => hit(r, b, m));
+  };
+  // A console's back stands on a real wall of the room: the tiles behind it are not floor.
+  const backed = (r: Box, rot: number): boolean => {
+    const dx = rot === 3 ? -1 : rot === 1 ? 1 : 0, dy = rot === 0 ? -1 : rot === 2 ? 1 : 0;
+    const ex = rot === 3 ? r.x : rot === 1 ? r.x + r.w - 1 : undefined, ey = rot === 0 ? r.y : rot === 2 ? r.y + r.h - 1 : undefined;
+    for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) {
+      if ((ex !== undefined && x !== ex) || (ey !== undefined && y !== ey)) continue;
+      if (room(x + dx, y + dy)) return false;
+    }
+    return true;
+  };
+  // Its aft edge on the door wall: no floor behind any tile of that edge.
+  const aftFlush = (r: Box): boolean => { for (let x = r.x; x < r.x + r.w; x++) if (room(x, r.y + r.h)) return false; return true; };
+  const put = (m: string, r: Box, rot: number): void => { out.push(P(m, r.x, r.y, rot)); boxes.push(r); };
+  const ops = c.need.filter((m) => OPS.includes(m));
+  const sideCount: number[] = [0, 0], load = (s: number): number => sideCount[s] ?? 0;
+  const reach = c.w + 24;
   ops.forEach((m) => {
     const [len, d] = fp(m);
-    const back = [0, 1].find((s) => (gap[s] as number) >= len && !(s === 0 ? out.some((p) => p.x === 0 && p.y === 0 && p.def !== HELM) : out.some((p) => p.y === 0 && p.x + fp(p.def)[0] === c.w && p.def !== HELM)));
-    if (back !== undefined) {
-      out.push(P(m, back === 0 ? 0 : c.w - len, 0, 0));
-      closed[back] = true;
-      y[back] = Math.max(y[back] as number, d);
-      return;
+    // By a side wall, the door's line clear: first turned across the room (left facing east, rot 3; right facing west,
+    // rot 1) with its back on the hull and its aft edge on the door wall; else in the aft corner facing the bow, its back
+    // on the door wall and its side on the hull (a corner the hull steps into); else turned on the hull, furthest aft,
+    // then furthest out.
+    const order = load(0) <= load(1) ? [0, 1] : [1, 0];
+    for (const margin of [1, 0]) {
+      for (const s of order) {
+        let best: { r: Box; rot: number; k: number } | null = null;
+        const take = (r: Box, rot: number, tier: number): void => {
+          const far = s === 0 ? c.d - (r.x + r.w - 1) : r.x - c.d;
+          if (far < 1 || !free(r, margin) || !backed(r, rot)) return;
+          const k = tier * 1e7 + (r.y + r.h) * 1e3 + far;
+          if (!best || k > best.k) best = { r, rot, k };
+        };
+        const sided = (r: Box): boolean => { const x = s === 0 ? r.x - 1 : r.x + r.w; for (let y = r.y; y < r.y + r.h; y++) if (room(x, y)) return false; return true; };
+        for (let y = c.h - 1; y >= 0; y--) for (let x = -reach; x <= reach; x++) {
+          const turned: Box = { x, y, w: d, h: len };
+          if (y + len <= c.h) take(turned, s === 0 ? 3 : 1, aftFlush(turned) ? 2 : 0);
+          const fore: Box = { x, y, w: len, h: d };
+          if (y + d <= c.h && sided(fore)) take(fore, 2, 1);
+        }
+        const got = best as { r: Box; rot: number } | null;
+        if (got) { put(m, got.r, got.rot); sideCount[s] = load(s) + 1; return; }
+      }
+      // The bow wall beside the helm, outermost first (with a tile between where there is one), then the door wall.
+      const spots: [Box, number][] = [];
+      for (const x of [0, c.w - len]) spots.push([{ x, y: 0, w: len, h: d }, 0]);
+      for (const x of [0, c.w - len]) spots.push([{ x, y: c.h - d, w: len, h: d }, 2]);
+      const spot = spots.find(([r, rot]) => free(r, margin) && backed(r, rot));
+      if (spot) { put(m, spot[0], spot[1]); return; }
     }
-    // Clear of the door's row.
-    const s = sides.filter((k) => closed[k] && (y[k] as number) + len <= c.h - 1).sort((a, b) => (y[a] as number) - (y[b] as number))[0];
-    if (s === undefined) return;
-    out.push(s === 0 ? P(m, 0, y[s] as number, 3) : P(m, c.w - d, y[s] as number, 1));
-    y[s] = (y[s] as number) + len;
   });
-  // A kind all there or none (the placer takes the rest of a kind).
-  return out.filter((p) => out.filter((q) => q.def === p.def).length === c.need.filter((m) => m === p.def).length);
+  // A console with no wall to stand against fails the frame (another frame may have one): none stands loose on the floor.
+  return out.length === 1 + ops.length ? out : [];
 }
 
 /** Consoles on the back wall from corner to corner, and the ops room's table between the outer two where it fits. */
@@ -293,7 +325,8 @@ function consoleRow(c: Ctx, list: readonly string[]): Piece[] {
 /** Arrangements by room role. A room takes one that suits it (seeded), else the plain fallback (place.ts). */
 export const RULES: Partial<Record<RoomRole, readonly RuleArrangement[]>> = {
   quarters: [
-    { name: 'B1 bunk pairs on the long walls', weight: 2, when: (n, r) => pieces(n, r.defs) >= 2, rule: b1 },
+    // (Barracks as built: B1 wherever it fits; the others where it does not place every bed.)
+    { name: 'B1 bunk pairs on the long walls', weight: 50, when: (n, r) => pieces(n, r.defs) >= 2, rule: b1 },
     { name: 'B3 two bays, shared tables', weight: 1, when: (n, r) => pieces(n, r.defs) >= 2 && pieces(n, r.defs) <= 8, rule: b3 },
     { name: 'B4 bunks on the back wall, a rec corner', weight: 1, when: (n, r) => { const k = pieces(n, r.defs); return k >= 2 && k <= 2 * pairsAcross(r.w) && r.w >= 6 && r.h >= 5; }, rule: b4 },
     { name: 'C1 cabin', weight: 1, when: (n, r) => pieces(n, r.defs) === 1, rule: (c) => [P(sleeper(c.need, c.defs), 0, 0, 0), P('module.storage_locker', c.w - 1, 0, 0)] },
@@ -339,7 +372,7 @@ export const RULES: Partial<Record<RoomRole, readonly RuleArrangement[]>> = {
     // The helm amid the consoles, all facing the back wall: a ship's bridge has its door aft, so they face the bow.
     { name: 'HF helm bridge, the helm forward on the door\'s line, the consoles on the side walls behind it', weight: 1, when: helmFits, rule: helmFront, deep: 3 },
   ],
-  cargo: [{ name: 'CW walkway hold, crate rows along a walkway down the middle', weight: 50, when: walkwayFits, rule: walkwayHold }, {
+  cargo: [{ name: 'RH rack hold, rows along the long axis, a gap at each doorway', weight: 50, when: rackHoldFits, rule: rackHold }, { name: 'CW walkway hold, crate rows along a walkway down the middle', weight: 50, when: walkwayFits, rule: walkwayHold }, {
     name: 'PA pantry, cold stores along the back wall', weight: 1,
     when: (n, r) => n.length > 0 && n.every((m) => m === RK || m === CD) && r.h >= 3 && r.h <= 4 && count(n, RK) + count(n, CD) <= shelfSlots(r.w).length,
     rule: pa,

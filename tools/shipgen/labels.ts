@@ -36,7 +36,8 @@ export function roomKind(role: string, mods: readonly string[]): string {
   if (role === 'plaza' && has('console')) return 'market';
   if (has('galley')) return 'mess';
   if (has('bed') && has('mess_table') && sleepers === 1) return 'chief';
-  if (role === 'quarters') return sleepers > 1 ? 'barracks' : 'cabin';
+  // (Beds, not bunks, for two: a passenger's suite.)
+  if (role === 'quarters') return sleepers === 2 && !has('bunk') ? 'suite' : sleepers > 1 ? 'barracks' : 'cabin';
   if (has('stasis_wheel')) return 'brig';
   if (has('storage_armory')) return 'quartermaster';
   if (has('research')) return 'lab';
@@ -57,6 +58,7 @@ export function roomKind(role: string, mods: readonly string[]): string {
   if (has('storage_ore') || has('storage_ore_large')) return 'ore';
   if (has('exercise')) return 'gym';
   if (has('arcade')) return 'rec';
+  if (has('planter')) return 'garden';
   if (role === 'support' && has('storage_locker')) return 'suits';
   return NAMES[role] ?? role;
 }

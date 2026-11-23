@@ -1,3 +1,4 @@
+import type { OutlineRecipe } from './outlineRecipe';
 import type { Faction } from '../combat/components';
 import type { ItemQty, ShipTemplate } from '../registry';
 import type { Equipment } from './equipment';
@@ -187,11 +188,6 @@ export interface FactionDef {
   architecture: ArchitectureDef;
   /** Assembly-driven generation (v3): hull families. When present, the faction uses the composer instead of v2. */
   hullFamilies?: readonly HullFamilyDef[];
-  /**
-   * Its ships' hulls are drawn outline first (SHIPGEN_V4, assembly/outlineShip.ts), each seed the navy type its hull family
-   * builds (`navyTypeOf`); its `hullFamilies` still weigh the families and give salvaged navy sections. Navy only.
-   */
-  outline?: true;
   /** Prototype (SHIPGEN_V4 step 2): the drawn hull's walls and doors are settled on the region grid (assembly/regrid.ts), not thinned. */
   regrid?: boolean;
   /** Tapered transitions where sections of different widths meet (none: exposed joins, e.g. drone beams). */
@@ -218,6 +214,11 @@ export interface FactionDef {
   budget: ShipBudget;
   /** Highest engine and reactor tier this faction's ships carry (1 to 3, default 3): drones' sealed pods hold Mk I only. */
   maxCoreTier?: 1 | 2 | 3;
+  /**
+   * Outline ship recipes, keyed by type id (SHIPGEN_V4, "Ship recipes and layout parts"; PROTOTYPE, #581). A seed whose
+   * hull family has a recipe (`outlineTypeOf`) is built from it in the game (`generateShip`); the rest by the arranger.
+   */
+  outline?: Readonly<Record<string, OutlineRecipe>>;
 }
 
 /** Where a generated ship came from: stored on its ship entity. */

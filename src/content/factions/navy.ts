@@ -1,4 +1,5 @@
 import type { ChunkDef, FactionDef } from '../../sim';
+import { navyOutline } from './navyOutline';
 
 /**
  * Navy / corporate: standardised naval engineering. Mirrored hulls in several archetypes (escort spine, ring-corridor
@@ -61,11 +62,11 @@ export const navy = {
     battery: 2,
     noses,
   },
-  // Hulls drawn outline first (assembly/outlineShip.ts), each seed's family as its navy type (a frigate seed every other a destroyer).
-  outline: true,
   // Hull families: their weights pick each seed's type; their standard sections (the arranger's) are the scrappers' salvaged navy parts.
   // Integrated transitions: regular stepped tapers (two tiles along per tile of height) where section widths change.
   transition: { slope: 2, max: 4, jitter: 0, label: 'taper' },
+  // Its ships drawn outline first (assembly/outlineShip.ts), each seed's family as its recipe's type (a frigate seed every other a destroyer).
+  outline: navyOutline,
   hullFamilies: [
     {
       id: 'corvette', hullPerRoomTile: 4.6, weight: { base: 5, perDepth: -0.5, max: 5 }, bonus: { weapons: -1, crew: -3, crates: -3, shields: -1, engines: -1 },

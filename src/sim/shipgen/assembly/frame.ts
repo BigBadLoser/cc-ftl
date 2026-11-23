@@ -1,4 +1,5 @@
 import { dockSpec, engineSpec, type RoomSpec, type ShipPlan } from '../plan';
+import type { BayPart } from './parts';
 /** A scaled silhouette about its axis: `inside(x, y)` with y = 0 the axis. */
 export interface Mask {
   W: number; H: number; inside: (x: number, y: number) => boolean;
@@ -56,6 +57,8 @@ export interface Frame {
   /** PROTOTYPE (#581): the battery's maintenance corridor, its row out from the axis per column (rooms stop short of it). */
   maint?: { a: number; b: number; guns: [number, number][]; rows: number; inner: number[]; hallY: (x: number) => number };
   lane?: Lane;
+  /** Columns [x0, x1] a layout part takes for its own rooms, its end walls included (a liner's drum): no bay there. */
+  skip?: [number, number];
   /** The mask's tiles (counted where the drive is sized by the hull). */
   area: number;
 }
@@ -67,7 +70,7 @@ const HULL_OF_MASK = 0.93;
  * With `carry` (the hull tiles one engine carries), the drive holds the engines the hull's own size needs, not only the
  * plan's. With `gap`, its engines stand that many rows apart.
  */
-export function outlineFrame(plan: ShipPlan, m: Mask, carry = 0, gap = 0, lane?: { both: boolean }): Frame | null {
+export function outlineFrame(plan: ShipPlan, m: Mask, carry = 0, gap = 0, lane?: { both: boolean }, part: BayPart = {}): Frame | null {
   const { W, H, inside } = m;
   if (2 * H + 4 > 120 || W + 4 > 240) return null;
   const top = (x: number): number => { let y = 0; while (inside(x, y + 1)) y++; return inside(x, 0) ? y : -1; };
@@ -144,9 +147,13 @@ export function outlineFrame(plan: ShipPlan, m: Mask, carry = 0, gap = 0, lane?:
   let dockAt = bt ? bt.air : -1;
   // A lane hull's cross corridor stands a hangar's length ahead of the lane's head.
   if (ln) for (const h of HANGAR) { const x = ln.head - h - CW; if (x > xBand + MIN_DEPTH && flat(x)) { dockAt = x; break; } }
+  // (Where a layout part sets it: passenger decks, at the forward section's shoulder.)
+  else if (part.dock) dockAt = part.dock({ xBand, xS, CW, depth, flat });
   else if (!bt) for (let x = xBand + MIN_DEPTH + 1; x <= Math.min(xS - MIN_DEPTH - CW - 1, xBand + 0.75 * (xS - xBand)); x++) if (flat(x) && (dockAt < 0 || depth(x) > depth(dockAt))) dockAt = x;
   if (dockAt < 0) return null;
-  return { W, H, inside, top, outer, depth, area: tiles, xS, xEnd, sternMax, perSide, used, engine, xBr, xBand, CW, dockAt, ...(bt ? { maint: { a: g0, b: g1, guns: bt.guns, rows: bt.rows, inner: bt.inner, hallY } } : {}), ...(ln ? { lane: ln } : {}) };
+  const skip = part.skip?.({ xBand, xS, CW, depth, flat });
+  if (skip === null) return null;
+  return { ...(skip ? { skip } : {}), W, H, inside, top, outer, depth, area: tiles, xS, xEnd, sternMax, perSide, used, engine, xBr, xBand, CW, dockAt, ...(bt ? { maint: { a: g0, b: g1, guns: bt.guns, rows: bt.rows, inner: bt.inner, hallY } } : {}), ...(ln ? { lane: ln } : {}) };
 }
 
 /**

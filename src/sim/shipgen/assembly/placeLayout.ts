@@ -1,4 +1,5 @@
 import type { ModuleDef } from '../../registry';
+import type { FrameGrid } from './frameGrid';
 import type { RoomSpec, ShipPlan } from '../plan';
 import { MIN_DEPTH, outlineFrame, type Frame, type Mask, type Row } from './frame';
 import { areaOf, capOf, minLen, programPairs, type Pair } from './pairs';
@@ -27,7 +28,9 @@ export interface Block { a: number; b: number; crossL: boolean; crossR: boolean;
 /** A corridor stub: a hall column from the spine to the hull. */
 export interface Stub { x: number }
 export interface Layout { blocks: Block[]; stern: Part | null; stubs: Stub[]; /** Program pairs placed out of turn (stacked with another). */ done: number[] }
-export interface Placed { fr: Frame; lay: Layout; score: number; viable: number; nodes: number; why: Map<string, number>; /** Gun pairs pinned to the outline's gun sites, of how many sites. */ pins: number; sites: number; /** The battery's gun pairs, a blister each (prototype). */ battery: Pair[] }
+export interface Placed {
+  /** A layout part's own rooms, painted over the closed frame. */ paint?: (fg: FrameGrid) => void;
+  fr: Frame; lay: Layout; score: number; viable: number; nodes: number; why: Map<string, number>; /** Gun pairs pinned to the outline's gun sites, of how many sites. */ pins: number; sites: number; /** The battery's gun pairs, a blister each (prototype). */ battery: Pair[] }
 
 const ASPECT = 3, DEEP = 1.25;
 /** Floor any room may take, past its own cap: the least room a deep hull can cut (three columns by seven rows, about). */

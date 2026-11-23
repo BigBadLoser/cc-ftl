@@ -2,7 +2,6 @@
  * Ship layout viewer core (dev tool, not shipped): renders generated layouts top-down into an RGBA buffer, plus an
  * ASCII dump and a validation summary. Used by the node CLI (PNG contact sheets) and the live page.
  */
-import { generateNavy, type NavyType } from '../../src/sim/shipgen/assembly/navyShip';
 import { generateOutline } from '../../src/sim/shipgen/assembly/outlineShip';
 import { content } from '../../src/content';
 import { stationRecipes } from '../../src/content/stationRecipes';
@@ -125,12 +124,8 @@ export const factionIds = (): string[] => Object.keys(content.factions);
 export function gen(factionSpec: string, seed: number, depth: number): GenResult {
   if (factionSpec.startsWith('station.')) return genStation(factionSpec, seed);
   if (factionSpec.includes('@v5')) {
-    const type = (factionSpec.split(':')[1] ?? 'corvette') as NavyType, id = factionSpec.split('@')[0] as string;
+    const type = factionSpec.split(':')[1] ?? 'corvette', id = factionSpec.split('@')[0] as string;
     return generateOutline(content.factions[id as keyof typeof content.factions] as never, id, seed, depth, defs, type);
-  }
-  if (factionSpec.startsWith('faction.navy@v4')) {
-    const type = factionSpec.split(':')[1] as NavyType | undefined;
-    return generateNavy(content.factions['faction.navy' as keyof typeof content.factions] as never, 'faction.navy', seed, depth, defs, ...(type ? [type] : []));
   }
   const grid = factionSpec.includes('~grid');
   const [faction, family] = factionSpec.replace('~grid', '').split(':') as [string, string | undefined];

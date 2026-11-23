@@ -8,11 +8,12 @@
  */
 import type { Rng } from '../../../rng';
 import type { Tile } from '../../../modules/footprint';
-import { footprintTiles, rotatedSize } from '../../../modules/footprint';
+import { accessTiles, footprintTiles, rotatedSize } from '../../../modules/footprint';
 import { placeOne } from '../../fit';
 import type { Layout } from '../../layout';
 import type { RoomRole } from '../../types';
 import { furnishBastion } from './bastion';
+import { C as CH } from './parts';
 import { roomProblems, type Piece } from './check';
 import { RULES, type RuleArrangement } from './rules';
 
@@ -44,9 +45,10 @@ export function entriesOf(lay: Layout, room: number): Entry[] {
  * tile, the door below it. `mirror` flips it left to right. `floor` says which layout tiles are the room's. With
  * `notched` the rectangle's corner tiles may be wall (a room with cut or round corners keeps its full width and depth:
  * the rules keep off the missing corners). With `deep` the deepest rectangle at least that wide instead (the largest of
- * those), its back wall as far from the door as the room runs.
+ * those), its back wall as far from the door as the room runs. With `cap` no more than that many rows (the room's
+ * shorter, wider stretch where it steps).
  */
-export function frameOf(floor: (x: number, y: number) => boolean, e: Entry, mirror: boolean, notched = false, deep = 0): Frame {
+export function frameOf(floor: (x: number, y: number) => boolean, e: Entry, mirror: boolean, notched = false, deep = 0, cap = 64): Frame {
   const u = { x: -e.out.x, y: -e.out.y };
   const r = mirror ? { x: u.y, y: -u.x } : { x: -u.y, y: u.x };
   const at = (a: number, b: number): Tile => ({ x: e.at.x + a * r.x + b * u.x, y: e.at.y + a * r.y + b * u.y });
@@ -55,7 +57,7 @@ export function frameOf(floor: (x: number, y: number) => boolean, e: Entry, mirr
   // An end column of a notched frame: floor but for its end tiles.
   const edge = (a: number, rows: number): boolean => { if (rows < 3) return false; for (let b = 1; b < rows - 1; b++) if (!on(a, b)) return false; return true; };
   let best = { a0: 0, a1: 0, h: 1, area: 0 };
-  for (let rows = 1; rows < 64 && ok(0, rows); rows++) {
+  for (let rows = 1; rows < cap && ok(0, rows); rows++) {
     let a0 = 0, a1 = 0;
     while (a0 > -64 && ok(a0 - 1, rows)) a0--;
     while (a1 < 64 && ok(a1 + 1, rows)) a1++;
@@ -84,6 +86,24 @@ export function toLayout(f: Frame, p: Piece, defs: Layout['defs']): Piece | null
   const [w, h] = rotatedSize(def, rot);
   const bw = Math.max(...tiles.map((t) => t.x)) - x + 1, bh = Math.max(...tiles.map((t) => t.y)) - y + 1;
   return w === bw && h === bh ? { def: p.def, x, y, rot } : null;
+}
+
+
+/**
+ * Whether a piece stands with its back to a frame edge that is no wall: the tiles behind it lie outside the frame, but
+ * the room's floor runs on there (the frame is the largest rectangle of a stepped room, not the room). A wall piece (a
+ * galley, a console, a rack, a bed's head) must back onto a real wall; leftover floor outside the frame stays open.
+ */
+function floating(f: Frame, p: Piece, floor: (x: number, y: number) => boolean, defs: Layout['defs']): boolean {
+  const def = defs[p.def];
+  if (!def || accessTiles(def, p.x, p.y, p.rot).length === 0) return false;
+  const face = FACE[p.rot % 4] as Tile;
+  return footprintTiles(def, p.x, p.y, p.rot).some((t) => {
+    const bx = t.x - face.x, by = t.y - face.y;
+    if (bx >= 0 && by >= 0 && bx < f.w && by < f.h) return false;
+    const m = f.map(bx, by);
+    return floor(m.x, m.y);
+  });
 }
 
 /** The arrangements of a role in a seeded order (weighted draw without replacement), those that suit the room only. */
@@ -117,25 +137,37 @@ export function furnishByRule(
   if (!list.some((a) => !a.when || sizes.some((f) => a.when?.(need, { ...f, defs: lay.defs })))) return null;
   const flip = rng.chance(0.5);
   // Every door's frames, plain and notched, the largest first (a room with cut corners is furnished to its walls).
-  const frames = entries.flatMap((e) => [frameOf(floor, e, flip), frameOf(floor, e, !flip), ...[frameOf(floor, e, flip, true), frameOf(floor, e, !flip, true)].filter((f) => f.cut.length > 0)])
+  // A room that steps (wider on a shorter stretch) also gives its wider, shallower frames, so its wall pieces can back onto the real wall.
+  const stepped = (e: Entry, mirror: boolean): Frame[] => {
+    const out: Frame[] = [];
+    let wide = frameOf(floor, e, mirror).w;
+    for (let cap = frameOf(floor, e, mirror).h - 1; cap >= 3; cap--) { const g = frameOf(floor, e, mirror, false, 0, cap + 1); if (g.w > wide) { out.push(g); wide = g.w; } }
+    return out;
+  };
+  const frames = entries.flatMap((e) => [frameOf(floor, e, flip), frameOf(floor, e, !flip), ...[frameOf(floor, e, flip, true), frameOf(floor, e, !flip, true)].filter((f) => f.cut.length > 0), ...stepped(e, flip), ...stepped(e, !flip)])
     .map((f, i) => ({ f, i })).sort((a, b) => b.f.w * b.f.h - a.f.w * a.f.h || a.i - b.i).map((q) => q.f);
   const at = entries.map((e) => e.at);
   const start = lay.modules.length;
   const undo = (): void => { while (lay.modules.length > start) lay.pop(); };
-  for (const arr of order(rng, list, need, { ...(frames[0] as Frame), defs: lay.defs })) {
+  // First only the arrangements whose wall pieces all back onto a real wall (`floating`), then, where none of them fits, the rest (a frame tried is not tried again).
+  const arrs = order(rng, list, need, { ...(frames[0] as Frame), defs: lay.defs }), tried = new Set<string>();
+  for (const strict of [true, false]) for (const arr of arrs) {
     const deep = arr.deep ? entries.flatMap((e) => [frameOf(floor, e, flip, false, arr.deep), frameOf(floor, e, !flip, false, arr.deep)]).filter((f) => f.w >= (arr.deep as number)) : [];
     // (An arrangement may stand smaller modules in for the planned ones: a farm's small beds where the large won't lie.)
     const sub = arr.swap, use = sub ? need.map((m) => sub[m] ?? m) : need, want = tally(use);
-    for (const f of [...deep.sort((a, b) => b.h - a.h), ...frames]) {
+    for (const [fi, f] of [...deep.sort((a, b) => b.h - a.h), ...frames].entries()) {
+      if (tried.has(`${arr.name}:${fi}`)) continue;
       if (arr.when && !arr.when(need, { ...f, defs: lay.defs })) continue;
       const doors: { x: number; y: number }[] = [];
       for (let y = 0; y < f.h; y++) for (let x = 0; x < f.w; x++) {
         const t = f.map(x, y);
         if ((x !== f.d || y !== f.h - 1) && at.some((e) => e.x === t.x && e.y === t.y)) doors.push({ x, y });
       }
-      const pieces = arr.rule({ w: f.w, h: f.h, d: f.d, need: use, defs: lay.defs, doors, ...(f.cut.length > 0 ? { cut: f.cut } : {}) });
+      const pieces = arr.rule({ w: f.w, h: f.h, d: f.d, need: use, defs: lay.defs, doors, floor: (x, y) => { const t = f.map(x, y); return floor(t.x, t.y); }, ...(f.cut.length > 0 ? { cut: f.cut } : {}) });
       // A rule with nothing to place for a planned room does not fit this frame.
       if (pieces.length === 0 && use.length > 0) continue;
+      if (strict && pieces.some((p) => floating(f, p, floor, lay.defs))) continue;
+      tried.add(`${arr.name}:${fi}`);
       const got = tally(pieces.map((p) => p.def));
       // The rule's own planned modules all there (it places every one of a kind, or none and leaves it to the placer).
       if ([...want].some(([id, n]) => (got.get(id) ?? 0) > 0 && (got.get(id) ?? 0) < n)) continue;
@@ -144,12 +176,13 @@ export function furnishByRule(
       // the room then fails, again with the extras added one at a time after the rest, each only if the room still works.
       for (const lean of [false, true]) {
         const left = new Map(want), extras: Piece[] = [];
-        let ok = true;
+        let ok = true, unseated = false;
         for (const p of pieces) {
           const q = toLayout(f, p, lay.defs);
           if ((left.get(p.def) ?? 0) <= 0) {
             if (q && lean) extras.push(q);
             else if (q && lay.fitError(q.def, q.x, q.y, q.rot, room) === null) lay.push(q);
+            else unseated ||= p.def === CH;
             continue;
           }
           left.set(p.def, (left.get(p.def) as number) - 1);
@@ -162,12 +195,13 @@ export function furnishByRule(
           for (let k = got.get(id) ?? 0; ok && k < n; k++) ok = !!placeOne(lay, rng, id, [room], { rots: rots(id), ok: works });
         }
         if (ok && works()) {
+          // (A chair the rule drew that cannot stand leaves its table unseated: the arrangement does not suit the room.)
           for (const q of extras) {
-            if (lay.fitError(q.def, q.x, q.y, q.rot, room) !== null) continue;
+            if (lay.fitError(q.def, q.x, q.y, q.rot, room) !== null) { unseated ||= q.def === CH; continue; }
             lay.push(q);
-            if (!works()) lay.pop();
+            if (!works()) { lay.pop(); unseated ||= q.def === CH; }
           }
-          return lay.modules.slice(start).map((_, i) => start + i);
+          if (!unseated) return lay.modules.slice(start).map((_, i) => start + i);
         }
         undo();
       }

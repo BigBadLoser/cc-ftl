@@ -8,7 +8,7 @@ import { RegionGrid, SOLID, SPACE } from './regions';
  * the dock's airlock bays (painted last by `closeFrame`, over any room), and `paint` for the side rooms between.
  */
 export interface FrameGrid {
-  g: RegionGrid; hall: number; docks: [number, number];
+  g: RegionGrid; hall: number; docks: [number, number]; bridge: number;
   /** Paints region `id` over columns [x0, x1) where the outline is inside and `yIn(y)` holds. */
   paint: (id: number, x0: number, x1: number, yIn: (y: number) => boolean) => void;
 }
@@ -27,12 +27,13 @@ export function frameGrid(fr: Frame, plan: ShipPlan): FrameGrid {
   let xNose = 0;
   while (xNose < xBr - MIN_DEPTH && top(xNose) < 2) xNose++;
   // Through the plating column before the band, so its aft wall is one wall with the spine's end on it.
-  paint(g.room(plan.command.role, { spec: plan.command }), xNose, xBr + 1, () => true);
-  return { g, hall, docks, paint };
+  const bridge = g.room(plan.command.role, { spec: plan.command });
+  paint(bridge, xNose, xBr + 1, () => true);
+  return { g, hall, docks, paint, bridge };
 }
 
 /** Unpainted floor to plating, then the spine and the cross corridor out to the airlocks over everything. */
-export function closeFrame(fr: Frame, { g, hall, docks, paint }: FrameGrid): void {
+export function closeFrame(fr: Frame, { g, hall, docks, paint, bridge }: FrameGrid): void {
   const { W, H, inside, xBr, dockAt, CW, xS, lane } = fr, ox = -Math.floor(W / 2);
   for (let tx = 0; tx < W; tx++) for (let ty = -H; ty <= H; ty++) if (inside(tx, ty) && g.at(ox + tx, ty) === SPACE) g.set(ox + tx, ty, SOLID);
   // The spine to the stern, or on a lane hull to the cross corridor, a corridor down each side hull from there to its engine room.
@@ -63,5 +64,28 @@ export function closeFrame(fr: Frame, { g, hall, docks, paint }: FrameGrid): voi
   // A lane hull's airlocks: from each side corridor in to the lane's wall.
   if (lane) for (const d of lane.docks) for (const sign of [-1, 1]) {
     paint(g.hall('dock', undefined, dockSpec()), d, d + CW, (y) => sign * y >= lane.edge(d) && sign * y <= lane.yc - 2);
+  }
+  fillJuts(fr, g, bridge);
+}
+
+/**
+ * No one-tile juts in the bridge: a floor tile of it that ends a stretch one tile wide, across or down (a step of the
+ * bow's hull against the aft wall), becomes plating, again until none is left, so the side walls run straight to the
+ * back wall. (Only the ends: a one-wide link between two parts of the room stays. Plating beside floor is just wall, so
+ * nothing is cut off.)
+ */
+function fillJuts(fr: Frame, g: RegionGrid, bridge: number): void {
+  const { W, H, xBr } = fr, ox = -Math.floor(W / 2), size = g.size, half = g.half;
+  for (let pass = 0; pass < 8; pass++) {
+    const cell = g.compile();
+    const floor = (tx: number, ty: number): boolean => cell[(ty + half) * size + ox + tx + half] === '_' && g.at(ox + tx, ty) === bridge;
+    let any = false;
+    for (let tx = 0; tx <= xBr + 1; tx++) for (let ty = -H; ty <= H; ty++) {
+      if (!floor(tx, ty)) continue;
+      const l = floor(tx - 1, ty), r = floor(tx + 1, ty), u = floor(tx, ty - 1), d = floor(tx, ty + 1);
+      const jut = +l + +r + +u + +d <= 1 || (!l && !r && (!u || !d)) || (!u && !d && (!l || !r));
+      if (jut) { g.set(ox + tx, ty, SOLID); any = true; }
+    }
+    if (!any) return;
   }
 }

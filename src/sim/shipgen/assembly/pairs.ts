@@ -2,7 +2,7 @@ import type { ModuleDef } from '../../registry';
 import { cargoSpec, reactorSpec, weaponSpec, type RoomSpec, type ShipPlan } from '../plan';
 import { pairUp } from '../topoNavy';
 import { MIN_DEPTH } from './frame';
-import { MESS } from './navyShip';
+import { MESS } from './outlineType';
 import { maxArea } from './roomSize';
 
 /**

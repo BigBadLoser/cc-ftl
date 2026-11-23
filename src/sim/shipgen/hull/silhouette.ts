@@ -25,7 +25,14 @@ export interface Pod { len: Range; half: Range }
  * A stretch of body at one half-width, reached from the one before by a taper of `taper` tiles along per tile out
  * (default 2; 1 is a hard 45-degree shoulder).
  */
-export interface Section { len: Range; half: Range; taper?: number; chance?: number }
+export interface Section {
+  len: Range; half: Range; taper?: number; chance?: number;
+  /**
+   * Square-ended, in place of tapers in and out, its four corners cut at 45 degrees this many tiles (a liner's drum): its
+   * end columns stand straight up from the sections either side to the cut.
+   */
+  chamfer?: Range;
+}
 
 /** A body part: one section, or a choice of sections picked per seed (how a recipe moves its masses between seeds). */
 export type Part = Section | readonly Section[];
@@ -73,6 +80,8 @@ export interface Silhouette {
   body: number[];
   /** A gun battery (with `drawSilhouette`'s `guns`): how many sites, and the straight stretches it may stand on, best first. */
   battery?: { guns: number; runs: [number, number][]; /** A gun room's floor columns and rows (set by the outline). */ w?: number; h?: number };
+  /** Chamfered sections' columns [first, last]: an outline samples them from both ends in, so the scaled cuts mirror. */
+  chamfer?: [number, number][];
 }
 
 const pick = (rng: Rng, r: Range): number => rng.int(r[0], r[1]);
@@ -91,15 +100,15 @@ function noseHalf(style: NoseStyle, i: number, n: number, front: number, h: numb
 }
 
 /** The body's half-widths bow to stern: nose or pod, then the sections joined by their tapers. */
-function body(rng: Rng, p: Profile, drive?: Drive): { outer: number[]; bodyStart: number } {
+function body(rng: Rng, p: Profile, drive?: Drive): { outer: number[]; bodyStart: number; chamfer: [number, number][] } {
   const secs = p.sections
     .map((part) => one(rng, part))
     .filter((s) => s.chance === undefined || rng.chance(s.chance))
-    .map((s) => ({ len: pick(rng, s.len), half: pick(rng, s.half), taper: s.taper ?? 2 }));
+    .map((s) => ({ len: pick(rng, s.len), half: pick(rng, s.half), taper: s.taper ?? 2, chamfer: s.chamfer ? pick(rng, s.chamfer) : 0 }));
   if (drive?.rng && secs.length > 1) {
     // The drive section drawn again from its own options, `grow` tiles wider (never past the section ahead of it).
     const s = one(drive.rng, p.sections[p.sections.length - 1] as Part), ahead = (secs[secs.length - 2] as { half: number }).half;
-    secs[secs.length - 1] = { len: pick(drive.rng, s.len), half: Math.min(ahead, pick(drive.rng, s.half) + (drive.grow ?? 0)), taper: s.taper ?? 2 };
+    secs[secs.length - 1] = { len: pick(drive.rng, s.len), half: Math.min(ahead, pick(drive.rng, s.half) + (drive.grow ?? 0)), taper: s.taper ?? 2, chamfer: 0 };
   }
   const H0 = (secs[0] as { half: number }).half;
   const outer: number[] = [];
@@ -119,15 +128,23 @@ function body(rng: Rng, p: Profile, drive?: Drive): { outer: number[]; bodyStart
     }
     while (h < H0) { h = Math.min(H0, h + 2); outer.push(h); }
   }
-  const bodyStart = outer.length;
+  const bodyStart = outer.length, chamfer: [number, number][] = [];
   let prev = H0;
-  for (const s of secs) {
+  for (const [i, s] of secs.entries()) {
     const start = outer.length;
+    if (s.chamfer > 0) {
+      // Straight up from the sections either side, its corners cut (no taper in or out); the next starts from its own half.
+      const lo = Math.max(prev, secs[i + 1]?.half ?? 0), c = Math.min(s.chamfer, s.half - lo - 1, Math.floor(s.len / 2));
+      for (let k = 0; k < s.len; k++) outer.push(s.half - Math.max(0, c - Math.min(k, s.len - 1 - k)));
+      chamfer.push([start, outer.length - 1]);
+      prev = secs[i + 1]?.half ?? s.half;
+      continue;
+    }
     while (prev < s.half) { prev++; for (let k = 0; k < s.taper; k++) outer.push(prev); }
     while (prev > s.half) { for (let k = 0; k < s.taper; k++) outer.push(prev); prev--; }
     while (outer.length - start < s.len) outer.push(s.half);
   }
-  return { outer, bodyStart };
+  return { outer, bodyStart, chamfer };
 }
 
 /**
@@ -226,7 +243,7 @@ export interface Drive { rng?: Rng; grow?: number; hold?: number }
 
 /** With `guns`, that many gun sites stand in place of the profile's embrasures (PROTOTYPE, #581); with `drive`, the drive section redrawn. */
 export function drawSilhouette(rng: Rng, p: Profile, guns?: number, drive?: Drive): Silhouette {
-  const { outer, bodyStart } = body(rng, p, drive);
+  const { outer, bodyStart, chamfer } = body(rng, p, drive);
   let st = one(rng, p.stern), sLen = pick(rng, st.len), sOut = pick(rng, st.out);
   if (drive?.rng) { st = one(drive.rng, p.stern); sLen = pick(drive.rng, st.len); sOut = pick(drive.rng, st.out); }
   const rate = st.rate ?? 2;
@@ -305,5 +322,5 @@ export function drawSilhouette(rng: Rng, p: Profile, guns?: number, drive?: Driv
   const y0 = Math.min(...ys), y1 = Math.max(...ys);
   const w = Math.max(...used.map((r) => Math.max(r.lastIndexOf('#'), r.lastIndexOf('>')))) + 1;
   const bodyHalf = top.map((t, x) => (x < sternFrom ? t : (pre[x] as number)));
-  return { rows: used.slice(y0, y1 + 1).map((r) => r.slice(0, w)), axis: axis - y0, length: w, body: bodyHalf, ...(battery ? { battery } : {}) };
+  return { rows: used.slice(y0, y1 + 1).map((r) => r.slice(0, w)), axis: axis - y0, length: w, body: bodyHalf, ...(battery ? { battery } : {}), ...(chamfer.length > 0 ? { chamfer } : {}) };
 }

@@ -18,6 +18,7 @@ import { extractContainers } from './containerCells';
 import { erodeHull } from './erodeHull';
 import { regrid } from './assembly/regrid';
 import { generateOutline } from './assembly/outlineShip';
+import { outlineTypeOf } from './assembly/outlineType';
 import { CAPACITY_PROBLEM, enginesShort, fitShell, seedHull, seedOf } from './shell';
 export { builtFamily, enginesShort, fitShell, previewHull, seedOf, type Shell } from './shell';
 import type { ArchetypeId, FactionDef, GenResult, HullFamilyDef, RoomRole, ShipRoleDef } from './types';
@@ -169,13 +170,14 @@ function specsOf(b: Builder): (RoomSpec | undefined)[] {
 /**
  * Generate a ship for a faction, deterministically from `seed` and sector `depth`: role and archetype, module plan,
  * structure, fit-out, validation. Bad layouts are reseeded up to GEN_ATTEMPTS times. The one owner of which generator
- * builds a faction's ships: an outline faction's (the navy) its type's outline hull (assembly/outlineShip.ts), the rest
- * by their hull families or roles (the arranger).
+ * builds a faction's ships: a seed whose hull family has an outline recipe (the navy's, the civilian liner and freighter)
+ * its type's outline hull (assembly/outlineShip.ts), the rest by their hull families or roles (the arranger).
  */
 export function generateShip(
   f: FactionDef, factionId: string, seed: number, depth: number, defs: Record<string, ModuleDef>,
 ): GenResult {
-  if (f.outline) return generateOutline(f, factionId, seed, depth, defs);
+  const type = outlineTypeOf(f, seed, depth);
+  if (type) return generateOutline(f, factionId, seed, depth, defs, type);
   let last: GenResult | null = null;
   const failures: string[] = [];
   for (let n = 0; n < GEN_ATTEMPTS; n++) {

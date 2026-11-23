@@ -80,6 +80,8 @@ export interface RoomSpec {
   annex?: RoomSpec;
   /** A room cut from this room's own end, entered only through it (a lane hull's pantry off its mess, #581). */
   beside?: RoomSpec;
+  /** Cut beside its host (`beside`): its share of the host's length as laid, never under its own `w` (a trauma room). */
+  share?: number;
   /** The station assembly: set on an annex as it is laid in a row, right after its room. */
   annexed?: boolean;
 }
@@ -186,6 +188,12 @@ export function coreKit(defs: Record<string, ModuleDef>, depth: number, maxTier 
   return { engine: top(ENGINE_TIERS), reactor: top(REACTOR_TIERS) };
 }
 
+/**
+ * A crewed ship's AI core room: the core, and the bay where it runs drones. A ship has one only where there is something for
+ * it to run, point defence or drones (`planShip`; a bay layout's own turret pair, bayRooms.ts).
+ */
+export const coreSpec = (drones?: RoomSpec['drones']): RoomSpec => ({ role: 'core', mods: ['module.aiCore', ...(drones ? ['module.droneBay'] : [])], w: 4 + (drones ? 3 : 0), h: 3, ...(drones ? { drones } : {}) });
+
 export const dockSpec = (): RoomSpec => ({ role: 'dock', mods: ['module.airlock'], w: 3, h: 3 });
 
 export function cargoSpec(n: number): RoomSpec {
@@ -253,9 +261,8 @@ export function planShip(rng: Rng, f: FactionDef, role: ShipRoleDef, depth: numb
   const drones = { def: 'drone.defence', count: ENEMY_DRONES_BASE + (depth >= ENEMY_DRONE_SECOND_DEPTH ? 1 : 0) };
   // The core runs the point defence from wherever the mounts stand, so they are hull mounts of their own,
   // not furniture of the core's room: weapon rooms on crewed ships, sealed pods on drone ships.
-  const core = f.aiCore && f.living
-    ? { role: 'core' as const, mods: ['module.aiCore', ...(dronesOn ? ['module.droneBay'] : [])], w: 4 + (dronesOn ? 3 : 0), h: 3, ...(dronesOn ? { drones } : {}) }
-    : null;
+  // (Only a ship with something for it to run has one: point defence or drones.)
+  const core = f.aiCore && f.living && (pdCount > 0 || dronesOn) ? coreSpec(dronesOn ? drones : undefined) : null;
   const pdRooms = Array.from({ length: pdCount }, () => ({ role: 'weapons' as const, mods: ['module.pointDefense'], w: 3, h: 3 }));
   if (f.living) weapons.push(...pdRooms);
   const pd: RoomSpec[] = !f.living ? pdRooms : [];
