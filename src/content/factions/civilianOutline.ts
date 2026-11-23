@@ -24,7 +24,7 @@ const LINER: readonly Profile[] = [
   // A stepped bow, swept wings at the stern, a tapered tail.
   { id: 'liner.swept', depths: [0, 6], nose: { style: 'stepped', len: [9, 12], front: [2, 3] },
     sections: [{ len: [36, 40], half: [10, 10], taper: 1 }, DRUM([31, 33]), { len: [30, 34], half: [10, 10] }],
-    rearWings: { len: [10, 12], reach: [3, 4], sweep: [1, 2] }, stern: { kind: 'tail', len: [5, 6], out: [1, 1], rate: 3 } },
+    rearWings: { len: [10, 12], reach: [3, 4], sweep: [1, 2] }, stern: { kind: 'flare', len: [6, 8], out: [1, 2] } },
   // From depth 7, twin drums: the passengers past one drum's cabins in a second, three bays or so of hull between them.
   { id: 'liner.twin', depths: [7, 99], nose: { style: 'round', len: [8, 10], front: [3, 4] },
     sections: [{ len: [34, 38], half: [10, 10], taper: 1 }, DRUM([31, 33]), { len: [24, 27], half: [10, 10] }, DRUM([31, 33]), { len: [26, 30], half: [10, 10] }],
@@ -84,7 +84,8 @@ export const civilianOutline = {
   },
   liner: {
     // (Two gun rooms, one a side, aft with the machinery.)
-    family: 'liner', profiles: LINER, maxBeam: 33, gunRooms: 2, crew: { sleep: 'bunks', rooms: 1 }, passengers: { base: 6, perDepth: 1 },
+    // (Stretched past a quarter its drawn length, a liner is mostly spare holds: it draws again.)
+    family: 'liner', profiles: LINER, maxBeam: 33, maxStretch: 1.25, gunRooms: 2, crew: { sleep: 'bunks', rooms: 1 }, passengers: { base: 6, perDepth: 1 },
     // (Its point defence the plan's own room's: no turret pair. Its passengers' suites the drum's corners. Any room
     // may take a single-tier bay: its machinery rooms are small.)
     // (A twin-drum liner, from depth 7, is a big ship: shields and point defence, so an AI core.)

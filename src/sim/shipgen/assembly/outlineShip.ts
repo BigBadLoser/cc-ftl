@@ -256,6 +256,7 @@ function bayGrid(plans: ShipPlan[], lanes: Silhouette[][], maxBeam: number, defs
       if (first && m0.W > 1.25 * first.W) return first.l;
       if (m0.W < (r.minLength ?? 0)) return null;
       const [sx, sy] = m0.scale ?? [1, 1];
+      if (sx > (r.maxStretch ?? Infinity)) return first?.l ?? null;
       // The widest lane the rooms fit (its side hulls deep enough), at its first drive that holds the engines.
       lanes: for (const [j, sils] of lanes.entries()) for (const [k, sil] of sils.entries()) {
         const m = j === 0 && k === 0 ? m0 : scaled(sil, sx, sy);

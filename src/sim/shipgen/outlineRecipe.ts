@@ -94,6 +94,11 @@ export interface OutlineRecipe {
   maxBeam: number;
   /** The hull's least length in tiles. */
   minLength?: number;
+  /**
+   * How far past its drawn length a hull may stretch to fit its rooms (a scale): past it, the attempt fails and the next
+   * draws again. Unset, as far as the search goes.
+   */
+  maxStretch?: number;
   /** Engines every ship of the type plans (more where an attempt adds them), in place of its budget's. */
   engines?: number;
   /** Shuttle bays, where the type's size calls for one (over its hull family's). */
