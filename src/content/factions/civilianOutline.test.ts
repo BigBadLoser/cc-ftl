@@ -15,7 +15,7 @@ const mods = (r: GenResult, pre: string): { def: string; x: number; y: number; r
 
 describe('civilian outline ships', () => {
   it('build valid, with an AI core only where they carry point defence or drones', () => {
-    for (const [type, seed, depth] of [['liner', 1, 3], ['liner', 2, 5], ['freighter', 1, 1], ['freighter', 2, 6]] as const) {
+    for (const [type, seed, depth] of [['liner', 1, 3], ['liner', 2, 5], ['freighter', 1, 1], ['freighter', 2, 6], ['mining', 1, 1], ['mining', 2, 3], ['mining', 3, 6]] as const) {
       const r = gen(type, seed, depth);
       expect(r.problems, `${type} ${seed}`).toEqual([]);
       const armed = mods(r, 'module.pointDefense').length + mods(r, 'module.droneBay').length > 0;
@@ -39,5 +39,36 @@ describe('civilian outline ships', () => {
       const sum = Math.min(...eng.map((m) => span(m)[0])) + Math.max(...eng.map((m) => span(m)[1]));
       for (const m of eng) expect(eng.some((o) => o.def === m.def && o.x === m.x && o.y === sum - span(m)[1]), `seed ${seed} ${m.def}@${m.x},${m.y}`).toBe(true);
     }
+  });
+
+  it('a lean miner (depth 1) has pods, ore bins and a galley, no guns and no crates', () => {
+    const r = gen('mining', 1, 1);
+    expect(r.problems).toEqual([]);
+    const bays = (r.template.modules ?? []).filter((m) => m.vehicle === 'vehicle.mining_pod');
+    expect(bays.length).toBeGreaterThanOrEqual(2);
+    expect(mods(r, 'module.storage_ore').length).toBeGreaterThan(0);
+    expect(mods(r, 'module.galley').length).toBeGreaterThan(0);
+    expect((r.template.modules ?? []).filter((m) => defs[m.def]?.weapon).length).toBe(0);
+    expect((r.template.modules ?? []).filter((m) => m.def === 'module.storage').length).toBe(0);
+  });
+
+  it('a deep miner (depth 6) refines ore in a hall, caps its pods and is wider', () => {
+    const lean = gen('mining', 1, 1), deep = gen('mining', 1, 6);
+    expect(deep.problems).toEqual([]);
+    expect(gen('mining', 2, 3).problems).toEqual([]);
+    expect(mods(deep, 'module.refinery').length).toBe(2);
+    expect((deep.template.modules ?? []).filter((m) => m.vehicle === 'vehicle.mining_pod').length).toBeLessThanOrEqual(4);
+    expect(deep.height).toBeGreaterThan(lean.height);
+  });
+
+  it('a depth-9 liner has twin drums, shields and point defence, and stays under 200 long', () => {
+    const r = gen('liner', 1, 9);
+    expect(r.problems).toEqual([]);
+    const w = r.width, planters = mods(r, 'module.planter');
+    const gardens = r.rooms.filter((room) => room.role === 'support' && planters.some((m) => room.tiles.includes(m.y * w + m.x)));
+    expect(gardens.length).toBeGreaterThanOrEqual(2);
+    expect(mods(r, 'module.shieldGen').length).toBeGreaterThan(0);
+    expect(mods(r, 'module.pointDefense').length).toBeGreaterThan(0);
+    expect(Math.max(r.width, r.height)).toBeLessThan(200);
   });
 });

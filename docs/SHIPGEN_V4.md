@@ -402,11 +402,13 @@ where they need them (a freighter's outside container rack).
 
 ### Civilian recipes (2026-11-23)
 
-`faction.civilian` has two recipes (`src/content/factions/civilianOutline.ts`), each with a part of its own; the
+`faction.civilian` has three recipes (`src/content/factions/civilianOutline.ts`), each with a part of its own; the
 navy's sheets are unchanged by them (golden dump re-baselined only where a shared rule changed, problems never grew).
 
 - **Liner** (`drum` part, `parts/drum.ts`): the widest section a drum, a ring corridor round a garden, single cabins
   along the hull, a suite in each corner, lounges forward and gyms aft; crew, mess and med bay ahead, machinery aft.
+  One drum to depth 6, twin drums from depth 7 (a second garden), `maxStretch` caps the length (under 200 tiles at
+  depth 9), and a `deep` bonus adds shields and point defence. The drum hulls are lit by floor.
 - **Freighter, a pusher** (`cockpit` part, `parts/cockpit.ts`, and the recipe's `truss`): a small tug hull (`TUG`
   silhouettes: block, round, waist; flared, tapered-in, quartered or banked sterns) pushes a truss of sealed large
   containers ahead of it. Big ship, little floor. The bridge is an offset pod on one front corner, run on from the
@@ -414,11 +416,16 @@ navy's sheets are unchanged by them (golden dump re-baselined only where a share
   (`assembly/truss.ts`, called by `assembleOutline` after the regions compile): a spine three beams deep on the
   axis, one bank of 3x6 containers either side stood across it, two tiles apart, in columns both sides share; the side
   without the pod fills on aft to its hull. Containers a bank: `banks` drawn, `perDepth` more a level, `max` at most.
+- **Miner** (`mining`: `MiningSpec`, `outlineRecipe.ts`; `shipWorks`, `leanPlan`, `isLean`, `beamAt` in
+  `assembly/outlineType.ts`): a pod deck of mining-pod bays (`vehicle.mining_pod`; 2 + 0.5 per depth, at most 4), an
+  ore store of bins, and from depth 4 a 15x7 refinery hall with two `module.refinery`. Lean through depth 3: no gun
+  room and no crate hold, the mess kept. The beam widens with depth (23 + 1 per depth, to 29). Profiles `box`,
+  `hammer`, `prow` and `barge`, each with `Profile.depths` saying where it may be drawn.
 - Shared rules these brought: an AI core only on ships with point defence or drones (`coreSpec`, plan.ts; a bay
   layout's own point-defence pair adds one); twin engine rooms furnish alike, the second mirrored (`shipgen/twin.ts`,
   fitOut); racks stand end-on to a hold's long walls; bridge consoles take the room's whole floor (helm on the hull,
   aft corners).
 - Parts gained hooks for it: `dock` (where the airlocks' corridor goes), `skip`, `program`, and `Region.doorOut`
   (a region's door at the outer end of its access hall).
-- Open: civilian mining ships and stations keep the older generator; a small civilian type (courier, shuttle) so
+- Open: civilian stations keep the older generator (mining ships have a recipe now); a small civilian type (courier, shuttle) so
   civilians are not all large; the freighter's tapered-in tail is one stern of several (about 1 in 6).
