@@ -37,18 +37,19 @@ export function addTruss(rng: Rng, t: TrussSpec, s: { rows: string[]; roomOf: In
   const at = (x: number, y: number): string => cells[y]?.[x] ?? '.';
   const set = (x: number, y: number, c: string): void => { const r = cells[y]; if (r && x >= 0 && x < W) r[x] = c; };
   const box = containerChar(CW, CL) as string;
-  // Each bank: its rows outward from the spine (or the rail inboard of it); its containers from its hull face forward.
-  let x0 = W;
-  for (const side of [-1, 1]) for (let l = 0; l < layers; l++) {
+  // Each bank: its rows outward from the spine (or the rail inboard of it), its hull face the first floor in them.
+  const banks = [-1, 1].flatMap((side) => Array.from({ length: layers }, (_, l) => {
     const inner = SPINE + 1 + l * (CL + 1), ys = Array.from({ length: CL }, (_, k) => a + side * (inner + k));
     let face = W;
     for (const y of ys) for (let x = 0; x < W; x++) if (at(x, y) !== '.') { face = Math.min(face, x); break; }
-    for (let i = 0; i < n; i++) {
-      const cx = face - GAP - CW - i * (CW + GAP);
-      for (const y of ys) for (let k = 0; k < CW; k++) set(cx + k, y, box);
-      x0 = Math.min(x0, cx);
-    }
-    if (l < layers - 1) for (let x = x0; x < face; x++) set(x, a + side * (inner + CL), '=');
+    return { side, inner, ys, face };
+  }));
+  // The containers in columns every bank shares, from the foremost face's: a bank whose hull stands further aft (the
+  // side without the pod) takes more, on aft until the next would close on its hull.
+  const lead = Math.min(...banks.map((b) => b.face)) - GAP - CW, x0 = lead - (n - 1) * (CW + GAP);
+  for (const { side, inner, ys, face } of banks) {
+    for (let cx = x0; cx + CW + GAP <= face; cx += CW + GAP) for (const y of ys) for (let k = 0; k < CW; k++) set(cx + k, y, box);
+    if (inner + CL < half) for (let x = x0; x < face; x++) set(x, a + side * (inner + CL), '=');
   }
   // The spine, from the foremost container on to the hull's bow wall.
   for (let y = a - SPINE; y <= a + SPINE; y++) for (let x = x0; x < W && at(x, y) === '.'; x++) set(x, y, '=');
