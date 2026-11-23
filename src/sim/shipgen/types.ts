@@ -214,7 +214,10 @@ export interface FactionDef {
   budget: ShipBudget;
   /** Highest engine and reactor tier this faction's ships carry (1 to 3, default 3): drones' sealed pods hold Mk I only. */
   maxCoreTier?: 1 | 2 | 3;
-  /** Outline ship recipes, keyed by type id (SHIPGEN_V4, "Ship recipes and layout parts"; PROTOTYPE, #581). */
+  /**
+   * Outline ship recipes, keyed by type id (SHIPGEN_V4, "Ship recipes and layout parts"; PROTOTYPE, #581). A seed whose
+   * hull family has a recipe (`outlineTypeOf`) is built from it in the game (`generateShip`); the rest by the arranger.
+   */
   outline?: Readonly<Record<string, OutlineRecipe>>;
 }
 
@@ -245,6 +248,8 @@ export interface GenResult {
   height: number;
   /** Ship role and archetype picked, and a one-line description of the topology built. */
   role: string;
+  /** The hull family built, where the role is not one (a navy destroyer is a frigate hull: assembly/outlineShip.ts). Read it through `builtFamily`. */
+  family?: string;
   archetype: ArchetypeId;
   topology: string;
   /** Attempts used (1 = first seed worked). */

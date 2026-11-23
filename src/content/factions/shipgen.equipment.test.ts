@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { ModuleDef } from '../../sim/registry';
 import { equipmentOf, equipmentShort } from '../../sim/shipgen/equipment';
-import { generateShip, previewHull } from '../../sim/shipgen/generate';
+import { builtFamily, generateShip, previewHull } from '../../sim/shipgen/generate';
 import type { FactionDef, GenResult } from '../../sim/shipgen/types';
 import { content } from '../index';
 import { factions } from './index';
@@ -18,7 +18,7 @@ describe('ship generator: planned equipment and family (#577)', () => {
       expect(g.problems, id).toEqual([]);
       expect(g.planned, id).toBeDefined();
       expect(equipmentShort(defs, g.planned!, g.template), id).toBeNull();
-      expect(g.role, id).toBe(previewHull(factions[id] as FactionDef, 4242, 4));
+      expect(builtFamily(g), id).toBe(previewHull(factions[id] as FactionDef, 4242, 4));
     }
   });
 

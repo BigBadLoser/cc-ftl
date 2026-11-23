@@ -62,9 +62,10 @@ export const navy = {
     battery: 2,
     noses,
   },
-  // Hull families (assembly-driven): standard sections, family proportions.
+  // Hull families: their weights pick each seed's type; their standard sections (the arranger's) are the scrappers' salvaged navy parts.
   // Integrated transitions: regular stepped tapers (two tiles along per tile of height) where section widths change.
   transition: { slope: 2, max: 4, jitter: 0, label: 'taper' },
+  // Its ships drawn outline first (assembly/outlineShip.ts), each seed's family as its recipe's type (a frigate seed every other a destroyer).
   outline: navyOutline,
   hullFamilies: [
     {

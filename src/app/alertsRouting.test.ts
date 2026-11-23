@@ -255,7 +255,7 @@ describe('ongoing alerts from state', () => {
 
   it('boarders left on a hostile ship survive a reload, and clear when they are brought home', () => {
     const sim = newGame(1, content);
-    sim.enqueue({ type: 'debug.spawnDerelict', faction: 'faction.civilian', seed: 4, depth: 2, cx: 130, cy: 70, intensity: 0.6, cause: 'decay' });
+    sim.enqueue({ type: 'debug.spawnDerelict', faction: 'faction.civilian', seed: 4, depth: 2, cx: 130, cy: 150, intensity: 0.6, cause: 'decay' });
     sim.step();
     const wreck = sim.world.query(ShipC).find((i) => sim.world.get(i, ShipC)?.faction === 'neutral') as number;
     sim.world.get(wreck, ShipC)!.faction = 'hostile';
@@ -283,7 +283,7 @@ describe('ongoing alerts from state', () => {
 describe('hazards on other player ships', () => {
   it('a fire on a captured ship raises its own alert (keyed by ship) and clears; a hostile ship raises none', () => {
     const sim = newGame(1, content);
-    sim.enqueue({ type: 'debug.spawnDerelict', faction: 'faction.civilian', seed: 4, depth: 2, cx: 130, cy: 70, intensity: 0.6, cause: 'decay' });
+    sim.enqueue({ type: 'debug.spawnDerelict', faction: 'faction.civilian', seed: 4, depth: 2, cx: 130, cy: 150, intensity: 0.6, cause: 'decay' });
     sim.step();
     const prize = sim.world.query(ShipC).find((i) => sim.world.get(i, ShipC)?.faction === 'neutral') as number;
     const g = shipGrid(sim, prize)!;

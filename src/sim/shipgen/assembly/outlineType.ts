@@ -1,5 +1,5 @@
 import type { ModuleDef } from '../../registry';
-import { enginesShort, previewHull } from '../generate';
+import { CAPACITY_PROBLEM, enginesShort, previewHull } from '../shell';
 import type { OutlineRecipe, ShipRoom } from '../outlineRecipe';
 import type { RoomSpec } from '../plan';
 import { messFloor } from '../rooms/rules/mess';
@@ -133,7 +133,7 @@ export function outlineAttempts(defs: Record<string, ModuleDef>, assemble: (n: n
   for (let n = 0; n < 24; n++) {
     let r = tryAssemble(n, 0);
     if (!r) continue;
-    for (let k = 0, extra = 0; k < 3 && r.problems[0]?.startsWith('engines carry'); k++) {
+    for (let k = 0, extra = 0; k < 3 && r.problems[0]?.startsWith(CAPACITY_PROBLEM); k++) {
       extra += Math.max(1, enginesShort(defs, r.template));
       const more = tryAssemble(n, extra);
       if (!more) break;

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { ModuleDef } from '../../sim/registry';
 import { equipmentShort } from '../../sim/shipgen/equipment';
-import { generateShip, previewHull } from '../../sim/shipgen/generate';
+import { builtFamily, generateShip, previewHull } from '../../sim/shipgen/generate';
 import type { FactionDef } from '../../sim/shipgen/types';
 import { content } from '../index';
 import { factions } from './index';
@@ -23,7 +23,7 @@ describe('ship generator: planned equipment and family, many seeds (#577)', () =
           const g = generateShip(f, id, seed, depth, defs);
           const short = g.planned ? equipmentShort(defs, g.planned, g.template) : 'no plan';
           const fam = previewHull(f, seed, depth);
-          if (short || g.role !== fam || g.problems.length > 0) bad.push(`depth ${depth} seed ${seed} ${g.role}/${fam}: ${short ?? ''} ${g.problems.join('; ')}`);
+          if (short || builtFamily(g) !== fam || g.problems.length > 0) bad.push(`depth ${depth} seed ${seed} ${g.role}/${fam}: ${short ?? ''} ${g.problems.join('; ')}`);
         }
       }
       expect(bad).toEqual([]);

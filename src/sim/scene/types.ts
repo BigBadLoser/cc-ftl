@@ -63,7 +63,10 @@ export interface SceneShipRecipe {
   story?: string;
 }
 
-/** Damage a scene ship starts with (`SceneShipRecipe.damage`). `failing`: the system a scene timer counts down on (`SceneTimerRecipe.stopOn`). */
+/**
+ * Damage a scene ship starts with (`SceneShipRecipe.damage`): its modules of `category`, or of `def` and its tiers (`module.reactor`
+ * takes a Mk II reactor). `failing`: the system a scene timer counts down on (`SceneTimerRecipe.stopOn`).
+ */
 export interface SceneDamageRecipe {
   category?: string;
   def?: string;

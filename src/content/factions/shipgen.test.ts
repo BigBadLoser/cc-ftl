@@ -18,13 +18,28 @@ const gen = (id: keyof typeof factions, seed: number, depth: number): GenResult 
   generateShip(factions[id] as FactionDef, id, seed, depth, defs);
 const count = (g: GenResult, pred: (d: ModuleDef) => boolean): number =>
   (g.template.modules ?? []).filter((m) => defs[m.def] && pred(defs[m.def] as ModuleDef)).length;
+/** The navy as the arranger builds it (its hull families' grammars), before the game drew navy hulls outline first (#581). */
+const arrangerNavy: FactionDef = { ...(factions['faction.navy'] as FactionDef) };
+delete arrangerNavy.outline;
+const arranged = (seed: number, depth: number): GenResult => generateShip(arrangerNavy, 'faction.navy', seed, depth, defs);
 
 describe('ship generator: doctrines', () => {
+  it('navy in the game: every type appears, each drawn outline first and valid', () => {
+    const types = new Set<string>();
+    for (let seed = 0; seed < 40; seed++) {
+      const g = gen('faction.navy', seed, seed % 2 === 1 ? 9 : seed % 10);
+      types.add(g.role);
+      expect(g.topology, `seed ${seed}`).toMatch(/^outline /);
+      expect(g.problems, `seed ${seed}`).toEqual([]);
+    }
+    expect([...types].sort()).toEqual(['carrier', 'corvette', 'cruiser', 'destroyer', 'frigate']);
+  });
+
   it('navy (2D arranger): every hull family appears, major assemblies sit side by side, architecture varies', () => {
     const families = new Set<string>();
     let sideBySide = 0;
     for (let seed = 0; seed < 60; seed++) {
-      const g = gen('faction.navy', seed, seed % 2 === 1 ? 9 : seed % 10);
+      const g = arranged(seed, seed % 2 === 1 ? 9 : seed % 10);
       families.add(g.role);
       const d = g.debug!;
       expect(d, 'arranger debug data').toBeDefined();
@@ -43,7 +58,7 @@ describe('ship generator: doctrines', () => {
     expect([...families].sort()).toEqual(['carrier', 'corvette', 'cruiser', 'frigate']);
     expect(sideBySide).toBeGreaterThan(25);
     // 48 deep hulls: the spread of twelve swings from 0.18 to 0.35 with the window of seeds, so a wide fixed sample (0.263 silhouette, 0.532 adjacency).
-    const deep = Array.from({ length: 48 }, (_, i) => gen('faction.navy', i + 1, 9));
+    const deep = Array.from({ length: 48 }, (_, i) => arranged(i + 1, 9));
     expect(meanPairwise(deep.map((g) => silhouetteMask(g.template.rows)), silhouetteDistance)).toBeGreaterThan(0.25);
     expect(meanPairwise(deep.map((g) => adjacencySignature(g.debug!)), adjacencyDistance)).toBeGreaterThan(0.45);
   });
@@ -102,11 +117,15 @@ describe('ship generator: doctrines', () => {
     expect(anchors.size).toBeGreaterThanOrEqual(4);
   });
 
-  it('civilians (same arranger, civil builders): four families, lightly armed, never a battery', () => {
+  it('civilians: four families, lightly armed, never a battery; a family with an outline recipe drawn from it, the rest arranged', () => {
     const families = new Set<string>();
     for (let seed = 0; seed < 40; seed++) {
       const g = gen('faction.civilian', seed, seed % 10);
       families.add(g.role);
+      // One generator a type: a family with an outline recipe is drawn from it, one without keeps the arranger.
+      const recipe = g.role in ((factions['faction.civilian'] as FactionDef).outline ?? {});
+      expect(g.topology.startsWith('outline '), `seed ${seed} ${g.role}: ${g.topology}`).toBe(recipe);
+      expect(g.problems, `seed ${seed} ${g.role}`).toEqual([]);
       expect(count(g, (m) => !!m.weapon && !m.pointDefense), `seed ${seed} guns`).toBeLessThanOrEqual(2);
       expect(count(g, (m) => !!m.bed)).toBeGreaterThan(0);
     }
@@ -128,10 +147,10 @@ describe('ship generator: doctrines', () => {
     expect(seen).toBeGreaterThan(0);
   });
 
-  it('an island carrier keeps one bridge: its nose holds stores, not a second helm', () => {
+  it('an island carrier from the arranger keeps one bridge: its nose holds stores, not a second helm', () => {
     let seen = 0;
     for (const seed of [3, 13]) {
-      const r = generateShip(factions['faction.navy'] as FactionDef, 'faction.navy', seed, 9, content.modules as Record<string, ModuleDef>);
+      const r = arranged(seed, 9);
       if (!r.topology.includes('carrierIsland')) continue;
       seen++;
       expect(r.problems).toEqual([]);

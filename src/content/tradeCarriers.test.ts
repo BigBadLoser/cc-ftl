@@ -202,6 +202,9 @@ describe('who carries a deal (#548)', () => {
     expect(order.phase).toBe('done');
     runYard(sim, 3000, () => sim.world.get(vehicle, VehicleC)?.state === 'stowed');
     expect(sim.world.get(vehicle, VehicleC)).toMatchObject({ homeShip: station, state: 'stowed' });
-    expect(new Set(sim.world.query(VehicleC))).toEqual(vehicles);
+    // No vehicle made up for the order: the ships here from the start have the vehicles they had (a ship arriving since
+    // may bring its own: a navy hangar's, a miner's pods).
+    const homes = new Set([...vehicles].map((v) => sim.world.get(v, VehicleC)?.homeShip));
+    expect(new Set(sim.world.query(VehicleC).filter((v) => homes.has(sim.world.get(v, VehicleC)?.homeShip)))).toEqual(vehicles);
   });
 });

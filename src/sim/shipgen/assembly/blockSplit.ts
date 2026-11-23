@@ -82,7 +82,8 @@ export function split(band: Band, pairs: readonly Pair[], vary: readonly number[
         next();
       }
     }
-    if (s < band.segs.length && x < (band.segs[s] as [number, number])[1]) next(); else s++;
+    // (Its last room's wall on the run's last column, or one short of it: the room takes the column, no second wall.)
+    if (s < band.segs.length && x <= (band.segs[s] as [number, number])[1]) next(); else s++;
     // Runs of an inner band the rooms did not reach hold stores (no floor stands empty).
     if (!sparse) for (const [a, b] of band.segs.slice(s)) stores(a, b);
     return out;

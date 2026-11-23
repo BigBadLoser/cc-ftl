@@ -3,7 +3,7 @@ import { footprintTiles } from '../../modules/footprint';
 import { LANDING_PAD } from '../../modules/landingPad';
 import type { ModuleDef, ShipTemplate } from '../../registry';
 import { Rng } from '../../rng';
-import { fitShell, seedOf } from '../generate';
+import { fitShell, seedOf } from '../shell';
 import { SECURITY_ROLE, docksOf, stationCrew } from '../stationCrew';
 import type { RoomSpec } from '../plan';
 import type { StationDef, StationInfo, StationSize } from '../stationTypes';

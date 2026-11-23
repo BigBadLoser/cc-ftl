@@ -1,37 +1,30 @@
 import { Rng } from '../rng';
-import type { ModuleDef, ShipTemplate } from '../registry';
+import type { ModuleDef } from '../registry';
 import { Builder } from './builder';
 import type { Arranger } from './arranger';
 import { arrangeHull } from './navyLayouts';
-import { layoutMetrics, metricViolation } from './metrics';
 import { roleOfLetter } from './canvas';
 import { pruneDoors } from './rooms';
-import { stockOf, toTemplate } from './fitted';
-import { fitOut, type ExtraCheck, type FinishOpts } from './fitOut';
+import type { ExtraCheck } from './fitOut';
 export type { ExtraCheck, FinishOpts } from './fitOut';
 import { hullChoices, pickWeighted, planShip, type RoomSpec, type ShipPlan } from './plan';
 import { clusters, hub, rails } from './topoDrone';
 import { ring, spine } from './topoNavy';
 import { salvage } from './topoSalvage';
 import { trimThin } from './salvage';
-import { validateTemplate } from './validate';
 import { equipmentShort, plannedEquipment, type Equipment } from './equipment';
-import { templateHullLoad } from '../ftl/capacity';
 import { thinWalls } from './thinWalls';
-import { extractContainers, type PlacedContainer } from './containerCells';
-import { openBareDocks } from './openDocks';
+import { extractContainers } from './containerCells';
 import { erodeHull } from './erodeHull';
 import { regrid } from './assembly/regrid';
-import type { ArchetypeId, FactionDef, GenResult, GenRoom, HullFamilyDef, RoomRole, ShipRoleDef } from './types';
+import { generateOutline } from './assembly/outlineShip';
+import { outlineTypeOf } from './assembly/outlineType';
+import { CAPACITY_PROBLEM, enginesShort, fitShell, seedHull, seedOf } from './shell';
+export { builtFamily, enginesShort, fitShell, previewHull, seedOf, type Shell } from './shell';
+import type { ArchetypeId, FactionDef, GenResult, HullFamilyDef, RoomRole, ShipRoleDef } from './types';
 
 /** Attempts before giving up on a seed (each reseeds deterministically). */
 export const GEN_ATTEMPTS = 24;
-
-/** Seed for attempt `n` of `seed` (shared with the station generator). */
-export const seedOf = (seed: number, n: number): number => attemptSeed(seed, n);
-
-/** Seed for attempt `n` of `seed`. */
-const attemptSeed = (seed: number, n: number): number => (Math.imul(seed ^ 0x9e3779b9, 0x85ebca6b) + Math.imul(n, 0xc2b2ae35)) >>> 0;
 
 type Topology = (b: Builder, f: FactionDef, plan: ShipPlan) => string | null;
 const TOPOLOGIES: Record<Exclude<ArchetypeId, 'sections'>, Topology> = {
@@ -44,9 +37,6 @@ function pickRole(rng: Rng, f: FactionDef, depth: number, seed: number): { role:
   return { role, archetype: pickWeighted(rng, role.archetypes) };
 }
 
-/** The hull family (or ship role) a seed builds: the first draw of its first attempt. */
-const seedHull = (f: FactionDef, seed: number, depth: number): HullFamilyDef | ShipRoleDef => pickWeighted(new Rng(attemptSeed(seed, 0)), hullChoices(f, depth));
-
 /**
  * The hull family (or ship role) of an attempt: the seed's, for every attempt, so a reseed rebuilds the same family and the ship is what
  * `previewHull` said (a roster slot gets the size it asked for, #577). The attempt still makes its own draw, so its later draws stay in step.
@@ -56,20 +46,8 @@ function hullOf(rng: Rng, f: FactionDef, seed: number, depth: number): HullFamil
   return seedHull(f, seed, depth);
 }
 
-/** The hull family (or ship role) id a seed builds, without building anything: every attempt builds the same one (`hullOf`). */
-export const previewHull = (f: FactionDef, seed: number, depth: number): string => seedHull(f, seed, depth).id;
-
-/** What a hull's problem begins with when its engines cannot carry it. */
-const CAPACITY_PROBLEM = 'engines carry';
-
 /** Times an attempt is built again with more engines when its hull came out bigger than its engines carry. */
 const ENGINE_TOP_UPS = 3;
-
-/** Engines a hull lacks to carry itself (`templateHullLoad`), at the capacity of the engines it has; 0 when it fits. */
-export function enginesShort(defs: Record<string, ModuleDef>, t: Pick<ShipTemplate, 'rows' | 'modules'>): number {
-  const load = templateHullLoad(defs, t);
-  return load.over > 0 && load.engines > 0 ? Math.ceil(load.over / (load.capacity / load.engines)) : 0;
-}
 
 /**
  * One generation attempt (attempt `n` of `seed`): the result, or the stage that failed. A hull its planned engines cannot carry is built
@@ -91,7 +69,7 @@ export function generateAttempt(
 function buildAttempt(
   f: FactionDef, factionId: string, seed: number, depth: number, defs: Record<string, ModuleDef>, n: number, extraEngines: number, topUp: boolean,
 ): GenResult | string | number {
-  const rng = new Rng(attemptSeed(seed, n));
+  const rng = new Rng(seedOf(seed, n));
   let role: ShipRoleDef;
   let archetype: ArchetypeId;
   let plan: ShipPlan;
@@ -130,7 +108,6 @@ function buildAttempt(
   const after = topUp && r.problems[0]?.startsWith(CAPACITY_PROBLEM) ? enginesShort(defs, r.template) : 0;
   return after > 0 ? after : r;
 }
-
 
 /**
  * Crop the built structure, fit it out, make the template, validate it and take metrics: the shared back half of a
@@ -190,61 +167,17 @@ function specsOf(b: Builder): (RoomSpec | undefined)[] {
   return b.cv.labels.map((l) => byKey.get(l.chunk) ?? b.chunkSpecs.get(`${l.chunk}:${l.letter}`));
 }
 
-/** A built structure, cropped: its tiles, the room of each floor tile, and each room's role and planned contents. */
-export interface Shell {
-  rows: string[];
-  roomOf: Int16Array;
-  width: number;
-  height: number;
-  roles: RoomRole[];
-  specs: (RoomSpec | undefined)[];
-  /** Cargo containers standing outside the hull, already placed. */
-  containers?: readonly PlacedContainer[];
-}
-
-/**
- * Fit a shell out, make the template, validate it and take metrics. The arranger's structures come here through
- * `finishLayout`; the station assembly (`assembly/station.ts`) hands its shell over directly.
- */
-export function fitShell(
-  rng: Rng, f: FactionDef, factionId: string, seed: number, role: ShipRoleDef, archetype: ArchetypeId, plan: Pick<ShipPlan, 'crew'>, shell: Shell,
-  topology: string, defs: Record<string, ModuleDef>, n: number, opts: FinishOpts = {},
-  debug?: (hall: (x: number, y: number) => boolean) => GenResult['debug'],
-): GenResult {
-  const { rows, roomOf, width, height, roles, specs } = shell;
-  const d = fitOut(rng, f, rows, roomOf, roles, specs, defs, opts);
-  // Airlock-only docks open into the corridor they border (wall and door go; openDocks.ts).
-  const opened = d.error ? { merged: 0, walled: 0, tiles: [] } : openBareDocks(d.lay);
-  const docks = { merged: opened.merged, walled: opened.walled };
-  const dockTile = new Set(opened.tiles);
-  const fitted = opened.merged > 0 ? rows.map((r, y) => d.lay.cells.slice(y * d.lay.w, y * d.lay.w + r.length).join('')) : rows;
-  const template = toTemplate(f, role, factionId, seed, plan, fitted, d);
-  // Modules standing apart (entered from their own rooms, or cabled on the ground as such): each structure is checked on its own.
-  if ((opts.entries?.size ?? 0) > 0 || (opts.ground?.apart?.length ?? 0) > 0) template.apart = true;
-  template.modules = [...(template.modules ?? []), ...(shell.containers ?? []).map((k) => ({ ...k, ...stockOf(rng, f, defs[k.def]) }))];
-  const problems = d.error ? [d.error] : validateTemplate(template, defs, opts.immobile ? { immobile: true } : {});
-  if (problems.length === 0 && opts.check) problems.push(...opts.check(template, defs));
-  // A generated ship that jumps carries its hull on its engines (ftl/capacity.ts), as the player's does (#129). Hand-drawn hulls are not held to it.
-  const load = opts.immobile ? null : templateHullLoad(defs, template);
-  if (problems.length === 0 && load && load.over > 0) problems.push(`${CAPACITY_PROBLEM} ${load.capacity} of ${load.tiles} tiles`);
-  const hall = (x: number, y: number): boolean => roles[roomOf[y * width + x] ?? -1] === 'hall' && !dockTile.has(y * width + x);
-  const metrics = layoutMetrics(template, hall, defs);
-  const bad = metricViolation(metrics, f.metrics);
-  if (bad && problems.length === 0) problems.push(bad);
-  const rooms: GenRoom[] = roles.map((r, id) => ({ id, role: r, tiles: d.lay.roomTiles(id) }));
-  return {
-    template, rooms, roomOf, width, height, role: role.id, archetype, topology, attempts: n + 1, problems, failures: [], metrics, docks,
-    ...(debug ? { debug: debug(hall) } : {}),
-  };
-}
-
 /**
  * Generate a ship for a faction, deterministically from `seed` and sector `depth`: role and archetype, module plan,
- * structure, fit-out, validation. Bad layouts are reseeded up to GEN_ATTEMPTS times.
+ * structure, fit-out, validation. Bad layouts are reseeded up to GEN_ATTEMPTS times. The one owner of which generator
+ * builds a faction's ships: a seed whose hull family has an outline recipe (the navy's; the civilian liner, freighter and miner)
+ * its type's outline hull (assembly/outlineShip.ts), the rest by their hull families or roles (the arranger).
  */
 export function generateShip(
   f: FactionDef, factionId: string, seed: number, depth: number, defs: Record<string, ModuleDef>,
 ): GenResult {
+  const type = outlineTypeOf(f, seed, depth);
+  if (type) return generateOutline(f, factionId, seed, depth, defs, type);
   let last: GenResult | null = null;
   const failures: string[] = [];
   for (let n = 0; n < GEN_ATTEMPTS; n++) {

@@ -27,8 +27,8 @@ fleets, stations) picks one or more *generator styles* to build its hulls. Only 
 | Zealot | `faction.zealot` | Scrapper hulls crewed by augmented zealots | In game | src/content/factions/pirates.ts:123 |
 | Mercenary | `faction.mercenary` | Scrapper hulls, hired guns | In game | src/content/factions/pirates.ts:90 |
 | Drones | `faction.drones` | Machine hulls: picket, lancer, swarm; sealed pods on crawlways | Partial: generator only | src/content/factions/drones.ts:9; galaxy rogue faction has `ships: []` (#427), so none spawn in a normal game; scrappers use drone sections as donors |
-| Navy | `faction.navy` | Standard-section hulls: corvette, frigate, cruiser, carrier (hangar bays) | In game | src/content/factions/navy.ts:48; sim/shipgen/navyGrammars.ts, topoNavy.ts |
-| Civilian | `faction.civilian` | Freighter, liner, mining ship and station hull families | In game | src/content/factions/civilian.ts:9; sim/shipgen/civilGrammars.ts |
+| Navy | `faction.navy` | Outline-first hulls from recipes: corvette, frigate, destroyer, cruiser, carrier (hangar bays); the old standard sections remain only as scrapper salvage | In game | src/content/factions/navy.ts, navyOutline.ts; sim/shipgen/assembly/outlineShip.ts |
+| Civilian | `faction.civilian` | Freighter, liner, mining ship (outline recipes) and station (arranger) hull families | In game | src/content/factions/civilian.ts:9, civilianOutline.ts; sim/shipgen/civilGrammars.ts |
 
 ## Galaxy factions (`content.galaxy.factions`)
 
@@ -54,11 +54,12 @@ Territory, standing (reputation), fleets, traffic, speciality stock and which st
 |---|---|---|---|---|
 | Corvette | `navy.corvette` | Small navy escort | In game | src/content/factions/navy.ts hullFamilies |
 | Frigate | `navy.frigate` | Mid navy hull | In game | src/content/factions/navy.ts |
+| Destroyer | `navy.destroyer` | Frigate-family hull on even seeds: a wider beam, single beds | In game | src/content/factions/navyOutline.ts |
 | Cruiser | `navy.cruiser` | Heavy navy hull, more depth | In game | src/content/factions/navy.ts |
 | Carrier | `navy.carrier` | Navy hull with 3 hangar bays and point defence | In game | src/content/factions/navy.ts |
-| Freighter | `civilian.freighter` | Truss/hold hull, many crates. Outline recipe (a tug pushing a truss of large containers, offset bridge pod) is debug only (shipgen CLI) until the navy-in-game PR routes outline recipes into the game | In game | src/content/factions/civilian.ts:30; civilianOutline.ts |
-| Liner | `civilian.liner` | Crew-heavy passenger hull. Outline recipe (a drum of cabins round a garden ring) is debug only (shipgen CLI) until the navy-in-game PR | In game | src/content/factions/civilian.ts; civilianOutline.ts |
-| Mining ship | `civilian.mining` | Ore barge hull | In game | src/content/factions/civilian.ts |
+| Freighter | `civilian.freighter` | Outline pusher: cockpit hull behind a truss of sealed containers | In game | src/content/factions/civilianOutline.ts; sim/shipgen/assembly/truss.ts |
+| Liner | `civilian.liner` | Outline passenger hull round a garden drum, cabins, ward | In game | src/content/factions/civilianOutline.ts; sim/shipgen/assembly/parts/drum.ts |
+| Mining ship | `civilian.mining` | Outline miner round a pod deck, ore store, a refinery from depth 4 (prototype) | In game | src/content/factions/civilianOutline.ts |
 | Station hull | `civilian.station` | Civilian station ring/hub (a ship hull; stations proper are built by the station assembly) | In game | src/content/factions/civilian.ts |
 | Scrapper raider | `scrapper.raider` | Gun hull from navy hulks and drone guns | In game | src/content/factions/scrapper.ts:31 |
 | Scrapper hauler | `scrapper.hauler` | Barge and pod-string hold hull | In game | src/content/factions/scrapper.ts |
