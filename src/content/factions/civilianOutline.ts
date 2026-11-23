@@ -57,14 +57,17 @@ const TUG: readonly Profile[] = [
  * a refinery.
  */
 const MINER: readonly Profile[] = [
-  // A box: one straight section.
-  { id: 'miner.box', nose: { style: 'stepped', len: [2, 3], front: [5, 6] }, sections: [{ len: [12, 16], half: [7, 7] }],
-    stern: [{ kind: 'bank', len: [0, 0], out: [0, 0] }, { kind: 'quarters', len: [5, 7], out: [1, 2], aft: [2, 3] }] },
-  // A hammer: a broad forward section over a narrower drive section.
-  { id: 'miner.hammer', nose: { style: 'stepped', len: [2, 3], front: [6, 7] }, sections: [{ len: [8, 11], half: [7, 8] }, { len: [7, 10], half: [5, 6], taper: 1 }],
+  // A wedge: a long cheeked bow, one section with its corners cut, a flared drive.
+  { id: 'miner.box', nose: { style: 'cheek', len: [5, 7], front: [3, 4] }, sections: [{ len: [12, 16], half: [7, 7] }],
+    stern: [{ kind: 'flare', len: [4, 6], out: [1, 2] }, { kind: 'bank', len: [0, 0], out: [0, 0] }] },
+  // A hammer: a broad forward section over a narrower drive section (from depth 4: a narrow beam leaves its drive section's bays too shallow).
+  { id: 'miner.hammer', depths: [4, 99], nose: { style: 'stepped', len: [3, 4], front: [5, 6] }, sections: [{ len: [8, 11], half: [7, 8] }, { len: [7, 10], half: [5, 6], taper: 1 }],
     stern: [{ kind: 'flare', len: [4, 6], out: [2, 2] }, { kind: 'bank', len: [0, 0], out: [0, 0] }] },
-  // A barge: a round bow, a long section.
-  { id: 'miner.barge', nose: { style: 'round', len: [3, 4], front: [5, 6] }, sections: [{ len: [14, 18], half: [7, 7] }],
+  // A prow: a steep bow, one section, quarter flares at the drive.
+  { id: 'miner.prow', nose: { style: 'steep', len: [4, 6], front: [3, 4] }, sections: [{ len: [12, 16], half: [7, 7] }],
+    stern: [{ kind: 'flare', len: [4, 6], out: [2, 2] }, { kind: 'bank', len: [0, 0], out: [0, 0] }] },
+  // A barge: a long round bow, a long section (from depth 4: at a narrow beam its bow leaves the forward bays too shallow).
+  { id: 'miner.barge', depths: [4, 99], nose: { style: 'round', len: [5, 6], front: [4, 5] }, sections: [{ len: [14, 18], half: [7, 7] }],
     stern: [{ kind: 'bank', len: [0, 0], out: [0, 0] }, { kind: 'flare', len: [4, 6], out: [1, 2] }] },
 ];
 
@@ -75,8 +78,8 @@ export const civilianOutline = {
     family: 'mining', profiles: MINER, maxBeam: 19, wider: { perDepth: 1, most: 29 }, lean: 3, crew: { sleep: 'bunks', rooms: 1 }, layout: { kind: 'bays', program: { pd: false, least: 64 } },
     // (Its hold the ore store: few crates.)
     bonus: { crates: -4 },
-    // (Two pods early, a pod more about every two depths, six at most; a refinery from depth 4, a second from 7.)
-    mining: { pods: { base: 2, perDepth: 0.5, max: 6 }, refinery: { from: 4, second: 7 } },
+    // (Two pods early, a pod more about every two depths, four at most; a refinery hall from depth 4, two machines in it.)
+    mining: { pods: { base: 2, perDepth: 0.5, max: 4 }, refinery: { from: 4, second: 4 } },
     // (Its pod deck with the stores, the ore beside it: no flight deck.)
     depts: { of: { hangar: 'hab' } },
   },

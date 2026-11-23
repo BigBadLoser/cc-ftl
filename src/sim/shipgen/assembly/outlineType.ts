@@ -86,7 +86,7 @@ export const beamAt = (r: OutlineRecipe, depth: number): number => (r.wider ? Ma
 
 /**
  * A miner's works (`OutlineRecipe.mining`): the pod deck (the bays in one row), the
- * ore store beside it (two bins a pod), and from its depth a refinery room (each machine with its own ore bin); none
+ * ore store beside it (two bins a pod), and from its depth a refinery hall two bays long (each machine with its own ore bin); none
  * without the recipe's `mining`.
  */
 export function shipWorks(r: OutlineRecipe, depth: number): RoomSpec[] {
@@ -97,7 +97,8 @@ export function shipWorks(r: OutlineRecipe, depth: number): RoomSpec[] {
   const deck: RoomSpec = { role: 'hangar', mods: Array<string>(pods).fill('module.pod_bay'), w: 4 * pods + 1, h: 5, vehicle: 'vehicle.mining_pod' };
   const ore: RoomSpec = { role: 'cargo', mods: Array<string>(2 * pods).fill('module.storage_ore'), w: Math.max(5, 2 * pods + 1), h: 5 };
   const refs = !m.refinery || depth < m.refinery.from ? 0 : depth >= m.refinery.second ? 2 : 1;
-  const plant: RoomSpec[] = refs === 0 ? [] : [{ role: 'industry', mods: [...Array<string>(refs).fill('module.refinery'), ...Array<string>(refs).fill('module.storage_ore')], w: 4 * refs + 1, h: 7 }];
+  // (The refinery a hall two bays long: the machines against its walls, the ship's reason for being.)
+  const plant: RoomSpec[] = refs === 0 ? [] : [{ role: 'industry', mods: [...Array<string>(refs).fill('module.refinery'), ...Array<string>(refs).fill('module.storage_ore')], w: 15, h: 7 }];
   return [deck, ore, ...plant];
 }
 
