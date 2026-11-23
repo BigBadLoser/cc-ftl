@@ -62,7 +62,8 @@ export const SHIP_ROOMS: Record<ShipRoom, RoomSpec> = {
  * for every four aboard, crew and passengers, up to four, three with a pantry), the recipe's extra rooms.
  */
 export function shipCommons(r: OutlineRecipe, crew: number, depth: number): RoomSpec[] {
-  if (isLean(r, depth)) return [];
+  // (A lean ship keeps its mess, the galley its crew eats from: only that.)
+  if (isLean(r, depth)) return [MESS];
   // (With passengers: a table for every four aboard (four seats each), up to four (three with a pantry beside it, the two in two bays), sized by `messFloor`.)
   const extra = r.rooms ?? [], pax = paxOf(r, depth), tables = Math.min(extra.includes('pantry') ? 3 : 4, Math.ceil((crew + pax) / 4));
   const sized: RoomSpec = pax > 0 ? { ...MESS, mods: ['module.galley', ...Array<string>(tables).fill('module.mess_table')], ...messFloor(tables) } : MESS;

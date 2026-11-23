@@ -74,7 +74,7 @@ const MINER: readonly Profile[] = [
 
 export const civilianOutline = {
   mining: {
-    // (Lean through depth 3, a prospector: bridge, pods, ore, bunks, life support, the drive. Broader the deeper: its
+    // (Lean through depth 3, a prospector: bridge, pods, ore, bunks, a mess, life support, the drive. Broader the deeper: its
     // beam 23 at first (room for its drive's flares), a tile more a depth, 29 at most.)
     family: 'mining', profiles: MINER, maxBeam: 23, wider: { perDepth: 1, most: 29 }, lean: 3, crew: { sleep: 'bunks', rooms: 1 }, layout: { kind: 'bays', program: { pd: false, least: 64 } },
     // (Its hold the ore store: few crates.)
