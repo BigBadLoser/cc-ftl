@@ -59,16 +59,16 @@ const TUG: readonly Profile[] = [
 const MINER: readonly Profile[] = [
   // A wedge: a long cheeked bow, one section; its drive flared, on quarter flares, or a flat bank.
   { id: 'miner.box', nose: { style: 'cheek', len: [5, 7], front: [3, 4] }, sections: [{ len: [12, 16], half: [7, 7] }],
-    stern: [{ kind: 'flare', len: [4, 6], out: [1, 2] }, { kind: 'quarters', len: [5, 7], out: [1, 2], aft: [2, 3] }, { kind: 'bank', len: [0, 0], out: [0, 0] }] },
-  // A hammer: a broad forward section over a narrower drive section (from depth 4: a narrow beam leaves its drive section's bays too shallow).
-  { id: 'miner.hammer', depths: [4, 99], nose: { style: 'stepped', len: [3, 4], front: [5, 6] }, sections: [{ len: [8, 11], half: [7, 8] }, { len: [7, 10], half: [5, 6], taper: 1 }],
+    stern: [{ kind: 'flare', len: [5, 7], out: [3, 4] }, { kind: 'quarters', len: [6, 8], out: [2, 3], aft: [3, 4] }, { kind: 'bank', len: [0, 0], out: [0, 0] }] },
+  // A hammer: a broad forward section over a narrower drive section.
+  { id: 'miner.hammer', nose: { style: 'stepped', len: [3, 4], front: [5, 6] }, sections: [{ len: [8, 11], half: [7, 8] }, { len: [7, 10], half: [5, 6], taper: 1 }],
     stern: [{ kind: 'flare', len: [4, 6], out: [2, 2] }, { kind: 'bank', len: [0, 0], out: [0, 0] }] },
   // A prow: a steep bow, one section; its drive a wide flare, quarter flares, or a flat bank. (A tail tapered in or pods
   // on pylons leave a hull this small no room for its drive.)
   { id: 'miner.prow', nose: { style: 'steep', len: [4, 6], front: [3, 4] }, sections: [{ len: [12, 16], half: [7, 7] }],
-    stern: [{ kind: 'flare', len: [5, 7], out: [2, 3] }, { kind: 'quarters', len: [5, 7], out: [1, 2], aft: [2, 3] }, { kind: 'bank', len: [0, 0], out: [0, 0] }] },
-  // A barge: a long round bow, a long section (from depth 4: at a narrow beam its bow leaves the forward bays too shallow).
-  { id: 'miner.barge', depths: [4, 99], nose: { style: 'round', len: [5, 6], front: [4, 5] }, sections: [{ len: [14, 18], half: [7, 7] }],
+    stern: [{ kind: 'flare', len: [6, 8], out: [3, 4] }, { kind: 'quarters', len: [6, 8], out: [2, 3], aft: [3, 4] }, { kind: 'bank', len: [0, 0], out: [0, 0] }] },
+  // A barge: a long round bow, a long section.
+  { id: 'miner.barge', nose: { style: 'round', len: [5, 6], front: [4, 5] }, sections: [{ len: [14, 18], half: [7, 7] }],
     stern: [{ kind: 'bank', len: [0, 0], out: [0, 0] }, { kind: 'flare', len: [4, 6], out: [1, 2] }] },
 ];
 
