@@ -69,6 +69,8 @@ export interface Profile {
   rearWings?: { len: Range; reach: Range; sweep?: Range } & Optional;
   /** One of these, picked per seed. */
   stern: Stern | readonly Stern[];
+  /** The depths it is drawn at, least and most (every depth where unset): a deep liner's twin drums. */
+  depths?: readonly [number, number];
 }
 
 export interface Silhouette {

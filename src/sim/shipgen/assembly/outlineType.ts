@@ -28,11 +28,12 @@ export function outlineTypeOf(f: FactionDef, seed: number, depth: number): strin
   return pick?.[0] ?? null;
 }
 
-/** The role a type plans with: its family's budget and the recipe's slant. */
-export function outlineRole(f: FactionDef, type: string, r: OutlineRecipe): ShipRoleDef {
+/** The role a type plans with at `depth`: its family's budget and the recipe's slant (its deep bonus from its depth). */
+export function outlineRole(f: FactionDef, type: string, r: OutlineRecipe, depth: number): ShipRoleDef {
   const fam = (f.hullFamilies ?? []).find((h) => h.id === r.family) as HullFamilyDef;
   const bonus = { ...(fam.bonus ?? {}) } as Record<string, number>;
-  for (const [k, v] of Object.entries(r.bonus ?? {})) bonus[k] = (bonus[k] ?? 0) + v;
+  const deep = r.deep && depth >= r.deep.from ? r.deep.bonus : {};
+  for (const add of [r.bonus ?? {}, deep]) for (const [k, v] of Object.entries(add)) bonus[k] = (bonus[k] ?? 0) + v;
   return { id: type, weight: fam.weight, archetypes: [], bonus, ...((r.bays ?? fam.bays) ? { bays: r.bays ?? fam.bays } : {}), ...(r.gunRooms ? { guns: r.gunRooms } : {}) };
 }
 

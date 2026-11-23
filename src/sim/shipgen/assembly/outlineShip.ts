@@ -168,7 +168,7 @@ export function outlineInputs(
 ): OutlineInputs {
   const rng = new Rng(seedOf(seed, n));
   const recipe = recipeOf(f, type), bay = recipe.layout.kind === 'bays' ? recipe.layout : undefined;
-  const role = outlineRole(f, type, recipe);
+  const role = outlineRole(f, type, recipe, depth);
   // A drive short of thrust gets engines a tier up before it gets more of them (more need a deeper stern, so a bigger hull).
   const engineUp = ENGINE_TIERS[ENGINE_TIERS.indexOf(planShip(new Rng(seedOf(seed, n)), f, role, depth, defs).kit.engine as (typeof ENGINE_TIERS)[number]) + 1];
   const tierUp = extra > 0 && !!engineUp && !!defs[engineUp];
@@ -189,7 +189,9 @@ export function outlineInputs(
   // deep); with a battery, a notched gun site per gun pair in place of the profile's embrasures.
   const sites = !!bay?.battery;
   const gp = gunsAndReactors(plan, defs).gunPairs;
-  const profile = rng.pick(recipe.profiles as Profile[]), from = rng.getState();
+  // (Of the profiles drawn at this depth: every one where none says.)
+  const pool = recipe.profiles.filter((p) => !p.depths || (depth >= p.depths[0] && depth <= p.depths[1]));
+  const profile = rng.pick((pool.length > 0 ? pool : recipe.profiles) as Profile[]), from = rng.getState();
   // A bay hull's flare holds its full width an engine room deep (the deepest engine it may take, a walk column and wall).
   const hold = bay ? engineSpec(1, 'w', planUp?.kit ?? kit).w + 2 : 0;
   const draw = (drive?: Drive, lane?: number): Silhouette => {
@@ -261,8 +263,8 @@ function bayGrid(plans: ShipPlan[], lanes: Silhouette[][], maxBeam: number, defs
         for (const plan of plans) {
           const fr = outlineFrame(plan, m, defs[plan.kit.engine]?.engine?.hullCapacity ?? 0, ENGINE_GAP, lane, rules.part);
           if (!fr) continue;
-          // (A lane hull's floor is far past its rooms' plan: its reactors light the hull's.)
-          const lit = fr.lane ? { ...plan, reactors: reactorsFor(plan, defs, Math.round(LIT * fr.area)) } : plan;
+          // (A lane hull's floor is far past its rooms' plan, and so is a drum hull's (its cabins, garden and lounges): its reactors light the hull's.)
+          const lit = fr.lane || fr.skips ? { ...plan, reactors: reactorsFor(plan, defs, Math.round(LIT * fr.area)) } : plan;
           const q = bayRooms(lit, fr, defs, 400, rules);
           if (q.viable > 0) { cands.push({ W: m.W, l: q, plan: lit }); break lanes; }
           continue lanes;

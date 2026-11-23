@@ -76,19 +76,19 @@ function cellOf(d: Drum, x: number, y: number): string | null {
   return `${end === 'f' ? 'lounge' : 'gym'}:${side}`;
 }
 
-/** The drum where the frame has one. */
-function drumOf(fr: Frame): Drum | null {
-  return fr.skip ? drumIn(fr.top, fr.skip[0] - 1, fr.skip[1] + 1) : null;
+/** The frame's drums, fore to aft. */
+function drumsOf(fr: Frame): Drum[] {
+  return (fr.skips ?? []).flatMap(([a, b]) => drumIn(fr.top, a - 1, b + 1) ?? []);
 }
 
 /** Every room tile's key, interior tiles only (the hull's own wall left to it). */
 function cells(fr: Frame): Map<string, [number, number][]> {
-  const d = drumOf(fr), out = new Map<string, [number, number][]>();
-  if (!d) return out;
+  const out = new Map<string, [number, number][]>();
   const inner = (x: number, y: number): boolean => fr.inside(x, y) && fr.inside(x + 1, y) && fr.inside(x - 1, y) && fr.inside(x, y + 1) && fr.inside(x, y - 1);
-  for (let x = d.x0 + 1; x < d.x1; x++) for (let y = -fr.H; y <= fr.H; y++) {
+  // (A drum's rooms keyed apart from another drum's; the halls and walls shared.)
+  for (const [i, d] of drumsOf(fr).entries()) for (let x = d.x0 + 1; x < d.x1; x++) for (let y = -fr.H; y <= fr.H; y++) {
     if (!inner(x, y)) continue;
-    const k = cellOf(d, x, y) ?? 'wall';
+    const c = cellOf(d, x, y), k = c === null ? 'wall' : c === 'hall' ? c : `${c}#${i}`;
     const got = out.get(k) ?? [];
     got.push([x, y]); out.set(k, got);
   }
@@ -107,12 +107,21 @@ const SPECS: Record<string, (area: number) => RoomSpec> = {
   garden: (a) => ({ role: 'support', mods: [...Array<string>(Math.max(2, Math.floor(a / 12))).fill('module.planter'), 'module.bench', 'module.bench'], w: 5, h: 5 }),
 };
 /** Beds a drum room holds. */
-const bedsIn = (k: string): number => SPECS[k.split(':')[0] as string]?.(0).mods.filter((m) => m === 'module.bed').length ?? 0;
+const bedsIn = (k: string): number => SPECS[k.split(/[:#]/)[0] as string]?.(0).mods.filter((m) => m === 'module.bed').length ?? 0;
 
-/** The drum's columns for the frame (its end walls), or null where the hull has no room for one. */
-const skipOf = (s: DockSite): [number, number] | null => {
-  const d = drumIn((x) => s.depth(x) + SPINE + 1, s.xBand + MIN_DEPTH + s.CW + 2, s.xS);
-  return d && [d.x0, d.x1];
+/**
+ * The drums' columns for the frame (their end walls), fore to aft, or null where the hull has no room for one: the
+ * deepest run first, then any as deep aft of it (a deep liner's second drum, a few bays of hull between).
+ */
+const skipOf = (s: DockSite): [number, number][] | null => {
+  const top = (x: number): number => s.depth(x) + SPINE + 1, out: [number, number][] = [];
+  let a = s.xBand + MIN_DEPTH + s.CW + 2, first: Drum | null = null;
+  for (let d = drumIn(top, a, s.xS); d && (!first || d.T >= first.T - 1); d = drumIn(top, a, s.xS)) {
+    first ??= d;
+    out.push([d.x0, d.x1]);
+    a = d.x1 + 2;
+  }
+  return out.length > 0 ? out : null;
 };
 
 export const DRUM: BayPart = {
@@ -124,17 +133,17 @@ export const DRUM: BayPart = {
   dock: (s) => {
     const d = skipOf(s);
     if (!d) return -1;
-    const lo = s.xBand + MIN_DEPTH + 1, hi = d[0] - s.CW - MIN_DEPTH - 1, mid = Math.round((s.xBand + d[0] - s.CW) / 2);
+    const x0 = (d[0] as [number, number])[0], lo = s.xBand + MIN_DEPTH + 1, hi = x0 - s.CW - MIN_DEPTH - 1, mid = Math.round((s.xBand + x0 - s.CW) / 2);
     for (let x = Math.min(mid, hi); x >= lo; x--) if (s.flat(x)) return x;
     for (let x = mid + 1; x <= hi; x++) if (s.flat(x)) return x;
     return -1;
   },
-  zones: { forward: (b, fr) => b.x0 < (fr.skip?.[0] ?? Infinity), other: () => 'systems' },
+  zones: { forward: (b, fr) => b.x0 < (fr.skips?.[0]?.[0] ?? Infinity), other: () => 'systems' },
   cabins: (fr) => [...cells(fr).keys()].reduce((n, k) => n + bedsIn(k), 0),
   paint: (fr, { g, hall }) => {
     const ox = -Math.floor(fr.W / 2);
     for (const [k, ts] of cells(fr)) {
-      const spec = SPECS[k.split(':')[0] as string]?.(ts.length);
+      const spec = SPECS[k.split(/[:#]/)[0] as string]?.(ts.length);
       const id = k === 'wall' ? SOLID : k === 'hall' ? hall : g.room(spec?.role ?? 'support', spec ? { spec } : {});
       for (const [x, y] of ts) g.set(ox + x, y, id);
     }

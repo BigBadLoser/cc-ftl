@@ -16,14 +16,14 @@ export function bayLayout(fr: Frame): Bay[] {
   const { xBand, dockAt, CW, xS, depth, maint, lane, outer } = fr;
   // On a lane hull, aft of the cross corridor: out from each side corridor, and in from it to the lane where it has both.
   const out: Row | undefined = lane && { c: lane.yc, dir: 1, depth: (x) => outer(x) - lane.yc - BAND - 1 };
-  // (Round a part's own columns, `skip`, the airlocks too where they are in them.)
-  const sk = fr.skip, dockIn = !!sk && dockAt > sk[0] && dockAt < sk[1];
-  const blocks: [number, number, Row?][] = [[xBand, dockIn && sk ? sk[0] : dockAt - 1]];
+  // (Round a part's own column runs, `skips`, the airlocks too where they are in one.)
+  const sks = fr.skips ?? [], inSk = sks.find((s) => dockAt > s[0] && dockAt < s[1]);
+  const blocks: [number, number, Row?][] = [[xBand, inSk ? inSk[0] : dockAt - 1]];
   // (Outboard, round its alcoves.)
   if (!out) {
-    if (sk && dockIn) blocks.push([sk[1] + 1, xS]);
-    else if (sk && sk[0] > dockAt) blocks.push([dockAt + CW + 1, sk[0]], [sk[1] + 1, xS]);
-    else blocks.push([dockAt + CW + 1, xS]);
+    let a = inSk ? inSk[1] + 1 : dockAt + CW + 1;
+    for (const s of sks) if (s[0] >= a) { blocks.push([a, s[0]]); a = s[1] + 1; }
+    blocks.push([a, xS]);
   }
   else for (const [a, b] of outboardRuns(fr)) blocks.push([a, b, out]);
   // (Inboard, between the lane's airlocks.)

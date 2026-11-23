@@ -14,8 +14,8 @@ export interface BayPart {
   program?: ProgramRules;
   /** Frame: the cross corridor's first column (-1 for none), in place of the hull's widest flat stretch. */
   dock?: (s: DockSite) => number;
-  /** Frame: columns [x0, x1] the part takes for rooms of its own, no bay there (null: the hull has no room for them). */
-  skip?: (s: DockSite) => [number, number] | null;
+  /** Frame: column runs [x0, x1] the part takes for rooms of its own, fore to aft, no bay there (null: the hull has no room for them). */
+  skip?: (s: DockSite) => [number, number][] | null;
   /** Fixed: the cabins the part's own rooms hold (the plan's cabin blocks go there, not on bays). */
   cabins?: (fr: Frame) => number;
   /** Paint: its own rooms and halls, over the closed frame (`beds`: the plan's cabin beds). */

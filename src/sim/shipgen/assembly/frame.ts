@@ -57,8 +57,8 @@ export interface Frame {
   /** PROTOTYPE (#581): the battery's maintenance corridor, its row out from the axis per column (rooms stop short of it). */
   maint?: { a: number; b: number; guns: [number, number][]; rows: number; inner: number[]; hallY: (x: number) => number };
   lane?: Lane;
-  /** Columns [x0, x1] a layout part takes for its own rooms, its end walls included (a liner's drum): no bay there. */
-  skip?: [number, number];
+  /** Column runs [x0, x1] a layout part takes for its own rooms, end walls included (a liner's drums), fore to aft: no bay there. */
+  skips?: [number, number][];
   /** The mask's tiles (counted where the drive is sized by the hull). */
   area: number;
 }
@@ -151,9 +151,9 @@ export function outlineFrame(plan: ShipPlan, m: Mask, carry = 0, gap = 0, lane?:
   else if (part.dock) dockAt = part.dock({ xBand, xS, CW, depth, flat });
   else if (!bt) for (let x = xBand + MIN_DEPTH + 1; x <= Math.min(xS - MIN_DEPTH - CW - 1, xBand + 0.75 * (xS - xBand)); x++) if (flat(x) && (dockAt < 0 || depth(x) > depth(dockAt))) dockAt = x;
   if (dockAt < 0) return null;
-  const skip = part.skip?.({ xBand, xS, CW, depth, flat });
-  if (skip === null) return null;
-  return { ...(skip ? { skip } : {}), W, H, inside, top, outer, depth, area: tiles, xS, xEnd, sternMax, perSide, used, engine, xBr, xBand, CW, dockAt, ...(bt ? { maint: { a: g0, b: g1, guns: bt.guns, rows: bt.rows, inner: bt.inner, hallY } } : {}), ...(ln ? { lane: ln } : {}) };
+  const skips = part.skip?.({ xBand, xS, CW, depth, flat });
+  if (skips === null) return null;
+  return { ...(skips ? { skips } : {}), W, H, inside, top, outer, depth, area: tiles, xS, xEnd, sternMax, perSide, used, engine, xBr, xBand, CW, dockAt, ...(bt ? { maint: { a: g0, b: g1, guns: bt.guns, rows: bt.rows, inner: bt.inner, hallY } } : {}), ...(ln ? { lane: ln } : {}) };
 }
 
 /**

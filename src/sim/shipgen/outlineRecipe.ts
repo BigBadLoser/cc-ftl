@@ -100,7 +100,9 @@ export interface OutlineRecipe {
   bays?: number;
   /** Guns every ship of the type carries, one to a room, in pairs (`ShipRoleDef.guns`). */
   gunRooms?: number;
-  bonus?: Partial<Record<'weapons' | 'engines' | 'crew' | 'crates' | 'shields' | 'pointDefense' | 'reactors', number>>;
+  bonus?: Bonus;
+  /** From `from` deep, `bonus` over the type's own (a deep liner's shields and point defence). */
+  deep?: { from: number; bonus: Bonus };
   /** How the crew sleeps; `rooms`: its barracks that many rooms (pieces along two walls), not the plan's. */
   crew: { sleep: Sleep; rooms?: number };
   /** Passenger beds past the crew's, single cabins: a base and more a depth. */
@@ -114,6 +116,9 @@ export interface OutlineRecipe {
   /** A miner: its pod deck, the ore store beside it, and from some depth a refinery aboard. */
   mining?: MiningSpec;
 }
+
+/** Loadout counts over a hull family's. */
+export type Bonus = Partial<Record<'weapons' | 'engines' | 'crew' | 'crates' | 'shields' | 'pointDefense' | 'reactors', number>>;
 
 /**
  * A miner's works (#581): mining pods (a pod deck of their bays, which they leave and enter through the floor) and an
