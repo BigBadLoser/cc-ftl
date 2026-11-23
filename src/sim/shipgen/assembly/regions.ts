@@ -320,7 +320,7 @@ export class RegionGrid {
   }
 
   /** Whether the tile compiles to wall (doors aside): the rule of `compile` for one tile. */
-  wallAt(x: number, y: number): boolean {
+  private wallAt(x: number, y: number): boolean {
     const a = this.wallOwner(x, y);
     if (a === SPACE) return false;
     if (a === SOLID) return true;
