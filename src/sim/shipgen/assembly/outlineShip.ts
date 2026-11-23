@@ -13,7 +13,7 @@ import { outlineFrame } from './frame';
 import { paintPlaced } from './placePaint';
 import type { Placed } from './placeTypes';
 import { gunsAndReactors } from './pairs';
-import { outlineAttempts, outlineRole, recipeOf, shipCommons, shipQuarters, shipWorks } from './outlineType';
+import { outlineAttempts, outlineRole, recipeOf, shipCommons, shipQuarters, shipWorks, leanPlan, beamAt } from './outlineType';
 import { SPACE, type RegionGrid } from './regions';
 import { addTruss } from './truss';
 
@@ -178,7 +178,7 @@ export function outlineInputs(
   const kit = { ...planned.kit, ...(planned.kit.reactor === REACTOR_TIERS[0] && defs[up] ? { reactor: up } : {}), ...(tierUp ? { engine: engineUp } : {}) };
   // The type's commons and quarters (a few spare beds past the crew's, its passengers' cabins) join the plan, their power counted.
   const quarters = shipQuarters(recipe, planned.quarters, planned.crew.length, rng.int(2, 4), depth);
-  const plan: ShipPlan = { ...planned, kit, quarters, support: [...planned.support, ...shipCommons(recipe, planned.crew.length, depth), ...shipWorks(recipe, depth)] };
+  const plan: ShipPlan = { ...leanPlan(planned, recipe, depth), kit, quarters, support: [...planned.support, ...shipCommons(recipe, planned.crew.length, depth), ...shipWorks(recipe, depth)] };
   const fixed = recipe.engines;
   if (fixed) plan.engines = fixed + (tierUp ? extra - 1 : extra);
   plan.reactors = reactorsFor(plan, defs);
@@ -209,7 +209,7 @@ export function outlineInputs(
   const both = lanes ? new Rng(seedOf(seed, 2000 + n)).chance(0.5) : undefined;
   const sil = draw();
   const vary = Array.from({ length: 24 }, () => rng.int(80, 135) / 100);
-  return { rng, role, plan, sil, drives, vary, maxBeam: recipe.maxBeam, profile: profile.id, ...(planUp ? { planUp } : {}), ...(lanes ? { lanes, both } : {}) };
+  return { rng, role, plan, sil, drives, vary, maxBeam: beamAt(recipe, depth), profile: profile.id, ...(planUp ? { planUp } : {}), ...(lanes ? { lanes, both } : {}) };
 }
 
 /**

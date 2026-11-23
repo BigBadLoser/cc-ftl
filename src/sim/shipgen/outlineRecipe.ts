@@ -118,6 +118,13 @@ export interface OutlineRecipe {
   depts?: DeptRules;
   /** A pusher: the hull behind a truss of containers it pushes. */
   truss?: TrussSpec;
+  /**
+   * Through this depth the type is lean, a small working ship: no mess (the crew eats at its bunks), no gun room, its
+   * crates in one hold.
+   */
+  lean?: number;
+  /** The beam's growth a depth over `maxBeam`, up to `most` (a deep miner broader, not only longer). */
+  wider?: { perDepth: number; most: number };
   /** A miner: its pod deck, the ore store beside it, and from some depth a refinery aboard. */
   mining?: MiningSpec;
 }

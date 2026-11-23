@@ -58,19 +58,21 @@ const TUG: readonly Profile[] = [
  */
 const MINER: readonly Profile[] = [
   // A box: one straight section.
-  { id: 'miner.box', nose: { style: 'stepped', len: [3, 4], front: [6, 7] }, sections: [{ len: [18, 24], half: [8, 9] }],
-    stern: [{ kind: 'bank', len: [0, 0], out: [0, 0] }, { kind: 'quarters', len: [6, 8], out: [2, 2], aft: [2, 3] }] },
+  { id: 'miner.box', nose: { style: 'stepped', len: [2, 3], front: [5, 6] }, sections: [{ len: [12, 16], half: [7, 7] }],
+    stern: [{ kind: 'bank', len: [0, 0], out: [0, 0] }, { kind: 'quarters', len: [5, 7], out: [1, 2], aft: [2, 3] }] },
   // A hammer: a broad forward section over a narrower drive section.
-  { id: 'miner.hammer', nose: { style: 'stepped', len: [2, 3], front: [8, 9] }, sections: [{ len: [12, 16], half: [9, 10] }, { len: [10, 14], half: [6, 7], taper: 1 }],
-    stern: [{ kind: 'flare', len: [5, 7], out: [2, 3] }, { kind: 'bank', len: [0, 0], out: [0, 0] }] },
+  { id: 'miner.hammer', nose: { style: 'stepped', len: [2, 3], front: [6, 7] }, sections: [{ len: [8, 11], half: [7, 8] }, { len: [7, 10], half: [5, 6], taper: 1 }],
+    stern: [{ kind: 'flare', len: [4, 6], out: [2, 2] }, { kind: 'bank', len: [0, 0], out: [0, 0] }] },
   // A barge: a round bow, a long section.
-  { id: 'miner.barge', nose: { style: 'round', len: [4, 5], front: [5, 6] }, sections: [{ len: [20, 28], half: [8, 9] }],
-    stern: [{ kind: 'quarters', len: [6, 8], out: [2, 3], aft: [2, 3] }, { kind: 'flare', len: [5, 7], out: [2, 3] }] },
+  { id: 'miner.barge', nose: { style: 'round', len: [3, 4], front: [4, 5] }, sections: [{ len: [14, 18], half: [7, 7] }],
+    stern: [{ kind: 'quarters', len: [5, 7], out: [1, 2], aft: [2, 3] }, { kind: 'flare', len: [4, 6], out: [1, 2] }] },
 ];
 
 export const civilianOutline = {
   mining: {
-    family: 'mining', profiles: MINER, maxBeam: 23, crew: { sleep: 'bunks', rooms: 1 }, layout: { kind: 'bays', program: { pd: false, least: 64 } },
+    // (Lean through depth 3, a prospector: bridge, pods, ore, bunks, life support, the drive. Broader the deeper: its
+    // beam 19 at first, a tile more a depth, 29 at most.)
+    family: 'mining', profiles: MINER, maxBeam: 19, wider: { perDepth: 1, most: 29 }, lean: 3, crew: { sleep: 'bunks', rooms: 1 }, layout: { kind: 'bays', program: { pd: false, least: 64 } },
     // (Its hold the ore store: few crates.)
     bonus: { crates: -4 },
     // (Two pods early, a pod more about every two depths, six at most; a refinery from depth 4, a second from 7.)

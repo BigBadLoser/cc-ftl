@@ -1,7 +1,7 @@
 import type { ModuleDef } from '../../registry';
 import { enginesShort, previewHull } from '../generate';
 import type { OutlineRecipe, ShipRoom } from '../outlineRecipe';
-import type { RoomSpec } from '../plan';
+import { cargoSpec, type RoomSpec, type ShipPlan } from '../plan';
 import { messFloor } from '../rooms/rules/mess';
 import type { FactionDef, GenResult, HullFamilyDef, ShipRoleDef } from '../types';
 import { SLEEPER, barracksSize, sleepersIn } from './quarters';
@@ -62,12 +62,27 @@ export const SHIP_ROOMS: Record<ShipRoom, RoomSpec> = {
  * for every four aboard, crew and passengers, up to four, three with a pantry), the recipe's extra rooms.
  */
 export function shipCommons(r: OutlineRecipe, crew: number, depth: number): RoomSpec[] {
+  if (isLean(r, depth)) return [];
   // (With passengers: a table for every four aboard (four seats each), up to four (three with a pantry beside it, the two in two bays), sized by `messFloor`.)
   const extra = r.rooms ?? [], pax = paxOf(r, depth), tables = Math.min(extra.includes('pantry') ? 3 : 4, Math.ceil((crew + pax) / 4));
   const sized: RoomSpec = pax > 0 ? { ...MESS, mods: ['module.galley', ...Array<string>(tables).fill('module.mess_table')], ...messFloor(tables) } : MESS;
   const mess: RoomSpec = extra.includes('pantry') ? { ...sized, annex: SHIP_ROOMS.pantry } : sized;
   return [...(crew >= 3 ? [mess] : []), ...extra.filter((k) => k !== 'pantry').map((k) => SHIP_ROOMS[k])];
 }
+
+/** Whether a type is lean at `depth` (`OutlineRecipe.lean`). */
+export const isLean = (r: OutlineRecipe, depth: number): boolean => r.lean !== undefined && depth <= r.lean;
+
+/** A lean plan: no gun rooms (no weapons console on the bridge), the crates in one hold. Others as they are. */
+export function leanPlan(plan: ShipPlan, r: OutlineRecipe, depth: number): ShipPlan {
+  if (!isLean(r, depth)) return plan;
+  const crates = plan.cargo.reduce((n, c) => n + c.mods.length, 0);
+  const command = { ...plan.command, mods: plan.command.mods.filter((m) => m !== 'module.weaponsConsole') };
+  return { ...plan, command, weapons: [], cargo: crates > 0 ? [cargoSpec(crates)] : [] };
+}
+
+/** A type's beam at `depth`: its `maxBeam`, wider by `wider` a depth up to its most. */
+export const beamAt = (r: OutlineRecipe, depth: number): number => (r.wider ? Math.min(r.wider.most, r.maxBeam + Math.floor(r.wider.perDepth * depth)) : r.maxBeam);
 
 /**
  * A miner's works (`OutlineRecipe.mining`): the pod deck (the bays in one row), the
