@@ -2,9 +2,9 @@ name: Semantic duplicates
 
 # Nightly report of functions that do the same thing written differently (`npm run dup:semantic`, jscpd --semantic). Runs on
 # the self-hosted runner labelled `pi` (the agent-harness host), and only from a schedule or a manual run: never on pull
-# requests, so a fork can't reach that machine through this file. The embeddings run on its CPU, with the same model as the
-# baseline; the host's NPU embedding server is not used, because its fixed 512-token input sees only the start of a long
-# function (BigBadLoser/cc-ftl#584). New pairs go into one open issue, kept updated; a clean run leaves the issue as it is.
+# requests, so a fork can't reach that machine through this file. Embeddings come from the host's NPU server for
+# embeddinggemma (port 8794: lengths up to 1024 tokens, longer functions in windows; same vectors as the CPU model, #610).
+# New pairs go into one open issue, kept updated; a clean run leaves the issue as it is.
 on:
   schedule:
     - cron: '23 8 * * *'
@@ -21,9 +21,9 @@ concurrency:
 jobs:
   report:
     runs-on: [self-hosted, pi]
-    # The first run embeds every function on the CPU (the cache is empty, and jscpd saves it only at the end); later runs
-    # embed only what changed.
-    timeout-minutes: 300
+    # The first run embeds every function (about an hour on the NPU; the cache is empty, and jscpd saves it only at the
+    # end); later runs embed only what changed.
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
       # No `cache: npm`: the runner keeps ~/.npm between runs, and jscpd keeps its embedding cache by checkout path.
@@ -31,6 +31,7 @@ jobs:
         with: { node-version: 22 }
       - run: npm ci --no-audit --no-fund
       - name: Scan
+        env: { JSCPD_SEMANTIC_URL: 'http://127.0.0.1:8794/v1' }
         run: npm run -s dup:semantic > "$RUNNER_TEMP/report.md"
       - name: Post
         uses: actions/github-script@v7
