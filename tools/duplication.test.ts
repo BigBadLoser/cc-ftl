@@ -17,7 +17,7 @@ const BASELINE = { clones: 70, duplicatedLines: 643 };
  * edited statements, which token matching misses. On the labelled set in tools/dupBench it found every renamed copy and almost
  * no false pairs (#610). `npx jscpd --kind ast --similarity 0.8 --reporters console` lists them.
  */
-const AST_BASELINE = { clones: 11, duplicatedLines: 99 };
+const AST_BASELINE = { clones: 10, duplicatedLines: 91 };
 
 function scan(args: string[]) {
   const out = mkdtempSync(join(tmpdir(), 'jscpd-'));
