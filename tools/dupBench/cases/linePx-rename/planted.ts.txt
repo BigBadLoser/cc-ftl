@@ -1,0 +1,26 @@
+type Px = { x: number; y: number };
+
+// Bresenham: every pixel on the segment between two points.
+export function rasterLine(ax: number, ay: number, bx: number, by: number): Px[] {
+  let [cx, cy] = [Math.round(ax), Math.round(ay)];
+  const [tx, ty] = [Math.round(bx), Math.round(by)];
+  const stepX = Math.abs(tx - cx);
+  const stepY = -Math.abs(ty - cy);
+  const dirX = cx < tx ? 1 : -1;
+  const dirY = cy < ty ? 1 : -1;
+  let error = stepX + stepY;
+  const pixels: Px[] = [{ x: cx, y: cy }];
+  while (cx !== tx || cy !== ty) {
+    const doubled = 2 * error;
+    if (doubled >= stepY) {
+      error += stepY;
+      cx += dirX;
+    }
+    if (doubled <= stepX) {
+      error += stepX;
+      cy += dirY;
+    }
+    pixels.push({ x: cx, y: cy });
+  }
+  return pixels;
+}

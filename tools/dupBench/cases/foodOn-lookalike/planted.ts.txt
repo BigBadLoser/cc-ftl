@@ -1,0 +1,23 @@
+import { storagesOn } from '../combat/ammo';
+import { StorageC } from '../items/components';
+import type { Sim } from '../sim';
+import { ammoKindsOf } from '../combat/ammoKinds';
+
+// Which ammo does a gun load first? The highest-damage kind held anywhere on the ship; a spent stack never counts.
+export function bestAmmoOn(sim: Sim, shipId: number): string | null {
+  const a = ammoKindsOf(sim);
+  let best = a.damage.size;
+  for (const id of storagesOn(sim, shipId)) {
+    const stacks = sim.world.get(id, StorageC)?.stacks;
+    if (!stacks) continue;
+    for (const st of stacks) {
+      if (st.count <= 0) continue;
+      const r = a.damage.get(st.item);
+      if (r !== undefined && r < best) {
+        if (r === 0) return a.order[0] ?? null;
+        best = r;
+      }
+    }
+  }
+  return a.order[best] ?? null;
+}

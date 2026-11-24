@@ -1,0 +1,6 @@
+{
+  "label": "distinct",
+  "level": "lookalike",
+  "original": { "file": "src/render/cartPose.ts", "fn": "cartAhead" },
+  "planted": { "target": "src/render/wireSag.ts", "fn": "cableSagAt" }
+}

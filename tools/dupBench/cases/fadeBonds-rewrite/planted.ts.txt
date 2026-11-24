@@ -1,0 +1,25 @@
+import type { Sim } from '../sim';
+import { TICK_HZ } from '../time';
+import { BOND_FADE_SEC, setScore } from './bonds';
+
+// Collect what is due first, then apply it, so the maps are not mutated while being walked.
+export function forgetFeelings(sim: Sim): void {
+  const period = BOND_FADE_SEC * TICK_HZ;
+  const due: { from: number; to: number; periods: number }[] = [];
+  for (const [fromKey, row] of Object.entries(sim.bonds.opinions)) {
+    for (const [toKey, op] of Object.entries(row)) {
+      const periods = Math.floor((sim.tick - op.touched) / period);
+      if (periods > 0) due.push({ from: Number(fromKey), to: Number(toKey), periods });
+    }
+  }
+  for (const { from, to, periods } of due) {
+    const op = sim.bonds.opinions[from]![to]!;
+    const magnitude = Math.max(0, Math.abs(op.score) - periods);
+    op.touched += periods * period;
+    setScore(sim, from, to, op, Math.sign(op.score) * magnitude);
+    if (op.score === 0 && !op.kind) delete sim.bonds.opinions[from]![to];
+  }
+  for (const key of Object.keys(sim.bonds.opinions)) {
+    if (Object.keys(sim.bonds.opinions[+key]!).length === 0) delete sim.bonds.opinions[+key];
+  }
+}

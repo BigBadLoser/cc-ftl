@@ -1,0 +1,26 @@
+import { AllegianceC } from '../fight/components';
+import { AboardC, EmbarkOrderC, type Vehicle } from '../vehicles/components';
+import { AssignmentC, CrewC, DeadC, DraftedC, JobC, PositionC } from '../crew/components';
+import { isIncapacitated } from '../crew/helpers';
+import { shipById } from '../combat/shipQuery';
+import { shipIdOf } from '../regions';
+import type { Sim } from '../sim';
+import { stat } from '../stats';
+
+function isFree(sim: Sim, id: number, taken: ReadonlySet<number>, exclude?: ReadonlySet<number>): boolean {
+  if (taken.has(id) || exclude?.has(id)) return false;
+  if ([DeadC, DraftedC, EmbarkOrderC, AboardC].some((c) => sim.world.has(id, c))) return false;
+  const job = sim.world.get(sim.world.get(id, AssignmentC)?.jobId ?? 0, JobC);
+  return job?.kind !== 'passage' && !isIncapacitated(sim, id);
+}
+
+export function bestAvailablePilot(sim: Sim, v: Vehicle, exclude?: ReadonlySet<number>): number {
+  const faction = shipById(sim, v.homeShip)?.faction;
+  const taken = reserved(sim);
+  const candidates = [...sim.world.query(CrewC, PositionC)]
+    .sort((a, b) => a - b)
+    .filter((id) => isFree(sim, id, taken, exclude))
+    .filter((id) => sim.world.get(id, AllegianceC)?.faction === faction)
+    .filter((id) => shipIdOf(sim, sim.world.get(id, PositionC)) === v.homeShip);
+  return candidates.reduce((best, id) => (best === 0 || stat(sim, id, 'piloting') > stat(sim, best, 'piloting') ? id : best), 0);
+}

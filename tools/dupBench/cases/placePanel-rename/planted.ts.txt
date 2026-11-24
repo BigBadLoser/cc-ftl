@@ -1,0 +1,29 @@
+type Rect = { x0: number; y0: number; x1: number; y1: number };
+type Size = { w: number; h: number };
+const hit = (a: Rect, b: Rect): boolean => a.x0 < b.x1 && b.x0 < a.x1 && a.y0 < b.y1 && b.y0 < a.y1;
+
+export function placeTooltip(target: Rect, box: Size, screen: Size, blockers: Rect[], pad = 12, edge = 8): { x: number; y: number } | null {
+  if (target.x1 <= 0 || target.y1 <= 0 || target.x0 >= screen.w || target.y0 >= screen.h) return null;
+  const midX = (target.x0 + target.x1) / 2 - box.w / 2;
+  const midY = (target.y0 + target.y1) / 2 - box.h / 2;
+  const tries = [
+    { x: target.x1 + pad, y: midY },
+    { x: target.x0 - pad - box.w, y: midY },
+    { x: midX, y: target.y0 - pad - box.h },
+    { x: midX, y: target.y1 + pad },
+  ];
+  const fit = (v: number, extent: number, max: number) => Math.max(edge, Math.min(v, max - extent - edge));
+  let winner: { x: number; y: number } | null = null;
+  let lowest = Infinity;
+  for (const t of tries) {
+    const x = fit(t.x, box.w, screen.w);
+    const y = fit(t.y, box.h, screen.h);
+    const r = { x0: x, y0: y, x1: x + box.w, y1: y + box.h };
+    const score = (hit(r, target) ? 1e6 : 0) + blockers.filter((o) => hit(r, o)).length * 1000 + Math.abs(x - t.x) + Math.abs(y - t.y);
+    if (score < lowest) {
+      winner = { x, y };
+      lowest = score;
+    }
+  }
+  return winner;
+}

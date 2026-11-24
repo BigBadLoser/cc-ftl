@@ -1,0 +1,24 @@
+type Person = { id: number; x: number; y: number };
+
+// Who chats with whom: pair people off by closeness, each person in at most one pair.
+export function pairBuddies(walkers: readonly Person[], maxGap: number): Map<number, number> {
+  const out = new Map<number, number>();
+  if (walkers.length < 2) return out;
+  const left = [...walkers].sort((a, b) => a.id - b.id);
+  for (let round = 0; left.length > 1; round++) {
+    const batch = left.splice(0, Math.min(left.length, 8));
+    const pairs: { d: number; a: Person; b: Person }[] = [];
+    for (const a of batch) for (const b of batch) if (a.id < b.id) pairs.push({ d: Math.hypot(a.x - b.x, a.y - b.y), a, b });
+    pairs.sort((p, q) => p.d - q.d || p.a.id - q.a.id || p.b.id - q.b.id);
+    const used = new Set<number>();
+    for (const p of pairs) {
+      if (p.d > maxGap || used.has(p.a.id) || used.has(p.b.id)) continue;
+      out.set(p.a.id, p.b.id);
+      out.set(p.b.id, p.a.id);
+      used.add(p.a.id);
+      used.add(p.b.id);
+    }
+    if (round > 50) break;
+  }
+  return out;
+}

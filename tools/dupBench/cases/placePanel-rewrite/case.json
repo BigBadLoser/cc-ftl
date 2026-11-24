@@ -1,0 +1,6 @@
+{
+  "label": "dup",
+  "level": "rewrite",
+  "original": { "file": "src/ui/combat/panelPlace.ts", "fn": "placePanel" },
+  "planted": { "target": "src/ui/combat/floatBeside.ts", "fn": "floatBeside" }
+}

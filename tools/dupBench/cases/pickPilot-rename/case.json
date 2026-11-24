@@ -1,0 +1,6 @@
+{
+  "label": "dup",
+  "level": "rename",
+  "original": { "file": "src/sim/mining/pilot.ts", "fn": "pickPilot" },
+  "planted": { "target": "src/sim/mining/choosePilot.ts", "fn": "choosePilot" }
+}

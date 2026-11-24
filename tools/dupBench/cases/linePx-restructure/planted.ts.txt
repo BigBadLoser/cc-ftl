@@ -1,0 +1,20 @@
+type Px = { x: number; y: number };
+
+export function segmentPixels(ax: number, ay: number, bx: number, by: number): Px[] {
+  const start: Px = { x: Math.round(ax), y: Math.round(ay) };
+  const end: Px = { x: Math.round(bx), y: Math.round(by) };
+  const spanX = Math.abs(end.x - start.x);
+  const spanY = -Math.abs(end.y - start.y);
+  const dirs = { x: Math.sign(end.x - start.x) || -1, y: Math.sign(end.y - start.y) || -1 };
+  const walk = (cur: Px, err: number, acc: Px[]): Px[] => {
+    if (cur.x === end.x && cur.y === end.y) return acc;
+    const twice = err * 2;
+    const moveX = twice >= spanY;
+    const moveY = twice <= spanX;
+    const next = { x: moveX ? cur.x + dirs.x : cur.x, y: moveY ? cur.y + dirs.y : cur.y };
+    const nextErr = err + (moveX ? spanY : 0) + (moveY ? spanX : 0);
+    acc.push(next);
+    return walk(next, nextErr, acc);
+  };
+  return walk(start, spanX + spanY, [start]);
+}

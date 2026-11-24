@@ -1,0 +1,27 @@
+import { AllegianceC } from '../fight/components';
+import { AboardC, EmbarkOrderC, type Vehicle } from '../vehicles/components';
+import { AssignmentC, CrewC, DeadC, DraftedC, JobC, PositionC } from '../crew/components';
+import { isIncapacitated } from '../crew/helpers';
+import { shipById } from '../combat/shipQuery';
+import { shipIdOf } from '../regions';
+import type { Sim } from '../sim';
+import { stat } from '../stats';
+
+export function choosePilot(world: Sim, craft: Vehicle, skip?: ReadonlySet<number>): number {
+  const side = shipById(world, craft.homeShip)?.faction;
+  const busy = reserved(world);
+  let winner = 0;
+  let record = -Infinity;
+  for (const who of [...world.world.query(CrewC, PositionC)].sort((a, b) => a - b)) {
+    if (busy.has(who) || skip?.has(who) || world.world.has(who, DeadC) || world.world.has(who, DraftedC) || world.world.has(who, EmbarkOrderC) || world.world.has(who, AboardC)) continue;
+    if (world.world.get(world.world.get(who, AssignmentC)?.jobId ?? 0, JobC)?.kind === 'passage') continue; // heading for a shuttle
+    if (isIncapacitated(world, who) || world.world.get(who, AllegianceC)?.faction !== side) continue;
+    if (shipIdOf(world, world.world.get(who, PositionC)) !== craft.homeShip) continue;
+    const rating = stat(world, who, 'piloting');
+    if (rating > record) {
+      winner = who;
+      record = rating;
+    }
+  }
+  return winner;
+}

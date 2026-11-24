@@ -1,0 +1,6 @@
+{
+  "label": "distinct",
+  "level": "lookalike",
+  "original": { "file": "src/render/pixelShapes.ts", "fn": "linePx" },
+  "planted": { "target": "src/render/ringPx.ts", "fn": "ringPx" }
+}

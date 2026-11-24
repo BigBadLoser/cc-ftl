@@ -1,0 +1,6 @@
+{
+  "label": "dup",
+  "level": "restructure",
+  "original": { "file": "src/sim/crew/breakdown.ts", "fn": "rollBreak" },
+  "planted": { "target": "src/sim/crew/rollMeltdown.ts", "fn": "rollMeltdown" }
+}

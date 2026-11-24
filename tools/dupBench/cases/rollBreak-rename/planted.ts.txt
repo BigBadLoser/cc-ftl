@@ -1,0 +1,35 @@
+import { unit } from '../galaxy/hash';
+import type { Sim } from '../sim';
+import { TICK_HZ } from '../time';
+import { DURATION, tierOf } from './breakTable';
+import type { BreakKind } from './breakTypes';
+import type { Mood } from './components';
+import { BREAK_INTERVAL, SALT_CONTEXT, SALT_DURATION, SALT_OUTCOME, SALT_ROLL, breakChance, breakTerms, type BreakPick, type Term } from './breakdown';
+
+export function rollCrisis(world: Sim, who: number, mood: Mood, onDuty: boolean): BreakPick | null {
+  const parts = breakTerms(world, who, mood, onDuty);
+  if (parts.length === 0) return null;
+  const window = Math.floor(world.tick / BREAK_INTERVAL);
+  if (unit(world.seed, SALT_ROLL, who, window) >= breakChance(world, who, parts, onDuty)) return null;
+  let left = unit(world.seed, SALT_CONTEXT, who, window) * parts.reduce((n, t) => n + t.p, 0);
+  let chosen = parts[parts.length - 1] as Term;
+  for (const t of parts) {
+    if (left < t.p) {
+      chosen = t;
+      break;
+    }
+    left -= t.p;
+  }
+  let pointer = unit(world.seed, SALT_OUTCOME, who, window) * chosen.pool.reduce((n, [, x]) => n + x, 0);
+  let result = (chosen.pool[chosen.pool.length - 1] as [BreakKind, number])[0];
+  for (const [k, x] of chosen.pool) {
+    if (pointer < x) {
+      result = k;
+      break;
+    }
+    pointer -= x;
+  }
+  const [min, max] = DURATION[result];
+  const secs = min + (max - min) * unit(world.seed, SALT_DURATION, who, window);
+  return { kind: result, tier: tierOf(result, chosen.context), context: chosen.context, ticks: Math.round(secs * TICK_HZ), src: chosen.src };
+}

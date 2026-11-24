@@ -1,0 +1,16 @@
+import { storagesOn } from '../combat/ammo';
+import { StorageC } from '../items/components';
+import type { Sim } from '../sim';
+import { foodsOf } from './eating';
+
+export function pickFood(sim: Sim, shipId: number): string | null {
+  const menu = foodsOf(sim);
+  const held = storagesOn(sim, shipId)
+    .flatMap((id) => sim.world.get(id, StorageC)?.stacks ?? [])
+    .filter((st) => st.count > 0)
+    .map((st) => menu.ranks.get(st.item))
+    .filter((r): r is number => r !== undefined);
+  if (held.length === 0) return menu.ids[menu.ranks.size] ?? null;
+  const best = Math.min(menu.ranks.size, ...held);
+  return menu.ids[best] ?? null;
+}

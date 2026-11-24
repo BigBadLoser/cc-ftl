@@ -7,9 +7,11 @@
 //   npm run dup:semantic          prints the new pairs as markdown; prints nothing when there are none
 //   npm run dup:semantic:accept   rewrites the baseline from the current tree (accept everything reported now)
 //
-// Embeddings come from jscpd's local CodeRankEmbed model (downloaded once, about 550 MB) unless JSCPD_SEMANTIC_URL names an
-// OpenAI-compatible embeddings server serving the same model (the agent-harness host runs one on its NPU). jscpd caches
-// embeddings per function, so after the first run only new or changed code is embedded.
+// Embeddings come from embeddinggemma (300M) over an OpenAI-compatible server: JSCPD_SEMANTIC_URL, by default a local Ollama
+// (`ollama pull embeddinggemma`). The agent-harness host serves the same model on its NPU (same vectors, cosine 0.9998). On
+// the labelled set in tools/dupBench it found the most rewritten copies at the least noise of the models tried (#610);
+// jscpd's built-in CodeRankEmbed found far fewer. jscpd caches embeddings per function and scanned path, so after the first
+// run only new or changed code is embedded.
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -17,14 +19,16 @@ import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 export const BASELINE = '.jscpd-semantic-baseline.json';
-const MODEL = 'nomic-ai/CodeRankEmbed';
+const MODEL = 'embeddinggemma';
+const OLLAMA = 'http://127.0.0.1:11434/v1';
+/** Cosine cutoff for a pair: jscpd has no calibration for this model. 0.85 kept ~100 pairs on clean src in the bench (#610). */
+export const THRESHOLD = '0.85';
 const SNIPPET_LINES = 12;
 
 /** jscpd arguments for a semantic run against the baseline. */
 export function jscpdArgs({ out, accept = false, url = process.env.JSCPD_SEMANTIC_URL } = {}) {
   const args = ['--semantic', '--kind', 'semantic', '--baseline', BASELINE, '--reporters', 'json', '--output', out, '--silent'];
-  if (url) args.push('--semantic-url', url, '--semantic-model', MODEL);
-  else args.push('--semantic-download');
+  args.push('--semantic-url', url || OLLAMA, '--semantic-model', MODEL, '--semantic-threshold', THRESHOLD, '--semantic-same-threshold', THRESHOLD);
   if (accept) args.push('--update-baseline');
   return args;
 }

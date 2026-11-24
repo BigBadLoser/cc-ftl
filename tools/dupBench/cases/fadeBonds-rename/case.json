@@ -1,0 +1,6 @@
+{
+  "label": "dup",
+  "level": "rename",
+  "original": { "file": "src/sim/crew/bonds.ts", "fn": "fadeBonds" },
+  "planted": { "target": "src/sim/crew/decayRapport.ts", "fn": "decayRapport" }
+}

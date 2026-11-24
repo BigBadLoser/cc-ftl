@@ -1,0 +1,28 @@
+import { AllegianceC } from '../fight/components';
+import { AboardC, EmbarkOrderC, type Vehicle } from '../vehicles/components';
+import { AssignmentC, CrewC, DeadC, DraftedC, JobC, PositionC } from '../crew/components';
+import { isIncapacitated } from '../crew/helpers';
+import { shipById } from '../combat/shipQuery';
+import { shipIdOf } from '../regions';
+import type { Sim } from '../sim';
+import { stat } from '../stats';
+
+// Which crew member mans the sickbay for a ship: the best medic who is awake, on board and not already busy.
+export function pickMedic(sim: Sim, v: Vehicle, exclude?: ReadonlySet<number>): number {
+  const faction = shipById(sim, v.homeShip)?.faction;
+  const taken = busyMedics(sim);
+  let best = 0;
+  let bestSkill = -Infinity;
+  for (const id of [...sim.world.query(CrewC, PositionC)].sort((a, b) => a - b)) {
+    if (taken.has(id) || exclude?.has(id) || sim.world.has(id, DeadC) || sim.world.has(id, DraftedC)) continue;
+    if (sim.world.get(sim.world.get(id, AssignmentC)?.jobId ?? 0, JobC)?.kind === 'treat') continue; // already treating someone
+    if (isIncapacitated(sim, id) || sim.world.get(id, AllegianceC)?.faction !== faction) continue;
+    if (shipIdOf(sim, sim.world.get(id, PositionC)) !== v.homeShip) continue;
+    const skill = stat(sim, id, 'medical');
+    if (skill > bestSkill) {
+      best = id;
+      bestSkill = skill;
+    }
+  }
+  return best;
+}

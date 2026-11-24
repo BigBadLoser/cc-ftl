@@ -1,0 +1,15 @@
+import { storagesOn } from '../combat/ammo';
+import { StorageC } from '../items/components';
+import type { Sim } from '../sim';
+import { foodsOf } from './eating';
+
+// Walk the preference list in order and stop at the first food that any storage holds.
+export function firstFoodHeld(sim: Sim, shipId: number): string | null {
+  const { ids } = foodsOf(sim);
+  const stock = new Map<string, number>();
+  for (const sid of storagesOn(sim, shipId)) {
+    for (const st of sim.world.get(sid, StorageC)?.stacks ?? []) stock.set(st.item, (stock.get(st.item) ?? 0) + st.count);
+  }
+  for (const id of ids) if ((stock.get(id) ?? 0) > 0) return id;
+  return null;
+}

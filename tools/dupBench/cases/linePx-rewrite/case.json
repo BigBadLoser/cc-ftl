@@ -1,0 +1,6 @@
+{
+  "label": "dup",
+  "level": "rewrite",
+  "original": { "file": "src/render/pixelShapes.ts", "fn": "linePx" },
+  "planted": { "target": "src/render/ddaLine.ts", "fn": "ddaLine" }
+}

@@ -1,0 +1,31 @@
+import { shipIdOf } from '../regions';
+import type { Sim } from '../sim';
+import { JobC, PositionC, type Job } from './components';
+import { isHazardJob } from '../ai/hazard';
+
+interface Tally {
+  hazards: Set<string>;
+  idle: number[];
+}
+
+const tallies = new WeakMap<Sim, { tick: number; byShip: Map<number, Tally> }>();
+
+// Per-ship count of crew who stand idle, and which hazard kinds are being worked: rebuilt once per tick.
+function tallyOn(sim: Sim, ship: number): Tally | undefined {
+  let t = tallies.get(sim);
+  if (!t || t.tick !== sim.tick) {
+    t = { tick: sim.tick, byShip: new Map() };
+    for (const jid of sim.world.query(JobC)) {
+      const j = sim.world.get(jid, JobC) as Job;
+      const hazard = isHazardJob(j);
+      if (!hazard && !(j.kind === 'idle' && j.reservedBy !== 0)) continue;
+      const s = shipIdOf(sim, sim.world.get(jid, PositionC));
+      let on = t.byShip.get(s);
+      if (!on) t.byShip.set(s, (on = { hazards: new Set(), idle: [] }));
+      if (hazard) on.hazards.add(j.kind);
+      else on.idle.push(j.reservedBy);
+    }
+    tallies.set(sim, t);
+  }
+  return t.byShip.get(ship);
+}

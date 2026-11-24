@@ -1,0 +1,28 @@
+import { BodyC } from '../body';
+import type { Sim } from '../sim';
+import { Struct } from '../structure';
+import { MiningPodC } from './components';
+import { STANDOFF } from './geometry';
+
+type P = { x: number; y: number };
+
+// Instead of ranking eight fixed headings, sample the ring of radius STANDOFF around the ore and take the free point nearest the pod.
+export function ringHover(sim: Sim, pod: number, target: P, size: number): P {
+  const cx = target.x + 0.5, cy = target.y + 0.5;
+  const peers = [...sim.world.query(MiningPodC)].flatMap((id) => (id === pod ? [] : [sim.world.get(id, MiningPodC)?.spot ?? []].flat()));
+  const here = sim.world.get(pod, BodyC) ?? { x: cx, y: cy };
+  const ring: P[] = Array.from({ length: 16 }, (_, k) => {
+    const a = (k / 16) * Math.PI * 2;
+    return { x: cx + Math.cos(a) * STANDOFF, y: cy + Math.sin(a) * STANDOFF };
+  });
+  const rank = (ok: (p: P) => boolean): P | undefined =>
+    ring
+      .filter(ok)
+      .reduce<P | undefined>((best, p) => (!best || Math.hypot(p.x - here.x, p.y - here.y) < Math.hypot(best.x - here.x, best.y - here.y) ? p : best), undefined);
+  const clearOfPeers = (p: P) => peers.every((o) => Math.hypot(o.x - p.x, o.y - p.y) >= size);
+  const onOpenTile = (p: P) => {
+    const t = sim.sector.grid.get('struct', Math.floor(p.x), Math.floor(p.y));
+    return t === Struct.Space || t === Struct.Ground;
+  };
+  return rank((p) => onOpenTile(p) && clearOfPeers(p)) ?? rank(clearOfPeers) ?? ring[0] ?? { x: cx, y: cy };
+}

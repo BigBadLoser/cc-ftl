@@ -1,0 +1,6 @@
+{
+  "label": "dup",
+  "level": "rewrite",
+  "original": { "file": "src/sim/crew/spread.ts", "fn": "assignTiles" },
+  "planted": { "target": "src/sim/crew/pickClosest.ts", "fn": "closestFirstSpots" }
+}

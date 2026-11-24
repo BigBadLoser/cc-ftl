@@ -1,0 +1,6 @@
+{
+  "label": "dup",
+  "level": "restructure",
+  "original": { "file": "src/sim/crew/bonds.ts", "fn": "fadeBonds" },
+  "planted": { "target": "src/sim/crew/cooldownFeelings.ts", "fn": "cooldownFeelings" }
+}

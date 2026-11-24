@@ -1,0 +1,6 @@
+{
+  "label": "dup",
+  "level": "rewrite",
+  "original": { "file": "src/sim/crew/onCall.ts", "fn": "callsOn" },
+  "planted": { "target": "src/sim/crew/callsFor.ts", "fn": "callsFor" }
+}

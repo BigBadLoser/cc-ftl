@@ -1,0 +1,25 @@
+import { CART_GAP, angleOf, orthoSteps, type CartPose, type Pt } from './cartPose';
+
+type Leg = { from: Pt; dx: number; dy: number; start: number; len: number };
+
+// Fold the path into straight legs with a cumulative length, then locate the cart by distance along them.
+function legsOf(tiles: readonly Pt[]): Leg[] {
+  const legs: Leg[] = [];
+  for (let i = 0; i + 1 < tiles.length; i++) {
+    const dx = tiles[i + 1]!.x - tiles[i]!.x, dy = tiles[i + 1]!.y - tiles[i]!.y;
+    const last = legs[legs.length - 1];
+    if (last && last.dx === dx && last.dy === dy) last.len += 1;
+    else legs.push({ from: tiles[i]!, dx, dy, start: last ? last.start + last.len : 0, len: 1 });
+  }
+  return legs;
+}
+
+export function segmentCart(tiles: readonly Pt[], progress: number): CartPose | null {
+  const { tiles: t, first } = orthoSteps(tiles);
+  const legs = legsOf(t);
+  if (legs.length === 0) return null;
+  const dist = Math.min(1, Math.max(0, progress)) * first + CART_GAP;
+  const leg = legs.find((l, i) => i === legs.length - 1 || dist < l.start + l.len) as Leg;
+  const along = Math.min(leg.len - 0.5, Math.max(0.5, dist - leg.start));
+  return { x: leg.from.x + leg.dx * along, y: leg.from.y + leg.dy * along, angle: angleOf(leg.dx, leg.dy) };
+}

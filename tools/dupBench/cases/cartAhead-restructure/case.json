@@ -1,0 +1,6 @@
+{
+  "label": "dup",
+  "level": "restructure",
+  "original": { "file": "src/render/cartPose.ts", "fn": "cartAhead" },
+  "planted": { "target": "src/render/railPose.ts", "fn": "railPose" }
+}

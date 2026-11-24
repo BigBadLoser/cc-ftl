@@ -1,0 +1,6 @@
+{
+  "label": "dup",
+  "level": "rename",
+  "original": { "file": "src/sim/mining/pick.ts", "fn": "hoverSpot" },
+  "planted": { "target": "src/sim/mining/hoverPoint.ts", "fn": "hoverPoint" }
+}

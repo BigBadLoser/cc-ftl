@@ -1,0 +1,36 @@
+import { unit } from '../galaxy/hash';
+import type { Sim } from '../sim';
+import { TICK_HZ } from '../time';
+import { DURATION, tierOf } from './breakTable';
+import type { BreakKind } from './breakTypes';
+import type { Mood } from './components';
+import { BREAK_INTERVAL, SALT_CONTEXT, SALT_DURATION, SALT_OUTCOME, SALT_ROLL, breakChance, breakTerms, type BreakPick, type Term } from './breakdown';
+
+function weighted<T>(items: readonly T[], weightOf: (t: T) => number, u: number): T {
+  let r = u * items.reduce((n, t) => n + weightOf(t), 0);
+  for (const t of items) {
+    const w = weightOf(t);
+    if (r < w) return t;
+    r -= w;
+  }
+  return items[items.length - 1] as T;
+}
+
+export function rollMeltdown(sim: Sim, id: number, m: Mood, drafted: boolean): BreakPick | null {
+  const terms = breakTerms(sim, id, m, drafted);
+  const check = Math.floor(sim.tick / BREAK_INTERVAL);
+  const roll = (salt: number) => unit(sim.seed, salt, id, check);
+  if (terms.length > 0 && roll(SALT_ROLL) < breakChance(sim, id, terms, drafted)) {
+    const term = weighted(terms, (t) => t.p, roll(SALT_CONTEXT));
+    const [kind] = weighted(term.pool, ([, x]) => x, roll(SALT_OUTCOME)) as [BreakKind, number];
+    const [lo, hi] = DURATION[kind];
+    return {
+      kind,
+      tier: tierOf(kind, term.context),
+      context: term.context,
+      ticks: Math.round((lo + (hi - lo) * roll(SALT_DURATION)) * TICK_HZ),
+      src: term.src,
+    };
+  }
+  return null;
+}

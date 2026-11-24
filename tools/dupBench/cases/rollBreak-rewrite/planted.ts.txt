@@ -1,0 +1,37 @@
+import { unit } from '../galaxy/hash';
+import type { Sim } from '../sim';
+import { TICK_HZ } from '../time';
+import { DURATION, tierOf } from './breakTable';
+import type { BreakKind } from './breakTypes';
+import type { Mood } from './components';
+import { BREAK_INTERVAL, SALT_CONTEXT, SALT_DURATION, SALT_OUTCOME, SALT_ROLL, breakChance, breakTerms, type BreakPick, type Term } from './breakdown';
+
+// Cumulative-weight tables and a binary search replace the running-subtraction scans.
+function cumulative(weights: readonly number[]): number[] {
+  const out: number[] = [];
+  weights.reduce((sum, w) => (out.push(sum + w), sum + w), 0);
+  return out;
+}
+
+function indexFor(cum: readonly number[], point: number): number {
+  let lo = 0, hi = cum.length - 1;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (point < (cum[mid] as number)) hi = mid;
+    else lo = mid + 1;
+  }
+  return lo;
+}
+
+export function breakDecision(sim: Sim, id: number, m: Mood, drafted: boolean): BreakPick | null {
+  const terms = breakTerms(sim, id, m, drafted);
+  const check = Math.floor(sim.tick / BREAK_INTERVAL);
+  if (!terms.length || unit(sim.seed, SALT_ROLL, id, check) >= breakChance(sim, id, terms, drafted)) return null;
+  const termCum = cumulative(terms.map((t) => t.p));
+  const term = terms[indexFor(termCum, unit(sim.seed, SALT_CONTEXT, id, check) * (termCum.at(-1) as number))] as Term;
+  const poolCum = cumulative(term.pool.map(([, w]) => w));
+  const kind = (term.pool[indexFor(poolCum, unit(sim.seed, SALT_OUTCOME, id, check) * (poolCum.at(-1) as number))] as [BreakKind, number])[0];
+  const [lo, hi] = DURATION[kind];
+  const seconds = lo + (hi - lo) * unit(sim.seed, SALT_DURATION, id, check);
+  return { kind, tier: tierOf(kind, term.context), context: term.context, ticks: Math.round(seconds * TICK_HZ), src: term.src };
+}

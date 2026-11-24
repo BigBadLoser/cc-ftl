@@ -1,0 +1,21 @@
+import { CART_GAP, angleOf, orthoSteps, type CartPose, type Pt } from './cartPose';
+
+export function trolleyAhead(path: readonly Pt[], frac: number): CartPose | null {
+  const { tiles: p, first: len } = orthoSteps(path);
+  if (p.length < 2) return null;
+  const heading = (n: number): [number, number] => [p[n + 1]!.x - p[n]!.x, p[n + 1]!.y - p[n]!.y];
+  // Legs: straight stretches between bends (a bend tile closes one leg and opens the next).
+  const stops: number[] = [0];
+  for (let n = 1; n < p.length - 1; n++) {
+    const [px, py] = heading(n - 1), [qx, qy] = heading(n);
+    if (px !== qx || py !== qy) stops.push(n);
+  }
+  stops.push(p.length - 1);
+  const dist = Math.max(0, Math.min(1, frac)) * len + CART_GAP;
+  let leg = 0;
+  while (leg < stops.length - 2 && dist >= stops[leg + 1]!) leg++;
+  const from = stops[leg]!, to = stops[leg + 1]!;
+  const at = Math.max(from + 0.5, Math.min(to - 0.5, dist));
+  const [vx, vy] = heading(from);
+  return { x: p[from]!.x + vx * (at - from), y: p[from]!.y + vy * (at - from), angle: angleOf(vx, vy) };
+}

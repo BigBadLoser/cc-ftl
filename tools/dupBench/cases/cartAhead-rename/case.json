@@ -1,0 +1,6 @@
+{
+  "label": "dup",
+  "level": "rename",
+  "original": { "file": "src/render/cartPose.ts", "fn": "cartAhead" },
+  "planted": { "target": "src/render/trolleyPose.ts", "fn": "trolleyAhead" }
+}

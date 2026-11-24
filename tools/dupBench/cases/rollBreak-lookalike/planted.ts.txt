@@ -1,0 +1,35 @@
+import { unit } from '../galaxy/hash';
+import type { Sim } from '../sim';
+import { TICK_HZ } from '../time';
+import { DURATION, tierOf } from './breakTable';
+import type { BreakKind } from './breakTypes';
+import type { Mood } from './components';
+import { BREAK_INTERVAL, SALT_CONTEXT, SALT_DURATION, SALT_OUTCOME, SALT_ROLL, breakChance, breakTerms, type BreakPick, type Term } from './breakdown';
+
+export function rollLoot(sim: Sim, id: number, tier: number, looted: boolean): LootPick | null {
+  const tables = lootTables(sim, id, tier, looted);
+  if (tables.length === 0) return null;
+  const check = Math.floor(sim.tick / LOOT_INTERVAL);
+  if (unit(sim.seed, SALT_FIND, id, check) >= lootChance(sim, id, tables, looted)) return null;
+  let r = unit(sim.seed, SALT_TABLE, id, check) * tables.reduce((n, t) => n + t.weight, 0);
+  let table = tables[tables.length - 1] as LootTable;
+  for (const t of tables) {
+    if (r < t.weight) {
+      table = t;
+      break;
+    }
+    r -= t.weight;
+  }
+  let w = unit(sim.seed, SALT_ITEM, id, check) * table.drops.reduce((n, [, x]) => n + x, 0);
+  let item = (table.drops[table.drops.length - 1] as [string, number])[0];
+  for (const [k, x] of table.drops) {
+    if (w < x) {
+      item = k;
+      break;
+    }
+    w -= x;
+  }
+  const [lo, hi] = QUANTITY[item];
+  const count = Math.floor(lo + (hi - lo + 1) * unit(sim.seed, SALT_COUNT, id, check));
+  return { item, rarity: rarityOf(item, table.biome), biome: table.biome, count, src: table.src };
+}

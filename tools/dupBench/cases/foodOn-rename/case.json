@@ -1,0 +1,6 @@
+{
+  "label": "dup",
+  "level": "rename",
+  "original": { "file": "src/sim/crew/eating.ts", "fn": "foodOn" },
+  "planted": { "target": "src/sim/crew/bestMeal.ts", "fn": "bestMealIn" }
+}
