@@ -1,4 +1,4 @@
-import type { BladeKind } from '../outlineRecipe';
+import type { BladeKind, RaiderNose } from '../outlineRecipe';
 
 /**
  * Raider blades (PROTOTYPE, #581): the shapes of the approved mock sheet (raider_kit_v18), as polygons in tiles. A blade
@@ -66,4 +66,15 @@ export function inPoly(x: number, y: number, p: Poly): boolean {
     if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) c = !c;
   }
   return c;
+}
+
+/**
+ * A raider's nose (the mock's), drawn onto the body's bow: its tip at x = 0, full half-beam `h` (from the axis) where it meets
+ * the bow, and a block three tiles on into the body so it fuses with it. Its length in tiles with the block.
+ */
+export function noseShape(kind: RaiderNose, h: number): { poly: Poly; len: number } {
+  const n = kind === 'taper' ? Math.round(1.3 * h) : kind === 'point' ? Math.round(1.6 * h) : kind === 'spike' ? Math.round(h) + 6 : kind === 'ram' ? 3 : 5;
+  const tip: Pt[] = kind === 'taper' ? [[0, 0], [0, 3]] : kind === 'point' ? [[0, 0], [0, 2]] : kind === 'spike' ? [[0, 0], [0, 1], [6, 2]]
+    : kind === 'ram' ? [[0, 0], [0, h - 3]] : [[0, 0], [0, h - 5], [2, h - 2]];
+  return { poly: [...tip, [n, h], [n + 3, h], [n + 3, 0]], len: n };
 }

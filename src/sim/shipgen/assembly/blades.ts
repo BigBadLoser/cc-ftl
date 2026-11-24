@@ -1,7 +1,7 @@
 import type { Rng } from '../../rng';
-import type { BladeKind, BladeSpec } from '../outlineRecipe';
+import type { BladeKind, BladeSpec, RaiderNose } from '../outlineRecipe';
 import type { RoomRole } from '../types';
-import { bladeShape, inPoly, type Poly } from './bladeShapes';
+import { bladeShape, inPoly, noseShape, type Poly } from './bladeShapes';
 
 /**
  * Raider blades (PROTOTYPE, #581): hull added along the body's sides once its rooms are cut, as on the approved mock
@@ -9,13 +9,13 @@ import { bladeShape, inPoly, type Poly } from './bladeShapes';
  * hold by an opening (every part at least three wide, so a wall a tile thick round floor), and what the opening cuts off
  * the body goes. The blade floor is cut into rooms, each the largest rectangle left (a wall between two), unfurnished;
  * what no room takes is crawlway. Each gets a door to what it joins. Nothing stands over the body's rooms that open out:
- * airlocks and hangars keep their hull face, the drives the space astern.
+ * an airlock keeps its hull face, the drives the space astern.
  */
 
 export interface Bladed { rows: string[]; roomOf: Int16Array; width: number; height: number; roles: RoomRole[] }
 
-/** Rooms near which no blade stands (they open out of the hull's side; the engines' face astern is kept apart). */
-const OPEN_OUT: readonly RoomRole[] = ['dock', 'hangar'];
+/** Rooms near which no blade stands (an airlock opens out of the hull's side; the engines' face astern is kept apart). */
+const OPEN_OUT: readonly RoomRole[] = ['dock'];
 /** A blade room's longest side in floor tiles, and its least. */
 const MAX_SIDE = 9, MIN_SIDE = 3;
 /** Where along the body the blades root (a fraction of its length from the bow): fore, aft, horn. */
@@ -23,11 +23,14 @@ const ROOT = { fore: 0.4, aft: 0.62, horn: 0.52 };
 /** The mock's medium body half-beam, at which a blade's scale is 1; the leading end's scale over it, and the other's. */
 const MEDIUM = 13, LEAD = 1.15, TRAIL = 0.9;
 
+/** The reach of the closing that fills a narrow gap between a blade and the body (two tiles). */
+const CLOSE = 2;
+
 const N8: readonly (readonly [number, number])[] = [[-1, -1], [0, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [0, 1], [1, 1]];
 
 export function addBlades(rng: Rng, spec: BladeSpec, s: { rows: string[]; roomOf: Int16Array; width: number; height: number }, axis: number, roles0: readonly RoomRole[]): Bladed {
   const lead = rng.pick(spec.lead as ('fore' | 'aft')[]), fore = rng.pick(spec.fore as (BladeKind | null)[]), aft = rng.pick(spec.aft as (BladeKind | null)[]);
-  const horn = rng.chance(spec.horn);
+  const horn = rng.chance(spec.horn), nose = spec.noses ? rng.pick(spec.noses as RaiderNose[]) : null;
   // The body: its columns, and its half-beam at each.
   const body0 = (x: number, y: number): boolean => (s.rows[y]?.[x] ?? '.') !== '.';
   const cols = Array.from({ length: s.width }, (_, x) => { let t = -1; for (let y = 0; y < s.height; y++) if (body0(x, y)) t = Math.max(t, Math.abs(y - axis)); return t; });
@@ -40,15 +43,24 @@ export function addBlades(rng: Rng, spec: BladeSpec, s: { rows: string[]; roomOf
   const polys: Poly[] = [];
   const place = (kind: BladeKind | null, kk: number, at: number, dir: number): void => {
     if (!kind) return;
-    // Its root slid along the side, nearest first, clear of the rooms that open out.
-    const w = 7 * Math.sqrt(kk), x0 = Math.round(bx0 + at * len);
-    const clear = (x: number): boolean => ![...shut].some((c) => Math.abs(c - x) <= w);
-    const x = [...Array(Math.round(len / 3)).keys()].flatMap((d) => [x0 + d, x0 - d]).find((c) => c > bx0 && c < bx1 && clear(c)) ?? x0, h = cols[x] ?? 0;
-    for (const p of bladeShape(kind, kk)) polys.push(p.map(([u, v]) => [x + dir * u, h + v] as const));
+    // Its root slid along the side, nearest first, until where it meets the body (within two tiles of its side) is clear of
+    // the airlocks by two tiles.
+    const shape = bladeShape(kind, kk), x0 = Math.round(bx0 + at * len), [u0, u1] = footprint(shape);
+    const clear = (x: number): boolean => {
+      const lo = Math.min(x + dir * u0, x + dir * u1) - 2, hi = Math.max(x + dir * u0, x + dir * u1) + 2;
+      return ![...shut].some((c) => c >= lo && c <= hi);
+    };
+    const x = [...Array(Math.round(len / 2)).keys()].flatMap((d) => [x0 + d, x0 - d]).find((c) => c > bx0 && c < bx1 && clear(c)) ?? x0, h = cols[x] ?? 0;
+    for (const p of shape) polys.push(p.map(([u, v]) => [x + dir * u, h + v] as const));
   };
   place(fore, fk, ROOT.fore, -1);
   place(aft, ak, ROOT.aft, 1);
   if (horn) place('horn', 0.9 * k, ROOT.horn, 1);
+  // The nose on the bow, at the bow's full half-beam.
+  if (nose) {
+    const { poly, len: n } = noseShape(nose, Math.max(...cols.slice(bx0, bx0 + 4)) + 1);
+    polys.push(poly.map(([u, v]) => [bx0 - n + u, v] as const));
+  }
   // The grid grown to hold them, the axis kept central.
   const xs = polys.flat().map(([x]) => x), ys = polys.flat().map(([, y]) => y);
   const px = Math.max(0, Math.ceil(-Math.min(0, ...xs)) + 2), pr = Math.max(0, Math.ceil(Math.max(0, ...xs)) - s.width + 3);
@@ -66,7 +78,9 @@ export function addBlades(rng: Rng, spec: BladeSpec, s: { rows: string[]; roomOf
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     const r = roomOf[at(x, y)] as number;
     if (r < 0 || !OPEN_OUT.includes(roles0[r] as RoomRole)) continue;
-    for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) for (const yy of [y + dy, 2 * A - (y + dy)]) if (inside(x + dx, yy)) forbid[at(x + dx, yy)] = 1;
+    // (A slot from the airlock straight out, its columns and one either side: a blade crossing it is cut clean through.)
+    const out = Math.sign(y - A) || 1;
+    for (let yy = y; yy >= 0 && yy < H; yy += out) for (let dx = -1; dx <= 1; dx++) for (const ym of [yy, 2 * A - yy]) if (inside(x + dx, ym)) forbid[at(x + dx, ym)] = 1;
   }
   const stern = bx1 + px, sternHalf = (cols[bx1] ?? 0) + 2;
   for (let y = A - sternHalf; y <= A + sternHalf; y++) for (let x = stern - 1; x < W; x++) if (inside(x, y)) forbid[at(x, y)] = 1;
@@ -79,6 +93,9 @@ export function addBlades(rng: Rng, spec: BladeSpec, s: { rows: string[]; roomOf
     const u = x - px + 0.5, v = Math.abs(y - A) + 0.5;
     if (polys.some((p) => inPoly(u, v, p))) shape[i] = 1;
   }
+  // Gaps narrower than a room's wall pair (a blade running a tile or two off the body's side) closed, by 5x5.
+  const closed = square(square(shape, W, H, CLOSE, true), W, H, CLOSE, false);
+  for (let i = 0; i < W * H; i++) if (closed[i] && !forbid[i]) shape[i] = 1;
   const full = (x: number, y: number): boolean => N8.every(([dx, dy]) => inside(x + dx, y + dy) && !!shape[at(x + dx, y + dy)]) && !!shape[at(x, y)];
   const open = new Uint8Array(W * H);
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
@@ -135,6 +152,33 @@ export function addBlades(rng: Rng, spec: BladeSpec, s: { rows: string[]; roomOf
   connect(cells, roomOf, roles, roles0.length, W, H, body);
   const rows = Array.from({ length: H }, (_, y) => cells.slice(y * W, (y + 1) * W).join(''));
   return { rows, roomOf, width: W, height: H, roles };
+}
+
+/** Where a blade meets the body: the least and most of its length (along its root's line) within two tiles of the side. */
+function footprint(shape: Poly[]): [number, number] {
+  let lo = Infinity, hi = -Infinity;
+  for (const p of shape) for (let i = 0; i < p.length; i++) {
+    const [ax, ay] = p[i] as readonly [number, number], [bx, by] = p[(i + 1) % p.length] as readonly [number, number];
+    for (let t = 0; t <= 1; t += 0.05) {
+      const u = ax + (bx - ax) * t, v = ay + (by - ay) * t;
+      if (v <= 2) { lo = Math.min(lo, u); hi = Math.max(hi, u); }
+    }
+  }
+  return lo <= hi ? [Math.floor(lo), Math.ceil(hi)] : [0, 0];
+}
+
+/** A mask grown (`grow`: any tile within `r`, square) or shrunk (every tile within `r`; past the edge counts as out). */
+function square(m: Uint8Array, W: number, H: number, r: number, grow: boolean): Uint8Array {
+  const out = new Uint8Array(W * H);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    let any = false, all = true;
+    for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+      const on = x + dx >= 0 && y + dy >= 0 && x + dx < W && y + dy < H && !!m[(y + dy) * W + x + dx];
+      any ||= on; all &&= on;
+    }
+    out[y * W + x] = (grow ? any : all) ? 1 : 0;
+  }
+  return out;
 }
 
 /** The largest rectangle of free tiles, each side `MIN_SIDE` to `MAX_SIDE` (counted capped): x, y, w, h. */

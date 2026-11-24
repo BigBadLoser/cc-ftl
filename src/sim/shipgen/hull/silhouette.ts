@@ -13,8 +13,8 @@ import type { Rng } from '../../rng';
 
 export type Range = readonly [number, number];
 
-/** Nose styles, from the sheets: stepped (A2), round (D1, D2), round onto a straight cheek (DG), steep then gentle (AD). */
-export type NoseStyle = 'stepped' | 'round' | 'cheek' | 'steep';
+/** Nose styles, from the sheets: stepped (A2), round (D1, D2), round onto a straight cheek (DG), steep then gentle (AD); a straight taper (a raider's). */
+export type NoseStyle = 'stepped' | 'round' | 'cheek' | 'steep' | 'taper';
 
 export interface Nose { style: NoseStyle | readonly NoseStyle[]; len: Range; /** Half-width of the flat front. */ front: Range }
 
@@ -98,6 +98,7 @@ function noseHalf(style: NoseStyle, i: number, n: number, front: number, h: numb
     case 'round': return front + Math.round(span * Math.sqrt(1 - (1 - t) ** 2));
     case 'cheek': return t < 0.6 ? front + Math.round((span - 2) * Math.sqrt(1 - (1 - t / 0.6) ** 2)) : t < 0.85 ? h - 2 : h - 1;
     case 'steep': return front + Math.round(span * Math.sqrt(t));
+    case 'taper': return front + Math.round(span * t);
   }
 }
 

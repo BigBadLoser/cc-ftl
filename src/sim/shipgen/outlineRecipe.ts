@@ -29,7 +29,7 @@ export interface BlocksLayout { kind: 'blocks'; guns: 'forward' | 'spread' }
  *   in its deep ones; command, stores and systems forward.
  * - `drum`: a liner's drum amidships, its own rooms (parts/drum.ts): a garden, a ring corridor, cabins outboard.
  */
-export interface BaysLayout { kind: 'bays'; battery?: boolean; lane?: boolean; decks?: boolean; drum?: boolean; /** A pusher's bridge in a pod on a front corner (PROTOTYPE). */ cockpit?: boolean; program?: ProgramRules }
+export interface BaysLayout { kind: 'bays'; battery?: boolean; lane?: boolean; decks?: boolean; drum?: boolean; /** A pusher's bridge in a pod on a front corner (PROTOTYPE). */ cockpit?: boolean; /** A raider's airlocks where its blades meet (PROTOTYPE). */ blades?: boolean; program?: ProgramRules }
 
 /** A bay ship's room program past its plan (bayRooms.ts), each set by its parts and over them by the recipe. */
 export interface ProgramRules {
@@ -91,7 +91,14 @@ export type BladeKind = 'slab' | 'slabPlain' | 'slab2' | 'slab3' | 'spikes2' | '
  * ship draws which end leads, one fore and one aft blade (a list of `null` for none), and a horn by chance; the leading
  * end's blade is drawn larger.
  */
-export interface BladeSpec { fore: readonly (BladeKind | null)[]; aft: readonly (BladeKind | null)[]; horn: number; lead: readonly ('fore' | 'aft')[] }
+export interface BladeSpec {
+  fore: readonly (BladeKind | null)[]; aft: readonly (BladeKind | null)[]; horn: number; lead: readonly ('fore' | 'aft')[];
+  /** The noses drawn onto the bow, one a ship (the body's own bow is blunt). */
+  noses?: readonly RaiderNose[];
+}
+
+/** A raider's nose (bladeShapes.ts): a long taper to a narrow prow, a fine point, a point on a spike, a blunt ram, a rounded bow. */
+export type RaiderNose = 'taper' | 'point' | 'spike' | 'ram' | 'round';
 
 export interface OutlineRecipe {
   /** A raider's blades, past its body (PROTOTYPE). */
