@@ -4,8 +4,10 @@
 // mode, minus the pairs already in .jscpd-semantic-baseline.json. About a third of semantic pairs are real "one answer per
 // question" breaks (#559), so this reports and never fails a build.
 //
-//   npm run dup:semantic          prints the new pairs as markdown; prints nothing when there are none
-//   npm run dup:semantic:accept   rewrites the baseline from the current tree (accept everything reported now)
+//   npm run dup:semantic                       prints the new pairs as markdown; prints nothing when there are none
+//   npm run dup:semantic -- --changed <base>   only pairs touching a file changed since <base> (the PR scan, #607);
+//                                              skips the scan when nothing under src/ changed
+//   npm run dup:semantic:accept                rewrites the baseline from the current tree (accept everything reported now)
 //
 // Embeddings come from jscpd's local CodeRankEmbed model (downloaded once, about 550 MB) unless JSCPD_SEMANTIC_URL names an
 // OpenAI-compatible embeddings server serving the same model (the agent-harness host runs one on its NPU). jscpd caches
@@ -38,9 +40,20 @@ const snippet = (text) => {
   return lines.length > SNIPPET_LINES ? `${head}\n…` : head;
 };
 
-/** Markdown for the pairs of a jscpd JSON report that are new against the baseline; '' when there are none. */
-export function report(json) {
-  const fresh = (json.duplicates ?? []).filter((d) => d.kind === 'semantic' && d.isNew);
+/** `src/` files changed between `base` and HEAD, as jscpd's report names them after `where`. */
+export function changedSrc(base, git = (args) => execFileSync('git', args, { encoding: 'utf8' })) {
+  return new Set(git(['diff', '--name-only', '--diff-filter=d', `${base}...HEAD`, '--', 'src']).split('\n').filter(Boolean));
+}
+
+const fileOf = (f) => where(f).replace(/:\d+-\d+$/, '');
+
+/**
+ * Markdown for the pairs of a jscpd JSON report that are new against the baseline; '' when there are none. With `only`
+ * (a set of `src/` paths), keeps the pairs with at least one side in those files.
+ */
+export function report(json, { only } = {}) {
+  const fresh = (json.duplicates ?? []).filter((d) => d.kind === 'semantic' && d.isNew
+    && (!only || only.has(fileOf(d.firstFile)) || only.has(fileOf(d.secondFile))));
   if (!fresh.length) return '';
   fresh.sort((a, b) => b.lines - a.lines);
   const rows = fresh.map((d) => [
@@ -53,7 +66,7 @@ export function report(json) {
     '  </details>',
   ].join('\n'));
   return [
-    `${fresh.length} new semantic duplicate pair${fresh.length === 1 ? '' : 's'}: code that may answer the same question twice.`,
+    `${fresh.length} new semantic duplicate pair${fresh.length === 1 ? '' : 's'}${only ? ' touching this change' : ''}: code that may answer the same question twice.`,
     'For each: fold it into one owner (see "One answer per question" in `docs/ARCHITECTURE.md`), or, if the two only look alike,',
     'accept it with `npm run dup:semantic:accept` and commit the baseline.',
     '',
@@ -63,12 +76,15 @@ export function report(json) {
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const accept = process.argv.includes('--accept');
+  const at = process.argv.indexOf('--changed');
+  const only = at > 0 ? changedSrc(process.argv[at + 1] ?? 'origin/main') : undefined;
+  if (only && !only.size) process.exit(0);
   const out = mkdtempSync(join(tmpdir(), 'dup-semantic-'));
   try {
     execFileSync('node_modules/.bin/jscpd', jscpdArgs({ out, accept }), { stdio: ['ignore', 'ignore', 'inherit'] });
     if (accept) console.error(`dup:semantic: ${BASELINE} rewritten from the current tree; commit it.`);
     else {
-      const md = report(JSON.parse(readFileSync(join(out, 'jscpd-report.json'), 'utf8')));
+      const md = report(JSON.parse(readFileSync(join(out, 'jscpd-report.json'), 'utf8')), { only });
       if (md) console.log(md);
     }
   } finally {
