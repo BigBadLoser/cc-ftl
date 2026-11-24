@@ -21,4 +21,9 @@ const BLADES: BladeSpec = {
 
 export const raiderOutline = {
   raider: { family: 'raider', profiles: RAIDER, maxBeam: 29, bays: 1, blades: BLADES, crew: { sleep: 'bunks' }, layout: { kind: 'bays', program: { pd: false, least: 64 } } },
+  // Silhouette first (to compare with rooms first, above): the mock's body and blades drawn whole, the rooms cut into it.
+  raiderSil: {
+    family: 'raider', profiles: RAIDER, maxBeam: 29, bays: 1, crew: { sleep: 'bunks' }, layout: { kind: 'bays', program: { pd: false, least: 64 } },
+    blades: { ...BLADES, sil: { noses: ['taper', 'ram', 'point', 'spike', 'round'], nose: [8, 13], len: [18, 26], half: [8, 10] } },
+  },
 } satisfies Record<string, OutlineRecipe>;

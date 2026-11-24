@@ -16,7 +16,8 @@ import { gunsAndReactors } from './pairs';
 import { outlineAttempts, outlineRole, recipeOf, shipCommons, shipQuarters, shipWorks, leanPlan, beamAt } from './outlineType';
 import { SPACE, type RegionGrid } from './regions';
 import { addTruss } from './truss';
-import { addBlades } from './blades';
+import { addBlades, pickBlades, ROOT } from './blades';
+import { drawRaider } from '../hull/raiderSilhouette';
 
 /**
  * Navy hulls outline first (SHIPGEN_V4): the type's silhouette is drawn, scaled until the plan's rooms fit, and the
@@ -78,7 +79,8 @@ function scaled(sil: Silhouette, sx: number, sy: number): Mask {
   const proud = (x: number, y: number): boolean => (sites.some(([s0, s1]) => x >= s0 && x < s1) || (air >= 0 && x >= air - 1 && x <= air + AIR)) && Math.abs(y) > topOf(x) && Math.abs(y) <= topOf(x) + P;
   const inside = (x: number, y: number): boolean => hull(x, y) || proud(x, y);
   const battery = sites.length > 0 ? { battery: { a: a0, b: b0, guns: sites, rows: bat?.h ?? 3, air, inner: guns > k ? [k - 1] : [] } } : {};
-  return { W: W0 + E, H: H0 + (sites.length > 0 ? P : 0), inside, scale: [sx, sy], ...battery };
+  const clear = sil.clear ? { clear: sil.clear.map(([a, b]) => [Math.floor(a * sx), Math.ceil(b * sx)] as [number, number]) } : {};
+  return { W: W0 + E, H: H0 + (sites.length > 0 ? P : 0), inside, scale: [sx, sy], ...battery, ...clear };
 }
 
 /**
@@ -195,15 +197,18 @@ export function outlineInputs(
   const profile = rng.pick((pool.length > 0 ? pool : recipe.profiles) as Profile[]), from = rng.getState();
   // A bay hull's flare holds its full width an engine room deep (the deepest engine it may take, a walk column and wall).
   const hold = bay ? engineSpec(1, 'w', planUp?.kit ?? kit).w + 2 : 0;
+  // PROTOTYPE (#581): a raider drawn silhouette first, its blades on it (its own draws, so the hull's stay as they were).
+  const raider = recipe.blades?.sil, pick = raider && recipe.blades ? pickBlades(new Rng(seedOf(seed, 3000 + n)), recipe.blades) : undefined;
   const draw = (drive?: Drive, lane?: number): Silhouette => {
     rng.setState(from);
+    if (raider && pick) return drawRaider(rng, raider, pick);
     const p = lane && profile.split ? { ...profile, split: { ...profile.split, lane: [lane, lane] as const } } : profile;
     const s = drawSilhouette(rng, p, sites ? gp.length : undefined, { ...drive, hold });
     if (s.battery) Object.assign(s.battery, { w: Math.max(...gp.flat().map((r) => r.w)), h: Math.max(3, ...gp.flat().map((r) => r.h)) });
     return s;
   };
   // (The redraws first, from the hull's own draws: the rng runs on from the hull's own as though there were none.)
-  const redraws = (lane?: number): Silhouette[] => (bay ? Array.from({ length: DRIVE_REDRAWS }, (_, k) => draw({ rng: new Rng(seedOf(seed, 1000 + 16 * n + k)), grow: k + 1 }, lane)) : []);
+  const redraws = (lane?: number): Silhouette[] => (bay && !raider ? Array.from({ length: DRIVE_REDRAWS }, (_, k) => draw({ rng: new Rng(seedOf(seed, 1000 + 16 * n + k)), grow: k + 1 }, lane)) : []);
   const drives = redraws();
   const lanes = bay?.lane && profile.split ? LANES.map((l) => [draw(undefined, l), ...redraws(l)]) : undefined;
   // (Its own draw, so the corridor style leaves the hull's draws as they were.)
@@ -295,8 +300,9 @@ export function assembleOutline(
   const rows = snap.rows.map((r, y) => [...r].map((c, cx) => (c === 'D' && [at(cx + 1, y), at(cx - 1, y), at(cx, y + 1), at(cx, y - 1)].includes('.') ? '#' : c)).join(''));
   // A pusher's truss ahead of its hull (its centre row the grid's row 0).
   const body = { rows, roomOf: snap.roomOf, width: snap.width, height: snap.height }, roles = g.regions.map((r) => r.role);
-  // A raider's blades along its sides (their own draws, so the hull's stay as they were).
-  const bladed = r.blades ? addBlades(new Rng(seedOf(seed, 3000 + n)), r.blades, body, -snap.y0, roles) : undefined;
+  // A raider's blades along its sides: where its silhouette drew them, else slid clear of its airlocks (their own draws).
+  const bladed = sil.blades ? addBlades(sil.blades.pick, { ...sil.blades.at, slide: false }, body, -snap.y0, roles)
+    : r.blades ? addBlades(pickBlades(new Rng(seedOf(seed, 3000 + n)), r.blades), { ...ROOT, slide: true }, body, -snap.y0, roles) : undefined;
   const shell = r.truss ? addTruss(rng, r.truss, body, -snap.y0, depth) : (bladed ?? body);
   return fitShell(
     rng, f, factionId, seed, role, 'sections', { crew: plan.crew } as Pick<ShipPlan, 'crew'>,

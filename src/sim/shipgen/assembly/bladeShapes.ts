@@ -1,4 +1,7 @@
-import type { BladeKind } from '../outlineRecipe';
+import type { BladeKind } from '../hull/silhouette';
+import type { Poly, Pt } from '../hull/raiderSilhouette';
+
+export { inPoly, type Poly } from '../hull/raiderSilhouette';
 
 /**
  * Raider blades (PROTOTYPE, #581): the shapes of the approved mock sheet (raider_kit_v18), as polygons in tiles. A blade
@@ -6,8 +9,6 @@ import type { BladeKind } from '../outlineRecipe';
  * the hull's side. Each shape is one or more slabs fused at the root, the last faired into the hull side.
  */
 
-export type Pt = readonly [number, number];
-export type Poly = readonly Pt[];
 
 interface SlabOpts { notch?: boolean; fair?: number; faired?: boolean; point?: boolean }
 
@@ -56,14 +57,4 @@ export function bladeShape(kind: BladeKind, k: number): Poly[] {
       return [...slab(55, 13 * k, w, [0, w * 0.35], { notch: false }), ...slab(10, 24 * k, w, [13 * k * 0.57 - 2, 13 * k * 0.82 + w * 0.35], { faired: false })];
     }
   }
-}
-
-/** Whether a point is inside a polygon (even-odd). */
-export function inPoly(x: number, y: number, p: Poly): boolean {
-  let c = false;
-  for (let i = 0, j = p.length - 1; i < p.length; j = i++) {
-    const [xi, yi] = p[i] as Pt, [xj, yj] = p[j] as Pt;
-    if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) c = !c;
-  }
-  return c;
 }

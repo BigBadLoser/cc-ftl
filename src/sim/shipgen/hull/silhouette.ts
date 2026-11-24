@@ -84,7 +84,17 @@ export interface Silhouette {
   battery?: { guns: number; runs: [number, number][]; /** A gun room's floor columns and rows (set by the outline). */ w?: number; h?: number };
   /** Chamfered sections' columns [first, last]: an outline samples them from both ends in, so the scaled cuts mirror. */
   chamfer?: [number, number][];
+  /** PROTOTYPE (#581): a raider's blades as its silhouette drew them, their roots a fraction of its length from the bow. */
+  blades?: { pick: BladePick; at: { fore: number; aft: number; horn: number } };
+  /** Columns [first, last] no airlock stands in (a blade's root there). */
+  clear?: [number, number][];
 }
+
+/** A raider blade of the palette (assembly/bladeShapes.ts). */
+export type BladeKind = 'slab' | 'slabPlain' | 'slab2' | 'slab3' | 'spikes2' | 'spikes3' | 'claw' | 'claw2' | 'horn' | 'kink';
+
+/** A raider's draw from its blade palette: which end leads (its blade drawn larger), its blades, whether it has a horn. */
+export interface BladePick { lead: 'fore' | 'aft'; fore: BladeKind | null; aft: BladeKind | null; horn: boolean }
 
 const pick = (rng: Rng, r: Range): number => rng.int(r[0], r[1]);
 const one = <T>(rng: Rng, v: T | readonly T[]): T => (Array.isArray(v) ? rng.pick(v as readonly T[]) : (v as T));

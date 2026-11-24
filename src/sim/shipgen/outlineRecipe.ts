@@ -1,5 +1,8 @@
 import type { Filler } from './assembly/roomSize';
-import type { Profile } from './hull/silhouette';
+import type { BladeKind, Profile } from './hull/silhouette';
+import type { RaiderSil } from './hull/raiderSilhouette';
+
+export type { BladeKind } from './hull/silhouette';
 import type { RoomRole } from './types';
 
 /**
@@ -83,15 +86,17 @@ export interface DeptRules {
  */
 export interface TrussSpec { banks: [number, number]; perDepth?: number; max?: number; layers: 1 | 2 }
 
-/** A raider blade of the palette (assembly/bladeShapes.ts). */
-export type BladeKind = 'slab' | 'slabPlain' | 'slab2' | 'slab3' | 'spikes2' | 'spikes3' | 'claw' | 'claw2' | 'horn' | 'kink';
 
 /**
- * Raider blades (PROTOTYPE, #581): hull added to the sides of the body once its rooms are cut (assembly/blades.ts). Each
+ * Raider blades (PROTOTYPE, #581): hull along the sides of the body, its rooms cut after the body's (assembly/blades.ts). Each
  * ship draws which end leads, one fore and one aft blade (a list of `null` for none), and a horn by chance; the leading
  * end's blade is drawn larger.
  */
-export interface BladeSpec { fore: readonly (BladeKind | null)[]; aft: readonly (BladeKind | null)[]; horn: number; lead: readonly ('fore' | 'aft')[] }
+export interface BladeSpec {
+  fore: readonly (BladeKind | null)[]; aft: readonly (BladeKind | null)[]; horn: number; lead: readonly ('fore' | 'aft')[];
+  /** Silhouette first: the whole outline drawn from this (hull/raiderSilhouette.ts), the rooms cut into it; else rooms first, the blades after. */
+  sil?: RaiderSil;
+}
 
 export interface OutlineRecipe {
   /** A raider's blades, past its body (PROTOTYPE). */

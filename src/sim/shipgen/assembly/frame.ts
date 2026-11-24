@@ -5,6 +5,7 @@ export interface Mask {
   W: number; H: number; inside: (x: number, y: number) => boolean;
   /** The silhouette's scale along and across, where it was scaled from one. */ scale?: [number, number];
   /** Gun sites' blister columns [x0, x1), scaled (prototype). */ sites?: [number, number][];
+  /** Columns [first, last] no airlock stands in, scaled (a raider blade's root: PROTOTYPE). */ clear?: [number, number][];
   /** PROTOTYPE (#581): a gun battery on a maintenance corridor along the hull: its columns [a, b), its guns' blisters, its gun rooms' floor rows, and the airlock's first column (the dock). */
   battery?: { a: number; b: number; guns: [number, number][]; rows: number; air: number; /** Sites whose column holds a second gun inboard. */ inner: number[] };
 }
@@ -142,6 +143,7 @@ export function outlineFrame(plan: ShipPlan, m: Mask, carry = 0, gap = 0, lane?:
     const st = m.sites ?? [];
     if (!st.some(([a, b]) => x0 === b + 1 || x0 + CW + 1 === a) && st.some(([a, b]) => x0 + CW + 1 >= a - 8 && x0 - 1 < b + 8)) return false;
     for (let k = -1; k <= CW; k++) if (top(x0 + k) !== top(x0)) return false;
+    if ((m.clear ?? []).some(([a, b]) => x0 + CW >= a && x0 - 1 <= b)) return false;
     return true;
   };
   let dockAt = bt ? bt.air : -1;
