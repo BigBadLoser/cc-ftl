@@ -1,6 +1,5 @@
 import type { Rng } from '../../rng';
-import type { BladeKind, BladePick } from '../hull/silhouette';
-import type { BladeSpec } from '../outlineRecipe';
+import type { BladeKind, BladeSpec } from '../outlineRecipe';
 import type { RoomRole } from '../types';
 import { bladeShape, inPoly, type Poly } from './bladeShapes';
 
@@ -20,26 +19,15 @@ const OPEN_OUT: readonly RoomRole[] = ['dock', 'hangar'];
 /** A blade room's longest side in floor tiles, and its least. */
 const MAX_SIDE = 9, MIN_SIDE = 3;
 /** Where along the body the blades root (a fraction of its length from the bow): fore, aft, horn. */
-export const ROOT = { fore: 0.4, aft: 0.62, horn: 0.52 };
+const ROOT = { fore: 0.4, aft: 0.62, horn: 0.52 };
 /** The mock's medium body half-beam, at which a blade's scale is 1; the leading end's scale over it, and the other's. */
 const MEDIUM = 13, LEAD = 1.15, TRAIL = 0.9;
 
 const N8: readonly (readonly [number, number])[] = [[-1, -1], [0, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [0, 1], [1, 1]];
 
-
-export function pickBlades(rng: Rng, spec: BladeSpec): BladePick {
+export function addBlades(rng: Rng, spec: BladeSpec, s: { rows: string[]; roomOf: Int16Array; width: number; height: number }, axis: number, roles0: readonly RoomRole[]): Bladed {
   const lead = rng.pick(spec.lead as ('fore' | 'aft')[]), fore = rng.pick(spec.fore as (BladeKind | null)[]), aft = rng.pick(spec.aft as (BladeKind | null)[]);
-  return { lead, fore, aft, horn: rng.chance(spec.horn) };
-}
-
-/**
- * Where a ship's blades root, as a fraction of the body's length, and whether a root may slide along the side clear of the
- * rooms that open out (rooms first); a silhouette that placed its blades keeps them where it drew them.
- */
-export interface BladeRoots { fore: number; aft: number; horn: number; slide: boolean }
-
-export function addBlades(pick: BladePick, roots: BladeRoots, s: { rows: string[]; roomOf: Int16Array; width: number; height: number }, axis: number, roles0: readonly RoomRole[]): Bladed {
-  const { lead, fore, aft, horn } = pick;
+  const horn = rng.chance(spec.horn);
   // The body: its columns, and its half-beam at each.
   const body0 = (x: number, y: number): boolean => (s.rows[y]?.[x] ?? '.') !== '.';
   const cols = Array.from({ length: s.width }, (_, x) => { let t = -1; for (let y = 0; y < s.height; y++) if (body0(x, y)) t = Math.max(t, Math.abs(y - axis)); return t; });
@@ -54,13 +42,13 @@ export function addBlades(pick: BladePick, roots: BladeRoots, s: { rows: string[
     if (!kind) return;
     // Its root slid along the side, nearest first, clear of the rooms that open out.
     const w = 7 * Math.sqrt(kk), x0 = Math.round(bx0 + at * len);
-    const clear = (x: number): boolean => !roots.slide || ![...shut].some((c) => Math.abs(c - x) <= w);
+    const clear = (x: number): boolean => ![...shut].some((c) => Math.abs(c - x) <= w);
     const x = [...Array(Math.round(len / 3)).keys()].flatMap((d) => [x0 + d, x0 - d]).find((c) => c > bx0 && c < bx1 && clear(c)) ?? x0, h = cols[x] ?? 0;
     for (const p of bladeShape(kind, kk)) polys.push(p.map(([u, v]) => [x + dir * u, h + v] as const));
   };
-  place(fore, fk, roots.fore, -1);
-  place(aft, ak, roots.aft, 1);
-  if (horn) place('horn', 0.9 * k, roots.horn, 1);
+  place(fore, fk, ROOT.fore, -1);
+  place(aft, ak, ROOT.aft, 1);
+  if (horn) place('horn', 0.9 * k, ROOT.horn, 1);
   // The grid grown to hold them, the axis kept central.
   const xs = polys.flat().map(([x]) => x), ys = polys.flat().map(([, y]) => y);
   const px = Math.max(0, Math.ceil(-Math.min(0, ...xs)) + 2), pr = Math.max(0, Math.ceil(Math.max(0, ...xs)) - s.width + 3);
