@@ -5,7 +5,7 @@
  * two screen px, icons are a whole number of device px per art px.
  */
 import { Container, Graphics } from 'pixi.js';
-import type { UiStarNode } from '../../ui/starmapApi';
+import type { UiStarFleet, UiStarNode } from '../../ui/starmapApi';
 import { fillArea } from './area';
 import { bodyVariant } from './artIds';
 import { createLaneMask } from './laneMask';
@@ -24,6 +24,8 @@ export function createLevel1(ctx: Ctx, sc0: Scene, cam0: Cam): Level {
   let sc = sc0;
   let cam = cam0;
   let ship: Glide | null = null;
+  /** How far the fleets that jumped this turn have slid in from where they were (0..1). */
+  let slide = 1;
   let hasShip = false;
   let g = 2 / cam.s;
   let zoomKey = '';
@@ -108,6 +110,23 @@ export function createLevel1(ctx: Ctx, sc0: Scene, cam0: Cam): Level {
   const fleetFrame = art?.art.frames['starmap.fleet.patrol.d0']?.w ?? 48;
   const structFrame = art?.art.frames['starmap.struct.den']?.w ?? 48;
 
+  /** Where a fleet's chevron sits: at its node (sliding in from where it was while the turn's slide runs), fanned off the lane. */
+  const lane = (m: (typeof marks)[number]): { x: number; y: number; px: number; py: number } => {
+    const k = 1 / cam.s;
+    const back = m.f.fx === null || m.f.fy === null ? 0 : 1 - slide;
+    const px = m.f.x + (m.f.fx === null ? 0 : (m.f.fx - m.f.x) * back);
+    const py = m.f.y + (m.f.fy === null ? 0 : (m.f.fy - m.f.y) * back);
+    return { x: px + m.ox * 54 * k, y: py + m.oy * 54 * k, px, py };
+  };
+  /** "Next node in 1:23" for a fleet on the move. */
+  const etaOf = (f: UiStarFleet): string => {
+    if (!f.hops) return '';
+    const sec = sc.map.turnSec ?? 0; // 0 while a hop or a deploy sets the turns: no clock to read
+    const s = Math.ceil((1 - (sc.map.turnFrac ?? 0)) * sec);
+    const when = sec ? `Next node in ${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}` : 'Next node on the next turn';
+    return ` ${when}${f.hops > 1 ? `, ${f.hops} jumps to go` : ''}.`;
+  };
+
   /** Everything drawn at the current grid that is not a piece: reach lines, route, fleets, exit icons, rings, the ship, labels. */
   function redraw(): void {
     const k = 1 / cam.s;
@@ -128,7 +147,8 @@ export function createLevel1(ctx: Ctx, sc0: Scene, cam0: Cam): Level {
     for (const m of marks) {
       if (m.f.tx === null || m.f.ty === null) continue;
       const o = newOps();
-      pixelLine(o, m.f.x, m.f.y, m.f.tx, m.f.ty, g, { dash: [2, 2] });
+      const at = lane(m);
+      pixelLine(o, at.px, at.py, m.f.tx, m.f.ty, g, { dash: [2, 2] });
       fillOps(dyn, o, pal.tone(m.f.tone), 0.55);
     }
     exitIcons.removeChildren().forEach((c) => c.destroy({ children: true }));
@@ -144,8 +164,7 @@ export function createLevel1(ctx: Ctx, sc0: Scene, cam0: Cam): Level {
     const fx = new Graphics({ roundPixels: true });
     fleetBox.addChild(fx);
     for (const m of marks) {
-      const x = m.f.x + m.ox * 54 * k;
-      const y = m.f.y + m.oy * 54 * k;
+      const { x, y } = lane(m);
       const id = `starmap.fleet.${m.f.kind}.d${dirOf(m.heading)}`;
       const spr = art?.has(`starmap.fleet.${m.f.kind}.d0`) ? spriteAt(ctx, id, x, y, fleetPx, m.f.tone, half) : null;
       if (spr) fleetBox.addChild(spr);
@@ -239,6 +258,11 @@ export function createLevel1(ctx: Ctx, sc0: Scene, cam0: Cam): Level {
     root,
     scene,
     camera,
+    slide(t) {
+      if (t === slide) return;
+      slide = t;
+      if (marks.some((m) => m.f.fx !== null)) redraw();
+    },
     glide(next) {
       const flipped = !!next !== hasShip;
       ship = next;
@@ -258,9 +282,8 @@ export function createLevel1(ctx: Ctx, sc0: Scene, cam0: Cam): Level {
       const my = cam.cy + (y - cam.h / 2) * k;
       const half = (iconSize(fleetFrame, cam.s, dpr) / 2) * k;
       for (const m of marks) {
-        const fx = m.f.x + m.ox * 54 * k;
-        const fy = m.f.y + m.oy * 54 * k;
-        if (Math.abs(mx - fx) <= half && Math.abs(my - fy) <= half) return `${m.f.faction} ${m.f.role.toLowerCase()}, ${m.f.ships} ship${m.f.ships > 1 ? 's' : ''}. ${m.f.heading}.`;
+        const { x: fx, y: fy } = lane(m);
+        if (Math.abs(mx - fx) <= half && Math.abs(my - fy) <= half) return `${m.f.faction} ${m.f.role.toLowerCase()}, ${m.f.ships} ship${m.f.ships > 1 ? 's' : ''}. ${m.f.heading}.${etaOf(m.f)}`;
       }
       for (const n of map.nodes) {
         if (!n.known || !n.jobs?.length) continue;

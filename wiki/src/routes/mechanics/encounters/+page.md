@@ -25,6 +25,10 @@ Open the starmap with **M**, or with the Starmap button on the left strip. Three
 the space, what is there, and which ships are in the area. Territory is coloured by faction, and the legend shows your
 standing with each one (see [Stations and trading](../trading/)).
 
+Ships your sensors see are drawn as small icons. A fleet waits at its node with a dashed line to the node it plans to jump to next. When a
+turn runs it slides along that lane the way your own ship does on a hop. Hover it, or select its node, to read "Next node in
+M:SS" and, on a longer route, how many jumps it has to go.
+
 Two buttons on the map are worth knowing:
 
 - **Where to sell** shows which known ports pay most for what you carry.

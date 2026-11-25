@@ -13,7 +13,7 @@
   import { isTypingTarget } from './keys';
   import { jumpCommand, toggleTake } from './starmapJump';
   import { toneColor } from './starmapStyle';
-  import { snapScale, wheelFactor, zoomTarget, type StarmapGlide, type StarmapGpu } from './starmapGpu';
+  import { createFleetSlide, easeGlide, GLIDE_MS, snapScale, wheelFactor, zoomTarget, type StarmapGlide, type StarmapGpu } from './starmapGpu';
 
   /** The starmap screen. `focusNode`: a node to centre on when it opens. (Fleeing a fight is the combat panel's flee control, not this map.) */
   let { api, focusNode = null, onClose, onSlide }: { api: UiApi; focusNode?: string | null; onClose: () => void; onSlide?: (on: boolean) => void } = $props();
@@ -226,12 +226,8 @@
     };
   });
 
-  /**
-   * The ship's glide along the route: visual only (a fixed tween per hop, independent of the sim's pace). `glide` is a float index
-   * along `travel.route`; it moves toward the node being headed for (the next one while a hop is under way) at one hop per
-   * GLIDE_MS, never overshooting, so fast sim turns queue up and play one after another.
-   */
-  const GLIDE_MS = 700;
+  /** The ship's glide: visual only, a float index along `travel.route` moving at one hop per GLIDE_MS toward the next node, never overshooting (fast sim turns queue). */
+  const slideFleets = createFleetSlide();
   let glide: number | null = null;
   let ship: StarmapGlide | null = null;
   let tripKey = '';
@@ -241,6 +237,8 @@
   function frame(now: number) {
     const dt = lastFrame ? Math.min(100, now - lastFrame) : 16;
     lastFrame = now;
+    const slid = slideFleets(dt, map?.turn); // the fleets that jumped this turn slide as the ship does
+    if (slid !== null) gpu?.fleetSlide(slid);
     const tr = trip;
     if (tr) {
       const key = `${tr.route[0]}>${tr.route.length}`;
@@ -289,7 +287,7 @@
     const b = nodeById.get(tr.route[i + 1] as string);
     if (!a || !b) return null;
     const t = Math.min(1, glide - i);
-    const e = t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2;
+    const e = easeGlide(t);
     return { x: a.x + (b.x - a.x) * e, y: a.y + (b.y - a.y) * e, fx: a.x, fy: a.y, tx: b.x, ty: b.y };
   }
 

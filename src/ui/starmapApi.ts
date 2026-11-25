@@ -2,8 +2,9 @@
 import type { UiHeat, UiLook } from './api';
 import type { CallerInfo, CommsLine, ReadoutRow, UiHoloRequest } from './comms/types';
 
-/** A theme colour by token name (`--cyan`...): the view maps it through `starmapStyle.ts`; the data holds no CSS. */
-export type Tone = 'cyan' | 'amber' | 'green' | 'red' | 'text' | 'dim';
+import type { Tone, UiStarFleet } from './starmapFleetApi';
+
+export type { Tone, UiStarFleet };
 
 export interface UiStarSector {
   id: string;
@@ -148,34 +149,6 @@ export interface UiStarIcon {
   name: string;
 }
 
-/** An NPC fleet the sensors can see: drawn beside its node, heading for `next` (null while resting). */
-export interface UiStarFleet {
-  id: number;
-  node: string;
-  x: number;
-  y: number;
-  /** The next node on its route (position), or null when it rests or is stranded. */
-  tx: number | null;
-  ty: number | null;
-  /** The fleet's name (its first ship, "+n" for the rest), e.g. "CNS Valiant +1". */
-  name: string;
-  /** Faction name, role label ("Trader", "Patrol", "Raider"), ship count, tone by faction kind, and whether it is hostile to the player. */
-  faction: string;
-  role: string;
-  /** The role id, for its icon (`starmap.fleet.<kind>.d0..d7`). */
-  kind: string;
-  ships: number;
-  tone: Tone;
-  hostile: boolean;
-  damaged: boolean;
-  /** What it is doing: "Resting at X", "Trading run to X", "Returning home to X", "Adrift"... */
-  heading: string;
-  /** Its home port's node. */
-  home: string;
-  /** What it carries ("20 Metal, 4 Ice"), or empty. */
-  cargo?: string;
-}
-
 export interface UiStarEdge {
   id: string;
   kind: 'route' | 'hyperlane';
@@ -232,6 +205,10 @@ export interface UiStarmap {
   jumps: number;
   /** The starmap turn (one per hop entered). */
   turn: number;
+  /** How much of the current turn has gone by (0..1, in steps): fleets are drawn that far along their next lane. */
+  turnFrac: number;
+  /** Seconds of game time in a turn. */
+  turnSec: number;
   /** 'active': in a node; 'hyperspace': travelling (see `travel`); 'deploying': dropped out, placing the ship. */
   state: 'active' | 'hyperspace' | 'deploying';
   /** The hyperspace trip in progress. */

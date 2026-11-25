@@ -54,20 +54,27 @@ const heldFleets = (sim: Sim): Set<number> => new Set([...inspectingFleets(sim),
  * node by a fight or a deal, or held for a patrol's inspection), and ports that are due build replacements. When the player's node is live ('active') a fleet that leaves it has its ships
  * lifted out and one that arrives has them materialised there; a fleet whose ship was crippled there is stranded first.
  */
+/** Does the fleet stay put this turn: in the live player node during a fight or a deal, or held for a patrol's inspection? One answer for the step and the map. */
+export function fleetHold(sim: Sim): (f: Fleet) => boolean {
+  const live = sim.sector.state === 'active';
+  const hold = holdsFleets(sim);
+  const held = heldFleets(sim);
+  return (f) => (live && hold && f.node === sim.galaxy.current) || held.has(f.id);
+}
+
 export function stepFleets(sim: Sim, turn: number): void {
   const g = sim.galaxy;
   if (!sim.content.galaxy) return;
   const live = sim.sector.state === 'active';
   syncFleets(sim, turn - 1);
   const area = nodesWithin(sim, g.current, FLEET_AREA_HOPS);
-  const hold = holdsFleets(sim);
-  const held = heldFleets(sim);
+  const isHeld = fleetHold(sim);
   const stepped: Fleet[] = [];
   for (const f of g.fleets) {
     if (f.synced >= turn || !simulated(f, area)) continue;
     const here = live && f.node === g.current;
     if (here) strandIfCrippled(sim, f, turn);
-    if ((here && hold) || held.has(f.id)) {
+    if (isHeld(f)) {
       f.from = f.node;
       f.synced = turn;
       continue;

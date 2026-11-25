@@ -53,6 +53,7 @@ export const createStarmapGpu: CreateStarmapGpu = (host) => {
   let scIn: StarmapGpuScene | null = null;
   let cam: Cam | null = null;
   let glideIn: StarmapGlide | null = null;
+  let slideIn = 1;
   let level: Level | null = null;
   let levelKey: unknown[] = [];
   let fading: { old: Level; t0: number } | null = null;
@@ -118,6 +119,7 @@ export const createStarmapGpu: CreateStarmapGpu = (host) => {
       const ctx: Ctx = { art: artTex, pal, dpr };
       const next = (scIn.level === 1 ? createLevel1 : scIn.level === 2 ? createLevel2 : createLevel3)(ctx, sc, cam);
       next.glide(glideIn);
+      next.slide?.(slideIn);
       if (level) {
         fading?.old.destroy();
         fading = { old: level, t0: performance.now() };
@@ -221,6 +223,11 @@ export const createStarmapGpu: CreateStarmapGpu = (host) => {
     glide(g) {
       glideIn = g;
       level?.glide(g);
+      request();
+    },
+    fleetSlide(t) {
+      slideIn = t;
+      level?.slide?.(t);
       request();
     },
     tip: (x, y) => level?.tip(x, y) ?? null,

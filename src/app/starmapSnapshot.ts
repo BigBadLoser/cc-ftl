@@ -1,7 +1,9 @@
 import {
   DANGER_STEP, FTL_CHARGE_SEC, edgeBetween, ftlCharge, fuelStock, jumpFuel, galaxyIndex, isHostileFaction, planStarRoute, playerShipId, playerShipPackedOk,
-  fieldItems, fleetName, hullLoad, isAdrift, nodeOf, nodeOwner, portNode, sectorOwner, structureOwner, riskOf, routeBlocker, routeCharge, sensorNodes, standings, visibleFleets, type Fleet, type NodeData, type Sim,
+  fieldItems, fleetName, hullLoad, isAdrift, nodeOf, nodeOwner, portNode, sectorOwner, structureOwner, riskOf, routeBlocker, routeCharge, fleetHold, sensorNodes, standings, visibleFleets, type Fleet, type NodeData, type Sim,
 } from '../sim';
+import { TURN_SEC } from '../sim/galaxy/tuning';
+import { TIME_TURN_TICKS } from '../sim/galaxy/turn';
 import { featureName, passengerName } from './jobsSnapshot';
 import type { UiNodeJob, UiStarExit, UiStarIcon, UiStarFleet, UiTravel, UiStarmap, UiStarNode, UiStarRoute } from '../ui/starmapApi';
 import { cargoOf, marketOf } from './marketSnapshot';
@@ -27,16 +29,26 @@ function headingOf(f: Fleet, nodeName: (id: string) => string): string {
   return f.node === home ? `Resting at ${nodeName(home)}` : `${WORKING[f.role][0]} ${nodeName(f.node)}`;
 }
 
+/** The turn's progress is published in this many steps (the map redraws a fleet on each). */
+const TURN_STEPS = 90;
+
+/** The node a fleet jumped from this turn (its slide's start), or nulls. */
+function fromOf(f: Fleet, turn: number, index: ReturnType<typeof galaxyIndex>): { fx: number | null; fy: number | null } {
+  const was = f.moved === turn && f.from !== f.node ? index.nodes.get(f.from) : undefined;
+  return { fx: was ? Math.round(was.x) : null, fy: was ? Math.round(was.y) : null };
+}
+
 /** The NPC fleets the sensors see, with where each is heading. */
 function fleetsOf(sim: Sim, nodeName: (id: string) => string): UiStarFleet[] {
   const index = galaxyIndex(sim.galaxy);
   const content = sim.content.galaxy;
+  const isHeld = fleetHold(sim);
   return visibleFleets(sim).flatMap((f) => {
     const at = index.nodes.get(f.node);
-    const next = f.route.length ? index.nodes.get(f.route[0] as string) : undefined;
+    const next = f.route.length && !isHeld(f) ? index.nodes.get(f.route[0] as string) : undefined;
     if (!at) return [];
     return [{
-      id: f.id, node: f.node, x: Math.round(at.x), y: Math.round(at.y), tx: next ? Math.round(next.x) : null, ty: next ? Math.round(next.y) : null,
+      id: f.id, node: f.node, x: Math.round(at.x), y: Math.round(at.y), tx: next ? Math.round(next.x) : null, ty: next ? Math.round(next.y) : null, hops: f.damaged || isHeld(f) ? 0 : f.route.length, ...fromOf(f, sim.galaxy.turn, index),
       name: fleetName(f), faction: content?.factions[f.faction]?.name ?? f.faction, role: ROLE_LABEL[f.role] ?? f.role, kind: f.role, ships: f.ships.length,
       tone: toneOf(content?.factions[f.faction]?.kind), hostile: isHostileFaction(sim, f.faction), damaged: !!f.damaged,
       heading: headingOf(f, nodeName), home: nodeName(portNode(f.home)), cargo: cargoOf(sim, f),
@@ -73,10 +85,10 @@ function travelOf(sim: Sim): UiTravel | null {
 }
 
 /** The fuel, charge and progress figures (cheap; refreshed often). */
-export function starmapStatus(sim: Sim): Pick<UiStarmap, 'fuel' | 'charge' | 'chargeMax' | 'jumps' | 'turn' | 'state' | 'travel' | 'current' | 'ship' | 'credits' | 'heat' | 'encounters' | 'event' | 'result'> {
+export function starmapStatus(sim: Sim): Pick<UiStarmap, 'fuel' | 'charge' | 'chargeMax' | 'jumps' | 'turn' | 'turnFrac' | 'turnSec' | 'state' | 'travel' | 'current' | 'ship' | 'credits' | 'heat' | 'encounters' | 'event' | 'result'> {
   return {
     ship: playerShipId(sim), fuel: fuelStock(sim), charge: Math.floor(ftlCharge(sim) ?? 0), chargeMax: FTL_CHARGE_SEC,
-    jumps: sim.galaxy.jumps, turn: sim.galaxy.turn, state: sim.sector.state, travel: travelOf(sim), current: sim.galaxy.current,
+    jumps: sim.galaxy.jumps, turn: sim.galaxy.turn, turnFrac: Math.floor((sim.galaxy.turnClock / TIME_TURN_TICKS) * TURN_STEPS) / TURN_STEPS, turnSec: sim.sector.state === 'active' && !sim.galaxy.travel ? TURN_SEC : 0, state: sim.sector.state, travel: travelOf(sim), current: sim.galaxy.current,
     credits: Math.floor(sim.trade.credits), heat: buildHeat(sim), encounters: encountersOf(sim), event: eventOf(sim), result: resultOf(sim),
   };
 }
@@ -203,7 +215,7 @@ export function planStarmapRoute(sim: Sim, to: string): UiStarRoute | null {
 /** A starmap with nothing in it (rev -1): what the store holds until the screen is first built. */
 export function emptyStarmap(): UiStarmap {
   return {
-    rev: -1, current: '', ship: 0, fuel: 0, charge: 0, chargeMax: FTL_CHARGE_SEC, jumps: 0, turn: 0, state: 'active', travel: null, credits: 0, heat: { notoriety: 0, wanted: false, wantedAt: 10, hunters: [], clearCost: 0, clearBlocker: null }, encounters: [], event: null, result: null, dangerStep: DANGER_STEP, sectors: [], nodes: [], fleets: [],
+    rev: -1, current: '', ship: 0, fuel: 0, charge: 0, chargeMax: FTL_CHARGE_SEC, jumps: 0, turn: 0, turnFrac: 0, turnSec: TURN_SEC, state: 'active', travel: null, credits: 0, heat: { notoriety: 0, wanted: false, wantedAt: 10, hunters: [], clearCost: 0, clearBlocker: null }, encounters: [], event: null, result: null, dangerStep: DANGER_STEP, sectors: [], nodes: [], fleets: [],
     edges: [], factions: [], currentSector: '', currentCluster: null, clusters: [], exits: [], sectorLinks: [], clusterLinks: [], nebula: [], news: [],
   };
 }
