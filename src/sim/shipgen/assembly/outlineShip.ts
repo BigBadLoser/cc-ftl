@@ -3,7 +3,7 @@ import { Rng } from '../../rng';
 import { drawSilhouette, type Drive, type Profile, type Silhouette } from '../hull/silhouette';
 import { fitShell, seedOf } from '../generate';
 import type { BaysLayout, OutlineRecipe } from '../outlineRecipe';
-import { ENGINE_TIERS, REACTOR_TIERS, engineSpec, planShip, reactorsFor, type ShipPlan } from '../plan';
+import { ENGINE_TIERS, REACTOR_TIERS, engineSpec, planShip, reactorsFor, type RoomSpec, type ShipPlan } from '../plan';
 import type { FactionDef, GenResult } from '../types';
 import { layoutBlocks, type Mask } from './blockLayout';
 import { bayRooms, type BayRules } from './bayRooms';
@@ -153,6 +153,8 @@ export interface OutlineInputs {
    * own drive section then the redraws, each; and whether its side corridors have rooms both sides (else outboard only).
    */
   lanes?: Silhouette[][]; both?: boolean;
+  /** A raider's gun rooms, cut in its blades rather than its body. */
+  guns: RoomSpec[];
 }
 
 /** Drive sections a bay hull may draw in place of its own, each a tile wider, where its own holds too few engines. */
@@ -186,6 +188,9 @@ export function outlineInputs(
   const next = ENGINE_TIERS[ENGINE_TIERS.indexOf(kit.engine as (typeof ENGINE_TIERS)[number]) + 1];
   const planUp: ShipPlan | undefined = bay && next && defs[next] ? { ...plan, kit: { ...kit, engine: next } } : undefined;
   if (planUp) planUp.reactors = reactorsFor(planUp, defs);
+  // PROTOTYPE (#581): a raider's guns stand in its blades, cut after the body's rooms (their power counted above).
+  const guns = recipe.blades?.guns ? plan.weapons : [];
+  if (guns.length > 0) for (const p of [plan, ...(planUp ? [planUp] : [])]) p.weapons = [];
   // PROTOTYPE (#581): on bays, the drive's choices (engines a tier up, wider drive sections, a flare held an engine room
   // deep); with a battery, a notched gun site per gun pair in place of the profile's embrasures.
   const sites = !!bay?.battery;
@@ -210,7 +215,7 @@ export function outlineInputs(
   const both = lanes ? new Rng(seedOf(seed, 2000 + n)).chance(0.5) : undefined;
   const sil = draw();
   const vary = Array.from({ length: 24 }, () => rng.int(80, 135) / 100);
-  return { rng, role, plan, sil, drives, vary, maxBeam: beamAt(recipe, depth), profile: profile.id, ...(planUp ? { planUp } : {}), ...(lanes ? { lanes, both } : {}) };
+  return { rng, role, plan, sil, drives, vary, maxBeam: beamAt(recipe, depth), profile: profile.id, guns, ...(planUp ? { planUp } : {}), ...(lanes ? { lanes, both } : {}) };
 }
 
 /**
@@ -286,7 +291,7 @@ export function assembleOutline(
 ): GenResult {
   // PROTOTYPE (#581): a recipe with a bay layout has its rooms on bays (a cruiser along a gun battery).
   const r = recipeOf(f, type), bay = r.layout.kind === 'bays' ? r.layout : undefined;
-  const { rng, role, plan, sil, drives, planUp, vary, maxBeam, profile, lanes, both } = outlineInputs(f, seed, depth, defs, type, n, extra);
+  const { rng, role, plan, sil, drives, planUp, vary, maxBeam, profile, lanes, both, guns } = outlineInputs(f, seed, depth, defs, type, n, extra);
   const g = bay ? bayGrid([plan, ...(planUp ? [planUp] : [])], lanes ?? [[sil, ...drives]], maxBeam, defs, r, bay, both) : blockGrid(plan, sil, maxBeam, defs, r, vary);
   thinHull(g);
   if (dropIslands(g)) thinHull(g);
@@ -296,11 +301,11 @@ export function assembleOutline(
   // A pusher's truss ahead of its hull (its centre row the grid's row 0).
   const body = { rows, roomOf: snap.roomOf, width: snap.width, height: snap.height }, roles = g.regions.map((r) => r.role);
   // A raider's blades along its sides (their own draws, so the hull's stay as they were).
-  const bladed = r.blades ? addBlades(new Rng(seedOf(seed, 3000 + n)), r.blades, body, -snap.y0, roles) : undefined;
+  const specs = g.regions.map((r) => r.spec), bladed = r.blades ? addBlades(new Rng(seedOf(seed, 3000 + n)), r.blades, body, -snap.y0, roles, specs, guns) : undefined;
   const shell = r.truss ? addTruss(rng, r.truss, body, -snap.y0, depth) : (bladed ?? body);
   return fitShell(
     rng, f, factionId, seed, role, 'sections', { crew: plan.crew } as Pick<ShipPlan, 'crew'>,
-    { ...shell, roles: bladed?.roles ?? roles, specs: g.regions.map((r) => r.spec) },
+    { ...shell, roles: bladed?.roles ?? roles, specs: bladed?.specs ?? specs },
     `outline ${profile}`, defs, n, { bareHalls: true },
   );
 }

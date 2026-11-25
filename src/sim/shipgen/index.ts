@@ -18,6 +18,6 @@ export { assembleStation, stationFaction, stationProblems, type StationResult } 
 export { buildStation, STATION_TRIES } from './stationBuild';
 export { recipeAt, type BranchRule, type Recipe } from './assembly/recipe';
 export type { RoomSpec, StationDept } from './plan';
-export type { BladeKind, BladeSpec, OutlineRecipe, RaiderNose, ShipRoom } from './outlineRecipe';
+export type { BladeCombo, BladeKind, BladeSpec, OutlineRecipe, RaiderNose, ShipRoom } from './outlineRecipe';
 export type { Profile, Part as HullPart } from './hull/silhouette';
 export { STATION_SIZES, type StationDef, type StationInfo, type StationKind, type StationRoomDef, type StationSize, type StationTier } from './stationTypes';

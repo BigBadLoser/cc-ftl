@@ -87,15 +87,14 @@ export interface TrussSpec { banks: [number, number]; perDepth?: number; max?: n
 export type BladeKind = 'slab' | 'slabPlain' | 'slab2' | 'slab3' | 'spikes2' | 'spikes3' | 'claw' | 'claw2' | 'horn' | 'kink';
 
 /**
- * Raider blades (PROTOTYPE, #581): hull added to the sides of the body once its rooms are cut (assembly/blades.ts). Each
- * ship draws which end leads, one fore and one aft blade (a list of `null` for none), and a horn by chance; the leading
- * end's blade is drawn larger.
+ * Raider blades (PROTOTYPE, #581): hull along the sides of the body, its rooms cut after the body's (assembly/blades.ts).
+ * Each ship draws one of the hand-picked combinations (the approved mock sheet's) and a nose; the leading end's blade is
+ * drawn larger. With `guns`, the ship's gun rooms stand in the blades, not the body; its airlocks always move out to them.
  */
-export interface BladeSpec {
-  fore: readonly (BladeKind | null)[]; aft: readonly (BladeKind | null)[]; horn: number; lead: readonly ('fore' | 'aft')[];
-  /** The noses drawn onto the bow, one a ship (the body's own bow is blunt). */
-  noses?: readonly RaiderNose[];
-}
+export interface BladeSpec { combos: readonly BladeCombo[]; noses?: readonly RaiderNose[]; guns?: boolean }
+
+/** A combination of blades: the fore and aft blade (null for none), which end leads, and whether a horn stands between. */
+export interface BladeCombo { fore: BladeKind | null; aft: BladeKind | null; lead: 'fore' | 'aft'; horn: boolean }
 
 /** A raider's nose (bladeShapes.ts): a long taper to a narrow prow, a fine point, a point on a spike, a blunt ram, a rounded bow. */
 export type RaiderNose = 'taper' | 'point' | 'spike' | 'ram' | 'round';
