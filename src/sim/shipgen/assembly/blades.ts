@@ -9,21 +9,23 @@ import { bladeShape, inPoly, noseShape, type Poly } from './bladeShapes';
  * hold by an opening (every part at least three wide, so a wall a tile thick round floor), and what the opening cuts off
  * the body goes. The blade floor is cut into rooms, each the largest rectangle left (a wall between two), unfurnished;
  * what no room takes is crawlway. Each gets a door to what it joins. Nothing stands over the body's rooms that open out:
- * an airlock keeps its hull face, the drives the space astern.
+ * an airlock keeps its hull face, the engines the space just astern of them.
  */
 
 export interface Bladed { rows: string[]; roomOf: Int16Array; width: number; height: number; roles: RoomRole[] }
 
 /** Rooms near which no blade stands (an airlock opens out of the hull's side; the engines' face astern is kept apart). */
 const OPEN_OUT: readonly RoomRole[] = ['dock'];
+/** Tiles astern of the engines kept clear for their exhaust. */
+const EXHAUST = 4;
 /** A blade room's longest side in floor tiles, and its least. */
 const MAX_SIDE = 9, MIN_SIDE = 3;
 /** Where along the body the blades root (a fraction of its length from the bow): fore, aft, horn. */
-const ROOT = { fore: 0.4, aft: 0.62, horn: 0.52 };
-/** The mock's medium body half-beam, at which a blade's scale is 1; the leading end's scale over it, and the other's. */
-const MEDIUM = 13, LEAD = 1.15, TRAIL = 0.9;
+const ROOT = { fore: 0.5, aft: 0.62, horn: 0.59 };
+/** The mock's medium body length (its drive block in), at which a blade's scale is 1; the leading end's scale over it, and the other's. */
+const MEDIUM = 39, LEAD = 1.15, TRAIL = 0.9;
 
-/** The reach of the closing that fills a narrow gap between a blade and the body (two tiles). */
+/** The tallest sliver of space between a blade and the body that is closed (two tiles). */
 const CLOSE = 2;
 
 const N8: readonly (readonly [number, number])[] = [[-1, -1], [0, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [0, 1], [1, 1]];
@@ -35,7 +37,7 @@ export function addBlades(rng: Rng, spec: BladeSpec, s: { rows: string[]; roomOf
   const body0 = (x: number, y: number): boolean => (s.rows[y]?.[x] ?? '.') !== '.';
   const cols = Array.from({ length: s.width }, (_, x) => { let t = -1; for (let y = 0; y < s.height; y++) if (body0(x, y)) t = Math.max(t, Math.abs(y - axis)); return t; });
   const bx0 = cols.findIndex((t) => t >= 0), bx1 = cols.length - 1 - [...cols].reverse().findIndex((t) => t >= 0), len = bx1 - bx0 + 1;
-  const k = (Math.max(...cols) + 1) / MEDIUM, [fk, ak] = lead === 'fore' ? [LEAD * k, TRAIL * k] : [TRAIL * k, LEAD * k];
+  const k = len / MEDIUM, [fk, ak] = lead === 'fore' ? [LEAD * k, TRAIL * k] : [TRAIL * k, LEAD * k];
   // The columns of the rooms that open out of the side.
   const shut = new Set<number>();
   s.roomOf.forEach((r, i) => { if (r >= 0 && OPEN_OUT.includes(roles0[r] as RoomRole)) shut.add(i % s.width); });
@@ -82,8 +84,12 @@ export function addBlades(rng: Rng, spec: BladeSpec, s: { rows: string[]; roomOf
     const out = Math.sign(y - A) || 1;
     for (let yy = y; yy >= 0 && yy < H; yy += out) for (let dx = -1; dx <= 1; dx++) for (const ym of [yy, 2 * A - yy]) if (inside(x + dx, ym)) forbid[at(x + dx, ym)] = 1;
   }
-  const stern = bx1 + px, sternHalf = (cols[bx1] ?? 0) + 2;
-  for (let y = A - sternHalf; y <= A + sternHalf; y++) for (let x = stern - 1; x < W; x++) if (inside(x, y)) forbid[at(x, y)] = 1;
+  // (Astern, only the engines' exhaust: the rows of the engine rooms at the stern wall, a row either side, EXHAUST deep.)
+  const stern = bx1 + px;
+  for (let y = 0; y < H; y++) {
+    if (![y - 1, y, y + 1].some((yy) => roles0[roomOf[at(stern - 1, yy)] ?? -1] === 'engine' || roles0[roomOf[at(stern - 2, yy)] ?? -1] === 'engine')) continue;
+    for (let x = stern; x <= stern + EXHAUST && x < W; x++) forbid[at(x, y)] = 1;
+  }
   // The blades rastered at tile centres (mirrored about the axis), then opened by 3x3 with the body.
   const shape = new Uint8Array(W * H);
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
@@ -93,9 +99,14 @@ export function addBlades(rng: Rng, spec: BladeSpec, s: { rows: string[]; roomOf
     const u = x - px + 0.5, v = Math.abs(y - A) + 0.5;
     if (polys.some((p) => inPoly(u, v, p))) shape[i] = 1;
   }
-  // Gaps narrower than a room's wall pair (a blade running a tile or two off the body's side) closed, by 5x5.
-  const closed = square(square(shape, W, H, CLOSE, true), W, H, CLOSE, false);
-  for (let i = 0; i < W * H; i++) if (closed[i] && !forbid[i]) shape[i] = 1;
+  // A sliver of space a tile or two tall between a blade and the body (a blade running just off its side) closed, column by
+  // column, so the angled space between them keeps its line.
+  for (let x = 0; x < W; x++) for (let y = 1; y < H - 1; y++) {
+    if (shape[at(x, y)] || !shape[at(x, y - 1)]) continue;
+    let e = y;
+    while (e < H && !shape[at(x, e)]) e++;
+    if (e < H && e - y <= CLOSE) for (let yy = y; yy < e; yy++) if (!forbid[at(x, yy)]) shape[at(x, yy)] = 1;
+  }
   const full = (x: number, y: number): boolean => N8.every(([dx, dy]) => inside(x + dx, y + dy) && !!shape[at(x + dx, y + dy)]) && !!shape[at(x, y)];
   const open = new Uint8Array(W * H);
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
@@ -165,20 +176,6 @@ function footprint(shape: Poly[]): [number, number] {
     }
   }
   return lo <= hi ? [Math.floor(lo), Math.ceil(hi)] : [0, 0];
-}
-
-/** A mask grown (`grow`: any tile within `r`, square) or shrunk (every tile within `r`; past the edge counts as out). */
-function square(m: Uint8Array, W: number, H: number, r: number, grow: boolean): Uint8Array {
-  const out = new Uint8Array(W * H);
-  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-    let any = false, all = true;
-    for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
-      const on = x + dx >= 0 && y + dy >= 0 && x + dx < W && y + dy < H && !!m[(y + dy) * W + x + dx];
-      any ||= on; all &&= on;
-    }
-    out[y * W + x] = (grow ? any : all) ? 1 : 0;
-  }
-  return out;
 }
 
 /** The largest rectangle of free tiles, each side `MIN_SIDE` to `MAX_SIDE` (counted capped): x, y, w, h. */
