@@ -2,11 +2,11 @@ import type { RoomSpec } from '../plan';
 import type { RoomRole } from '../types';
 
 /**
- * A raider's blade rooms (PROTOTYPE, #581): the blade floor cut into rooms, each the largest rectangle left (a wall between
- * two), on the upper side and mirrored below; what no room takes is crawlway. Each gets a door to what it joins. The
- * ship's guns stand in the blade rooms nearest the body that hold them, and its airlocks move out of the body into the
- * smallest rooms on a blade's outer edge (the body's dock rooms left as floor of the corridor they end); the rest are
- * unfurnished.
+ * A raider's blade rooms (PROTOTYPE, #581): rooms only where something stands. The blade floor is cut into rectangles
+ * (each the largest left, a wall between two, on the upper side and mirrored below); the ship's guns take the ones nearest
+ * the body that hold them, its airlocks move out of the body into the smallest on a blade's outer edge (the body's dock
+ * rooms left as floor of the corridor they end), and every other goes back to floor: crawlway that follows the blade's
+ * line, a hall each piece. Each gets a door to what it joins.
  */
 
 /** The grid the blades were drawn on: cells, rooms, the blade floor still free, the body's tiles, its size and axis row. */
@@ -15,7 +15,7 @@ export interface BladeGrid { cells: string[]; roomOf: Int16Array; floor: Uint8Ar
 /** A blade room's longest side in floor tiles, and its least. */
 const MAX_SIDE = 9, MIN_SIDE = 3;
 
-interface Cut { top: number; bottom: number; x: number; y: number; w: number; h: number }
+interface Cut { top: number; bottom: number; x: number; y: number; w: number; h: number; /** The free tiles its wall took (upper side). */ ring: number[] }
 
 export function bladeRooms(g: BladeGrid, roles0: readonly RoomRole[], specs0: readonly (RoomSpec | undefined)[], guns: readonly RoomSpec[]): { roles: RoomRole[]; specs: (RoomSpec | undefined)[] } {
   const { cells, roomOf, floor, body, W, H, A } = g, at = (x: number, y: number): number => y * W + x;
@@ -30,26 +30,14 @@ export function bladeRooms(g: BladeGrid, roles0: readonly RoomRole[], specs0: re
     if (!r) break;
     const [rx, ry, rw, rh] = r, top = roles.length, bottom = top + 1;
     roles.push('cargo', 'cargo');
-    cuts.push({ top, bottom, x: rx, y: ry, w: rw, h: rh });
+    const cut: Cut = { top, bottom, x: rx, y: ry, w: rw, h: rh, ring: [] };
+    cuts.push(cut);
     for (let y = ry - 1; y <= ry + rh; y++) for (let x = rx - 1; x <= rx + rw; x++) {
       const inR = x >= rx && x < rx + rw && y >= ry && y < ry + rh;
-      if (inR) { setFloor(x, y, top); roomOf[at(x, mirror(y))] = bottom; } else if (free(x, y)) setWall(x, y);
+      if (inR) { setFloor(x, y, top); roomOf[at(x, mirror(y))] = bottom; } else if (free(x, y)) { setWall(x, y); cut.ring.push(at(x, y)); }
     }
   }
-  // What is left is crawlway, a hall each piece.
-  for (let y = 0; y < A; y++) for (let x = 0; x < W; x++) {
-    if (!free(x, y)) continue;
-    const top = roles.length, bottom = top + 1, stack: [number, number][] = [[x, y]];
-    roles.push('hall', 'hall');
-    setFloor(x, y, top); roomOf[at(x, mirror(y))] = bottom;
-    while (stack.length > 0) {
-      const [cx, cy] = stack.pop() as [number, number];
-      for (const [nx, ny] of [[cx + 1, cy], [cx - 1, cy], [cx, cy + 1], [cx, cy - 1]] as const) if (free(nx, ny)) { setFloor(nx, ny, top); roomOf[at(nx, mirror(ny))] = bottom; stack.push([nx, ny]); }
-    }
-  }
-  connect(cells, roomOf, roles, roles0.length, W, H, body);
-  // (A cut kept: its floor still there.)
-  const live = cuts.filter((c) => roomOf[at(c.x, c.y)] === c.top && cells[at(c.x, c.y)] === '_');
+  const live = cuts;
   // How far a cut stands from the body (its nearest floor tile to the nearest body tile, by rows and columns).
   const bodyCols = [...body.keys()].filter((i) => body[i]);
   const gap = (c: Cut): number => Math.min(...bodyCols.map((i) => { const bx = i % W, by = (i - bx) / W; return Math.max(0, c.x - bx, bx - (c.x + c.w - 1)) + Math.max(0, c.y - by, by - (c.y + c.h - 1)); }));
@@ -81,6 +69,29 @@ export function bladeRooms(g: BladeGrid, roles0: readonly RoomRole[], specs0: re
       roles[r] = 'dock'; specs[r] = specs0[d]; roles[d] = 'hall'; specs[d] = undefined;
     }
   }
+  // Every other cut back to blade floor (its wall too, where no kept room stands beside it): crawlway that follows the
+  // blade's line, not a grid of rooms.
+  const kept = cuts.filter((c) => roles[c.top] !== 'cargo'), floorOf = new Set(kept.flatMap((c) => [c.top, c.bottom]));
+  const beside = (i: number): boolean => [i - 1, i + 1, i - W, i + W, i - W - 1, i - W + 1, i + W - 1, i + W + 1].some((j) => floorOf.has(roomOf[j] as number) && cells[j] === '_');
+  for (const c of cuts) {
+    if (roles[c.top] !== 'cargo') continue;
+    roles[c.top] = roles[c.bottom] = 'hall';
+    const back = (i: number): void => { const x = i % W, y = (i - x) / W; for (const yy of [y, mirror(y)]) { const j = at(x, yy); cells[j] = '#'; roomOf[j] = -1; floor[j] = 1; } };
+    for (let y = c.y; y < c.y + c.h; y++) for (let x = c.x; x < c.x + c.w; x++) back(at(x, y));
+    for (const i of c.ring) if (!beside(i)) back(i);
+  }
+  // What is left is crawlway, a hall each piece.
+  for (let y = 0; y < A; y++) for (let x = 0; x < W; x++) {
+    if (!free(x, y)) continue;
+    const top = roles.length, bottom = top + 1, stack: [number, number][] = [[x, y]];
+    roles.push('hall', 'hall');
+    setFloor(x, y, top); roomOf[at(x, mirror(y))] = bottom;
+    while (stack.length > 0) {
+      const [cx, cy] = stack.pop() as [number, number];
+      for (const [nx, ny] of [[cx + 1, cy], [cx - 1, cy], [cx, cy + 1], [cx, cy - 1]] as const) if (free(nx, ny)) { setFloor(nx, ny, top); roomOf[at(nx, mirror(ny))] = bottom; stack.push([nx, ny]); }
+    }
+  }
+  connect(cells, roomOf, roles, roles0.length, W, H, body);
   return { roles, specs };
 }
 
