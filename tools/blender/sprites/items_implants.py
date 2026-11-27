@@ -18,10 +18,10 @@ TO_CAM = (0.62, 0.62, 0.48)
 
 
 class P:
-    """Parts at c (grid x, y), floor z, turned rz and scaled k; lit = the tier's light colour."""
+    """Parts at c (grid x, y), floor z, turned rz and scaled k; lit = the tier's light colour, joint = the trim's (gold on named)."""
 
-    def __init__(self, m, c, z, rz, k, lit):
-        self.m, self.c, self.z, self.rz, self.k, self.lit = m, c, z, rz, k, lit
+    def __init__(self, m, c, z, rz, k, lit, joint=JOINT):
+        self.m, self.c, self.z, self.rz, self.k, self.lit, self.joint = m, c, z, rz, k, lit, joint
 
     def p(self, x, y, z):
         cs, sn = math.cos(self.rz), math.sin(self.rz)
@@ -56,23 +56,23 @@ def at(base, d, r):
 def arm(q):
     """A cyber arm lying on the deck: upper arm, a white elbow, forearm, an open hand."""
     q.tube((-0.26, -0.1, 0.05), (-0.04, 0.0, 0.05), 0.05, BODY)
-    q.ball(-0.04, 0.0, 0.0, 0.055, JOINT)
+    q.ball(-0.04, 0.0, 0.0, 0.055, q.joint)
     q.tube((-0.04, 0.0, 0.05), (0.14, 0.1, 0.04), 0.04, BODY, r1=0.034)
-    q.ball(0.14, 0.1, 0.004, 0.038, JOINT)
+    q.ball(0.14, 0.1, 0.004, 0.038, q.joint)
     q.box(0.2, 0.14, 0.0, (0.1, 0.09, 0.05), BODY_D, top=BODY, rz=0.5)
     for i, a in enumerate((-0.5, -0.15, 0.15, 0.45)):
         y0 = 0.14 + i * 0.02
-        q.tube((0.24, y0, 0.03), (0.24 + 0.1 * math.cos(0.27 + a), y0 + 0.1 * math.sin(0.27 + a) + 0.06 * a, 0.03), 0.014, JOINT)
-    q.tube((0.17, 0.2, 0.03), (0.15, 0.28, 0.03), 0.015, JOINT)                                  # thumb
+        q.tube((0.24, y0, 0.03), (0.24 + 0.1 * math.cos(0.27 + a), y0 + 0.1 * math.sin(0.27 + a) + 0.06 * a, 0.03), 0.014, q.joint)
+    q.tube((0.17, 0.2, 0.03), (0.15, 0.28, 0.03), 0.015, q.joint)                                  # thumb
     q.box(-0.15, -0.05, 0.095, (0.06, 0.03, 0.012), q.lit, rz=0.42, bevel=0)
 
 
 def leg(q):
     """A cyber leg lying on the deck: thigh, a white knee, shin, a flat foot."""
     q.tube((-0.27, -0.06, 0.055), (-0.06, 0.0, 0.055), 0.055, BODY)
-    q.ball(-0.06, 0.0, 0.0, 0.058, JOINT)
+    q.ball(-0.06, 0.0, 0.0, 0.058, q.joint)
     q.tube((-0.06, 0.0, 0.05), (0.15, 0.06, 0.04), 0.042, BODY, r1=0.034)
-    q.ball(0.15, 0.06, 0.004, 0.036, JOINT)
+    q.ball(0.15, 0.06, 0.004, 0.036, q.joint)
     q.box(0.2, 0.075, 0.0, (0.07, 0.11, 0.15), BODY_D, top=BODY, rz=0.28, bevel=0.012)         # the foot, standing up
     q.box(-0.17, -0.03, 0.105, (0.07, 0.03, 0.012), q.lit, rz=0.28, bevel=0)
 
@@ -86,18 +86,13 @@ def eye(q):
     q.tube((-0.1, -0.1, 0.08), (-0.26, -0.18, 0.02), 0.024, BODY)
 
 
-def heart(q, trim=JOINT):
-    """A cyber heart: two red chambers, a lit band round them, three vessels out of the top (trim: their colour)."""
+def heart(q):
+    """A cyber heart: two red chambers, a lit band round them, three vessels out of the top."""
     q.ball(-0.04, 0.03, 0.0, 0.12, HEART, sz=0.8)
     q.ball(0.07, -0.03, 0.0, 0.1, HEART_D, sz=0.8)
     q.tube((0.0, 0.0, 0.085), (0.0, 0.0, 0.115), 0.135, q.lit, sides=16)
     for x, y, h in ((-0.06, 0.08, 0.3), (0.0, 0.04, 0.32), (0.05, 0.0, 0.27)):
-        q.tube((x, y, 0.14), (x, y, h), 0.026, trim)
-
-
-def halcyon(q):
-    """The Halcyon Heart (named): the heart in deep red with gold vessels."""
-    heart(q, trim="imGoldD")
+        q.tube((x, y, 0.14), (x, y, h), 0.026, q.joint)
 
 
 def lungs(q):
@@ -105,17 +100,17 @@ def lungs(q):
     for y, col in ((-0.08, LUNG_D), (0.08, LUNG)):
         q.ball(0.02, y, 0.0, 0.085, col, sx=1.6, sz=0.9)
         q.tube((-0.03, y - 0.09, 0.1), (-0.03, y + 0.09, 0.1), 0.012, q.lit)
-    q.tube((-0.27, 0.0, 0.08), (-0.12, 0.0, 0.08), 0.026, JOINT)
+    q.tube((-0.27, 0.0, 0.08), (-0.12, 0.0, 0.08), 0.026, q.joint)
     for y in (-0.06, 0.06):
-        q.tube((-0.12, 0.0, 0.08), (-0.06, y, 0.08), 0.02, JOINT)
+        q.tube((-0.12, 0.0, 0.08), (-0.06, y, 0.08), 0.02, q.joint)
 
 
 def spine(q):
     """A spinal frame: a chain of white vertebrae with spines up and lit discs between."""
     for i in range(7):
         x = (i - 3) * 0.075
-        q.box(x, 0, 0, (0.05, 0.1, 0.06), JOINT, top=EYE, bevel=0.01)
-        q.box(x, 0, 0.06, (0.022, 0.03, 0.05), JOINT, bevel=0.006)
+        q.box(x, 0, 0, (0.05, 0.1, 0.06), q.joint, top=EYE, bevel=0.01)
+        q.box(x, 0, 0.06, (0.022, 0.03, 0.05), q.joint, bevel=0.006)
         if i < 6:
             q.box(x + 0.0375, 0, 0.012, (0.016, 0.07, 0.036), q.lit, bevel=0)
 
@@ -125,7 +120,7 @@ def booster(q):
     q.tube((-0.2, 0, 0.065), (0.16, 0, 0.065), 0.065, BODY, cap=BODY_D)
     for x in (-0.12, -0.04, 0.04):
         q.tube((x - 0.012, 0, 0.065), (x + 0.012, 0, 0.065), 0.072, q.lit)
-    q.box(0.21, 0, 0.0, (0.07, 0.16, 0.11), JOINT, top=EYE, bevel=0.01)
+    q.box(0.21, 0, 0.0, (0.07, 0.16, 0.11), q.joint, top=EYE, bevel=0.01)
 
 
 def dermal(q):
@@ -155,13 +150,15 @@ def coprocessor(q):
     q.box(0, 0, 0, (0.4, 0.28, 0.03), "pcb")
     q.box(0, 0, 0.03, (0.3, 0.22, 0.03), BODY_D)
     for i in range(7):
-        q.box(-0.12 + i * 0.04, 0, 0.06, (0.014, 0.2, 0.07), JOINT)
+        q.box(-0.12 + i * 0.04, 0, 0.06, (0.014, 0.2, 0.07), q.joint)
     q.box(0.18, 0, 0.03, (0.03, 0.16, 0.02), q.lit, bevel=0)
 
 
 LINES = {"cyber_arm": arm, "cyber_leg": leg, "cyber_eye": eye, "cyber_heart": heart, "cyber_lungs": lungs,
          "spinal_frame": spine, "reflex_booster": booster, "dermal_armor": dermal}
-NAMED = {"chip_coprocessor": coprocessor, "halcyon_heart": halcyon}
+# Named cyberware (#626): its line's model, lit and trimmed in gold.
+NAMED = {"chip_coprocessor": coprocessor, "halcyon_heart": heart, "hawkeye_lens": eye, "titan_arm": arm, "strider_leg": leg,
+         "abyss_lungs": lungs, "atlas_frame": spine, "quicksilver": booster, "carapace_weave": dermal}
 
 # Stacks of 4 (itemView.stackClass): s one, m two side by side, l three; the carried one a little smaller.
 LAYOUT = {"held": [(0.0, 0.0)], "s": [(0.0, 0.0)], "m": [(-0.1, 0.14), (0.1, -0.14)],
@@ -172,7 +169,7 @@ SCALE = {"held": 0.7, "s": 1.0, "m": 0.78, "l": 0.66}
 def stack(build, tier):
     def fn(m, size):
         for x, y in LAYOUT[size]:
-            build(P(m, (x, y), 0.0, 0.0, SCALE[size], LIGHTS[tier]))
+            build(P(m, (x, y), 0.0, 0.0, SCALE[size], LIGHTS[tier], "imGoldD" if tier == "named" else JOINT))
     return fn
 
 
