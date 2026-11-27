@@ -64,21 +64,21 @@ def at(base, d, r):
 # ---- the lines -------------------------------------------------------------------------------------------------------
 
 def arm(q):
-    """A cyber arm lying on the deck: upper arm, a white elbow, forearm, and a big open hand, fingers spread apart."""
-    q.tube((-0.28, -0.16, 0.045), (-0.14, -0.08, 0.045), 0.045, BODY)
-    q.ball(-0.14, -0.08, 0.0, 0.05, q.joint)
-    q.tube((-0.14, -0.08, 0.045), (-0.02, -0.01, 0.038), 0.037, BODY, r1=0.032)
-    q.ball(-0.02, -0.01, 0.006, 0.033, q.joint)                                                 # the wrist
-    q.blob(0.06, 0.04, 0.035, (0.095, 0.08, 0.032), BODY_D)                                     # the palm
-    for a in (-0.6, -0.2, 0.2, 0.58):                                                           # four fingers, fanned wide
+    """A cyber arm lying on the deck: upper arm, a white elbow, forearm, and an open hand with long fingers spread apart."""
+    q.tube((-0.3, -0.17, 0.045), (-0.17, -0.1, 0.045), 0.045, BODY)
+    q.ball(-0.17, -0.1, 0.0, 0.05, q.joint)
+    q.tube((-0.17, -0.1, 0.045), (-0.05, -0.03, 0.038), 0.037, BODY, r1=0.032)
+    q.ball(-0.05, -0.03, 0.006, 0.033, q.joint)                                                 # the wrist
+    q.blob(0.02, 0.015, 0.035, (0.075, 0.065, 0.03), BODY_D)                                    # the palm
+    for a in (-0.55, -0.18, 0.18, 0.52):                                                        # four long fingers, fanned
         d = (math.cos(0.5 + a), math.sin(0.5 + a))
-        b = (0.06 + d[0] * 0.075, 0.04 + d[1] * 0.075)
-        k = (b[0] + d[0] * 0.07, b[1] + d[1] * 0.07)
-        q.tube((b[0], b[1], 0.04), (k[0], k[1], 0.04), 0.022, q.joint)
-        q.tube((k[0], k[1], 0.04), (k[0] + d[0] * 0.06, k[1] + d[1] * 0.06, 0.03), 0.018, BODY)
-    q.tube((0.02, 0.1, 0.035), (-0.02, 0.18, 0.035), 0.022, q.joint)                             # thumb
-    q.tube((-0.02, 0.18, 0.035), (-0.06, 0.22, 0.03), 0.018, BODY)
-    q.box(-0.22, -0.12, 0.085, (0.06, 0.03, 0.012), q.lit, rz=0.52, bevel=0)
+        b = (0.02 + d[0] * 0.06, 0.015 + d[1] * 0.06)
+        k = (b[0] + d[0] * 0.09, b[1] + d[1] * 0.09)
+        q.tube((b[0], b[1], 0.04), (k[0], k[1], 0.04), 0.021, q.joint)
+        q.tube((k[0], k[1], 0.04), (k[0] + d[0] * 0.08, k[1] + d[1] * 0.08, 0.03), 0.017, BODY)
+    q.tube((-0.01, 0.06, 0.035), (-0.04, 0.11, 0.035), 0.021, q.joint)                           # a short thumb
+    q.tube((-0.04, 0.11, 0.035), (-0.06, 0.14, 0.03), 0.017, BODY)
+    q.box(-0.24, -0.135, 0.085, (0.06, 0.03, 0.012), q.lit, rz=0.52, bevel=0)
 
 
 def leg(q):
@@ -101,17 +101,17 @@ def eye(q):
 
 
 def heart(q):
-    """A cyber heart, anatomical: a tapered red body with its point down toward the viewer, a darker atrium behind,
-    a white aortic arch curving over the top, and a lit band round it."""
-    q.blob(0.02, 0.02, 0.15, (0.11, 0.12, 0.12), HEART, tilt=(0.45, -0.45))                     # the ventricles
-    q.blob(0.08, 0.08, 0.07, (0.05, 0.05, 0.08), HEART, tilt=(0.75, -0.75))                     # the apex, forward and down
-    q.blob(-0.07, -0.02, 0.2, (0.06, 0.07, 0.06), HEART_D)                                      # the atrium, behind
-    q.blob(0.02, 0.02, 0.13, (0.108, 0.128, 0.025), q.lit, tilt=(0.45, -0.45))                  # the band
-    arch = [(-0.01, -0.03, 0.22), (-0.02, -0.04, 0.33), (0.02, -0.1, 0.38), (0.07, -0.15, 0.34), (0.08, -0.16, 0.26)]
-    for a, b in zip(arch, arch[1:]):
-        q.tube(a, b, 0.03, q.joint)
-    for a, b in ((( -0.04, 0.05, 0.22), (-0.07, 0.08, 0.33)), ((-0.04, -0.09, 0.3), (-0.06, -0.12, 0.37))):
-        q.tube(a, b, 0.018, q.joint)
+    """A cyber heart: two round red lobes side by side over a point at the bottom (the shape everyone knows), a lit
+    band round it, and short white vessels standing up from the top."""
+    for s, col in ((1, HEART), (-1, HEART_D)):                                                  # the lobes, across the view
+        q.blob(0.05 * s, -0.05 * s, 0.22, (0.085, 0.085, 0.09), col)
+    q.blob(0.0, 0.0, 0.14, (0.09, 0.09, 0.13), HEART, tilt=(0.0, 0.0))                          # the body to the point
+    q.blob(0.0, 0.0, 0.17, (0.094, 0.094, 0.018), q.lit)                                        # the band
+    q.tube((0.0, 0.0, 0.28), (0.0, 0.0, 0.36), 0.032, q.joint)                                  # the aorta, arching over
+    q.tube((0.0, 0.0, 0.36), (0.04, -0.04, 0.38), 0.03, q.joint)
+    q.tube((0.04, -0.04, 0.38), (0.07, -0.07, 0.34), 0.028, q.joint)
+    q.tube((-0.05, 0.05, 0.27), (-0.06, 0.06, 0.34), 0.02, q.joint)                             # two short stubs
+    q.tube((0.03, 0.05, 0.27), (0.035, 0.06, 0.32), 0.017, q.joint)
 
 
 def lungs(q):
@@ -128,14 +128,18 @@ def lungs(q):
 
 
 def spine(q):
-    """A spinal frame: six white vertebrae with gaps between, each with side wings and a spike up, lit discs between."""
-    for i in range(6):
-        x = (i - 2.5) * 0.085
-        q.tube((x - 0.025, 0, 0.045), (x + 0.025, 0, 0.045), 0.04, q.joint, cap=EYE)               # the body
-        q.box(x, 0, 0.05, (0.02, 0.17, 0.018), q.joint, bevel=0.004)                             # side wings
-        q.tube((x, 0, 0.07), (x - 0.02, 0, 0.13), 0.013, q.joint)                                   # the spike
-        if i < 5:
-            q.tube((x + 0.03, 0, 0.045), (x + 0.055, 0, 0.045), 0.032, q.lit)
+    """A spinal frame lying in a gentle S: seven white vertebrae shrinking toward the tail, each a round body with wide
+    side wings and a tall spike, dark discs between, a lit light on each spike."""
+    n = 7
+    pts = [((i - 3) * 0.075, 0.035 * math.sin(i * 0.9), 1.0 - i * 0.06) for i in range(n)]
+    for i, (x, y, s) in enumerate(pts):
+        q.tube((x - 0.022 * s, y, 0.045), (x + 0.022 * s, y, 0.045), 0.045 * s, q.joint, cap=EYE)  # the body
+        q.box(x, y, 0.035, (0.02 * s, 0.2 * s, 0.022), q.joint, bevel=0.005)                       # the wings
+        q.tube((x, y, 0.08), (x - 0.03, y, 0.15 * s), 0.016 * s, q.joint)                          # the spike
+        q.ball(x - 0.03, y, 0.15 * s - 0.012, 0.012, q.lit)
+        if i < n - 1:
+            nx, ny, _ = pts[i + 1]
+            q.tube((x + 0.024, y, 0.045), (nx - 0.024, ny, 0.045), 0.034 * s, BODY_D)
 
 
 def booster(q):
