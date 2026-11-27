@@ -332,8 +332,10 @@ eyes and the main organs are parts, fingers are not.
     Biosystems' speciality), and researched later. Mk III: black market and found. Reflex booster and dermal armour
     Mk II-III are military (the Mk I booster is civilian): contraband, and carried by navy and mercenary crews.
   - **Named cyberware (found only, no Mk tier, same slots).** In game: *Halcyon Heart* (heart replacement, bleed-out x4,
-    healing x2) and the *Neural co-processor* (brain augment, +1 every skill, work x1.05). Surgery treats one as Mk III
-    (difficulty, time) and never picks it for an urgent replacement; their names show in a muted gold. Planned examples: *Ghost Eye* (sees enemy
+    healing x2), the *Neural co-processor* (brain augment, +1 every skill, work x1.05) and one per other slot: *Hawkeye Lens* (eye 1.2, gunnery +3),
+    *Titan Arm* (arm 1.3, melee +3, carry +4), *Strider Leg* (leg 1.3, move x1.1), *Abyss Lungs* (lungs 1.1, suit air x2.5), *Atlas Frame* (spine 1.1, carry +5),
+    *Quicksilver* (spine augment, move x1.25, melee +3; contraband) and *Carapace Weave* (dermal, armour 0.25; contraband). Surgery treats one as Mk III
+    (difficulty, time) and never picks it for an urgent replacement; their names show in a muted gold. Planned (need new effects): *Ghost Eye* (sees enemy
     crew through roofs within a few tiles), *Grip Hands* (a cyber arm, work x1.3 on EVA). Zealot relics drop from
     zealot crews.
   - **Heavily augmented** = load 6 or more. Zealots trade on standing or on enough heavily augmented crew. Zealot crews

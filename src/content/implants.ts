@@ -37,6 +37,41 @@ const named = {
     description: 'A legendary heart replacement. Bleed-out takes four times as long and the body heals twice as fast.',
     implant: { slot: 'heart', named: true, kind: 'replacement', capacity: 1, bleedOutMul: 4, healMul: 2, ...ion(3) },
   },
+  'item.hawkeye_lens': {
+    ...base, name: 'Hawkeye Lens', price: 1500,
+    description: 'A sniper-grade eye: sharper than flesh, and the aim follows.',
+    implant: { slot: 'eye', named: true, kind: 'replacement', capacity: 1.2, mods: [add('gunnery', 3)], ...ion(3) },
+  },
+  'item.titan_arm': {
+    ...base, name: 'Titan Arm', price: 1700,
+    description: 'A hauler\'s arm built like a piston: hits hard and carries a crate on its own.',
+    implant: { slot: 'arm', named: true, kind: 'replacement', capacity: 1.3, mods: [add('melee', 3), add('carryCapacity', 4)], ...ion(4) },
+  },
+  'item.strider_leg': {
+    ...base, name: 'Strider Leg', price: 1500,
+    description: 'A spring-loaded leg that eats the deck in long strides.',
+    implant: { slot: 'leg', named: true, kind: 'replacement', capacity: 1.3, mods: [mul('moveSpeed', 1.1)], ...ion(3) },
+  },
+  'item.abyss_lungs': {
+    ...base, name: 'Abyss Lungs', price: 1600,
+    description: 'Deep-dive lungs: a suit\'s air lasts two and a half times as long.',
+    implant: { slot: 'lungs', named: true, kind: 'replacement', capacity: 1.1, suitAirMul: 2.5, ...ion(3) },
+  },
+  'item.atlas_frame': {
+    ...base, name: 'Atlas Frame', price: 1700,
+    description: 'A load-bearing spine that shrugs off a heavy burden.',
+    implant: { slot: 'spine', named: true, kind: 'replacement', capacity: 1.1, mods: [add('carryCapacity', 5)], ...ion(4) },
+  },
+  'item.quicksilver': {
+    ...base, tags: ['implant', 'contraband'], name: 'Quicksilver', price: 1800,
+    description: 'Military reflex wiring, tuned past any standard: fast on the feet and faster with a blade.',
+    implant: { slot: 'spine', named: true, kind: 'augment', mods: [mul('moveSpeed', 1.25), add('melee', 3)], contraband: true, ...ion(4) },
+  },
+  'item.carapace_weave': {
+    ...base, tags: ['implant', 'contraband'], name: 'Carapace Weave', price: 1700,
+    description: 'Military skin armour woven under the dermis: a quarter of the damage turned away.',
+    implant: { slot: 'dermal', named: true, kind: 'augment', armor: 0.25, contraband: true, ...ion(3) },
+  },
 } satisfies Record<string, ItemDef>;
 
 export const implantItems = {

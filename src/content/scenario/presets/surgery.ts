@@ -28,7 +28,7 @@ export default definePreset({
   spec: (p) => ({
     node: { warm: 10 },
     modules: { add: [{ def: 'module.med_bed' }] },
-    items: { give: { 'item.cyber_eye_1': 1, 'item.cyber_eye_2': 1, 'item.cyber_arm_1': 1, 'item.cyber_arm_2': 1, 'item.chip_gunnery_1': 1, 'item.cyber_heart_1': 1, 'item.halcyon_heart': 1 } },
+    items: { give: { 'item.cyber_eye_1': 1, 'item.cyber_eye_2': 1, 'item.cyber_arm_1': 1, 'item.cyber_arm_2': 1, 'item.chip_gunnery_1': 1, 'item.cyber_heart_1': 1, 'item.halcyon_heart': 1, 'item.hawkeye_lens': 1 } },
     crew: [
       {
         who: 0,

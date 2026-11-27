@@ -4,6 +4,7 @@ import { bleedOutMult, healMult } from '../sim/crew/body';
 import { implantLine, implantTier, isNamedImplant } from '../sim/crew/implants';
 import { fitImplant } from '../sim/crew/surgeryOutcome';
 import { operationsOf, surgeryChance } from '../sim/crew/surgery';
+import { stat } from '../sim/stats';
 import { playerCrew } from '../sim/story/world';
 import type { Sim } from '../sim/sim';
 import { cachedNewGame } from '../../test/support/content';
@@ -26,8 +27,9 @@ describe('Mk tiers and named cyberware (#626)', () => {
   it('named cyberware has no Mk tier and no Mk in its name', () => {
     const sim = cachedNewGame(3);
     const named = implants(sim).filter((d) => isNamedImplant(d.def));
-    expect(named.map((n) => n.id).sort()).toEqual(['item.chip_coprocessor', 'item.halcyon_heart']);
+    expect(named.map((n) => n.id).sort()).toEqual(['item.abyss_lungs', 'item.atlas_frame', 'item.carapace_weave', 'item.chip_coprocessor', 'item.halcyon_heart', 'item.hawkeye_lens', 'item.quicksilver', 'item.strider_leg', 'item.titan_arm']);
     for (const n of named) {
+      expect(n.def.slot).toBeTruthy();
       expect(n.def.tier).toBeUndefined();
       expect(n.item.tier).toBeUndefined();
       expect(n.item.name).not.toMatch(/Mk/);
@@ -57,5 +59,15 @@ describe('Mk tiers and named cyberware (#626)', () => {
     fitImplant(sim, id, 'part.heart', 'item.halcyon_heart');
     expect(bleedOutMult(sim, id)).toBeCloseTo(bleed * 4, 6);
     expect(healMult(sim, id)).toBeCloseTo(heal * 2, 6);
+  });
+
+  it("Titan Arm's melee +3 and carry +4 take effect, and a named piece is above its line's Mk III in price", () => {
+    const sim = cachedNewGame(3);
+    const id = human(sim);
+    const [melee, carry] = [stat(sim, id, 'melee'), stat(sim, id, 'carryCapacity')];
+    fitImplant(sim, id, 'part.arm_right', 'item.titan_arm');
+    expect(stat(sim, id, 'melee')).toBeGreaterThanOrEqual(melee + 3);
+    expect(stat(sim, id, 'carryCapacity')).toBeGreaterThan(carry);
+    expect(sim.content.items['item.titan_arm']!.price ?? 0).toBeGreaterThan(sim.content.items['item.cyber_arm_3']!.price ?? 0);
   });
 });

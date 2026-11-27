@@ -88,6 +88,13 @@ Surgery treats it like a Mk III piece, and an urgent replacement never takes it,
 |---|---|---|
 | Halcyon Heart | Heart | full circulation, bleeds out ×4 slower, heals ×2 faster |
 | Neural co-processor | Brain (augment) | +1 to every skill, work ×1.05 |
+| Hawkeye Lens | Eye | 120% of an eye, gunnery +3 |
+| Titan Arm | Arm | 130% of an arm, melee +3, carries much more |
+| Strider Leg | Leg | 130% of a leg, moves ×1.1 faster |
+| Abyss Lungs | Lungs | 110% breathing, suit air ×2.5 |
+| Atlas Frame | Spine | 110% moving, carries much more |
+| Quicksilver | Spine (augment) | move ×1.25, melee +3 (military: contraband) |
+| Carapace Weave | Skin (augment) | 25% less weapon damage (military: contraband) |
 
 Every implant has a **load** (Mk I 1, Mk II 2, Mk III 3; a spinal frame one more; named pieces 3). A crew member at load
 <Stat kind="tuning" id="HEAVY_LOAD" /> or more counts as **heavily augmented**, which the zealots respect.

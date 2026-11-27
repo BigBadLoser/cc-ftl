@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import type { Sim } from '../sim/sim';
 import { cachedNewGame } from '../../test/support/content';
-import { CrewC } from '../sim/crew/components';
+import { CrewC, PositionC } from '../sim/crew/components';
+import { drawFromStores } from '../sim/items/stock';
+import { shipIdOf } from '../sim/regions';
 import type { UiImplantLine } from '../ui/crewDetailApi';
 import { cachedScenario } from '../../test/support/scenario';
 import { pickCrew } from '../content/scenario/lib/crewPick';
@@ -40,6 +42,7 @@ describe('the Health tab surgery section (#311)', () => {
     expect(cyber.name).toBe('Cyber heart');
     expect(cyber.tiers.map((t) => [t.id, t.tier, t.stock])).toEqual([['item.cyber_heart_1', 1, 1], ['item.cyber_heart_2', 2, 0], ['item.cyber_heart_3', 3, 0]]);
     expect(cyber.best).toBe('item.cyber_heart_1');
+    drawFromStores(sim, shipIdOf(sim, sim.world.get(patient, PositionC)), 'item.hawkeye_lens', 1); // the hold is full: make room
     sim.enqueue({ type: 'debug.giveItems', item: 'item.cyber_heart_2', count: 1 });
     sim.applyCommands();
     expect(heart().find((l) => l.id === 'item.cyber_heart')!.best).toBe('item.cyber_heart_2');
