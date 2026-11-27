@@ -16,6 +16,7 @@
   const h = $derived(d?.body ?? null);
   let picking = $state<string | null>(null);
   let root = $state<HTMLElement | null>(null);
+  const ACTION_ICON = { fit: 'replace', repair: 'repair', amputate: 'amputate' } as const;
   let pickKind = $state<UiOperationOption['kind'] | null>(null);
   /** The card beside a row's action button: the part, its operation and where it sits. */
   let card = $state<{ part: string; kind: UiOperationOption['kind']; left: number; top: number } | null>(null);
@@ -52,11 +53,15 @@
         <h4>Body</h4>
         {#each h.parts as p (p.id)}
           {#snippet rich()}{#if p.card}<InjuryCard card={p.card} part={p.name} onQueue={null} />{/if}{/snippet}
-          <div class="row part {p.tone}" class:gap={p.gap} data-testid="part-{p.id}" use:tip={p.card ? { rich, side: 'right', focus: true } : null}>
+          <div class="row part {p.tone}" class:gap={p.gap} data-testid="part-{p.id}">
+            <div class="info" use:tip={p.card ? { rich, side: 'right', focus: true } : null}>
             <span class="name">{@render glyph(p)}{p.name}</span>
             <span class="state">{#if p.implant}<span class="cyber" data-testid="implant-{p.id}">{p.implant}</span>{#if p.state}, {/if}{/if}{p.state}{#if p.more} <small>+{p.more}</small>{/if}</span>
-            {#if p.action?.kind === 'heals'}<span class="heals" data-testid="heals-{p.id}">heals</span>
-            {:else if p.action}<button class="act interact" data-part-action data-testid="act-{p.id}" onclick={(e) => openCard(e, p)}>{p.action.label}</button>{/if}
+            </div>
+            <span class="slot">
+              {#if p.action?.kind === 'heals'}<span class="heals" data-testid="heals-{p.id}" use:tip={{ text: 'Heals on its own' }}><Icon name="heals" size={13} /></span>
+              {:else if p.action}<button class="act interact" data-part-action data-testid="act-{p.id}" aria-label={p.action.label} use:tip={{ text: `${p.action.label} ${p.name.toLowerCase()}` }} onclick={(e) => openCard(e, p)}><Icon name={ACTION_ICON[p.action.kind]} size={13} /></button>{/if}
+            </span>
           </div>
         {/each}
         {#if h.operations}
@@ -109,8 +114,10 @@
   .lbl { overflow: hidden; text-overflow: ellipsis; }
   .ops-head { display: flex; justify-content: space-between; align-items: center; margin-top: 14px; }
   .ops-head h4 { margin: 0; }
-  .heals { color: var(--dim); font: 600 var(--fs-label) var(--head-font); letter-spacing: var(--ls-label); text-transform: uppercase; }
-  button.act { min-height: 20px; padding: 0 8px; font: 600 var(--fs-label) var(--head-font); letter-spacing: var(--ls-label); text-transform: uppercase; color: var(--cyan); }
+  .info { flex: 1; min-width: 0; display: flex; justify-content: space-between; align-items: center; gap: 8px; align-self: stretch; }
+  .slot { flex: none; display: inline-flex; justify-content: center; width: 22px; }
+  .heals { display: inline-flex; color: var(--dim); opacity: 0.6; }
+  button.act { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; min-width: 0; min-height: 0; padding: 0; color: var(--cyan); }
   button.link { min-height: 0; min-width: 0; padding: 0; border: 0; background: none; color: var(--cyan); font-size: var(--fs-small); }
   button.x { min-height: 0; min-width: 0; padding: 0 2px; border: 0; background: none; color: var(--dim); font-size: 11px; }
 </style>

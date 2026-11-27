@@ -45,10 +45,9 @@
       {/each}
     </div>
     <div class="ops">
-      <Tabs label="Operation" options={options.map((o) => ({ value: o.kind, label: o.label.replace(/ implant$/, ''), disabled: !!o.disabled, testId: `op-${o.kind}` }))}
+      <Tabs label="Operation" options={options.map((o) => ({ value: o.kind, label: o.label.replace(/ implant$/, ''), disabled: !!o.disabled, title: o.disabled, testId: `op-${o.kind}` }))}
         value={chosen?.kind ?? ''} onChange={(v) => ((pick = v as UiOperationOption['kind']), (lineId = null), (implant = null))} />
       <p class="why">{chosen?.note ?? ''}</p>
-      {#each options.filter((o) => o.disabled) as o (o.kind)}<p class="why off">{o.label}: {o.disabled}</p>{/each}
       {#if chosen?.lines}
         <h4>Implant</h4>
         {#each chosen.lines as l (l.id)}
@@ -87,7 +86,6 @@
   .parts h4 { margin-top: 0; }
   p { margin: 0; color: var(--dim); font-size: var(--fs-small); }
   .why { margin: 8px 12px 0; }
-  .why.off { margin-top: 2px; opacity: 0.6; }
   .fact { margin: 0 12px 2px; color: var(--ink-accent); }
   /* Plain rows, no borders: a hover tint, and the selected one filled with a cyan bar on its left edge. */
   .row { display: flex; align-items: center; justify-content: space-between; gap: 7px; min-height: 26px; min-width: 0; padding: 0 12px; border: 0; border-left: 2px solid transparent; background: none; color: var(--text); text-align: left; font-size: var(--fs-small); }

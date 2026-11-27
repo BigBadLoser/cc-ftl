@@ -1,5 +1,6 @@
 <script lang="ts">
   import { Tabs } from 'bits-ui';
+  import { tip } from './tip';
   import type { KitOption } from './types';
 
   /**
@@ -14,7 +15,9 @@
 <Tabs.Root {value} onValueChange={(v) => v && v !== value && onChange(v)} class="kit-tabs-root">
   <Tabs.List class="kit-tabs" aria-label={label} data-testid={testId}>
     {#each options as o (o.value)}
-      <Tabs.Trigger value={o.value} disabled={o.disabled} class="kit-tab" data-testid={o.testId}>{o.label}</Tabs.Trigger>
+      <Tabs.Trigger value={o.value} disabled={o.disabled} class="kit-tab" data-testid={o.testId}>
+        {#snippet child({ props })}<button {...props} use:tip={{ text: o.title }}>{o.label}</button>{/snippet}
+      </Tabs.Trigger>
     {/each}
   </Tabs.List>
 </Tabs.Root>

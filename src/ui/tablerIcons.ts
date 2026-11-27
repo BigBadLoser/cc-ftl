@@ -40,6 +40,9 @@ import t_dice_5 from '@tabler/icons/outline/dice-5.svg?raw';
 import t_pencil from '@tabler/icons/outline/pencil.svg?raw';
 import t_chevron_right from '@tabler/icons/outline/chevron-right.svg?raw';
 import t_cpu from '@tabler/icons/outline/cpu.svg?raw';
+import t_bandage from '@tabler/icons/outline/bandage.svg?raw';
+import t_cut from '@tabler/icons/outline/cut.svg?raw';
+import t_hourglass from '@tabler/icons/outline/hourglass.svg?raw';
 import t_crosshair from '@tabler/icons/outline/crosshair.svg?raw';
 import t_current_location from '@tabler/icons/outline/current-location.svg?raw';
 import t_door from '@tabler/icons/outline/door.svg?raw';
@@ -163,6 +166,10 @@ export const FILES = {
   floor: 'square-rotated',
   door: 'door',
   module: 'cpu',
+  replace: 'cpu',
+  repair: 'bandage',
+  amputate: 'cut',
+  heals: 'hourglass',
   ship: 'ufo',
   person: 'user',
   smile: 'mood-smile',
@@ -249,6 +256,9 @@ const RAW: Record<string, string> = {
   'pencil': t_pencil,
   'chevron-right': t_chevron_right,
   'cpu': t_cpu,
+  'bandage': t_bandage,
+  'cut': t_cut,
+  'hourglass': t_hourglass,
   'crosshair': t_crosshair,
   'current-location': t_current_location,
   'door': t_door,
