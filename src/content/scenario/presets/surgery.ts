@@ -19,12 +19,12 @@ function rigBeside(sim: Sim): Command[] {
 /**
  * `?scenario=surgery` (#311): surgery and implants. A medical bed with a surgical rig beside it is added and implants put in the hold (cyber eyes and arms, a neural
  * chip, a cyber heart, the named Halcyon Heart). The first crew member (the patient, selected) has lost the right eye and the left arm, and carries a Mk I dermal armour already;
- * the second is made a surgeon (Medicine +6, medical work first). Queue operations from the patient's Health tab. `&queue`: an eye replacement and an
+ * the second is made a surgeon (Medicine +6, medical work first). Queue operations from the patient's Health tab. `&rows`: lungs with a serious injury and a bruised leg, to show every Health row action. `&queue`: an eye replacement and an
  * amputation are queued at once, so the patient walks to the rigged bed. Works on any starter crew (the app rolls them).
  */
 export default definePreset({
   doc: 'Surgery: a medical bed with a surgical rig, a surgeon, implants in stock, and a patient with a lost eye and a destroyed arm.',
-  params: { queue: flag() },
+  params: { queue: flag(), rows: flag() },
   spec: (p) => ({
     node: { warm: 10 },
     modules: { add: [{ def: 'module.med_bed' }] },
@@ -33,7 +33,7 @@ export default definePreset({
       {
         who: 0,
         set: {
-          injuries: [{ part: 'part.eye_right', kind: 'injury.organ_damage', as: 'destroyed' }, { part: 'part.arm_left', kind: 'injury.fracture', as: 'destroyed' }],
+          injuries: [...(p.rows ? [{ part: 'part.lungs', kind: 'injury.organ_damage' }, { part: 'part.leg_right', kind: 'injury.bruise' }] : []), { part: 'part.eye_right', kind: 'injury.organ_damage', as: 'destroyed' }, { part: 'part.arm_left', kind: 'injury.fracture', as: 'destroyed' }],
           implants: [{ part: 'part.dermal', item: 'item.dermal_armor_1' }],
         },
       },

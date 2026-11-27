@@ -5,6 +5,7 @@ import type { BodyPartDef, Capacity } from '../sim/crew/injuryTypes';
 import { clockAt } from '../sim/clock';
 import { implantsOf } from '../sim/crew/implants';
 import { DERMAL_PART } from '../sim/crew/implantTypes';
+import { suggestedOperation } from '../sim/crew/surgery';
 import type { UiBodyPart, UiHealth, UiInjuryCard, UiOperations, UiPartIcon, UiTone } from '../ui/crewDetailApi';
 
 /** The glyph of a part, from what it feeds (a gate on moving is the spine). */
@@ -49,6 +50,15 @@ function implantNames(sim: Sim, id: number, part: string): string | null {
   return names.length ? names.join(', ') : null;
 }
 
+const ACTION_LABEL = { fit: 'Replace', repair: 'Repair', amputate: 'Amputate' } as const;
+
+/** The row's action from the sim's suggestion (crew/surgery.ts `suggestedOperation`); buttons only where surgery is on offer. */
+function actionOf(sim: Sim, id: number, part: string, surgery: boolean): Pick<UiBodyPart, 'action'> {
+  const s = suggestedOperation(sim, id, part);
+  if (s === 'heals') return { action: { kind: 'heals', label: 'heals' } };
+  return s && s !== 'remove' && surgery ? { action: { kind: s, label: ACTION_LABEL[s] } } : {};
+}
+
 /** The Health tab of one crew member (null for a body that takes no injuries). `operations`: the surgery section (app/surgeryDetail.ts). */
 export function buildHealth(sim: Sim, id: number, operations: UiOperations | null = null): UiHealth | null {
   const c = sim.content.injuries;
@@ -72,7 +82,7 @@ export function buildHealth(sim: Sim, id: number, operations: UiOperations | nul
       effect: `${capDef?.name ?? def.capacity} ${Math.round(caps[def.capacity] * 100)}%: ${capDef?.effect ?? ''}.`,
     } : null;
     const implant = implantNames(sim, id, pid);
-    return { id: pid, name: def.name, icon: partIcon(def), mirror: def.side === 'left', gap, state: worst ? stateOf(sim, worst) : implant ? '' : 'Fine', more: Math.max(0, mine.length - 1), tone: implant && tone === 'fine' ? 'plain' : tone, implant, card };
+    return { id: pid, name: def.name, icon: partIcon(def), mirror: def.side === 'left', gap, state: worst ? stateOf(sim, worst) : implant ? '' : 'Fine', more: Math.max(0, mine.length - 1), tone: implant && tone === 'fine' ? 'plain' : tone, implant, card, ...actionOf(sim, id, pid, !!operations) };
   });
   const skin = implantNames(sim, id, DERMAL_PART); // the skin has a row only while an implant is in it
   if (skin) parts.push({ id: DERMAL_PART, name: 'Skin', icon: 'part-skin', mirror: false, gap: true, state: '', more: 0, tone: 'plain', implant: skin, card: null });

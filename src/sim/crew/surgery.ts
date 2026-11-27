@@ -82,6 +82,31 @@ export function stockFor(sim: Sim, id: number, op: Pick<Operation, 'kind' | 'ite
   return !!pos && !!op.item && shipStoreCount(sim, shipIdOf(sim, pos), op.item) > 0;
 }
 
+/** What a body part's row offers: an operation kind (`fit` is Replace), `heals` (a minor injury that mends on its own: a label, no action), or nothing. */
+export type SuggestedOperation = OperationKind | 'heals' | null;
+
+/** Is a replacement for the (lost) part in the patient's ship stock, one that could be fitted now? */
+function replacementInStock(sim: Sim, id: number, part: string): boolean {
+  return Object.entries(sim.content.items).some(([item, d]) => d.implant?.kind === 'replacement' && !operationError(sim, id, { kind: 'fit', part, item }) && stockFor(sim, id, { kind: 'fit', item }));
+}
+
+/**
+ * The one obvious operation for a body part (the Health tab's button): a lost limb is amputated, then (or when amputated) replaced, a lost organ replaced, a serious injury
+ * repaired, all only when the operation applies, nothing is queued on the part, and (a replacement) one is in stock. A minor injury is `heals`. The one owner of "what
+ * does this part need"; the app maps it to rows.
+ */
+export function suggestedOperation(sim: Sim, id: number, part: string): SuggestedOperation {
+  const def = partDef(sim, part);
+  if (!def || !canBeInjured(sim, id) || operationsOf(sim, id).some((o) => o.part === part)) return null;
+  const mine = injuriesOf(sim, id).filter((i) => i.part === part);
+  if (partDestroyed(sim, id, part)) {
+    if (def.group === 'limb' && !operationError(sim, id, { kind: 'amputate', part })) return 'amputate';
+    return replacementInStock(sim, id, part) ? 'fit' : null;
+  }
+  if (mine.some((i) => i.sev === 'serious') && !operationError(sim, id, { kind: 'repair', part })) return 'repair';
+  return mine.some((i) => i.sev === 'minor') && !mine.some((i) => i.sev === 'serious') ? 'heals' : null;
+}
+
 /** The patient's queue (empty for none). */
 export const operationsOf = (sim: Sim, id: number): readonly Operation[] => sim.world.get(id, OperationsC)?.list ?? [];
 

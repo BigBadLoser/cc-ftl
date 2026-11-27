@@ -185,6 +185,8 @@ export interface UiBodyPart {
   /** The fitted implants' names, drawn in cyan (the one place cyan is used), or null. */
   implant: string | null;
   card: UiInjuryCard | null;
+  /** The row's one obvious action (sim `suggestedOperation`): a button (Replace, Repair, Amputate) or the faint "heals" label; absent for none. */
+  action?: { kind: 'fit' | 'repair' | 'amputate'; label: string } | { kind: 'heals'; label: string };
 }
 
 /** The hover card of an injured part: what is wrong, the care it needs, what it does, and how it happened, per injury. */

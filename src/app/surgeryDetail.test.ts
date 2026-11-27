@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { Sim } from '../sim/sim';
 import { cachedNewGame } from '../../test/support/content';
 import { CrewC } from '../sim/crew/components';
 import type { UiImplantLine } from '../ui/crewDetailApi';
@@ -6,6 +7,7 @@ import { cachedScenario } from '../../test/support/scenario';
 import { pickCrew } from '../content/scenario/lib/crewPick';
 import { buildHealth } from './healthDetail';
 import { buildOperations } from './surgeryDetail';
+import { suggestedOperation } from '../sim/crew/surgery';
 
 describe('the Health tab surgery section (#311)', () => {
   it('fills the queue and the picker from the sim: real stock, greyed reasons, odds, and implants on their rows', () => {
@@ -56,5 +58,41 @@ describe('the Health tab surgery section (#311)', () => {
     const lines = buildOperations(bare, crew)!.picker.ops['part.brain']!.find((o) => o.kind === 'fit')!.lines!;
     expect(lines.some((l) => l.named)).toBe(false); // the co-processor is not in stock
     expect(lines.some((l) => l.id === 'item.chip_gunnery')).toBe(true);
+  });
+
+  describe('the row action (sim suggestedOperation, #626)', () => {
+    const rows = (sim: Sim, id: number) => Object.fromEntries(buildHealth(sim, id, buildOperations(sim, id))!.parts.map((p) => [p.id, p.action]));
+
+    it('a destroyed eye with a replacement in stock is Replace, a lost limb is Amputate, a serious injury is Repair, a minor one only heals', () => {
+      const sim = cachedScenario('surgery', { params: { rows: true } }).sim;
+      const a = rows(sim, pickCrew(sim, 0)!);
+      expect(a['part.eye_right']).toEqual({ kind: 'fit', label: 'Replace' });
+      expect(a['part.arm_left']).toEqual({ kind: 'amputate', label: 'Amputate' });
+      expect(a['part.lungs']).toEqual({ kind: 'repair', label: 'Repair' });
+      expect(a['part.leg_right']).toEqual({ kind: 'heals', label: 'heals' });
+      expect(a['part.brain']).toBeUndefined();
+    });
+
+    it('an amputated limb is Replace once a cyber limb is in stock, and a lost organ with nothing in stock offers nothing', () => {
+      const sim = cachedScenario('surgery', { params: { rows: true } }).sim;
+      const id = pickCrew(sim, 0)!;
+      sim.enqueue({ type: 'debug.setCrew', id, injuries: [{ part: 'part.heart', kind: 'injury.organ_damage', as: 'destroyed' }] });
+      sim.applyCommands();
+      expect(rows(sim, id)['part.heart']).toEqual({ kind: 'fit', label: 'Replace' }); // the hold has a heart
+      expect(suggestedOperation(sim, id, 'part.lungs')).toBe('repair');
+      const bare = cachedNewGame(3);
+      const crew = bare.world.query(CrewC)[0] as number;
+      bare.enqueue({ type: 'debug.setCrew', id: crew, injuries: [{ part: 'part.eye_right', kind: 'injury.organ_damage', as: 'destroyed' }, { part: 'part.arm_left', kind: 'injury.amputated', as: 'destroyed' }] });
+      bare.applyCommands();
+      expect(suggestedOperation(bare, crew, 'part.eye_right')).toBeNull(); // no cyber eye aboard
+      expect(suggestedOperation(bare, crew, 'part.arm_left')).toBeNull(); // amputated, no cyber arm aboard
+    });
+
+    it('the card opens on the best tier in stock for a replacement', () => {
+      const sim = cachedScenario('surgery').sim;
+      const id = pickCrew(sim, 0)!;
+      const eye = buildOperations(sim, id)!.picker.ops['part.eye_right']!.find((o) => o.kind === 'fit')!.lines!.find((l) => l.id === 'item.cyber_eye')!;
+      expect(eye.best).toBe('item.cyber_eye_2');
+    });
   });
 });
