@@ -42,6 +42,16 @@ class P:
         bmesh.ops.translate(bm, verts=bm.verts, vec=self.p(x, y, z + r * sz))
         emit(self.m, bm, lambda n, c: col)
 
+    def blob(self, x, y, z, radii, col, tilt=(0.0, 0.0)):
+        """An ellipsoid centred at (x, y, z) with radii (rx, ry, rz), tilted about grid x then y by tilt (radians)."""
+        bm = bmesh.new()
+        bmesh.ops.create_uvsphere(bm, u_segments=14, v_segments=10, radius=1.0)
+        bmesh.ops.transform(bm, matrix=Matrix.Diagonal((*(r * self.k for r in radii), 1.0)), verts=bm.verts)
+        rot = Matrix.Rotation(self.rz, 3, "Z") @ Matrix.Rotation(tilt[1], 3, "Y") @ Matrix.Rotation(tilt[0], 3, "X")
+        bmesh.ops.rotate(bm, verts=bm.verts, cent=(0, 0, 0), matrix=rot)
+        bmesh.ops.translate(bm, verts=bm.verts, vec=self.p(x, y, z))
+        emit(self.m, bm, lambda n, c: col)
+
     def disc(self, x, y, z, r, h, col, top=None, sides=14):
         self.m.cyl(self.p(x, y, z), r * self.k, h * self.k, col, sides=sides, top=top or col, rz=self.rz)
 
@@ -54,17 +64,21 @@ def at(base, d, r):
 # ---- the lines -------------------------------------------------------------------------------------------------------
 
 def arm(q):
-    """A cyber arm lying on the deck: upper arm, a white elbow, forearm, an open hand."""
-    q.tube((-0.26, -0.1, 0.05), (-0.04, 0.0, 0.05), 0.05, BODY)
-    q.ball(-0.04, 0.0, 0.0, 0.055, q.joint)
-    q.tube((-0.04, 0.0, 0.05), (0.14, 0.1, 0.04), 0.04, BODY, r1=0.034)
-    q.ball(0.14, 0.1, 0.004, 0.038, q.joint)
-    q.box(0.2, 0.14, 0.0, (0.1, 0.09, 0.05), BODY_D, top=BODY, rz=0.5)
-    for i, a in enumerate((-0.5, -0.15, 0.15, 0.45)):
-        y0 = 0.14 + i * 0.02
-        q.tube((0.24, y0, 0.03), (0.24 + 0.1 * math.cos(0.27 + a), y0 + 0.1 * math.sin(0.27 + a) + 0.06 * a, 0.03), 0.014, q.joint)
-    q.tube((0.17, 0.2, 0.03), (0.15, 0.28, 0.03), 0.015, q.joint)                                  # thumb
-    q.box(-0.15, -0.05, 0.095, (0.06, 0.03, 0.012), q.lit, rz=0.42, bevel=0)
+    """A cyber arm lying on the deck: upper arm, a white elbow, forearm, and a big open hand, fingers spread apart."""
+    q.tube((-0.28, -0.16, 0.045), (-0.14, -0.08, 0.045), 0.045, BODY)
+    q.ball(-0.14, -0.08, 0.0, 0.05, q.joint)
+    q.tube((-0.14, -0.08, 0.045), (-0.02, -0.01, 0.038), 0.037, BODY, r1=0.032)
+    q.ball(-0.02, -0.01, 0.006, 0.033, q.joint)                                                 # the wrist
+    q.blob(0.06, 0.04, 0.035, (0.095, 0.08, 0.032), BODY_D)                                     # the palm
+    for a in (-0.6, -0.2, 0.2, 0.58):                                                           # four fingers, fanned wide
+        d = (math.cos(0.5 + a), math.sin(0.5 + a))
+        b = (0.06 + d[0] * 0.075, 0.04 + d[1] * 0.075)
+        k = (b[0] + d[0] * 0.07, b[1] + d[1] * 0.07)
+        q.tube((b[0], b[1], 0.04), (k[0], k[1], 0.04), 0.022, q.joint)
+        q.tube((k[0], k[1], 0.04), (k[0] + d[0] * 0.06, k[1] + d[1] * 0.06, 0.03), 0.018, BODY)
+    q.tube((0.02, 0.1, 0.035), (-0.02, 0.18, 0.035), 0.022, q.joint)                             # thumb
+    q.tube((-0.02, 0.18, 0.035), (-0.06, 0.22, 0.03), 0.018, BODY)
+    q.box(-0.22, -0.12, 0.085, (0.06, 0.03, 0.012), q.lit, rz=0.52, bevel=0)
 
 
 def leg(q):
@@ -87,32 +101,41 @@ def eye(q):
 
 
 def heart(q):
-    """A cyber heart: two red chambers, a lit band round them, three vessels out of the top."""
-    q.ball(-0.04, 0.03, 0.0, 0.12, HEART, sz=0.8)
-    q.ball(0.07, -0.03, 0.0, 0.1, HEART_D, sz=0.8)
-    q.tube((0.0, 0.0, 0.085), (0.0, 0.0, 0.115), 0.135, q.lit, sides=16)
-    for x, y, h in ((-0.06, 0.08, 0.3), (0.0, 0.04, 0.32), (0.05, 0.0, 0.27)):
-        q.tube((x, y, 0.14), (x, y, h), 0.026, q.joint)
+    """A cyber heart, anatomical: a tapered red body with its point down toward the viewer, a darker atrium behind,
+    a white aortic arch curving over the top, and a lit band round it."""
+    q.blob(0.02, 0.02, 0.15, (0.11, 0.12, 0.12), HEART, tilt=(0.45, -0.45))                     # the ventricles
+    q.blob(0.08, 0.08, 0.07, (0.05, 0.05, 0.08), HEART, tilt=(0.75, -0.75))                     # the apex, forward and down
+    q.blob(-0.07, -0.02, 0.2, (0.06, 0.07, 0.06), HEART_D)                                      # the atrium, behind
+    q.blob(0.02, 0.02, 0.13, (0.108, 0.128, 0.025), q.lit, tilt=(0.45, -0.45))                  # the band
+    arch = [(-0.01, -0.03, 0.22), (-0.02, -0.04, 0.33), (0.02, -0.1, 0.38), (0.07, -0.15, 0.34), (0.08, -0.16, 0.26)]
+    for a, b in zip(arch, arch[1:]):
+        q.tube(a, b, 0.03, q.joint)
+    for a, b in ((( -0.04, 0.05, 0.22), (-0.07, 0.08, 0.33)), ((-0.04, -0.09, 0.3), (-0.06, -0.12, 0.37))):
+        q.tube(a, b, 0.018, q.joint)
 
 
 def lungs(q):
-    """Cyber lungs: two pink lobes side by side, a steel windpipe forking between them, a lit band on each."""
-    for y, col in ((-0.08, LUNG_D), (0.08, LUNG)):
-        q.ball(0.02, y, 0.0, 0.085, col, sx=1.6, sz=0.9)
-        q.tube((-0.03, y - 0.09, 0.1), (-0.03, y + 0.09, 0.1), 0.012, q.lit)
-    q.tube((-0.27, 0.0, 0.08), (-0.12, 0.0, 0.08), 0.026, q.joint)
-    for y in (-0.06, 0.06):
-        q.tube((-0.12, 0.0, 0.08), (-0.06, y, 0.08), 0.02, q.joint)
+    """Cyber lungs standing up: two tall pink lobes, a white windpipe rising between them and forking into each,
+    a lit band across each lobe."""
+    for y, col in ((-0.075, LUNG_D), (0.075, LUNG)):
+        q.blob(0.0, y * 1.25, 0.16, (0.08, 0.075, 0.16), col, tilt=(0.18 if y > 0 else -0.18, 0.0))
+        q.blob(0.0, y * 1.25, 0.13, (0.084, 0.079, 0.018), q.lit)
+    q.tube((0.0, 0.0, 0.22), (0.0, 0.0, 0.4), 0.024, q.joint)
+    for y in (-0.05, 0.05):
+        q.tube((0.0, 0.0, 0.23), (0.0, y * 1.3, 0.19), 0.017, q.joint)
+    for z in (0.29, 0.33, 0.37):
+        q.tube((0.0, 0.0, z - 0.006), (0.0, 0.0, z + 0.006), 0.026, BODY_D)
 
 
 def spine(q):
-    """A spinal frame: a chain of white vertebrae with spines up and lit discs between."""
-    for i in range(7):
-        x = (i - 3) * 0.075
-        q.box(x, 0, 0, (0.05, 0.1, 0.06), q.joint, top=EYE, bevel=0.01)
-        q.box(x, 0, 0.06, (0.022, 0.03, 0.05), q.joint, bevel=0.006)
-        if i < 6:
-            q.box(x + 0.0375, 0, 0.012, (0.016, 0.07, 0.036), q.lit, bevel=0)
+    """A spinal frame: six white vertebrae with gaps between, each with side wings and a spike up, lit discs between."""
+    for i in range(6):
+        x = (i - 2.5) * 0.085
+        q.tube((x - 0.025, 0, 0.045), (x + 0.025, 0, 0.045), 0.04, q.joint, cap=EYE)               # the body
+        q.box(x, 0, 0.05, (0.02, 0.17, 0.018), q.joint, bevel=0.004)                             # side wings
+        q.tube((x, 0, 0.07), (x - 0.02, 0, 0.13), 0.013, q.joint)                                   # the spike
+        if i < 5:
+            q.tube((x + 0.03, 0, 0.045), (x + 0.055, 0, 0.045), 0.032, q.lit)
 
 
 def booster(q):
@@ -124,13 +147,16 @@ def booster(q):
 
 
 def dermal(q):
-    """Dermal armour: a bowed patch of gunmetal hexagonal scales with lit seams between."""
-    q.box(0, 0, 0, (0.42, 0.3, 0.012), q.lit, bevel=0)
-    for i in range(6):
+    """Dermal armour: a skin-toned sheet half rolled up, its open part covered in gunmetal scales with lit seams."""
+    q.box(0.04, 0, 0, (0.34, 0.28, 0.01), "skin", bevel=0)
+    q.tube((-0.15, -0.14, 0.05), (-0.15, 0.14, 0.05), 0.05, "skin", cap="skinD")                # the rolled end
+    q.tube((-0.15, -0.141, 0.05), (-0.15, 0.141, 0.05), 0.022, BODY_D)
+    for i in range(5):
         for j in range(4):
-            x, y = (i - 2.5) * 0.068 + (0.034 if j % 2 else 0.0), (j - 1.5) * 0.068
-            if abs(x) < 0.2:
-                q.disc(x, y, 0.012 + 0.04 * (1 - (y / 0.15) ** 2), 0.034, 0.02, BODY_D, top=BODY, sides=6)
+            x, y = -0.07 + i * 0.058 + (0.029 if j % 2 else 0.0), (j - 1.5) * 0.062
+            if x < 0.2:
+                q.disc(x, y, 0.01, 0.026, 0.016, BODY_D, top=BODY, sides=6)
+    q.box(0.04, 0, 0.01, (0.32, 0.006, 0.004), q.lit, bevel=0)
 
 
 def chip(skill):
