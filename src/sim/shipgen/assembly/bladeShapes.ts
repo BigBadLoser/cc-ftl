@@ -37,8 +37,15 @@ function stack(k: number, layers: number, { ang = 8, first = 34, step = 7, sprea
     slab(ang + spread * i, (first - step * i) * k, w, [-i * w * 1.4, w * 0.35], { notch: notch && i === 0, faired: i === layers - 1, point })).flat();
 }
 
-/** A blade of the palette at scale `k` (1: a medium hull's). */
-export function bladeShape(kind: BladeKind, k: number): Poly[] {
+/**
+ * A blade at the mock's scale `k` (its lead or trail: the length by it, the width by its root), the whole then enlarged by
+ * `size` (the body's length over the mock's): a larger hull's blades the mock's shapes, not longer thinner ones.
+ */
+export function bladeShape(kind: BladeKind, k: number, size = 1): Poly[] {
+  return mockShape(kind, k).map((p) => p.map(([x, y]) => [x * size, y * size] as const));
+}
+
+function mockShape(kind: BladeKind, k: number): Poly[] {
   const s = Math.sqrt(k);
   switch (kind) {
     case 'slab': return stack(k, 1);

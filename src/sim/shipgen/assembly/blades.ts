@@ -36,17 +36,17 @@ export function addBlades(
   const body0 = (x: number, y: number): boolean => (s.rows[y]?.[x] ?? '.') !== '.';
   const cols = Array.from({ length: s.width }, (_, x) => { let t = -1; for (let y = 0; y < s.height; y++) if (body0(x, y)) t = Math.max(t, Math.abs(y - axis)); return t; });
   const bx0 = cols.findIndex((t) => t >= 0), bx1 = cols.length - 1 - [...cols].reverse().findIndex((t) => t >= 0), len = bx1 - bx0 + 1;
-  const k = len / MEDIUM, [fk, ak] = lead === 'fore' ? [LEAD * k, TRAIL * k] : [TRAIL * k, LEAD * k];
+  const k = len / MEDIUM, [fk, ak] = lead === 'fore' ? [LEAD, TRAIL] : [TRAIL, LEAD];
   // Each blade at its root (on the body's side there), pointing aft (+1) or fore (-1).
   const polys: Poly[] = [];
   const place = (kind: BladeKind | null, kk: number, at: number, dir: number): void => {
     if (!kind) return;
-    const shape = bladeShape(kind, kk), x = Math.round(bx0 + at * len), h = cols[x] ?? 0;
+    const shape = bladeShape(kind, kk, k), x = Math.round(bx0 + at * len), h = cols[x] ?? 0;
     for (const p of shape) polys.push(p.map(([u, v]) => [x + dir * u, h + v] as const));
   };
   place(fore, fk, ROOT.fore, -1);
   place(aft, ak, ROOT.aft, 1);
-  if (horn) place('horn', 0.9 * k, ROOT.horn, 1);
+  if (horn) place('horn', 0.9, ROOT.horn, 1);
   // The nose on the bow, at the bow's full half-beam.
   if (nose) {
     const { poly, len: n } = noseShape(nose, Math.max(...cols.slice(bx0, bx0 + 4)) + 1);
